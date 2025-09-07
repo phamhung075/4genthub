@@ -41,12 +41,13 @@ class CallAgentMCPController:
         
         # Get centralized parameter definitions
         params = get_call_agent_parameters()
-
-        @mcp.tool(description=get_call_agent_description())
-        def call_agent(
-            name_agent: Annotated[str, Field(description=params["name_agent"]["description"])]
-        ) -> Dict[str, Any]:
+        
+        # Define the tool function with proper signature
+        def call_agent(name_agent: Annotated[str, Field(description=params["name_agent"]["description"])]) -> Dict[str, Any]:
             return self.call_agent(name_agent=name_agent)
+
+        # Register tool with description using the same pattern as working controllers
+        mcp.tool(description=get_call_agent_description())(call_agent)
 
     def call_agent(self, name_agent: str) -> Dict[str, Any]:
         """

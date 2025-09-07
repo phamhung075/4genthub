@@ -177,17 +177,16 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   // Delete subtask handler
   const handleDeleteSubtask = useCallback(async (subtaskId: string) => {
     try {
-      const success = await deleteSubtask(parentTaskId, subtaskId);
-      if (success) {
-        // Remove from summaries
-        setSubtaskSummaries(prev => prev.filter(s => s.id !== subtaskId));
-        // Remove from full subtasks
-        setFullSubtasks(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(subtaskId);
-          return newMap;
-        });
-      }
+      await deleteSubtask(subtaskId);
+      // If no error is thrown, consider it successful
+      // Remove from summaries
+      setSubtaskSummaries(prev => prev.filter(s => s.id !== subtaskId));
+      // Remove from full subtasks
+      setFullSubtasks(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(subtaskId);
+        return newMap;
+      });
     } catch (error) {
       console.error('Failed to delete subtask:', error);
     }
@@ -364,6 +363,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
             </TableCell>
           </TableRow>
         )}
+        
       </React.Fragment>
     );
   }, [loadingSubtasks, fullSubtasks, showDetails, handleSubtaskAction]);

@@ -49,6 +49,11 @@ export interface Subtask {
     parent_task_id: string;
     assignees?: string[];
     dependencies?: string[];
+    progress_percentage?: number;
+    progress_notes?: string;
+    created_at?: string;
+    updated_at?: string;
+    completed_at?: string;
     [key: string]: any;
 }
 
@@ -150,14 +155,9 @@ export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
 };
 
 export const getSubtask = async (task_id: string, subtask_id: string): Promise<Subtask> => {
-    // For now, get all subtasks and find the one we need
-    // In the future, this could be a dedicated endpoint
-    const subtasks = await listSubtasks(task_id);
-    const subtask = subtasks.find(s => s.id === subtask_id);
-    if (!subtask) {
-        throw new Error(`Subtask ${subtask_id} not found`);
-    }
-    return subtask;
+    // Use dedicated subtask endpoint for complete data
+    const response = await subtaskApiV2.getSubtask(subtask_id);
+    return response.subtask || response;
 };
 
 export const createSubtask = async (task_id: string, subtask: Partial<Subtask>): Promise<Subtask> => {

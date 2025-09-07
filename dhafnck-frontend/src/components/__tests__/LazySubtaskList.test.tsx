@@ -307,7 +307,7 @@ describe('LazySubtaskList', () => {
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
-      expect(vi.mocked(deleteSubtask)).toHaveBeenCalledWith('task-123', 'sub-1');
+      expect(vi.mocked(deleteSubtask)).toHaveBeenCalledWith('sub-1');
     });
 
     // Subtask should be removed from list

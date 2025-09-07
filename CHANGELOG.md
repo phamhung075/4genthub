@@ -6,6 +6,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **🔧 Subtask Completion Progress Percentage Auto-Setting** - 2025-09-07
+  - Fixed issue where `progress_percentage` was not automatically set to 100% when subtasks were completed
+  - Updated `Subtask.complete()` method to automatically set `progress_percentage = 100`
+  - Updated `Subtask.update_status()` method to automatically set `progress_percentage = 100` when status changes to 'done'  
+  - Updated `Subtask.update_status()` method to reset `progress_percentage = 0` when status changes to 'todo' from completed state
+  - Updated MCP `complete_subtask` handler to include `progress_percentage = 100` in completion data
+  - Ensures consistent behavior across all completion methods (MCP, API, direct domain calls)
+  - Backend now handles this automatically without relying on frontend to send correct values
+  - Files modified:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/subtask.py`
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/crud_handler.py`
+
+- **🔧 LazySubtaskList Critical Syntax & Display Issues** - 2025-09-07
+  - Fixed critical try-catch block syntax error that was causing frontend crashes around line 179
+  - Fixed `getSubtask()` function to use dedicated `/api/v2/subtasks/{subtask_id}` endpoint instead of filtering list results  
+  - Fixed `deleteSubtask()` function signature to use correct parameter (only `subtask_id`, not `task_id, subtask_id`)
+  - Updated `Subtask` interface to include missing fields (`progress_percentage`, `progress_notes`, `created_at`, `updated_at`, `completed_at`)
+  - "View details" button now correctly displays subtask information instead of showing "nothing"
+  - All detailed fields (description, progress notes, assignees) now display properly in SubtaskDetailsDialog
+  - Updated test cases to match corrected API signatures
+  - **Added Raw JSON Display**: Implemented consistent JSON view functionality for subtasks like other components
+  - Added new JSON button in subtask actions with expandable Raw JSON display using RawJSONDisplay component
+  - JSON data displays in expandable table rows with copy-to-clipboard functionality
+  - Consistent with BranchDetailsDialog and SubtaskDetailsDialog JSON display patterns
+
 ### Added
 - **✨ Modern Token Management UI** - 2025-09-07
   - Complete redesign with shadcn/ui components and grid layouts

@@ -106,6 +106,14 @@ class Subtask:
         self.status = new_status
         self.updated_at = datetime.now(timezone.utc)
         
+        # Automatically set progress_percentage when status changes to done
+        if new_status.value == TaskStatusEnum.DONE.value:
+            self.progress_percentage = 100
+        elif new_status.value == TaskStatusEnum.TODO.value:
+            # Only reset to 0 if progress is currently 100 (was completed)
+            if self.progress_percentage == 100:
+                self.progress_percentage = 0
+        
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.parent_task_id,
@@ -296,6 +304,7 @@ class Subtask:
         
         old_status = self.status
         self.status = TaskStatus.done()
+        self.progress_percentage = 100  # Automatically set progress to 100% when completed
         self.updated_at = datetime.now(timezone.utc)
         
         # Raise domain event

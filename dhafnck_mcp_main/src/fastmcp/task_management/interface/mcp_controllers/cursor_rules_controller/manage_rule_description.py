@@ -79,11 +79,5 @@ def get_manage_rule_parameters():
 
 def get_manage_rule_description():
     """Return the manage_rule tool description"""
-    return {
-        "description": MANAGE_RULE_DESCRIPTION,
-        "parameters": {
-            "action": "Rule management action to perform. Required. Valid: 'list', 'backup', 'restore', 'clean', 'info', 'load_core', 'parse_rule', 'analyze_hierarchy', 'get_dependencies', 'enhanced_info', 'compose_nested_rules', 'resolve_rule_inheritance', 'validate_rule_hierarchy', 'build_hierarchy', 'load_nested', 'cache_status', 'register_client', 'authenticate_client', 'sync_client', 'client_diff', 'resolve_conflicts', 'client_status', 'client_analytics'. (string)",
-            "target": "Target for the action. Optional. Can be rule name, rule path, client ID, or resource identifier. Default: empty string. Examples: 'security_rules', 'client_123', 'project/auth_rules'. (string)",
-            "content": "Content for the action. Optional. Can be rule content, configuration data, or operation parameters. For complex data, use JSON string format. Default: empty string. Examples: 'inherit:base_rules', '{\"merge_strategy\": \"recursive\"}'. (string)"
-        }
-    }
+    # MCP tool registration expects just the description string, not a dict
+    return MANAGE_RULE_DESCRIPTION

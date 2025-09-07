@@ -325,6 +325,7 @@ class SubtaskCRUDHandler:
             # Complete the subtask
             completion_data = {
                 "status": "done",
+                "progress_percentage": 100,  # Automatically set progress to 100% when completed
                 "completion_notes": completion_notes,
                 "completed_at": datetime.now(timezone.utc).isoformat()
             }
