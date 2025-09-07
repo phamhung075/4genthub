@@ -620,7 +620,22 @@ def create_streamable_http_app(
         v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
         
-        # Add authentication endpoints for frontend
+        # Add API token management routes for frontend (with PostgreSQL storage) FIRST
+        # This must come before general auth endpoints to avoid routing conflicts
+        try:
+            from .routes.token_mgmt_routes_db import router as token_management_router
+            v2_app.include_router(token_management_router)
+            logger.info("API token management routes registered at /api/auth/tokens")
+        except ImportError:
+            # Fall back to in-memory storage if DB version not available
+            try:
+                from .routes.token_mgmt_routes import router as token_management_router
+                v2_app.include_router(token_management_router)
+                logger.warning("Using in-memory token storage (fallback mode)")
+            except ImportError as token_mgmt_e:
+                logger.warning(f"Could not import token management routes: {token_mgmt_e}")
+        
+        # Add authentication endpoints for frontend (after token routes to avoid conflicts)
         try:
             from ..auth.interface.auth_endpoints import router as auth_router
             v2_app.include_router(auth_router)
@@ -643,20 +658,6 @@ def create_streamable_http_app(
             logger.info("MCP token management routes registered at /api/v2/mcp-tokens")
         except ImportError as mcp_token_e:
             logger.warning(f"Could not import MCP token routes: {mcp_token_e}")
-        
-        # Add API token management routes for frontend (with PostgreSQL storage)
-        try:
-            from .routes.token_mgmt_routes_db import router as token_management_router
-            v2_app.include_router(token_management_router)
-            logger.info("API token management routes registered at /api/v2/tokens (PostgreSQL storage)")
-        except ImportError:
-            # Fall back to in-memory storage if DB version not available
-            try:
-                from .routes.token_mgmt_routes import router as token_management_router
-                v2_app.include_router(token_management_router)
-                logger.warning("Using in-memory token storage (fallback mode)")
-            except ImportError as token_mgmt_e:
-                logger.warning(f"Could not import token management routes: {token_mgmt_e}")
         
         # Add simplified MCP registration endpoints directly to FastAPI app
         import uuid
