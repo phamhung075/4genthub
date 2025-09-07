@@ -517,3 +517,13 @@ mcp__dhafnck_mcp_http__manage_task(
 **Remember**: Respect project structure unless changes requested
 
 **Remember**: The key to multi-session collaboration is updating context. Every AI agent and session can access shared context, making your work persistent and discoverable.
+
+**Remember**: Session continuity across agents and time - Always check previous session context before starting new work, update context regularly during work, and complete tasks with detailed summaries for future sessions.
+
+**Remember**:  
+After completing a task or subtask, always:
+
+1. **Update the context** using `mcp__dhafnck_mcp_http__manage_context` to ensure the latest state is reflected and visible to all agents and the frontend.
+2. **Update the completion status and progress percentage** using `mcp__dhafnck_mcp_http__manage_task` or `mcp__dhafnck_mcp_http__manage_subtask`:
+   - Set `status="done"` and `progress_percentage=100` for completed items.
+   - Ensure any related context objects are also updated or linked as needed.

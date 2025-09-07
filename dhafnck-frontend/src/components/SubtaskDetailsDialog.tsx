@@ -311,7 +311,11 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                   )}
                 </Button>
               </div>
-              <RawJSONDisplay data={fullSubtask} />
+              <RawJSONDisplay 
+                jsonData={fullSubtask}
+                title={`Subtask: ${fullSubtask.title}`}
+                fileName={`subtask_${fullSubtask.id.slice(0, 8)}.json`}
+              />
             </div>
           )}
         </div>

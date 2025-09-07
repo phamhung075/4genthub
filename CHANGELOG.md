@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **🔧 Subtask JSON View Button Consolidation** - 2025-09-07
+  - Removed duplicate JSON button from subtask row actions in LazySubtaskList
+  - Consolidated JSON view functionality in SubtaskDetailsDialog using proper tab interface
+  - Fixed RawJSONDisplay prop mismatch (`data` vs `jsonData`) that was causing crashes
+  - Enhanced JSON display in dialog with proper title and filename for subtasks  
+  - JSON view is now only accessible through the details dialog, providing a cleaner and more consistent UI
+  - Files modified:
+    - `dhafnck-frontend/src/components/LazySubtaskList.tsx` - Removed JSON button and inline display
+    - `dhafnck-frontend/src/components/SubtaskDetailsDialog.tsx` - Fixed RawJSONDisplay props
 - **🔧 Subtask Completion Progress Percentage Auto-Setting** - 2025-09-07
   - Fixed issue where `progress_percentage` was not automatically set to 100% when subtasks were completed
   - Updated `Subtask.complete()` method to automatically set `progress_percentage = 100`
