@@ -339,7 +339,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl text-left">
             {displayTask?.title || 'Task Details'}
@@ -378,10 +378,10 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
           </div>
         </DialogHeader>
         
-        <div className="mt-4">
+        <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
           {activeTab === 'details' && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 p-4">
               {/* Task Information Header */}
               <div className="theme-context-section p-4 rounded-lg">
                 <div className="flex gap-2 mt-3 flex-wrap">
@@ -650,7 +650,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
           
           {/* Context Tab Content */}
           {activeTab === 'context' && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 p-4">
               {contextLoading ? (
                 <div className="text-center py-8">
                   <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>

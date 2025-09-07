@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **🎨 Dialog Size Consistency Update** - 2025-09-07
+  - Updated TaskDetailsDialog and SubtaskDetailsDialog to match the larger size of BranchDetailsDialog and ProjectDetailsDialog
+  - Changed dialog width from `max-w-4xl` to `w-[90vw] max-w-6xl h-[85vh]` for consistent user experience
+  - Added proper flex layout structure with `overflow-hidden` and proper content scrolling
+  - Enhanced dialog styling with consistent background colors and shadow effects  
+  - Better space utilization for viewing detailed task and subtask information
+  - All detail dialogs now have the same professional appearance and sizing
+  - Files modified:
+    - `dhafnck-frontend/src/components/TaskDetailsDialog.tsx` - Updated dialog size and layout structure
+    - `dhafnck-frontend/src/components/SubtaskDetailsDialog.tsx` - Updated dialog size and content padding
 - **🔧 Subtask JSON View Button Consolidation** - 2025-09-07
   - Removed duplicate JSON button from subtask row actions in LazySubtaskList
   - Consolidated JSON view functionality in SubtaskDetailsDialog using proper tab interface

@@ -90,7 +90,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
 
         <Separator className="my-2" />
 
-        <div className="flex-1 overflow-y-auto px-1">
+        <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'details' ? (
             <div className="space-y-4">
               {/* Basic Information */}
