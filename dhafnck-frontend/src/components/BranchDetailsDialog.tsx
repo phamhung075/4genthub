@@ -1,10 +1,11 @@
+import { Calendar, Check as CheckIcon, ChevronDown, ChevronRight, Copy, FileText, GitBranch, Hash, Info, Layers, Tag, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { getBranchContext, Project } from "../api";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { Separator } from "./ui/separator";
-import { getBranchContext, Project } from "../api";
-import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, GitBranch, Users } from "lucide-react";
 
 interface BranchDetailsDialogProps {
   open: boolean;
@@ -439,10 +440,12 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                 <summary className="font-semibold text-sm text-gray-700 hover:text-gray-900">
                   View Complete Raw Branch Data (JSON)
                 </summary>
-                <div className="mt-3 bg-surface-hover p-3 rounded">
-                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                    {JSON.stringify({ branch: branch, project: project }, null, 2)}
-                  </pre>
+                <div className="mt-3">
+                  <RawJSONDisplay 
+                    jsonData={{ branch: branch, project: project }}
+                    title="Branch Data"
+                    fileName="branch.json"
+                  />
                 </div>
               </details>
             </div>
@@ -624,16 +627,16 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                   
                   {/* Debug Information - Collapsed by Default */}
                   <details className="bg-surface-hover p-4 rounded-lg border border-surface-border">
-                    <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-700">
+                    <summary className="cursor-pointer text-md font-medium text-white-600 hover:text-gray-700">
                       🐛 Debug: View Raw Context Data
                     </summary>
                     <div className="mt-3">
                       <p className="text-xs text-gray-500 mb-2">Complete context structure for debugging purposes</p>
-                      <pre className="bg-code-bg text-code-text p-4 rounded-lg overflow-x-auto max-h-96 overflow-y-auto">
-                        <code className="text-xs font-mono">
-                          {JSON.stringify(branchContext, null, 2)}
-                        </code>
-                      </pre>
+                      <RawJSONDisplay 
+                        jsonData={branchContext}
+                        title="Branch Context"
+                        fileName="branch_context.json"
+                      />
                     </div>
                   </details>
                   

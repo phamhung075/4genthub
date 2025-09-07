@@ -7,6 +7,7 @@ import { Task, Subtask, getTask, getTaskContext } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon } from "lucide-react";
+import RawJSONDisplay from "./ui/RawJSONDisplay";
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -634,10 +635,12 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     <summary className="font-semibold text-sm text-text hover:text-text">
                       View Complete Raw Task Data (JSON)
                     </summary>
-                    <div className="mt-3 theme-context-raw">
-                      <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                        {JSON.stringify(displayTask, null, 2)}
-                      </pre>
+                    <div className="mt-3">
+                      <RawJSONDisplay 
+                        jsonData={displayTask}
+                        title="Task Data"
+                        fileName="task.json"
+                      />
                     </div>
                   </details>
                 </div>
@@ -819,11 +822,11 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     </summary>
                     <div className="mt-3">
                       <p className="text-xs text-text-secondary mb-2">Complete context structure for debugging purposes</p>
-                      <pre className="bg-background-tertiary text-text p-4 rounded-lg overflow-x-auto max-h-96 overflow-y-auto">
-                        <code className="text-xs font-mono">
-                          {JSON.stringify(taskContext, null, 2)}
-                        </code>
-                      </pre>
+                      <RawJSONDisplay 
+                        jsonData={taskContext}
+                        title="Task Context"
+                        fileName="task_context.json"
+                      />
                     </div>
                   </details>
                   

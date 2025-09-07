@@ -35,18 +35,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
       );
       data.forEach((item, index) => {
         if (typeof item === 'object' && item !== null) {
-          const subElements = formatJSON(item, indent + 1);
-          elements.push(...subElements);
-          if (index < data.length - 1) {
-            // Add comma to the last element of the nested object/array
-            const lastElement = elements[elements.length - 1];
-            elements[elements.length - 1] = React.cloneElement(lastElement as React.ReactElement, {
-              children: [
-                ...(lastElement as React.ReactElement).props.children,
-                <span key="comma" className="text-zinc-600 dark:text-gray-400">,</span>
-              ]
-            });
-          }
+          elements.push(...formatJSON(item, indent + 1));
         } else {
           elements.push(
             <div key={`array-item-${indent}-${index}`} className="h-6 md:h-7 lg:h-8 flex items-center">
@@ -83,16 +72,19 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
               <span className="text-zinc-600 dark:text-gray-400">{Array.isArray(value) ? '[' : '{'}</span>
             </div>
           );
-          const subElements = formatJSON(value, indent + 2);
-          // Skip the opening bracket/brace as we already added it
-          elements.push(...subElements.slice(1, -1));
-          elements.push(
-            <div key={`object-value-close-${indent}-${key}`} className="h-6 md:h-7 lg:h-8 flex items-center">
-              <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
-              <span className="text-zinc-600 dark:text-gray-400">{Array.isArray(value) ? ']' : '}'}</span>
-              {index < entries.length - 1 && <span className="text-zinc-600 dark:text-gray-400">,</span>}
-            </div>
-          );
+          elements.push(...formatJSON(value, indent + 2));
+          // Add comma after closing bracket/brace if not last item
+          if (index < entries.length - 1) {
+            const lastIdx = elements.length - 1;
+            const lastElement = elements[lastIdx];
+            // Create a new element with comma appended
+            elements[lastIdx] = (
+              <div key={lastElement.key} className={lastElement.props.className}>
+                {lastElement.props.children}
+                <span className="text-zinc-600 dark:text-gray-400">,</span>
+              </div>
+            );
+          }
         } else {
           elements.push(
             <div key={`object-pair-${indent}-${key}`} className="h-6 md:h-7 lg:h-8 flex items-center">
