@@ -1,19 +1,19 @@
 import { format } from 'date-fns';
-import { AlertCircle, CheckCircle, Clock, Copy, Delete, Key, Settings, Shield, Sparkles, Zap, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Copy, Key, Settings, Shield, Sparkles, XCircle, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AppLayout } from '../components/AppLayout';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
+import MCPConfigProfile from '../components/ui/MCPConfigProfile';
 import { Separator } from '../components/ui/separator';
 import { SparklesText } from '../components/ui/SparklesText';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useAuth } from '../hooks/useAuth';
 import { tokenService } from '../services/tokenService';
-import MCPConfigProfile from '../components/ui/MCPConfigProfile';
 
 interface APIToken {
   id: string;
@@ -772,8 +772,8 @@ export function TokenManagement() {
                   serverName: "DhafnckMCP",
                   protocol: "HTTP",
                   version: "2.1.0",
-                  host: (import.meta as any).env?.VITE_API_URL?.replace(/^https?:\/\//, '') || 'localhost',
-                  port: 8000,
+                  host: (import.meta as any).env?.VITE_BACKEND_URL?.replace(/^https?:\/\//, '').replace(/:\d+$/, '') || 'localhost',
+                  port: parseInt((import.meta as any).env?.VITE_BACKEND_URL?.match(/:(\d+)$/)?.[1] || '8000'),
                   authentication: "JWT Bearer",
                   capabilities: selectedScopes,
                   token: generatedToken || undefined,
@@ -793,7 +793,7 @@ export function TokenManagement() {
                         const config = {
                           dhafnck_mcp_http: {
                             type: "http",
-                            url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                            url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
                             headers: {
                               Accept: "application/json, text/event-stream",
                               Authorization: `Bearer ${generatedToken}`
@@ -877,7 +877,7 @@ export function TokenManagement() {
                   const config = {
                     dhafnck_mcp_http: {
                       type: "http", 
-                      url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                      url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
                       headers: {
                         Accept: "application/json, text/event-stream",
                         Authorization: `Bearer ${generatedToken}`

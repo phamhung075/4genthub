@@ -60,7 +60,7 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
           <div className="h-3 w-3 rounded-full bg-green-400"></div>
         </div>
         <div className="text-xs text-zinc-600 dark:text-gray-400 font-mono">
-          claude_mcp_config.json
+          [project-folder]/.mcp.json
         </div>
       </div>
 
@@ -70,10 +70,7 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
 
         <div className="relative flex overflow-x-auto">
           <code className="font-mono text-xs md:text-sm lg:text-base w-full">
-            <div className="h-6 md:h-7 lg:h-8 flex items-center">
-              <span className="text-zinc-600 dark:text-gray-400">{"{"}</span>
-            </div>
-            
+                       
             <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
               <span className="text-blue-600 dark:text-blue-400">"dhafnck_mcp_http"</span>
               <span className="text-zinc-600 dark:text-gray-400">: {"{"}</span>
@@ -135,11 +132,8 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
             
             <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
               <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
-            </div>
-            
-            <div className="h-6 md:h-7 lg:h-8 flex items-center">
-              <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
-            </div>
+            </div>           
+          
           </code>
         </div>
       </div>
