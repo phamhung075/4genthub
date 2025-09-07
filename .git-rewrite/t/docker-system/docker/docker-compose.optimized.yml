@@ -1,0 +1,96 @@
+# Auto-generated optimized configuration for low-resource PCs
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: dhafnck-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+      POSTGRES_SHARED_BUFFERS: 128MB
+      POSTGRES_WORK_MEM: 4MB
+      POSTGRES_MAX_CONNECTIONS: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: dhafnck_mcp_main/docker/Dockerfile
+      args:
+        - ENV=production
+    container_name: dhafnck-backend
+    environment:
+      - DATABASE_TYPE=postgresql
+      - DATABASE_URL=postgresql://dhafnck_user:dev_password@postgres:5432/dhafnck_mcp
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_LOG_LEVEL=WARNING
+      - PYTHONOPTIMIZE=1
+      - WEB_CONCURRENCY=2
+    volumes:
+      - backend-data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/frontend.Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: dhafnck-frontend
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - frontend-static:/usr/share/nginx/html:ro
+    ports:
+      - "3800:80"
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  backend-data:
+  frontend-static:
+
+networks:
+  default:
+    name: dhafnck-network

@@ -1,0 +1,20 @@
+tree b67db60d5db5f0a04a321210169a366be541adee
+parent b4f874faac70ecafd7677bc8ef6f90c379542416
+author phamhung075 <daihung.pham@yahoo.fr> 1756402128 +0200
+committer phamhung075 <daihung.pham@yahoo.fr> 1756402128 +0200
+
+📁 Reorganize agent scripts into working directory
+
+- Move agent scripts (ANALYZE, CODE, TEST, REVIEW, PLANNER_TASK) to working/ subdirectory
+- Update index.md to reference new locations and document working directory structure
+- Consolidate workplace.md as the single active working document
+- Remove old script locations from root architecture directory
+
+This reorganization follows project documentation structure rules:
+- Keep active work in working/ subdirectory
+- Maintain clean architecture root for stable documentation
+- Single workplace.md for all agent updates (no separate report files)
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

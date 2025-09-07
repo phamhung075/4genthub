@@ -1,0 +1,69 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+```mermaid
+sequenceDiagram
+    participant UI as "UI / CLI / API Controller (Interface Layer)"
+    participant Facade as "TaskApplicationFacade (Application Layer)"
+    participant UseCase as "CreateTaskUseCase (Use-Case Layer)"
+    participant Domain as "Task Aggregate (Domain Layer)"
+    participant Repo as "TaskRepository (Infra Adapter)"
+    participant DB as "SQLite / DB (Infrastructure)"
+    participant CtxMgr as "ContextManager (Infra Service)"
+    participant CtxDB as "ContextRepository / EnhancedContextManager"
+    UI->>Facade: CreateTaskRequest DTO (title, description, ...)
+    Facade-->>UI: Validation errors? (stop flow)
+    Facade->>UseCase: validated CreateTaskRequest
+    UseCase->>Domain: Task.create()
+    Domain-->>UseCase: Task entity (with id)
+    UseCase->>Repo: save(Task)
+    Repo->>DB: INSERT / UPDATE
+    Repo-->>UseCase: OK
+    UseCase-->>Facade: CreateTaskResponse (success, task DTO)
+    Note over Facade: Orchestration / x-cutting logic
+    Facade->>Repo: find_by_id(task.id)  %% reload for context
+    Repo->>DB: SELECT
+    Repo-->>Facade: Task entity
+    Facade->>CtxMgr: create_context_from_task(Task, user_id,...)
+    CtxMgr->>CtxDB: upsert(template_context)
+    CtxDB-->>CtxMgr: success
+    CtxMgr-->>Facade: coroutine result
+    Facade-->>UI: JSON dict {success, action="create", task:{...}}
+    UI-->>Client: HTTP 200 JSON
+
+    %% Retrieval path example (short)
+    UI->>Facade: GET /tasks/{id}
+    Facade->>UseCase: GetTaskUseCase(id)
+    UseCase->>Repo: find_by_id(id)
+    Repo->>DB: SELECT
+    Repo-->>UseCase: Task entity
+    UseCase-->>Facade: TaskResponse DTO
+    Facade-->>UI: JSON dict {success, task:{...}, context?}
+```
+
+```mermaid
+graph TD
+  Client["Client / CLI / HTTP Controller"]
+  Facade["TaskApplicationFacade / Service"]
+  UC["CreateTaskUseCase"]
+  Aggregate["Task Aggregate"]
+  Repo["TaskRepository"]
+  DB[("SQLite / DB")] 
+  CtxMgr["ContextManager"]
+  CtxStore[("Context Store")] 
+
+  Client -->|"CreateTaskRequest DTO"| Facade
+  Facade -->|"validate & orchestrate"| UC
+  UC -->|"construct Task"| Aggregate
+  UC -->|"save()"| Repo
+  Repo --> DB
+  Repo -->|"OK"| UC
+  UC -->|"CreateTaskResponse"| Facade
+  Facade -->|"reload Task"| Repo
+  Facade -->|"Task entity"| CtxMgr
+  CtxMgr --> CtxStore
+  Facade -->|"JSON result"| Client
+```

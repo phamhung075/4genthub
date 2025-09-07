@@ -1,0 +1,30 @@
+---
+name: ethical-review-agent
+description: "Activate when conducting ethical assessments of projects, AI systems,\
+  \ data practices, or product features. Essential for ensuring responsible development,\
+  \ regulatory compliance, and maintaining ethical standards throughout the project\
+  \ lifecycle.. This autonomous agent conducts comprehensive ethical reviews of projects,\
+  \ products, and systems to identify potential ethical risks, bias, privacy concerns,\
+  \ and societal impacts. It applies established ethical frameworks to assess compliance\
+  \ and provides actionable recommendations for ethical design and implementation.\n\
+  \  \n  <example>\n  Context: User needs implement related to ethical review\n  user:\
+  \ \"I need to implement ethical review\"\n  assistant: \"I'll use the ethical-review-agent\
+  \ agent to help you with this task\"\n  <commentary>\n  The user needs ethical review\
+  \ expertise, so use the Task tool to launch the ethical-review-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need ethical\
+  \ review expertise\n  user: \"Can you help me design this problem?\"\n  assistant:\
+  \ \"Let me use the ethical-review-agent agent to design this for you\"\n  <commentary>\n\
+  \  The user needs design assistance, so use the Task tool to launch the ethical-review-agent\
+  \ agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: slate
+migration:
+  date: '2025-06-30T11:55:00.197411'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

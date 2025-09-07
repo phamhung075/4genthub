@@ -1,0 +1,1730 @@
+================================================================================
+TEST COVERAGE ANALYSIS REPORT
+================================================================================
+Scope: All domains
+
+
+CRITICAL FILES WITHOUT TESTS (49 files):
+------------------------------------------------------------
+  Source: fastmcp/task_management/domain/entities/context.py
+  Test:   unit/task_management/domain/entities/context_test.py
+
+  Source: fastmcp/task_management/domain/entities/git_branch.py
+  Test:   unit/task_management/domain/entities/git_branch_test.py
+
+  Source: fastmcp/task_management/domain/entities/project.py
+  Test:   unit/task_management/domain/entities/project_test.py
+
+  Source: fastmcp/task_management/domain/entities/rule_content.py
+  Test:   unit/task_management/domain/entities/rule_content_test.py
+
+  Source: fastmcp/task_management/domain/entities/rule_entity.py
+  Test:   unit/task_management/domain/entities/rule_entity_test.py
+
+  Source: fastmcp/task_management/domain/entities/subtask.py
+  Test:   unit/task_management/domain/entities/subtask_test.py
+
+  Source: fastmcp/task_management/domain/entities/template.py
+  Test:   unit/task_management/domain/entities/template_test.py
+
+  Source: fastmcp/task_management/domain/entities/work_session.py
+  Test:   unit/task_management/domain/entities/work_session_test.py
+
+  Source: fastmcp/task_management/domain/events/agent_events.py
+  Test:   unit/task_management/domain/events/agent_events_test.py
+
+  Source: fastmcp/task_management/domain/events/base.py
+  Test:   unit/task_management/domain/events/base_test.py
+
+  Source: fastmcp/task_management/domain/events/context_events.py
+  Test:   unit/task_management/domain/events/context_events_test.py
+
+  Source: fastmcp/task_management/domain/events/hint_events.py
+  Test:   unit/task_management/domain/events/hint_events_test.py
+
+  Source: fastmcp/task_management/domain/events/progress_events.py
+  Test:   unit/task_management/domain/events/progress_events_test.py
+
+  Source: fastmcp/task_management/domain/events/task_events.py
+  Test:   unit/task_management/domain/events/task_events_test.py
+
+  Source: fastmcp/task_management/domain/exceptions/base.py
+  Test:   unit/task_management/domain/exceptions/base_test.py
+
+  Source: fastmcp/task_management/domain/exceptions/base_exceptions.py
+  Test:   unit/task_management/domain/exceptions/base_exceptions_test.py
+
+  Source: fastmcp/task_management/domain/exceptions/task_exceptions.py
+  Test:   unit/task_management/domain/exceptions/task_exceptions_test.py
+
+  Source: fastmcp/task_management/domain/exceptions/template_exceptions.py
+  Test:   unit/task_management/domain/exceptions/template_exceptions_test.py
+
+  Source: fastmcp/task_management/domain/exceptions/vision_exceptions.py
+  Test:   unit/task_management/domain/exceptions/vision_exceptions_test.py
+
+  Source: fastmcp/task_management/domain/repositories/agent_repository.py
+  Test:   unit/task_management/domain/repositories/agent_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/base_repository.py
+  Test:   unit/task_management/domain/repositories/base_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/context_repository.py
+  Test:   unit/task_management/domain/repositories/context_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/git_branch_repository.py
+  Test:   unit/task_management/domain/repositories/git_branch_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/label_repository.py
+  Test:   unit/task_management/domain/repositories/label_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/project_repository.py
+  Test:   unit/task_management/domain/repositories/project_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/rule_repository.py
+  Test:   unit/task_management/domain/repositories/rule_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/subtask_repository.py
+  Test:   unit/task_management/domain/repositories/subtask_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/task_repository.py
+  Test:   unit/task_management/domain/repositories/task_repository_test.py
+
+  Source: fastmcp/task_management/domain/repositories/template_repository.py
+  Test:   unit/task_management/domain/repositories/template_repository_test.py
+
+  Source: fastmcp/task_management/domain/services/context_derivation_service.py
+  Test:   unit/task_management/domain/services/context_derivation_service_test.py
+
+  Source: fastmcp/task_management/domain/services/dependency_validation_service.py
+  Test:   unit/task_management/domain/services/dependency_validation_service_test.py
+
+  Source: fastmcp/task_management/domain/services/hint_rules.py
+  Test:   unit/task_management/domain/services/hint_rules_test.py
+
+  Source: fastmcp/task_management/domain/services/orchestrator.py
+  Test:   unit/task_management/domain/services/orchestrator_test.py
+
+  Source: fastmcp/task_management/domain/services/rule_composition_service.py
+  Test:   unit/task_management/domain/services/rule_composition_service_test.py
+
+  Source: fastmcp/task_management/domain/services/task_completion_service.py
+  Test:   unit/task_management/domain/services/task_completion_service_test.py
+
+  Source: fastmcp/task_management/domain/services/task_priority_service.py
+  Test:   unit/task_management/domain/services/task_priority_service_test.py
+
+  Source: fastmcp/task_management/domain/services/task_progress_service.py
+  Test:   unit/task_management/domain/services/task_progress_service_test.py
+
+  Source: fastmcp/task_management/domain/services/task_state_transition_service.py
+  Test:   unit/task_management/domain/services/task_state_transition_service_test.py
+
+  Source: fastmcp/task_management/domain/services/task_validation_service.py
+  Test:   unit/task_management/domain/services/task_validation_service_test.py
+
+  Source: fastmcp/task_management/domain/services/template_domain_service.py
+  Test:   unit/task_management/domain/services/template_domain_service_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/agents.py
+  Test:   unit/task_management/domain/value_objects/agents_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/compliance_objects.py
+  Test:   unit/task_management/domain/value_objects/compliance_objects_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/context_enums.py
+  Test:   unit/task_management/domain/value_objects/context_enums_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/hints.py
+  Test:   unit/task_management/domain/value_objects/hints_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/priority.py
+  Test:   unit/task_management/domain/value_objects/priority_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/progress.py
+  Test:   unit/task_management/domain/value_objects/progress_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/rule_value_objects.py
+  Test:   unit/task_management/domain/value_objects/rule_value_objects_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/subtask_id.py
+  Test:   unit/task_management/domain/value_objects/subtask_id_test.py
+
+  Source: fastmcp/task_management/domain/value_objects/template_id.py
+  Test:   unit/task_management/domain/value_objects/template_id_test.py
+
+
+IMPORTANT FILES WITHOUT TESTS (102 files):
+------------------------------------------------------------
+  Source: fastmcp/auth/application/services/auth_service.py
+  Test:   unit/auth/application/services/auth_service_test.py
+
+  Source: fastmcp/connection_management/application/dtos/connection_dtos.py
+  Test:   unit/connection_management/application/dtos/connection_dtos_test.py
+
+  Source: fastmcp/connection_management/application/use_cases/check_connection_health.py
+  Test:   unit/connection_management/application/use_cases/check_connection_health_test.py
+
+  Source: fastmcp/connection_management/application/use_cases/check_server_health.py
+  Test:   unit/connection_management/application/use_cases/check_server_health_test.py
+
+  Source: fastmcp/connection_management/application/use_cases/get_server_capabilities.py
+  Test:   unit/connection_management/application/use_cases/get_server_capabilities_test.py
+
+  Source: fastmcp/connection_management/application/use_cases/get_server_status.py
+  Test:   unit/connection_management/application/use_cases/get_server_status_test.py
+
+  Source: fastmcp/connection_management/application/use_cases/register_status_updates.py
+  Test:   unit/connection_management/application/use_cases/register_status_updates_test.py
+
+  Source: fastmcp/task_management/application/dtos/agent/agent_response.py
+  Test:   unit/task_management/application/dtos/agent/agent_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/agent/assign_agent_request.py
+  Test:   unit/task_management/application/dtos/agent/assign_agent_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/agent/register_agent_request.py
+  Test:   unit/task_management/application/dtos/agent/register_agent_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/agent/register_agent_response.py
+  Test:   unit/task_management/application/dtos/agent/register_agent_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/agent/update_agent_request.py
+  Test:   unit/task_management/application/dtos/agent/update_agent_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/common/agent_role.py
+  Test:   unit/task_management/application/dtos/common/agent_role_test.py
+
+  Source: fastmcp/task_management/application/dtos/common/task_context.py
+  Test:   unit/task_management/application/dtos/common/task_context_test.py
+
+  Source: fastmcp/task_management/application/dtos/common/task_progress_info.py
+  Test:   unit/task_management/application/dtos/common/task_progress_info_test.py
+
+  Source: fastmcp/task_management/application/dtos/common/validation_result.py
+  Test:   unit/task_management/application/dtos/common/validation_result_test.py
+
+  Source: fastmcp/task_management/application/dtos/context/context_response.py
+  Test:   unit/task_management/application/dtos/context/context_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/dependency/add_dependency_request.py
+  Test:   unit/task_management/application/dtos/dependency/add_dependency_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/dependency/dependency_response.py
+  Test:   unit/task_management/application/dtos/dependency/dependency_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/project/create_project_request.py
+  Test:   unit/task_management/application/dtos/project/create_project_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/project/update_project_request.py
+  Test:   unit/task_management/application/dtos/project/update_project_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/subtask/add_subtask_request.py
+  Test:   unit/task_management/application/dtos/subtask/add_subtask_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/subtask/create_subtask_request.py
+  Test:   unit/task_management/application/dtos/subtask/create_subtask_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/subtask/subtask_info.py
+  Test:   unit/task_management/application/dtos/subtask/subtask_info_test.py
+
+  Source: fastmcp/task_management/application/dtos/subtask/subtask_response.py
+  Test:   unit/task_management/application/dtos/subtask/subtask_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/subtask/update_subtask_request.py
+  Test:   unit/task_management/application/dtos/subtask/update_subtask_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/create_task_response.py
+  Test:   unit/task_management/application/dtos/task/create_task_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/dependency_info.py
+  Test:   unit/task_management/application/dtos/task/dependency_info_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/list_tasks_request.py
+  Test:   unit/task_management/application/dtos/task/list_tasks_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/next_task_request.py
+  Test:   unit/task_management/application/dtos/task/next_task_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/search_tasks_request.py
+  Test:   unit/task_management/application/dtos/task/search_tasks_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/task_info.py
+  Test:   unit/task_management/application/dtos/task/task_info_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/task_list_item_response.py
+  Test:   unit/task_management/application/dtos/task/task_list_item_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/task_list_response.py
+  Test:   unit/task_management/application/dtos/task/task_list_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/task_progress.py
+  Test:   unit/task_management/application/dtos/task/task_progress_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/task_response.py
+  Test:   unit/task_management/application/dtos/task/task_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/update_task_request.py
+  Test:   unit/task_management/application/dtos/task/update_task_request_test.py
+
+  Source: fastmcp/task_management/application/dtos/task/update_task_response.py
+  Test:   unit/task_management/application/dtos/task/update_task_response_test.py
+
+  Source: fastmcp/task_management/application/dtos/task_dtos.py
+  Test:   unit/task_management/application/dtos/task_dtos_test.py
+
+  Source: fastmcp/task_management/application/dtos/template_dtos.py
+  Test:   unit/task_management/application/dtos/template_dtos_test.py
+
+  Source: fastmcp/task_management/application/facades/agent_application_facade.py
+  Test:   unit/task_management/application/facades/agent_application_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/dependency_application_facade.py
+  Test:   unit/task_management/application/facades/dependency_application_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/file_resource_application_facade.py
+  Test:   unit/task_management/application/facades/file_resource_application_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/rule_application_facade.py
+  Test:   unit/task_management/application/facades/rule_application_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/rule_orchestration_facade.py
+  Test:   unit/task_management/application/facades/rule_orchestration_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/subtask_application_facade.py
+  Test:   unit/task_management/application/facades/subtask_application_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/task_application_facade.py
+  Test:   unit/task_management/application/facades/task_application_facade_test.py
+
+  Source: fastmcp/task_management/application/facades/unified_context_facade.py
+  Test:   unit/task_management/application/facades/unified_context_facade_test.py
+
+  Source: fastmcp/task_management/application/use_cases/add_context_insight.py
+  Test:   unit/task_management/application/use_cases/add_context_insight_test.py
+
+  Source: fastmcp/task_management/application/use_cases/add_context_progress.py
+  Test:   unit/task_management/application/use_cases/add_context_progress_test.py
+
+  Source: fastmcp/task_management/application/use_cases/add_dependency.py
+  Test:   unit/task_management/application/use_cases/add_dependency_test.py
+
+  Source: fastmcp/task_management/application/use_cases/add_subtask.py
+  Test:   unit/task_management/application/use_cases/add_subtask_test.py
+
+  Source: fastmcp/task_management/application/use_cases/assign_agent.py
+  Test:   unit/task_management/application/use_cases/assign_agent_test.py
+
+  Source: fastmcp/task_management/application/use_cases/batch_context_operations.py
+  Test:   unit/task_management/application/use_cases/batch_context_operations_test.py
+
+  Source: fastmcp/task_management/application/use_cases/call_agent.py
+  Test:   unit/task_management/application/use_cases/call_agent_test.py
+
+  Source: fastmcp/task_management/application/use_cases/cleanup_obsolete_use_case.py
+  Test:   unit/task_management/application/use_cases/cleanup_obsolete_use_case_test.py
+
+  Source: fastmcp/task_management/application/use_cases/clear_dependencies.py
+  Test:   unit/task_management/application/use_cases/clear_dependencies_test.py
+
+  Source: fastmcp/task_management/application/use_cases/complete_subtask.py
+  Test:   unit/task_management/application/use_cases/complete_subtask_test.py
+
+  Source: fastmcp/task_management/application/use_cases/complete_task.py
+  Test:   unit/task_management/application/use_cases/complete_task_test.py
+
+  Source: fastmcp/task_management/application/use_cases/complete_task_optimized.py
+  Test:   unit/task_management/application/use_cases/complete_task_optimized_test.py
+
+  Source: fastmcp/task_management/application/use_cases/context_search.py
+  Test:   unit/task_management/application/use_cases/context_search_test.py
+
+  Source: fastmcp/task_management/application/use_cases/context_templates.py
+  Test:   unit/task_management/application/use_cases/context_templates_test.py
+
+  Source: fastmcp/task_management/application/use_cases/context_versioning.py
+  Test:   unit/task_management/application/use_cases/context_versioning_test.py
+
+  Source: fastmcp/task_management/application/use_cases/create_context.py
+  Test:   unit/task_management/application/use_cases/create_context_test.py
+
+  Source: fastmcp/task_management/application/use_cases/create_project.py
+  Test:   unit/task_management/application/use_cases/create_project_test.py
+
+  Source: fastmcp/task_management/application/use_cases/create_rule.py
+  Test:   unit/task_management/application/use_cases/create_rule_test.py
+
+  Source: fastmcp/task_management/application/use_cases/create_task.py
+  Test:   unit/task_management/application/use_cases/create_task_test.py
+
+  Source: fastmcp/task_management/application/use_cases/delete_project.py
+  Test:   unit/task_management/application/use_cases/delete_project_test.py
+
+  Source: fastmcp/task_management/application/use_cases/delete_rule.py
+  Test:   unit/task_management/application/use_cases/delete_rule_test.py
+
+  Source: fastmcp/task_management/application/use_cases/delete_task.py
+  Test:   unit/task_management/application/use_cases/delete_task_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_agent.py
+  Test:   unit/task_management/application/use_cases/get_agent_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_blocking_tasks.py
+  Test:   unit/task_management/application/use_cases/get_blocking_tasks_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_context.py
+  Test:   unit/task_management/application/use_cases/get_context_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_dependencies.py
+  Test:   unit/task_management/application/use_cases/get_dependencies_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_project.py
+  Test:   unit/task_management/application/use_cases/get_project_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_rule.py
+  Test:   unit/task_management/application/use_cases/get_rule_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_subtask.py
+  Test:   unit/task_management/application/use_cases/get_subtask_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_subtasks.py
+  Test:   unit/task_management/application/use_cases/get_subtasks_test.py
+
+  Source: fastmcp/task_management/application/use_cases/get_task.py
+  Test:   unit/task_management/application/use_cases/get_task_test.py
+
+  Source: fastmcp/task_management/application/use_cases/list_agents.py
+  Test:   unit/task_management/application/use_cases/list_agents_test.py
+
+  Source: fastmcp/task_management/application/use_cases/list_contexts.py
+  Test:   unit/task_management/application/use_cases/list_contexts_test.py
+
+  Source: fastmcp/task_management/application/use_cases/list_projects.py
+  Test:   unit/task_management/application/use_cases/list_projects_test.py
+
+  Source: fastmcp/task_management/application/use_cases/list_rules.py
+  Test:   unit/task_management/application/use_cases/list_rules_test.py
+
+  Source: fastmcp/task_management/application/use_cases/manage_dependencies.py
+  Test:   unit/task_management/application/use_cases/manage_dependencies_test.py
+
+  Source: fastmcp/task_management/application/use_cases/project_health_check.py
+  Test:   unit/task_management/application/use_cases/project_health_check_test.py
+
+  Source: fastmcp/task_management/application/use_cases/rebalance_agents_use_case.py
+  Test:   unit/task_management/application/use_cases/rebalance_agents_use_case_test.py
+
+  Source: fastmcp/task_management/application/use_cases/register_agent.py
+  Test:   unit/task_management/application/use_cases/register_agent_test.py
+
+  Source: fastmcp/task_management/application/use_cases/remove_dependency.py
+  Test:   unit/task_management/application/use_cases/remove_dependency_test.py
+
+  Source: fastmcp/task_management/application/use_cases/remove_subtask.py
+  Test:   unit/task_management/application/use_cases/remove_subtask_test.py
+
+  Source: fastmcp/task_management/application/use_cases/rule_orchestration_use_case.py
+  Test:   unit/task_management/application/use_cases/rule_orchestration_use_case_test.py
+
+  Source: fastmcp/task_management/application/use_cases/search_tasks.py
+  Test:   unit/task_management/application/use_cases/search_tasks_test.py
+
+  Source: fastmcp/task_management/application/use_cases/template_use_cases.py
+  Test:   unit/task_management/application/use_cases/template_use_cases_test.py
+
+  Source: fastmcp/task_management/application/use_cases/unassign_agent.py
+  Test:   unit/task_management/application/use_cases/unassign_agent_test.py
+
+  Source: fastmcp/task_management/application/use_cases/unregister_agent.py
+  Test:   unit/task_management/application/use_cases/unregister_agent_test.py
+
+  Source: fastmcp/task_management/application/use_cases/update_context.py
+  Test:   unit/task_management/application/use_cases/update_context_test.py
+
+  Source: fastmcp/task_management/application/use_cases/update_project.py
+  Test:   unit/task_management/application/use_cases/update_project_test.py
+
+  Source: fastmcp/task_management/application/use_cases/update_rule.py
+  Test:   unit/task_management/application/use_cases/update_rule_test.py
+
+  Source: fastmcp/task_management/application/use_cases/update_subtask.py
+  Test:   unit/task_management/application/use_cases/update_subtask_test.py
+
+  Source: fastmcp/task_management/application/use_cases/update_task.py
+  Test:   unit/task_management/application/use_cases/update_task_test.py
+
+  Source: fastmcp/task_management/application/use_cases/validate_dependencies.py
+  Test:   unit/task_management/application/use_cases/validate_dependencies_test.py
+
+  Source: fastmcp/task_management/application/use_cases/validate_integrity_use_case.py
+  Test:   unit/task_management/application/use_cases/validate_integrity_use_case_test.py
+
+  Source: fastmcp/task_management/application/use_cases/validate_rule.py
+  Test:   unit/task_management/application/use_cases/validate_rule_test.py
+
+
+STANDARD FILES WITHOUT TESTS (419 files):
+------------------------------------------------------------
+  Source: fastmcp/__main__.py
+  Test:   unit/__main___test.py
+
+  Source: fastmcp/auth/api/supabase_endpoints.py
+  Test:   unit/auth/api/supabase_endpoints_test.py
+
+  Source: fastmcp/auth/api_server.py
+  Test:   unit/auth/api_server_test.py
+
+  Source: fastmcp/auth/dependencies.py
+  Test:   unit/auth/dependencies_test.py
+
+  Source: fastmcp/auth/infrastructure/database/models.py
+  Test:   unit/auth/infrastructure/database/models_test.py
+
+  Source: fastmcp/auth/infrastructure/migrations/001_create_auth_tables.py
+  Test:   unit/auth/infrastructure/migrations/001_create_auth_tables_test.py
+
+  Source: fastmcp/auth/integration/server_integration.py
+  Test:   unit/auth/integration/server_integration_test.py
+
+  Source: fastmcp/auth/interface/supabase_fastapi_auth.py
+  Test:   unit/auth/interface/supabase_fastapi_auth_test.py
+
+  Source: fastmcp/auth/middleware/jwt_auth_middleware.py
+  Test:   unit/auth/middleware/jwt_auth_middleware_test.py
+
+  Source: fastmcp/auth/middleware/request_context_middleware.py
+  Test:   unit/auth/middleware/request_context_middleware_test.py
+
+  Source: fastmcp/auth/supabase_client.py
+  Test:   unit/auth/supabase_client_test.py
+
+  Source: fastmcp/cli/claude.py
+  Test:   unit/cli/claude_test.py
+
+  Source: fastmcp/cli/cli.py
+  Test:   unit/cli/cli_test.py
+
+  Source: fastmcp/cli/run.py
+  Test:   unit/cli/run_test.py
+
+  Source: fastmcp/client/auth/bearer.py
+  Test:   unit/client/auth/bearer_test.py
+
+  Source: fastmcp/client/auth/oauth.py
+  Test:   unit/client/auth/oauth_test.py
+
+  Source: fastmcp/client/client.py
+  Test:   unit/client/client_test.py
+
+  Source: fastmcp/client/logging.py
+  Test:   unit/client/logging_test.py
+
+  Source: fastmcp/client/oauth_callback.py
+  Test:   unit/client/oauth_callback_test.py
+
+  Source: fastmcp/client/progress.py
+  Test:   unit/client/progress_test.py
+
+  Source: fastmcp/client/roots.py
+  Test:   unit/client/roots_test.py
+
+  Source: fastmcp/client/sampling.py
+  Test:   unit/client/sampling_test.py
+
+  Source: fastmcp/client/transports.py
+  Test:   unit/client/transports_test.py
+
+  Source: fastmcp/config/auth_config.py
+  Test:   unit/config/auth_config_test.py
+
+  Source: fastmcp/connection_management/infrastructure/repositories/in_memory_connection_repository.py
+  Test:   unit/connection_management/infrastructure/repositories/in_memory_connection_repository_test.py
+
+  Source: fastmcp/connection_management/infrastructure/repositories/in_memory_server_repository.py
+  Test:   unit/connection_management/infrastructure/repositories/in_memory_server_repository_test.py
+
+  Source: fastmcp/connection_management/infrastructure/services/mcp_connection_diagnostics_service.py
+  Test:   unit/connection_management/infrastructure/services/mcp_connection_diagnostics_service_test.py
+
+  Source: fastmcp/connection_management/infrastructure/services/mcp_server_health_service.py
+  Test:   unit/connection_management/infrastructure/services/mcp_server_health_service_test.py
+
+  Source: fastmcp/connection_management/infrastructure/services/mcp_status_broadcasting_service.py
+  Test:   unit/connection_management/infrastructure/services/mcp_status_broadcasting_service_test.py
+
+  Source: fastmcp/connection_management/interface/controllers/connection_mcp_controller.py
+  Test:   unit/connection_management/interface/controllers/connection_mcp_controller_test.py
+
+  Source: fastmcp/connection_management/interface/controllers/desc/connection/manage_connection_description.py
+  Test:   unit/connection_management/interface/controllers/desc/connection/manage_connection_description_test.py
+
+  Source: fastmcp/connection_management/interface/controllers/desc/description_loader.py
+  Test:   unit/connection_management/interface/controllers/desc/description_loader_test.py
+
+  Source: fastmcp/connection_management/interface/controllers/manage_connection_description.py
+  Test:   unit/connection_management/interface/controllers/manage_connection_description_test.py
+
+  Source: fastmcp/connection_management/interface/ddd_compliant_connection_tools.py
+  Test:   unit/connection_management/interface/ddd_compliant_connection_tools_test.py
+
+  Source: fastmcp/dual_mode_config.py
+  Test:   unit/dual_mode_config_test.py
+
+  Source: fastmcp/exceptions.py
+  Test:   unit/exceptions_test.py
+
+  Source: fastmcp/prompts/prompt.py
+  Test:   unit/prompts/prompt_test.py
+
+  Source: fastmcp/prompts/prompt_manager.py
+  Test:   unit/prompts/prompt_manager_test.py
+
+  Source: fastmcp/resources/resource.py
+  Test:   unit/resources/resource_test.py
+
+  Source: fastmcp/resources/resource_manager.py
+  Test:   unit/resources/resource_manager_test.py
+
+  Source: fastmcp/resources/template.py
+  Test:   unit/resources/template_test.py
+
+  Source: fastmcp/resources/types.py
+  Test:   unit/resources/types_test.py
+
+  Source: fastmcp/server/__main__.py
+  Test:   unit/server/__main___test.py
+
+  Source: fastmcp/server/auth/auth.py
+  Test:   unit/server/auth/auth_test.py
+
+  Source: fastmcp/server/auth/mcp_auth_config.py
+  Test:   unit/server/auth/mcp_auth_config_test.py
+
+  Source: fastmcp/server/auth/providers/bearer.py
+  Test:   unit/server/auth/providers/bearer_test.py
+
+  Source: fastmcp/server/auth/providers/in_memory.py
+  Test:   unit/server/auth/providers/in_memory_test.py
+
+  Source: fastmcp/server/auth/providers/jwt_bearer.py
+  Test:   unit/server/auth/providers/jwt_bearer_test.py
+
+  Source: fastmcp/server/cache/cache_invalidation_hooks.py
+  Test:   unit/server/cache/cache_invalidation_hooks_test.py
+
+  Source: fastmcp/server/cache/redis_cache_decorator.py
+  Test:   unit/server/cache/redis_cache_decorator_test.py
+
+  Source: fastmcp/server/connection_health_tool.py
+  Test:   unit/server/connection_health_tool_test.py
+
+  Source: fastmcp/server/connection_manager.py
+  Test:   unit/server/connection_manager_test.py
+
+  Source: fastmcp/server/connection_status_broadcaster.py
+  Test:   unit/server/connection_status_broadcaster_test.py
+
+  Source: fastmcp/server/context.py
+  Test:   unit/server/context_test.py
+
+  Source: fastmcp/server/dependencies.py
+  Test:   unit/server/dependencies_test.py
+
+  Source: fastmcp/server/error_middleware.py
+  Test:   unit/server/error_middleware_test.py
+
+  Source: fastmcp/server/http_server.py
+  Test:   unit/server/http_server_test.py
+
+  Source: fastmcp/server/main_server.py
+  Test:   unit/server/main_server_test.py
+
+  Source: fastmcp/server/manage_connection_tool.py
+  Test:   unit/server/manage_connection_tool_test.py
+
+  Source: fastmcp/server/mcp_entry_point.py
+  Test:   unit/server/mcp_entry_point_test.py
+
+  Source: fastmcp/server/mcp_status_tool.py
+  Test:   unit/server/mcp_status_tool_test.py
+
+  Source: fastmcp/server/middleware.py
+  Test:   unit/server/middleware_test.py
+
+  Source: fastmcp/server/openapi.py
+  Test:   unit/server/openapi_test.py
+
+  Source: fastmcp/server/proxy.py
+  Test:   unit/server/proxy_test.py
+
+  Source: fastmcp/server/routes/agent_registry.py
+  Test:   unit/server/routes/agent_registry_test.py
+
+  Source: fastmcp/server/routes/agent_routes.py
+  Test:   unit/server/routes/agent_routes_test.py
+
+  Source: fastmcp/server/routes/auth_integration.py
+  Test:   unit/server/routes/auth_integration_test.py
+
+  Source: fastmcp/server/routes/branch_routes.py
+  Test:   unit/server/routes/branch_routes_test.py
+
+  Source: fastmcp/server/routes/context_routes.py
+  Test:   unit/server/routes/context_routes_test.py
+
+  Source: fastmcp/server/routes/mcp_redirect_routes.py
+  Test:   unit/server/routes/mcp_redirect_routes_test.py
+
+  Source: fastmcp/server/routes/mcp_registration_routes.py
+  Test:   unit/server/routes/mcp_registration_routes_test.py
+
+  Source: fastmcp/server/routes/mcp_token_routes.py
+  Test:   unit/server/routes/mcp_token_routes_test.py
+
+  Source: fastmcp/server/routes/project_routes.py
+  Test:   unit/server/routes/project_routes_test.py
+
+  Source: fastmcp/server/routes/subtask_routes.py
+  Test:   unit/server/routes/subtask_routes_test.py
+
+  Source: fastmcp/server/routes/supabase_auth_integration.py
+  Test:   unit/server/routes/supabase_auth_integration_test.py
+
+  Source: fastmcp/server/routes/task_lazy_routes.py
+  Test:   unit/server/routes/task_lazy_routes_test.py
+
+  Source: fastmcp/server/routes/task_protected_routes.py
+  Test:   unit/server/routes/task_protected_routes_test.py
+
+  Source: fastmcp/server/routes/task_routes.py
+  Test:   unit/server/routes/task_routes_test.py
+
+  Source: fastmcp/server/routes/task_user_routes.py
+  Test:   unit/server/routes/task_user_routes_test.py
+
+  Source: fastmcp/server/routes/token_mgmt_routes.py
+  Test:   unit/server/routes/token_mgmt_routes_test.py
+
+  Source: fastmcp/server/routes/token_router.py
+  Test:   unit/server/routes/token_router_test.py
+
+  Source: fastmcp/server/routes/token_routes_backup.py
+  Test:   unit/server/routes/token_routes_backup_test.py
+
+  Source: fastmcp/server/routes/token_routes_starlette_bridge_backup.py
+  Test:   unit/server/routes/token_routes_starlette_bridge_backup_test.py
+
+  Source: fastmcp/server/secure_connection_tool.py
+  Test:   unit/server/secure_connection_tool_test.py
+
+  Source: fastmcp/server/secure_health_check.py
+  Test:   unit/server/secure_health_check_test.py
+
+  Source: fastmcp/server/server.py
+  Test:   unit/server/server_test.py
+
+  Source: fastmcp/server/session_health_tool.py
+  Test:   unit/server/session_health_tool_test.py
+
+  Source: fastmcp/server/session_store.py
+  Test:   unit/server/session_store_test.py
+
+  Source: fastmcp/settings.py
+  Test:   unit/settings_test.py
+
+  Source: fastmcp/setup.py
+  Test:   unit/setup_test.py
+
+  Source: fastmcp/task_management/application/event_handlers/hint_event_handlers.py
+  Test:   unit/task_management/application/event_handlers/hint_event_handlers_test.py
+
+  Source: fastmcp/task_management/application/event_handlers/progress_event_handlers.py
+  Test:   unit/task_management/application/event_handlers/progress_event_handlers_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/compliance_orchestrator.py
+  Test:   unit/task_management/application/orchestrators/compliance_orchestrator_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/agent_coordination_service.py
+  Test:   unit/task_management/application/orchestrators/services/agent_coordination_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/audit_service.py
+  Test:   unit/task_management/application/orchestrators/services/audit_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/automated_context_sync_service.py
+  Test:   unit/task_management/application/orchestrators/services/automated_context_sync_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/compliance_service.py
+  Test:   unit/task_management/application/orchestrators/services/compliance_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/context_cache_service.py
+  Test:   unit/task_management/application/orchestrators/services/context_cache_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/context_delegation_service.py
+  Test:   unit/task_management/application/orchestrators/services/context_delegation_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/context_detection_service.py
+  Test:   unit/task_management/application/orchestrators/services/context_detection_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/context_hierarchy_validator.py
+  Test:   unit/task_management/application/orchestrators/services/context_hierarchy_validator_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/context_inheritance_service.py
+  Test:   unit/task_management/application/orchestrators/services/context_inheritance_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/context_validation_service.py
+  Test:   unit/task_management/application/orchestrators/services/context_validation_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/dependencie_application_service.py
+  Test:   unit/task_management/application/orchestrators/services/dependencie_application_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/dependency_resolver_service.py
+  Test:   unit/task_management/application/orchestrators/services/dependency_resolver_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/domain_service_factory.py
+  Test:   unit/task_management/application/orchestrators/services/domain_service_factory_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/feature_flag_service.py
+  Test:   unit/task_management/application/orchestrators/services/feature_flag_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/git_branch_application_service.py
+  Test:   unit/task_management/application/orchestrators/services/git_branch_application_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/git_branch_service.py
+  Test:   unit/task_management/application/orchestrators/services/git_branch_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/git_branch_service_wrapper.py
+  Test:   unit/task_management/application/orchestrators/services/git_branch_service_wrapper_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/hint_generation_service.py
+  Test:   unit/task_management/application/orchestrators/services/hint_generation_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/mock_unified_context_service.py
+  Test:   unit/task_management/application/orchestrators/services/mock_unified_context_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/orchestrator.py
+  Test:   unit/task_management/application/orchestrators/services/orchestrator_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/parameter_enforcement_service.py
+  Test:   unit/task_management/application/orchestrators/services/parameter_enforcement_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/progress_tracking_service.py
+  Test:   unit/task_management/application/orchestrators/services/progress_tracking_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/progressive_enforcement_service.py
+  Test:   unit/task_management/application/orchestrators/services/progressive_enforcement_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/project_application_service.py
+  Test:   unit/task_management/application/orchestrators/services/project_application_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/project_management_service.py
+  Test:   unit/task_management/application/orchestrators/services/project_management_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/response_enrichment_service.py
+  Test:   unit/task_management/application/orchestrators/services/response_enrichment_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/rule_application_service.py
+  Test:   unit/task_management/application/orchestrators/services/rule_application_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/subtask_application_service.py
+  Test:   unit/task_management/application/orchestrators/services/subtask_application_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/task_application_service.py
+  Test:   unit/task_management/application/orchestrators/services/task_application_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/task_context_sync_service.py
+  Test:   unit/task_management/application/orchestrators/services/task_context_sync_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/task_progress_service.py
+  Test:   unit/task_management/application/orchestrators/services/task_progress_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/unified_context_service.py
+  Test:   unit/task_management/application/orchestrators/services/unified_context_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/work_distribution_service.py
+  Test:   unit/task_management/application/orchestrators/services/work_distribution_service_test.py
+
+  Source: fastmcp/task_management/application/orchestrators/services/workflow_analysis_service.py
+  Test:   unit/task_management/application/orchestrators/services/workflow_analysis_service_test.py
+
+  Source: fastmcp/task_management/domain/enums/agent_roles.py
+  Test:   unit/task_management/domain/enums/agent_roles_test.py
+
+  Source: fastmcp/task_management/domain/enums/common_labels.py
+  Test:   unit/task_management/domain/enums/common_labels_test.py
+
+  Source: fastmcp/task_management/domain/enums/compliance_enums.py
+  Test:   unit/task_management/domain/enums/compliance_enums_test.py
+
+  Source: fastmcp/task_management/domain/enums/estimated_effort.py
+  Test:   unit/task_management/domain/enums/estimated_effort_test.py
+
+  Source: fastmcp/task_management/domain/enums/rule_enums.py
+  Test:   unit/task_management/domain/enums/rule_enums_test.py
+
+  Source: fastmcp/task_management/domain/enums/template_enums.py
+  Test:   unit/task_management/domain/enums/template_enums_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/cache_service.py
+  Test:   unit/task_management/domain/interfaces/cache_service_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/database_session.py
+  Test:   unit/task_management/domain/interfaces/database_session_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/event_bus.py
+  Test:   unit/task_management/domain/interfaces/event_bus_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/event_store.py
+  Test:   unit/task_management/domain/interfaces/event_store_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/logging_service.py
+  Test:   unit/task_management/domain/interfaces/logging_service_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/monitoring_service.py
+  Test:   unit/task_management/domain/interfaces/monitoring_service_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/notification_service.py
+  Test:   unit/task_management/domain/interfaces/notification_service_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/repository_factory.py
+  Test:   unit/task_management/domain/interfaces/repository_factory_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/utility_service.py
+  Test:   unit/task_management/domain/interfaces/utility_service_test.py
+
+  Source: fastmcp/task_management/domain/interfaces/validation_service.py
+  Test:   unit/task_management/domain/interfaces/validation_service_test.py
+
+  Source: fastmcp/task_management/infrastructure/adapters/cache_service_adapter.py
+  Test:   unit/task_management/infrastructure/adapters/cache_service_adapter_test.py
+
+  Source: fastmcp/task_management/infrastructure/adapters/event_store_adapter.py
+  Test:   unit/task_management/infrastructure/adapters/event_store_adapter_test.py
+
+  Source: fastmcp/task_management/infrastructure/adapters/placeholder_adapters.py
+  Test:   unit/task_management/infrastructure/adapters/placeholder_adapters_test.py
+
+  Source: fastmcp/task_management/infrastructure/adapters/repository_factory_adapter.py
+  Test:   unit/task_management/infrastructure/adapters/repository_factory_adapter_test.py
+
+  Source: fastmcp/task_management/infrastructure/adapters/service_adapter_factory.py
+  Test:   unit/task_management/infrastructure/adapters/service_adapter_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/adapters/sqlalchemy_session_adapter.py
+  Test:   unit/task_management/infrastructure/adapters/sqlalchemy_session_adapter_test.py
+
+  Source: fastmcp/task_management/infrastructure/cache/cache_invalidation_mixin.py
+  Test:   unit/task_management/infrastructure/cache/cache_invalidation_mixin_test.py
+
+  Source: fastmcp/task_management/infrastructure/cache/cache_manager.py
+  Test:   unit/task_management/infrastructure/cache/cache_manager_test.py
+
+  Source: fastmcp/task_management/infrastructure/cache/context_cache.py
+  Test:   unit/task_management/infrastructure/cache/context_cache_test.py
+
+  Source: fastmcp/task_management/infrastructure/configuration/tool_config.py
+  Test:   unit/task_management/infrastructure/configuration/tool_config_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/add_composite_indexes.py
+  Test:   unit/task_management/infrastructure/database/add_composite_indexes_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/connection_pool.py
+  Test:   unit/task_management/infrastructure/database/connection_pool_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/database_adapter.py
+  Test:   unit/task_management/infrastructure/database/database_adapter_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/database_config.py
+  Test:   unit/task_management/infrastructure/database/database_config_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/database_initializer.py
+  Test:   unit/task_management/infrastructure/database/database_initializer_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/database_source_manager.py
+  Test:   unit/task_management/infrastructure/database/database_source_manager_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/dependency_installer.py
+  Test:   unit/task_management/infrastructure/database/dependency_installer_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/migrations/add_user_id_not_null_constraints.py
+  Test:   unit/task_management/infrastructure/database/migrations/add_user_id_not_null_constraints_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/migrations/fix_missing_user_id_columns.py
+  Test:   unit/task_management/infrastructure/database/migrations/fix_missing_user_id_columns_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/migrations/fix_missing_user_id_columns_postgresql.py
+  Test:   unit/task_management/infrastructure/database/migrations/fix_missing_user_id_columns_postgresql_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/models.py
+  Test:   unit/task_management/infrastructure/database/models_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/schema_validator.py
+  Test:   unit/task_management/infrastructure/database/schema_validator_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/session_manager.py
+  Test:   unit/task_management/infrastructure/database/session_manager_test.py
+
+  Source: fastmcp/task_management/infrastructure/database/supabase_config.py
+  Test:   unit/task_management/infrastructure/database/supabase_config_test.py
+
+  Source: fastmcp/task_management/infrastructure/di_container.py
+  Test:   unit/task_management/infrastructure/di_container_test.py
+
+  Source: fastmcp/task_management/infrastructure/event_bus.py
+  Test:   unit/task_management/infrastructure/event_bus_test.py
+
+  Source: fastmcp/task_management/infrastructure/event_store.py
+  Test:   unit/task_management/infrastructure/event_store_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/agent_facade_factory.py
+  Test:   unit/task_management/infrastructure/factories/agent_facade_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/context_response_factory.py
+  Test:   unit/task_management/infrastructure/factories/context_response_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/git_branch_facade_factory.py
+  Test:   unit/task_management/infrastructure/factories/git_branch_facade_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/project_facade_factory.py
+  Test:   unit/task_management/infrastructure/factories/project_facade_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/project_service_factory.py
+  Test:   unit/task_management/infrastructure/factories/project_service_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/rule_service_factory.py
+  Test:   unit/task_management/infrastructure/factories/rule_service_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/subtask_facade_factory.py
+  Test:   unit/task_management/infrastructure/factories/subtask_facade_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/task_facade_factory.py
+  Test:   unit/task_management/infrastructure/factories/task_facade_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/factories/unified_context_facade_factory.py
+  Test:   unit/task_management/infrastructure/factories/unified_context_facade_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/logging/logger_config.py
+  Test:   unit/task_management/infrastructure/logging/logger_config_test.py
+
+  Source: fastmcp/task_management/infrastructure/migrations/apply_005_simple.py
+  Test:   unit/task_management/infrastructure/migrations/apply_005_simple_test.py
+
+  Source: fastmcp/task_management/infrastructure/migrations/apply_005_step_by_step.py
+  Test:   unit/task_management/infrastructure/migrations/apply_005_step_by_step_test.py
+
+  Source: fastmcp/task_management/infrastructure/migrations/run_migration_003.py
+  Test:   unit/task_management/infrastructure/migrations/run_migration_003_test.py
+
+  Source: fastmcp/task_management/infrastructure/migrations/run_migration_004.py
+  Test:   unit/task_management/infrastructure/migrations/run_migration_004_test.py
+
+  Source: fastmcp/task_management/infrastructure/migrations/verify_constraints.py
+  Test:   unit/task_management/infrastructure/migrations/verify_constraints_test.py
+
+  Source: fastmcp/task_management/infrastructure/migrations/vision_context_migration.py
+  Test:   unit/task_management/infrastructure/migrations/vision_context_migration_test.py
+
+  Source: fastmcp/task_management/infrastructure/monitoring/process_monitor.py
+  Test:   unit/task_management/infrastructure/monitoring/process_monitor_test.py
+
+  Source: fastmcp/task_management/infrastructure/notification_service.py
+  Test:   unit/task_management/infrastructure/notification_service_test.py
+
+  Source: fastmcp/task_management/infrastructure/parsers/rule_content_parser.py
+  Test:   unit/task_management/infrastructure/parsers/rule_content_parser_test.py
+
+  Source: fastmcp/task_management/infrastructure/performance/performance_config.py
+  Test:   unit/task_management/infrastructure/performance/performance_config_test.py
+
+  Source: fastmcp/task_management/infrastructure/performance/task_performance_optimizer.py
+  Test:   unit/task_management/infrastructure/performance/task_performance_optimizer_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/agent_repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/agent_repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/cached/cached_agent_repository.py
+  Test:   unit/task_management/infrastructure/repositories/cached/cached_agent_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/cached/cached_git_branch_repository.py
+  Test:   unit/task_management/infrastructure/repositories/cached/cached_git_branch_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/cached/cached_project_repository.py
+  Test:   unit/task_management/infrastructure/repositories/cached/cached_project_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/cached/cached_subtask_repository.py
+  Test:   unit/task_management/infrastructure/repositories/cached/cached_subtask_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/cached/cached_task_repository.py
+  Test:   unit/task_management/infrastructure/repositories/cached/cached_task_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/git_branch_repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/git_branch_repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/global_context_repository.py
+  Test:   unit/task_management/infrastructure/repositories/global_context_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/mock_repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/mock_repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/mock_repository_factory_wrapper.py
+  Test:   unit/task_management/infrastructure/repositories/mock_repository_factory_wrapper_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/mock_task_context_repository.py
+  Test:   unit/task_management/infrastructure/repositories/mock_task_context_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/agent_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/agent_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/label_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/label_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/optimized_branch_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/optimized_branch_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/optimized_task_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/optimized_task_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/project_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/project_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/subtask_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/task_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/task_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/orm/template_repository.py
+  Test:   unit/task_management/infrastructure/repositories/orm/template_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/project_repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/project_repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/subtask_repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/subtask_repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/template_repository_factory.py
+  Test:   unit/task_management/infrastructure/repositories/template_repository_factory_test.py
+
+  Source: fastmcp/task_management/infrastructure/repositories/user_scoped_orm_repository.py
+  Test:   unit/task_management/infrastructure/repositories/user_scoped_orm_repository_test.py
+
+  Source: fastmcp/task_management/infrastructure/security/access_controller.py
+  Test:   unit/task_management/infrastructure/security/access_controller_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/agent_converter.py
+  Test:   unit/task_management/infrastructure/services/agent_converter_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/agent_doc_generator.py
+  Test:   unit/task_management/infrastructure/services/agent_doc_generator_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/context_schema.py
+  Test:   unit/task_management/infrastructure/services/context_schema_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/performance_cache_manager.py
+  Test:   unit/task_management/infrastructure/services/performance_cache_manager_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/performance_monitor.py
+  Test:   unit/task_management/infrastructure/services/performance_monitor_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/rule_parser_service.py
+  Test:   unit/task_management/infrastructure/services/rule_parser_service_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/template_engine_service.py
+  Test:   unit/task_management/infrastructure/services/template_engine_service_test.py
+
+  Source: fastmcp/task_management/infrastructure/services/template_registry_service.py
+  Test:   unit/task_management/infrastructure/services/template_registry_service_test.py
+
+  Source: fastmcp/task_management/infrastructure/utilities/directory_utils.py
+  Test:   unit/task_management/infrastructure/utilities/directory_utils_test.py
+
+  Source: fastmcp/task_management/infrastructure/utilities/path_resolver.py
+  Test:   unit/task_management/infrastructure/utilities/path_resolver_test.py
+
+  Source: fastmcp/task_management/infrastructure/validation/document_validator.py
+  Test:   unit/task_management/infrastructure/validation/document_validator_test.py
+
+  Source: fastmcp/task_management/infrastructure/websocket/context_notifications.py
+  Test:   unit/task_management/infrastructure/websocket/context_notifications_test.py
+
+  Source: fastmcp/task_management/interface/adapters/simple_multi_agent_adapter.py
+  Test:   unit/task_management/interface/adapters/simple_multi_agent_adapter_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/agent_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/agent_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/branch_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/branch_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/context_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/context_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/project_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/project_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/subtask_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/subtask_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/api_controllers/task_api_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/dependency_handler.py
+  Test:   unit/task_management/interface/api_controllers/task_api_controller/handlers/dependency_handler_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/search_handler.py
+  Test:   unit/task_management/interface/api_controllers/task_api_controller/handlers/search_handler_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/workflow_handler.py
+  Test:   unit/task_management/interface/api_controllers/task_api_controller/handlers/workflow_handler_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/task_api_controller/task_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/task_api_controller/task_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/api_controllers/task_api_controller.py
+  Test:   unit/task_management/interface/api_controllers/task_api_controller_test.py
+
+  Source: fastmcp/task_management/interface/consolidated_mcp_server.py
+  Test:   unit/task_management/interface/consolidated_mcp_server_test.py
+
+  Source: fastmcp/task_management/interface/cursor_rules_tools_ddd.py
+  Test:   unit/task_management/interface/cursor_rules_tools_ddd_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/agent_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/agent_mcp_controller/agent_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/agent_mcp_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/assignment_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/assignment_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/rebalance_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/rebalance_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/manage_agent_description.py
+  Test:   unit/task_management/interface/mcp_controllers/agent_mcp_controller/manage_agent_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/auth_helper.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/auth_helper_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/extractors/context_object_extractor.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/extractors/context_object_extractor_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/extractors/mcp_context_extractor.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/extractors/mcp_context_extractor_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/extractors/request_state_extractor.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/extractors/request_state_extractor_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/services/authentication_service.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/services/authentication_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/services/context_import_service.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/services/context_import_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/auth_helper/services/debug_service.py
+  Test:   unit/task_management/interface/mcp_controllers/auth_helper/services/debug_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/agent_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/agent_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/auth_helper.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/auth_helper_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/call_agent_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/call_agent_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/compliance_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/compliance_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/context_id_detector_orm.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/context_id_detector_orm_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/cursor_rules_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/cursor_rules_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/dependency_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/dependency_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/agent/call_agent_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/agent/call_agent_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/agent/manage_agent_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/agent/manage_agent_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/compliance/manage_compliance_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/compliance/manage_compliance_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/context/manage_unified_context_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/context/manage_unified_context_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/cursor_rules_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/cursor_rules_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/dependency/manage_dependency_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/dependency/manage_dependency_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/description_loader.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/description_loader_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/file_resource_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/file_resource_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/git_branch/manage_git_branch_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/git_branch/manage_git_branch_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/manage_connection_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/manage_connection_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/project/manage_project_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/project/manage_project_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/rule/manage_rule_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/rule/manage_rule_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/subtask/manage_subtask_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/subtask/manage_subtask_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/task/manage_task_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/task/manage_task_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/desc/template/manage_template_description.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/desc/template/manage_template_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/file_resource_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/file_resource_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/git_branch_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/git_branch_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/progress_tools_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/progress_tools_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/project_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/project_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/rule_orchestration_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/rule_orchestration_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/subtask_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/subtask_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/task_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/task_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/template_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/template_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/unified_context_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/unified_context_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/agent/agent_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/agent/agent_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/agent/agent_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/agent/agent_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/base.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/base_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/context/context_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/context/context_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/context/context_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/context/context_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/git_branch/git_branch_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/git_branch/git_branch_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/git_branch/git_branch_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/git_branch/git_branch_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/rule/rule_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/rule/rule_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/rule/rule_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/rule/rule_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/subtask/subtask_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/subtask/subtask_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/subtask/subtask_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/subtask/subtask_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/task/task_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/task/task_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_guidance/task/task_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_guidance/task/task_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/backup/workflow_hint_enhancer.py
+  Test:   unit/task_management/interface/mcp_controllers/backup/workflow_hint_enhancer_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_description.py
+  Test:   unit/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/handlers/agent_invocation_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/call_agent_mcp_controller/handlers/agent_invocation_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service.py
+  Test:   unit/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/compliance_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/compliance_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/factories/compliance_controller_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/factories/compliance_controller_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/audit_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/audit_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/dashboard_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/dashboard_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/execution_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/execution_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/validation_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/handlers/validation_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/manage_compliance_description.py
+  Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/manage_compliance_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/context_id_detector/context_id_detector.py
+  Test:   unit/task_management/interface/mcp_controllers/context_id_detector/context_id_detector_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/cursor_rules_controller/cursor_rules_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/cursor_rules_controller/cursor_rules_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/cursor_rules_controller/cursor_rules_description.py
+  Test:   unit/task_management/interface/mcp_controllers/cursor_rules_controller/cursor_rules_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/cursor_rules_controller/handlers/rule_management_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/cursor_rules_controller/handlers/rule_management_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/cursor_rules_controller/manage_rule_description.py
+  Test:   unit/task_management/interface/mcp_controllers/cursor_rules_controller/manage_rule_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/dependency_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/dependency_mcp_controller/dependency_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/factories/dependency_controller_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/dependency_mcp_controller/factories/dependency_controller_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/handlers/dependency_operation_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/dependency_mcp_controller/handlers/dependency_operation_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/manage_dependency_description.py
+  Test:   unit/task_management/interface/mcp_controllers/dependency_mcp_controller/manage_dependency_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/dependency_mcp_controller/services/description_service.py
+  Test:   unit/task_management/interface/mcp_controllers/dependency_mcp_controller/services/description_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/desc/description_loader.py
+  Test:   unit/task_management/interface/mcp_controllers/desc/description_loader_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/file_resource_mcp_controller/factories/file_resource_controller_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/file_resource_mcp_controller/factories/file_resource_controller_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/file_resource_mcp_controller/file_resource_description.py
+  Test:   unit/task_management/interface/mcp_controllers/file_resource_mcp_controller/file_resource_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/file_resource_mcp_controller/file_resource_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/file_resource_mcp_controller/file_resource_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/file_resource_mcp_controller/handlers/resource_registration_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/file_resource_mcp_controller/handlers/resource_registration_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/file_resource_mcp_controller/utils/file_utils.py
+  Test:   unit/task_management/interface/mcp_controllers/file_resource_mcp_controller/utils/file_utils_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/git_branch_mcp_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller/git_branch_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/git_branch_mcp_controller/git_branch_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller/handlers/advanced_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/git_branch_mcp_controller/handlers/advanced_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller/handlers/agent_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/git_branch_mcp_controller/handlers/agent_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/git_branch_mcp_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller/manage_git_branch_description.py
+  Test:   unit/task_management/interface/mcp_controllers/git_branch_mcp_controller/manage_git_branch_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/progress_tools_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/progress_tools_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/progress_tools_controller/handlers/context_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/progress_tools_controller/handlers/context_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/progress_tools_controller/handlers/progress_reporting_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/progress_tools_controller/handlers/progress_reporting_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/progress_tools_controller/handlers/workflow_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/progress_tools_controller/handlers/workflow_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/progress_tools_controller/progress_tools_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/progress_tools_controller/progress_tools_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/project_mcp_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/project_mcp_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/handlers/maintenance_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/project_mcp_controller/handlers/maintenance_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/manage_project_description.py
+  Test:   unit/task_management/interface/mcp_controllers/project_mcp_controller/manage_project_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/project_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/project_mcp_controller/project_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/factories/rule_orchestration_controller_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/rule_orchestration_controller/factories/rule_orchestration_controller_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/handlers/client_sync_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/rule_orchestration_controller/handlers/client_sync_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/handlers/composition_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/rule_orchestration_controller/handlers/composition_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/handlers/rule_management_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/rule_orchestration_controller/handlers/rule_management_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/manage_rule_description.py
+  Test:   unit/task_management/interface/mcp_controllers/rule_orchestration_controller/manage_rule_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/rule_orchestration_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/rule_orchestration_controller/rule_orchestration_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/subtask_mcp_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/progress_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/progress_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/manage_subtask_description.py
+  Test:   unit/task_management/interface/mcp_controllers/subtask_mcp_controller/manage_subtask_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/response_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/factories/response_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/validation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/factories/validation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/search_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/handlers/search_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/workflow_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/handlers/workflow_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/manage_task_description.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/manage_task_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/services/enrichment_service.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/services/enrichment_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/validators/business_validator.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/validators/business_validator_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/validators/context_validator.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/validators/context_validator_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/validators/parameter_validator.py
+  Test:   unit/task_management/interface/mcp_controllers/task_mcp_controller/validators/parameter_validator_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/factories/template_controller_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/factories/template_controller_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/handlers/crud_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/handlers/crud_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/handlers/render_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/handlers/render_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/handlers/search_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/handlers/search_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/handlers/suggestion_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/handlers/suggestion_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/manage_template_description.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/manage_template_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/services/analytics_service.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/services/analytics_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/services/validation_service.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/services/validation_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/template_controller/template_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/template_controller/template_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/unified_context_controller/factories/operation_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/unified_context_controller/factories/operation_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/unified_context_controller/handlers/context_operation_handler.py
+  Test:   unit/task_management/interface/mcp_controllers/unified_context_controller/handlers/context_operation_handler_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/unified_context_controller/manage_unified_context_description.py
+  Test:   unit/task_management/interface/mcp_controllers/unified_context_controller/manage_unified_context_description_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/unified_context_controller/unified_context_controller.py
+  Test:   unit/task_management/interface/mcp_controllers/unified_context_controller/unified_context_controller_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/agent/agent_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/agent/agent_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/agent/agent_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/agent/agent_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/base.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/base_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/context/context_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/context/context_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/context/context_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/context/context_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/git_branch/git_branch_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/git_branch/git_branch_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/git_branch/git_branch_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/git_branch/git_branch_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/rule/rule_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/rule/rule_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/rule/rule_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/rule/rule_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/task/task_workflow_factory.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/task/task_workflow_factory_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_guidance/task/task_workflow_guidance.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_guidance/task/task_workflow_guidance_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_hint_enhancer/services/enhancement_service.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_hint_enhancer/services/enhancement_service_test.py
+
+  Source: fastmcp/task_management/interface/mcp_controllers/workflow_hint_enhancer/workflow_hint_enhancer.py
+  Test:   unit/task_management/interface/mcp_controllers/workflow_hint_enhancer/workflow_hint_enhancer_test.py
+
+  Source: fastmcp/task_management/interface/utils/error_handler.py
+  Test:   unit/task_management/interface/utils/error_handler_test.py
+
+  Source: fastmcp/task_management/interface/utils/flexible_schema_generator.py
+  Test:   unit/task_management/interface/utils/flexible_schema_generator_test.py
+
+  Source: fastmcp/task_management/interface/utils/json_parameter_mixin.py
+  Test:   unit/task_management/interface/utils/json_parameter_mixin_test.py
+
+  Source: fastmcp/task_management/interface/utils/json_parameter_parser.py
+  Test:   unit/task_management/interface/utils/json_parameter_parser_test.py
+
+  Source: fastmcp/task_management/interface/utils/mcp_parameter_validator.py
+  Test:   unit/task_management/interface/utils/mcp_parameter_validator_test.py
+
+  Source: fastmcp/task_management/interface/utils/response_formatter.py
+  Test:   unit/task_management/interface/utils/response_formatter_test.py
+
+  Source: fastmcp/task_management/interface/utils/schema_monkey_patch.py
+  Test:   unit/task_management/interface/utils/schema_monkey_patch_test.py
+
+  Source: fastmcp/tools/tool.py
+  Test:   unit/tools/tool_test.py
+
+  Source: fastmcp/tools/tool_manager.py
+  Test:   unit/tools/tool_manager_test.py
+
+  Source: fastmcp/tools/tool_path.py
+  Test:   unit/tools/tool_path_test.py
+
+  Source: fastmcp/tools/tool_transform.py
+  Test:   unit/tools/tool_transform_test.py
+
+  Source: fastmcp/utilities/cache.py
+  Test:   unit/utilities/cache_test.py
+
+  Source: fastmcp/utilities/components.py
+  Test:   unit/utilities/components_test.py
+
+  Source: fastmcp/utilities/debug_service.py
+  Test:   unit/utilities/debug_service_test.py
+
+  Source: fastmcp/utilities/exceptions.py
+  Test:   unit/utilities/exceptions_test.py
+
+  Source: fastmcp/utilities/http.py
+  Test:   unit/utilities/http_test.py
+
+  Source: fastmcp/utilities/json_schema.py
+  Test:   unit/utilities/json_schema_test.py
+
+  Source: fastmcp/utilities/logging.py
+  Test:   unit/utilities/logging_test.py
+
+  Source: fastmcp/utilities/mcp_config.py
+  Test:   unit/utilities/mcp_config_test.py
+
+  Source: fastmcp/utilities/openapi.py
+  Test:   unit/utilities/openapi_test.py
+
+  Source: fastmcp/utilities/types.py
+  Test:   unit/utilities/types_test.py
+
+  Source: mcp_bridge.py
+  Test:   unit/mcp_bridge_test.py
+
+  Source: mcp_http_server.py
+  Test:   unit/mcp_http_server_test.py
+
+  Source: mock_supabase.py
+  Test:   unit/mock_supabase_test.py
+
+  Source: simple_server.py
+  Test:   unit/simple_server_test.py
+
+
+SUMMARY:
+Critical files without tests: 49
+Important files without tests: 102
+Standard files without tests: 419
+Total untested files: 570

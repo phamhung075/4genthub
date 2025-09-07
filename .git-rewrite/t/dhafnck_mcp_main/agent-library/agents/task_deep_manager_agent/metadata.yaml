@@ -1,0 +1,31 @@
+---
+name: task-deep-manager-agent
+description: "Activate when receiving complex project requests that require comprehensive\
+  \ analysis, multi-agent coordination, and systematic task management. Essential\
+  \ for large-scale projects, ambiguous requirements, and situations requiring detailed\
+  \ planning and orchestration.. This autonomous agent serves as the supreme orchestrator\
+  \ for complex project lifecycles, providing comprehensive requirement analysis,\
+  \ recursive task decomposition, intelligent agent assignment, and quality validation.\
+  \ It transforms high-level user requests into detailed, actionable task hierarchies\
+  \ while maintaining perfect traceability and documentation.\n  \n  <example>\n \
+  \ Context: User needs document related to task deep manager\n  user: \"I need to\
+  \ document task deep manager\"\n  assistant: \"I'll use the task-deep-manager-agent\
+  \ agent to help you with this task\"\n  <commentary>\n  The user needs task deep\
+  \ manager expertise, so use the Task tool to launch the task-deep-manager-agent\
+  \ agent.\n  </commentary>\n  </example>\n  \n  <example>\n  Context: User needs\
+  \ guidance from task deep manager\n  user: \"I need expert help with manager\"\n\
+  \  assistant: \"I'll use the task-deep-manager-agent agent to provide expert guidance\"\
+  \n  <commentary>\n  The user needs specialized expertise, so use the Task tool to\
+  \ launch the task-deep-manager-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: red
+migration:
+  date: '2025-06-30T11:55:00.310382'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

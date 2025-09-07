@@ -1,0 +1,34 @@
+---
+name: visual-regression-testing-agent
+description: "Activate when performing visual regression testing, validating UI consistency,\
+  \ detecting visual changes, or when comprehensive visual quality assurance is needed.\
+  \ Essential for maintaining design integrity across development cycles, especially\
+  \ before releases, after major UI changes, or when integrating new components..\
+  \ This autonomous agent performs comprehensive visual regression testing by capturing,\
+  \ comparing, and analyzing UI screenshots to detect unintended visual changes across\
+  \ development iterations. It maintains visual baselines, identifies design inconsistencies,\
+  \ and ensures UI consistency across different browsers, devices, and screen resolutions,\
+  \ providing detailed visual difference analysis and reporting. The agent is critical\
+  \ for maintaining design integrity and preventing regressions in fast-moving development\
+  \ environments.\n  \n  <example>\n  Context: User needs implement related to visual\
+  \ regression testing\n  user: \"I need to implement visual regression testing\"\n\
+  \  assistant: \"I'll use the visual-regression-testing-agent agent to help you with\
+  \ this task\"\n  <commentary>\n  The user needs visual regression testing expertise,\
+  \ so use the Task tool to launch the visual-regression-testing-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need visual\
+  \ regression testing expertise\n  user: \"Can you help me test this problem?\"\n\
+  \  assistant: \"Let me use the visual-regression-testing-agent agent to test this\
+  \ for you\"\n  <commentary>\n  The user needs test assistance, so use the Task tool\
+  \ to launch the visual-regression-testing-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: red
+migration:
+  date: '2025-06-30T11:55:00.258477'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

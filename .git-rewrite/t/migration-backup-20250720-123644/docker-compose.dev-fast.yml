@@ -1,0 +1,139 @@
+# Ultra-fast development overrides for Docker Compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev-fast.yml up
+# This version uses bind mounts for maximum performance
+
+services:
+  dhafnck-mcp:
+    build:
+      target: builder  # Use builder stage for development
+    
+    # Development environment variables - updated to match redis mode
+    environment:
+      PYTHONPATH: /app/src
+      FASTMCP_LOG_LEVEL: DEBUG
+      FASTMCP_ENABLE_RICH_TRACEBACKS: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      PYTHONUNBUFFERED: 1
+      DEVELOPMENT_MODE: true
+      HOT_RELOAD: true
+      WATCHDOG_ENABLED: true
+      RELOAD_DELAY: 0.05  # Ultra-fast reload detection
+      REDIS_URL: redis://redis:6379/0
+      SESSION_TTL: 3600
+      MAX_EVENTS_PER_SESSION: 1000
+      SESSION_COMPRESSION: true
+      SESSION_KEY_PREFIX: "mcp:session:"
+      REDIS_SOCKET_TIMEOUT: 5
+      REDIS_CONNECT_TIMEOUT: 5
+      REDIS_HEALTH_CHECK_INTERVAL: 30
+      SESSION_PERSISTENCE_ENABLED: true
+      FALLBACK_TO_MEMORY: true
+      SESSION_DEBUG_LOGGING: true
+      PREFER_REDIS: true
+      ENABLE_EVENT_REPLAY: true
+      EVENT_TTL: 3600
+      CLEANUP_INTERVAL: 300
+      EVENT_COMPRESSION: true
+      EVENT_ID_SEQUENCE_START: 0
+      MAX_CONCURRENT_STREAMS: 100
+      STREAM_TIMEOUT_MS: 300000
+      ENABLE_STREAM_RESUMPTION: true
+      FASTMCP_TRANSPORT: streamable-http
+      FASTMCP_HOST: 0.0.0.0
+      FASTMCP_PORT: 8000
+      DHAFNCK_DISABLE_CURSOR_TOOLS: false
+      ENABLE_CURSOR_INTEGRATION: true
+      CURSOR_STATUS_ENDPOINT: true
+      ENABLE_STATUS_BROADCASTING: true
+      SESSION_CLEANUP_INTERVAL: 600
+      MAX_SESSIONS_PER_CLIENT: 10
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      LOG_TIMESTAMP: true
+    
+    # Mount source code using bind mounts for maximum speed - commented out to test without binds
+    volumes:
+      # - type: bind
+      #   source: ./src
+      #   target: /app/src
+      #   consistency: delegated
+      # - type: bind
+      #   source: ./tests
+      #   target: /app/tests
+      #   consistency: delegated
+      # - type: bind
+      #   source: ../00_RULES
+      #   target: /data/rules/mounted
+      #   consistency: delegated
+      - redis_data:/data
+      - dhafnck_data:/data
+      - dhafnck_logs:/app/logs
+    
+    # Remove resource limits for development
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # Development ports (if needed for debugging)
+    ports:
+      - "8000:8000"
+      - "8001:8001"  # Additional debug port
+    
+    # Development logging (more verbose)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    # Override entrypoint for development - commented out to test default
+    # entrypoint: ["/app/scripts/dev-entrypoint.sh"]
+
+    # Explicitly set command to run FastMCP
+    command: ["python", "-m", "fastmcp"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: dhafnck-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s  # Faster health checks
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.2'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  dhafnck_data:
+    driver: local
+  dhafnck_logs:
+    driver: local
+  redis_data:
+    driver: local

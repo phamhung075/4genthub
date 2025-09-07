@@ -1,0 +1,414 @@
+// API service - Direct V2 API usage (no backward compatibility)
+// All operations use the V2 authenticated endpoints
+
+import { 
+  taskApiV2, 
+  projectApiV2, 
+  subtaskApiV2, 
+  contextApiV2, 
+  branchApiV2, 
+  connectionApiV2,
+  agentApiV2,
+  isAuthenticated,
+  getCurrentUserId
+} from './services/apiV2';
+
+// --- Interfaces for Type Safety ---
+export interface Task {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    priority: string;
+    subtasks: string[];
+    assignees?: string[];
+    dependencies?: string[];
+    dependency_relationships?: {
+        depends_on: string[];
+        blocks: string[];
+        dependency_chains?: string[][];
+    };
+    context_data?: any;
+    context_id?: string;
+    git_branch_id?: string;
+    details?: string;
+    labels?: string[];
+    estimated_effort?: string;
+    due_date?: string;
+    created_at?: string;
+    updated_at?: string;
+    [key: string]: any;
+}
+
+export interface Subtask {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    priority: string;
+    parent_task_id: string;
+    assignees?: string[];
+    dependencies?: string[];
+    [key: string]: any;
+}
+
+export interface Project {
+    id: string;
+    name: string;
+    description: string;
+    branches?: Branch[];
+    created_at?: string;
+    updated_at?: string;
+    [key: string]: any;
+}
+
+export interface Branch {
+    id: string;
+    git_branch_name: string;
+    description?: string;
+    project_id: string;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface Rule {
+    id: string;
+    name: string;
+    description: string;
+    condition: string;
+    action: string;
+    priority: number;
+    is_active: boolean;
+    [key: string]: any;
+}
+
+// --- Task Operations ---
+export const listTasks = async (params?: { git_branch_id?: string }): Promise<Task[]> => {
+    const response = await taskApiV2.getTasks(params);
+    return response.tasks || [];
+};
+
+export const getTask = async (task_id: string): Promise<Task> => {
+    const response = await taskApiV2.getTask(task_id);
+    return response.task || response;
+};
+
+export const createTask = async (task: Partial<Task>): Promise<Task> => {
+    const response = await taskApiV2.createTask({
+        title: task.title || '',
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        git_branch_id: task.git_branch_id
+    });
+    return response.task || response;
+};
+
+export const updateTask = async (task_id: string, updates: Partial<Task>): Promise<Task> => {
+    const response = await taskApiV2.updateTask(task_id, {
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        priority: updates.priority,
+        progress_percentage: updates.progress_percentage
+    });
+    return response.task || response;
+};
+
+export const deleteTask = async (task_id: string): Promise<void> => {
+    await taskApiV2.deleteTask(task_id);
+};
+
+export const completeTask = async (
+    task_id: string, 
+    completion_data: { completion_summary: string; testing_notes?: string }
+): Promise<Task> => {
+    const response = await taskApiV2.completeTask(task_id, completion_data);
+    return response.task || response;
+};
+
+export const searchTasks = async (query: string, params?: { git_branch_id?: string }): Promise<Task[]> => {
+    // Search functionality can be implemented on frontend by filtering list results
+    const tasks = await listTasks(params);
+    const searchLower = query.toLowerCase();
+    return tasks.filter(task => 
+        task.title.toLowerCase().includes(searchLower) ||
+        task.description?.toLowerCase().includes(searchLower)
+    );
+};
+
+// --- Subtask Operations ---
+export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
+    const response = await subtaskApiV2.listSubtasksForTask(task_id);
+    return response.subtasks || [];
+};
+
+export const createSubtask = async (task_id: string, subtask: Partial<Subtask>): Promise<Subtask> => {
+    const response = await subtaskApiV2.createSubtask(task_id, {
+        title: subtask.title || '',
+        description: subtask.description
+    });
+    return response.subtask || response;
+};
+
+export const updateSubtask = async (subtask_id: string, updates: Partial<Subtask>): Promise<Subtask> => {
+    const response = await subtaskApiV2.updateSubtask(subtask_id, {
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        progress_percentage: updates.progress_percentage
+    });
+    return response.subtask || response;
+};
+
+export const deleteSubtask = async (subtask_id: string): Promise<void> => {
+    await subtaskApiV2.deleteSubtask(subtask_id);
+};
+
+export const completeSubtask = async (
+    subtask_id: string,
+    completion_notes?: string
+): Promise<Subtask> => {
+    const response = await subtaskApiV2.completeSubtask(subtask_id, completion_notes);
+    return response.subtask || response;
+};
+
+// --- Project Operations ---
+export const listProjects = async (): Promise<Project[]> => {
+    console.log('listProjects: Fetching projects from API V2...');
+    try {
+        const response = await projectApiV2.getProjects();
+        console.log('listProjects: Got response:', response);
+        return response.projects || [];
+    } catch (error) {
+        console.error('listProjects: Error fetching projects:', error);
+        throw error;
+    }
+};
+
+export const createProject = async (project: Partial<Project>): Promise<Project> => {
+    const response = await projectApiV2.createProject({
+        name: project.name || '',
+        description: project.description
+    });
+    return response.project || response;
+};
+
+export const updateProject = async (project_id: string, updates: Partial<Project>): Promise<Project> => {
+    const response = await projectApiV2.updateProject(project_id, {
+        name: updates.name,
+        description: updates.description
+    });
+    return response.project || response;
+};
+
+export const deleteProject = async (project_id: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    const response = await projectApiV2.deleteProject(project_id);
+    return response;
+};
+
+// --- Branch Operations ---
+export const listBranches = async (project_id: string): Promise<Branch[]> => {
+    const response = await branchApiV2.getBranches(project_id);
+    return response.branches || [];
+};
+
+export const createBranch = async (project_id: string, branch: Partial<Branch>): Promise<Branch> => {
+    const response = await branchApiV2.createBranch(project_id, {
+        git_branch_name: branch.git_branch_name || '',
+        description: branch.description
+    });
+    return response.branch || response;
+};
+
+export const updateBranch = async (branch_id: string, updates: Partial<Branch>): Promise<Branch> => {
+    const response = await branchApiV2.updateBranch(branch_id, {
+        git_branch_name: updates.git_branch_name,
+        description: updates.description,
+        is_active: updates.is_active
+    });
+    return response.branch || response;
+};
+
+export const deleteBranch = async (branch_id: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+    try {
+        const response = await branchApiV2.deleteBranch(branch_id);
+        // Handle different response formats
+        if (response === null || response === undefined) {
+            // If response is null/undefined, assume success (204 No Content)
+            return { success: true, message: 'Branch deleted successfully' };
+        }
+        if (typeof response === 'object') {
+            // If response has a success field, use it
+            if ('success' in response) {
+                return response;
+            }
+            // If response has no error indication, assume success
+            if (!response.error && !response.detail) {
+                return { success: true, message: response.message || 'Branch deleted successfully' };
+            }
+            // If there's an error
+            return { success: false, error: response.error || response.detail || 'Failed to delete branch' };
+        }
+        // For any other response type, assume success
+        return { success: true, message: 'Branch deleted successfully' };
+    } catch (error: any) {
+        console.error('Delete branch error:', error);
+        return { 
+            success: false, 
+            error: error.message || 'Failed to delete branch' 
+        };
+    }
+};
+
+// --- Context Operations ---
+export const getTaskContext = async (task_id: string): Promise<any> => {
+    try {
+        const response = await contextApiV2.getContext('task', task_id, true);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error getting task context:', error);
+        return null;
+    }
+};
+
+export const getBranchContext = async (branch_id: string): Promise<any> => {
+    try {
+        const response = await contextApiV2.getContext('branch', branch_id, true);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error getting branch context:', error);
+        return null;
+    }
+};
+
+export const getProjectContext = async (project_id: string): Promise<any> => {
+    try {
+        const response = await contextApiV2.getContext('project', project_id, true);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error getting project context:', error);
+        return null;
+    }
+};
+
+export const getGlobalContext = async (): Promise<any> => {
+    try {
+        // For global context, use any dummy value - server ignores it and uses token user
+        const response = await contextApiV2.getContext('global', 'global', false);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error getting global context:', error);
+        return null;
+    }
+};
+
+export const updateGlobalContext = async (data: any): Promise<any> => {
+    try {
+        // For global context, use any dummy value - server ignores it and uses token user
+        const response = await contextApiV2.updateContext('global', 'global', data);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error updating global context:', error);
+        return null;
+    }
+};
+
+export const updateProjectContext = async (project_id: string, data: any): Promise<any> => {
+    try {
+        const response = await contextApiV2.updateContext('project', project_id, data);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error updating project context:', error);
+        return null;
+    }
+};
+
+export const updateBranchContext = async (branch_id: string, data: any): Promise<any> => {
+    try {
+        const response = await contextApiV2.updateContext('branch', branch_id, data);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error updating branch context:', error);
+        return null;
+    }
+};
+
+export const updateTaskContext = async (task_id: string, data: any): Promise<any> => {
+    try {
+        const response = await contextApiV2.updateContext('task', task_id, data);
+        return response.context || response;
+    } catch (error) {
+        console.error('Error updating task context:', error);
+        return null;
+    }
+};
+
+// --- Agent Operations ---
+export const listAgents = async (): Promise<any[]> => {
+    try {
+        const response = await agentApiV2.getAgentsMetadata();
+        return response.agents || [];
+    } catch (error) {
+        console.error('Error listing agents:', error);
+        return [];
+    }
+};
+
+export const getAvailableAgents = async (): Promise<string[]> => {
+    try {
+        const agents = await listAgents();
+        return agents.map(a => a.name || a.id);
+    } catch (error) {
+        console.error('Error getting available agents:', error);
+        return [];
+    }
+};
+
+export const callAgent = async (agent_name: string, params: any): Promise<any> => {
+    // Agent operations might need a different approach
+    // This is a placeholder that might need backend support
+    console.warn('callAgent not fully implemented in V2 API');
+    return { success: false, message: 'Agent operations need backend implementation' };
+};
+
+// --- Rule Operations (Placeholder) ---
+export const listRules = async (): Promise<Rule[]> => {
+    console.warn('Rule operations not yet implemented in V2 API');
+    return [];
+};
+
+export const createRule = async (rule: Partial<Rule>): Promise<Rule> => {
+    console.warn('Rule operations not yet implemented in V2 API');
+    throw new Error('Rule operations not available');
+};
+
+export const updateRule = async (rule_id: string, updates: Partial<Rule>): Promise<Rule> => {
+    console.warn('Rule operations not yet implemented in V2 API');
+    throw new Error('Rule operations not available');
+};
+
+export const deleteRule = async (rule_id: string): Promise<void> => {
+    console.warn('Rule operations not yet implemented in V2 API');
+    throw new Error('Rule operations not available');
+};
+
+export const validateRule = async (rule: Partial<Rule>): Promise<any> => {
+    console.warn('Rule operations not yet implemented in V2 API');
+    return { valid: false, errors: ['Rule operations not available'] };
+};
+
+// --- Connection Operations ---
+export const checkHealth = async (): Promise<boolean> => {
+    try {
+        const response = await connectionApiV2.healthCheck();
+        return response.status === 'healthy';
+    } catch (error) {
+        console.error('Health check failed:', error);
+        return false;
+    }
+};
+
+// Export utility functions
+export { isAuthenticated, getCurrentUserId };

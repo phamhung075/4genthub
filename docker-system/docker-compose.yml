@@ -1,0 +1,135 @@
+services:
+  # =============================================================================
+  # PostgreSQL Database Service
+  # =============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: dhafnck-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-dhafnck_mcp_prod}
+      POSTGRES_USER: ${DATABASE_USER:-dhafnck_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./dhafnck_mcp_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - dhafnck_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-dhafnck_user} -d ${DATABASE_NAME:-dhafnck_mcp_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # MCP HTTP Server Service
+  # =============================================================================
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker-system/docker/Dockerfile.backend
+    container_name: dhafnck-mcp-server
+    restart: unless-stopped
+    environment:
+      # Environment
+      ENV: ${ENV:-production}
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
+
+      # Database
+      DATABASE_TYPE: postgresql
+      DATABASE_HOST: postgres  # Use service name for internal Docker network
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-dhafnck_mcp_prod}
+      DATABASE_USER: ${DATABASE_USER:-dhafnck_user}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}
+      DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-prefer}
+      DATABASE_URL: postgresql://${DATABASE_USER:-dhafnck_user}:${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}@postgres:5432/${DATABASE_NAME:-dhafnck_mcp_prod}?sslmode=${DATABASE_SSL_MODE:-prefer}
+
+      # Keycloak Authentication
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-keycloak}
+      EMAIL_VERIFIED_AUTO: ${EMAIL_VERIFIED_AUTO:-true}
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-dhafnck-mcp}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-mcp-backend}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_VERIFY_TOKEN_AUDIENCE: ${KEYCLOAK_VERIFY_TOKEN_AUDIENCE:-true}
+      KEYCLOAK_TOKEN_CACHE_TTL: ${KEYCLOAK_TOKEN_CACHE_TTL:-300}
+      KEYCLOAK_PUBLIC_KEY_CACHE_TTL: ${KEYCLOAK_PUBLIC_KEY_CACHE_TTL:-3600}
+      KEYCLOAK_SSL_VERIFY: ${KEYCLOAK_SSL_VERIFY:-true}
+
+      # MCP Server
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8001
+      MCP_SECRET_KEY: ${MCP_SECRET_KEY}
+
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3800,http://localhost:8001}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+
+      # Features
+      FEATURE_VISION_SYSTEM: ${FEATURE_VISION_SYSTEM:-true}
+      FEATURE_HIERARCHICAL_CONTEXT: ${FEATURE_HIERARCHICAL_CONTEXT:-true}
+      FEATURE_AUTO_COMPACT: ${FEATURE_AUTO_COMPACT:-true}
+      FEATURE_MULTI_AGENT: ${FEATURE_MULTI_AGENT:-true}
+      FEATURE_RATE_LIMITING: ${FEATURE_RATE_LIMITING:-true}
+      FEATURE_REQUEST_LOGGING: ${FEATURE_REQUEST_LOGGING:-true}
+    volumes:
+      - ./dhafnck_mcp_main:/app
+      - ./data:/data
+      - mcp_logs:/var/log/dhafnck-mcp
+    ports:
+      - "8001:8001"
+    networks:
+      - dhafnck_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: python /app/src/mcp_http_server.py
+
+  # =============================================================================
+  # PgAdmin Service (Optional - for database management)
+  # =============================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dhafnck-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@dhafnck.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-AdminPassword2025!}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - dhafnck_network
+    depends_on:
+      - postgres
+    profiles:
+      - tools  # Only start if explicitly requested with --profile tools
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  dhafnck_network:
+    driver: bridge
+    name: ${DOCKER_NETWORK:-dhafnck_network}
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    name: dhafnck_postgres_data
+  mcp_logs:
+    name: dhafnck_mcp_logs
+  pgadmin_data:
+    name: dhafnck_pgadmin_data

@@ -1,0 +1,32 @@
+---
+name: prototyping-agent
+description: "Activate when creating interactive prototypes from static designs, validating\
+  \ user flows and interactions, demonstrating concepts to stakeholders, or testing\
+  \ design assumptions before full development. Essential for design validation, user\
+  \ experience testing, and rapid iteration cycles.. This autonomous agent transforms\
+  \ static designs, mockups, and wireframes into interactive, functional prototypes.\
+  \ It implements user flows, navigation, and key interactive states to enable early\
+  \ user feedback, design validation, and stakeholder communication through tangible,\
+  \ testable experiences. The agent is a bridge between design and development, ensuring\
+  \ that prototypes are both visually accurate and technically feasible.\n  \n  <example>\n\
+  \  Context: User needs implement related to prototyping\n  user: \"I need to implement\
+  \ prototyping\"\n  assistant: \"I'll use the prototyping-agent agent to help you\
+  \ with this task\"\n  <commentary>\n  The user needs prototyping expertise, so use\
+  \ the Task tool to launch the prototyping-agent agent.\n  </commentary>\n  </example>\n\
+  \  \n  <example>\n  Context: User experiencing issues that need prototyping expertise\n\
+  \  user: \"Can you help me test this problem?\"\n  assistant: \"Let me use the prototyping-agent\
+  \ agent to test this for you\"\n  <commentary>\n  The user needs test assistance,\
+  \ so use the Task tool to launch the prototyping-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: indigo
+migration:
+  date: '2025-06-30T11:55:00.340849'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

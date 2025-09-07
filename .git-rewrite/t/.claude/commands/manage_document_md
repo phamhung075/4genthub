@@ -1,0 +1,601 @@
+#!/bin/bash
+
+# manage_document_md - Smart documentation management system for markdown files
+# This command analyzes, indexes, and manages all .md documentation in the project
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Project paths
+PROJECT_ROOT="/home/daihungpham/agentic-project"
+BACKEND_ROOT="$PROJECT_ROOT/dhafnck_mcp_main"
+FRONTEND_ROOT="$PROJECT_ROOT/dhafnck-frontend"
+DOCS_ROOT="$BACKEND_ROOT/docs"
+INDEX_FILE="$DOCS_ROOT/index.md"
+DOC_INDEX_DB="$PROJECT_ROOT/.claude/doc_index.json"
+
+# Time thresholds
+STALE_DAYS=30
+OLD_DAYS=90
+
+# Document categories
+declare -A DOC_CATEGORIES=(
+    ["api"]="API Reference"
+    ["architecture"]="Architecture & Design"
+    ["fixes"]="Bug Fixes & Solutions"
+    ["testing"]="Testing & Quality"
+    ["vision"]="Vision System"
+    ["troubleshooting"]="Troubleshooting"
+    ["configuration"]="Configuration & Setup"
+    ["migration"]="Migration Guides"
+    ["changelog"]="Change Logs"
+)
+
+# Code file patterns that might be referenced in docs
+declare -A CODE_PATTERNS=(
+    ["python"]="*.py"
+    ["typescript"]="*.ts"
+    ["javascript"]="*.js"
+    ["yaml"]="*.yml *.yaml"
+)
+
+# Function to print colored output
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_header() {
+    echo -e "\n${BOLD}$1${NC}"
+    echo "$(printf '%.0s=' {1..60})"
+}
+
+# Function to get file age in days
+get_file_age_days() {
+    local file="$1"
+    local current_time=$(date +%s)
+    local file_time=$(stat -c %Y "$file" 2>/dev/null || echo 0)
+    echo $(( (current_time - file_time) / 86400 ))
+}
+
+# Function to get last git commit date for a file
+get_last_git_update() {
+    local file="$1"
+    cd "$(dirname "$file")" 2>/dev/null
+    git log -1 --format="%ai" -- "$(basename "$file")" 2>/dev/null || echo "Unknown"
+}
+
+# Function to extract document metadata
+extract_doc_metadata() {
+    local file="$1"
+    local content=$(head -100 "$file" 2>/dev/null || echo "")
+    
+    # Extract title (first # heading)
+    local title=$(echo "$content" | grep -m1 "^#[[:space:]]" | sed 's/^#[[:space:]]*//')
+    [ -z "$title" ] && title=$(basename "$file" .md)
+    
+    # Extract description (first paragraph after title)
+    local description=$(echo "$content" | awk '/^#[[:space:]]/{p=1; next} p && /^[[:space:]]*$/{p=0} p && /^[^#]/' | head -3 | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | cut -c1-150)
+    
+    # Extract categories/tags
+    local tags=$(echo "$content" | grep -E "^(Tags?|Categories?):" | cut -d: -f2- | tr ',' '\n' | xargs)
+    
+    # Count sections
+    local section_count=$(echo "$content" | grep -c "^##[[:space:]]" || echo 0)
+    
+    # Detect document type
+    local doc_type="general"
+    case "$file" in
+        */api-*|*/API*) doc_type="api" ;;
+        */test*|*/Test*) doc_type="testing" ;;
+        */fix*|*/Fix*) doc_type="fixes" ;;
+        */vision/*) doc_type="vision" ;;
+        */architecture*|*/design*) doc_type="architecture" ;;
+        */troubleshoot*) doc_type="troubleshooting" ;;
+        */config*|*/setup*) doc_type="configuration" ;;
+        */migration*) doc_type="migration" ;;
+        */CHANGELOG*|*/changelog*) doc_type="changelog" ;;
+    esac
+    
+    # Escape quotes in title and description for JSON
+    title=$(echo "$title" | sed 's/"/\\"/g')
+    description=$(echo "$description" | sed 's/"/\\"/g')
+    echo "{\"title\": \"$title\", \"description\": \"$description\", \"type\": \"$doc_type\", \"sections\": $section_count, \"tags\": \"$tags\"}"
+}
+
+# Function to find code references in a document
+find_code_references() {
+    local file="$1"
+    local content=$(cat "$file" 2>/dev/null || echo "")
+    local refs=()
+    
+    # Find Python imports/files
+    while IFS= read -r ref; do
+        refs+=("py:$ref")
+    done < <(echo "$content" | grep -oE "(from |import )[a-zA-Z_][a-zA-Z0-9_.]+" | sed 's/^from //;s/^import //' | sort -u)
+    
+    # Find file paths
+    while IFS= read -r ref; do
+        refs+=("path:$ref")
+    done < <(echo "$content" | grep -oE "/(src|tests|fastmcp|dhafnck)[/a-zA-Z0-9_.-]+" | sort -u)
+    
+    # Find class/function references
+    while IFS= read -r ref; do
+        refs+=("code:$ref")
+    done < <(echo "$content" | grep -oE "(class |def |function |interface |type )[A-Za-z][A-Za-z0-9_]*" | sed 's/^[^ ]* //' | sort -u)
+    
+    # Find MCP tool references
+    while IFS= read -r ref; do
+        refs+=("mcp:$ref")
+    done < <(echo "$content" | grep -oE "manage_[a-z_]+" | sort -u)
+    
+    echo "${refs[@]}"
+}
+
+# Function to check if a document is outdated
+check_doc_outdated() {
+    local file="$1"
+    local age_days=$(get_file_age_days "$file")
+    local content=$(cat "$file" 2>/dev/null || echo "")
+    local reasons=()
+    
+    # Check age
+    if [ $age_days -gt $OLD_DAYS ]; then
+        reasons+=("Not updated in $age_days days")
+    elif [ $age_days -gt $STALE_DAYS ]; then
+        reasons+=("Stale - not updated in $age_days days")
+    fi
+    
+    # Check for outdated markers
+    if echo "$content" | grep -qE "(DEPRECATED|OUTDATED|OLD|OBSOLETE|TODO|FIXME|WIP)"; then
+        reasons+=("Contains deprecation/TODO markers")
+    fi
+    
+    # Check for broken links
+    local broken_links=$(echo "$content" | grep -oE "\[([^\]]+)\]\(([^)]+)\)" | while read -r link; do
+        local url=$(echo "$link" | sed 's/.*](\([^)]*\)).*/\1/')
+        if [[ "$url" =~ ^/ ]] || [[ "$url" =~ ^\.\/ ]]; then
+            # Local file reference
+            local full_path="$(dirname "$file")/$url"
+            [ ! -e "$full_path" ] && echo "$url"
+        fi
+    done)
+    
+    if [ -n "$broken_links" ]; then
+        reasons+=("Has broken links")
+    fi
+    
+    # Check if references outdated code
+    if echo "$content" | grep -qE "(SQLite|sqlite|aiosqlite)"; then
+        reasons+=("References outdated SQLite (project uses PostgreSQL)")
+    fi
+    
+    if [ ${#reasons[@]} -gt 0 ]; then
+        echo "outdated"
+        for reason in "${reasons[@]}"; do
+            echo "  - $reason"
+        done
+    else
+        echo "current"
+    fi
+}
+
+# Function to generate document index
+generate_doc_index() {
+    local output_file="${1:-$DOC_INDEX_DB}"
+    
+    print_header "Generating Document Index"
+    
+    # Initialize JSON structure
+    echo "{" > "$output_file"
+    echo "  \"generated\": \"$(date -Iseconds)\"," >> "$output_file"
+    echo "  \"stats\": {" >> "$output_file"
+    
+    # Count documents
+    local total_docs=$(find "$PROJECT_ROOT" -name "*.md" -type f -not -path "*/node_modules/*" -not -path "*/00_RESOURCES/*" -not -path "*/00_RULES/*" | wc -l)
+    local project_docs=$(find "$PROJECT_ROOT" -name "*.md" -type f -not -path "*/node_modules/*" -not -path "*/00_RESOURCES/*" -not -path "*/00_RULES/*" | grep -E "(dhafnck_mcp_main|dhafnck-frontend)" | wc -l)
+    
+    echo "    \"total_documents\": $total_docs," >> "$output_file"
+    echo "    \"project_documents\": $project_docs," >> "$output_file"
+    echo "    \"categories\": {" >> "$output_file"
+    
+    # Count by category
+    local first_cat=true
+    for cat in "${!DOC_CATEGORIES[@]}"; do
+        local count=$(find "$PROJECT_ROOT" -name "*.md" -type f -not -path "*/node_modules/*" | grep -ci "$cat" || echo 0)
+        [ "$first_cat" = false ] && echo "," >> "$output_file"
+        echo -n "      \"$cat\": $count" >> "$output_file"
+        first_cat=false
+    done
+    
+    echo -e "\n    }" >> "$output_file"
+    echo "  }," >> "$output_file"
+    echo "  \"documents\": [" >> "$output_file"
+    
+    # Process each document
+    local first_doc=true
+    while IFS= read -r doc; do
+        [ "$first_doc" = false ] && echo "," >> "$output_file"
+        
+        local rel_path="${doc#$PROJECT_ROOT/}"
+        local metadata=$(extract_doc_metadata "$doc")
+        local age_days=$(get_file_age_days "$doc")
+        local last_update=$(get_last_git_update "$doc")
+        local status=$(check_doc_outdated "$doc" | head -1)
+        local code_refs=($(find_code_references "$doc"))
+        
+        echo -n "    {" >> "$output_file"
+        echo -n "\"path\": \"$rel_path\", " >> "$output_file"
+        echo -n "\"age_days\": $age_days, " >> "$output_file"
+        echo -n "\"last_update\": \"$last_update\", " >> "$output_file"
+        echo -n "\"status\": \"$status\", " >> "$output_file"
+        echo -n "\"metadata\": $metadata, " >> "$output_file"
+        echo -n "\"code_refs\": [" >> "$output_file"
+        
+        # Add code references
+        local first_ref=true
+        for ref in "${code_refs[@]}"; do
+            [ "$first_ref" = false ] && echo -n ", " >> "$output_file"
+            echo -n "\"$ref\"" >> "$output_file"
+            first_ref=false
+        done
+        
+        echo -n "]}" >> "$output_file"
+        first_doc=false
+        
+        # Progress indicator
+        echo -n "."
+        
+    done < <(find "$PROJECT_ROOT" -name "*.md" -type f -not -path "*/node_modules/*" -not -path "*/00_RESOURCES/*" -not -path "*/00_RULES/*" | grep -E "(dhafnck_mcp_main|dhafnck-frontend)" | sort)
+    
+    echo -e "\n  ]" >> "$output_file"
+    echo "}" >> "$output_file"
+    
+    echo ""
+    print_success "Index generated: $output_file"
+}
+
+# Function to analyze documentation health
+analyze_doc_health() {
+    print_header "Documentation Health Analysis"
+    
+    # Load or generate index
+    if [ ! -f "$DOC_INDEX_DB" ] || [ $(get_file_age_days "$DOC_INDEX_DB") -gt 1 ]; then
+        print_info "Generating fresh document index..."
+        generate_doc_index "$DOC_INDEX_DB"
+    fi
+    
+    # Parse index with jq
+    local total=$(jq -r '.stats.total_documents' "$DOC_INDEX_DB")
+    local outdated=$(jq -r '.documents[] | select(.status == "outdated") | .path' "$DOC_INDEX_DB" | wc -l)
+    local current=$(jq -r '.documents[] | select(.status == "current") | .path' "$DOC_INDEX_DB" | wc -l)
+    
+    echo "Total Documents: $total"
+    echo "Current: $current ($(( current * 100 / total ))%)"
+    echo "Outdated: $outdated ($(( outdated * 100 / total ))%)"
+    echo ""
+    
+    # Show outdated documents
+    if [ $outdated -gt 0 ]; then
+        echo -e "${YELLOW}Outdated Documents:${NC}"
+        jq -r '.documents[] | select(.status == "outdated") | "  - \(.path) (age: \(.age_days) days)"' "$DOC_INDEX_DB"
+        echo ""
+    fi
+    
+    # Show category breakdown
+    echo -e "${BLUE}Documentation by Category:${NC}"
+    for cat in "${!DOC_CATEGORIES[@]}"; do
+        local count=$(jq -r ".stats.categories.$cat // 0" "$DOC_INDEX_DB")
+        printf "  %-20s: %3d documents\n" "${DOC_CATEGORIES[$cat]}" "$count"
+    done
+}
+
+# Function to find orphaned documents
+find_orphaned_docs() {
+    print_header "Finding Orphaned Documents"
+    
+    # Documents not linked from index.md or other docs
+    local all_docs=$(find "$DOCS_ROOT" -name "*.md" -type f | sort)
+    local linked_docs=()
+    
+    # Extract all internal links
+    while IFS= read -r doc; do
+        local links=$(grep -oE "\[([^\]]+)\]\(([^)]+\.md[^)]*)\)" "$doc" 2>/dev/null | sed 's/.*](\([^)]*\)).*/\1/' | sed 's/#.*//')
+        for link in $links; do
+            if [[ "$link" =~ ^/ ]]; then
+                linked_docs+=("$DOCS_ROOT$link")
+            else
+                linked_docs+=("$(dirname "$doc")/$link")
+            fi
+        done
+    done < <(echo "$all_docs")
+    
+    # Find orphans
+    local orphan_count=0
+    while IFS= read -r doc; do
+        local is_linked=false
+        for linked in "${linked_docs[@]}"; do
+            [ "$(realpath "$doc" 2>/dev/null)" = "$(realpath "$linked" 2>/dev/null)" ] && is_linked=true && break
+        done
+        
+        if [ "$is_linked" = false ] && [[ ! "$doc" =~ (index\.md|README\.md)$ ]]; then
+            echo "  - ${doc#$PROJECT_ROOT/}"
+            ((orphan_count++))
+        fi
+    done < <(echo "$all_docs")
+    
+    [ $orphan_count -eq 0 ] && print_success "No orphaned documents found!"
+}
+
+# Function to check code-doc dependencies
+check_code_doc_deps() {
+    print_header "Checking Code-Documentation Dependencies"
+    
+    # Load index
+    [ ! -f "$DOC_INDEX_DB" ] && generate_doc_index "$DOC_INDEX_DB"
+    
+    # Find code files that should have documentation
+    local undocumented=()
+    
+    # Check key Python files
+    while IFS= read -r pyfile; do
+        local rel_path="${pyfile#$PROJECT_ROOT/}"
+        local base_name=$(basename "$pyfile" .py)
+        local doc_found=false
+        
+        # Look for corresponding documentation
+        if jq -r '.documents[].code_refs[]' "$DOC_INDEX_DB" | grep -q "$base_name"; then
+            doc_found=true
+        fi
+        
+        if [ "$doc_found" = false ] && [[ "$pyfile" =~ (controller|facade|service|repository)\.py$ ]]; then
+            undocumented+=("$rel_path")
+        fi
+    done < <(find "$BACKEND_ROOT/src" -name "*.py" -type f | grep -E "(controller|facade|service|repository)" | head -20)
+    
+    if [ ${#undocumented[@]} -gt 0 ]; then
+        echo -e "${YELLOW}Potentially undocumented code files:${NC}"
+        for file in "${undocumented[@]}"; do
+            echo "  - $file"
+        done
+    else
+        print_success "All major code files appear to be documented!"
+    fi
+}
+
+# Function to generate documentation report
+generate_doc_report() {
+    local report_file="${1:-$DOCS_ROOT/DOCUMENTATION_REPORT.md}"
+    
+    print_header "Generating Documentation Report"
+    
+    # Generate fresh index
+    generate_doc_index "$DOC_INDEX_DB"
+    
+    # Create report
+    cat > "$report_file" << EOF
+# Documentation Report
+
+Generated: $(date)
+
+## Overview
+
+This report provides a comprehensive analysis of the documentation in the DhafnckMCP project.
+
+## Statistics
+
+$(jq -r '
+    "- Total Documents: \(.stats.total_documents)
+- Project Documents: \(.stats.project_documents)
+- Generated: \(.generated)"
+' "$DOC_INDEX_DB")
+
+## Documentation by Category
+
+$(for cat in "${!DOC_CATEGORIES[@]}"; do
+    count=$(jq -r ".stats.categories.$cat // 0" "$DOC_INDEX_DB")
+    echo "- ${DOC_CATEGORIES[$cat]}: $count documents"
+done | sort)
+
+## Document Status
+
+### Current Documents
+$(jq -r '.documents[] | select(.status == "current") | "- [\(.metadata.title)](\(.path)) - \(.metadata.description)"' "$DOC_INDEX_DB" | head -20)
+
+### Outdated Documents
+$(jq -r '.documents[] | select(.status == "outdated") | "- [\(.metadata.title)](\(.path)) - Last updated: \(.last_update)"' "$DOC_INDEX_DB")
+
+## Documentation Structure
+
+### Main Categories
+
+\`\`\`
+$(tree "$DOCS_ROOT" -d -L 2 2>/dev/null || find "$DOCS_ROOT" -type d | sed 's|[^/]*/|  |g')
+\`\`\`
+
+## Recommendations
+
+1. **Update Outdated Documents**: Review and update documents that haven't been modified in over $STALE_DAYS days
+2. **Fix Broken Links**: Scan for and fix any broken internal links
+3. **Add Missing Documentation**: Document any undocumented major components
+4. **Maintain Index**: Keep the main index.md file up to date with all documentation
+
+## Next Steps
+
+1. Review outdated documents and update as needed
+2. Add documentation for any new features or changes
+3. Ensure all documentation follows the established patterns
+4. Run this report regularly to maintain documentation quality
+
+---
+*This report was generated automatically by the manage_document_md tool*
+EOF
+    
+    print_success "Report generated: $report_file"
+}
+
+# Function to update main index
+update_main_index() {
+    print_header "Updating Main Documentation Index"
+    
+    # Backup existing index
+    [ -f "$INDEX_FILE" ] && cp "$INDEX_FILE" "$INDEX_FILE.bak"
+    
+    # Generate new index structure
+    cat > "$INDEX_FILE" << 'EOF'
+# DhafnckMCP Documentation
+
+Welcome to the DhafnckMCP documentation. This index provides navigation to all project documentation.
+
+## Quick Start
+
+- [Architecture Overview](architecture.md) - System architecture and design
+- [API Reference](api-reference.md) - Complete MCP tools reference
+- [Configuration Guide](configuration.md) - Environment and setup configuration
+- [Docker Deployment](docker-deployment.md) - Production deployment guide
+
+## Core Documentation
+
+### Architecture & Design
+EOF
+    
+    # Add architecture docs
+    find "$DOCS_ROOT" -name "*.md" -type f | grep -E "(architecture|design|domain)" | sort | while read -r doc; do
+        local rel_path="${doc#$DOCS_ROOT/}"
+        local title=$(grep -m1 "^#[[:space:]]" "$doc" 2>/dev/null | sed 's/^#[[:space:]]*//' || basename "$doc" .md)
+        echo "- [$title]($rel_path)" >> "$INDEX_FILE"
+    done
+    
+    # Add other categories
+    cat >> "$INDEX_FILE" << 'EOF'
+
+### Vision System
+EOF
+    
+    find "$DOCS_ROOT/vision" -name "*.md" -type f | sort | while read -r doc; do
+        local rel_path="${doc#$DOCS_ROOT/}"
+        local title=$(grep -m1 "^#[[:space:]]" "$doc" 2>/dev/null | sed 's/^#[[:space:]]*//' || basename "$doc" .md)
+        echo "- [$title]($rel_path)" >> "$INDEX_FILE"
+    done
+    
+    # Add remaining sections
+    cat >> "$INDEX_FILE" << 'EOF'
+
+### Testing & Quality
+EOF
+    
+    find "$DOCS_ROOT" -name "*.md" -type f | grep -E "(test|quality)" | sort | while read -r doc; do
+        local rel_path="${doc#$DOCS_ROOT/}"
+        local title=$(grep -m1 "^#[[:space:]]" "$doc" 2>/dev/null | sed 's/^#[[:space:]]*//' || basename "$doc" .md)
+        echo "- [$title]($rel_path)" >> "$INDEX_FILE"
+    done
+    
+    print_success "Main index updated: $INDEX_FILE"
+}
+
+# Main menu
+show_menu() {
+    echo ""
+    print_header "Document Management System"
+    echo "1. Analyze documentation health"
+    echo "2. Generate document index"
+    echo "3. Find outdated documents"
+    echo "4. Find orphaned documents"
+    echo "5. Check code-documentation dependencies"
+    echo "6. Generate documentation report"
+    echo "7. Update main index.md"
+    echo "8. Full analysis (all of the above)"
+    echo "0. Exit"
+    echo ""
+    echo -n "Select option: "
+}
+
+# Main function
+main() {
+    # Create necessary directories
+    mkdir -p "$(dirname "$DOC_INDEX_DB")"
+    
+    if [ $# -eq 0 ]; then
+        # Interactive mode
+        while true; do
+            show_menu
+            read -r choice
+            
+            case $choice in
+                1) analyze_doc_health ;;
+                2) generate_doc_index ;;
+                3) analyze_doc_health ;;
+                4) find_orphaned_docs ;;
+                5) check_code_doc_deps ;;
+                6) generate_doc_report ;;
+                7) update_main_index ;;
+                8) 
+                    analyze_doc_health
+                    find_orphaned_docs
+                    check_code_doc_deps
+                    generate_doc_report
+                    update_main_index
+                    ;;
+                0) exit 0 ;;
+                *) print_error "Invalid option" ;;
+            esac
+        done
+    else
+        # Command line mode
+        case "$1" in
+            --analyze) analyze_doc_health ;;
+            --index) generate_doc_index ;;
+            --outdated) analyze_doc_health ;;
+            --orphaned) find_orphaned_docs ;;
+            --deps) check_code_doc_deps ;;
+            --report) generate_doc_report "${2:-}" ;;
+            --update-index) update_main_index ;;
+            --full)
+                analyze_doc_health
+                find_orphaned_docs
+                check_code_doc_deps
+                generate_doc_report
+                update_main_index
+                ;;
+            --help|*)
+                echo "Usage: manage_document_md [OPTION]"
+                echo ""
+                echo "Options:"
+                echo "  --analyze       Analyze documentation health"
+                echo "  --index        Generate document index"
+                echo "  --outdated     Find outdated documents"
+                echo "  --orphaned     Find orphaned documents"
+                echo "  --deps         Check code-documentation dependencies"
+                echo "  --report [file] Generate documentation report"
+                echo "  --update-index Update main index.md"
+                echo "  --full         Run full analysis"
+                echo "  --help         Show this help"
+                echo ""
+                echo "Without options, runs in interactive mode."
+                ;;
+        esac
+    fi
+}
+
+# Run main
+main "$@"

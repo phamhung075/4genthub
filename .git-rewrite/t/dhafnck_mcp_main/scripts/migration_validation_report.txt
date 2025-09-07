@@ -1,0 +1,57 @@
+============================================================
+🔍 ORM MIGRATION VALIDATION REPORT
+============================================================
+
+📋 SCHEMA VALIDATION
+------------------------------
+
+SQLITE Schema:
+  Expected tables: 13
+  Existing tables: 16
+  Missing tables: 1
+  Extra tables: 4
+  ❌ Missing: context_inheritance_caches
+
+🔗 DATA INTEGRITY
+------------------------------
+
+SQLITE Data Integrity:
+  foreign_key_constraints:
+    ❌ Foreign key constraint error: (sqlite3.IntegrityError) NOT NULL constraint failed: projects.id
+[SQL: INSERT INTO projects (name, description, user_id, status, model_metadata) VALUES (?, ?, ?, ?, ?) RETURNING created_at, updated_at]
+[parameters: ('Integrity Test Project', 'Testing data integrity', 'test_user', 'active', '{}')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+  unique_constraints:
+  json_field_validation:
+    ❌ JSON field error: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.IntegrityError) NOT NULL constraint failed: projects.id
+[SQL: INSERT INTO projects (name, description, user_id, status, model_metadata) VALUES (?, ?, ?, ?, ?) RETURNING created_at, updated_at]
+[parameters: ('Integrity Test Project', 'Testing data integrity', 'test_user', 'active', '{}')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+  relationship_validation:
+
+⚙️ REPOSITORY FUNCTIONALITY
+------------------------------
+
+SQLITE Repository Tests:
+  ❌ ProjectRepository error: Not an executable object: 'SELECT sqlite_version()'
+  ❌ AgentRepository error: Not an executable object: 'SELECT sqlite_version()'
+  ❌ TaskRepository error: Not an executable object: 'SELECT sqlite_version()'
+
+⚡ PERFORMANCE TESTS
+------------------------------
+
+SQLITE Performance:
+  ✅ Connection established in 0.000s
+  ✅ Query 10 projects in 0.002s
+
+❌ ERRORS
+------------------------------
+  PostgreSQL validation error: (psycopg2.OperationalError) connection to server on socket "@@@db.dmuqoeppsoesqcijrwhw.supabase.co/.s.PGSQL.5432" failed: Connection refused
+	Is the server running locally and accepting connections on that socket?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+📊 SUMMARY
+------------------------------
+❌ Migration validation FAILED with 1 errors
+💡 Check the errors above and fix before deployment

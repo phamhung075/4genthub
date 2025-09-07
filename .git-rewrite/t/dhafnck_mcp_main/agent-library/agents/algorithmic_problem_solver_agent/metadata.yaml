@@ -1,0 +1,32 @@
+---
+name: algorithmic-problem-solver-agent
+description: "Activate when facing complex computational challenges, optimization\
+  \ problems, data structure design needs, or when requiring algorithmic analysis\
+  \ for system architecture decisions. Essential for technical problem decomposition\
+  \ and solution design.. This autonomous agent specializes in analyzing complex computational\
+  \ problems, designing optimal algorithmic solutions, and creating comprehensive\
+  \ technical specifications. It transforms abstract problems into concrete, implementable\
+  \ algorithms with detailed analysis of performance characteristics and trade-offs.\n\
+  \  \n  <example>\n  Context: User needs implement related to algorithmic problem\
+  \ solver\n  user: \"I need to implement algorithmic problem solver\"\n  assistant:\
+  \ \"I'll use the algorithmic-problem-solver-agent agent to help you with this task\"\
+  \n  <commentary>\n  The user needs algorithmic problem solver expertise, so use\
+  \ the Task tool to launch the algorithmic-problem-solver-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need algorithmic\
+  \ problem solver expertise\n  user: \"Can you help me design this problem?\"\n \
+  \ assistant: \"Let me use the algorithmic-problem-solver-agent agent to design this\
+  \ for you\"\n  <commentary>\n  The user needs design assistance, so use the Task\
+  \ tool to launch the algorithmic-problem-solver-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: teal
+migration:
+  date: '2025-06-30T11:55:00.315690'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

@@ -1,0 +1,4 @@
+connectivity:
+  interactsWith:
+  - coding-agent
+  feedbackLoop: Receives implementation feedback (from @coding_agent), integration feedback (from @system_architect_agent), and performance data (from @performance_load_tester_agent) to refine algorithmic approaches. Learns from test failures, performance regressions, and code review comments.

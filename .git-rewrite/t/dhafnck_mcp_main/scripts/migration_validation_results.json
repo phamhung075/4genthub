@@ -1,0 +1,558 @@
+{
+  "schema_validation": {
+    "sqlite": {
+      "expected_tables": [
+        "projects",
+        "agents",
+        "project_git_branchs",
+        "tasks",
+        "task_subtasks",
+        "labels",
+        "task_labels",
+        "global_contexts",
+        "project_contexts",
+        "task_contexts",
+        "context_delegations",
+        "context_inheritance_caches",
+        "templates"
+      ],
+      "existing_tables": [
+        "agents",
+        "context_delegations",
+        "context_inheritance_cache",
+        "global_contexts",
+        "hierarchical_context",
+        "labels",
+        "project_contexts",
+        "project_git_branchs",
+        "projects",
+        "task_assignees",
+        "task_contexts",
+        "task_dependencies",
+        "task_labels",
+        "task_subtasks",
+        "tasks",
+        "templates"
+      ],
+      "missing_tables": [
+        "context_inheritance_caches"
+      ],
+      "extra_tables": [
+        "context_inheritance_cache",
+        "hierarchical_context",
+        "task_assignees",
+        "task_dependencies"
+      ],
+      "table_details": {
+        "projects": {
+          "columns": 8,
+          "indexes": 0,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "description",
+            "created_at",
+            "updated_at",
+            "user_id",
+            "status",
+            "model_metadata"
+          ]
+        },
+        "agents": {
+          "columns": 10,
+          "indexes": 2,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "description",
+            "capabilities",
+            "status",
+            "availability_score",
+            "last_active_at",
+            "created_at",
+            "updated_at",
+            "model_metadata"
+          ]
+        },
+        "project_git_branchs": {
+          "columns": 12,
+          "indexes": 0,
+          "foreign_keys": 1,
+          "column_names": [
+            "id",
+            "project_id",
+            "name",
+            "description",
+            "created_at",
+            "updated_at",
+            "assigned_agent_id",
+            "priority",
+            "status",
+            "model_metadata",
+            "task_count",
+            "completed_task_count"
+          ]
+        },
+        "tasks": {
+          "columns": 12,
+          "indexes": 4,
+          "foreign_keys": 1,
+          "column_names": [
+            "id",
+            "title",
+            "description",
+            "git_branch_id",
+            "status",
+            "priority",
+            "details",
+            "estimated_effort",
+            "due_date",
+            "created_at",
+            "updated_at",
+            "context_id"
+          ]
+        },
+        "task_subtasks": {
+          "columns": 17,
+          "indexes": 2,
+          "foreign_keys": 1,
+          "column_names": [
+            "id",
+            "task_id",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "assignees",
+            "estimated_effort",
+            "progress_percentage",
+            "progress_notes",
+            "blockers",
+            "completion_summary",
+            "impact_on_parent",
+            "insights_found",
+            "created_at",
+            "updated_at",
+            "completed_at"
+          ]
+        },
+        "labels": {
+          "columns": 5,
+          "indexes": 0,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "color",
+            "description",
+            "created_at"
+          ]
+        },
+        "task_labels": {
+          "columns": 3,
+          "indexes": 2,
+          "foreign_keys": 2,
+          "column_names": [
+            "task_id",
+            "label_id",
+            "applied_at"
+          ]
+        },
+        "global_contexts": {
+          "columns": 10,
+          "indexes": 0,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "organization_id",
+            "autonomous_rules",
+            "security_policies",
+            "coding_standards",
+            "workflow_templates",
+            "delegation_rules",
+            "created_at",
+            "updated_at",
+            "version"
+          ]
+        },
+        "project_contexts": {
+          "columns": 12,
+          "indexes": 0,
+          "foreign_keys": 1,
+          "column_names": [
+            "project_id",
+            "parent_global_id",
+            "team_preferences",
+            "technology_stack",
+            "project_workflow",
+            "local_standards",
+            "global_overrides",
+            "delegation_rules",
+            "created_at",
+            "updated_at",
+            "version",
+            "inheritance_disabled"
+          ]
+        },
+        "task_contexts": {
+          "columns": 12,
+          "indexes": 0,
+          "foreign_keys": 2,
+          "column_names": [
+            "task_id",
+            "parent_project_id",
+            "parent_project_context_id",
+            "task_data",
+            "local_overrides",
+            "implementation_notes",
+            "delegation_triggers",
+            "inheritance_disabled",
+            "force_local_only",
+            "created_at",
+            "updated_at",
+            "version"
+          ]
+        },
+        "context_delegations": {
+          "columns": 16,
+          "indexes": 3,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "source_level",
+            "source_id",
+            "target_level",
+            "target_id",
+            "delegated_data",
+            "delegation_reason",
+            "trigger_type",
+            "auto_delegated",
+            "confidence_score",
+            "processed",
+            "approved",
+            "processed_by",
+            "rejected_reason",
+            "created_at",
+            "processed_at"
+          ]
+        },
+        "templates": {
+          "columns": 10,
+          "indexes": 2,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "type",
+            "content",
+            "category",
+            "tags",
+            "usage_count",
+            "created_at",
+            "updated_at",
+            "created_by"
+          ]
+        }
+      }
+    }
+  },
+  "data_integrity": {
+    "sqlite": {
+      "foreign_key_constraints": [
+        "\u274c Foreign key constraint error: (sqlite3.IntegrityError) NOT NULL constraint failed: projects.id\n[SQL: INSERT INTO projects (name, description, user_id, status, model_metadata) VALUES (?, ?, ?, ?, ?) RETURNING created_at, updated_at]\n[parameters: ('Integrity Test Project', 'Testing data integrity', 'test_user', 'active', '{}')]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+      ],
+      "unique_constraints": [],
+      "json_field_validation": [
+        "\u274c JSON field error: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.IntegrityError) NOT NULL constraint failed: projects.id\n[SQL: INSERT INTO projects (name, description, user_id, status, model_metadata) VALUES (?, ?, ?, ?, ?) RETURNING created_at, updated_at]\n[parameters: ('Integrity Test Project', 'Testing data integrity', 'test_user', 'active', '{}')]\n(Background on this error at: https://sqlalche.me/e/20/gkpj) (Background on this error at: https://sqlalche.me/e/20/7s2a)"
+      ],
+      "relationship_validation": []
+    }
+  },
+  "functionality_tests": {
+    "sqlite": {
+      "database_type": "sqlite",
+      "repository_tests": [
+        "\u274c ProjectRepository error: Not an executable object: 'SELECT sqlite_version()'",
+        "\u274c AgentRepository error: Not an executable object: 'SELECT sqlite_version()'",
+        "\u274c TaskRepository error: Not an executable object: 'SELECT sqlite_version()'"
+      ]
+    }
+  },
+  "performance_tests": {
+    "sqlite": {
+      "connection_test": "\u2705 Connection established in 0.000s",
+      "query_performance": [
+        "\u2705 Query 10 projects in 0.002s"
+      ],
+      "bulk_operations": []
+    }
+  },
+  "errors": [
+    "PostgreSQL validation error: (psycopg2.OperationalError) connection to server on socket \"@@@db.dmuqoeppsoesqcijrwhw.supabase.co/.s.PGSQL.5432\" failed: Connection refused\n\tIs the server running locally and accepting connections on that socket?\n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+  ],
+  "schema_comparison": {
+    "sqlite_schema": {
+      "expected_tables": [
+        "projects",
+        "agents",
+        "project_git_branchs",
+        "tasks",
+        "task_subtasks",
+        "labels",
+        "task_labels",
+        "global_contexts",
+        "project_contexts",
+        "task_contexts",
+        "context_delegations",
+        "context_inheritance_caches",
+        "templates"
+      ],
+      "existing_tables": [
+        "agents",
+        "context_delegations",
+        "context_inheritance_cache",
+        "global_contexts",
+        "hierarchical_context",
+        "labels",
+        "project_contexts",
+        "project_git_branchs",
+        "projects",
+        "task_assignees",
+        "task_contexts",
+        "task_dependencies",
+        "task_labels",
+        "task_subtasks",
+        "tasks",
+        "templates"
+      ],
+      "missing_tables": [
+        "context_inheritance_caches"
+      ],
+      "extra_tables": [
+        "context_inheritance_cache",
+        "hierarchical_context",
+        "task_assignees",
+        "task_dependencies"
+      ],
+      "table_details": {
+        "projects": {
+          "columns": 8,
+          "indexes": 0,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "description",
+            "created_at",
+            "updated_at",
+            "user_id",
+            "status",
+            "model_metadata"
+          ]
+        },
+        "agents": {
+          "columns": 10,
+          "indexes": 2,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "description",
+            "capabilities",
+            "status",
+            "availability_score",
+            "last_active_at",
+            "created_at",
+            "updated_at",
+            "model_metadata"
+          ]
+        },
+        "project_git_branchs": {
+          "columns": 12,
+          "indexes": 0,
+          "foreign_keys": 1,
+          "column_names": [
+            "id",
+            "project_id",
+            "name",
+            "description",
+            "created_at",
+            "updated_at",
+            "assigned_agent_id",
+            "priority",
+            "status",
+            "model_metadata",
+            "task_count",
+            "completed_task_count"
+          ]
+        },
+        "tasks": {
+          "columns": 12,
+          "indexes": 4,
+          "foreign_keys": 1,
+          "column_names": [
+            "id",
+            "title",
+            "description",
+            "git_branch_id",
+            "status",
+            "priority",
+            "details",
+            "estimated_effort",
+            "due_date",
+            "created_at",
+            "updated_at",
+            "context_id"
+          ]
+        },
+        "task_subtasks": {
+          "columns": 17,
+          "indexes": 2,
+          "foreign_keys": 1,
+          "column_names": [
+            "id",
+            "task_id",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "assignees",
+            "estimated_effort",
+            "progress_percentage",
+            "progress_notes",
+            "blockers",
+            "completion_summary",
+            "impact_on_parent",
+            "insights_found",
+            "created_at",
+            "updated_at",
+            "completed_at"
+          ]
+        },
+        "labels": {
+          "columns": 5,
+          "indexes": 0,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "color",
+            "description",
+            "created_at"
+          ]
+        },
+        "task_labels": {
+          "columns": 3,
+          "indexes": 2,
+          "foreign_keys": 2,
+          "column_names": [
+            "task_id",
+            "label_id",
+            "applied_at"
+          ]
+        },
+        "global_contexts": {
+          "columns": 10,
+          "indexes": 0,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "organization_id",
+            "autonomous_rules",
+            "security_policies",
+            "coding_standards",
+            "workflow_templates",
+            "delegation_rules",
+            "created_at",
+            "updated_at",
+            "version"
+          ]
+        },
+        "project_contexts": {
+          "columns": 12,
+          "indexes": 0,
+          "foreign_keys": 1,
+          "column_names": [
+            "project_id",
+            "parent_global_id",
+            "team_preferences",
+            "technology_stack",
+            "project_workflow",
+            "local_standards",
+            "global_overrides",
+            "delegation_rules",
+            "created_at",
+            "updated_at",
+            "version",
+            "inheritance_disabled"
+          ]
+        },
+        "task_contexts": {
+          "columns": 12,
+          "indexes": 0,
+          "foreign_keys": 2,
+          "column_names": [
+            "task_id",
+            "parent_project_id",
+            "parent_project_context_id",
+            "task_data",
+            "local_overrides",
+            "implementation_notes",
+            "delegation_triggers",
+            "inheritance_disabled",
+            "force_local_only",
+            "created_at",
+            "updated_at",
+            "version"
+          ]
+        },
+        "context_delegations": {
+          "columns": 16,
+          "indexes": 3,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "source_level",
+            "source_id",
+            "target_level",
+            "target_id",
+            "delegated_data",
+            "delegation_reason",
+            "trigger_type",
+            "auto_delegated",
+            "confidence_score",
+            "processed",
+            "approved",
+            "processed_by",
+            "rejected_reason",
+            "created_at",
+            "processed_at"
+          ]
+        },
+        "templates": {
+          "columns": 10,
+          "indexes": 2,
+          "foreign_keys": 0,
+          "column_names": [
+            "id",
+            "name",
+            "type",
+            "content",
+            "category",
+            "tags",
+            "usage_count",
+            "created_at",
+            "updated_at",
+            "created_by"
+          ]
+        }
+      }
+    },
+    "postgresql_schema": null,
+    "differences": [
+      "\u26a0\ufe0f PostgreSQL not available: (psycopg2.OperationalError) connection to server on socket \"@@@db.dmuqoeppsoesqcijrwhw.supabase.co/.s.PGSQL.5432\" failed: Connection refused\n\tIs the server running locally and accepting connections on that socket?\n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+    ]
+  }
+}

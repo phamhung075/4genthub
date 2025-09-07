@@ -1,0 +1,30 @@
+---
+name: health-monitor-agent
+description: "Activate for continuous system monitoring, health status assessment,\
+  \ anomaly detection, or when proactive health management is needed. Essential for\
+  \ maintaining system reliability and preventing issues before they impact operations..\
+  \ This autonomous monitoring agent continuously observes system health metrics,\
+  \ detects anomalies, and provides proactive health management. It employs advanced\
+  \ monitoring techniques, predictive analytics, and intelligent alerting to ensure\
+  \ optimal system performance and early issue detection.\n  \n  <example>\n  Context:\
+  \ User needs help with related to health monitor\n  user: \"I need to help with\
+  \ health monitor\"\n  assistant: \"I'll use the health-monitor-agent agent to help\
+  \ you with this task\"\n  <commentary>\n  The user needs health monitor expertise,\
+  \ so use the Task tool to launch the health-monitor-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User needs guidance from health monitor\n\
+  \  user: \"I need expert help with monitor\"\n  assistant: \"I'll use the health-monitor-agent\
+  \ agent to provide expert guidance\"\n  <commentary>\n  The user needs specialized\
+  \ expertise, so use the Task tool to launch the health-monitor-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: purple
+migration:
+  date: '2025-06-30T11:55:00.226892'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

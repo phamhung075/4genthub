@@ -1,0 +1,298 @@
+# Highly Optimized Docker Compose for DhafnckMCP
+# Features: BuildKit cache, resource limits, health checks, parallel builds
+
+services:
+  # PostgreSQL with optimized settings
+  postgres:
+    image: postgres:15-alpine
+    container_name: dhafnck-postgres-opt
+    profiles: ["postgresql"]
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-dhafnck_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-dhafnck_password}
+      POSTGRES_DB: ${DATABASE_NAME:-dhafnck_mcp}
+      # Performance tuning
+      POSTGRES_SHARED_BUFFERS: ${POSTGRES_SHARED_BUFFERS:-256MB}
+      POSTGRES_WORK_MEM: ${POSTGRES_WORK_MEM:-8MB}
+      POSTGRES_MAINTENANCE_WORK_MEM: ${POSTGRES_MAINTENANCE_WORK_MEM:-128MB}
+      POSTGRES_EFFECTIVE_CACHE_SIZE: ${POSTGRES_EFFECTIVE_CACHE_SIZE:-512MB}
+      POSTGRES_MAX_CONNECTIONS: ${POSTGRES_MAX_CONNECTIONS:-100}
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: 0.9
+      POSTGRES_WAL_BUFFERS: 16MB
+      POSTGRES_DEFAULT_STATISTICS_TARGET: 100
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 256M
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    networks:
+      - dhafnck-network
+    deploy:
+      resources:
+        limits:
+          cpus: '${POSTGRES_CPU_LIMIT:-1.0}'
+          memory: ${POSTGRES_MEMORY_LIMIT:-512M}
+        reservations:
+          cpus: '${POSTGRES_CPU_RESERVE:-0.25}'
+          memory: ${POSTGRES_MEMORY_RESERVE:-256M}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-dhafnck_user} -d ${DATABASE_NAME:-dhafnck_mcp}"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: >
+      postgres
+      -c shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+      -c work_mem=${POSTGRES_WORK_MEM:-8MB}
+      -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-128MB}
+      -c effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-512MB}
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+
+  # Redis with optimized memory settings
+  redis:
+    image: redis:7-alpine
+    container_name: dhafnck-redis-opt
+    profiles: ["redis"]
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+      --save 900 1 300 10 60 10000
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-backlog 128
+      --tcp-keepalive 60
+      --timeout 300
+      --databases 16
+      --client-output-buffer-limit normal 0 0 0
+      --client-output-buffer-limit replica 256mb 64mb 60
+      --client-output-buffer-limit pubsub 32mb 8mb 60
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    volumes:
+      - redis-data:/data
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 100M
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - dhafnck-network
+    deploy:
+      resources:
+        limits:
+          cpus: '${REDIS_CPU_LIMIT:-0.5}'
+          memory: ${REDIS_MEMORY_LIMIT:-300M}
+        reservations:
+          cpus: '${REDIS_CPU_RESERVE:-0.1}'
+          memory: ${REDIS_MEMORY_RESERVE:-128M}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Highly optimized backend
+  backend:
+    build:
+      context: ..
+      dockerfile: docker-system/docker/Dockerfile.backend
+      args:
+        - PYTHON_VERSION=${PYTHON_VERSION:-3.11}
+        - OPTIMIZATION_MODE=${OPTIMIZATION_MODE:-true}
+        - BUILDKIT_INLINE_CACHE=1
+      platforms:
+        - linux/amd64
+      target: runtime
+      x-bake:
+        provenance: false
+        sbom: false
+    image: dhafnck/mcp-server:optimized
+    container_name: dhafnck-mcp-server
+    env_file:
+      - ../.env
+    environment:
+      # Database Configuration
+      - DATABASE_TYPE=${DATABASE_TYPE:-supabase}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.pmswmvxhzdfxeqsfdgif:P02tqbj016p9@aws-0-eu-north-1.pooler.supabase.com:5432/postgres?sslmode=require}
+      
+      # Supabase Configuration
+      - SUPABASE_URL=${SUPABASE_URL:-https://pmswmvxhzdfxeqsfdgif.supabase.co}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtc3dtdnhoemRmeGVxc2ZkZ2lmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MjAzOTcsImV4cCI6MjA3MDA5NjM5N30.UyHFbWB4qRRkEFjHIrvyjk0h_l1w85dAa7pa-POC4a4}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtc3dtdnhoemRmeGVxc2ZkZ2lmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDUyMDM5NywiZXhwIjoyMDcwMDk2Mzk3fQ.-z-VdY5iZghvNMxUhud6BoHkC4swMHh9cO6zLmGO6-Y}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET:-xQVwQQIPe9X00jzJT64CkDnt2/IDmst4TjzNDIVfg0T8ADxlsUZDK+SOtaBs6lYuEttroRNHIOGMPYmoyHHs7A==}
+      
+      # Redis Configuration
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ENABLE_REDIS=${ENABLE_REDIS:-true}
+      
+      # Security - MUST be set in .env file, never use defaults in production!
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-1440}
+      
+      # Application Configuration
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_LOG_LEVEL=${APP_LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3800}
+      
+      # Authentication Configuration - CRITICAL SECURITY
+      - DHAFNCK_AUTH_ENABLED=${DHAFNCK_AUTH_ENABLED:-true}
+      - MCP_AUTH_ENABLED=${MCP_AUTH_ENABLED:-true}
+      
+      # Performance Configuration
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONHASHSEED=1
+      - PYTHONOPTIMIZE=2
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-4}
+      - MAX_WORKERS=${MAX_WORKERS:-4}
+      - UVICORN_WORKERS=${UVICORN_WORKERS:-1}
+      
+      # Agent Configuration
+      - AGENT_LIBRARY_DIR_PATH=/app/agent-library
+      - FASTMCP_TRANSPORT=streamable-http
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=8000
+    volumes:
+      - backend-data:/app/data
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 100M
+      - type: tmpfs
+        target: /app/.cache
+        tmpfs:
+          size: 50M
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+        required: false
+    networks:
+      - dhafnck-network
+    deploy:
+      resources:
+        limits:
+          cpus: '${BACKEND_CPU_LIMIT:-2.0}'
+          memory: ${BACKEND_MEMORY_LIMIT:-1G}
+        reservations:
+          cpus: '${BACKEND_CPU_RESERVE:-0.5}'
+          memory: ${BACKEND_MEMORY_RESERVE:-512M}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "3", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Highly optimized frontend
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker-system/docker/Dockerfile.frontend
+      args:
+        - NODE_VERSION=${NODE_VERSION:-20}
+        - NODE_ENV=${NODE_ENV:-production}
+        - VITE_API_URL=${BACKEND_URL:-http://localhost:8000}
+        - REACT_APP_SUPABASE_URL=${REACT_APP_SUPABASE_URL}
+        - REACT_APP_SUPABASE_ANON_KEY=${REACT_APP_SUPABASE_ANON_KEY}
+        - BUILDKIT_INLINE_CACHE=1
+      platforms:
+        - linux/amd64
+      target: ${NODE_ENV:-production}
+      x-bake:
+        provenance: false
+        sbom: false
+    image: dhafnck/frontend:optimized
+    container_name: dhafnck-frontend
+    environment:
+      - VITE_API_URL=${BACKEND_URL:-http://localhost:8000}
+      - VITE_WS_URL=${WS_URL:-ws://localhost:8000}
+      - NODE_ENV=${NODE_ENV:-production}
+      - REACT_APP_SUPABASE_URL=${REACT_APP_SUPABASE_URL}
+      - REACT_APP_SUPABASE_ANON_KEY=${REACT_APP_SUPABASE_ANON_KEY}
+    volumes:
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 50M
+      - type: tmpfs
+        target: /var/cache/nginx
+        tmpfs:
+          size: 10M
+    ports:
+      - "${FRONTEND_PORT:-3800}:3800"
+    depends_on:
+      - backend
+    networks:
+      - dhafnck-network
+    deploy:
+      resources:
+        limits:
+          cpus: '${FRONTEND_CPU_LIMIT:-0.5}'
+          memory: ${FRONTEND_MEMORY_LIMIT:-128M}
+        reservations:
+          cpus: '${FRONTEND_CPU_RESERVE:-0.1}'
+          memory: ${FRONTEND_MEMORY_RESERVE:-64M}
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z 127.0.0.1 3800 || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  postgres-data:
+    name: dhafnck-postgres-data-opt
+    driver: local
+  redis-data:
+    name: dhafnck-redis-data-opt
+    driver: local
+  backend-data:
+    name: dhafnck-backend-data-opt
+    driver: local
+
+networks:
+  dhafnck-network:
+    name: dhafnck-network
+    driver: bridge

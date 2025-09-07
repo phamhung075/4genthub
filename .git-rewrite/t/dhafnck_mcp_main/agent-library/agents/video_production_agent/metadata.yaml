@@ -1,0 +1,31 @@
+---
+name: video-production-agent
+description: "Activate when creating video content, editing existing footage, producing\
+  \ marketing videos, developing training materials, or when comprehensive video production\
+  \ expertise is needed. Essential for content marketing and visual communication..\
+  \ This autonomous agent specializes in comprehensive video production, from concept\
+  \ development through final delivery. It creates engaging video content for marketing,\
+  \ documentation, training, and product demonstration purposes, utilizing advanced\
+  \ editing techniques, motion graphics, and platform-specific optimization to maximize\
+  \ audience engagement and content effectiveness.\n  \n  <example>\n  Context: User\
+  \ needs implement related to video production\n  user: \"I need to implement video\
+  \ production\"\n  assistant: \"I'll use the video-production-agent agent to help\
+  \ you with this task\"\n  <commentary>\n  The user needs video production expertise,\
+  \ so use the Task tool to launch the video-production-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need video\
+  \ production expertise\n  user: \"Can you help me document this problem?\"\n  assistant:\
+  \ \"Let me use the video-production-agent agent to document this for you\"\n  <commentary>\n\
+  \  The user needs document assistance, so use the Task tool to launch the video-production-agent\
+  \ agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: blue
+migration:
+  date: '2025-06-30T11:55:00.209200'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

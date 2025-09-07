@@ -1,0 +1,176 @@
+# Development Backend Dockerfile for DhafnckMCP
+# Optimized for development with debugging tools
+# Based on production Dockerfile but simplified for dev workflow
+# Note: Hot-reload disabled in Docker - rebuild container for code changes
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies including PostgreSQL client for debugging
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    libpq-dev \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast dependency management
+RUN pip install uv
+
+# Copy dependency files first for better caching
+COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md ./dhafnck_mcp_main/
+
+# Install dependencies with editable mode for development
+WORKDIR /app/dhafnck_mcp_main
+RUN uv pip install --system -e .
+
+WORKDIR /app
+
+# Copy application code
+COPY dhafnck_mcp_main/ ./dhafnck_mcp_main/
+
+# Create necessary directories
+RUN mkdir -p /data /data/logs /data/resources /app/.cache
+
+# Set Python environment for development
+ENV PYTHONPATH="/app/dhafnck_mcp_main/src:/app:$PYTHONPATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Development environment defaults (will be overridden by .env.dev)
+ENV APP_DEBUG=true
+ENV APP_ENV=development
+ENV APP_LOG_LEVEL=DEBUG
+ENV ENV=development
+
+# Database settings for local PostgreSQL (matching .env.dev)
+ENV DATABASE_TYPE=postgresql
+ENV DATABASE_HOST=localhost
+ENV DATABASE_PORT=5432
+ENV DATABASE_NAME=dhafnck_mcp
+ENV DATABASE_USER=dhafnck_user
+ENV DATABASE_PASSWORD=dev_password
+ENV DATABASE_URL=postgresql://dhafnck_user:dev_password@localhost:5432/dhafnck_mcp
+
+# FastMCP settings
+ENV FASTMCP_PORT=8000
+ENV MCP_HOST=0.0.0.0
+ENV FASTMCP_TRANSPORT=streamable-http
+
+# Auth settings (matching .env.dev with Keycloak)
+ENV AUTH_ENABLED=true
+ENV MCP_AUTH_MODE=keycloak
+ENV AUTH_PROVIDER=keycloak
+
+# CORS settings for development
+ENV CORS_ALLOW_CREDENTIALS=true
+ENV CORS_ORIGINS=http://localhost:3800,http://localhost:3000,http://127.0.0.1:3800
+
+# Feature flags for development
+ENV FEATURE_AUTO_COMPACT=true
+ENV FEATURE_HIERARCHICAL_CONTEXT=true
+ENV FEATURE_MULTI_AGENT=true
+ENV FEATURE_RATE_LIMITING=false
+ENV FEATURE_REQUEST_LOGGING=true
+ENV FEATURE_VISION_SYSTEM=true
+
+# Development specific settings
+ENV AUTO_MIGRATE=true
+ENV SEED_DATA=false
+
+# Create development entrypoint script
+RUN cat <<'EOF' > /app/docker-entrypoint.sh
+#!/bin/sh
+set -e
+
+echo "Starting DhafnckMCP Development Server..."
+echo "================================================"
+
+# Validate required environment variables
+REQUIRED_VARS="DATABASE_TYPE DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD FASTMCP_PORT"
+MISSING_VARS=""
+
+for VAR in $REQUIRED_VARS; do
+    eval VALUE=\$$VAR
+    if [ -z "$VALUE" ]; then
+        MISSING_VARS="$MISSING_VARS $VAR"
+        echo "❌ Missing required variable: $VAR"
+    else
+        echo "✅ $VAR: $VALUE"
+    fi
+done
+
+if [ -n "$MISSING_VARS" ]; then
+    echo ""
+    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"
+    echo "Please ensure .env.dev file contains all required variables"
+    exit 1
+fi
+
+# Validate port numbers
+if ! echo "$FASTMCP_PORT" | grep -qE '^[0-9]+$'; then
+    echo "❌ ERROR: FASTMCP_PORT must be a valid port number, got: $FASTMCP_PORT"
+    exit 1
+fi
+
+if ! echo "$DATABASE_PORT" | grep -qE '^[0-9]+$'; then
+    echo "❌ ERROR: DATABASE_PORT must be a valid port number, got: $DATABASE_PORT"
+    exit 1
+fi
+
+echo ""
+echo "Configuration Summary:"
+echo "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"
+echo "  Database Name: ${DATABASE_NAME}"
+echo "  Environment: ${APP_ENV:-development}"
+echo "  Debug Mode: ${APP_DEBUG:-false}"
+echo "  Server Port: ${FASTMCP_PORT} (REST API + MCP Protocol)"
+echo "================================================"
+
+# Wait for database to be ready
+if [ "$DATABASE_TYPE" = "postgresql" ]; then
+    echo "Waiting for PostgreSQL to be ready..."
+    RETRIES=30
+    while [ $RETRIES -gt 0 ]; do
+        if pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} 2>/dev/null; then
+            echo "✅ PostgreSQL is ready!"
+            break
+        fi
+        echo "  Waiting for PostgreSQL... ($RETRIES retries left)"
+        RETRIES=$((RETRIES - 1))
+        sleep 2
+    done
+    
+    if [ $RETRIES -eq 0 ]; then
+        echo "❌ ERROR: PostgreSQL failed to become ready"
+        exit 1
+    fi
+fi
+
+# Initialize database if needed
+if [ "${AUTO_MIGRATE:-true}" = "true" ]; then
+    echo "Initializing database..."
+    cd /app/dhafnck_mcp_main
+    python scripts/init_database.py || echo "Database initialization skipped or already done"
+fi
+
+# Start the application without hot-reload (not needed in Docker)
+echo ""
+echo "🚀 Starting FastMCP server on port ${FASTMCP_PORT}..."
+cd /app/dhafnck_mcp_main
+exec python -m fastmcp.server --host 0.0.0.0 --port ${FASTMCP_PORT}
+EOF
+
+RUN chmod +x /app/docker-entrypoint.sh
+
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${FASTMCP_PORT:-8000}/health || exit 1
+
+# No volume needed since hot-reload is disabled
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -1,0 +1,134 @@
+# Highly Optimized Backend Dockerfile for DhafnckMCP
+# Uses BuildKit cache mounts, proper layer ordering, and uv for speed
+
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION=3.11
+ARG OPTIMIZATION_MODE=false
+
+# ============================================
+# Stage 1: Dependencies Builder
+# ============================================
+FROM python:${PYTHON_VERSION}-slim AS dependencies
+
+# Install system dependencies in one layer
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        libpq-dev \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+
+# Install uv (faster than pip)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir uv
+
+WORKDIR /build
+
+# Copy dependency files AND README.md (required by pyproject.toml) first for better caching
+COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md ./
+
+# Create venv and install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv .venv && \
+    . .venv/bin/activate && \
+    uv sync --frozen --no-dev
+
+# ============================================
+# Stage 2: Application Builder
+# ============================================
+FROM dependencies AS builder
+
+# Copy source code (separate layer for better caching)
+COPY dhafnck_mcp_main/src/ src/
+COPY dhafnck_mcp_main/scripts/ scripts/
+COPY dhafnck_mcp_main/database/ database/
+COPY dhafnck_mcp_main/agent-library/ agent-library/
+
+# Install package and compile Python files
+RUN . .venv/bin/activate && \
+    pip install --no-deps -e . && \
+    python -O -m compileall -x 'tests/*' src/ && \
+    # Cleanup unnecessary files
+    find .venv -name "*.pyc" -delete && \
+    find .venv -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find .venv -name "*.pyo" -delete && \
+    # Remove build dependencies from venv
+    find .venv -name "*.so" -exec strip {} \; 2>/dev/null || true
+
+# ============================================
+# Stage 3: Optimized Runtime
+# ============================================
+FROM python:${PYTHON_VERSION}-slim AS runtime
+
+# Install only runtime dependencies
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        curl \
+        && rm -rf /var/lib/apt/lists/* \
+        && apt-get clean
+
+# Create non-root user early
+RUN groupadd -r dhafnck && \
+    useradd -r -g dhafnck -s /bin/false -d /app dhafnck
+
+WORKDIR /app
+
+# Create directories with correct ownership
+RUN mkdir -p /data /data/logs /data/resources /app/.cache && \
+    chown -R dhafnck:dhafnck /app /data
+
+# Copy optimized virtual environment and application
+COPY --from=builder --chown=dhafnck:dhafnck /build/.venv /app/.venv
+COPY --from=builder --chown=dhafnck:dhafnck /build/src /app/src
+COPY --from=builder --chown=dhafnck:dhafnck /build/scripts /app/scripts
+COPY --from=builder --chown=dhafnck:dhafnck /build/database /app/database
+COPY --from=builder --chown=dhafnck:dhafnck /build/agent-library /app/agent-library
+COPY --from=builder --chown=dhafnck:dhafnck /build/pyproject.toml /app/
+
+# Optimized environment variables
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/src" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create optimized entrypoint script
+COPY --chown=dhafnck:dhafnck <<EOF /app/docker-entrypoint.sh
+#!/bin/sh
+set -e
+
+# Database initialization/migration
+if [ "\${AUTO_MIGRATE:-false}" = "true" ]; then
+    echo "Running database migrations..."
+    python scripts/init_database.py || true
+fi
+
+# Seed data (development only)
+if [ "\${SEED_DATA:-false}" = "true" ] && [ "\${APP_ENV}" = "development" ]; then
+    echo "Seeding development data..."
+    python scripts/seed_data.py || true
+fi
+
+# Start the application
+echo "Starting DhafnckMCP server on port 8000..."
+exec python -m fastmcp.server.mcp_entry_point
+EOF
+
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Switch to non-root user
+USER dhafnck
+
+EXPOSE 8000
+
+# Optimized healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD curl -f --max-time 2 http://localhost:8000/health || exit 1
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

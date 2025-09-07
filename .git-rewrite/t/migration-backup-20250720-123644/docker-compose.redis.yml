@@ -1,0 +1,138 @@
+# Redis Session Persistence Override for Docker Compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.redis.yml up
+# This adds Redis for persistent MCP sessions
+
+
+services:
+  # Redis service for session persistence
+  redis:
+    image: redis:7-alpine
+    container_name: dhafnck-mcp-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-dev_redis_password_123}
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --tcp-keepalive 60
+      --timeout 300
+      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  # Updated MCP server with Redis session persistence
+  dhafnck-mcp:
+    build:
+      context: ../..
+      dockerfile: dhafnck_mcp_main/docker/Dockerfile
+    container_name: dhafnck-mcp-server
+    ports:
+      - "${MCP_PORT:-8000}:8000"
+    environment:
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-dev_redis_password_123}
+      
+      # Enhanced EventStore Configuration for Last-Event-ID Support
+      - PREFER_REDIS=true
+      - FALLBACK_TO_MEMORY=true
+      - ENABLE_EVENT_REPLAY=true
+      - MAX_EVENTS_PER_SESSION=1000
+      - EVENT_TTL=3600
+      - CLEANUP_INTERVAL=300
+      - HEALTH_CHECK_INTERVAL=30
+      - EVENT_COMPRESSION=true
+      - EVENT_ID_SEQUENCE_START=0
+      
+      # Stream Configuration
+      - MAX_CONCURRENT_STREAMS=100
+      - STREAM_TIMEOUT_MS=300000
+      - ENABLE_STREAM_RESUMPTION=true
+      
+      # MCP Server Configuration
+      - FASTMCP_TRANSPORT=streamable-http
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=8000
+      - FASTMCP_LOG_LEVEL=INFO
+      - NODE_ENV=production
+      
+      # Cursor Integration
+      - DHAFNCK_DISABLE_CURSOR_TOOLS=false
+      - ENABLE_CURSOR_INTEGRATION=true
+      - CURSOR_STATUS_ENDPOINT=true
+      - ENABLE_STATUS_BROADCASTING=true
+      
+      # Session Management
+      - SESSION_TTL=7200
+      - SESSION_CLEANUP_INTERVAL=600
+      - MAX_SESSIONS_PER_CLIENT=10
+      
+      # Logging Configuration
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - LOG_TIMESTAMP=true
+      
+      # Performance Tuning
+      - WORKER_PROCESSES=${WORKER_PROCESSES:-1}
+      - MAX_CONNECTIONS=${MAX_CONNECTIONS:-1000}
+      - KEEPALIVE_TIMEOUT=${KEEPALIVE_TIMEOUT:-75}
+      
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis monitoring
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: dhafnck-mcp-redis-ui
+    ports:
+      - "${REDIS_UI_PORT:-8081}:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-dev_redis_password_123}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    profiles:
+      - monitoring
+
+# Named volumes for data persistence
+volumes:
+  redis_data:
+    driver: local
+
+# Network configuration (optional - services can communicate by name)
+networks:
+  mcp-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

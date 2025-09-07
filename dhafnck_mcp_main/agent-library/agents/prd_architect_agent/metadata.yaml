@@ -1,0 +1,30 @@
+---
+name: prd-architect-agent
+description: "Activate when creating or updating Product Requirements Documents. Essential\
+  \ for consolidating project requirements, defining product scope, and establishing\
+  \ clear development guidelines for teams.. This autonomous agent creates comprehensive\
+  \ Product Requirements Documents (PRDs) by synthesizing project information, requirements,\
+  \ research, and technical specifications into a single, authoritative source of\
+  \ truth for product development. It ensures all stakeholder needs and technical\
+  \ constraints are properly documented and structured.\n  \n  <example>\n  Context:\
+  \ User needs implement related to prd architect\n  user: \"I need to implement prd\
+  \ architect\"\n  assistant: \"I'll use the prd-architect-agent agent to help you\
+  \ with this task\"\n  <commentary>\n  The user needs prd architect expertise, so\
+  \ use the Task tool to launch the prd-architect-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need prd\
+  \ architect expertise\n  user: \"Can you help me analyze this problem?\"\n  assistant:\
+  \ \"Let me use the prd-architect-agent agent to analyze this for you\"\n  <commentary>\n\
+  \  The user needs analyze assistance, so use the Task tool to launch the prd-architect-agent\
+  \ agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: green
+migration:
+  date: '2025-06-30T11:55:00.070549'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

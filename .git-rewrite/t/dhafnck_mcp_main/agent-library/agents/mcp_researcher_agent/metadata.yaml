@@ -1,0 +1,29 @@
+---
+name: mcp-researcher-agent
+description: "Activate when researching MCP servers, technology platforms, third-party\
+  \ services, or integration solutions. Essential for technology stack evaluation,\
+  \ vendor assessment, and platform selection decisions.. This autonomous agent investigates,\
+  \ evaluates, and recommends suitable Model Context Protocol (MCP) servers, technology\
+  \ platforms, and integration solutions. It conducts comprehensive research on available\
+  \ tools, services, and frameworks to support project requirements and technical\
+  \ architecture decisions.\n  \n  <example>\n  Context: User needs design related\
+  \ to mcp researcher\n  user: \"I need to design mcp researcher\"\n  assistant: \"\
+  I'll use the mcp-researcher-agent agent to help you with this task\"\n  <commentary>\n\
+  \  The user needs mcp researcher expertise, so use the Task tool to launch the mcp-researcher-agent\
+  \ agent.\n  </commentary>\n  </example>\n  \n  <example>\n  Context: User experiencing\
+  \ issues that need mcp researcher expertise\n  user: \"Can you help me analyze this\
+  \ problem?\"\n  assistant: \"Let me use the mcp-researcher-agent agent to analyze\
+  \ this for you\"\n  <commentary>\n  The user needs analyze assistance, so use the\
+  \ Task tool to launch the mcp-researcher-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: teal
+migration:
+  date: '2025-06-30T11:55:00.242492'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

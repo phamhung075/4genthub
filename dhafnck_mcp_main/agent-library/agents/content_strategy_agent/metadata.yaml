@@ -1,0 +1,31 @@
+---
+name: content-strategy-agent
+description: "Activate when developing content strategies, planning content marketing\
+  \ initiatives, creating editorial calendars, or when comprehensive content planning\
+  \ expertise is needed. Essential for content marketing and audience engagement..\
+  \ This autonomous agent develops comprehensive content strategies that align with\
+  \ business objectives, audience needs, and brand guidelines. It creates content\
+  \ frameworks, editorial calendars, and content creation processes that drive engagement,\
+  \ build authority, and support marketing and business goals across all channels\
+  \ and platforms.\n  \n  <example>\n  Context: User needs implement related to content\
+  \ strategy\n  user: \"I need to implement content strategy\"\n  assistant: \"I'll\
+  \ use the content-strategy-agent agent to help you with this task\"\n  <commentary>\n\
+  \  The user needs content strategy expertise, so use the Task tool to launch the\
+  \ content-strategy-agent agent.\n  </commentary>\n  </example>\n  \n  <example>\n\
+  \  Context: User needs guidance from content strategy\n  user: \"I need expert help\
+  \ with strategy\"\n  assistant: \"I'll use the content-strategy-agent agent to provide\
+  \ expert guidance\"\n  <commentary>\n  The user needs specialized expertise, so\
+  \ use the Task tool to launch the content-strategy-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: rose
+migration:
+  date: '2025-06-30T11:55:00.110079'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

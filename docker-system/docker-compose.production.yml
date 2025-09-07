@@ -1,0 +1,183 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Local Docker)
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${POSTGRES_CONTAINER_NAME:-dhafnck-postgres-prod}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_HOST_AUTH_METHOD: md5
+      # Performance tuning for production
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
+      POSTGRES_MAINTENANCE_WORK_MEM: 64MB
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: 0.9
+      POSTGRES_WAL_BUFFERS: 16MB
+      POSTGRES_DEFAULT_STATISTICS_TARGET: 100
+      POSTGRES_RANDOM_PAGE_COST: 1.1
+      POSTGRES_EFFECTIVE_IO_CONCURRENCY: 200
+      POSTGRES_WORK_MEM: 4MB
+      POSTGRES_HUGE_PAGES: try
+      POSTGRES_MIN_WAL_SIZE: 1GB
+      POSTGRES_MAX_WAL_SIZE: 4GB
+      POSTGRES_CHECKPOINT_TIMEOUT: 30min
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_backup:/backup
+      # Mount initialization scripts
+      - ./dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - dhafnck_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # MCP Backend Server
+  mcp-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dhafnck-mcp-backend
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      # Override database host for container networking
+      DATABASE_HOST: postgres
+      # Ensure production settings
+      ENV: production
+      APP_ENV: production
+      NODE_ENV: production
+    ports:
+      - "${MCP_PORT:-8001}:8001"
+    volumes:
+      - ./dhafnck_mcp_main:/app/dhafnck_mcp_main:ro
+      - ./logs:/app/logs
+    networks:
+      - dhafnck_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  # Frontend (optional - if running in Docker)
+  frontend:
+    build:
+      context: ./dhafnck-frontend
+      dockerfile: Dockerfile
+    container_name: dhafnck-frontend
+    restart: unless-stopped
+    profiles: ["with-frontend"]  # Only start when explicitly requested
+    environment:
+      REACT_APP_API_URL: http://localhost:8001
+      REACT_APP_KEYCLOAK_URL: ${KEYCLOAK_URL}
+      REACT_APP_KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      REACT_APP_KEYCLOAK_CLIENT_ID: mcp-frontend
+      NODE_ENV: production
+    ports:
+      - "${FRONTEND_PORT:-3800}:3800"
+    networks:
+      - dhafnck_network
+    depends_on:
+      - mcp-backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # PgAdmin (Optional - Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dhafnck-pgadmin
+    restart: unless-stopped
+    profiles: ["tools"]  # Only start when profile is activated
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@dhafnck.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-PgAdminSecure2025!}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      # Auto-configure PostgreSQL server
+      - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - dhafnck_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx Reverse Proxy (Optional - for production deployment)
+  nginx:
+    image: nginx:alpine
+    container_name: dhafnck-nginx
+    restart: unless-stopped
+    profiles: ["with-nginx"]  # Only start when profile is activated
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/sites:/etc/nginx/sites-enabled:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    networks:
+      - dhafnck_network
+    depends_on:
+      - mcp-backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  dhafnck_network:
+    name: ${DOCKER_NETWORK:-dhafnck_prod_network}
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_DATA_VOLUME:-dhafnck_postgres_prod_data}
+  postgres_backup:
+    name: ${POSTGRES_BACKUP_VOLUME:-dhafnck_postgres_prod_backup}
+  pgadmin_data:
+    name: dhafnck_pgadmin_data
+  nginx_cache:
+    name: dhafnck_nginx_cache

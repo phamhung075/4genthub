@@ -1,0 +1,32 @@
+---
+name: idea-refinement-agent
+description: "Activate when refining existing project ideas, integrating new research\
+  \ findings, updating concepts based on feedback, or enhancing preliminary proposals\
+  \ with additional insights. Essential for iterative idea development and concept\
+  \ evolution.. This autonomous agent analytically refines and enhances project ideas\
+  \ by integrating new information from requirements analysis, market research, user\
+  \ feedback, and technical assessments. It transforms preliminary concepts into robust,\
+  \ well-documented project proposals with clear value propositions and implementation\
+  \ strategies. The agent is a key peer in the iterative development cycle, collaborating\
+  \ with research, elicitation, and generation agents.\n  \n  <example>\n  Context:\
+  \ User needs implement related to idea refinement\n  user: \"I need to implement\
+  \ idea refinement\"\n  assistant: \"I'll use the idea-refinement-agent agent to\
+  \ help you with this task\"\n  <commentary>\n  The user needs idea refinement expertise,\
+  \ so use the Task tool to launch the idea-refinement-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need idea\
+  \ refinement expertise\n  user: \"Can you help me analyze this problem?\"\n  assistant:\
+  \ \"Let me use the idea-refinement-agent agent to analyze this for you\"\n  <commentary>\n\
+  \  The user needs analyze assistance, so use the Task tool to launch the idea-refinement-agent\
+  \ agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: indigo
+migration:
+  date: '2025-06-30T11:55:00.114010'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

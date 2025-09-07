@@ -1,0 +1,126 @@
+# Development Frontend Dockerfile for DhafnckMCP
+# Based on production Dockerfile but optimized for development
+# Note: Hot-reload disabled in Docker - rebuild container for code changes
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Development environment variables (matching .env.dev)
+ENV NODE_ENV=development
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
+# Vite environment variables for development
+# These will be overridden by docker-compose or .env.dev
+ENV VITE_API_URL=http://localhost:8000
+ENV VITE_BACKEND_URL=http://localhost:8000
+ENV VITE_KEYCLOAK_URL=https://your-keycloak-server.com
+ENV VITE_KEYCLOAK_REALM=your-realm
+ENV VITE_KEYCLOAK_CLIENT_ID=your-client-id
+ENV VITE_ENVIRONMENT=development
+ENV VITE_BUILD_TIME=development
+ENV VITE_BUILD_SHA=development
+
+# Copy package files from frontend directory
+COPY dhafnck-frontend/package*.json ./
+
+# Install dependencies including dev dependencies for development
+RUN npm ci || npm install
+
+# Install serve globally for serving built files
+RUN npm install -g serve
+
+# Copy frontend source code
+COPY dhafnck-frontend/ .
+
+# Create a development startup script
+RUN cat <<'EOF' > /app/start-dev.sh
+#!/bin/sh
+set -e
+
+echo "Starting DhafnckMCP Frontend Development Server..."
+echo "================================================"
+
+# Validate required environment variables
+REQUIRED_VARS="VITE_API_URL VITE_BACKEND_URL"
+MISSING_VARS=""
+
+for VAR in $REQUIRED_VARS; do
+    eval VALUE=\$$VAR
+    if [ -z "$VALUE" ]; then
+        MISSING_VARS="$MISSING_VARS $VAR"
+        echo "❌ Missing required variable: $VAR"
+    else
+        echo "✅ $VAR: $VALUE"
+    fi
+done
+
+# Check optional but important variables
+OPTIONAL_VARS="VITE_KEYCLOAK_URL VITE_KEYCLOAK_REALM VITE_KEYCLOAK_CLIENT_ID"
+for VAR in $OPTIONAL_VARS; do
+    eval VALUE=\$$VAR
+    if [ -z "$VALUE" ]; then
+        echo "⚠️  Optional variable not set: $VAR (Auth may not work properly)"
+    else
+        echo "✅ $VAR: $VALUE"
+    fi
+done
+
+if [ -n "$MISSING_VARS" ]; then
+    echo ""
+    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"
+    echo "Please ensure .env.dev file contains all required variables"
+    exit 1
+fi
+
+# Validate URLs
+for VAR in VITE_API_URL VITE_BACKEND_URL VITE_KEYCLOAK_URL; do
+    eval VALUE=\$$VAR
+    if [ -n "$VALUE" ]; then
+        if ! echo "$VALUE" | grep -qE '^https?://'; then
+            echo "⚠️  WARNING: $VAR should be a valid URL, got: $VALUE"
+        fi
+    fi
+done
+
+echo ""
+echo "Configuration Summary:"
+echo "  Backend URL: ${VITE_BACKEND_URL}"
+echo "  API URL: ${VITE_API_URL}"
+echo "  Environment: ${VITE_ENVIRONMENT:-development}"
+echo "  Keycloak URL: ${VITE_KEYCLOAK_URL:-Not configured}"
+echo "  Keycloak Realm: ${VITE_KEYCLOAK_REALM:-Not configured}"
+echo "  Keycloak Client: ${VITE_KEYCLOAK_CLIENT_ID:-Not configured}"
+echo "  Debug Mode: ${VITE_ENABLE_DEBUG:-false}"
+echo "================================================"
+
+# Build and serve the application (no hot-reload in Docker)
+echo ""
+echo "🔨 Building frontend application..."
+npm run build || {
+    echo "❌ ERROR: Frontend build failed"
+    echo "Check that all dependencies are installed and code is valid"
+    exit 1
+}
+
+echo ""
+echo "🚀 Starting frontend server on port 3800..."
+exec serve -s build -l 3800
+EOF
+
+RUN chmod +x /app/start-dev.sh
+
+# Expose Vite dev server port
+EXPOSE 3800
+
+# Health check for dev server
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3800/ || exit 1
+
+# No volume needed since hot-reload is disabled
+
+# Start development server
+CMD ["/app/start-dev.sh"]

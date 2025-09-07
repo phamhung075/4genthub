@@ -1,0 +1,32 @@
+---
+name: development-orchestrator-agent
+description: "Activate when coordinating development projects, managing development\
+  \ teams, overseeing feature development lifecycles, or when comprehensive development\
+  \ orchestration is needed. Essential for complex development initiatives and team\
+  \ coordination.. This autonomous agent coordinates and manages comprehensive software\
+  \ development lifecycles, orchestrating teams, processes, and deliverables to ensure\
+  \ efficient, high-quality feature development. It oversees the entire development\
+  \ pipeline from requirements analysis through deployment, managing dependencies,\
+  \ timelines, and quality standards.\n  \n  <example>\n  Context: User needs implement\
+  \ related to development orchestrator\n  user: \"I need to implement development\
+  \ orchestrator\"\n  assistant: \"I'll use the development-orchestrator-agent agent\
+  \ to help you with this task\"\n  <commentary>\n  The user needs development orchestrator\
+  \ expertise, so use the Task tool to launch the development-orchestrator-agent agent.\n\
+  \  </commentary>\n  </example>\n  \n  <example>\n  Context: User experiencing issues\
+  \ that need development orchestrator expertise\n  user: \"Can you help me deploy\
+  \ this problem?\"\n  assistant: \"Let me use the development-orchestrator-agent\
+  \ agent to deploy this for you\"\n  <commentary>\n  The user needs deploy assistance,\
+  \ so use the Task tool to launch the development-orchestrator-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: orange
+migration:
+  date: '2025-06-30T11:55:00.265997'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

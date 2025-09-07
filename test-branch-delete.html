@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Branch Deletion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Branch Deletion</h1>
+    
+    <div>
+        <label>Branch ID: 
+            <input type="text" id="branchId" placeholder="Enter branch ID" style="width: 300px;">
+        </label>
+    </div>
+    
+    <div>
+        <button onclick="testDelete()">Test Delete Branch</button>
+        <button onclick="listBranches()">List All Branches</button>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const resultDiv = document.getElementById('result');
+        
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        
+        async function testDelete() {
+            const branchId = document.getElementById('branchId').value;
+            if (!branchId) {
+                resultDiv.innerHTML = '<span class="error">Please enter a branch ID</span>';
+                return;
+            }
+            
+            resultDiv.innerHTML = 'Attempting to delete branch...';
+            
+            try {
+                const token = getCookie('access_token');
+                if (!token) {
+                    throw new Error('No access token found. Please log in first.');
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<span class="success">Success! Response: ${JSON.stringify(data, null, 2)}</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">Failed with status ${response.status}: ${JSON.stringify(data, null, 2)}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        }
+        
+        async function listBranches() {
+            resultDiv.innerHTML = 'Fetching branches...';
+            
+            try {
+                const token = getCookie('access_token');
+                if (!token) {
+                    throw new Error('No access token found. Please log in first.');
+                }
+                
+                // First get projects
+                const projectsResponse = await fetch(`${API_BASE_URL}/api/v2/projects`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const projectsData = await projectsResponse.json();
+                
+                if (!projectsResponse.ok) {
+                    throw new Error(`Failed to fetch projects: ${JSON.stringify(projectsData)}`);
+                }
+                
+                let html = '<h3>Available Branches:</h3>';
+                
+                for (const project of projectsData.projects) {
+                    html += `<h4>Project: ${project.name} (${project.id})</h4><ul>`;
+                    
+                    if (project.git_branchs) {
+                        for (const branch of Object.values(project.git_branchs)) {
+                            html += `<li>${branch.git_branch_name || branch.name} - ID: <code>${branch.id}</code> 
+                                     <button onclick="document.getElementById('branchId').value='${branch.id}'">Use this ID</button></li>`;
+                        }
+                    }
+                    html += '</ul>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

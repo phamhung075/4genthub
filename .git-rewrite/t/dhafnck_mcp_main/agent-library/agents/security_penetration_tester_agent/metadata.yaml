@@ -1,0 +1,29 @@
+---
+name: security-penetration-tester-agent
+description: "Activate when performing security and penetration testing, vulnerability\
+  \ assessments, or when comprehensive security validation is needed. Essential for\
+  \ maintaining application and infrastructure security.. Performs security and penetration\
+  \ testing on applications and infrastructure. Identifies vulnerabilities, documents\
+  \ findings, and collaborates with security and coding agents for remediation.\n\
+  \  \n  <example>\n  Context: User needs test related to security penetration tester\n\
+  \  user: \"I need to test security penetration tester\"\n  assistant: \"I'll use\
+  \ the security-penetration-tester-agent agent to help you with this task\"\n  <commentary>\n\
+  \  The user needs security penetration tester expertise, so use the Task tool to\
+  \ launch the security-penetration-tester-agent agent.\n  </commentary>\n  </example>\n\
+  \  \n  <example>\n  Context: User experiencing issues that need security penetration\
+  \ tester expertise\n  user: \"Can you help me document this problem?\"\n  assistant:\
+  \ \"Let me use the security-penetration-tester-agent agent to document this for\
+  \ you\"\n  <commentary>\n  The user needs document assistance, so use the Task tool\
+  \ to launch the security-penetration-tester-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: green
+migration:
+  date: '2025-06-30T11:55:00.262408'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

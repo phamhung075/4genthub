@@ -1,0 +1,32 @@
+---
+name: knowledge-evolution-agent
+description: "Activate for system-wide analysis and improvement recommendations, post-project\
+  \ retrospectives, performance optimization initiatives, or when systemic issues\
+  \ are identified. Essential for maintaining and evolving the effectiveness of the\
+  \ entire agent ecosystem.. This autonomous meta-agent drives continuous learning\
+  \ and evolution of the entire agentic system. It analyzes project outcomes, agent\
+  \ performance, workflow efficiencies, user feedback, and knowledge patterns to identify\
+  \ and propose systemic improvements to agent definitions, processes, configurations,\
+  \ and knowledge management practices. It is a system-level peer and advisor, not\
+  \ a direct executor of business logic.\n  \n  <example>\n  Context: User needs analyze\
+  \ related to knowledge evolution\n  user: \"I need to analyze knowledge evolution\"\
+  \n  assistant: \"I'll use the knowledge-evolution-agent agent to help you with this\
+  \ task\"\n  <commentary>\n  The user needs knowledge evolution expertise, so use\
+  \ the Task tool to launch the knowledge-evolution-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User experiencing issues that need knowledge\
+  \ evolution expertise\n  user: \"Can you help me optimize this problem?\"\n  assistant:\
+  \ \"Let me use the knowledge-evolution-agent agent to optimize this for you\"\n\
+  \  <commentary>\n  The user needs optimize assistance, so use the Task tool to launch\
+  \ the knowledge-evolution-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: sky
+migration:
+  date: '2025-06-30T11:55:00.230356'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

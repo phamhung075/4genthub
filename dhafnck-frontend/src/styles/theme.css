@@ -1,0 +1,560 @@
+/* Global Theme CSS Variables and Styles */
+
+/* Root CSS Variables - Will be dynamically updated by JavaScript */
+:root {
+  /* Modern Light Theme Variables - Enhanced color palette */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-light: #e0e7ff;
+  --color-primary-dark: #3730a3;
+  
+  --color-secondary: #0891b2;
+  --color-secondary-hover: #0e7490;
+  --color-secondary-light: #cffafe;
+  --color-secondary-dark: #155e75;
+  
+  --color-background: #ffffff;
+  --color-background-secondary: #f8fafc;
+  --color-background-tertiary: #f1f5f9;
+  --color-background-hover: #f8fafc;
+  --color-background-active: #e2e8f0;
+  
+  --color-surface: #ffffff;
+  --color-surface-hover: #f8fafc;
+  --color-surface-border: #e2e8f0;
+  --color-surface-border-hover: #cbd5e1;
+  
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
+  --color-text-disabled: #cbd5e1;
+  --color-text-inverse: #ffffff;
+  
+  --color-input-background: #ffffff;
+  --color-input-border: #cbd5e1;
+  --color-input-border-focus: #6366f1;
+  --color-input-border-error: #ef4444;
+  --color-input-text: #0f172a;
+  --color-input-placeholder: #64748b;
+  
+  --color-button-primary-bg: #6366f1;
+  --color-button-primary-hover: #4f46e5;
+  --color-button-primary-text: #ffffff;
+  --color-button-secondary-bg: #e2e8f0;
+  --color-button-secondary-hover: #cbd5e1;
+  --color-button-secondary-text: #1e293b;
+  --color-button-outline-border: #cbd5e1;
+  --color-button-outline-hover: #e2e8f0;
+  --color-button-danger-bg: #ef4444;
+  --color-button-danger-hover: #dc2626;
+  
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-warning-dark: #d97706;
+  --color-error: #ef4444;
+  --color-error-light: #fee2e2;
+  --color-error-dark: #dc2626;
+  --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
+  --color-info-dark: #2563eb;
+  
+  --color-shadow: rgba(15, 23, 42, 0.05);
+  --color-shadow-medium: rgba(15, 23, 42, 0.08);
+  --color-shadow-large: rgba(15, 23, 42, 0.12);
+  --color-overlay: rgba(15, 23, 42, 0.6);
+  
+  --color-scrollbar-track: #f3f4f6;
+  --color-scrollbar-thumb: #d1d5db;
+  --color-scrollbar-thumb-hover: #9ca3af;
+  
+  --color-code-background: #f3f4f6;
+  --color-code-border: #e5e7eb;
+  --color-code-text: #111827;
+  
+  --color-nav-background: #ffffff;
+  --color-nav-text: #6b7280;
+  --color-nav-text-hover: #111827;
+  --color-nav-text-active: #3b82f6;
+  --color-nav-border: #e5e7eb;
+}
+
+/* Global Base Styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+
+/* Global Component Styles */
+@layer components {
+  /* Modern Card Component */
+  .theme-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-border);
+    @apply rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out;
+  }
+  
+  .theme-card-elevated {
+    background-color: var(--color-surface);
+    @apply rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out border-0;
+  }
+  
+  /* Modern Button Components */
+  .theme-btn-primary {
+    background-color: var(--color-button-primary-bg);
+    color: var(--color-button-primary-text);
+    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
+  }
+  
+  .theme-btn-primary:hover {
+    background-color: var(--color-button-primary-hover);
+    @apply -translate-y-0.5;
+  }
+  
+  .theme-btn-secondary {
+    background-color: var(--color-button-secondary-bg);
+    color: var(--color-button-secondary-text);
+    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
+  }
+  
+  .theme-btn-secondary:hover {
+    background-color: var(--color-button-secondary-hover);
+    @apply -translate-y-0.5;
+  }
+  
+  .theme-btn-outline {
+    background-color: transparent;
+    border: 1.5px solid var(--color-button-outline-border);
+    @apply px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
+  }
+  
+  .theme-btn-outline:hover {
+    background-color: var(--color-button-outline-hover);
+    @apply -translate-y-0.5;
+  }
+  
+  /* Enhanced Ghost Button */
+  .theme-btn-ghost {
+    background-color: transparent;
+    color: var(--color-text);
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+  
+  .theme-btn-ghost:hover {
+    background-color: var(--color-background-hover);
+  }
+  
+  .theme-btn-danger {
+    background-color: var(--color-button-danger-bg);
+    @apply text-white px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+  
+  .theme-btn-danger:hover {
+    background-color: var(--color-button-danger-hover);
+  }
+  
+  /* Modern Input Components */
+  .theme-input {
+    background-color: var(--color-input-background);
+    border: 1.5px solid var(--color-input-border);
+    color: var(--color-input-text);
+    @apply px-4 py-3 rounded-xl transition-all duration-200 focus:ring-2 text-sm font-medium;
+  }
+  
+  .theme-input:focus {
+    border-color: var(--color-input-border-focus);
+    --tw-ring-color: rgba(99, 102, 241, 0.15); /* updated primary with opacity */
+    @apply shadow-md;
+  }
+  
+  .theme-input::placeholder {
+    color: var(--color-input-placeholder);
+  }
+  
+  .theme-input-error {
+    border-color: var(--color-input-border-error);
+    @apply focus:ring-2;
+  }
+  
+  .theme-input-error:focus {
+    border-color: var(--color-input-border-error);
+    --tw-ring-color: rgba(239, 68, 68, 0.2); /* error with opacity */
+  }
+  
+  /* Table Components */
+  .theme-table {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-border);
+    @apply w-full rounded-lg overflow-hidden;
+  }
+  
+  .theme-table-header {
+    background-color: var(--color-background-secondary);
+    border-bottom: 1px solid var(--color-surface-border);
+  }
+  
+  .theme-table-row {
+    border-bottom: 1px solid var(--color-surface-border);
+    @apply transition-colors duration-150;
+  }
+  
+  .theme-table-row:hover {
+    background-color: var(--color-background-hover);
+  }
+  
+  .theme-table-cell {
+    color: var(--color-text);
+    @apply px-4 py-3;
+  }
+  
+  /* Navigation Components */
+  .theme-nav {
+    background-color: var(--color-nav-background);
+    border-bottom: 1px solid var(--color-nav-border);
+  }
+  
+  .theme-nav-item {
+    color: var(--color-nav-text);
+    @apply transition-colors duration-200;
+  }
+  
+  .theme-nav-item:hover {
+    color: var(--color-nav-text-hover);
+  }
+  
+  .theme-nav-item-active {
+    color: var(--color-nav-text-active);
+    @apply font-medium;
+  }
+  
+  /* Modal/Dialog Components */
+  .theme-modal-overlay {
+    @apply fixed inset-0 z-50;
+    background-color: var(--color-overlay);
+  }
+  
+  .theme-modal {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-border);
+    @apply rounded-lg shadow-xl p-6 max-w-md mx-auto;
+  }
+  
+  .theme-modal-header {
+    color: var(--color-text);
+    @apply text-lg font-semibold mb-4;
+  }
+  
+  .theme-modal-body {
+    color: var(--color-text-secondary);
+    @apply mb-6;
+  }
+  
+  /* Alert Components */
+  .theme-alert {
+    @apply px-4 py-3 rounded-lg border;
+  }
+  
+  .theme-alert-success {
+    background-color: var(--color-success-light);
+    border-color: var(--color-success);
+    color: var(--color-success-dark);
+  }
+  
+  .theme-alert-warning {
+    background-color: var(--color-warning-light);
+    border-color: var(--color-warning);
+    color: var(--color-warning-dark);
+  }
+  
+  .theme-alert-error {
+    background-color: var(--color-error-light);
+    border-color: var(--color-error);
+    color: var(--color-error-dark);
+  }
+  
+  .theme-alert-info {
+    background-color: var(--color-info-light);
+    border-color: var(--color-info);
+    color: var(--color-info-dark);
+  }
+  
+  /* Badge Components */
+  .theme-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .theme-badge-primary {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+  }
+  
+  .theme-badge-secondary {
+    background-color: var(--color-secondary-light);
+    color: var(--color-secondary-dark);
+  }
+  
+  .theme-badge-success {
+    background-color: var(--color-success-light);
+    color: var(--color-success-dark);
+  }
+  
+  .theme-badge-warning {
+    background-color: var(--color-warning-light);
+    color: var(--color-warning-dark);
+  }
+  
+  .theme-badge-error {
+    background-color: var(--color-error-light);
+    color: var(--color-error-dark);
+  }
+  
+  /* Dropdown Components */
+  .theme-dropdown {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-border);
+    @apply rounded-lg shadow-lg py-2;
+  }
+  
+  .theme-dropdown-item {
+    color: var(--color-text);
+    @apply px-4 py-2 transition-colors duration-150 cursor-pointer;
+  }
+  
+  .theme-dropdown-item:hover {
+    background-color: var(--color-background-hover);
+  }
+  
+  /* Tab Components */
+  .theme-tab-list {
+    border-bottom: 1px solid var(--color-surface-border);
+    @apply flex space-x-1;
+  }
+  
+  .theme-tab {
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent;
+    @apply px-4 py-2 transition-colors duration-200;
+  }
+  
+  .theme-tab:hover {
+    color: var(--color-text);
+    border-color: var(--color-surface-border);
+  }
+  
+  .theme-tab-active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  
+  /* Tooltip Components */
+  .theme-tooltip {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-text);
+    border: 1px solid var(--color-surface-border);
+    @apply text-sm px-2 py-1 rounded shadow-lg;
+  }
+  
+  /* Progress Components */
+  .theme-progress-bar {
+    background-color: var(--color-background-tertiary);
+    @apply w-full rounded-full h-2;
+  }
+  
+  .theme-progress-fill {
+    background-color: var(--color-primary);
+    @apply h-full rounded-full transition-all duration-300;
+  }
+  
+  /* Skeleton Loading */
+  .theme-skeleton {
+    background-color: var(--color-background-tertiary);
+    @apply animate-pulse rounded;
+  }
+
+  /* Context Display Components */
+  .theme-context-section {
+    background-color: var(--color-background-secondary);
+    border: 1px solid var(--color-surface-border);
+    @apply p-3 rounded;
+  }
+
+  .theme-context-metadata {
+    background-color: var(--color-info-light);
+    border: 1px solid var(--color-info);
+    @apply p-3 rounded;
+  }
+
+  .theme-context-data {
+    background-color: var(--color-success-light);
+    border: 1px solid var(--color-success);
+    @apply p-3 rounded;
+  }
+
+  .theme-context-insights {
+    background-color: var(--color-secondary-light);
+    border: 1px solid var(--color-secondary);
+    @apply p-3 rounded space-y-2;
+  }
+
+  .theme-context-progress {
+    background-color: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
+    @apply p-3 rounded space-y-2;
+  }
+
+  .theme-context-completion {
+    background-color: var(--color-success-light);
+    border: 1px solid var(--color-success);
+    @apply p-3 rounded;
+  }
+
+  .theme-context-raw {
+    background-color: var(--color-code-background);
+    border: 1px solid var(--color-code-border);
+    @apply p-3 rounded;
+  }
+}
+
+/* Utility Classes for Theme */
+@layer utilities {
+  /* Text Utilities */
+  .text-base-primary {
+    color: var(--color-text);
+  }
+  
+  .text-base-secondary {
+    color: var(--color-text-secondary);
+  }
+  
+  .text-base-tertiary {
+    color: var(--color-text-tertiary);
+  }
+  
+  /* Background Utilities */
+  .bg-base {
+    background-color: var(--color-background);
+  }
+  
+  .bg-base-secondary {
+    background-color: var(--color-background-secondary);
+  }
+  
+  .bg-base-tertiary {
+    background-color: var(--color-background-tertiary);
+  }
+  
+  /* Border Utilities */
+  .border-base {
+    border-color: var(--color-surface-border);
+  }
+  
+  .border-base-hover {
+    border-color: var(--color-surface-border-hover);
+  }
+}
+
+/* Modern Animation Classes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInFromRight 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(90deg, 
+    var(--color-background-tertiary) 0%, 
+    var(--color-surface-hover) 50%, 
+    var(--color-background-tertiary) 100%
+  );
+  background-size: 200px 100%;
+}
+
+/* Transition Classes */
+.transition-theme {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
