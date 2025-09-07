@@ -18,6 +18,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Gradient backgrounds and backdrop blur effects
     - Enhanced color-coded permission categories (Core, API, Projects, etc.)
     - Modern button styling with gradient effects
+  - **MCP Configuration Code Profile**: Beautiful code editor-style MCP configuration display after token generation
+    - Styled like VS Code with syntax highlighting
+    - Browser window decoration with colored dots
+    - Line numbers and proper code formatting
+    - Token and configuration details displayed as JavaScript object
+    - Copy buttons for complete MCP configuration and token-only
+    - Setup instructions and security notes
     - Improved token status indicators with expiry warnings
   - **Better UX**:
     - Quick selection presets (Full Access, Read Only, Essential, Execute Only)

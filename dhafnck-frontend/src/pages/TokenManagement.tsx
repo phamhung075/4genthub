@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { AlertCircle, CheckCircle, Clock, Copy, Delete, Key, Settings, Shield, Sparkles, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, Copy, Delete, Key, Settings, Shield, Sparkles, Zap, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AppLayout } from '../components/AppLayout';
 import { Alert, AlertDescription } from '../components/ui/alert';
@@ -13,6 +13,7 @@ import { SparklesText } from '../components/ui/SparklesText';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useAuth } from '../hooks/useAuth';
 import { tokenService } from '../services/tokenService';
+import MCPConfigProfile from '../components/ui/MCPConfigProfile';
 
 interface APIToken {
   id: string;
@@ -616,42 +617,6 @@ export function TokenManagement() {
                               )}
                             </div>
                           </div>
-                          <Dialog 
-                            open={deleteDialogOpen[token.id] || false}
-                            onOpenChange={(open) => open ? openDeleteDialog(token.id) : closeDeleteDialog(token.id)}
-                          >
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
-                              >
-                                <Delete className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Revoke API Token</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to revoke this token? This action cannot be undone and any applications using this token will lose access.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter>
-                                <Button variant="outline" onClick={() => closeDeleteDialog(token.id)}>
-                                  Cancel
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={() => {
-                                    handleRevokeToken(token.id);
-                                    closeDeleteDialog(token.id);
-                                  }}
-                                >
-                                  Revoke Token
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
                         </div>
                       </CardHeader>
                       
@@ -689,6 +654,48 @@ export function TokenManagement() {
                             </div>
                           )}
                         </div>
+                        
+                        {/* Revoke Button */}
+                        <div className="pt-4">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => openDeleteDialog(token.id)}
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Revoke Token
+                          </Button>
+                          
+                          {/* Revoke Dialog - Separate from button */}
+                          <Dialog 
+                            open={deleteDialogOpen[token.id] || false}
+                            onOpenChange={(open) => !open && closeDeleteDialog(token.id)}
+                          >
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Revoke API Token</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to revoke the token <strong>"{token.name}"</strong>? This action cannot be undone and any applications using this token will lose access immediately.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => closeDeleteDialog(token.id)}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => {
+                                    handleRevokeToken(token.id);
+                                    closeDeleteDialog(token.id);
+                                  }}
+                                >
+                                  Revoke Token
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -723,14 +730,14 @@ export function TokenManagement() {
 
         {/* Generated Token Dialog */}
         <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
                 <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>Token Generated Successfully</span>
+                <span>MCP Configuration Generated</span>
               </DialogTitle>
               <DialogDescription>
-                Make sure to copy this token now. You won't be able to see it again!
+                Your token has been generated and is ready for Claude Code MCP integration. Save this configuration securely.
               </DialogDescription>
             </DialogHeader>
             
@@ -738,79 +745,89 @@ export function TokenManagement() {
               <Alert className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Important:</strong> This token will only be shown once. Copy it now and store it securely.
+                  <strong>Important:</strong> This token will only be shown once. Copy the configuration now and store it securely.
                 </AlertDescription>
               </Alert>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Your API Token:</label>
-                <div className="relative">
-                  <Input
-                    value={generatedToken || ''}
-                    readOnly
-                    className="font-mono text-xs bg-background/50 pr-10"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-8 w-8 p-0"
-                    onClick={() => generatedToken && copyToClipboard(generatedToken)}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
+              {/* MCP Configuration Display */}
+              <MCPConfigProfile 
+                configData={{
+                  serverName: "DhafnckMCP",
+                  protocol: "HTTP",
+                  version: "2.1.0",
+                  host: (import.meta as any).env?.VITE_API_URL?.replace(/^https?:\/\//, '') || 'localhost',
+                  port: 8000,
+                  authentication: "JWT Bearer",
+                  capabilities: selectedScopes,
+                  token: generatedToken || undefined,
+                  expiresAt: new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000).toISOString()
+                }}
+                showToken={true}
+              />
               
               <div className="space-y-4">
-                <h4 className="font-semibold">How to Use This Token</h4>
-                
-                <div className="space-y-3">
-                  <div>
-                    <h5 className="text-sm font-medium mb-2">For Claude Code MCP Configuration:</h5>
-                    <div className="relative">
-                      <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto font-mono">
-{`"dhafnck_mcp_http": {
-    "type": "http",
-    "url": "${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp",
-    "headers": {
-        "Accept": "application/json, text/event-stream",
-        "Authorization": "Bearer ${generatedToken || 'YOUR_TOKEN_HERE'}"
-    }
-}`}
-                      </pre>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => {
-                          const config = {
-                            dhafnck_mcp_http: {
-                              type: "http",
-                              url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
-                              headers: {
-                                Accept: "application/json, text/event-stream",
-                                Authorization: `Bearer ${generatedToken}`
-                              }
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold">Quick Actions</h4>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const config = {
+                          dhafnck_mcp_http: {
+                            type: "http",
+                            url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                            headers: {
+                              Accept: "application/json, text/event-stream",
+                              Authorization: `Bearer ${generatedToken}`
                             }
-                          };
-                          copyToClipboard(JSON.stringify(config, null, 4));
-                          setSuccess('MCP configuration copied to clipboard');
-                        }}
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copy
-                      </Button>
-                    </div>
+                          }
+                        };
+                        copyToClipboard(JSON.stringify(config, null, 2));
+                        setSuccess('MCP configuration copied to clipboard');
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy MCP Config
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => generatedToken && copyToClipboard(generatedToken)}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy Token Only
+                    </Button>
                   </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <Card className="p-4">
+                    <h5 className="font-medium mb-2 flex items-center">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Setup Instructions
+                    </h5>
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                      <p>1. Copy the MCP configuration above</p>
+                      <p>2. Add it to your Claude Code settings</p>
+                      <p>3. Restart Claude Code to activate</p>
+                      <p>4. Test connection with the health endpoint</p>
+                    </div>
+                  </Card>
                   
-                  <div>
-                    <h5 className="text-sm font-medium mb-2">For API Requests:</h5>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <code className="text-xs font-mono">
-                        Authorization: Bearer {generatedToken ? `${generatedToken.substring(0, 20)}...` : 'YOUR_TOKEN_HERE'}
-                      </code>
+                  <Card className="p-4">
+                    <h5 className="font-medium mb-2 flex items-center">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Security Notes
+                    </h5>
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                      <p>• Token expires in {expiryDays} days</p>
+                      <p>• Rate limit: {rateLimit} requests/hour</p>
+                      <p>• Scopes: {selectedScopes.join(', ')}</p>
+                      <p>• Store token securely (password manager)</p>
                     </div>
-                  </div>
+                  </Card>
                 </div>
               </div>
             </div>
@@ -820,11 +837,24 @@ export function TokenManagement() {
                 Close
               </Button>
               <Button
-                onClick={() => generatedToken && copyToClipboard(generatedToken)}
-                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white"
+                onClick={() => {
+                  const config = {
+                    dhafnck_mcp_http: {
+                      type: "http", 
+                      url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                      headers: {
+                        Accept: "application/json, text/event-stream",
+                        Authorization: `Bearer ${generatedToken}`
+                      }
+                    }
+                  };
+                  copyToClipboard(JSON.stringify(config, null, 2));
+                  setSuccess('Complete MCP configuration copied!');
+                }}
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
               >
                 <Copy className="h-4 w-4 mr-2" />
-                Copy Token Only
+                Copy Complete Config
               </Button>
             </DialogFooter>
           </DialogContent>
