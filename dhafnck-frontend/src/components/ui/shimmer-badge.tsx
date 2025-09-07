@@ -12,7 +12,7 @@ export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
   children, 
   className = '',
   variant = 'default',
-  shimmerColor = '#06b6d4',
+  shimmerColor = '#d1d5db',
   ...props 
 }) => {
   const customCss = `
@@ -30,17 +30,17 @@ export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
   `;
 
   const variantClasses = {
-    default: 'bg-gray-300 dark:bg-black',
-    secondary: 'bg-gray-200 dark:bg-gray-800',
-    destructive: 'bg-red-500 dark:bg-red-600',
-    outline: 'bg-transparent border border-gray-300 dark:border-gray-700'
+    default: 'bg-gray-100 dark:bg-gray-900',
+    secondary: 'bg-gray-100 dark:bg-gray-800',
+    destructive: 'bg-red-100 dark:bg-red-900',
+    outline: 'bg-transparent border border-gray-200 dark:border-gray-700'
   };
 
   const innerVariantClasses = {
-    default: 'bg-primary text-primary-foreground',
-    secondary: 'bg-secondary text-secondary-foreground',
-    destructive: 'bg-destructive text-destructive-foreground',
-    outline: 'bg-background text-foreground'
+    default: 'bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100',
+    secondary: 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+    destructive: 'bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100',
+    outline: 'bg-transparent text-gray-600 dark:text-gray-400'
   };
 
   return (

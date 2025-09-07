@@ -259,7 +259,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl text-left flex items-center gap-2">
             <GitBranch className="w-5 h-5" />
@@ -272,7 +272,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               onClick={() => setActiveTab('details')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                 activeTab === 'details' 
-                  ? 'text-blue-600 border-blue-600' 
+                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                   : 'text-gray-500 border-transparent hover:text-gray-700'
               }`}
             >
@@ -284,7 +284,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               onClick={() => setActiveTab('context')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                 activeTab === 'context' 
-                  ? 'text-blue-600 border-blue-600' 
+                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                   : 'text-gray-500 border-transparent hover:text-gray-700'
               }`}
             >

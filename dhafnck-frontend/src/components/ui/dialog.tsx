@@ -29,11 +29,9 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   
   if (!open) return null;
   return (
-    <div className="theme-modal-overlay" onClick={() => onOpenChange(false)}>
-      <div className="fixed inset-0 overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-4">
-          {children}
-        </div>
+    <div className="theme-modal-overlay flex items-center justify-center" onClick={() => onOpenChange(false)}>
+      <div className="w-full max-h-[90vh] overflow-y-auto p-4">
+        {children}
       </div>
     </div>
   );

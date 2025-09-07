@@ -4,6 +4,7 @@ import { deleteSubtask, listSubtasks, Subtask } from "../api";
 import { getSubtaskSummaries } from "../api-lazy";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 // Lazy load dialogs
@@ -252,13 +253,13 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     
     return (
       <React.Fragment key={summary.id}>
-        <TableRow className="text-sm hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors">
+        <TableRow className="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors">
           <TableCell className="pl-8">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-600"></div>
               <span className="text-gray-700 dark:text-gray-300">{summary.title}</span>
               {summary.progress_percentage !== undefined && (
-                <Badge variant="outline" className="text-xs bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700">
+                <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
                   {summary.progress_percentage}%
                 </Badge>
               )}
@@ -266,9 +267,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           </TableCell>
           
           <TableCell>
-            <Badge className={`text-xs`} variant={statusColor[summary.status] || "outline"}>
-              {summary.status}
-            </Badge>
+            <HolographicStatusBadge status={summary.status as any} size="xs" />
           </TableCell>
           
           <TableCell>
@@ -437,7 +436,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       {/* Subtasks Table */}
       <Table className="bg-white/50 dark:bg-gray-900/50 rounded-lg overflow-hidden">
         <TableHeader>
-          <TableRow className="bg-blue-100/30 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+          <TableRow className="bg-gray-100/50 dark:bg-gray-800/20 border-b border-gray-200 dark:border-gray-700">
             <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">Subtask</TableHead>
             <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">Status</TableHead>
             <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">Priority</TableHead>

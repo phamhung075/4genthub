@@ -385,7 +385,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               onClick={() => setActiveTab('details')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                 activeTab === 'details' 
-                  ? 'text-blue-600 border-blue-600' 
+                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                   : 'text-gray-500 border-transparent hover:text-gray-700'
               }`}
             >
@@ -397,7 +397,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               onClick={() => setActiveTab('context')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                 activeTab === 'context' 
-                  ? 'text-blue-600 border-blue-600' 
+                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                   : 'text-gray-500 border-transparent hover:text-gray-700'
               }`}
             >

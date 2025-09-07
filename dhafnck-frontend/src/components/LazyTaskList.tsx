@@ -4,6 +4,7 @@ import { listTasks, Task, listAgents, getAvailableAgents, deleteTask } from "../
 import { getFullTask } from "../api-lazy";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { RefreshButton } from "./ui/refresh-button";
 import TaskSearch from "./TaskSearch";
@@ -265,13 +266,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     }
   }, [taskSummaries, fullTasks, totalTasks, onTasksChanged, closeDialog]);
 
-  // Load more tasks (pagination) - simplified version
-  const loadMoreTasks = useCallback(async () => {
-    if (loading) return;
-    
-    const nextPage = Math.floor(taskSummaries.length / TASKS_PER_PAGE) + 1;
-    await loadTaskSummaries(nextPage);
-  }, [loading, taskSummaries.length, loadTaskSummaries]);
 
   // Initial load
   useEffect(() => {
@@ -304,8 +298,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             <div className="flex-1">
               <h3 className="font-medium text-base mb-2 pr-2">{summary.title}</h3>
               <div className="flex flex-wrap gap-2">
-                <Badge className="text-xs">{summary.status}</Badge>
-                <Badge variant="secondary" className="text-xs">{summary.priority}</Badge>
+                <HolographicStatusBadge status={summary.status as any} size="xs" />
+                <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
                 {summary.subtask_count > 0 && (
                   <Badge variant="outline" className="text-xs">
                     {summary.subtask_count} subtasks
@@ -450,11 +444,11 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           </TableCell>
           
           <TableCell className="hidden sm:table-cell">
-            <Badge>{summary.status}</Badge>
+            <HolographicStatusBadge status={summary.status as any} size="sm" />
           </TableCell>
           
           <TableCell className="hidden md:table-cell">
-            <Badge variant="secondary">{summary.priority}</Badge>
+            <HolographicPriorityBadge priority={summary.priority as any} size="sm" />
           </TableCell>
           
           <TableCell className="hidden lg:table-cell">
@@ -629,18 +623,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         </div>
       )}
 
-      {/* Load More Button */}
-      {taskSummaries.length > 0 && (
-        <div className="flex justify-center p-4">
-          <Button
-            onClick={loadMoreTasks}
-            disabled={loading}
-            variant="outline"
-          >
-            {loading ? 'Loading...' : 'Load More Tasks'}
-          </Button>
-        </div>
-      )}
 
       {/* Lazy-loaded Dialogs */}
       <Suspense fallback={null}>

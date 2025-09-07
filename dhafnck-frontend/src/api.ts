@@ -89,6 +89,11 @@ export const listTasks = async (params?: { git_branch_id?: string }): Promise<Ta
     return response.tasks || [];
 };
 
+export const getTasks = async (git_branch_id: string): Promise<any> => {
+    const response = await taskApiV2.getTasks({ git_branch_id });
+    return response || { tasks: [] };
+};
+
 export const getTask = async (task_id: string): Promise<Task> => {
     const response = await taskApiV2.getTask(task_id);
     return response.task || response;

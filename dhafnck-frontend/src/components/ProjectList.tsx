@@ -10,6 +10,7 @@ import { RefreshButton } from "./ui/refresh-button";
 import { useAuth } from "../hooks/useAuth";
 import { useSuccessToast, useErrorToast } from "./ui/toast";
 import Cookies from "js-cookie";
+import { cn } from "../lib/utils";
 
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
@@ -512,8 +513,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                           <span className="text-muted-foreground">—</span>
                           <ShimmerButton
                             size="sm"
-                            variant={selected === `${project.id}:${branch.id}` ? "secondary" : "ghost"}
-                            className="flex-1 justify-start text-xs text-left"
+                            variant={selected === `${project.id}:${branch.id}` ? "default" : "ghost"}
+                            className={cn(
+                              "flex-1 justify-start text-xs text-left",
+                              selected === `${project.id}:${branch.id}` && "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700"
+                            )}
                             onClick={() => {
                               setSelected(`${project.id}:${branch.id}`);
                               onSelect && onSelect(project.id, branch.id);
@@ -779,9 +783,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
           </DialogHeader>
           <div className="space-y-2">
             <p className="text-sm">Are you sure you want to delete the branch <strong>{showDeleteBranch?.branch.git_branch_name || showDeleteBranch?.branch.name}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
-            {showDeleteBranch && showDeleteBranch.branch.task_count > 0 && (
+            {showDeleteBranch && (showDeleteBranch.branch.task_count || 0) > 0 && (
               <p className="text-sm text-destructive">
-                Warning: This branch contains {showDeleteBranch.branch.task_count} task(s) that will also be deleted.
+                Warning: This branch contains {showDeleteBranch.branch.task_count || 0} task(s) that will also be deleted.
               </p>
             )}
             <p className="text-sm text-muted-foreground">This action cannot be undone.</p>

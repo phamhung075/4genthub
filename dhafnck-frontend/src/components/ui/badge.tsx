@@ -6,10 +6,10 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const badgeVariants = {
-  default: "bg-primary text-primary-foreground hover:bg-primary/80",
-  secondary: "bg-secondary text-secondary-foreground",
-  destructive: "bg-destructive text-destructive-foreground",
-  outline: "border border-input"
+  default: "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100 hover:bg-green-100 dark:hover:bg-green-800",
+  secondary: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700",
+  destructive: "bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-100 hover:bg-red-100 dark:hover:bg-red-800",
+  outline: "border border-gray-200 dark:border-gray-600 bg-transparent text-gray-600 dark:text-gray-400"
 };
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(

@@ -123,7 +123,7 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+    <div className="fixed top-4 right-4 z-[10000] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
           <ToastItem toast={toast} onDismiss={dismissToast} />
@@ -163,28 +163,48 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 // Convenience hooks for different toast types
 export const useSuccessToast = () => {
-  const { showToast } = useToast();
+  const context = useContext(ToastContext);
+  if (!context) {
+    // Return a no-op function if not within provider
+    return () => '';
+  }
+  const { showToast } = context;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
     return showToast({ type: 'success', title, description, action });
   }, [showToast]);
 };
 
 export const useErrorToast = () => {
-  const { showToast } = useToast();
+  const context = useContext(ToastContext);
+  if (!context) {
+    // Return a no-op function if not within provider
+    return () => '';
+  }
+  const { showToast } = context;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
     return showToast({ type: 'error', title, description, action, duration: 8000 }); // Longer for errors
   }, [showToast]);
 };
 
 export const useWarningToast = () => {
-  const { showToast } = useToast();
+  const context = useContext(ToastContext);
+  if (!context) {
+    // Return a no-op function if not within provider
+    return () => '';
+  }
+  const { showToast } = context;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
     return showToast({ type: 'warning', title, description, action });
   }, [showToast]);
 };
 
 export const useInfoToast = () => {
-  const { showToast } = useToast();
+  const context = useContext(ToastContext);
+  if (!context) {
+    // Return a no-op function if not within provider
+    return () => '';
+  }
+  const { showToast } = context;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
     return showToast({ type: 'info', title, description, action });
   }, [showToast]);

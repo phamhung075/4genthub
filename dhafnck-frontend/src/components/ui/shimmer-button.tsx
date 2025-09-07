@@ -40,19 +40,19 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
   };
 
   const variantClasses = {
-    default: 'bg-gray-300 dark:bg-black',
+    default: 'bg-gray-200 dark:bg-gray-900',
     ghost: 'bg-transparent',
-    outline: 'bg-transparent border border-gray-300 dark:border-gray-700',
-    secondary: 'bg-gray-200 dark:bg-gray-800',
+    outline: 'bg-transparent border border-gray-200 dark:border-gray-700',
+    secondary: 'bg-gray-100 dark:bg-gray-800',
     destructive: 'bg-red-500 dark:bg-red-600',
     link: 'bg-transparent underline-offset-4 hover:underline'
   };
 
   const innerVariantClasses = {
-    default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+    default: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
     ghost: 'bg-transparent hover:bg-accent hover:text-accent-foreground',
-    outline: 'bg-background hover:bg-accent hover:text-accent-foreground',
-    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+    outline: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
+    secondary: 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700',
     destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
     link: 'text-primary underline-offset-4 hover:underline'
   };

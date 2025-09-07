@@ -15,52 +15,52 @@ export const HolographicStatusBadge: React.FC<HolographicStatusBadgeProps> = ({
 }) => {
   const statusConfig = {
     todo: {
-      gradient: 'from-gray-400/40 via-gray-300/40 to-gray-400/40',
-      borderColor: 'border-gray-400/50',
-      textColor: 'text-gray-700 dark:text-gray-300',
-      glow: 'shadow-gray-400/30',
+      gradient: 'from-slate-100/80 via-slate-50/80 to-slate-100/80 dark:from-slate-800/40 dark:via-slate-700/40 dark:to-slate-800/40',
+      borderColor: 'border-slate-300 dark:border-slate-600',
+      textColor: 'text-slate-600 dark:text-slate-300',
+      glow: 'shadow-slate-200/50 dark:shadow-slate-600/30',
       label: 'To Do'
     },
     in_progress: {
-      gradient: 'from-blue-500/40 via-cyan-400/40 to-blue-500/40',
-      borderColor: 'border-blue-400/50',
-      textColor: 'text-blue-700 dark:text-blue-300',
-      glow: 'shadow-blue-400/30',
+      gradient: 'from-sky-100/80 via-blue-50/80 to-sky-100/80 dark:from-blue-800/40 dark:via-sky-700/40 dark:to-blue-800/40',
+      borderColor: 'border-sky-300 dark:border-sky-600',
+      textColor: 'text-sky-700 dark:text-sky-300',
+      glow: 'shadow-sky-200/50 dark:shadow-sky-600/30',
       label: 'In Progress'
     },
     blocked: {
-      gradient: 'from-red-500/40 via-orange-400/40 to-red-500/40',
-      borderColor: 'border-red-400/50',
-      textColor: 'text-red-700 dark:text-red-300',
-      glow: 'shadow-red-400/30',
+      gradient: 'from-rose-100/80 via-red-50/80 to-rose-100/80 dark:from-red-900/40 dark:via-rose-800/40 dark:to-red-900/40',
+      borderColor: 'border-rose-300 dark:border-rose-600',
+      textColor: 'text-rose-700 dark:text-rose-300',
+      glow: 'shadow-rose-200/50 dark:shadow-rose-600/30',
       label: 'Blocked'
     },
     review: {
-      gradient: 'from-purple-500/40 via-pink-400/40 to-purple-500/40',
-      borderColor: 'border-purple-400/50',
-      textColor: 'text-purple-700 dark:text-purple-300',
-      glow: 'shadow-purple-400/30',
+      gradient: 'from-violet-100/80 via-purple-50/80 to-violet-100/80 dark:from-purple-900/40 dark:via-violet-800/40 dark:to-purple-900/40',
+      borderColor: 'border-violet-300 dark:border-violet-600',
+      textColor: 'text-violet-700 dark:text-violet-300',
+      glow: 'shadow-violet-200/50 dark:shadow-violet-600/30',
       label: 'Review'
     },
     testing: {
-      gradient: 'from-yellow-500/40 via-amber-400/40 to-yellow-500/40',
-      borderColor: 'border-yellow-400/50',
-      textColor: 'text-yellow-700 dark:text-yellow-300',
-      glow: 'shadow-yellow-400/30',
+      gradient: 'from-amber-100/80 via-yellow-50/80 to-amber-100/80 dark:from-yellow-900/40 dark:via-amber-800/40 dark:to-yellow-900/40',
+      borderColor: 'border-amber-300 dark:border-amber-600',
+      textColor: 'text-amber-700 dark:text-amber-300',
+      glow: 'shadow-amber-200/50 dark:shadow-amber-600/30',
       label: 'Testing'
     },
     done: {
-      gradient: 'from-green-500/40 via-emerald-400/40 to-green-500/40',
-      borderColor: 'border-green-400/50',
-      textColor: 'text-green-700 dark:text-green-300',
-      glow: 'shadow-green-400/30',
+      gradient: 'from-emerald-100/80 via-green-50/80 to-emerald-100/80 dark:from-green-900/40 dark:via-emerald-800/40 dark:to-green-900/40',
+      borderColor: 'border-emerald-300 dark:border-emerald-600',
+      textColor: 'text-emerald-700 dark:text-emerald-300',
+      glow: 'shadow-emerald-200/50 dark:shadow-emerald-600/30',
       label: 'Done'
     },
     cancelled: {
-      gradient: 'from-gray-500/40 via-gray-400/40 to-gray-500/40',
-      borderColor: 'border-gray-500/50',
+      gradient: 'from-gray-100/80 via-gray-50/80 to-gray-100/80 dark:from-gray-800/40 dark:via-gray-700/40 dark:to-gray-800/40',
+      borderColor: 'border-gray-300 dark:border-gray-600',
       textColor: 'text-gray-600 dark:text-gray-400',
-      glow: 'shadow-gray-500/30',
+      glow: 'shadow-gray-200/50 dark:shadow-gray-600/30',
       label: 'Cancelled'
     }
   }
@@ -110,42 +110,42 @@ export const HolographicPriorityBadge: React.FC<HolographicPriorityBadgeProps> =
 }) => {
   const priorityConfig = {
     low: {
-      gradient: 'from-slate-400/40 via-gray-300/40 to-slate-400/40',
-      borderColor: 'border-slate-400/50',
-      textColor: 'text-slate-700 dark:text-slate-300',
-      glow: 'shadow-slate-400/30',
+      gradient: 'from-gray-100/60 via-gray-50/60 to-gray-100/60 dark:from-gray-800/30 dark:via-gray-700/30 dark:to-gray-800/30',
+      borderColor: 'border-gray-200 dark:border-gray-700',
+      textColor: 'text-gray-500 dark:text-gray-400',
+      glow: 'shadow-gray-100/30 dark:shadow-gray-700/20',
       label: 'Low',
       icon: '▽'
     },
     medium: {
-      gradient: 'from-blue-400/40 via-sky-300/40 to-blue-400/40',
-      borderColor: 'border-blue-400/50',
-      textColor: 'text-blue-700 dark:text-blue-300',
-      glow: 'shadow-blue-400/30',
+      gradient: 'from-teal-100/70 via-cyan-50/70 to-teal-100/70 dark:from-teal-900/35 dark:via-cyan-800/35 dark:to-teal-900/35',
+      borderColor: 'border-teal-300 dark:border-teal-700',
+      textColor: 'text-teal-700 dark:text-teal-300',
+      glow: 'shadow-teal-200/40 dark:shadow-teal-700/25',
       label: 'Medium',
       icon: '◇'
     },
     high: {
-      gradient: 'from-amber-500/40 via-yellow-400/40 to-amber-500/40',
-      borderColor: 'border-amber-400/50',
-      textColor: 'text-amber-700 dark:text-amber-300',
-      glow: 'shadow-amber-400/30',
+      gradient: 'from-orange-100/80 via-amber-50/80 to-orange-100/80 dark:from-orange-900/40 dark:via-amber-800/40 dark:to-orange-900/40',
+      borderColor: 'border-orange-400 dark:border-orange-600',
+      textColor: 'text-orange-700 dark:text-orange-300',
+      glow: 'shadow-orange-300/50 dark:shadow-orange-600/30',
       label: 'High',
       icon: '△'
     },
     urgent: {
-      gradient: 'from-orange-500/40 via-red-400/40 to-orange-500/40',
-      borderColor: 'border-orange-400/50',
-      textColor: 'text-orange-700 dark:text-orange-300',
-      glow: 'shadow-orange-400/30',
+      gradient: 'from-red-100/85 via-orange-50/85 to-red-100/85 dark:from-red-900/45 dark:via-orange-800/45 dark:to-red-900/45',
+      borderColor: 'border-red-400 dark:border-red-600',
+      textColor: 'text-red-700 dark:text-red-300',
+      glow: 'shadow-red-300/60 dark:shadow-red-600/35',
       label: 'Urgent',
       icon: '⚠'
     },
     critical: {
-      gradient: 'from-red-600/40 via-pink-500/40 to-red-600/40',
-      borderColor: 'border-red-500/50',
-      textColor: 'text-red-700 dark:text-red-300',
-      glow: 'shadow-red-500/30',
+      gradient: 'from-rose-200/90 via-red-100/90 to-rose-200/90 dark:from-red-950/50 dark:via-rose-900/50 dark:to-red-950/50',
+      borderColor: 'border-red-500 dark:border-red-500',
+      textColor: 'text-red-800 dark:text-red-200',
+      glow: 'shadow-red-400/70 dark:shadow-red-500/40',
       label: 'Critical',
       icon: '🔥'
     }

@@ -250,9 +250,17 @@ body {
     @apply font-medium;
   }
   
+  /* 
+   * Z-Index Layering System:
+   * - Base content: z-0 to z-10
+   * - Dropdowns/Popovers: z-100 to z-200
+   * - Modals/Dialogs: z-1000
+   * - Toasts/Notifications: z-10000 (highest)
+   */
+  
   /* Modal/Dialog Components */
   .theme-modal-overlay {
-    @apply fixed inset-0 z-50;
+    @apply fixed inset-0 z-[1000];
     background-color: var(--color-overlay);
   }
   
