@@ -149,6 +149,17 @@ export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
     return response.subtasks || [];
 };
 
+export const getSubtask = async (task_id: string, subtask_id: string): Promise<Subtask> => {
+    // For now, get all subtasks and find the one we need
+    // In the future, this could be a dedicated endpoint
+    const subtasks = await listSubtasks(task_id);
+    const subtask = subtasks.find(s => s.id === subtask_id);
+    if (!subtask) {
+        throw new Error(`Subtask ${subtask_id} not found`);
+    }
+    return subtask;
+};
+
 export const createSubtask = async (task_id: string, subtask: Partial<Subtask>): Promise<Subtask> => {
     const response = await subtaskApiV2.createSubtask(task_id, {
         title: subtask.title || '',

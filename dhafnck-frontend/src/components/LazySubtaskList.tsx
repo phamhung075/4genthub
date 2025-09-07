@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 // Lazy load dialogs
 const DeleteConfirmDialog = lazy(() => import("./DeleteConfirmDialog"));
 const SubtaskCompleteDialog = lazy(() => import("./SubtaskCompleteDialog"));
+const SubtaskDetailsDialog = lazy(() => import("./SubtaskDetailsDialog"));
 
 interface LazySubtaskListProps {
   projectId: string;
@@ -68,6 +69,11 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     subtaskId?: string;
     subtask?: Subtask | null;
   }>({ type: null });
+  
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    subtask: Subtask | null;
+  }>({ open: false, subtask: null });
   
   const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
@@ -200,7 +206,8 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     
     switch (action) {
       case 'details':
-        setShowDetails(showDetails === subtaskId ? null : subtaskId);
+        // Open the details dialog instead of inline details
+        setDetailsDialog({ open: true, subtask });
         break;
       case 'edit':
         setEditingSubtask(subtask);
@@ -209,7 +216,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         setActiveDialog({ type: 'complete', subtaskId, subtask });
         break;
     }
-  }, [loadFullSubtask, showDetails]);
+  }, [loadFullSubtask]);
 
   // Handle subtask completion
   const handleCompleteSubtask = useCallback((completedSubtask: Subtask) => {
@@ -520,6 +527,19 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
               </div>
             </div>
           </div>
+        )}
+      </Suspense>
+      
+      {/* Subtask Details Dialog */}
+      <Suspense fallback={null}>
+        {detailsDialog.subtask && (
+          <SubtaskDetailsDialog
+            open={detailsDialog.open}
+            onOpenChange={(open) => setDetailsDialog({ open, subtask: detailsDialog.subtask })}
+            subtask={detailsDialog.subtask}
+            parentTaskId={parentTaskId}
+            onClose={() => setDetailsDialog({ open: false, subtask: null })}
+          />
         )}
       </Suspense>
     </div>
