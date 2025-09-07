@@ -1,0 +1,117 @@
+# Development Docker Compose Configuration
+# Uses .env.dev for environment variables
+# Includes validation and error handling
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: dhafnck-postgres
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-dhafnck_mcp}
+      POSTGRES_USER: ${DATABASE_USER:-dhafnck_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-dev_password}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - dhafnck-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-dhafnck_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dhafnck-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - dhafnck-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ..
+      dockerfile: docker-system/docker/Dockerfile.backend.dev
+    container_name: dhafnck-backend
+    env_file:
+      - ../.env.dev
+    environment:
+      # Override to use container network
+      DATABASE_HOST: postgres
+      DATABASE_URL: postgresql://${DATABASE_USER:-dhafnck_user}:${DATABASE_PASSWORD:-dev_password}@postgres:${DATABASE_PORT:-5432}/${DATABASE_NAME:-dhafnck_mcp}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      APP_ENV: ${APP_ENV:-development}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      FASTMCP_HOST: 0.0.0.0
+      FASTMCP_PORT: ${FASTMCP_PORT:-8000}
+    ports:
+      - "${FASTMCP_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dhafnck-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${FASTMCP_PORT:-8000}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker-system/docker/Dockerfile.frontend.dev
+    container_name: dhafnck-frontend
+    env_file:
+      - ../.env.dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8000}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
+      VITE_ENVIRONMENT: ${VITE_ENVIRONMENT:-development}
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "${FRONTEND_PORT:-3800}:3800"
+    depends_on:
+      - backend
+    networks:
+      - dhafnck-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3800/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+networks:
+  dhafnck-network:
+    driver: bridge
+    name: dhafnck-network

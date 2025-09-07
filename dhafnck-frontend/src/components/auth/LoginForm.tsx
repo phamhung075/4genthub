@@ -7,7 +7,6 @@ import {
   TextField,
   Typography,
   Alert,
-  Container,
   Paper,
   FormControlLabel,
   Checkbox,
@@ -25,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 import { ThemeToggle } from '../ThemeToggle';
+import FallingGlitch from '../effects/FallingGlitch';
 
 interface LoginFormData {
   email: string;
@@ -75,28 +75,46 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      {/* Theme Toggle in top-right corner */}
-      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-        <ThemeToggle />
-      </Box>
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
+    <Box sx={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      <FallingGlitch
+        glitchColors={theme.palette.mode === 'dark' 
+          ? ["#ff7cce", "#7cf0ff", "#fcf07c", "#8E44AD", "#3498DB"]
+          : ["#ff5fa3", "#5cd9ff", "#ffd85c", "#9B59B6", "#5DADE2"]
+        }
+        backgroundColor={theme.palette.mode === 'dark' ? "#080A12" : "#0f1419"}
+        fontSize={12}
+        glitchSpeed={60}
+        glitchIntensity={0.03}
+        fallSpeed={0.5}
+        outerVignette={true}
       >
-        <Paper
-          elevation={3}
+        {/* Theme Toggle in top-right corner */}
+        <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 20 }}>
+          <ThemeToggle />
+        </Box>
+        
+        <Box
           sx={{
-            padding: 4,
             width: '100%',
-            borderRadius: 2,
-            backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+            maxWidth: 420,
+            px: 2,
           }}
         >
+          <Paper
+            elevation={6}
+            sx={{
+              padding: 4,
+              width: '100%',
+              borderRadius: 3,
+              backgroundColor: theme.palette.mode === 'dark' 
+                ? 'rgba(18, 18, 18, 0.95)' 
+                : 'rgba(255, 255, 255, 0.98)',
+              backdropFilter: 'blur(10px)',
+              border: theme.palette.mode === 'dark'
+                ? '1px solid rgba(255, 255, 255, 0.1)'
+                : '1px solid rgba(0, 0, 0, 0.05)',
+            }}
+          >
           <Box
             sx={{
               display: 'flex',
@@ -232,8 +250,9 @@ export const LoginForm: React.FC = () => {
               </Link>
             </Box>
           </Box>
-        </Paper>
-      </Box>
-    </Container>
+          </Paper>
+        </Box>
+      </FallingGlitch>
+    </Box>
   );
 };

@@ -343,94 +343,78 @@ export function TokenManagement() {
                       );
                     })}
                     
-                    {/* Quick Actions */}
-                    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="success"
-                        onClick={() => {
-                          // Select all scopes
-                          const allScopes = AVAILABLE_SCOPES.map(s => s.value);
-                          setSelectedScopes(allScopes);
-                        }}
-                      >
-                        Select All
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => {
-                          // Select MCP tools scopes
-                          const mcpToolsScopes = [
-                            'openid', 'profile', 'email', 'offline_access',
-                            'mcp-api', 'mcp-roles', 'mcp-profile',
-                            'mcp:execute', 'mcp:delegate',
-                            // Include all CRUD permissions for MCP tools
-                            'projects:create', 'projects:read', 'projects:update', 'projects:delete',
-                            'tasks:create', 'tasks:read', 'tasks:update', 'tasks:delete',
-                            'subtasks:create', 'subtasks:read', 'subtasks:update', 'subtasks:delete',
-                            'contexts:create', 'contexts:read', 'contexts:update', 'contexts:delete',
-                            'agents:create', 'agents:read', 'agents:update', 'agents:delete',
-                            'branches:create', 'branches:read', 'branches:update', 'branches:delete'
-                          ];
-                          setSelectedScopes(mcpToolsScopes);
-                        }}
-                      >
-                        MCP Tools (Full Access)
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          // Select all read scopes
-                          const readScopes = AVAILABLE_SCOPES
-                            .filter(s => s.value.includes(':read'))
-                            .map(s => s.value);
-                          const coreScopes = ['openid', 'profile', 'email', 'mcp-api', 'mcp-roles'];
-                          setSelectedScopes([...new Set([...coreScopes, ...readScopes])]);
-                        }}
-                      >
-                        Read Only
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          // Select full CRUD for all resources
-                          const fullCrudScopes = AVAILABLE_SCOPES
-                            .filter(s => ['Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches'].includes(s.category))
-                            .map(s => s.value);
-                          const coreScopes = ['openid', 'profile', 'email', 'mcp-api', 'mcp-roles', 'mcp-profile'];
-                          setSelectedScopes([...new Set([...coreScopes, ...fullCrudScopes])]);
-                        }}
-                      >
-                        Full CRUD
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          // Select essential scopes
-                          const essentialScopes = [
-                            'openid', 'profile', 'email', 'mcp-api', 'mcp-roles',
-                            'projects:read', 'tasks:read', 'tasks:create', 'tasks:update',
-                            'contexts:read', 'contexts:update'
-                          ];
-                          setSelectedScopes(essentialScopes);
-                        }}
-                      >
-                        Essential
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        onClick={() => setSelectedScopes([])}
-                      >
-                        Clear All
-                      </Button>
+                    {/* Quick Actions - Improved with less redundancy */}
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        Quick Selection Presets
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="primary"
+                          onClick={() => {
+                            // Full MCP Access - All permissions
+                            const allScopes = AVAILABLE_SCOPES.map(s => s.value);
+                            setSelectedScopes(allScopes);
+                          }}
+                          startIcon={<Shield size={16} />}
+                        >
+                          Full Access
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Read-only access to all resources
+                            const readScopes = AVAILABLE_SCOPES
+                              .filter(s => s.value.includes(':read') || s.category === 'Core' || s.category === 'API')
+                              .map(s => s.value);
+                            setSelectedScopes(readScopes);
+                          }}
+                        >
+                          Read Only
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Essential scopes for basic operations
+                            const essentialScopes = [
+                              'openid', 'profile', 'email', 
+                              'mcp-api', 'mcp-roles',
+                              'projects:read', 'tasks:read', 'tasks:create', 'tasks:update',
+                              'contexts:read', 'contexts:update'
+                            ];
+                            setSelectedScopes(essentialScopes);
+                          }}
+                        >
+                          Essential
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // MCP Execute permissions only
+                            const executeScopes = [
+                              'openid', 'profile', 'email',
+                              'mcp-api', 'mcp-roles', 'mcp-profile',
+                              'mcp:execute', 'mcp:delegate'
+                            ];
+                            setSelectedScopes(executeScopes);
+                          }}
+                        >
+                          Execute Only
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="text"
+                          color="error"
+                          onClick={() => setSelectedScopes([])}
+                        >
+                          Clear All
+                        </Button>
+                      </Stack>
                     </Box>
                   </Grid>
 
@@ -459,15 +443,40 @@ export function TokenManagement() {
                   </Grid>
 
                   <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleGenerateToken}
-                      disabled={loading || !tokenName || selectedScopes.length === 0}
-                      startIcon={loading ? <CircularProgress size={20} /> : <Key size={20} />}
-                    >
-                      Generate Token
-                    </Button>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      mt: 2,
+                      p: 2,
+                      backgroundColor: 'background.default',
+                      borderRadius: 1
+                    }}>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {selectedScopes.length} scope{selectedScopes.length !== 1 ? 's' : ''} selected
+                        </Typography>
+                        {tokenName && (
+                          <Typography variant="caption" color="text.secondary">
+                            Token will be named: "{tokenName}"
+                          </Typography>
+                        )}
+                      </Box>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        onClick={handleGenerateToken}
+                        disabled={loading || !tokenName || selectedScopes.length === 0}
+                        startIcon={loading ? <CircularProgress size={20} /> : <Key size={20} />}
+                        sx={{ 
+                          minWidth: 200,
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {loading ? 'Generating...' : 'Generate New API Token'}
+                      </Button>
+                    </Box>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -475,10 +484,15 @@ export function TokenManagement() {
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">Active API Tokens</Typography>
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h6">Active API Tokens</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {tokens.length} active token{tokens.length !== 1 ? 's' : ''}
+                </Typography>
+              </Box>
               <Button
-                size="small"
+                variant="outlined"
                 onClick={fetchTokens}
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={16} /> : <Shield size={16} />}
@@ -486,67 +500,45 @@ export function TokenManagement() {
                 Refresh
               </Button>
             </Box>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Scopes</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell>Expires</TableCell>
-                    <TableCell>Usage</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        <CircularProgress />
-                      </TableCell>
-                    </TableRow>
-                  ) : tokens.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        <Typography variant="body2" color="text.secondary">
-                          No API tokens found. Generate your first token to get started.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    tokens.map((token) => (
-                      <TableRow key={token.id}>
-                        <TableCell>{token.name}</TableCell>
-                        <TableCell>
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                            {token.scopes.map((scope) => (
-                              <Chip key={scope} label={scope} size="small" />
-                            ))}
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(token.created_at), 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(token.expires_at), 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          {token.usage_count} requests
-                          {token.last_used_at && (
-                            <Typography variant="caption" display="block">
-                              Last: {format(new Date(token.last_used_at), 'MMM d')}
+            
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : tokens.length === 0 ? (
+              <Card sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No API Tokens Yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Generate your first token to start using the MCP API
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setTabValue(0)}
+                  startIcon={<Key size={20} />}
+                >
+                  Generate First Token
+                </Button>
+              </Card>
+            ) : (
+              <Grid container spacing={2}>
+                {tokens.map((token) => (
+                  <Grid item xs={12} md={6} lg={4} key={token.id}>
+                    <Card>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                          <Box>
+                            <Typography variant="h6" gutterBottom>
+                              {token.name}
                             </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={token.is_active ? 'Active' : 'Inactive'}
-                            color={token.is_active ? 'success' : 'default'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
+                            <Chip
+                              label={token.is_active ? 'Active' : 'Inactive'}
+                              color={token.is_active ? 'success' : 'default'}
+                              size="small"
+                            />
+                          </Box>
                           <IconButton
                             onClick={() => {
                               setTokenToDelete(token.id);
@@ -557,13 +549,57 @@ export function TokenManagement() {
                           >
                             <Delete size={18} />
                           </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                        </Box>
+                        
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Created: {format(new Date(token.created_at), 'MMM d, yyyy')}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Expires: {format(new Date(token.expires_at), 'MMM d, yyyy')}
+                          </Typography>
+                          {token.last_used_at && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Last used: {format(new Date(token.last_used_at), 'MMM d, h:mm a')}
+                            </Typography>
+                          )}
+                        </Box>
+                        
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                            Usage: {token.usage_count} requests
+                          </Typography>
+                          {token.rate_limit && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Rate limit: {token.rate_limit}/hour
+                            </Typography>
+                          )}
+                        </Box>
+                        
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                            Scopes ({token.scopes.length})
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {token.scopes.slice(0, 5).map((scope) => (
+                              <Chip key={scope} label={scope} size="small" variant="outlined" />
+                            ))}
+                            {token.scopes.length > 5 && (
+                              <Chip 
+                                label={`+${token.scopes.length - 5} more`} 
+                                size="small" 
+                                variant="outlined"
+                                color="primary"
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>

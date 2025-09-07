@@ -1,5 +1,34 @@
 # TEST-CHANGELOG
 
+## [2025-09-07] Comprehensive Auth Endpoints Test Coverage
+
+### Added
+- **Auth Endpoints Comprehensive Tests** (`src/tests/auth/interface/auth_endpoints_test.py`)
+  - Complete rewrite with comprehensive test coverage for all authentication endpoints
+  - Added 85+ test methods covering all public functions, edge cases, and error conditions
+  - Test coverage includes:
+    - Data model validation (LoginRequest, RegisterRequest, RegisterResponse, LoginResponse)
+    - Helper functions (get_keycloak_admin_token, cleanup_incomplete_account_internal, setup_user_roles)
+    - Login endpoint with all scenarios (success, invalid credentials, account not fully setup, scope retry, connection errors)
+    - Register endpoint with all scenarios (success, email verification, user exists, cleanup and retry, validation errors)
+    - Refresh token endpoint (success, invalid token, connection errors)
+    - Logout endpoint (success, connection errors, without token)
+    - Utility endpoints (provider info, verify auth, password requirements, password validation, registration success)
+    - Token management endpoints (create, list, get details, delete, rotate, validate)
+    - Edge cases and error handling scenarios
+  - Proper mocking of external dependencies (httpx, Keycloak responses, JWT decode)
+  - Following AAA pattern (Arrange, Act, Assert) throughout
+  - Comprehensive error condition testing including connection failures and various HTTP status codes
+  - Parameterized tests for validation scenarios
+  - Environment variable mocking for different authentication providers
+
+### Technical Improvements
+- Used proper async/await patterns for async function testing
+- Comprehensive mocking strategy to avoid external dependencies
+- Edge case coverage including empty values, malformed data, and boundary conditions
+- Proper fixture usage for test client and mock objects
+- Clear test organization with descriptive class and method names
+
 ## [2025-09-06] Unit Test Fixes - Iteration 36
 
 ### Fixed

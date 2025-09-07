@@ -6,6 +6,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **🎨 FallingGlitch Background Effect for Login Page** - 2025-09-07
+  - **Component**: Created `FallingGlitch.tsx` animated background component
+  - **Features**:
+    - Animated falling binary digits (0s and 1s) with glitch effects
+    - Theme-aware color schemes (dark/light mode support)
+    - Customizable parameters: colors, speed, intensity, font size
+    - Vignette overlay for enhanced visual depth
+    - Performance optimized with React hooks (useRef, useCallback, useMemo)
+  - **Login Page Integration**:
+    - Replaced static background with animated FallingGlitch effect
+    - Full viewport coverage with responsive design
+    - Semi-transparent login form with backdrop blur effect
+    - Adjusted Paper component styling for better visibility over animation
+    - Theme toggle remains accessible in top-right corner
+  - **Files Modified**:
+    - Created: `dhafnck-frontend/src/components/effects/FallingGlitch.tsx`
+    - Updated: `dhafnck-frontend/src/components/auth/LoginForm.tsx`
+
 ### Security
 - **🔒 Removed Hardcoded Credentials from Keycloak Scripts** - 2025-09-07
   - **Security Enhancement**: All Keycloak configuration scripts now require passwords via command-line arguments or environment variables
