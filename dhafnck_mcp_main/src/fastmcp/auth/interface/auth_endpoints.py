@@ -604,12 +604,20 @@ async def login(request: LoginRequest):
             data["client_secret"] = KEYCLOAK_CLIENT_SECRET
         
         try:
+            # Log the authentication attempt
+            logger.info(f"Attempting Keycloak login for user: {request.email}")
+            logger.debug(f"Token URL: {token_url}")
+            logger.debug(f"Client ID: {KEYCLOAK_CLIENT_ID}")
+            logger.debug(f"Has client secret: {bool(KEYCLOAK_CLIENT_SECRET)}")
+            
             async with httpx.AsyncClient(verify=False) as client:  # verify=False for self-signed certs
                 response = await client.post(
                     token_url,
                     data=data,
                     headers={"Content-Type": "application/x-www-form-urlencoded"}
                 )
+                
+                logger.debug(f"Keycloak response status: {response.status_code}")
                 
                 if response.status_code == 200:
                     token_data = response.json()
@@ -626,6 +634,8 @@ async def login(request: LoginRequest):
                         email=decoded.get("email", request.email)
                     )
                 elif response.status_code == 401:
+                    error_details = response.text
+                    logger.error(f"Keycloak authentication failed for {request.email}: {error_details}")
                     raise HTTPException(status_code=401, detail="Invalid credentials")
                 elif response.status_code == 400:
                     # Handle bad request errors (like invalid scope)

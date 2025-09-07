@@ -5,13 +5,19 @@ Users were experiencing 401 "Invalid credentials" errors when trying to login, e
 
 ## Root Cause Analysis
 
-### Issue 1: Password Not Set Correctly
+### Issue 1: Email Typo in User Account
+The user account had a typo in the email address:
+- Was: `q987@yomail.com` (missing 'p')
+- Fixed to: `q987@yopmail.com`
+- This caused login attempts to fail as the email didn't match
+
+### Issue 2: Password Not Set Correctly
 When users registered through the frontend, the account was created in Keycloak but:
 - Password was not properly set
 - User roles were not assigned
 - Required actions were blocking login
 
-### Issue 2: Missing Role Assignments
+### Issue 3: Missing Role Assignments
 New users were not automatically assigned necessary roles:
 - `user` role (application-specific)
 - `offline_access` role (for refresh tokens)
