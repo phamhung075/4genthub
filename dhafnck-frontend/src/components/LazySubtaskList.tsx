@@ -425,9 +425,21 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           <div className="flex-1">
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
-                className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full transition-all duration-300"
+                className="h-2 rounded-full transition-all duration-300 relative overflow-hidden group"
                 style={{ width: `${progressSummary.percentage}%` }}
-              />
+              >
+                {/* Background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600" />
+                
+                {/* Animated shimmer overlay */}
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  style={{
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer-progress 2s infinite linear'
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>

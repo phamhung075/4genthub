@@ -1,13 +1,13 @@
-import { Eye, FileText, Pencil, Plus, Trash2, Users, ChevronDown, ChevronRight } from "lucide-react";
-import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense } from "react";
-import { listTasks, Task, listAgents, getAvailableAgents, deleteTask } from "../api";
+import { ChevronDown, ChevronRight, Eye, FileText, Pencil, Plus, RefreshCw, Trash2, Users } from "lucide-react";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { getFullTask } from "../api-lazy";
+import TaskSearch from "./TaskSearch";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
+import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
+import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { RefreshButton } from "./ui/refresh-button";
-import TaskSearch from "./TaskSearch";
 
 // Lazy-loaded components
 const LazySubtaskList = lazy(() => import("./LazySubtaskList"));
@@ -557,7 +557,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* Search Bar */}
         <div className="w-full">
           <Suspense fallback={<div>Loading search...</div>}>
@@ -571,26 +571,30 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         </div>
         
         {/* Header - Responsive */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
           <h2 className="text-lg font-semibold">
             Tasks ({totalTasks})
           </h2>
           <div className="flex gap-2">
-            <Button
+            <ShimmerButton
+              onClick={() => loadTaskSummaries(1)}
+              size="sm"
+              variant="outline"
+              disabled={loading}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </ShimmerButton>
+            <ShimmerButton
               onClick={() => openDialog('create')}
-              size={isMobile ? "default" : "sm"}
+              size="sm"
               variant="default"
-              className="flex items-center gap-1 flex-1 sm:flex-initial"
+              className="flex items-center gap-1"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Task</span>
-              <span className="sm:hidden">New</span>
-            </Button>
-            <RefreshButton 
-              onClick={() => loadTaskSummaries(1)} 
-              loading={loading}
-              size={isMobile ? "default" : "sm"}
-            />
+              New Task
+            </ShimmerButton>
           </div>
         </div>
       </div>
@@ -598,12 +602,12 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       {/* Task List - Responsive View */}
       {isMobile ? (
         // Mobile Card View
-        <div className="space-y-3">
+        <div className="space-y-2">
           {displayTasks.map(renderMobileTaskCard)}
         </div>
       ) : (
         // Desktop Table View
-        <div className="overflow-x-auto">
+        <div className="mt-3 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
