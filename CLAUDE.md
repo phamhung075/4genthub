@@ -502,6 +502,8 @@ mcp__dhafnck_mcp_http__manage_task(
 
 ---
 
+**Auto-Agent**: For context creation and management, Claude will automatically call the most competent agent (e.g., @context_manager_agent) when a context is missing or required for frontend visibility. Manual creation is no longer necessary if the agent can handle it.
+
 **Remember**: Contexts must be manually created for frontend visibility.
 
 **Remember**: Fix root causes, not symptoms
