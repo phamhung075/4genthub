@@ -39,20 +39,6 @@ interface ScopeCardProps {
 }
 
 function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Core': return 'bg-gradient-to-r from-blue-500 to-blue-600';
-      case 'API': return 'bg-gradient-to-r from-purple-500 to-purple-600';
-      case 'Projects': return 'bg-gradient-to-r from-green-500 to-green-600';
-      case 'Tasks': return 'bg-gradient-to-r from-orange-500 to-orange-600';
-      case 'Subtasks': return 'bg-gradient-to-r from-amber-500 to-amber-600';
-      case 'Contexts': return 'bg-gradient-to-r from-indigo-500 to-indigo-600';
-      case 'Agents': return 'bg-gradient-to-r from-red-500 to-red-600';
-      case 'Branches': return 'bg-gradient-to-r from-teal-500 to-teal-600';
-      case 'Execute': return 'bg-gradient-to-r from-rose-500 to-rose-600';
-      default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
-    }
-  };
 
   const parsePermission = (value: string) => {
     // Handle special cases first
