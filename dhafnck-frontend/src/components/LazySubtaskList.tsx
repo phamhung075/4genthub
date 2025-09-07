@@ -4,6 +4,7 @@ import { deleteSubtask, listSubtasks, Subtask } from "../api";
 import { getSubtaskSummaries } from "../api-lazy";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { ShimmerButton } from "./ui/shimmer-button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
@@ -271,9 +272,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           </TableCell>
           
           <TableCell>
-            <Badge className="text-xs" variant={priorityColor[summary.priority] || "secondary"}>
-              {summary.priority}
-            </Badge>
+            <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
           </TableCell>
           
           <TableCell>
