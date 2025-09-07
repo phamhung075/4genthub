@@ -1225,6 +1225,9 @@ async def validate_password(password: str):
 # Add token management functionality to match frontend expectations
 
 # Import token management dependencies
+# DISABLED: Token management is now handled by dedicated token_mgmt_routes_db.py
+# This prevents routing conflicts where /api/auth/tokens routes conflict with
+# the dedicated token management router at /api/auth/tokens/generate
 try:
     from fastmcp.auth.interface.fastapi_auth import get_current_user, get_db
     from fastmcp.auth.domain.entities.user import User
@@ -1265,7 +1268,7 @@ try:
         data: List[TokenResponse]
         total: int
 
-    @router.post("/tokens", response_model=TokenResponse)
+    # @router.post("/tokens", response_model=TokenResponse)  # DISABLED - conflicts with dedicated router
     async def create_auth_token(
         request: TokenCreateRequest,
         current_user: User = Depends(get_current_user),
@@ -1290,7 +1293,7 @@ try:
                 detail=result.get("error", "Failed to generate token")
             )
 
-    @router.get("/tokens", response_model=TokenListResponse)
+    # @router.get("/tokens", response_model=TokenListResponse)  # DISABLED - conflicts with dedicated router
     async def list_auth_tokens(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db),
@@ -1317,7 +1320,7 @@ try:
                 detail=result.get("error", "Failed to list tokens")
             )
 
-    @router.get("/tokens/{token_id}", response_model=TokenResponse)
+    # @router.get("/tokens/{token_id}", response_model=TokenResponse)  # DISABLED - conflicts with dedicated router
     async def get_auth_token_details(
         token_id: str,
         current_user: User = Depends(get_current_user),
@@ -1346,7 +1349,7 @@ try:
                     detail=result.get("error", "Failed to get token details")
                 )
 
-    @router.delete("/tokens/{token_id}")
+    # @router.delete("/tokens/{token_id}")  # DISABLED - conflicts with dedicated router
     async def delete_auth_token(
         token_id: str,
         current_user: User = Depends(get_current_user),
@@ -1375,7 +1378,7 @@ try:
                     detail=result.get("error", "Failed to delete token")
                 )
 
-    @router.post("/tokens/{token_id}/rotate", response_model=TokenResponse)
+    # @router.post("/tokens/{token_id}/rotate", response_model=TokenResponse)  # DISABLED - conflicts with dedicated router
     async def rotate_auth_token(
         token_id: str,
         current_user: User = Depends(get_current_user),
@@ -1404,7 +1407,7 @@ try:
                     detail=result.get("error", "Failed to rotate token")
                 )
 
-    @router.get("/tokens/validate/{token}")
+    # @router.get("/tokens/validate/{token}")  # DISABLED - conflicts with dedicated router
     async def validate_auth_token(token: str, db: Session = Depends(get_db)):
         """Validate a token and return its claims"""
         
@@ -1427,3 +1430,6 @@ try:
 except ImportError as e:
     logger.warning(f"Could not import token management dependencies: {e}")
     logger.info("Token management endpoints will not be available at /api/auth")
+
+# Log that token management is handled by dedicated router
+logger.info("Token management is handled by dedicated token_mgmt_routes_db.py at /api/auth/tokens/*")

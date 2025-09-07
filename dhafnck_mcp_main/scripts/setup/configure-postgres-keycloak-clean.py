@@ -52,7 +52,7 @@ class PostgreSQLKeycloakConfigurator:
         self.mcp_config = {
             'host': os.getenv('MCP_HOST', '0.0.0.0'),
             'port': os.getenv('MCP_PORT', '8001'),
-            'secret_key': os.getenv('MCP_SECRET_KEY')
+            'secret_key': os.getenv('JWT_SECRET_KEY')
         }
         
         self.project_root = Path(__file__).parent
@@ -70,7 +70,7 @@ class PostgreSQLKeycloakConfigurator:
                 ('KEYCLOAK_CLIENT_SECRET', self.keycloak_config['client_secret'])
             ],
             'MCP': [
-                ('MCP_SECRET_KEY', self.mcp_config['secret_key'])
+                ('JWT_SECRET_KEY', self.mcp_config['secret_key'])
             ]
         }
         
@@ -339,7 +339,7 @@ KEYCLOAK_VERIFY_TOKEN_AUDIENCE=true
 # MCP Server
 MCP_HOST={self.mcp_config['host']}
 MCP_PORT={self.mcp_config['port']}
-MCP_SECRET_KEY={self.mcp_config['secret_key']}
+JWT_SECRET_KEY={self.mcp_config['secret_key']}
 
 # Frontend
 FRONTEND_URL=http://localhost:3800
@@ -704,7 +704,7 @@ mcp_keycloak_integration = MCPKeycloakIntegration()
             logger.info("  DATABASE_PASSWORD=<secure-password>")
             logger.info("  KEYCLOAK_URL=<your-keycloak-cloud-url>")
             logger.info("  KEYCLOAK_CLIENT_SECRET=<your-client-secret>")
-            logger.info("  MCP_SECRET_KEY=<secure-64-char-string>")
+            logger.info("  JWT_SECRET_KEY=<secure-64-char-string>")
             return False
         
         # Step 2: Start PostgreSQL

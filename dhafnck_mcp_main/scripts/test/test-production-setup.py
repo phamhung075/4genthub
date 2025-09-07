@@ -38,7 +38,7 @@ def check_environment():
         "MCP": [
             "MCP_HOST",
             "MCP_PORT",
-            "MCP_SECRET_KEY",
+            "JWT_SECRET_KEY",
             "AUTH_ENABLED",
             "AUTH_PROVIDER"
         ]

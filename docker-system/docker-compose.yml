@@ -66,7 +66,7 @@ services:
       # MCP Server
       MCP_HOST: 0.0.0.0
       MCP_PORT: 8001
-      MCP_SECRET_KEY: ${MCP_SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
 
       # CORS
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3800,http://localhost:8001}

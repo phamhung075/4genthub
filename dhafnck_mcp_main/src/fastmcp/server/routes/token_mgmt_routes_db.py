@@ -22,8 +22,8 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-# Use unified authentication that handles all auth methods
-from fastmcp.auth.interface.unified_auth import get_current_user
+# Use fastapi authentication that handles auth methods
+from fastmcp.auth.interface.fastapi_auth import get_current_user
 
 from fastmcp.auth.domain.entities.user import User
 

@@ -102,7 +102,7 @@ KEYCLOAK_SSL_VERIFY=true
 # =============================================================================
 MCP_HOST=0.0.0.0
 MCP_PORT=8001
-MCP_SECRET_KEY=generate-a-secure-64-char-string-for-production-use-here-1234567890
+JWT_SECRET_KEY=generate-a-secure-64-char-string-for-production-use-here-1234567890
 MCP_WORKERS=4
 
 # =============================================================================

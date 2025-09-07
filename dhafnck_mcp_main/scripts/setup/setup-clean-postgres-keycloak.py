@@ -189,7 +189,7 @@ KEYCLOAK_TOKEN_ISSUER=https://your-keycloak-domain.com/realms/dhafnck-mcp
 # =============================================================================
 MCP_HOST=0.0.0.0
 MCP_PORT=8001
-MCP_SECRET_KEY=generate-a-secure-random-string-for-production-use
+JWT_SECRET_KEY=generate-a-secure-random-string-for-production-use
 
 # =============================================================================
 # FRONTEND
@@ -322,7 +322,7 @@ services:
       # Application
       MCP_HOST: 0.0.0.0
       MCP_PORT: 8001
-      MCP_SECRET_KEY: ${MCP_SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3800,http://localhost:8001}
     ports:
       - "${MCP_PORT:-8001}:8001"

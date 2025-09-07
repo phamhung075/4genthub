@@ -110,7 +110,7 @@ KEYCLOAK_CLIENT_SECRET=your-secret-here  # UPDATE THIS
 
 - [ ] Change `DATABASE_PASSWORD` from default
 - [ ] Configure Keycloak with HTTPS
-- [ ] Set strong `MCP_SECRET_KEY`
+- [ ] Set strong `JWT_SECRET_KEY`
 - [ ] Enable SSL for PostgreSQL in production
 - [ ] Configure proper CORS origins
 - [ ] Set up regular secret rotation

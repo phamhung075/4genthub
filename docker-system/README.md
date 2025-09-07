@@ -72,7 +72,7 @@ DATABASE_USER=dhafnck_user
 DATABASE_PASSWORD=your_secure_password_here
 
 # MCP Configuration  
-MCP_SECRET_KEY=your-secret-key-here
+JWT_SECRET_KEY=your-secret-key-here
 FASTMCP_PORT=8000
 FRONTEND_PORT=3800
 

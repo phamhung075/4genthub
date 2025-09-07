@@ -56,7 +56,7 @@ AUTH_ENABLED=true
 AUTH_PROVIDER=keycloak
 MCP_HOST=0.0.0.0
 MCP_PORT=8001
-MCP_SECRET_KEY=generate-a-secure-key-here
+JWT_SECRET_KEY=generate-a-secure-key-here
 
 FRONTEND_URL=http://localhost:3800
 CORS_ORIGINS=http://localhost:3800,http://localhost:8001

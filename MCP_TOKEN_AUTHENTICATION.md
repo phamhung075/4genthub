@@ -89,7 +89,7 @@ CORS_ORIGINS=*
 # Token authentication settings
 AUTH_ENABLED=true
 AUTH_PROVIDER=local  # or keycloak
-MCP_SECRET_KEY=your-secret-key-here
+JWT_SECRET_KEY=your-secret-key-here
 TOKEN_EXPIRY=86400  # 24 hours
 ```
 
@@ -133,7 +133,7 @@ Token Expires → Request Fails → User Re-authenticates → New Token Generate
 1. **Use HTTPS**: Always use HTTPS in production to protect tokens in transit
 2. **Short Expiry**: Keep token expiry times reasonable (24-48 hours)
 3. **Secure Storage**: Store tokens securely in Claude Code configuration
-4. **Rotate Keys**: Regularly rotate MCP_SECRET_KEY
+4. **Rotate Keys**: Regularly rotate JWT_SECRET_KEY
 5. **Monitor Usage**: Log and monitor token usage for anomalies
 
 ## Implementation Details
@@ -169,7 +169,7 @@ class TokenAuthMiddleware:
         
         # Validate token
         try:
-            payload = jwt.decode(token, MCP_SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
             request.state.user_id = payload["user_id"]
             request.state.permissions = payload.get("permissions", [])
         except jwt.ExpiredSignatureError:

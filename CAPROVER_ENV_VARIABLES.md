@@ -33,7 +33,7 @@ AUTH_PROVIDER=keycloak  # Options: keycloak, local
 FASTMCP_TRANSPORT=streamable-http
 FASTMCP_HOST=0.0.0.0
 FASTMCP_PORT=8000
-MCP_SECRET_KEY=your-secret-key-here
+JWT_SECRET_KEY=your-secret-key-here
 
 # Feature Flags
 FEATURE_AUTO_COMPACT=true
@@ -77,7 +77,7 @@ VITE_ENVIRONMENT=production
 
 4. **Database**: If using CapRover's built-in PostgreSQL, use the internal connection string provided by CapRover.
 
-5. **Secrets**: Generate strong, unique values for MCP_SECRET_KEY and database passwords.
+5. **Secrets**: Generate strong, unique values for JWT_SECRET_KEY and database passwords.
 
 ## Troubleshooting CORS Issues
 

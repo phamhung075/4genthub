@@ -117,7 +117,7 @@ fi
 # Generate MCP secret key
 if grep -q "GENERATE_A_SECURE_64_CHARACTER_STRING" .env; then
     MCP_SECRET=$(openssl rand -hex 32)
-    sed -i "s|MCP_SECRET_KEY=.*|MCP_SECRET_KEY=$MCP_SECRET|" .env
+    sed -i "s|JWT_SECRET_KEY=.*|JWT_SECRET_KEY=$MCP_SECRET|" .env
     echo -e "${GREEN}✓ Generated secure MCP secret key${NC}"
 fi
 

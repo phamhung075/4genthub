@@ -82,7 +82,7 @@ KEYCLOAK_SSL_VERIFY=true
 # ===================================================================
 MCP_HOST=0.0.0.0
 MCP_PORT=8001
-MCP_SECRET_KEY=generate-secure-key-here-32-chars-min
+JWT_SECRET_KEY=generate-secure-key-here-32-chars-min
 
 # ===================================================================
 # CORS Configuration
@@ -126,7 +126,7 @@ PGADMIN_PASSWORD=AdminPassword2025!
             print("\n⚠️  IMPORTANT: Update the following in .env:")
             print("   - KEYCLOAK_URL: Your Keycloak cloud URL")
             print("   - KEYCLOAK_CLIENT_SECRET: Your client secret")
-            print("   - MCP_SECRET_KEY: Generate a secure 32+ character key")
+            print("   - JWT_SECRET_KEY: Generate a secure 32+ character key")
             print("   - DATABASE_PASSWORD: Change to a secure password")
             
             return True
