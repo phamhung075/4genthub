@@ -1,3 +1,0 @@
-"""
-Connection-related tool descriptions.
-"""

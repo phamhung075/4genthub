@@ -1,1 +1,0 @@
-⚠️ CRITICAL PREREQUISITE: Read full content of `.cursor/settings.md` → Apply all configuration rules → Execute complete master_flow sequence (P00-MT00 through P00-MT09) → Validate environment ready → ONLY THEN process user requests
