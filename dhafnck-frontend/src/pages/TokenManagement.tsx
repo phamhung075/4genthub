@@ -328,24 +328,33 @@ export function TokenManagement() {
 
         {/* Modern Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-surface/80 to-surface-secondary/80 backdrop-blur-sm">
-            <TabsTrigger value="generate" className="flex items-center space-x-2 font-medium">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg h-12">
+            <TabsTrigger 
+              value="generate" 
+              className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+            >
               <Key size={18} />
               <span>Generate Token</span>
             </TabsTrigger>
-            <TabsTrigger value="tokens" className="flex items-center space-x-2 font-medium">
+            <TabsTrigger 
+              value="tokens" 
+              className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+            >
               <Shield size={18} />
               <span>Active Tokens</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2 font-medium">
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
+            >
               <Settings size={18} />
               <span>Settings</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Generate Token Tab */}
-          <TabsContent value="generate" className="space-y-6">
-            <Card className="bg-gradient-to-br from-surface/50 to-surface-secondary/50 backdrop-blur-sm">
+          <TabsContent value="generate" className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+            <Card className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Sparkles className="h-5 w-5 text-primary" />
@@ -378,7 +387,7 @@ export function TokenManagement() {
                   </div>
                   
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap gap-2 p-4 bg-background/30 rounded-lg">
+                  <div className="flex flex-wrap gap-2 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
                     <Button
                       variant="default"
                       size="sm"
@@ -534,7 +543,7 @@ export function TokenManagement() {
           </TabsContent>
 
           {/* Active Tokens Tab */}
-          <TabsContent value="tokens" className="space-y-6">
+          <TabsContent value="tokens" className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">Active API Tokens</h2>
@@ -562,9 +571,9 @@ export function TokenManagement() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : tokens.length === 0 ? (
-              <Card className="p-8 text-center bg-gradient-to-br from-surface/30 to-surface-secondary/30">
+              <Card className="p-8 text-center bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <div className="mb-6">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mb-4">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-full flex items-center justify-center mb-4">
                     <Key className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No API Tokens Yet</h3>
@@ -589,8 +598,8 @@ export function TokenManagement() {
                   return (
                     <Card 
                       key={token.id} 
-                      className={`relative overflow-hidden bg-gradient-to-br from-surface/50 to-surface-secondary/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 ${
-                        isExpired ? 'border-red-200 bg-red-50/50' : isExpiringSoon ? 'border-orange-200 bg-orange-50/50' : ''
+                      className={`relative overflow-hidden bg-white dark:bg-slate-800 hover:shadow-lg transition-all duration-300 border ${
+                        isExpired ? 'border-red-300 bg-red-50 dark:bg-red-950' : isExpiringSoon ? 'border-orange-300 bg-orange-50 dark:bg-orange-950' : 'border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       <CardHeader className="pb-3">
@@ -705,8 +714,8 @@ export function TokenManagement() {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="bg-gradient-to-br from-surface/50 to-surface-secondary/50 backdrop-blur-sm">
+          <TabsContent value="settings" className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+            <Card className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Settings className="h-5 w-5 text-primary" />
