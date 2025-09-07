@@ -1,40 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  Tabs,
-  Tab,
-  TextField,
-  Button,
-  Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Tooltip,
-  CircularProgress,
-  Stack,
-  Card,
-  CardContent,
-  FormControlLabel,
-  Checkbox,
-  Grid
-} from '@mui/material';
-import { Delete, Copy, Key, Shield, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Delete, Copy, Key, Shield, Settings, CheckCircle, AlertCircle, Clock, Zap, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { tokenService } from '../services/tokenService';
 import { AppLayout } from '../components/AppLayout';
 import { format } from 'date-fns';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Checkbox } from '../components/ui/checkbox';
+import { Badge } from '../components/ui/badge';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '../components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Separator } from '../components/ui/separator';
+import { SparklesText } from '../components/ui/SparklesText';
 
 interface APIToken {
   id: string;
@@ -49,24 +28,64 @@ interface APIToken {
   is_active: boolean;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
+interface ScopeCardProps {
+  scope: {
+    value: string;
+    label: string;
+    description: string;
+    category: string;
+  };
+  isSelected: boolean;
+  onToggle: (value: string) => void;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Core': return 'bg-gradient-to-r from-blue-500 to-blue-600';
+      case 'API': return 'bg-gradient-to-r from-purple-500 to-purple-600';
+      case 'Projects': return 'bg-gradient-to-r from-green-500 to-green-600';
+      case 'Tasks': return 'bg-gradient-to-r from-orange-500 to-orange-600';
+      case 'Subtasks': return 'bg-gradient-to-r from-amber-500 to-amber-600';
+      case 'Contexts': return 'bg-gradient-to-r from-indigo-500 to-indigo-600';
+      case 'Agents': return 'bg-gradient-to-r from-red-500 to-red-600';
+      case 'Branches': return 'bg-gradient-to-r from-teal-500 to-teal-600';
+      case 'Execute': return 'bg-gradient-to-r from-rose-500 to-rose-600';
+      default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
+    }
+  };
+
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`token-tabpanel-${index}`}
-      aria-labelledby={`token-tab-${index}`}
-      {...other}
+    <Card 
+      className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
+        isSelected 
+          ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10' 
+          : 'hover:shadow-md bg-gradient-to-br from-surface to-surface-secondary'
+      }`}
+      onClick={() => onToggle(scope.value)}
     >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
-    </div>
+      <CardContent className="p-4">
+        <div className="flex items-start space-x-3">
+          <Checkbox 
+            checked={isSelected}
+            onChange={() => onToggle(scope.value)}
+            className="mt-1"
+          />
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-2">
+              <h4 className="font-medium text-sm">{scope.label}</h4>
+              <Badge 
+                variant="secondary" 
+                className={`text-white text-xs px-2 py-1 ${getCategoryColor(scope.category)}`}
+              >
+                {scope.category}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{scope.description}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -125,7 +144,7 @@ const AVAILABLE_SCOPES = [
 
 export function TokenManagement() {
   useAuth(); // Ensure user is authenticated
-  const [tabValue, setTabValue] = useState(0);
+  const [activeTab, setActiveTab] = useState('generate');
   const [tokens, setTokens] = useState<APIToken[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,16 +158,15 @@ export function TokenManagement() {
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   
-  // Delete confirmation dialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [tokenToDelete, setTokenToDelete] = useState<string | null>(null);
+  // Delete dialog state - using token ID as key for multiple dialogs
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     // Only fetch tokens if we're on the Active Tokens tab
-    if (tabValue === 1) {
+    if (activeTab === 'tokens') {
       fetchTokens();
     }
-  }, [tabValue]);
+  }, [activeTab]);
 
   const fetchTokens = async () => {
     try {
@@ -226,8 +244,6 @@ export function TokenManagement() {
       setError('Failed to revoke token');
     } finally {
       setLoading(false);
-      setDeleteDialogOpen(false);
-      setTokenToDelete(null);
     }
   };
 
@@ -236,498 +252,580 @@ export function TokenManagement() {
     setSuccess('Copied to clipboard');
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const handleScopeToggle = (scopeValue: string) => {
+    setSelectedScopes(prev => 
+      prev.includes(scopeValue) 
+        ? prev.filter(s => s !== scopeValue)
+        : [...prev, scopeValue]
+    );
+  };
+
+  const openDeleteDialog = (tokenId: string) => {
+    setDeleteDialogOpen(prev => ({ ...prev, [tokenId]: true }));
+  };
+
+  const closeDeleteDialog = (tokenId: string) => {
+    setDeleteDialogOpen(prev => ({ ...prev, [tokenId]: false }));
   };
 
   return (
     <AppLayout>
-      <Container maxWidth="lg">
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Header Section */}
+        <div className="mb-8">
+          <SparklesText 
+            as="h1" 
+            className="text-4xl font-bold text-foreground mb-4"
+            sparkleCount={20}
+            sparkleSize={14}
+          >
             API Token Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Generate and manage API tokens for MCP authentication
-          </Typography>
-        </Box>
+          </SparklesText>
+          <p className="text-muted-foreground text-lg">
+            Generate and manage secure API tokens for MCP authentication and integration
+          </p>
+        </div>
 
+        {/* Alerts */}
         {error && (
-          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-            {error}
+          <Alert className="mb-6 border-l-4 border-red-500 bg-red-50 dark:bg-red-950">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         
         {success && (
-          <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 2 }}>
-            {success}
+          <Alert className="mb-6 border-l-4 border-green-500 bg-green-50 dark:bg-green-950">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
-        <Paper sx={{ width: '100%' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="token management tabs">
-            <Tab label="Generate Token" icon={<Key size={20} />} iconPosition="start" />
-            <Tab label="Active Tokens" icon={<Shield size={20} />} iconPosition="start" />
-            <Tab label="Settings" icon={<Settings size={20} />} iconPosition="start" />
-          </Tabs>
+        {/* Modern Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-surface/80 to-surface-secondary/80 backdrop-blur-sm">
+            <TabsTrigger value="generate" className="flex items-center space-x-2 font-medium">
+              <Key size={18} />
+              <span>Generate Token</span>
+            </TabsTrigger>
+            <TabsTrigger value="tokens" className="flex items-center space-x-2 font-medium">
+              <Shield size={18} />
+              <span>Active Tokens</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center space-x-2 font-medium">
+              <Settings size={18} />
+              <span>Settings</span>
+            </TabsTrigger>
+          </TabsList>
 
-          <TabPanel value={tabValue} index={0}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Generate New API Token
-                </Typography>
-                
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Token Name"
-                      value={tokenName}
-                      onChange={(e) => setTokenName(e.target.value)}
-                      placeholder="e.g., Production API, CI/CD Pipeline"
-                      helperText="A descriptive name to identify this token"
-                    />
-                  </Grid>
+          {/* Generate Token Tab */}
+          <TabsContent value="generate" className="space-y-6">
+            <Card className="bg-gradient-to-br from-surface/50 to-surface-secondary/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span>Generate New API Token</span>
+                </CardTitle>
+                <CardDescription>
+                  Create a secure API token with custom permissions and settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Token Name */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Token Name</label>
+                  <Input
+                    value={tokenName}
+                    onChange={(e) => setTokenName(e.target.value)}
+                    placeholder="e.g., Production API, CI/CD Pipeline, Development Access"
+                    className="bg-background/50"
+                  />
+                  <p className="text-xs text-muted-foreground">A descriptive name to identify this token</p>
+                </div>
 
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Select Scopes
-                    </Typography>
-                    {/* Group scopes by category */}
-                    {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute'].map((category) => {
-                      const categoryScopes = AVAILABLE_SCOPES.filter(s => s.category === category);
-                      if (categoryScopes.length === 0) return null;
-                      
-                      return (
-                        <Box key={category} sx={{ mb: 2 }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                            {category} Scopes
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            {categoryScopes.map((scope) => (
-                              <FormControlLabel
-                                key={scope.value}
-                                control={
-                                  <Checkbox
-                                    checked={selectedScopes.includes(scope.value)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedScopes([...selectedScopes, scope.value]);
-                                      } else {
-                                        setSelectedScopes(selectedScopes.filter(s => s !== scope.value));
-                                      }
-                                    }}
-                                    size="small"
-                                  />
-                                }
-                                label={
-                                  <Tooltip title={scope.description}>
-                                    <Chip 
-                                      label={scope.label} 
-                                      size="small"
-                                      color={
-                                        category === 'Core' ? 'secondary' : 
-                                        category === 'API' ? 'primary' : 
-                                        category === 'Execute' ? 'warning' : 
-                                        'default'
-                                      }
-                                      variant={selectedScopes.includes(scope.value) ? 'filled' : 'outlined'}
-                                    />
-                                  </Tooltip>
-                                }
-                              />
-                            ))}
-                          </Box>
-                        </Box>
-                      );
-                    })}
+                {/* Scope Selection with Improved Grid */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Select Permissions</h3>
+                    <Badge variant="outline" className="text-sm">
+                      {selectedScopes.length} selected
+                    </Badge>
+                  </div>
+                  
+                  {/* Quick Actions */}
+                  <div className="flex flex-wrap gap-2 p-4 bg-background/30 rounded-lg">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.map(s => s.value))}
+                      className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                    >
+                      <Shield className="h-4 w-4 mr-1" />
+                      Full Access
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const readScopes = AVAILABLE_SCOPES
+                          .filter(s => s.value.includes(':read') || s.category === 'Core' || s.category === 'API')
+                          .map(s => s.value);
+                        setSelectedScopes(readScopes);
+                      }}
+                    >
+                      Read Only
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const essentialScopes = [
+                          'openid', 'profile', 'email', 'mcp-api', 'mcp-roles',
+                          'projects:read', 'tasks:read', 'tasks:create', 'tasks:update',
+                          'contexts:read', 'contexts:update'
+                        ];
+                        setSelectedScopes(essentialScopes);
+                      }}
+                    >
+                      Essential
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const executeScopes = [
+                          'openid', 'profile', 'email', 'mcp-api', 'mcp-roles', 'mcp-profile',
+                          'mcp:execute', 'mcp:delegate'
+                        ];
+                        setSelectedScopes(executeScopes);
+                      }}
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      Execute Only
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedScopes([])}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+
+                  {/* Improved Grid Layout for Scopes */}
+                  {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute'].map((category) => {
+                    const categoryScopes = AVAILABLE_SCOPES.filter(s => s.category === category);
+                    if (categoryScopes.length === 0) return null;
                     
-                    {/* Quick Actions - Improved with less redundancy */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        Quick Selection Presets
-                      </Typography>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="primary"
-                          onClick={() => {
-                            // Full MCP Access - All permissions
-                            const allScopes = AVAILABLE_SCOPES.map(s => s.value);
-                            setSelectedScopes(allScopes);
-                          }}
-                          startIcon={<Shield size={16} />}
-                        >
-                          Full Access
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => {
-                            // Read-only access to all resources
-                            const readScopes = AVAILABLE_SCOPES
-                              .filter(s => s.value.includes(':read') || s.category === 'Core' || s.category === 'API')
-                              .map(s => s.value);
-                            setSelectedScopes(readScopes);
-                          }}
-                        >
-                          Read Only
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => {
-                            // Essential scopes for basic operations
-                            const essentialScopes = [
-                              'openid', 'profile', 'email', 
-                              'mcp-api', 'mcp-roles',
-                              'projects:read', 'tasks:read', 'tasks:create', 'tasks:update',
-                              'contexts:read', 'contexts:update'
-                            ];
-                            setSelectedScopes(essentialScopes);
-                          }}
-                        >
-                          Essential
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => {
-                            // MCP Execute permissions only
-                            const executeScopes = [
-                              'openid', 'profile', 'email',
-                              'mcp-api', 'mcp-roles', 'mcp-profile',
-                              'mcp:execute', 'mcp:delegate'
-                            ];
-                            setSelectedScopes(executeScopes);
-                          }}
-                        >
-                          Execute Only
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="error"
-                          onClick={() => setSelectedScopes([])}
-                        >
-                          Clear All
-                        </Button>
-                      </Stack>
-                    </Box>
-                  </Grid>
+                    return (
+                      <div key={category} className="space-y-3">
+                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                          {category} Permissions
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {categoryScopes.map((scope) => (
+                            <ScopeCard
+                              key={scope.value}
+                              scope={scope}
+                              isSelected={selectedScopes.includes(scope.value)}
+                              onToggle={handleScopeToggle}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
+                {/* Settings Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>Expiry (days)</span>
+                    </label>
+                    <Input
                       type="number"
-                      label="Expiry (days)"
                       value={expiryDays}
-                      onChange={(e) => setExpiryDays(parseInt(e.target.value))}
-                      helperText="Token will expire after this many days"
-                      InputProps={{ inputProps: { min: 1, max: 365 } }}
+                      onChange={(e) => setExpiryDays(parseInt(e.target.value) || 30)}
+                      min="1"
+                      max="365"
+                      className="bg-background/50"
                     />
-                  </Grid>
+                    <p className="text-xs text-muted-foreground">Token expires after this many days</p>
+                  </div>
 
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center space-x-2">
+                      <Zap className="h-4 w-4" />
+                      <span>Rate Limit (requests/hour)</span>
+                    </label>
+                    <Input
                       type="number"
-                      label="Rate Limit (requests/hour)"
                       value={rateLimit}
-                      onChange={(e) => setRateLimit(parseInt(e.target.value))}
-                      helperText="Maximum requests per hour"
-                      InputProps={{ inputProps: { min: 1, max: 10000 } }}
+                      onChange={(e) => setRateLimit(parseInt(e.target.value) || 1000)}
+                      min="1"
+                      max="10000"
+                      className="bg-background/50"
                     />
-                  </Grid>
+                    <p className="text-xs text-muted-foreground">Maximum requests per hour</p>
+                  </div>
+                </div>
 
-                  <Grid item xs={12}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      mt: 2,
-                      p: 2,
-                      backgroundColor: 'background.default',
-                      borderRadius: 1
-                    }}>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {selectedScopes.length} scope{selectedScopes.length !== 1 ? 's' : ''} selected
-                        </Typography>
-                        {tokenName && (
-                          <Typography variant="caption" color="text.secondary">
-                            Token will be named: "{tokenName}"
-                          </Typography>
-                        )}
-                      </Box>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="large"
-                        onClick={handleGenerateToken}
-                        disabled={loading || !tokenName || selectedScopes.length === 0}
-                        startIcon={loading ? <CircularProgress size={20} /> : <Key size={20} />}
-                        sx={{ 
-                          minWidth: 200,
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {loading ? 'Generating...' : 'Generate New API Token'}
-                      </Button>
-                    </Box>
-                  </Grid>
-                </Grid>
+                {/* Generate Button */}
+                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {selectedScopes.length} permission{selectedScopes.length !== 1 ? 's' : ''} selected
+                    </p>
+                    {tokenName && (
+                      <p className="text-xs text-muted-foreground">
+                        Token name: "{tokenName}"
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleGenerateToken}
+                    disabled={loading || !tokenName || selectedScopes.length === 0}
+                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white font-semibold px-8"
+                    size="lg"
+                  >
+                    {loading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Generating...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Key className="h-4 w-4" />
+                        <span>Generate API Token</span>
+                      </div>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel value={tabValue} index={1}>
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="h6">Active API Tokens</Typography>
-                <Typography variant="body2" color="text.secondary">
+          {/* Active Tokens Tab */}
+          <TabsContent value="tokens" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Active API Tokens</h2>
+                <p className="text-muted-foreground">
                   {tokens.length} active token{tokens.length !== 1 ? 's' : ''}
-                </Typography>
-              </Box>
+                </p>
+              </div>
               <Button
-                variant="outlined"
+                variant="outline"
                 onClick={fetchTokens}
                 disabled={loading}
-                startIcon={loading ? <CircularProgress size={16} /> : <Shield size={16} />}
+                className="bg-background/50 hover:bg-background"
               >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                ) : (
+                  <Shield className="h-4 w-4 mr-2" />
+                )}
                 Refresh
               </Button>
-            </Box>
+            </div>
             
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
             ) : tokens.length === 0 ? (
-              <Card sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No API Tokens Yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Generate your first token to start using the MCP API
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setTabValue(0)}
-                  startIcon={<Key size={20} />}
-                >
-                  Generate First Token
-                </Button>
+              <Card className="p-8 text-center bg-gradient-to-br from-surface/30 to-surface-secondary/30">
+                <div className="mb-6">
+                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mb-4">
+                    <Key className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No API Tokens Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Generate your first token to start using the MCP API
+                  </p>
+                  <Button
+                    onClick={() => setActiveTab('generate')}
+                    className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Generate First Token
+                  </Button>
+                </div>
               </Card>
             ) : (
-              <Grid container spacing={2}>
-                {tokens.map((token) => (
-                  <Grid item xs={12} md={6} lg={4} key={token.id}>
-                    <Card>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                          <Box>
-                            <Typography variant="h6" gutterBottom>
-                              {token.name}
-                            </Typography>
-                            <Chip
-                              label={token.is_active ? 'Active' : 'Inactive'}
-                              color={token.is_active ? 'success' : 'default'}
-                              size="small"
-                            />
-                          </Box>
-                          <IconButton
-                            onClick={() => {
-                              setTokenToDelete(token.id);
-                              setDeleteDialogOpen(true);
-                            }}
-                            color="error"
-                            size="small"
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {tokens.map((token) => {
+                  const isExpiringSoon = new Date(token.expires_at) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                  const isExpired = new Date(token.expires_at) < new Date();
+                  
+                  return (
+                    <Card 
+                      key={token.id} 
+                      className={`relative overflow-hidden bg-gradient-to-br from-surface/50 to-surface-secondary/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 ${
+                        isExpired ? 'border-red-200 bg-red-50/50' : isExpiringSoon ? 'border-orange-200 bg-orange-50/50' : ''
+                      }`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg mb-2 flex items-center space-x-2">
+                              <span className="truncate">{token.name}</span>
+                            </CardTitle>
+                            <div className="flex items-center space-x-2">
+                              <Badge 
+                                variant={token.is_active && !isExpired ? "default" : "secondary"}
+                                className={`${
+                                  token.is_active && !isExpired 
+                                    ? "bg-green-500 hover:bg-green-600 text-white" 
+                                    : "bg-gray-500 text-white"
+                                }`}
+                              >
+                                {isExpired ? 'Expired' : token.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                              {isExpiringSoon && !isExpired && (
+                                <Badge variant="outline" className="border-orange-500 text-orange-600">
+                                  Expiring Soon
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Dialog 
+                            open={deleteDialogOpen[token.id] || false}
+                            onOpenChange={(open) => open ? openDeleteDialog(token.id) : closeDeleteDialog(token.id)}
                           >
-                            <Delete size={18} />
-                          </IconButton>
-                        </Box>
-                        
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Created: {format(new Date(token.created_at), 'MMM d, yyyy')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Expires: {format(new Date(token.expires_at), 'MMM d, yyyy')}
-                          </Typography>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
+                                onClick={() => openDeleteDialog(token.id)}
+                              >
+                                <Delete className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Revoke API Token</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to revoke this token? This action cannot be undone and any applications using this token will lose access.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => closeDeleteDialog(token.id)}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => {
+                                    handleRevokeToken(token.id);
+                                    closeDeleteDialog(token.id);
+                                  }}
+                                >
+                                  Revoke Token
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        {/* Dates */}
+                        <div className="grid grid-cols-1 gap-2 text-sm">
+                          <div className="flex items-center space-x-2 text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span className="text-xs">Created: {format(new Date(token.created_at), 'MMM d, yyyy')}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-muted-foreground">
+                            <AlertCircle className="h-3 w-3" />
+                            <span className="text-xs">Expires: {format(new Date(token.expires_at), 'MMM d, yyyy')}</span>
+                          </div>
                           {token.last_used_at && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              Last used: {format(new Date(token.last_used_at), 'MMM d, h:mm a')}
-                            </Typography>
+                            <div className="flex items-center space-x-2 text-muted-foreground">
+                              <Zap className="h-3 w-3" />
+                              <span className="text-xs">Last used: {format(new Date(token.last_used_at), 'MMM d, h:mm a')}</span>
+                            </div>
                           )}
-                        </Box>
+                        </div>
                         
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                            Usage: {token.usage_count} requests
-                          </Typography>
+                        <Separator />
+                        
+                        {/* Usage Stats */}
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div className="bg-background/50 rounded-lg p-3">
+                            <p className="text-2xl font-bold text-primary">{token.usage_count}</p>
+                            <p className="text-xs text-muted-foreground">Requests</p>
+                          </div>
                           {token.rate_limit && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              Rate limit: {token.rate_limit}/hour
-                            </Typography>
+                            <div className="bg-background/50 rounded-lg p-3">
+                              <p className="text-2xl font-bold text-secondary">{token.rate_limit}</p>
+                              <p className="text-xs text-muted-foreground">Per Hour</p>
+                            </div>
                           )}
-                        </Box>
+                        </div>
                         
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                            Scopes ({token.scopes.length})
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {token.scopes.slice(0, 5).map((scope) => (
-                              <Chip key={scope} label={scope} size="small" variant="outlined" />
+                        {/* Scopes */}
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2 font-medium">
+                            Permissions ({token.scopes.length})
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {token.scopes.slice(0, 4).map((scope) => (
+                              <Badge key={scope} variant="outline" className="text-xs px-2 py-0.5">
+                                {scope}
+                              </Badge>
                             ))}
-                            {token.scopes.length > 5 && (
-                              <Chip 
-                                label={`+${token.scopes.length - 5} more`} 
-                                size="small" 
-                                variant="outlined"
-                                color="primary"
-                              />
+                            {token.scopes.length > 4 && (
+                              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                                +{token.scopes.length - 4} more
+                              </Badge>
                             )}
-                          </Box>
-                        </Box>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
-                  </Grid>
-                ))}
-              </Grid>
+                  );
+                })}
+              </div>
             )}
-          </TabPanel>
+          </TabsContent>
 
-          <TabPanel value={tabValue} index={2}>
-            <Card>
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="bg-gradient-to-br from-surface/50 to-surface-secondary/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  <span>Token Settings</span>
+                </CardTitle>
+                <CardDescription>
+                  Configure default settings for API token generation and management
+                </CardDescription>
+              </CardHeader>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Token Settings
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Configure default settings for API token generation and management.
-                </Typography>
-                
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  Token settings configuration will be available in a future update.
+                <Alert className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Token settings configuration will be available in a future update.
+                  </AlertDescription>
                 </Alert>
               </CardContent>
             </Card>
-          </TabPanel>
-        </Paper>
+          </TabsContent>
+        </Tabs>
 
         {/* Generated Token Dialog */}
-        <Dialog 
-          open={showTokenDialog} 
-          onClose={() => setShowTokenDialog(false)} 
-          maxWidth="md" 
-          fullWidth
-          PaperProps={{
-            sx: { maxHeight: '90vh' }
-          }}
-        >
-          <DialogTitle>Token Generated Successfully</DialogTitle>
-          <DialogContent dividers sx={{ pb: 3 }}>
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Make sure to copy this token now. You won't be able to see it again!
-            </Alert>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              value={generatedToken || ''}
-              InputProps={{
-                readOnly: true,
-                sx: { fontFamily: 'monospace', fontSize: '0.85rem' }
-              }}
-              sx={{ mb: 2 }}
-            />
+        <Dialog open={showTokenDialog} onOpenChange={setShowTokenDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span>Token Generated Successfully</span>
+              </DialogTitle>
+              <DialogDescription>
+                Make sure to copy this token now. You won't be able to see it again!
+              </DialogDescription>
+            </DialogHeader>
             
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-              How to Use This Token
-            </Typography>
-            
-            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-              For Claude Code MCP Configuration:
-            </Typography>
-            <Paper sx={{ p: 2, bgcolor: 'grey.100', mb: 2 }}>
-              <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+            <div className="space-y-6">
+              <Alert className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Important:</strong> This token will only be shown once. Copy it now and store it securely.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your API Token:</label>
+                <div className="relative">
+                  <Input
+                    value={generatedToken || ''}
+                    readOnly
+                    className="font-mono text-xs bg-background/50 pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1 h-8 w-8 p-0"
+                    onClick={() => generatedToken && copyToClipboard(generatedToken)}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-semibold">How to Use This Token</h4>
+                
+                <div className="space-y-3">
+                  <div>
+                    <h5 className="text-sm font-medium mb-2">For Claude Code MCP Configuration:</h5>
+                    <div className="relative">
+                      <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto font-mono">
 {`"dhafnck_mcp_http": {
     "type": "http",
-    "url": "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/mcp",
+    "url": "${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp",
     "headers": {
         "Accept": "application/json, text/event-stream",
         "Authorization": "Bearer ${generatedToken || 'YOUR_TOKEN_HERE'}"
     }
 }`}
-              </Typography>
-            </Paper>
-            <Button
-              size="small"
-              startIcon={<Copy size={16} />}
-              onClick={() => {
-                const config = {
-                  dhafnck_mcp_http: {
-                    type: "http",
-                    url: `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/mcp`,
-                    headers: {
-                      Accept: "application/json, text/event-stream",
-                      Authorization: `Bearer ${generatedToken}`
-                    }
-                  }
-                };
-                copyToClipboard(JSON.stringify(config, null, 4));
-                setSuccess('MCP configuration copied to clipboard');
-              }}
-            >
-              Copy MCP Configuration
-            </Button>
+                      </pre>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          const config = {
+                            dhafnck_mcp_http: {
+                              type: "http",
+                              url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                              headers: {
+                                Accept: "application/json, text/event-stream",
+                                Authorization: `Bearer ${generatedToken}`
+                              }
+                            }
+                          };
+                          copyToClipboard(JSON.stringify(config, null, 4));
+                          setSuccess('MCP configuration copied to clipboard');
+                        }}
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h5 className="text-sm font-medium mb-2">For API Requests:</h5>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <code className="text-xs font-mono">
+                        Authorization: Bearer {generatedToken ? `${generatedToken.substring(0, 20)}...` : 'YOUR_TOKEN_HERE'}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-              For API Requests:
-            </Typography>
-            <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
-              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                Authorization: Bearer {generatedToken ? `${generatedToken.substring(0, 20)}...` : 'YOUR_TOKEN_HERE'}
-              </Typography>
-            </Paper>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowTokenDialog(false)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => generatedToken && copyToClipboard(generatedToken)}
+                className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Token Only
+              </Button>
+            </DialogFooter>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowTokenDialog(false)}>Close</Button>
-            <Button
-              variant="contained"
-              startIcon={<Copy size={18} />}
-              onClick={() => generatedToken && copyToClipboard(generatedToken)}
-            >
-              Copy Token Only
-            </Button>
-          </DialogActions>
         </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-          <DialogTitle>Revoke API Token</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Are you sure you want to revoke this token? This action cannot be undone and any applications using this token will lose access.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button
-              color="error"
-              variant="contained"
-              onClick={() => tokenToDelete && handleRevokeToken(tokenToDelete)}
-            >
-              Revoke Token
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Container>
+      </div>
     </AppLayout>
   );
 }

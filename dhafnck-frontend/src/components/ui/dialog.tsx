@@ -63,4 +63,12 @@ export function DialogTitle({ children, className }: { children: React.ReactNode
 
 export function DialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn("mt-6 flex justify-end gap-2", className)}>{children}</div>;
+}
+
+export function DialogDescription({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <p className={cn("text-sm text-muted-foreground mb-4", className)}>{children}</p>;
+}
+
+export function DialogTrigger({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) {
+  return <>{children}</>;
 } 

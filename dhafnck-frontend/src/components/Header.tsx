@@ -1,8 +1,9 @@
+import { ChevronDown, Home, Key, LogOut, Settings, User } from 'lucide-react';
 import React, { useContext, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
-import { User, LogOut, ChevronDown, Settings, Home, Key } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { Brand } from './ui/Brand';
 
 export const Header: React.FC = () => {
   const authContext = useContext(AuthContext);
@@ -34,12 +35,10 @@ export const Header: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-6">
           <Link to="/dashboard" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">D</span>
-            </div>
+
             <div className="flex flex-col">
-              <h1 className="text-2xl font-bold text-base-primary group-hover:text-primary transition-colors">DhafnckMCP</h1>
-              <span className="text-xs text-base-tertiary -mt-1">AI Orchestration Platform</span>
+              <Brand variant="header" />
+              <span className="text-xs text-base-white -mt-1">AI Orchestration Platform</span>
             </div>
           </Link>
         </div>

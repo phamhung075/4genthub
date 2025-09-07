@@ -7,6 +7,40 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **✨ Modernized Token Management Page with Grid Layout** - 2025-09-07
+  - **Complete UI Redesign**: Converted from Material-UI to shadcn/ui components
+  - **Enhanced Grid Layouts**: 
+    - Improved scope selection with responsive 3-column grid
+    - Modern active tokens display with card-based layout
+    - Interactive scope cards with category color coding
+  - **Visual Improvements**:
+    - SparklesText header with animated text effects
+    - Gradient backgrounds and backdrop blur effects
+    - Enhanced color-coded permission categories (Core, API, Projects, etc.)
+    - Modern button styling with gradient effects
+    - Improved token status indicators with expiry warnings
+  - **Better UX**:
+    - Quick selection presets (Full Access, Read Only, Essential, Execute Only)
+    - Intuitive scope selection with visual feedback
+    - Enhanced token generation dialog with copy functionality
+    - Inline delete confirmation dialogs
+    - Responsive design optimized for all screen sizes
+  - **Components Enhanced**: `dhafnck-frontend/src/pages/TokenManagement.tsx`
+  - **Dependencies Added**: shadcn/ui tabs, alert components, class-variance-authority
+
+- **🎬 VideoText Component for Dynamic Dashboard Titles** - 2025-09-07
+  - **Component**: Created `VideoText.tsx` with multiple visual effects and size options
+  - **Features**:
+    - Multiple variants: default, gradient, animated, holographic
+    - Configurable sizes: xs, sm, md, lg, xl, 2xl, 3xl
+    - Animation effects: flicker, glow, scanning light effect
+    - Customizable colors, speed, and glitch intensity
+    - Built-in presets: DashboardTitle, SectionTitle, BrandLogo
+    - TypeScript interfaces with comprehensive props
+    - Theme integration with existing design system
+  - **Location**: `dhafnck-frontend/src/components/ui/VideoText.tsx`
+  - **Usage**: Perfect for dashboard titles like "DhafnckMCP" with visual effects
+  - **Integration**: Follows existing component patterns and utility functions
 - **🎨 FallingGlitch Background Effect for Login Page** - 2025-09-07
   - **Component**: Created `FallingGlitch.tsx` animated background component
   - **Features**:

@@ -1,5 +1,23 @@
 # TEST-CHANGELOG
 
+## [2025-09-07] VideoText Component Test Coverage & Auth Endpoints Tests
+
+### Added
+- **VideoText Component Tests** (`src/tests/components/ui/VideoText.test.tsx`)
+  - Comprehensive test coverage for the new VideoText component
+  - Test coverage includes:
+    - Basic rendering and children display
+    - Size class application (xs, sm, md, lg, xl, 2xl, 3xl)
+    - Variant behavior (default, gradient, animated, holographic)
+    - Custom className and prop handling
+    - Animation class application for different variants
+    - Glow effect enablement/disablement
+    - Preset components (DashboardTitle, SectionTitle, BrandLogo)
+    - All configuration props (speed, glitchIntensity, colors, enableGlow)
+    - CSS injection and animation keyframes validation
+  - Uses React Testing Library and Jest DOM matchers
+  - 25+ test cases covering all component features and edge cases
+
 ## [2025-09-07] Comprehensive Auth Endpoints Test Coverage
 
 ### Added

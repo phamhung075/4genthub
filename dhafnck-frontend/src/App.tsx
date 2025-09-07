@@ -1,21 +1,21 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Folder, Menu, X } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { Project } from './api';
 import './App.css';
+import { AppLayout } from './components/AppLayout';
+import { AuthWrapper, EmailVerification, LoginForm, ProtectedRoute, SignupForm } from './components/auth';
+import BranchDetailsDialog from './components/BranchDetailsDialog';
+import GlobalContextDialog from './components/GlobalContextDialog';
+import { Header } from './components/Header';
+import ProjectDetailsDialog from './components/ProjectDetailsDialog';
 import ProjectList from './components/ProjectList';
 import { Button } from './components/ui/button';
-import { Menu, X, Folder } from 'lucide-react';
-import { AuthWrapper, LoginForm, SignupForm, ProtectedRoute, EmailVerification } from './components/auth';
-import { Header } from './components/Header';
-import { Profile } from './pages/Profile';
-import { TokenManagement } from './pages/TokenManagement';
-import RegistrationSuccess from './pages/RegistrationSuccess';
-import { AppLayout } from './components/AppLayout';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './components/ui/toast';
-import GlobalContextDialog from './components/GlobalContextDialog';
-import ProjectDetailsDialog from './components/ProjectDetailsDialog';
-import BranchDetailsDialog from './components/BranchDetailsDialog';
-import { Project } from './api';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { Profile } from './pages/Profile';
+import RegistrationSuccess from './pages/RegistrationSuccess';
+import { TokenManagement } from './pages/TokenManagement';
 
 // Use lazy loading for TaskList component for better performance
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
@@ -106,7 +106,7 @@ function Dashboard() {
 
         {/* Modern Main content */}
         <main className="flex-1 flex flex-col p-6 w-full">
-          {/* Add padding top on mobile to account for menu button */}
+           {/* Add padding top on mobile to account for menu button */}
           <div className="flex-1 overflow-y-auto pt-16 lg:pt-0">
             {selection ? (
               <Suspense fallback={
