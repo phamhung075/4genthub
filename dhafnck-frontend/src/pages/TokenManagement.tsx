@@ -791,16 +791,15 @@ export function TokenManagement() {
                       size="sm"
                       onClick={() => {
                         const config = {
-                          dhafnck_mcp_http: {
-                            type: "http",
-                            url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
-                            headers: {
-                              Accept: "application/json, text/event-stream",
-                              Authorization: `Bearer ${generatedToken}`
-                            }
+                          type: "http",
+                          url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
+                          headers: {
+                            Accept: "application/json, text/event-stream",
+                            Authorization: `Bearer ${generatedToken}`
                           }
                         };
-                        copyToClipboard(JSON.stringify(config, null, 2), 'mcp-config');
+                        const configString = `"dhafnck_mcp_http": ${JSON.stringify(config, null, 2)}`;
+                        copyToClipboard(configString, 'mcp-config');
                       }}
                       className={copiedButton === 'mcp-config' ? 'bg-green-50 border-green-500 text-green-700' : ''}
                     >
@@ -875,16 +874,15 @@ export function TokenManagement() {
               <Button
                 onClick={() => {
                   const config = {
-                    dhafnck_mcp_http: {
-                      type: "http", 
-                      url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
-                      headers: {
-                        Accept: "application/json, text/event-stream",
-                        Authorization: `Bearer ${generatedToken}`
-                      }
+                    type: "http", 
+                    url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
+                    headers: {
+                      Accept: "application/json, text/event-stream",
+                      Authorization: `Bearer ${generatedToken}`
                     }
                   };
-                  copyToClipboard(JSON.stringify(config, null, 2), 'complete-config');
+                  const configString = `"dhafnck_mcp_http": ${JSON.stringify(config, null, 2)}`;
+                  copyToClipboard(configString, 'complete-config');
                 }}
                 className={copiedButton === 'complete-config' 
                   ? "bg-green-600 hover:bg-green-700 text-white"

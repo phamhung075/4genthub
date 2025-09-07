@@ -71,19 +71,19 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
         <div className="relative flex overflow-x-auto">
           <code className="font-mono text-xs md:text-sm lg:text-base w-full">
                        
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center">
               <span className="text-blue-600 dark:text-blue-400">"dhafnck_mcp_http"</span>
               <span className="text-zinc-600 dark:text-gray-400">: {"{"}</span>
             </div>
             
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
               <span className="text-blue-600 dark:text-blue-400">"type"</span>
               <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-green-600 dark:text-green-400">"http"</span>
               <span className="text-zinc-600 dark:text-gray-400">,</span>
             </div>
             
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
               <span className="text-blue-600 dark:text-blue-400">"url"</span>
               <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-green-600 dark:text-green-400">
@@ -92,12 +92,12 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
               <span className="text-zinc-600 dark:text-gray-400">,</span>
             </div>
             
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
               <span className="text-blue-600 dark:text-blue-400">"headers"</span>
               <span className="text-zinc-600 dark:text-gray-400">: {"{"}</span>
             </div>
             
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-12">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
               <span className="text-blue-600 dark:text-blue-400">"Accept"</span>
               <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-green-600 dark:text-green-400">
@@ -109,7 +109,7 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
             </div>
             
             {showToken && configData.token && (
-              <div className="pl-12">
+              <div className="pl-8">
                 <div className="flex items-start">
                   <span className="text-blue-600 dark:text-blue-400 whitespace-nowrap">"Authorization"</span>
                   <span className="text-zinc-600 dark:text-gray-400">: </span>
@@ -126,11 +126,11 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
               </div>
             )}
             
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
               <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
             </div>
             
-            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
+            <div className="h-6 md:h-7 lg:h-8 flex items-center">
               <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
             </div>           
           
