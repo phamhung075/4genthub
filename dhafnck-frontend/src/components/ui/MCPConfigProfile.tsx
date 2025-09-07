@@ -1,4 +1,3 @@
-import React from "react";
 
 interface MCPConfigData {
   serverName: string;
@@ -27,10 +26,24 @@ export default function MCPConfigProfile({ configData, showToken = false }: MCPC
 
 const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
   const getLineCount = () => {
-    let lines = 8; // Base structure lines
-    lines += configData.capabilities.length; // Capabilities array lines
-    if (showToken) lines += 2; // Token lines
+    let lines = 9; // Base structure lines (without Authorization)
+    if (showToken && configData.token) {
+      // Authorization takes 3 visual lines when token is shown
+      lines += 3;
+    }
     return lines;
+  };
+
+  // Generate the proper MCP config format
+  const mcpConfig = {
+    dhafnck_mcp_http: {
+      type: "http",
+      url: `http://${configData.host}:${configData.port}/mcp`,
+      headers: {
+        Accept: "application/json, text/event-stream",
+        ...(showToken && configData.token ? { Authorization: `Bearer ${configData.token}` } : {})
+      }
+    }
   };
 
   return (
@@ -47,134 +60,85 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
           <div className="h-3 w-3 rounded-full bg-green-400"></div>
         </div>
         <div className="text-xs text-zinc-600 dark:text-gray-400 font-mono">
-          mcp-config.json
+          claude_mcp_config.json
         </div>
       </div>
 
-      <div className="overflow-hidden border-t-[2px] border-zinc-300 dark:border-indigo-900 px-4 lg:px-8 py-4 lg:py-8 relative">
+      <div className="border-t-[2px] border-zinc-300 dark:border-indigo-900 px-4 lg:px-8 py-4 lg:py-8 relative">
         <div className="absolute -top-24 -left-24 w-56 h-56 bg-blue-600 rounded-full opacity-10 filter blur-3xl"></div>
         <div className="absolute -bottom-24 -right-24 w-56 h-56 bg-cyan-600 rounded-full opacity-10 filter blur-3xl"></div>
 
-        <div className="relative flex">
-          <div className="hidden md:flex flex-col items-end pr-4 text-zinc-600 dark:text-gray-500 font-mono text-xs">
-            {Array.from({ length: getLineCount() }, (_, i) => (
-              <div key={i} className="leading-relaxed select-none opacity-70">
-                {i + 1}
-              </div>
-            ))}
-          </div>
-
+        <div className="relative flex overflow-x-auto">
           <code className="font-mono text-xs md:text-sm lg:text-base w-full">
-            <div>
-              <span className="mr-2 text-pink-500 dark:text-pink-400">
-                const
-              </span>
-              <span className="mr-2 text-violet-500 dark:text-violet-400">
-                mcpConfig
-              </span>
-              <span className="mr-2 text-pink-500 dark:text-pink-400">=</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center">
               <span className="text-zinc-600 dark:text-gray-400">{"{"}</span>
             </div>
             
-            <div className="pl-6">
-              <span className="text-zinc-800 dark:text-white">serverName:</span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
-              <span className="text-green-600 dark:text-green-400">
-                {configData.serverName}
-              </span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
+              <span className="text-blue-600 dark:text-blue-400">"dhafnck_mcp_http"</span>
+              <span className="text-zinc-600 dark:text-gray-400">: {"{"}</span>
             </div>
             
-            <div className="pl-6">
-              <span className="text-zinc-800 dark:text-white">protocol:</span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
-              <span className="text-green-600 dark:text-green-400">
-                {configData.protocol}
-              </span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+              <span className="text-blue-600 dark:text-blue-400">"type"</span>
+              <span className="text-zinc-600 dark:text-gray-400">: </span>
+              <span className="text-green-600 dark:text-green-400">"http"</span>
+              <span className="text-zinc-600 dark:text-gray-400">,</span>
             </div>
             
-            <div className="pl-6">
-              <span className="text-zinc-800 dark:text-white">version:</span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+              <span className="text-blue-600 dark:text-blue-400">"url"</span>
+              <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-green-600 dark:text-green-400">
-                {configData.version}
+                "http://{configData.host}:{configData.port}/mcp"
               </span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
+              <span className="text-zinc-600 dark:text-gray-400">,</span>
             </div>
             
-            <div className="pl-6">
-              <span className="text-zinc-800 dark:text-white">endpoint:</span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
-              <span className="text-green-600 dark:text-green-400">
-                {configData.host}:{configData.port}
-              </span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+              <span className="text-blue-600 dark:text-blue-400">"headers"</span>
+              <span className="text-zinc-600 dark:text-gray-400">: {"{"}</span>
             </div>
             
-            <div className="pl-6">
-              <span className="text-zinc-800 dark:text-white">authentication:</span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-12">
+              <span className="text-blue-600 dark:text-blue-400">"Accept"</span>
+              <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-green-600 dark:text-green-400">
-                {configData.authentication}
+                "application/json, text/event-stream"
               </span>
-              <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
+              {showToken && configData.token && (
+                <span className="text-zinc-600 dark:text-gray-400">,</span>
+              )}
             </div>
             
             {showToken && configData.token && (
-              <>
-                <div className="pl-6">
-                  <span className="text-zinc-800 dark:text-white">token:</span>
-                  <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
-                  <span className="text-amber-600 dark:text-amber-400 break-all">
-                    {configData.token.length > 50 
-                      ? `${configData.token.substring(0, 50)}...`
-                      : configData.token
-                    }
-                  </span>
-                  <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
+              <div className="pl-12">
+                <div className="flex items-start">
+                  <span className="text-blue-600 dark:text-blue-400 whitespace-nowrap">"Authorization"</span>
+                  <span className="text-zinc-600 dark:text-gray-400">: </span>
+                  <span className="text-green-600 dark:text-green-400">"Bearer </span>
                 </div>
-                {configData.expiresAt && (
-                  <div className="pl-6">
-                    <span className="text-zinc-800 dark:text-white">expiresAt:</span>
-                    <span className="text-zinc-600 dark:text-gray-400">&#39;</span>
-                    <span className="text-orange-600 dark:text-orange-400">
-                      {configData.expiresAt}
-                    </span>
-                    <span className="text-zinc-600 dark:text-gray-400">&#39;,</span>
-                  </div>
-                )}
-              </>
+                <div className="pl-4 py-1">
+                  <span className="text-amber-600 dark:text-amber-400 break-all text-xs font-mono bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded block">
+                    {configData.token}
+                  </span>
+                </div>
+                <div className="pl-4">
+                  <span className="text-green-600 dark:text-green-400">"</span>
+                </div>
+              </div>
             )}
             
-            <div className="pl-6">
-              <span className="text-zinc-800 dark:text-white">capabilities:</span>
-              <span className="text-zinc-600 dark:text-gray-400">{"["}</span>
-              <div className="pl-6 flex flex-wrap">
-                {configData.capabilities.map((capability, index) => (
-                  <span key={capability} className="mr-1">
-                    <span className="text-zinc-600 dark:text-gray-400">
-                      &#39;
-                    </span>
-                    <span className="text-cyan-600 dark:text-cyan-400">
-                      {capability}
-                    </span>
-                    <span className="text-zinc-600 dark:text-gray-400">
-                      &#39;
-                    </span>
-                    {index < configData.capabilities.length - 1 && (
-                      <span className="text-zinc-600 dark:text-gray-400">
-                        ,{" "}
-                      </span>
-                    )}
-                  </span>
-                ))}
-              </div>
-              <span className="text-zinc-600 dark:text-gray-400">{"],"}</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-8">
+              <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
             </div>
             
-            <div>
-              <span className="text-zinc-600 dark:text-gray-400">{"};"}</span>
+            <div className="h-6 md:h-7 lg:h-8 flex items-center pl-4">
+              <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
+            </div>
+            
+            <div className="h-6 md:h-7 lg:h-8 flex items-center">
+              <span className="text-zinc-600 dark:text-gray-400">{"}"}</span>
             </div>
           </code>
         </div>

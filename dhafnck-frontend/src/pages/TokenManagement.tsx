@@ -185,6 +185,9 @@ export function TokenManagement() {
   
   // Delete dialog state - using token ID as key for multiple dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<{[key: string]: boolean}>({});
+  
+  // Copy state for buttons
+  const [copiedButton, setCopiedButton] = useState<string | null>(null);
 
   useEffect(() => {
     // Only fetch tokens if we're on the Active Tokens tab
@@ -272,9 +275,14 @@ export function TokenManagement() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, buttonId?: string) => {
     navigator.clipboard.writeText(text);
+    if (buttonId) {
+      setCopiedButton(buttonId);
+      setTimeout(() => setCopiedButton(null), 2000);
+    }
     setSuccess('Copied to clipboard');
+    setTimeout(() => setSuccess(null), 2000);
   };
 
   const handleScopeToggle = (scopeValue: string) => {
@@ -792,21 +800,40 @@ export function TokenManagement() {
                             }
                           }
                         };
-                        copyToClipboard(JSON.stringify(config, null, 2));
-                        setSuccess('MCP configuration copied to clipboard');
+                        copyToClipboard(JSON.stringify(config, null, 2), 'mcp-config');
                       }}
+                      className={copiedButton === 'mcp-config' ? 'bg-green-50 border-green-500 text-green-700' : ''}
                     >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy MCP Config
+                      {copiedButton === 'mcp-config' ? (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy MCP Config
+                        </>
+                      )}
                     </Button>
                     
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => generatedToken && copyToClipboard(generatedToken)}
+                      onClick={() => generatedToken && copyToClipboard(generatedToken, 'token-only')}
+                      className={copiedButton === 'token-only' ? 'bg-green-50 border-green-500 text-green-700' : ''}
                     >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy Token Only
+                      {copiedButton === 'token-only' ? (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy Token Only
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -857,13 +884,24 @@ export function TokenManagement() {
                       }
                     }
                   };
-                  copyToClipboard(JSON.stringify(config, null, 2));
-                  setSuccess('Complete MCP configuration copied!');
+                  copyToClipboard(JSON.stringify(config, null, 2), 'complete-config');
                 }}
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                className={copiedButton === 'complete-config' 
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                }
               >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Complete Config
+                {copiedButton === 'complete-config' ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Copied Successfully!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Complete Config
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
