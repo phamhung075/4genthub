@@ -1,19 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Delete, Copy, Key, Shield, Settings, CheckCircle, AlertCircle, Clock, Zap, Sparkles } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { tokenService } from '../services/tokenService';
-import { AppLayout } from '../components/AppLayout';
 import { format } from 'date-fns';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Checkbox } from '../components/ui/checkbox';
-import { Badge } from '../components/ui/badge';
+import { AlertCircle, CheckCircle, Clock, Copy, Delete, Key, Settings, Shield, Sparkles, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AppLayout } from '../components/AppLayout';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '../components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
 import { Separator } from '../components/ui/separator';
 import { SparklesText } from '../components/ui/SparklesText';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useAuth } from '../hooks/useAuth';
+import { tokenService } from '../services/tokenService';
 
 interface APIToken {
   id: string;
@@ -55,37 +54,76 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
     }
   };
 
+  const parsePermission = (value: string) => {
+    // Handle special cases first
+    if (value === 'openid') return { resource: 'OpenID', verb: 'Connect' };
+    if (value === 'profile') return { resource: 'Profile', verb: 'Access' };
+    if (value === 'email') return { resource: 'Email', verb: 'Access' };
+    if (value === 'offline_access') return { resource: 'Offline', verb: 'Access' };
+    if (value === 'mcp-api') return { resource: 'MCP API', verb: 'Access' };
+    if (value === 'mcp-roles') return { resource: 'MCP Roles', verb: 'Manage' };
+    if (value === 'mcp-profile') return { resource: 'MCP Profile', verb: 'Access' };
+    if (value === 'mcp:execute') return { resource: 'MCP', verb: 'Execute' };
+    if (value === 'mcp:delegate') return { resource: 'MCP', verb: 'Delegate' };
+    
+    // Parse standard format: resource:action
+    if (value.includes(':')) {
+      const [resource, action] = value.split(':');
+      const resourceName = resource.charAt(0).toUpperCase() + resource.slice(1);
+      const verbName = action.charAt(0).toUpperCase() + action.slice(1);
+      return { resource: resourceName, verb: verbName };
+    }
+    
+    // Fallback for unknown formats
+    return { resource: scope.label, verb: 'Access' };
+  };
+
+  const { resource, verb } = parsePermission(scope.value);
+
   return (
-    <Card 
-      className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
-        isSelected 
-          ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10' 
-          : 'hover:shadow-md bg-gradient-to-br from-surface to-surface-secondary'
-      }`}
-      onClick={() => onToggle(scope.value)}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start space-x-3">
-          <Checkbox 
-            checked={isSelected}
-            onChange={() => onToggle(scope.value)}
-            className="mt-1"
-          />
-          <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-2">
-              <h4 className="font-medium text-sm">{scope.label}</h4>
-              <Badge 
-                variant="secondary" 
-                className={`text-white text-xs px-2 py-1 ${getCategoryColor(scope.category)}`}
-              >
-                {scope.category}
-              </Badge>
+    <div className="relative group">
+      <Card 
+        className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          isSelected 
+            ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10' 
+            : 'hover:shadow-md bg-gradient-to-br from-surface to-surface-secondary border-border hover:border-primary/20'
+        }`}
+        onClick={() => onToggle(scope.value)}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center space-x-2">
+            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+              isSelected 
+                ? 'bg-primary border-primary text-primary-foreground' 
+                : 'border-muted-foreground/30 hover:border-primary/50'
+            }`}>
+              {isSelected && (
+                <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 12 12">
+                  <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.281 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
+                </svg>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">{scope.description}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-1">
+                <span className="font-medium text-xs text-foreground truncate">{resource}</span>
+                <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                  {verb}
+                </span>
+              </div>
+            </div>
           </div>
+        </CardContent>
+      </Card>
+      
+      {/* Tooltip on hover */}
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 max-w-xs whitespace-normal">
+        <div className="text-center">
+          <div className="text-gray-300">{scope.description}</div>
         </div>
-      </CardContent>
-    </Card>
+        {/* Arrow pointing down */}
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+      </div>
+    </div>
   );
 }
 
@@ -423,7 +461,7 @@ export function TokenManagement() {
                         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
                           {category} Permissions
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                           {categoryScopes.map((scope) => (
                             <ScopeCard
                               key={scope.value}
@@ -601,7 +639,6 @@ export function TokenManagement() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
-                                onClick={() => openDeleteDialog(token.id)}
                               >
                                 <Delete className="h-4 w-4" />
                               </Button>
@@ -665,25 +702,6 @@ export function TokenManagement() {
                               <p className="text-xs text-muted-foreground">Per Hour</p>
                             </div>
                           )}
-                        </div>
-                        
-                        {/* Scopes */}
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-2 font-medium">
-                            Permissions ({token.scopes.length})
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {token.scopes.slice(0, 4).map((scope) => (
-                              <Badge key={scope} variant="outline" className="text-xs px-2 py-0.5">
-                                {scope}
-                              </Badge>
-                            ))}
-                            {token.scopes.length > 4 && (
-                              <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                                +{token.scopes.length - 4} more
-                              </Badge>
-                            )}
-                          </div>
                         </div>
                       </CardContent>
                     </Card>

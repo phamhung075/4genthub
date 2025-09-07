@@ -38,7 +38,7 @@ export const Header: React.FC = () => {
 
             <div className="flex flex-col">
               <Brand variant="header" />
-              <span className="text-xs text-base-white -mt-1">AI Orchestration Platform</span>
+              <span className="text-xs text-base-tertiary -mt-1">AI Orchestration Platform</span>
             </div>
           </Link>
         </div>
