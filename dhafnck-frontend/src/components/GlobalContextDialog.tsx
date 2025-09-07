@@ -1,9 +1,9 @@
+import { Check as CheckIcon, ChevronDown, ChevronRight, Edit, Folder, GitBranch, Globe, Info, Save, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { getGlobalContext, updateGlobalContext } from "../api";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Textarea } from "./ui/textarea";
-import { Globe, Save, Edit, X, Copy, Check as CheckIcon, Settings, Layers, Zap, Info, ChevronRight, ChevronDown, GitBranch, Folder } from "lucide-react";
-import { getGlobalContext, updateGlobalContext } from "../api";
+import RawJSONDisplay from "./ui/RawJSONDisplay";
 
 interface GlobalContextDialogProps {
   open: boolean;
@@ -185,7 +185,10 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     patterns: true,
     capabilities: true,
     metadata: true,
-    rawJson: false  // Raw JSON collapsed by default
+    rawJson: false,  // Raw JSON collapsed by default
+    projectJson: false,
+    branchJson: false,
+    taskJson: false
   });
   
   // Store the entire nested data structure for editing
@@ -205,7 +208,10 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
         patterns: true,
         capabilities: true,
         metadata: true,
-        rawJson: false
+        rawJson: false,
+        projectJson: false,
+        branchJson: false,
+        taskJson: false
       });
     }
   }, [open]);
@@ -720,55 +726,119 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                 </div>
               </div>
               
-              {/* Raw JSON with expand/collapse and copy */}
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <button
-                      onClick={() => toggleSection('rawJson')}
-                      className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    >
-                      {expandedSections.rawJson ? 
-                        <ChevronDown className="w-4 h-4" /> : 
-                        <ChevronRight className="w-4 h-4" />
-                      }
-                      <Info className="w-5 h-5" />
-                      Raw JSON Data
-                    </button>
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const jsonData = editMode ? editingData : globalContext;
-                        const jsonString = JSON.stringify(jsonData, null, 2);
-                        navigator.clipboard.writeText(jsonString).then(() => {
-                          setJsonCopied(true);
-                          setTimeout(() => setJsonCopied(false), 2000);
-                        });
-                      }}
-                      className="flex items-center gap-1"
-                    >
-                      {jsonCopied ? (
-                        <>
-                          <CheckIcon className="w-3 h-3" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          Copy JSON
-                        </>
+              {/* Raw JSON Displays for different context levels */}
+              <div className="space-y-6 mt-6">
+                {(() => {
+                  // Categorize data once to avoid multiple calls
+                  const currentData = editMode ? editingData : globalContext;
+                  const categorized = currentData ? categorizeFieldsByLevel(currentData) : null;
+                  
+                  return (
+                    <>
+                      {/* Global Context JSON */}
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                          <button
+                            onClick={() => toggleSection('rawJson')}
+                            className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
+                            {expandedSections.rawJson ? 
+                              <ChevronDown className="w-4 h-4" /> : 
+                              <ChevronRight className="w-4 h-4" />
+                            }
+                            <Globe className="w-5 h-5" />
+                            Global Context Raw Data
+                          </button>
+                        </h3>
+                        {expandedSections.rawJson && currentData && (
+                          <RawJSONDisplay 
+                            jsonData={currentData}
+                            title="Global Context Management"
+                            fileName="global_context.json"                            
+                          />
+                        )}
+                      </div>
+
+                      {/* Project Context JSON */}
+                      {categorized?.project && Object.keys(categorized.project).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <button
+                              onClick={() => toggleSection('projectJson')}
+                              className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                            >
+                              {expandedSections.projectJson ? 
+                                <ChevronDown className="w-4 h-4" /> : 
+                                <ChevronRight className="w-4 h-4" />
+                              }
+                              <Folder className="w-5 h-5" />
+                              Project Context Raw Data
+                            </button>
+                          </h3>
+                          {expandedSections.projectJson && (
+                            <RawJSONDisplay 
+                              jsonData={categorized.project}
+                              title="Project Context"
+                              fileName="project_context.json"
+                            />
+                          )}
+                        </div>
                       )}
-                    </Button>
-                  </div>
-                </div>
-                {expandedSections.rawJson && (
-                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-900 p-3 rounded max-h-96 overflow-y-auto">
-                    {JSON.stringify(editMode ? editingData : globalContext, null, 2)}
-                  </pre>
-                )}
+
+                      {/* Branch Context JSON */}
+                      {categorized?.branch && Object.keys(categorized.branch).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <button
+                              onClick={() => toggleSection('branchJson')}
+                              className="flex items-center gap-2 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                            >
+                              {expandedSections.branchJson ? 
+                                <ChevronDown className="w-4 h-4" /> : 
+                                <ChevronRight className="w-4 h-4" />
+                              }
+                              <GitBranch className="w-5 h-5" />
+                              Branch Context Raw Data
+                            </button>
+                          </h3>
+                          {expandedSections.branchJson && (
+                            <RawJSONDisplay 
+                              jsonData={categorized.branch}
+                              title="Branch Context"
+                              fileName="branch_context.json"
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {/* Task Context JSON */}
+                      {categorized?.task && Object.keys(categorized.task).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <button
+                              onClick={() => toggleSection('taskJson')}
+                              className="flex items-center gap-2 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                            >
+                              {expandedSections.taskJson ? 
+                                <ChevronDown className="w-4 h-4" /> : 
+                                <ChevronRight className="w-4 h-4" />
+                              }
+                              <CheckIcon className="w-5 h-5" />
+                              Task Context Raw Data
+                            </button>
+                          </h3>
+                          {expandedSections.taskJson && (
+                            <RawJSONDisplay 
+                              jsonData={categorized.task}
+                              title="Task Context"
+                              fileName="task_context.json"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ) : (

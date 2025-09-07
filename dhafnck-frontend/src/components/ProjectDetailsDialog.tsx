@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Separator } from "./ui/separator";
 import { getProjectContext, Project } from "../api";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Folder, Users, ChevronUp } from "lucide-react";
+import RawJSONDisplay from "./ui/RawJSONDisplay";
 
 interface ProjectDetailsDialogProps {
   open: boolean;
@@ -549,10 +550,12 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                 <summary className="font-semibold text-sm text-gray-700 hover:text-gray-900">
                   View Complete Raw Project Data (JSON)
                 </summary>
-                <div className="mt-3 bg-surface-hover p-3 rounded">
-                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                    {JSON.stringify(project, null, 2)}
-                  </pre>
+                <div className="mt-3">
+                  <RawJSONDisplay 
+                    jsonData={project}
+                    title="Project Data"
+                    fileName="project.json"
+                  />
                 </div>
               </details>
             </div>
@@ -597,10 +600,12 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       </div>
                       
                       {rawJsonExpanded && (
-                        <div className="mt-3 bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
-                          <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-                            {JSON.stringify(projectContext, null, 2)}
-                          </pre>
+                        <div className="mt-3">
+                          <RawJSONDisplay 
+                            jsonData={projectContext}
+                            title="Project Context"
+                            fileName="project_context.json"
+                          />
                         </div>
                       )}
                     </div>
