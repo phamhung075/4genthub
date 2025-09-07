@@ -104,8 +104,8 @@ class SearchHandler:
             )
     
     async def get_next_task(self, facade: TaskApplicationFacade, git_branch_id: Optional[str], 
-                     include_context: bool = False) -> Dict[str, Any]:
-        """Handle next task retrieval."""
+                     include_context: bool = True) -> Dict[str, Any]:
+        """Handle next task retrieval with context (defaults to True)."""
         try:
             # Get next available task - pass parameters as keyword arguments
             result = await facade.get_next_task(

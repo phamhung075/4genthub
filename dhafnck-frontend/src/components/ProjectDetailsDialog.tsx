@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { getProjectContext, Project } from "../api";
-import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Folder, Users, ChevronUp } from "lucide-react";
+import { FileText, Info, ChevronDown, ChevronRight, Copy, Check as CheckIcon, Folder, Code, Settings, Shield, Database, GitBranch } from "lucide-react";
+import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 
 interface ProjectDetailsDialogProps {
@@ -23,10 +24,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   const [projectContext, setProjectContext] = useState<any>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
-  const [contextTab, setContextTab] = useState<'info' | 'technical' | 'patterns' | 'workflows'>('info');
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['data', 'resolved_context', 'project_data', 'metadata']));
   const [jsonCopied, setJsonCopied] = useState(false);
-  const [rawJsonExpanded, setRawJsonExpanded] = useState(false);
 
   // Fetch project context when dialog opens
   useEffect(() => {
@@ -76,340 +74,49 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     }
   }, [open, project?.id]);
 
-  // Toggle section expansion
-  const toggleSection = (path: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(path)) {
-        newSet.delete(path);
-      } else {
-        newSet.add(path);
-      }
-      return newSet;
-    });
-  };
-
-  // Copy JSON to clipboard
-  const copyJsonToClipboard = () => {
-    if (projectContext) {
-      const jsonString = JSON.stringify(projectContext, null, 2);
-      navigator.clipboard.writeText(jsonString).then(() => {
-        setJsonCopied(true);
-        setTimeout(() => setJsonCopied(false), 2000);
-      }).catch(err => {
-        console.error('Failed to copy JSON:', err);
-      });
-    }
-  };
-
-  // Get level-based styling
-  const getLevelStyling = (depth: number) => {
-    const styles = [
-      { // Level 0 - Root level fields
-        bg: 'bg-blue-50 dark:bg-blue-900/10',
-        border: 'border-l-4 border-blue-500',
-        text: 'text-blue-900 dark:text-blue-100',
-        keySize: 'text-base font-semibold',
-        padding: 'pl-3',
-      },
-      { // Level 1
-        bg: 'bg-green-50 dark:bg-green-900/10',
-        border: 'border-l-4 border-green-500',
-        text: 'text-green-900 dark:text-green-100',
-        keySize: 'text-sm font-medium',
-        padding: 'pl-6',
-      },
-      { // Level 2
-        bg: 'bg-purple-50 dark:bg-purple-900/10',
-        border: 'border-l-4 border-purple-500',
-        text: 'text-purple-900 dark:text-purple-100',
-        keySize: 'text-sm',
-        padding: 'pl-9',
-      },
-      { // Level 3+
-        bg: 'bg-orange-50 dark:bg-orange-900/10',
-        border: 'border-l-4 border-orange-500',
-        text: 'text-orange-900 dark:text-orange-100',
-        keySize: 'text-xs',
-        padding: 'pl-12',
-      },
-    ];
-    
-    return styles[Math.min(depth, styles.length - 1)];
-  };
-
-  // Render nested data with level-based styling
-  const renderNestedData = (data: any, depth: number = 0): JSX.Element => {
-    const style = getLevelStyling(depth);
-    
-    if (data === null || data === undefined) {
-      return <span className="text-gray-400 italic">null</span>;
-    }
-    
-    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
-      return <span className={style.text}>{String(data)}</span>;
-    }
-    
-    if (Array.isArray(data)) {
-      return (
-        <div className="space-y-1">
-          {data.map((item, index) => (
-            <div key={index} className={`${style.padding} py-1`}>
-              <span className={`${style.text} ${style.keySize}`}>[{index}]:</span>
-              <div className="ml-4">
-                {renderNestedData(item, depth + 1)}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    if (typeof data === 'object') {
-      return (
-        <div className="space-y-2">
-          {Object.entries(data).map(([key, value]) => (
-            <div
-              key={key}
-              className={`${style.bg} ${style.border} ${style.padding} py-2 rounded-r transition-colors hover:opacity-90`}
-            >
-              <div>
-                <span className={`${style.text} ${style.keySize} capitalize`}>
-                  {key.replace(/_/g, ' ')}:
-                </span>
-                {typeof value === 'object' && value !== null ? (
-                  <div className="mt-2">
-                    {renderNestedData(value, depth + 1)}
-                  </div>
-                ) : (
-                  <span className="ml-2">{renderNestedData(value, depth + 1)}</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    return <span>{String(data)}</span>;
-  };
-
-  // Format nested objects to readable markdown-like text
-  const formatNestedObject = (data: any, indent: number = 0): string => {
-    if (!data || typeof data !== 'object') {
-      return String(data);
-    }
-    
-    const spaces = '  '.repeat(indent);
-    let result: string[] = [];
-    
-    Object.entries(data).forEach(([key, value]) => {
-      if (typeof value === 'object' && value !== null) {
-        if (Array.isArray(value)) {
-          result.push(`${spaces}${key}: ${value.join(', ')}`);
-        } else {
-          result.push(`${spaces}${key}:`);
-          result.push(formatNestedObject(value, indent + 1));
-        }
-      } else {
-        result.push(`${spaces}${key}: ${value}`);
-      }
-    });
-    
-    return result.join('\n');
-  };
-
-  // Render nested JSON beautifully (same as TaskDetailsDialog)
-  const renderNestedJson = (data: any, path: string = '', depth: number = 0): React.ReactElement => {
-    if (data === null || data === undefined) {
-      return <span className="text-gray-400 italic">null</span>;
-    }
-
-    if (typeof data === 'boolean') {
-      return <span className={`font-medium ${data ? 'text-green-600' : 'text-red-600'}`}>{String(data)}</span>;
-    }
-
-    if (typeof data === 'string') {
-      // Check if it's a date string
-      if (data.match(/^\d{4}-\d{2}-\d{2}/) || data.includes('T')) {
-        try {
-          const date = new Date(data);
-          if (!isNaN(date.getTime())) {
-            return (
-              <span className="text-blue-600">
-                <Calendar className="inline w-3 h-3 mr-1" />
-                {date.toLocaleString()}
-              </span>
-            );
-          }
-        } catch {}
-      }
-      // Check if it's a UUID
-      if (data.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        return (
-          <span className="font-mono text-xs text-purple-600">
-            <Hash className="inline w-3 h-3 mr-1" />
-            {data}
-          </span>
-        );
-      }
-      return <span className="text-gray-700 dark:text-gray-300">"{data}"</span>;
-    }
-
-    if (typeof data === 'number') {
-      return <span className="text-blue-600 font-medium">{data}</span>;
-    }
-
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        return <span className="text-gray-400 italic">[]</span>;
-      }
-      
-      const isExpanded = expandedSections.has(path);
-      
-      return (
-        <div className="inline-block">
-          <button
-            onClick={() => toggleSection(path)}
-            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            <span className="font-medium">[{data.length} items]</span>
-          </button>
-          {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1">
-              {data.map((item, index) => (
-                <div key={index} className="flex items-start">
-                  <span className="text-gray-400 text-xs mr-2">{index}:</span>
-                  {renderNestedJson(item, `${path}[${index}]`, depth + 1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (typeof data === 'object') {
-      const keys = Object.keys(data);
-      if (keys.length === 0) {
-        return <span className="text-gray-400 italic">{'{}'}</span>;
-      }
-
-      const isExpanded = expandedSections.has(path);
-      const isMainSection = depth === 0 || depth === 1;
-      
-      return (
-        <div className={depth === 0 ? '' : 'inline-block'}>
-          {path && (
-            <button
-              onClick={() => toggleSection(path)}
-              className={`text-xs hover:text-gray-700 flex items-center gap-1 mb-1 ${
-                isMainSection ? 'text-gray-700 font-semibold' : 'text-gray-500'
-              }`}
-            >
-              {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <Layers className="w-3 h-3" />
-              <span>{keys.length} properties</span>
-            </button>
-          )}
-          {(!path || isExpanded) && (
-            <div className={`${path ? 'ml-4 mt-1' : ''} space-y-1`}>
-              {keys.map(key => {
-                const value = data[key];
-                const currentPath = path ? `${path}.${key}` : key;
-                const isEmpty = value === null || value === undefined || 
-                               (typeof value === 'object' && Object.keys(value).length === 0) ||
-                               (Array.isArray(value) && value.length === 0);
-                
-                // Get appropriate icon and color for known keys
-                let keyIcon = null;
-                let keyColor = 'text-gray-600';
-                
-                if (key.includes('id') || key.includes('uuid')) {
-                  keyIcon = <Hash className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-purple-600';
-                } else if (key.includes('date') || key.includes('time') || key.includes('_at')) {
-                  keyIcon = <Calendar className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-blue-600';
-                } else if (key.includes('status') || key.includes('state')) {
-                  keyIcon = <Tag className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-green-600';
-                } else if (key.includes('agent')) {
-                  keyIcon = <Users className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-orange-600';
-                }
-                
-                return (
-                  <div 
-                    key={key} 
-                    className={`flex items-start ${
-                      isEmpty ? 'opacity-50' : ''
-                    } ${
-                      isMainSection && typeof value === 'object' && !Array.isArray(value) 
-                        ? 'p-3 bg-surface-hover rounded-lg border border-surface-border' 
-                        : ''
-                    }`}
-                  >
-                    <span className={`${keyColor} text-sm font-medium mr-2 min-w-[120px]`}>
-                      {keyIcon}
-                      {key}:
-                    </span>
-                    <div className="flex-1">
-                      {renderNestedJson(value, currentPath, depth + 1)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return <span className="text-gray-500">{String(data)}</span>;
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-left flex items-center gap-2">
-            <Folder className="w-5 h-5" />
-            {project?.name || 'Project Details'}
-          </DialogTitle>
-          
-          {/* Tab Navigation */}
-          <div className="flex gap-1 mt-4 border-b">
-            <button
-              onClick={() => setActiveTab('details')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === 'details' 
-                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'text-gray-500 border-transparent hover:text-gray-700'
-              }`}
-            >
-              <Info className="w-4 h-4" />
-              Details
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('context')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === 'context' 
-                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'text-gray-500 border-transparent hover:text-gray-700'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              Context
-              {contextLoading && <span className="text-xs">(Loading...)</span>}
-              {!contextLoading && projectContext && Object.keys(projectContext).length > 0 && (
-                <Badge variant="secondary" className="text-xs">Available</Badge>
-              )}
-            </button>
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
+        <DialogHeader className="pb-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl text-left flex items-center gap-2">
+              <Folder className="w-5 h-5" />
+              {project?.name || 'Project Details'}
+            </DialogTitle>
           </div>
         </DialogHeader>
+        
+        {/* Tab Navigation */}
+        <div className="flex gap-1 border-b px-6 -mt-2">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
+              activeTab === 'details' 
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            <Info className="w-4 h-4" />
+            Details
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('context')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
+              activeTab === 'context' 
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Context
+            {contextLoading && <span className="text-xs">(Loading...)</span>}
+            {!contextLoading && projectContext && Object.keys(projectContext).length > 0 && (
+              <Badge variant="secondary" className="text-xs ml-1">Available</Badge>
+            )}
+          </button>
+        </div>
         
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
@@ -572,43 +279,172 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               ) : projectContext ? (
                 <>
                   {/* Context Header */}
-                  <div className="bg-surface-hover rounded-lg p-6">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Layers className="w-5 h-5" /> 
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                      <Database className="w-5 h-5" />
                       Project Context Data
                     </h3>
-                    
-                    {/* Render nested data with level-based styling */}
-                    <div className="space-y-2">
-                      {renderNestedData(projectContext)}
-                    </div>
-                    
-                    {/* Raw JSON Section with expand/collapse and copy */}
-                    <div className="mt-6 border-t pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <button
-                          onClick={() => setRawJsonExpanded(!rawJsonExpanded)}
-                          className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-                        >
-                          {rawJsonExpanded ? (
-                            <ChevronUp className="w-4 h-4" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" />
-                          )}
-                          View Complete JSON Context
-                        </button>
-                      </div>
-                      
-                      {rawJsonExpanded && (
-                        <div className="mt-3">
-                          <RawJSONDisplay 
-                            jsonData={projectContext}
-                            title="Project Context"
-                            fileName="project_context.json"
-                          />
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                      Complete project context with configuration and settings
+                    </p>
+                  </div>
+                  
+                  {/* Organized Context Sections */}
+                  <div className="space-y-4">
+                    {/* Team Preferences */}
+                    {projectContext.team_preferences && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Settings className="w-4 h-4" />
+                            Team Preferences
+                          </h3>
                         </div>
-                      )}
-                    </div>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={projectContext.team_preferences} defaultExpanded={false} maxHeight="max-h-64" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Technology Stack */}
+                    {projectContext.technology_stack && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Code className="w-4 h-4" />
+                            Technology Stack
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={projectContext.technology_stack} defaultExpanded={false} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Project Workflow */}
+                    {projectContext.project_workflow && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <GitBranch className="w-4 h-4" />
+                            Project Workflow
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={projectContext.project_workflow} defaultExpanded={false} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Local Standards */}
+                    {projectContext.local_standards && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            Local Standards
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={projectContext.local_standards} defaultExpanded={false} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Metadata */}
+                    {projectContext.metadata && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-950/30 dark:to-sky-950/30 p-3 border-l-4 border-cyan-400 dark:border-cyan-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Info className="w-4 h-4" />
+                            Metadata
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          {projectContext.metadata.created_at && (
+                            <div className="mb-2 text-sm">
+                              <span className="text-gray-500 dark:text-gray-400">Created:</span>
+                              <span className="ml-2 text-gray-700 dark:text-gray-300">
+                                {new Date(projectContext.metadata.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          {projectContext.metadata.updated_at && (
+                            <div className="mb-3 text-sm">
+                              <span className="text-gray-500 dark:text-gray-400">Updated:</span>
+                              <span className="ml-2 text-gray-700 dark:text-gray-300">
+                                {new Date(projectContext.metadata.updated_at).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          <details className="group">
+                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                              <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                              View All Metadata
+                            </summary>
+                            <div className="mt-2">
+                              <EnhancedJSONViewer data={projectContext.metadata} defaultExpanded={true} maxHeight="max-h-60" />
+                            </div>
+                          </details>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Fields / Additional Data */}
+                    {(() => {
+                      const knownFields = ['team_preferences', 'technology_stack', 'project_workflow', 'local_standards', 'metadata', '_originalResponse', '_inheritance'];
+                      const customFields = Object.entries(projectContext).filter(([key]) => !knownFields.includes(key) && !key.startsWith('_'));
+                      
+                      if (customFields.length > 0) {
+                        return (
+                          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600">
+                              <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                                <Code className="w-4 h-4" />
+                                Additional Context Data
+                              </h3>
+                            </div>
+                            <div className="p-4 space-y-3">
+                              {customFields.map(([key, value]) => (
+                                <details key={key} className="group">
+                                  <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                                    <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                                    {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  </summary>
+                                  <div className="mt-2 ml-6">
+                                    {typeof value === 'object' ? (
+                                      <EnhancedJSONViewer data={value} defaultExpanded={false} maxHeight="max-h-48" />
+                                    ) : (
+                                      <span className="text-gray-700 dark:text-gray-300">{String(value)}</span>
+                                    )}
+                                  </div>
+                                </details>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Raw JSON View - Always at the bottom */}
+                    <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <summary className="cursor-pointer">
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 p-3 border-l-4 border-teal-400 dark:border-teal-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            Complete Raw Context
+                          </h3>
+                        </div>
+                      </summary>
+                      <div className="p-4">
+                        <RawJSONDisplay 
+                          jsonData={projectContext}
+                          title="Project Context Data"
+                          fileName="project_context.json"
+                        />
+                      </div>
+                    </details>
                   </div>
                 </>
               ) : (
@@ -626,6 +462,46 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
         </div>
         <DialogFooter className="flex justify-between">
           <div className="flex gap-2">
+            {activeTab === 'context' && projectContext && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Expand all details elements
+                    const detailsElements = document.querySelectorAll('details');
+                    detailsElements.forEach(details => {
+                      details.open = true;
+                    });
+                    // Also expand all JSON viewers
+                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
+                      detail: { viewerId: 'all' } 
+                    }));
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Expand All
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Collapse all details elements
+                    const detailsElements = document.querySelectorAll('details');
+                    detailsElements.forEach(details => {
+                      details.open = false;
+                    });
+                    // Also collapse all JSON viewers
+                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
+                      detail: { viewerId: 'all' } 
+                    }));
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  Collapse All
+                </Button>
+              </>
+            )}
             {((activeTab === 'context' && projectContext) || (activeTab === 'details' && project)) && (
               <Button
                 variant="outline"

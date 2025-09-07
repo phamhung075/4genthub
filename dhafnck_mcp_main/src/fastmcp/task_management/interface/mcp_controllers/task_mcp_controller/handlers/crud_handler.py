@@ -135,8 +135,8 @@ class CRUDHandler:
         return facade.update_task(task_id, request)
     
     def get_task(self, facade: TaskApplicationFacade, task_id: str, 
-                include_context: bool = False) -> Dict[str, Any]:
-        """Handle task retrieval with optional context."""
+                include_context: bool = True) -> Dict[str, Any]:
+        """Handle task retrieval with optional context (defaults to True)."""
         if not task_id:
             return self._create_standardized_error(
                 operation="get_task",

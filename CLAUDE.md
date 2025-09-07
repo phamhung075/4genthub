@@ -247,10 +247,22 @@ context = mcp__dhafnck_mcp_http__manage_context(
 ```
 
 ### Agent Loading Protocol
-1. Call `mcp__dhafnck_mcp_http__call_agent(name_agent="@agent_name")`
-2. Extract `yaml_content` (rules, contexts, metadata) and `capabilities`
-3. Follow agent's specifications as source of truth
-4. Use only allowed tools and respect permissions
+**Agent Loading Protocol**
+
+**Step 1:** Call `mcp__dhafnck_mcp_http__call_agent(name_agent="@agent_name")` to retrieve agent information.  
+- **Display:** `[Agent: Initializing...]`
+
+**Step 2:** Extract `yaml_content` (rules, contexts, metadata) and `capabilities` from the MCP server response.  
+- **Display:** `[Agent: Loading...]`
+
+**Step 3:** Follow the agent's specifications as the source of truth.  
+- Use only the allowed tools and respect all permissions.
+
+**Step 4:** Use the Task tool to launch the agent with its complete specification.  
+- **Display:** `[Agent: {agent_name} - Working...]`
+
+**Step 5:** Agent becomes operational (equivalent to launching from `.claude/agents`).  
+- **Display:** `[Agent: {agent_name} - Ready]`
 
 **Source of Truth**: `yaml_content` (primary) → `capabilities` → `agent_info` → Never hardcoded assumptions
 

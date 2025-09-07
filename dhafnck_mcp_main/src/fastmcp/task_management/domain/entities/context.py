@@ -33,6 +33,10 @@ class GlobalContext:
         """Initialize nested structure if not already present."""
         if self._nested_data is None:
             self._ensure_nested_structure()
+            # If global_settings contains nested structure data, populate it
+            if self.global_settings and any(key in self.global_settings for key in 
+                                           ["organization", "development", "security", "operations", "preferences"]):
+                self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
     def _ensure_nested_structure(self) -> None:
         """Ensure nested structure is initialized."""
@@ -78,18 +82,28 @@ class GlobalContext:
             
             # If settings contain nested structure directly
             if any(key in ["organization", "development", "security", "operations", "preferences"] for key in settings.keys()):
-                # Direct nested update
+                # Direct nested update - deep merge to preserve existing data
                 for category in ["organization", "development", "security", "operations", "preferences"]:
                     if category in settings:
-                        getattr(nested_data, category).update(settings[category])
+                        # Deep merge: update existing subcategories without losing others
+                        if hasattr(nested_data, category):
+                            category_dict = getattr(nested_data, category)
+                            for subcat, values in settings[category].items():
+                                if subcat in category_dict:
+                                    category_dict[subcat].update(values)
+                                else:
+                                    category_dict[subcat] = values
             else:
-                # Update flat settings directly
-                nested_data.from_dict(settings)
+                # If no nested keys, recreate nested structure from all settings
+                self._nested_data = GlobalContextNestedData.from_dict(settings)
             
             self._sync_to_flat_structure()
         else:
             # Direct flat structure update
             self.global_settings.update(settings)
+            # Also update nested structure from the updated flat structure
+            if any(key in self.global_settings for key in ["organization", "development", "security", "operations", "preferences"]):
+                self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
     def get_organization_standards(self) -> Dict[str, Any]:
         """Get organization standards from nested structure."""

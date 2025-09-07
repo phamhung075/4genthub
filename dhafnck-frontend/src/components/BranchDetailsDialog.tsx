@@ -1,9 +1,10 @@
-import { Calendar, Check as CheckIcon, ChevronDown, ChevronRight, Copy, FileText, GitBranch, Hash, Info, Layers, Tag, Users } from "lucide-react";
+import { Calendar, Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, FileCode, FileText, GitBranch, Hash, Info, Layers, Settings, Shield, Tag, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getBranchContext, Project } from "../api";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { Separator } from "./ui/separator";
 
@@ -93,18 +94,6 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
     });
   };
 
-  // Copy JSON to clipboard
-  const copyJsonToClipboard = () => {
-    if (branchContext) {
-      const jsonString = JSON.stringify(branchContext, null, 2);
-      navigator.clipboard.writeText(jsonString).then(() => {
-        setJsonCopied(true);
-        setTimeout(() => setJsonCopied(false), 2000);
-      }).catch(err => {
-        console.error('Failed to copy JSON:', err);
-      });
-    }
-  };
 
   // Render nested JSON beautifully (same as TaskDetailsDialog)
   const renderNestedJson = (data: any, path: string = '', depth: number = 0): React.ReactElement => {
@@ -260,43 +249,45 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-left flex items-center gap-2">
-            <GitBranch className="w-5 h-5" />
-            {branch?.name || 'Branch Details'}
-          </DialogTitle>
-          
-          {/* Tab Navigation */}
-          <div className="flex gap-1 mt-4 border-b">
-            <button
-              onClick={() => setActiveTab('details')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === 'details' 
-                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'text-gray-500 border-transparent hover:text-gray-700'
-              }`}
-            >
-              <Info className="w-4 h-4" />
-              Details
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('context')}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === 'context' 
-                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'text-gray-500 border-transparent hover:text-gray-700'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              Context
-              {contextLoading && <span className="text-xs">(Loading...)</span>}
-              {!contextLoading && branchContext && Object.keys(branchContext).length > 0 && (
-                <Badge variant="secondary" className="text-xs">Available</Badge>
-              )}
-            </button>
+        <DialogHeader className="pb-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl text-left flex items-center gap-2">
+              <GitBranch className="w-5 h-5" />
+              {branch?.name || 'Branch Details'}
+            </DialogTitle>
           </div>
         </DialogHeader>
+        
+        {/* Tab Navigation */}
+        <div className="flex gap-1 border-b px-6 -mt-2">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
+              activeTab === 'details' 
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            <Info className="w-4 h-4" />
+            Details
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('context')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
+              activeTab === 'context' 
+                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Context
+            {contextLoading && <span className="text-xs">(Loading...)</span>}
+            {!contextLoading && branchContext && Object.keys(branchContext).length > 0 && (
+              <Badge variant="secondary" className="text-xs ml-1">Available</Badge>
+            )}
+          </button>
+        </div>
         
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
@@ -465,226 +456,203 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                     <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
                       <Layers className="w-5 h-5" />
-                      Branch Context - Complete Hierarchical View
+                      Branch Context Data
                     </h3>
                     <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                      Interactive nested view showing ALL context data including custom fields - click to expand/collapse sections
+                      Complete hierarchical context for this branch including inherited data
                     </p>
                   </div>
                   
-                  {/* Key Implementation Details - Organized View */}
-                  {branchContext.branch_settings?.branch_workflow?.authentication_implementation && (
-                    <div className="bg-surface-hover p-4 rounded-lg border border-surface-border">
-                      <h4 className="text-md font-semibold text-green-700 dark:text-green-300 mb-3">
-                        🎯 Authentication Implementation Overview
-                      </h4>
-                      
-                      {/* Timeline and Progress */}
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div className="bg-surface p-2 rounded">
-                          <span className="text-xs text-gray-500">Timeline</span>
-                          <p className="font-medium">{branchContext.branch_settings.branch_workflow.authentication_implementation.timeline || 'TBD'}</p>
+                  {/* Organized Context Sections */}
+                  <div className="space-y-4">
+                    {/* Branch Settings & Configuration */}
+                    {(branchContext.branch_settings || branchContext.branch_standards || branchContext.branch_workflow) && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 border-l-4 border-blue-400 dark:border-blue-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Settings className="w-4 h-4" />
+                            Branch Configuration
+                          </h3>
                         </div>
-                        <div className="bg-surface p-2 rounded">
-                          <span className="text-xs text-gray-500">Current Phase</span>
-                          <p className="font-medium">{branchContext.branch_settings.branch_workflow.authentication_implementation.current_phase || 'Planning'}</p>
+                        <div className="p-4 space-y-3">
+                          {branchContext.branch_settings && (
+                            <details className="group">
+                              <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                                <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                                Settings
+                              </summary>
+                              <div className="mt-2 ml-6">
+                                <EnhancedJSONViewer data={branchContext.branch_settings} defaultExpanded={false} />
+                              </div>
+                            </details>
+                          )}
+                          {branchContext.branch_standards && (
+                            <details className="group">
+                              <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                                <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                                <Shield className="w-4 h-4" />
+                                Standards & Policies
+                              </summary>
+                              <div className="mt-2 ml-6">
+                                <EnhancedJSONViewer data={branchContext.branch_standards} defaultExpanded={false} />
+                              </div>
+                            </details>
+                          )}
+                          {branchContext.branch_workflow && (
+                            <details className="group">
+                              <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                                <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                                <FileCode className="w-4 h-4" />
+                                Workflow
+                              </summary>
+                              <div className="mt-2 ml-6">
+                                <EnhancedJSONViewer data={branchContext.branch_workflow} defaultExpanded={false} />
+                              </div>
+                            </details>
+                          )}
                         </div>
                       </div>
-                      
-                      {/* Dependencies Summary */}
-                      {branchContext.branch_settings.branch_workflow.authentication_implementation.dependencies_to_install && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-green-600 hover:text-green-700">
-                            📦 Dependencies ({Object.keys(branchContext.branch_settings.branch_workflow.authentication_implementation.dependencies_to_install).length} categories)
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm">
-                            {renderNestedJson(branchContext.branch_settings.branch_workflow.authentication_implementation.dependencies_to_install)}
-                          </div>
-                        </details>
-                      )}
-                      
-                      {/* Implementation Phases Summary */}
-                      {branchContext.branch_settings.branch_workflow.authentication_implementation.implementation_plan && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-green-600 hover:text-green-700">
-                            📋 Implementation Phases ({branchContext.branch_settings.branch_workflow.authentication_implementation.phases} phases)
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm max-h-60 overflow-y-auto">
-                            {renderNestedJson(branchContext.branch_settings.branch_workflow.authentication_implementation.implementation_plan)}
-                          </div>
-                        </details>
-                      )}
-                      
-                      {/* Risk Mitigation Summary */}
-                      {branchContext.branch_settings.branch_workflow.authentication_implementation.risk_mitigation && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-green-600 hover:text-green-700">
-                            ⚠️ Risk Mitigation Strategies
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm">
-                            {renderNestedJson(branchContext.branch_settings.branch_workflow.authentication_implementation.risk_mitigation)}
-                          </div>
-                        </details>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Branch Settings Section */}
-                  {branchContext.branch_settings && (
-                    <div className="bg-surface-hover p-4 rounded-lg border border-surface-border">
-                      <h4 className="text-md font-semibold text-blue-700 dark:text-blue-300 mb-3">
-                        ⚙️ Branch Settings & Standards
-                      </h4>
-                      
-                      {/* Security Standards */}
-                      {branchContext.branch_settings.branch_standards?.security && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700">
-                            🔒 Security Standards
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm bg-surface p-2 rounded">
-                            {renderNestedJson(branchContext.branch_settings.branch_standards.security)}
-                          </div>
-                        </details>
-                      )}
-                      
-                      {/* API Design Standards */}
-                      {branchContext.branch_settings.branch_standards?.api_design && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700">
-                            🔌 API Design Standards
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm bg-surface p-2 rounded">
-                            {renderNestedJson(branchContext.branch_settings.branch_standards.api_design)}
-                          </div>
-                        </details>
-                      )}
-                      
-                      {/* Agent Assignments */}
-                      {branchContext.branch_settings.agent_assignments && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700">
-                            🤖 Agent Assignments ({Object.keys(branchContext.branch_settings.agent_assignments).length} agents)
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm bg-surface p-2 rounded">
-                            {renderNestedJson(branchContext.branch_settings.agent_assignments)}
-                          </div>
-                        </details>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Metadata Section */}
-                  {branchContext.metadata && (
-                    <div className="bg-surface-hover p-4 rounded-lg border border-surface-border">
-                      <h4 className="text-md font-semibold text-purple-700 dark:text-purple-300 mb-3">
-                        📊 Metadata & System Information
-                      </h4>
-                      
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        {branchContext.metadata.created_at && (
-                          <div className="bg-surface p-2 rounded">
-                            <span className="text-xs text-gray-500">Created</span>
-                            <p className="font-medium text-sm">{new Date(branchContext.metadata.created_at).toLocaleDateString()}</p>
-                          </div>
-                        )}
-                        {branchContext.metadata.updated_at && (
-                          <div className="bg-surface p-2 rounded">
-                            <span className="text-xs text-gray-500">Last Updated</span>
-                            <p className="font-medium text-sm">{new Date(branchContext.metadata.updated_at).toLocaleDateString()}</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Other Metadata */}
-                      <details>
-                        <summary className="cursor-pointer text-sm font-medium text-purple-600 hover:text-purple-700">
-                          View All Metadata
-                        </summary>
-                        <div className="mt-2 ml-4 text-sm bg-surface p-2 rounded max-h-40 overflow-y-auto">
-                          {renderNestedJson(branchContext.metadata)}
+                    )}
+
+                    {/* Project Context (Inherited) */}
+                    {branchContext.project_context && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Database className="w-4 h-4" />
+                            Project Context (Inherited)
+                          </h3>
                         </div>
-                      </details>
-                    </div>
-                  )}
-                  
-                  {/* Inheritance Information */}
-                  {branchContext._inheritance && (
-                    <div className="bg-surface-hover p-4 rounded-lg border border-surface-border">
-                      <h4 className="text-md font-semibold text-orange-700 dark:text-orange-300 mb-3">
-                        🔗 Context Inheritance
-                      </h4>
-                      <div className="text-sm">
-                        <p className="mb-2">
-                          <span className="font-medium">Inheritance Chain:</span> {branchContext._inheritance.chain?.join(' → ') || 'N/A'}
-                        </p>
-                        <p className="mb-2">
-                          <span className="font-medium">Inheritance Depth:</span> {branchContext._inheritance.inheritance_depth || 0}
-                        </p>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={branchContext.project_context} defaultExpanded={false} maxHeight="max-h-64" />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Debug Information - Collapsed by Default */}
-                  <details className="bg-surface-hover p-4 rounded-lg border border-surface-border">
-                    <summary className="cursor-pointer text-md font-medium text-white-600 hover:text-gray-700">
-                      🐛 Debug: View Raw Context Data
-                    </summary>
-                    <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-2">Complete context structure for debugging purposes</p>
-                      <RawJSONDisplay 
-                        jsonData={branchContext}
-                        title="Branch Context"
-                        fileName="branch_context.json"
-                      />
-                    </div>
-                  </details>
-                  
-                  {/* Expand/Collapse All Controls */}
-                  <div className="flex gap-2 justify-end mt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Expand all sections including HTML details elements
-                        const allPaths = new Set<string>();
-                        const traverse = (obj: any, path: string = '') => {
-                          if (obj && typeof obj === 'object') {
-                            allPaths.add(path);
-                            Object.keys(obj).forEach(key => {
-                              const newPath = path ? `${path}.${key}` : key;
-                              traverse(obj[key], newPath);
-                            });
-                          }
-                        };
-                        traverse(branchContext);
-                        setExpandedSections(allPaths);
-                        
-                        // Also expand all HTML details elements
-                        const detailsElements = document.querySelectorAll('details');
-                        detailsElements.forEach(details => {
-                          details.open = true;
-                        });
-                      }}
-                    >
-                      Expand All
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Collapse all sections
-                        setExpandedSections(new Set(['data', 'resolved_context', 'branch_data', 'metadata']));
-                        
-                        // Also collapse all HTML details elements
-                        const detailsElements = document.querySelectorAll('details');
-                        detailsElements.forEach(details => {
-                          details.open = false;
-                        });
-                      }}
-                    >
-                      Collapse All
-                    </Button>
+                    )}
+
+                    {/* Branch Data */}
+                    {branchContext.branch_data && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <GitBranch className="w-4 h-4" />
+                            Branch Data
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={branchContext.branch_data} defaultExpanded={false} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Agent Assignments */}
+                    {branchContext.agent_assignments && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Agent Assignments
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          <EnhancedJSONViewer data={branchContext.agent_assignments} defaultExpanded={true} maxHeight="max-h-48" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Metadata */}
+                    {branchContext.metadata && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <Info className="w-4 h-4" />
+                            Metadata
+                          </h3>
+                        </div>
+                        <div className="p-4">
+                          {branchContext.metadata.created_at && (
+                            <div className="mb-2 text-sm">
+                              <span className="text-gray-500 dark:text-gray-400">Created:</span>
+                              <span className="ml-2 text-gray-700 dark:text-gray-300">
+                                {new Date(branchContext.metadata.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          {branchContext.metadata.updated_at && (
+                            <div className="mb-3 text-sm">
+                              <span className="text-gray-500 dark:text-gray-400">Updated:</span>
+                              <span className="ml-2 text-gray-700 dark:text-gray-300">
+                                {new Date(branchContext.metadata.updated_at).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          <details className="group">
+                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                              <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                              View All Metadata
+                            </summary>
+                            <div className="mt-2">
+                              <EnhancedJSONViewer data={branchContext.metadata} defaultExpanded={true} maxHeight="max-h-60" />
+                            </div>
+                          </details>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Fields / Additional Data */}
+                    {(() => {
+                      const knownFields = ['branch_settings', 'branch_standards', 'branch_workflow', 'project_context', 'branch_data', 'agent_assignments', 'metadata', '_originalResponse', '_inheritance'];
+                      const customFields = Object.entries(branchContext).filter(([key]) => !knownFields.includes(key) && !key.startsWith('_'));
+                      
+                      if (customFields.length > 0) {
+                        return (
+                          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600">
+                              <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                                <Code className="w-4 h-4" />
+                                Additional Context Data
+                              </h3>
+                            </div>
+                            <div className="p-4 space-y-3">
+                              {customFields.map(([key, value]) => (
+                                <details key={key} className="group">
+                                  <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                                    <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                                    {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  </summary>
+                                  <div className="mt-2 ml-6">
+                                    {typeof value === 'object' ? (
+                                      <EnhancedJSONViewer data={value} defaultExpanded={false} maxHeight="max-h-48" />
+                                    ) : (
+                                      <span className="text-gray-700 dark:text-gray-300">{String(value)}</span>
+                                    )}
+                                  </div>
+                                </details>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Raw JSON View - Always at the bottom */}
+                    <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <summary className="cursor-pointer">
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 p-3 border-l-4 border-teal-400 dark:border-teal-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            Complete Raw Context
+                          </h3>
+                        </div>
+                      </summary>
+                      <div className="p-4">
+                        <RawJSONDisplay 
+                          jsonData={branchContext}
+                          title="Branch Context Data"
+                          fileName="branch_context.json"
+                        />
+                      </div>
+                    </details>
                   </div>
                 </>
               ) : (
@@ -704,6 +672,46 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
         </div>
         <DialogFooter className="flex justify-between">
           <div className="flex gap-2">
+            {activeTab === 'context' && branchContext && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Expand all details elements
+                    const detailsElements = document.querySelectorAll('details');
+                    detailsElements.forEach(details => {
+                      details.open = true;
+                    });
+                    // Also expand all JSON viewers
+                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
+                      detail: { viewerId: 'all' } 
+                    }));
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Expand All
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Collapse all details elements
+                    const detailsElements = document.querySelectorAll('details');
+                    detailsElements.forEach(details => {
+                      details.open = false;
+                    });
+                    // Also collapse all JSON viewers
+                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
+                      detail: { viewerId: 'all' } 
+                    }));
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  Collapse All
+                </Button>
+              </>
+            )}
             {((activeTab === 'context' && branchContext) || (activeTab === 'details' && branch)) && (
               <Button
                 variant="outline"

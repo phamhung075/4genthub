@@ -214,7 +214,7 @@ class TaskMCPController(ContextPropagationMixin):
             """
             # Handle None defaults for boolean parameters
             if include_context is None:
-                include_context = False
+                include_context = True  # Default to True for better user experience
             if force_full_generation is None:
                 force_full_generation = False
             

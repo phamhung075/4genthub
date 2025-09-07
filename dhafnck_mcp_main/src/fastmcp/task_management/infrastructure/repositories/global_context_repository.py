@@ -233,15 +233,33 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             if custom_fields:
                 global_preferences["_custom"] = custom_fields
             
-            # Update fields
+            # Use modern nested structure (similar to create method)
+            nested_data = entity.get_nested_data()
+            nested_structure_dict = nested_data.to_dict()
+            
+            # Extract structured data for database columns from nested structure
+            organization_standards_nested = nested_structure_dict.get("organization", {}).get("standards", {})
+            security_policies_nested = nested_structure_dict.get("security", {}).get("access_control", {})
+            compliance_requirements_nested = nested_structure_dict.get("organization", {}).get("compliance", {})
+            shared_resources_nested = nested_structure_dict.get("operations", {}).get("resources", {})
+            reusable_patterns_nested = nested_structure_dict.get("development", {}).get("patterns", {})
+            delegation_rules_nested = nested_structure_dict.get("organization", {}).get("policies", {})
+            combined_preferences_nested = nested_structure_dict.get("preferences", {})
+            
+            # Merge flat structure fields with nested structure fields
+            # Prefer non-empty values from either source
             db_model.organization_id = entity.organization_name
-            db_model.organization_standards = organization_standards
-            db_model.security_policies = security_policies
-            db_model.compliance_requirements = compliance_requirements
-            db_model.shared_resources = shared_resources
-            db_model.reusable_patterns = reusable_patterns
-            db_model.global_preferences = global_preferences
-            db_model.delegation_rules = delegation_rules
+            db_model.organization_standards = organization_standards if organization_standards else organization_standards_nested
+            db_model.security_policies = security_policies if security_policies else security_policies_nested
+            db_model.compliance_requirements = compliance_requirements if compliance_requirements else compliance_requirements_nested
+            db_model.shared_resources = shared_resources if shared_resources else shared_resources_nested
+            db_model.reusable_patterns = reusable_patterns if reusable_patterns else reusable_patterns_nested
+            db_model.global_preferences = global_preferences if global_preferences else combined_preferences_nested
+            db_model.delegation_rules = delegation_rules if delegation_rules else delegation_rules_nested
+            
+            # CRITICAL: Update the nested structure field (this was missing!)
+            db_model.nested_structure = nested_structure_dict
+            
             db_model.updated_at = datetime.now(timezone.utc)
             
             # Log access for audit

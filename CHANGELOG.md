@@ -6,6 +6,125 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+- **📊 Task Details Context Tab Enhanced** - 2025-09-07
+  - Completely redesigned Context tab in TaskDetailsDialog to match Branch Context tab style
+  - Replaced custom renderNestedJson function with EnhancedJSONViewer component for consistent display
+  - Added organized sections with soft gradient headers: Task Execution Details, Implementation Notes, Metadata, Inheritance Information
+  - Each section uses EnhancedJSONViewer with color-coded JSON syntax highlighting
+  - Added Expand All/Collapse All buttons that work with both HTML details elements and EnhancedJSONViewer components
+  - Buttons dispatch custom events ('expand-all-json', 'collapse-all-json') for synchronized control
+  - Removed unused expandedSections state and toggleSection function in favor of EnhancedJSONViewer's built-in expansion
+  - Applied soft pastel gradient headers matching other context dialogs (from-green-50, from-purple-50, etc.)
+  - Improved theme compatibility with dark mode support throughout
+  - Consistent visual hierarchy with border-left accent colors
+  - Files modified:
+    - `dhafnck-frontend/src/components/TaskDetailsDialog.tsx` - Complete Context tab redesign with EnhancedJSONViewer
+
+### Added
+- **🎨 Enhanced JSON Viewer Component** - 2025-09-07
+  - Created new EnhancedJSONViewer component with collapsible sections and syntax highlighting
+  - Added color coding for different JSON data types (strings in emerald, numbers in orange, booleans in green/red)
+  - Special formatting for UUIDs (purple) and dates (blue)
+  - Depth-based border colors for visual hierarchy
+  - Added support for external expand/collapse control via custom events
+  - Files created:
+    - `dhafnck-frontend/src/components/ui/EnhancedJSONViewer.tsx` - New enhanced JSON viewer component
+- **🔄 Expand All/Collapse All Buttons** - 2025-09-07
+  - Added Expand All and Collapse All buttons to Branch Context Data tab
+  - Positioned buttons in dialog footer at the same level as Copy JSON button for consistency
+  - Buttons only appear when viewing the Context tab with available data
+  - Controls both HTML details elements and EnhancedJSONViewer components
+  - Uses custom events to synchronize expand/collapse state across all viewers
+
+### Changed
+- **🎨 Task Context Dialog Styling Update** - 2025-09-07
+  - Updated TaskContextDialog to match the styling of other context dialogs
+  - Replaced renderNestedData function with EnhancedJSONViewer component for consistent data display
+  - Applied soft gradient headers with pastel colors matching other dialogs
+  - Made all inheritance tab sections collapsible using HTML details elements
+  - Updated section headers with theme-aware colors (text-gray-700 dark:text-gray-300)
+  - Each section now has border-left accent for visual hierarchy
+  - Inheritance sections use consistent color scheme:
+    - Blue for Global Context
+    - Green for Project Context  
+    - Purple for Branch Context
+    - Orange for Task Context
+    - Gray for Information section
+  - Files modified:
+    - `dhafnck-frontend/src/components/TaskContextDialog.tsx` - Complete styling overhaul with EnhancedJSONViewer integration
+- **📋 Complete Raw Context Collapsible** - 2025-09-07
+  - Made "Complete Raw Context" section collapsible in all context dialogs
+  - Wrapped RawJSONDisplay component in HTML details element for expand/collapse functionality
+  - Applied consistent soft gradient header style (from-teal-50 to-cyan-50) matching other sections
+  - Section now responds to Expand All/Collapse All buttons like other sections
+  - Improved performance by allowing users to collapse large JSON data when not needed
+  - Files modified:
+    - `dhafnck-frontend/src/components/GlobalContextDialog.tsx` - Added collapsible wrapper to Raw Context
+    - `dhafnck-frontend/src/components/BranchDetailsDialog.tsx` - Made Raw Context collapsible
+    - `dhafnck-frontend/src/components/ProjectDetailsDialog.tsx` - Added collapse functionality to Raw Context
+- **🎨 Section Headers Theme Compatibility** - 2025-09-07
+  - Replaced bright gradient headers with softer, theme-aware pastel gradients
+  - Changed from intense colors (from-green-500 to-green-600) to subtle pastels (from-green-50 to-emerald-50)
+  - Added border-left accent for visual hierarchy while maintaining subtlety
+  - Updated text colors from white to theme-aware gray (text-gray-700 dark:text-gray-300)
+  - Applied consistent soft color scheme across all context dialogs:
+    - Green for User Preferences and Settings
+    - Purple for AI Agent Settings and Technology Stack
+    - Red for Security Settings
+    - Orange for Workflow Preferences
+    - Indigo for Development Tools
+    - Cyan for Dashboard Settings
+    - Gray/Slate for Metadata and Additional sections
+  - Files modified:
+    - `dhafnck-frontend/src/components/GlobalContextDialog.tsx` - Updated all section headers with soft gradients
+    - `dhafnck-frontend/src/components/BranchDetailsDialog.tsx` - Applied same soft gradient pattern
+    - `dhafnck-frontend/src/components/ProjectDetailsDialog.tsx` - Consistent soft gradient headers
+- **📊 Global Context Data Tab Improved** - 2025-09-07
+  - Completely redesigned to match the improved Branch and Project Context tab design patterns
+  - Replaced complex nested JSON rendering with EnhancedJSONViewer component for consistent display
+  - Added organized sections with gradient headers: User Preferences, AI Agent Settings, Security Settings, Workflow Preferences, Development Tools, Dashboard Settings, Additional Context Data
+  - Added Expand All/Collapse All buttons in dialog footer positioned at same level as Copy JSON button
+  - Adjusted tab navigation to be level with dialog header for UI consistency
+  - Each section uses collapsible details elements with smooth transitions and color-coded headers
+  - Maintained edit mode functionality with improved data structure preservation
+  - Integrated color-coded JSON syntax highlighting with special formatting for UUIDs and dates
+  - Files modified:
+    - `dhafnck-frontend/src/components/GlobalContextDialog.tsx` - Complete redesign with EnhancedJSONViewer integration
+- **📊 Project Context Data Tab Improved** - 2025-09-07
+  - Completely redesigned to match the improved Branch Context tab design
+  - Replaced nested renderNestedData functions with EnhancedJSONViewer component
+  - Added organized sections with gradient headers: Team Preferences, Technology Stack, Project Workflow, Local Standards, Metadata
+  - Added Expand All/Collapse All buttons in dialog footer (same level as Copy JSON)
+  - Adjusted tab navigation to be level with dialog header
+  - Each section uses collapsible details elements with smooth transitions
+  - Integrated color-coded JSON syntax highlighting
+  - Files modified:
+    - `dhafnck-frontend/src/components/ProjectDetailsDialog.tsx` - Complete redesign with EnhancedJSONViewer
+- **📊 Branch Context Data Tab Improved** - 2025-09-07
+  - Replaced complex nested JSON rendering with cleaner, organized display
+  - Added categorized sections with gradient headers for different context types
+  - Integrated EnhancedJSONViewer for all JSON data display
+  - Organized sections: Branch Configuration, Project Context (Inherited), Branch Data, Agent Assignments, Metadata, Additional Context Data
+  - Each section has collapsible details with color-coded headers
+  - Adjusted tab navigation to be level with dialog header for better UI consistency
+  - Files modified:
+    - `dhafnck-frontend/src/components/BranchDetailsDialog.tsx` - Complete context tab redesign with improved layout
+- **🎨 Task Context Dialog Enhanced with Nested Data Visualization** - 2025-09-07
+  - Redesigned TaskContextDialog to surpass ProjectContextDialog with beautiful nested data visualization
+  - Added 9 context tabs: Task Info, Progress, Completion, Testing, Blockers, Insights, Next Steps, Metadata, and Inheritance
+  - Implemented hierarchical color-coded visualization for nested data (blue, green, purple, orange levels)
+  - Added markdown editing mode with key-value and list formats for different context sections
+  - View mode now shows nested data with level-based styling instead of plain markdown
+  - Added Edit/Save/Cancel functionality with real-time context updates via API
+  - Added inheritance tab showing context hierarchy (Global → Project → Branch → Task)
+  - Implemented collapsible raw JSON view with expand/collapse button
+  - Copy JSON button for easy clipboard access
+  - Implemented "Initialize Task Context" button for empty contexts
+  - Each tab has its own icon, placeholder text, and formatting instructions
+  - Files modified:
+    - `dhafnck-frontend/src/components/TaskContextDialog.tsx` - Complete rewrite with enhanced visualization
+
 ### Fixed
 - **🖱️ Action Button Double-Click Issue** - 2025-09-07
   - Fixed critical UX issue where action buttons (View Details, Edit, etc.) required two clicks to open dialogs on fresh page load

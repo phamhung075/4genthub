@@ -6,8 +6,9 @@ import { Separator } from "./ui/separator";
 import { Task, Subtask, getTask, getTaskContext } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
-import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon } from "lucide-react";
+import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Settings, Shield, Database, Globe, FolderOpen, Code, GitBranch } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
+import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -29,7 +30,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['data', 'resolved_context', 'task_data', 'progress']));
   const [jsonCopied, setJsonCopied] = useState(false);
 
   // Set initial task when it changes - but don't clear if null
@@ -139,18 +139,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   // Format context data using helper functions
   const contextDisplay = formatContextDisplay(displayTask?.context_data);
   
-  // Toggle section expansion
-  const toggleSection = (path: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(path)) {
-        newSet.delete(path);
-      } else {
-        newSet.add(path);
-      }
-      return newSet;
-    });
-  };
 
   // Copy JSON to clipboard
   const copyJsonToClipboard = () => {
@@ -165,153 +153,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
     }
   };
 
-  // Render nested JSON beautifully
-  const renderNestedJson = (data: any, path: string = '', depth: number = 0): React.ReactElement => {
-    if (data === null || data === undefined) {
-      return <span className="text-text-tertiary italic">null</span>;
-    }
-
-    if (typeof data === 'boolean') {
-      return <span className={`font-medium ${data ? 'text-success dark:text-success-dark' : 'text-error dark:text-error-dark'}`}>{String(data)}</span>;
-    }
-
-    if (typeof data === 'string') {
-      // Check if it's a date string
-      if (data.match(/^\d{4}-\d{2}-\d{2}/) || data.includes('T')) {
-        try {
-          const date = new Date(data);
-          if (!isNaN(date.getTime())) {
-            return (
-              <span className="text-info dark:text-info-dark">
-                <Calendar className="inline w-3 h-3 mr-1" />
-                {date.toLocaleString()}
-              </span>
-            );
-          }
-        } catch {}
-      }
-      // Check if it's a UUID
-      if (data.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        return (
-          <span className="font-mono text-xs text-secondary dark:text-secondary-dark">
-            <Hash className="inline w-3 h-3 mr-1" />
-            {data}
-          </span>
-        );
-      }
-      return <span className="text-text dark:text-text">"{data}"</span>;
-    }
-
-    if (typeof data === 'number') {
-      return <span className="text-info dark:text-info-dark font-medium">{data}</span>;
-    }
-
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        return <span className="text-text-tertiary italic">[]</span>;
-      }
-      
-      const isExpanded = expandedSections.has(path);
-      
-      return (
-        <div className="inline-block">
-          <button
-            onClick={() => toggleSection(path)}
-            className="text-xs text-text-secondary hover:text-text flex items-center gap-1"
-          >
-            {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            <span className="font-medium">[{data.length} items]</span>
-          </button>
-          {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1">
-              {data.map((item, index) => (
-                <div key={index} className="flex items-start">
-                  <span className="text-text-tertiary text-xs mr-2">{index}:</span>
-                  {renderNestedJson(item, `${path}[${index}]`, depth + 1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (typeof data === 'object') {
-      const keys = Object.keys(data);
-      if (keys.length === 0) {
-        return <span className="text-text-tertiary italic">{'{}'}</span>;
-      }
-
-      const isExpanded = expandedSections.has(path);
-      const isMainSection = depth === 0 || depth === 1;
-      
-      return (
-        <div className={depth === 0 ? '' : 'inline-block'}>
-          {path && (
-            <button
-              onClick={() => toggleSection(path)}
-              className={`text-xs hover:text-text flex items-center gap-1 mb-1 ${
-                isMainSection ? 'text-text font-semibold' : 'text-text-secondary'
-              }`}
-            >
-              {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <Layers className="w-3 h-3" />
-              <span>{keys.length} properties</span>
-            </button>
-          )}
-          {(!path || isExpanded) && (
-            <div className={`${path ? 'ml-4 mt-1' : ''} space-y-1`}>
-              {keys.map(key => {
-                const value = data[key];
-                const currentPath = path ? `${path}.${key}` : key;
-                const isEmpty = value === null || value === undefined || 
-                               (typeof value === 'object' && Object.keys(value).length === 0) ||
-                               (Array.isArray(value) && value.length === 0);
-                
-                // Get appropriate icon and color for known keys
-                let keyIcon = null;
-                let keyColor = 'text-text-secondary';
-                
-                if (key.includes('id') || key.includes('uuid')) {
-                  keyIcon = <Hash className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-secondary dark:text-secondary-dark';
-                } else if (key.includes('date') || key.includes('time') || key.includes('_at')) {
-                  keyIcon = <Calendar className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-info dark:text-info-dark';
-                } else if (key.includes('status') || key.includes('state')) {
-                  keyIcon = <Tag className="inline w-3 h-3 mr-1" />;
-                  keyColor = 'text-success dark:text-success-dark';
-                }
-                
-                return (
-                  <div 
-                    key={key} 
-                    className={`flex items-start ${
-                      isEmpty ? 'opacity-50' : ''
-                    } ${
-                      isMainSection && typeof value === 'object' && !Array.isArray(value) 
-                        ? 'theme-context-section rounded-lg' 
-                        : ''
-                    }`}
-                  >
-                    <span className={`${keyColor} text-sm font-medium mr-2 min-w-[120px]`}>
-                      {keyIcon}
-                      {key}:
-                    </span>
-                    <div className="flex-1">
-                      {renderNestedJson(value, currentPath, depth + 1)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return <span className="text-text-secondary">{String(data)}</span>;
-  };
   
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -659,158 +500,129 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
               ) : taskContext ? (
                 <>
                   {/* Context Header */}
-                  <div className="theme-context-metadata p-4 rounded-lg">
-                    <h3 className="text-lg font-semibold text-info dark:text-info-dark flex items-center gap-2">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                       <Layers className="w-5 h-5" />
-                      Task Context - Complete Hierarchical View
+                      Task Context Data
                     </h3>
-                    <p className="text-sm text-info dark:text-info-dark mt-1">
-                      Interactive nested view showing ALL context data - click to expand/collapse sections
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Complete hierarchical view of task context and inherited data
                     </p>
                   </div>
                   
-                  {/* Task Data Section */}
-                  {(taskContext.task_data || taskContext.execution_context || taskContext.discovered_patterns) && (
-                    <div className="theme-context-data p-4 rounded-lg">
-                      <h4 className="text-md font-semibold text-success dark:text-success-dark mb-3">
-                        🎯 Task Execution Details
-                      </h4>
+                  {/* Task Execution Section */}
+                  {(taskContext.task_data || taskContext.execution_context || taskContext.discovered_patterns || taskContext.local_decisions) && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
+                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <Settings className="w-4 h-4" />
+                          Task Execution Details
+                        </h3>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        {/* Task Data */}
+                        {taskContext.task_data && Object.keys(taskContext.task_data).length > 0 && (
+                          <details className="group">
+                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                              <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                              Task Data
+                            </summary>
+                            <div className="mt-2 ml-6">
+                              <EnhancedJSONViewer data={taskContext.task_data} defaultExpanded={false} maxHeight="max-h-64" />
+                            </div>
+                          </details>
+                        )}
                       
-                      {/* Task Data */}
-                      {taskContext.task_data && Object.keys(taskContext.task_data).length > 0 && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-success hover:text-success-dark">
-                            📋 Task Data
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm theme-card p-2 rounded">
-                            {renderNestedJson(taskContext.task_data)}
-                          </div>
-                        </details>
-                      )}
+                        {/* Execution Context */}
+                        {taskContext.execution_context && Object.keys(taskContext.execution_context).length > 0 && (
+                          <details className="group">
+                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                              <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                              Execution Context
+                            </summary>
+                            <div className="mt-2 ml-6">
+                              <EnhancedJSONViewer data={taskContext.execution_context} defaultExpanded={false} maxHeight="max-h-64" />
+                            </div>
+                          </details>
+                        )}
                       
-                      {/* Execution Context */}
-                      {taskContext.execution_context && Object.keys(taskContext.execution_context).length > 0 && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-success hover:text-success-dark">
-                            ⚡ Execution Context
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm theme-card p-2 rounded max-h-60 overflow-y-auto">
-                            {renderNestedJson(taskContext.execution_context)}
-                          </div>
-                        </details>
-                      )}
+                        {/* Discovered Patterns */}
+                        {taskContext.discovered_patterns && Object.keys(taskContext.discovered_patterns).length > 0 && (
+                          <details className="group">
+                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                              <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                              Discovered Patterns
+                            </summary>
+                            <div className="mt-2 ml-6">
+                              <EnhancedJSONViewer data={taskContext.discovered_patterns} defaultExpanded={false} maxHeight="max-h-64" />
+                            </div>
+                          </details>
+                        )}
                       
-                      {/* Discovered Patterns */}
-                      {taskContext.discovered_patterns && Object.keys(taskContext.discovered_patterns).length > 0 && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-success hover:text-success-dark">
-                            🔍 Discovered Patterns
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm theme-card p-2 rounded">
-                            {renderNestedJson(taskContext.discovered_patterns)}
-                          </div>
-                        </details>
-                      )}
-                      
-                      {/* Local Decisions */}
-                      {taskContext.local_decisions && Object.keys(taskContext.local_decisions).length > 0 && (
-                        <details className="mb-3">
-                          <summary className="cursor-pointer text-sm font-medium text-success hover:text-success-dark">
-                            🎯 Local Decisions
-                          </summary>
-                          <div className="mt-2 ml-4 text-sm theme-card p-2 rounded">
-                            {renderNestedJson(taskContext.local_decisions)}
-                          </div>
-                        </details>
-                      )}
+                        {/* Local Decisions */}
+                        {taskContext.local_decisions && Object.keys(taskContext.local_decisions).length > 0 && (
+                          <details className="group">
+                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                              <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                              Local Decisions
+                            </summary>
+                            <div className="mt-2 ml-6">
+                              <EnhancedJSONViewer data={taskContext.local_decisions} defaultExpanded={false} maxHeight="max-h-64" />
+                            </div>
+                          </details>
+                        )}
+                      </div>
                     </div>
                   )}
                   
                   {/* Implementation Notes Section */}
                   {taskContext.implementation_notes && Object.keys(taskContext.implementation_notes).length > 0 && (
-                    <div className="theme-context-metadata p-4 rounded-lg">
-                      <h4 className="text-md font-semibold text-info dark:text-info-dark mb-3">
-                        📝 Implementation Notes
-                      </h4>
-                      <details open className="mb-3">
-                        <summary className="cursor-pointer text-sm font-medium text-info hover:text-info-dark">
-                          View Implementation Details
-                        </summary>
-                        <div className="mt-2 ml-4 text-sm theme-card p-2 rounded max-h-60 overflow-y-auto">
-                          {renderNestedJson(taskContext.implementation_notes)}
-                        </div>
-                      </details>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
+                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Implementation Notes
+                        </h3>
+                      </div>
+                      <div className="p-4">
+                        <EnhancedJSONViewer data={taskContext.implementation_notes} defaultExpanded={false} maxHeight="max-h-64" />
+                      </div>
                     </div>
                   )}
                   
                   {/* Metadata Section */}
                   {taskContext.metadata && (
-                    <div className="theme-context-insights p-4 rounded-lg">
-                      <h4 className="text-md font-semibold text-secondary dark:text-secondary-dark mb-3">
-                        📊 Metadata & System Information
-                      </h4>
-                      
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        {taskContext.metadata.created_at && (
-                          <div className="theme-card p-2 rounded">
-                            <span className="text-xs text-text-secondary">Created</span>
-                            <p className="font-medium text-sm">{new Date(taskContext.metadata.created_at).toLocaleDateString()}</p>
-                          </div>
-                        )}
-                        {taskContext.metadata.updated_at && (
-                          <div className="theme-card p-2 rounded">
-                            <span className="text-xs text-text-secondary">Last Updated</span>
-                            <p className="font-medium text-sm">{new Date(taskContext.metadata.updated_at).toLocaleDateString()}</p>
-                          </div>
-                        )}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
+                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <Info className="w-4 h-4" />
+                          Metadata & System Information
+                        </h3>
                       </div>
-                      
-                      <details>
-                        <summary className="cursor-pointer text-sm font-medium text-secondary hover:text-secondary-dark">
-                          View All Metadata
-                        </summary>
-                        <div className="mt-2 ml-4 text-sm theme-card p-2 rounded max-h-40 overflow-y-auto">
-                          {renderNestedJson(taskContext.metadata)}
-                        </div>
-                      </details>
+                      <div className="p-4">
+                        <EnhancedJSONViewer data={taskContext.metadata} defaultExpanded={false} maxHeight="max-h-64" />
+                      </div>
                     </div>
                   )}
                   
                   {/* Inheritance Information */}
                   {(taskContext._inheritance || taskContext.inheritance_metadata || taskContext.inheritance_disabled !== undefined) && (
-                    <div className="theme-context-progress p-4 rounded-lg">
-                      <h4 className="text-md font-semibold text-warning dark:text-warning-dark mb-3">
-                        🔗 Context Inheritance
-                      </h4>
-                      <div className="text-sm">
-                        {(taskContext._inheritance || taskContext.inheritance_metadata) && (
-                          <>
-                            <p className="mb-2">
-                              <span className="font-medium">Inheritance Chain:</span> {
-                                (taskContext._inheritance?.chain || 
-                                 taskContext.inheritance_metadata?.inheritance_chain)?.join(' → ') || 'N/A'
-                              }
-                            </p>
-                            <p className="mb-2">
-                              <span className="font-medium">Inheritance Depth:</span> {
-                                taskContext._inheritance?.inheritance_depth || 
-                                taskContext.inheritance_metadata?.inheritance_depth || 0
-                              }
-                            </p>
-                          </>
-                        )}
-                        {taskContext.inheritance_disabled !== undefined && (
-                          <p className="mb-2">
-                            <span className="font-medium">Inheritance Status:</span> {
-                              taskContext.inheritance_disabled ? 'Disabled' : 'Enabled'
-                            }
-                          </p>
-                        )}
-                        {taskContext.force_local_only && (
-                          <p className="text-xs text-warning italic">
-                            ⚠️ This task uses local context only (inheritance bypassed)
-                          </p>
-                        )}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
+                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <Layers className="w-4 h-4" />
+                          Context Inheritance
+                        </h3>
+                      </div>
+                      <div className="p-4">
+                        <EnhancedJSONViewer data={{
+                          inheritance_chain: (taskContext._inheritance?.chain || taskContext.inheritance_metadata?.inheritance_chain)?.join(' → ') || 'N/A',
+                          inheritance_depth: taskContext._inheritance?.inheritance_depth || taskContext.inheritance_metadata?.inheritance_depth || 0,
+                          inheritance_status: taskContext.inheritance_disabled !== undefined ? (taskContext.inheritance_disabled ? 'Disabled' : 'Enabled') : 'Unknown',
+                          force_local_only: taskContext.force_local_only || false,
+                          ...(taskContext._inheritance || {}),
+                          ...(taskContext.inheritance_metadata || {})
+                        }} defaultExpanded={false} maxHeight="max-h-64" />
                       </div>
                     </div>
                   )}
@@ -830,70 +642,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     </div>
                   </details>
                   
-                  {/* Expand/Collapse All Controls */}
-                  <div className="flex gap-2 justify-end mt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyJsonToClipboard}
-                      className="flex items-center gap-2"
-                    >
-                      {jsonCopied ? (
-                        <>
-                          <CheckIcon className="w-4 h-4" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          Copy JSON
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Expand all sections including HTML details elements
-                        const allPaths = new Set<string>();
-                        const traverse = (obj: any, path: string = '') => {
-                          if (obj && typeof obj === 'object') {
-                            allPaths.add(path);
-                            Object.keys(obj).forEach(key => {
-                              const newPath = path ? `${path}.${key}` : key;
-                              traverse(obj[key], newPath);
-                            });
-                          }
-                        };
-                        traverse(taskContext);
-                        setExpandedSections(allPaths);
-                        
-                        // Also expand all HTML details elements
-                        const detailsElements = document.querySelectorAll('details');
-                        detailsElements.forEach(details => {
-                          details.open = true;
-                        });
-                      }}
-                    >
-                      Expand All
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Collapse all sections
-                        setExpandedSections(new Set(['data', 'resolved_context', 'task_data', 'progress']));
-                        
-                        // Also collapse all HTML details elements
-                        const detailsElements = document.querySelectorAll('details');
-                        detailsElements.forEach(details => {
-                          details.open = false;
-                        });
-                      }}
-                    >
-                      Collapse All
-                    </Button>
-                  </div>
                 </>
               ) : (
                 <div className="text-center py-8 theme-context-section rounded-lg">
@@ -910,7 +658,67 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex justify-between">
+          <div className="flex gap-2">
+            {activeTab === 'context' && taskContext && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Expand all HTML details elements
+                    const detailsElements = document.querySelectorAll('details');
+                    detailsElements.forEach(details => {
+                      details.open = true;
+                    });
+                    
+                    // Dispatch custom event for EnhancedJSONViewer components
+                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
+                      detail: { viewerId: 'all' }
+                    }));
+                  }}
+                >
+                  Expand All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Collapse all HTML details elements
+                    const detailsElements = document.querySelectorAll('details');
+                    detailsElements.forEach(details => {
+                      details.open = false;
+                    });
+                    
+                    // Dispatch custom event for EnhancedJSONViewer components
+                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
+                      detail: { viewerId: 'all' }
+                    }));
+                  }}
+                >
+                  Collapse All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyJsonToClipboard}
+                  className="flex items-center gap-2"
+                >
+                  {jsonCopied ? (
+                    <>
+                      <CheckIcon className="w-4 h-4" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy JSON
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </div>
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>

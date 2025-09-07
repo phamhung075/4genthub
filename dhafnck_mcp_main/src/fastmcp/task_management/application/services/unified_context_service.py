@@ -1367,19 +1367,17 @@ class UnifiedContextService:
             global_repo = self.repositories.get(ContextLevel.GLOBAL)
             if global_repo:
                 try:
-                    # Generate user-specific global context ID
-                    import uuid
-                    namespace = uuid.UUID("a47ae7b9-1d4b-4e5f-8b5a-9c3e5d2f8a1c")
+                    # Each user has exactly ONE global context with their user_id as the context_id
+                    # No need to generate - just use the user_id directly
                     if self._user_id:
-                        try:
-                            user_uuid = uuid.UUID(str(self._user_id))
-                        except ValueError:
-                            user_uuid = uuid.uuid5(namespace, str(self._user_id))
-                        global_context_id = str(uuid.uuid5(namespace, str(user_uuid)))
+                        global_context_id = self._user_id
                     else:
-                        global_context_id = str(uuid.uuid4())
+                        # Fallback - should not happen in production
+                        logger.warning("No user_id available for global context lookup")
+                        global_context_id = None
                     
-                    global_entity = global_repo.get(global_context_id)
+                    if global_context_id:
+                        global_entity = global_repo.get(global_context_id)
                     if global_entity:
                         global_data = self._entity_to_dict(global_entity)
                         inheritance_chain.append({
