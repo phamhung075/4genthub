@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **🖱️ Action Button Double-Click Issue** - 2025-09-07
+  - Fixed critical UX issue where action buttons (View Details, Edit, etc.) required two clicks to open dialogs on fresh page load
+  - Root cause: async data loading was blocking dialog state changes in LazyTaskList and LazySubtaskList components
+  - Solution: Set dialog state immediately, then load data asynchronously after dialog opens
+  - Dialogs now open instantly on first click and show loading states while data loads in background
+  - Files modified:
+    - `dhafnck-frontend/src/components/LazyTaskList.tsx` - Fixed openDialog function to set state before async loading
+    - `dhafnck-frontend/src/components/LazySubtaskList.tsx` - Fixed handleSubtaskAction function for immediate dialog opening
+  - Impact: Significantly improved user experience across all task and subtask management interfaces
 - **🎨 Dialog Size Consistency Update** - 2025-09-07
   - Updated TaskDetailsDialog and SubtaskDetailsDialog to match the larger size of BranchDetailsDialog and ProjectDetailsDialog
   - Changed dialog width from `max-w-4xl` to `w-[90vw] max-w-6xl h-[85vh]` for consistent user experience

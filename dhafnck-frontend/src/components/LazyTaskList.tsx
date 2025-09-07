@@ -212,17 +212,19 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     }
   }, [expandedTasks, loadFullTask]);
 
-  // Dialog handlers with lazy loading
-  const openDialog = useCallback(async (type: string, taskId?: string, extraData?: any) => {
+  // Dialog handlers with lazy loading - Fixed double-click issue
+  const openDialog = useCallback((type: string, taskId?: string, extraData?: any) => {
+    // Set dialog state immediately to fix double-click issue
+    setActiveDialog({ type: type as any, taskId, data: extraData });
+    
+    // Load data asynchronously after dialog is opened
     if (taskId) {
-      await loadFullTask(taskId);
+      loadFullTask(taskId);
     }
     
     if (type === 'assign') {
-      await loadAgentsOnDemand();
+      loadAgentsOnDemand();
     }
-    
-    setActiveDialog({ type: type as any, taskId, data: extraData });
   }, [loadFullTask, loadAgentsOnDemand]);
 
   const closeDialog = useCallback(() => {

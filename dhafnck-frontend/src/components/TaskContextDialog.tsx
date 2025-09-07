@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Task } from "../api";
 import { formatContextDisplay, getContextLevel, getContextFields } from "../utils/contextHelpers";
+import { FileText, Copy, Check as CheckIcon, ChevronDown, ChevronUp } from "lucide-react";
 
 interface TaskContextDialogProps {
   open: boolean;
@@ -21,10 +22,118 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
   onClose,
   loading = false
 }) => {
+  const [jsonCopied, setJsonCopied] = useState(false);
+  const [rawJsonExpanded, setRawJsonExpanded] = useState(false);
+  
   // Format context data using helper functions
   const contextDisplay = formatContextDisplay(context?.data);
   const contextLevel = getContextLevel(context?.data);
   const contextFields = getContextFields(context?.data);
+  
+  // Copy JSON to clipboard
+  const copyJsonToClipboard = () => {
+    if (context) {
+      const jsonString = JSON.stringify(context, null, 2);
+      navigator.clipboard.writeText(jsonString).then(() => {
+        setJsonCopied(true);
+        setTimeout(() => setJsonCopied(false), 2000);
+      }).catch(err => {
+        console.error('Failed to copy JSON:', err);
+      });
+    }
+  };
+  
+  // Get level-based styling (matching branch context pattern)
+  const getLevelStyling = (depth: number) => {
+    const styles = [
+      { // Level 0 - Root level fields
+        bg: 'bg-blue-50 dark:bg-blue-900/10',
+        border: 'border-l-4 border-blue-500',
+        text: 'text-blue-900 dark:text-blue-100',
+        keySize: 'text-base font-semibold',
+        padding: 'pl-3',
+      },
+      { // Level 1
+        bg: 'bg-green-50 dark:bg-green-900/10',
+        border: 'border-l-4 border-green-500',
+        text: 'text-green-900 dark:text-green-100',
+        keySize: 'text-sm font-medium',
+        padding: 'pl-6',
+      },
+      { // Level 2
+        bg: 'bg-purple-50 dark:bg-purple-900/10',
+        border: 'border-l-4 border-purple-500',
+        text: 'text-purple-900 dark:text-purple-100',
+        keySize: 'text-sm',
+        padding: 'pl-9',
+      },
+      { // Level 3+
+        bg: 'bg-orange-50 dark:bg-orange-900/10',
+        border: 'border-l-4 border-orange-500',
+        text: 'text-orange-900 dark:text-orange-100',
+        keySize: 'text-xs',
+        padding: 'pl-12',
+      },
+    ];
+    
+    return styles[Math.min(depth, styles.length - 1)];
+  };
+  
+  // Render nested data with level-based styling
+  const renderNestedData = (data: any, depth: number = 0): JSX.Element => {
+    const style = getLevelStyling(depth);
+    
+    if (data === null || data === undefined) {
+      return <span className="text-gray-400 italic">null</span>;
+    }
+    
+    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+      return <span className={style.text}>{String(data)}</span>;
+    }
+    
+    if (Array.isArray(data)) {
+      return (
+        <div className="space-y-1">
+          {data.map((item, index) => (
+            <div key={index} className={`${style.padding} py-1`}>
+              <span className={`${style.text} ${style.keySize}`}>[{index}]:</span>
+              <div className="ml-4">
+                {renderNestedData(item, depth + 1)}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    if (typeof data === 'object') {
+      return (
+        <div className="space-y-2">
+          {Object.entries(data).map(([key, value]) => (
+            <div
+              key={key}
+              className={`${style.bg} ${style.border} ${style.padding} py-2 rounded-r transition-colors hover:opacity-90`}
+            >
+              <div>
+                <span className={`${style.text} ${style.keySize} capitalize`}>
+                  {key.replace(/_/g, ' ')}:
+                </span>
+                {typeof value === 'object' && value !== null ? (
+                  <div className="mt-2">
+                    {renderNestedData(value, depth + 1)}
+                  </div>
+                ) : (
+                  <span className="ml-2">{renderNestedData(value, depth + 1)}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    return <span>{String(data)}</span>;
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

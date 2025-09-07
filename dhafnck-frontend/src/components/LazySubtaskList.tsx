@@ -193,29 +193,46 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     setDeleteDialog({ open: false, subtaskId: null });
   }, [parentTaskId]);
 
-  // Handle subtask actions
-  const handleSubtaskAction = useCallback(async (action: 'details' | 'edit' | 'complete', subtaskId: string) => {
-    // Load full subtask data if not already loaded
-    const subtask = await loadFullSubtask(subtaskId);
+  // Handle subtask actions - Fixed double-click issue
+  const handleSubtaskAction = useCallback((action: 'details' | 'edit' | 'complete', subtaskId: string) => {
+    // Get existing subtask data if available
+    const existingSubtask = fullSubtasks.get(subtaskId);
     
-    if (!subtask) {
-      console.error('Failed to load subtask for action:', action);
-      return;
-    }
-    
+    // Set dialog state immediately to fix double-click issue
     switch (action) {
       case 'details':
-        // Open the details dialog instead of inline details
-        setDetailsDialog({ open: true, subtask });
+        // Open the details dialog immediately, even with null data
+        setDetailsDialog({ open: true, subtask: existingSubtask || null });
         break;
       case 'edit':
-        setEditingSubtask(subtask);
+        setEditingSubtask(existingSubtask || null);
         break;
       case 'complete':
-        setActiveDialog({ type: 'complete', subtaskId, subtask });
+        setActiveDialog({ type: 'complete', subtaskId, subtask: existingSubtask || null });
         break;
     }
-  }, [loadFullSubtask]);
+    
+    // Load full subtask data asynchronously after dialog is opened
+    if (!existingSubtask) {
+      loadFullSubtask(subtaskId).then(subtask => {
+        if (subtask) {
+          switch (action) {
+            case 'details':
+              setDetailsDialog({ open: true, subtask });
+              break;
+            case 'edit':
+              setEditingSubtask(subtask);
+              break;
+            case 'complete':
+              setActiveDialog({ type: 'complete', subtaskId, subtask });
+              break;
+          }
+        }
+      }).catch(error => {
+        console.error('Failed to load subtask for action:', action, error);
+      });
+    }
+  }, [loadFullSubtask, fullSubtasks]);
 
   // Handle subtask completion
   const handleCompleteSubtask = useCallback((completedSubtask: Subtask) => {
@@ -236,7 +253,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     setActiveDialog({ type: null });
   }, []);
 
-  // Memoized progress calculation
+  // Memoized progress calculation - Force 100% for done subtasks
   const progressSummary = useMemo(() => {
     if (subtaskSummaries.length === 0) return null;
     
@@ -267,7 +284,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
               <span className="text-gray-700 dark:text-gray-300">{summary.title}</span>
               {summary.progress_percentage !== undefined && (
                 <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
-                  {summary.progress_percentage}%
+                  {summary.status === 'done' ? 100 : summary.progress_percentage}%
                 </Badge>
               )}
             </div>
@@ -434,12 +451,12 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
                 className="h-2 rounded-full transition-all duration-300 relative overflow-hidden group"
                 style={{ width: `${progressSummary.percentage}%` }}
               >
-                {/* Background gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600" />
+                {/* Background gradient - lighter blue for subtasks */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-blue-500" />
                 
                 {/* Animated shimmer overlay */}
                 <div 
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                   style={{
                     backgroundSize: '200% 100%',
                     animation: 'shimmer-progress 2s infinite linear'

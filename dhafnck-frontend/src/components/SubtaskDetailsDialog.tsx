@@ -189,16 +189,17 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Completion:</span>
-                          <span className="text-sm font-medium">{fullSubtask.progress_percentage}%</span>
+                          <span className="text-sm font-medium">{fullSubtask.status === 'done' ? 100 : fullSubtask.progress_percentage}%</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div 
                             className="h-2 rounded-full transition-all duration-300 relative overflow-hidden group"
-                            style={{ width: `${fullSubtask.progress_percentage}%` }}
+                            style={{ width: `${fullSubtask.status === 'done' ? 100 : fullSubtask.progress_percentage}%` }}
                           >
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600" />
+                            {/* Background gradient - lighter blue for subtasks */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-blue-500" />
                             <div 
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                               style={{
                                 backgroundSize: '200% 100%',
                                 animation: 'shimmer-progress 2s infinite linear'
