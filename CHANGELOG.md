@@ -7,6 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **📚 COMPLETE REWRITE: manage_agent API Documentation to Match Actual Implementation** - 2025-09-08
+  - **Issue**: API documentation described a completely different system than what was actually implemented
+  - **Analysis**: Documentation was for a non-existent agent execution monitoring system, actual implementation is simple CRUD + assignment
+  - **Complete Documentation Rewrite**:
+    - **Actual Actions**: register, assign, get, list, update, unassign, unregister, rebalance (8 total)
+    - **Correct Parameters**: action, project_id (REQUIRED), agent_id, name, call_agent, git_branch_id, user_id
+    - **Removed Non-Existent Features**: Removed all documentation for task execution monitoring, performance analytics, agent specialization catalog
+    - **Two-Stage Validation**: Documented actual validation pattern with business logic requirements per action
+    - **Real Response Formats**: Based responses on actual StandardResponseFormatter with workflow guidance
+    - **Integration Patterns**: Documented actual integration with project, git branch, task, and context systems
+  - **Major Corrections**:
+    - **project_id**: Changed from OPTIONAL to REQUIRED (critical error in original docs)
+    - **Removed Invalid Actions**: execute_task, get_execution_status, cancel_execution, get_performance, get_activity_log
+    - **Actual Architecture**: Domain-Driven Design with modular handlers (CRUD, Assignment, Rebalance)
+  - **Files Rewritten**: `dhafnck_mcp_main/docs/api-integration/controllers/manage-agent-api.md`
+  - **Impact**: Documentation now accurately reflects the simple but effective agent registration and assignment system
+  - **Verification**: Based on actual AgentMCPController, handlers, and AgentApplicationFacade implementation
 - **📚 COMPREHENSIVE: Updated manage_task API Documentation (Missing 60% of Features)** - 2025-09-08
   - **Issue**: API documentation was severely incomplete, missing 60% of implemented features
   - **Analysis**: Implementation far more advanced than documented - controller supports 30+ parameters, 12+ actions, and full Vision System integration
