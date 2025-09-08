@@ -137,6 +137,8 @@ class CRUDHandler:
     def get_task(self, facade: TaskApplicationFacade, task_id: str, 
                 include_context: bool = True) -> Dict[str, Any]:
         """Handle task retrieval with optional context (defaults to True)."""
+        logger.info(f"DEBUG: CRUDHandler.get_task called - task_id={task_id}, include_context={include_context}")
+        print(f"[CRUD DEBUG] get_task called with task_id={task_id}, include_context={include_context}")
         if not task_id:
             return self._create_standardized_error(
                 operation="get_task",
@@ -148,14 +150,59 @@ class CRUDHandler:
         result = facade.get_task(task_id)
         
         if result.get("success") and include_context and result.get("task"):
-            # Add context information if requested
+            # Add context information if requested - FETCH INHERITED CONTEXT
             task_data = result["task"]
             task_context_id = task_data.get("context_id")
+            logger.info(f"DEBUG: get_task - include_context={include_context}, task_context_id={task_context_id}")
+            
             if task_context_id:
-                result["include_context"] = True
-                result["task"]["context_available"] = True
+                try:
+                    # Use the existing facade service to get context facade
+                    from .....application.services.facade_service import FacadeService
+                    facade_service = FacadeService.get_instance()
+                    
+                    # Get git_branch_id from task data for proper context scoping
+                    git_branch_id = task_data.get("git_branch_id")
+                    
+                    # Get unified context facade for inheritance resolution
+                    context_facade = facade_service.get_unified_context_facade()
+                    
+                    # Resolve task context with full inheritance using facade
+                    inherited_context_result = context_facade.resolve_context(
+                        level="task", 
+                        context_id=task_context_id,
+                        include_inherited=True
+                    )
+                    
+                    inherited_context = {
+                        "success": inherited_context_result.get("success", False),
+                        "data": inherited_context_result
+                    }
+                    
+                    if inherited_context.get("success") and inherited_context.get("data"):
+                        # Check if we have resolved_context data
+                        context_data = inherited_context["data"]
+                        if "resolved_context" in context_data:
+                            task_data["inherited_context"] = context_data["resolved_context"]
+                        elif "context" in context_data:
+                            task_data["inherited_context"] = context_data["context"]
+                        else:
+                            # Use the entire data as inherited context
+                            task_data["inherited_context"] = context_data
+                        result["include_context"] = True
+                        result["task"]["context_available"] = True
+                        result["task"]["inherited_context_available"] = True
+                    else:
+                        result["task"]["context_available"] = True
+                        result["task"]["inherited_context_available"] = False
+                
+                except Exception as e:
+                    logger.error(f"Failed to fetch inherited context for task {task_id}: {e}")
+                    result["task"]["context_available"] = True
+                    result["task"]["inherited_context_available"] = False
             else:
                 result["task"]["context_available"] = False
+                result["task"]["inherited_context_available"] = False
         
         return result
     

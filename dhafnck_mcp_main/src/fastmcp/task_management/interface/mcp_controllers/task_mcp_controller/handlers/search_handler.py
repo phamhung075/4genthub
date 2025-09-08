@@ -120,6 +120,31 @@ class SearchHandler:
             if result.get("success") and result.get("tasks") and len(result["tasks"]) > 0:
                 next_task = result["tasks"][0]
                 
+                # If context is requested, get the full task details (list_tasks returns minimal data)
+                if include_context:
+                    try:
+                        # Use CRUDHandler to get full task details with context (same approach that works for get)
+                        from .crud_handler import CRUDHandler
+                        from ....utils.response_formatter import StandardResponseFormatter
+                        
+                        task_id = next_task["id"]
+                        crud_handler = CRUDHandler(StandardResponseFormatter())
+                        full_task_result = crud_handler.get_task(facade, task_id, include_context=True)
+                        
+                        if full_task_result.get("success") and full_task_result.get("task"):
+                            # Replace minimal task with full task details (which now includes context)
+                            next_task = full_task_result["task"]
+                            # Ensure the progress_percentage is maintained from original minimal task
+                            if "progress_percentage" not in next_task:
+                                next_task["progress_percentage"] = result["tasks"][0].get("progress_percentage", 0)
+                        else:
+                            logger.warning(f"Could not fetch full task details for task {task_id}")
+                    except Exception as e:
+                        logger.error(f"Error fetching full task details for next task: {e}")
+                
+                # Context resolution is already handled by CRUDHandler.get_task() above
+                # No need for duplicate context resolution logic here
+                
                 # Format as "next" response
                 return {
                     "success": True,

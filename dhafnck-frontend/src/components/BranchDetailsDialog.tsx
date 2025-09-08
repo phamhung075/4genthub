@@ -5,7 +5,6 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
-import { PixelCanvas } from "./ui/pixel-canvas";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { Separator } from "./ui/separator";
 
@@ -453,25 +452,15 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                 </div>
               ) : branchContext ? (
                 <>
-                  {/* Context Header with PixelCanvas */}
-                  <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 overflow-hidden group">
-                    <PixelCanvas
-                      gap={8}
-                      speed={25}
-                      colors={["#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa"]}
-                      variant="default"
-                      noFocus
-                      style={{ opacity: 0.4 }}
-                    />
-                    <div className="relative z-10">
-                      <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                        <Layers className="w-5 h-5" />
-                        Branch Context Data
-                      </h3>
-                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                        Complete hierarchical context for this branch including inherited data
-                      </p>
-                    </div>
+                  {/* Context Header */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                      <Layers className="w-5 h-5" />
+                      Branch Context Data
+                    </h3>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                      Complete hierarchical context for this branch including inherited data
+                    </p>
                   </div>
                   
                   {/* Organized Context Sections */}
@@ -479,16 +468,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {/* Branch Settings & Configuration */}
                     {(branchContext.branch_settings || branchContext.branch_standards || branchContext.branch_workflow) && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 border-l-4 border-blue-400 dark:border-blue-600 overflow-hidden group">
-                          <PixelCanvas
-                            gap={6}
-                            speed={18}
-                            colors={["#dbeafe", "#bfdbfe", "#93c5fd"]}
-                            variant="default"
-                            noFocus
-                            style={{ opacity: 0.25 }}
-                          />
-                          <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 border-l-4 border-blue-400 dark:border-blue-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                             <Settings className="w-4 h-4" />
                             Branch Configuration
                           </h3>
@@ -536,16 +517,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {/* Project Context (Inherited) */}
                     {branchContext.project_context && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <div className="relative bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600 overflow-hidden group">
-                          <PixelCanvas
-                            gap={6}
-                            speed={20}
-                            colors={["#dcfce7", "#bbf7d0", "#86efac"]}
-                            variant="default"
-                            noFocus
-                            style={{ opacity: 0.3 }}
-                          />
-                          <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                             <Database className="w-4 h-4" />
                             Project Context (Inherited)
                           </h3>
@@ -559,16 +532,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {/* Branch Data */}
                     {branchContext.branch_data && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <div className="relative bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600 overflow-hidden group">
-                          <PixelCanvas
-                            gap={6}
-                            speed={22}
-                            colors={["#faf5ff", "#f3e8ff", "#e9d5ff"]}
-                            variant="default"
-                            noFocus
-                            style={{ opacity: 0.25 }}
-                          />
-                          <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                             <GitBranch className="w-4 h-4" />
                             Branch Data
                           </h3>
@@ -582,16 +547,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {/* Agent Assignments */}
                     {branchContext.agent_assignments && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <div className="relative bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600 overflow-hidden group">
-                          <PixelCanvas
-                            gap={6}
-                            speed={19}
-                            colors={["#fefbf2", "#fef3c7", "#fed7aa"]}
-                            variant="default"
-                            noFocus
-                            style={{ opacity: 0.25 }}
-                          />
-                          <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                             <Users className="w-4 h-4" />
                             Agent Assignments
                           </h3>
@@ -605,16 +562,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {/* Metadata */}
                     {branchContext.metadata && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <div className="relative bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600 overflow-hidden group">
-                          <PixelCanvas
-                            gap={6}
-                            speed={17}
-                            colors={["#eef2ff", "#e0e7ff", "#c7d2fe"]}
-                            variant="default"
-                            noFocus
-                            style={{ opacity: 0.25 }}
-                          />
-                          <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                             <Info className="w-4 h-4" />
                             Metadata
                           </h3>
@@ -657,16 +606,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                       if (customFields.length > 0) {
                         return (
                           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                            <div className="relative bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600 overflow-hidden group">
-                              <PixelCanvas
-                                gap={6}
-                                speed={16}
-                                colors={["#f9fafb", "#f1f5f9", "#e2e8f0"]}
-                                variant="default"
-                                noFocus
-                                style={{ opacity: 0.2 }}
-                              />
-                              <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                            <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600">
+                              <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                                 <Code className="w-4 h-4" />
                                 Additional Context Data
                               </h3>
@@ -697,16 +638,8 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                     {/* Raw JSON View - Always at the bottom */}
                     <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                       <summary className="cursor-pointer">
-                        <div className="relative bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 p-3 border-l-4 border-teal-400 dark:border-teal-600 overflow-hidden group">
-                          <PixelCanvas
-                            gap={6}
-                            speed={21}
-                            colors={["#f0fdfa", "#ccfbf1", "#99f6e4"]}
-                            variant="default"
-                            noFocus
-                            style={{ opacity: 0.3 }}
-                          />
-                          <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 p-3 border-l-4 border-teal-400 dark:border-teal-600">
+                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                             <FileText className="w-4 h-4" />
                             Complete Raw Context
                           </h3>

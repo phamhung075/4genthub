@@ -138,6 +138,9 @@ module.exports = {
         '3xl': '2rem',
         'full': '9999px',
       },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+      },
       keyframes: {
         "slide-in-from-right-full": {
           "0%": { transform: "translateX(100%)" },

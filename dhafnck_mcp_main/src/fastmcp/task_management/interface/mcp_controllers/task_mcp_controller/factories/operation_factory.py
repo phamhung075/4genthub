@@ -54,6 +54,7 @@ class OperationFactory:
         Returns:
             Operation result
         """
+        print(f"[OPERATION DEBUG] handle_operation called with operation={operation}, kwargs keys: {list(kwargs.keys())}")
         try:
             # Route to appropriate handler based on operation
             if operation in ['create', 'update', 'delete', 'get', 'complete']:
