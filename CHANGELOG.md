@@ -6,6 +6,55 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+- **🎨 UI Enhancement: Updated sidebar toggle button to use ShimmerButton component** - 2025-09-08
+  - **File Modified**: `dhafnck-frontend/src/App.tsx`
+  - **Changes Made**:
+    - Replaced custom styled button with ShimmerButton component for sidebar toggle on small screens
+    - Added shimmer animation effect with blue color (#3b82f6) for better visual feedback
+    - Using icon size variant of ShimmerButton for compact mobile UI
+    - Maintains existing show/hide functionality with Menu/X icons from lucide-react
+  - **User Experience**: Enhanced visual feedback when toggling sidebar on mobile devices with animated shimmer effect
+
+### Fixed
+- **🐛 UI Fix: Fixed "New Project" button text being cut off on medium screens** - 2025-09-08
+  - **File Modified**: `dhafnck-frontend/src/components/ProjectList.tsx`
+  - **Issue**: "New Project" button text was being truncated on medium-sized screens due to sidebar width constraints
+  - **Changes Made**:
+    - Added `min-w-0` class to allow button to shrink properly without cutting off text
+    - Changed button text from "New" to "New Project" for better clarity
+    - Added `title` attribute for tooltip on hover
+    - Applied same fix to Global context button for consistency
+  - **Impact**: Buttons now display properly across all screen sizes without text truncation
+- **🎨 UI Enhancement: Updated sidebar buttons to show icons only on small and medium screens** - 2025-09-08
+  - **File Modified**: `dhafnck-frontend/src/components/ProjectList.tsx`
+  - **Changes Made**:
+    - Updated all buttons (Refresh, Global, New Project) to show icons only on sm and md screens
+    - Text labels now only appear on lg screens and above (hidden lg:inline)
+    - Added dual Refresh button implementation: icon-only for sm/md, with text for lg+
+    - Changed icon spacing from `sm:mr-2` to `lg:mr-2` to match new breakpoint
+    - Added `title` attributes for tooltip clarity on all screen sizes
+  - **User Experience**: Optimized button layout for medium screens, preventing text cutoff while maintaining clarity with icons
+
+### Added
+- **📋 TEST REVIEW: Progress Tools Controller Test Suite Analysis** - 2025-09-08
+  - **Task**: Review and create comprehensive test files for Progress Tools Controller components
+  - **Finding**: All requested test files already exist with comprehensive coverage
+  - **Existing Tests Reviewed**:
+    - `progress_reporting_handler_test.py` (550 lines) - Complete coverage of progress reporting and task updates
+    - `workflow_handler_test.py` (418 lines) - Full coverage of checkpoint creation and workflow states
+    - `progress_tools_controller_test.py` (496 lines) - Thorough testing of controller delegation patterns
+    - `manage_task_description_test.py` (388 lines) - Comprehensive validation of tool descriptions
+  - **Test Coverage Includes**:
+    - Unit tests for all handler methods
+    - Edge case handling (empty lists, special characters, unicode)
+    - Error scenarios and exception handling
+    - Mock-based testing with proper dependency injection
+    - Logging verification
+    - Response formatting validation
+  - **Conclusion**: No new test files needed - existing test suite provides excellent coverage
+  - **Documentation**: Updated TEST-CHANGELOG.md with test review summary
+
 ### Added
 - **📚 COMPLETE REWRITE: manage_agent API Documentation to Match Actual Implementation** - 2025-09-08
   - **Issue**: API documentation described a completely different system than what was actually implemented
@@ -43,6 +92,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Verification**: Based on actual controller implementation in task_mcp_controller directory
 
 ### Fixed
+- **🐛 Fixed Global Context Display Issue in Frontend** - 2025-09-08
+  - **Issue**: Global context was not displaying correctly in the frontend despite being successfully created/updated via MCP tools
+  - **Root Cause**: Backend's `_to_entity` method in `global_context_repository.py` was not properly mapping the nested structure (schema v2.0) to the flat structure expected by the frontend
+  - **Solution**: Updated the `_to_entity` method to properly convert nested structure to frontend-compatible flat structure
+  - **Changes Made**:
+    - Modified `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/global_context_repository.py`
+    - Added proper mapping from nested structure fields (organization, development, security, etc.) to flat frontend fields (user_preferences, ai_agent_settings, etc.)
+    - Preserved both nested and flat structures for backward compatibility
+  - **Frontend Expected Structure**:
+    - Flat fields: user_preferences, ai_agent_settings, workflow_preferences, development_tools, security_settings, etc.
+    - Also includes nested structure: organization, development, security, operations, preferences
+  - **Impact**: Global context now displays correctly in frontend with all data properly mapped and visible
+  - **Testing**: Verified data is stored correctly in PostgreSQL database and retrieved properly through API
 - **📚 CRITICAL: Fixed manage_subtask API Documentation Action Names** - 2025-09-08
   - **Issue**: API documentation was using incorrect action names that don't match the actual controller implementation
   - **Wrong Action Names Fixed**: 

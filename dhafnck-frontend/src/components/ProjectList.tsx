@@ -431,17 +431,25 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
             onClick={fetchProjects}
             loading={loading}
             className="sm:hidden"
-            size="sm"
+            size="icon"
+            title="Refresh projects"
           />
         </div>
         
         {/* Action buttons - responsive layout */}
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 justify-end sm:w-auto">
           {/* Hidden refresh on desktop (shown in different position) */}
           <RefreshButton 
             onClick={fetchProjects}
             loading={loading}
-            className="hidden sm:flex"
+            className="hidden sm:flex lg:hidden"
+            size="icon"
+            title="Refresh projects"
+          />
+          <RefreshButton 
+            onClick={fetchProjects}
+            loading={loading}
+            className="hidden lg:flex"
             size="sm"
           />
           
@@ -452,10 +460,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
             onClick={() => onShowGlobalContext && onShowGlobalContext()}
             aria-label="View/Edit Global Context"
             title="View and Edit Global Context"
-            className="flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial min-w-0"
           >
-            <Globe className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Global</span>
+            <Globe className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Global</span>
           </ShimmerButton>
           
           {/* New project button */}
@@ -463,10 +471,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
             size="sm" 
             variant="default" 
             onClick={() => { setShowCreate(true); setForm({ name: "", description: "" }); }}
-            className="flex-1 sm:flex-initial"
+            className="flex-1 sm:flex-initial min-w-0"
+            title="Create New Project"
           >
-            <Plus className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">New</span>
+            <Plus className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">New Project</span>
           </ShimmerButton>
         </div>
       </div>

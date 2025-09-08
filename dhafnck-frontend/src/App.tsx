@@ -11,6 +11,7 @@ import { Header } from './components/Header';
 import ProjectDetailsDialog from './components/ProjectDetailsDialog';
 import ProjectList from './components/ProjectList';
 import { Button } from './components/ui/button';
+import ShimmerButton from './components/ui/ShimmerButton';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './components/ui/toast';
 import { Profile } from './pages/Profile';
@@ -92,13 +93,16 @@ function Dashboard() {
       )}
 
       {/* Modern Toggle button for mobile */}
-      <button
-        className={`fixed bottom-6 left-6 z-50 flex items-center justify-center w-14 h-14 bg-primary/90 backdrop-blur-xl border-2 border-primary/20 shadow-2xl hover:shadow-primary/25 hover:scale-110 transition-all duration-300 rounded-full ${isLargeScreen ? 'hidden' : 'flex'}`}
+      <ShimmerButton
+        className={`fixed bottom-6 left-6 z-50 ${isLargeScreen ? 'hidden' : 'block'}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+        size="icon"
+        variant="default"
+        shimmerColor="#3b82f6"
       >
-        {sidebarOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
-      </button>
+        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </ShimmerButton>
 
         {/* Modern Main content */}
         <main className="flex-1 flex flex-col p-6 w-full">
