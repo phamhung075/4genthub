@@ -50,7 +50,7 @@ mcp__dhafnck_mcp_http__manage_agent(action="list", project_id="your-project-id")
 > 
 > **📋 Complete Fix Documentation**: For detailed technical information about these fixes, see [Unified Context System Fixes - January 19, 2025](fixes/unified_context_system_fixes_2025_01_19.md)
 >
-> **🔄 Context System Update**: As of January 2025, `manage_context` has been deprecated. Use `manage_context` for all context operations. All examples in this guide have been updated to reflect this change.
+> **🔄 Context System Update**: As of January 2025, `manage_hierarchical_context` has been deprecated. Use `manage_context` for all context operations. All examples in this guide have been updated to reflect this change.
 
 #### ✅ TaskId Import Scoping Error (FIXED)
 

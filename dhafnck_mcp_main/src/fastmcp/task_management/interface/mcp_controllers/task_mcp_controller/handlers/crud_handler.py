@@ -35,7 +35,11 @@ class CRUDHandler:
                    due_date: Optional[str] = None,
                    dependencies: Optional[List[str]] = None,
                    user_id: Optional[str] = None) -> Dict[str, Any]:
-        """Handle task creation with validation and context setup."""
+        """Handle task creation with validation and context setup.
+        
+        Enhanced to support multiple agent assignment at creation time.
+        Validates all assignees using AgentRole enum before task creation.
+        """
         if not title:
             return self._create_standardized_error(
                 operation="create_task",
@@ -52,6 +56,23 @@ class CRUDHandler:
                 hint="Include 'git_branch_id' in your request body"
             )
         
+        # Validate assignees if provided
+        if assignees:
+            try:
+                # Validate assignees using AgentRole enum
+                from ....domain.entities.task import Task
+                dummy_task = Task(title="dummy", description="dummy")
+                validated_assignees = dummy_task.validate_assignee_list(assignees)
+                assignees = validated_assignees
+                logger.info(f"Validated {len(assignees)} assignees for task creation: {assignees}")
+            except ValueError as e:
+                return self._create_standardized_error(
+                    operation="create_task",
+                    field="assignees",
+                    expected="Valid agent roles from AgentRole enum",
+                    hint=f"Invalid assignees: {str(e)}. Use valid agent roles like '@coding-agent', '@test-orchestrator-agent'"
+                )
+        
         request = CreateTaskRequest(
             title=title,
             description=description or f"Description for {title}",
@@ -60,7 +81,7 @@ class CRUDHandler:
             priority=priority,
             details=details or "",
             estimated_effort=estimated_effort,
-            assignees=assignees or [],
+            assignees=assignees or [],  # Use validated assignees
             labels=labels or [],
             due_date=due_date,
             dependencies=dependencies or [],

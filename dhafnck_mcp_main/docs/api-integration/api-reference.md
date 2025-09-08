@@ -302,7 +302,7 @@ Unified context management system providing a single interface for all context o
 > **🚀 NEW in v9.1**: The `data` parameter now accepts JSON strings in addition to dictionary objects! JSON strings are automatically parsed, making it easier to work with serialized data.
 > 
 > **📋 January 2025 Updates**:
-> - manage_context is now deprecated - use manage_context for all operations
+> - manage_hierarchical_context is now deprecated - use manage_context for all operations
 > - Fixed boolean parameter validation - accepts "true", "false", "yes", "no", etc.
 > - Enhanced array parameter handling for assignees, labels, dependencies
 > - Automatic context synchronization on task updates

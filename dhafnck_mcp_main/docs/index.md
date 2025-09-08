@@ -95,7 +95,7 @@ Product requirements, specifications, and strategic planning documents.
 Comprehensive troubleshooting documentation for diagnosing and resolving issues.
 
 - [**Troubleshooting Overview**](troubleshooting-guides/README.md) - Complete troubleshooting documentation hub
-- [**MCP Connection Issues Guide**](TROUBLESHOOTING/mcp-connection-issues.md) - Diagnose and fix MCP connection problems
+- [**MCP Connection Issues Guide**](troubleshooting-guides/mcp-connection-issues.md) - Diagnose and fix MCP connection problems
 - [Comprehensive Troubleshooting Guide](troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md) - Systematic problem diagnosis and solutions
 - [Quick Troubleshooting Reference](troubleshooting-guides/TROUBLESHOOTING.md) - Common issues and quick fixes
 - [**Issue Documentation**](issues/index.md) - Detailed documentation of significant issues and resolutions
@@ -105,6 +105,7 @@ Comprehensive troubleshooting documentation for diagnosing and resolving issues.
 System status reports, documentation health checks, and implementation status updates.
 
 - [**Reports & Status Overview**](reports-status/README.md) - Complete reports and status documentation hub
+- [**Final Cleanup Report (2025-09-08)**](reports-status/final-cleanup-report-2025-09-08.md) - ⭐ **LATEST** - Comprehensive final cleanup operations summary with system integrity validation
 - [Documentation Status Report](reports-status/DOCUMENTATION_STATUS_REPORT.md) - Latest documentation health check and coverage
 - [Insights Found Parameter Fix](reports-status/INSIGHTS_FOUND_PARAMETER_FIX_SOLUTION.md) - Parameter validation solution implementation
 

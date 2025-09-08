@@ -95,6 +95,13 @@ class TaskApplicationFacade:
         # Initialize dependency resolver service
         from ..services.dependency_resolver_service import DependencyResolverService
         self._dependency_resolver = DependencyResolverService(task_repository)
+        
+        # Initialize agent inheritance service
+        from ..services.agent_inheritance_service import AgentInheritanceService
+        if subtask_repository:
+            self._agent_inheritance_service = AgentInheritanceService(task_repository, subtask_repository)
+        else:
+            self._agent_inheritance_service = None
     
     async def _derive_context_from_git_branch_id(self, git_branch_id: str) -> Dict[str, Optional[str]]:
         """Derive project_id and git_branch_name from git_branch_id using git branch repository"""

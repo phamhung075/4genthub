@@ -22,6 +22,9 @@ class AddSubtaskUseCase:
         if not task:
             raise TaskNotFoundError(f"Task {request.task_id} not found")
         
+        agent_inheritance_applied = False
+        inherited_assignees = []
+        
         # Create subtask using the new domain entity
         if self._subtask_repository:
             # Use dedicated subtask repository if available
@@ -42,6 +45,19 @@ class AddSubtaskUseCase:
                 assignees=request.assignees,
                 priority=priority
             )
+            
+            # Apply agent inheritance if subtask has no assignees
+            if subtask.should_inherit_assignees():
+                parent_assignees = task.get_inherited_assignees_for_subtasks()
+                if parent_assignees:
+                    logging.info(f"Applying agent inheritance: subtask {subtask.id} inheriting {len(parent_assignees)} assignees from parent task {task.id}")
+                    subtask.inherit_assignees_from_parent(parent_assignees)
+                    agent_inheritance_applied = True
+                    inherited_assignees = parent_assignees.copy()
+                    logging.info(f"Agent inheritance applied: {inherited_assignees}")
+                else:
+                    logging.info(f"No assignees to inherit: parent task {task.id} has no assignees")
+            
             self._subtask_repository.save(subtask)
             added_subtask = subtask.to_dict()
             
@@ -74,11 +90,18 @@ class AddSubtaskUseCase:
             logging.error(f"[AddSubtask] Error getting subtask progress: {e}, using fallback")
             progress = {"total": len(task.subtasks) if task.subtasks else 0, "completed": 0, "percentage": 0}
         
-        return SubtaskResponse(
+        response = SubtaskResponse(
             task_id=str(request.task_id),
             subtask=added_subtask,
             progress=progress
         )
+        
+        # Add inheritance information to the response
+        if agent_inheritance_applied:
+            response.agent_inheritance_applied = True
+            response.inherited_assignees = inherited_assignees
+        
+        return response
 
     def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
         if isinstance(task_id, int):

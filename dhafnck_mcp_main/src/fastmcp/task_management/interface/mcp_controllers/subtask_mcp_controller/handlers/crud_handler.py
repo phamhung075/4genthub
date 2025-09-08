@@ -27,7 +27,11 @@ class SubtaskCRUDHandler:
                       title: str, description: Optional[str] = None, 
                       priority: Optional[str] = None, assignees: Optional[List[str]] = None,
                       progress_notes: Optional[str] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
-        """Handle subtask creation with automatic parent context update."""
+        """Handle subtask creation with automatic parent context update and agent inheritance.
+        
+        Enhanced to support agent inheritance from parent tasks when no assignees are provided.
+        Validates all assignees using AgentRole enum before subtask creation.
+        """
         
         if not task_id:
             return self._create_validation_error(
@@ -40,6 +44,23 @@ class SubtaskCRUDHandler:
                 "title", "A non-empty title string",
                 "Include 'title' in your request"
             )
+        
+        # Validate assignees if provided
+        if assignees:
+            try:
+                # Validate assignees using AgentRole enum
+                from ....domain.entities.task import Task
+                dummy_task = Task(title="dummy", description="dummy")
+                validated_assignees = dummy_task.validate_assignee_list(assignees)
+                assignees = validated_assignees
+                logger.info(f"Validated {len(assignees)} assignees for subtask creation: {assignees}")
+            except ValueError as e:
+                return self._response_formatter.create_error_response(
+                    operation="create_subtask",
+                    error=f"Invalid assignees: {str(e)}. Use valid agent roles like '@coding-agent', '@test-orchestrator-agent'",
+                    error_code=ErrorCodes.VALIDATION_ERROR,
+                    metadata={"field": "assignees", "hint": "Provide valid agent roles from AgentRole enum"}
+                )
         
         try:
             # Create the subtask
@@ -56,6 +77,16 @@ class SubtaskCRUDHandler:
                 subtask_data=subtask_data
             )
             
+            # Add information about agent inheritance if it was applied
+            if result.get("success") and result.get("agent_inheritance_applied"):
+                logger.info(f"Agent inheritance applied for subtask creation: {result.get('inherited_assignees', [])}")
+                result["inheritance_info"] = {
+                    "applied": True,
+                    "inherited_from": "parent_task",
+                    "inherited_assignees": result.get("inherited_assignees", []),
+                    "assignee_count": len(result.get("inherited_assignees", []))
+                }
+            
             # Update parent context if available
             if result.get("success") and self._context_facade:
                 try:
@@ -65,8 +96,11 @@ class SubtaskCRUDHandler:
                     else:
                         subtask_id = getattr(subtask, 'id', None)
                     
-                    # Update parent context
+                    # Update parent context with inheritance information
                     progress_content = f"Created subtask: {title}"
+                    if result.get("agent_inheritance_applied"):
+                        inherited_count = len(result.get("inherited_assignees", []))
+                        progress_content += f" (inherited {inherited_count} assignees from parent)"
                     if progress_notes:
                         progress_content += f" - {progress_notes}"
                     

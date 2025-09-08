@@ -43,6 +43,13 @@ class SubtaskApplicationFacade:
         # Store user_id for repository creation
         self._user_id = user_id
         
+        # Initialize agent inheritance service if both repositories are available
+        if task_repository and subtask_repository:
+            from ..services.agent_inheritance_service import AgentInheritanceService
+            self._agent_inheritance_service = AgentInheritanceService(task_repository, subtask_repository)
+        else:
+            self._agent_inheritance_service = None
+        
         # Initialize use cases only if static repositories are provided (backward compatibility)
         if task_repository:
             self._add_subtask_use_case = AddSubtaskUseCase(task_repository, subtask_repository)
@@ -293,7 +300,7 @@ class SubtaskApplicationFacade:
             priority=subtask_data.get("priority")
         )
         response = add_subtask_use_case.execute(request)
-        return {
+        result = {
             "success": True,
             "action": "create",
             "message": f"Subtask '{subtask_data['title']}' created for task {task_id}",
@@ -301,6 +308,14 @@ class SubtaskApplicationFacade:
             "task_id": response.task_id,
             "progress": response.progress
         }
+        
+        # Include agent inheritance information if applicable
+        if response.agent_inheritance_applied:
+            result["agent_inheritance_applied"] = True
+            result["inherited_assignees"] = response.inherited_assignees
+            result["message"] = f"Subtask '{subtask_data['title']}' created for task {task_id} with {len(response.inherited_assignees)} agent(s) inherited from parent"
+        
+        return result
     
     def _handle_update_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
         """Handle subtask update"""
@@ -399,3 +414,12 @@ class SubtaskApplicationFacade:
             "subtask": {"id": actual_subtask_id, "completed": True},
             "progress": result["progress"]
         }
+    
+    def _create_inheritance_service(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository):
+        """Create agent inheritance service for operations."""
+        try:
+            from ..services.agent_inheritance_service import AgentInheritanceService
+            return AgentInheritanceService(task_repository, subtask_repository)
+        except Exception as e:
+            logger.error(f"Failed to create agent inheritance service: {e}")
+            return None

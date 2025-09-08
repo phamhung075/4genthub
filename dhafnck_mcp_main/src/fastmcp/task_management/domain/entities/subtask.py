@@ -297,6 +297,46 @@ class Subtask:
                 updated_at=self.updated_at
             ))
     
+    def inherit_assignees_from_parent(self, parent_assignees: List[str]) -> None:
+        """Inherit assignees from parent task if this subtask has no assignees.
+        
+        This method implements the inheritance logic where subtasks without
+        assignees automatically inherit their parent task's assignees.
+        
+        Args:
+            parent_assignees: List of assignees from the parent task
+        """
+        if not self.assignees and parent_assignees:
+            # Only inherit if subtask has no assignees assigned
+            old_assignees = self.assignees.copy()
+            self.assignees = parent_assignees.copy()
+            self.updated_at = datetime.now(timezone.utc)
+            
+            # Raise domain event for inheritance
+            self._events.append(TaskUpdated(
+                task_id=self.parent_task_id,
+                field_name="subtask_assignees",
+                old_value=f"{self.id}:inherited_from_parent",
+                new_value=f"{self.id}:{self.assignees}",
+                updated_at=self.updated_at
+            ))
+    
+    def has_assignees(self) -> bool:
+        """Check if subtask has any assignees assigned.
+        
+        Returns:
+            bool: True if subtask has assignees, False otherwise
+        """
+        return bool(self.assignees)
+    
+    def should_inherit_assignees(self) -> bool:
+        """Check if subtask should inherit assignees from parent.
+        
+        Returns:
+            bool: True if subtask should inherit (has no assignees), False otherwise
+        """
+        return not self.has_assignees()
+    
     def complete(self) -> None:
         """Mark subtask as completed"""
         if self.is_completed:

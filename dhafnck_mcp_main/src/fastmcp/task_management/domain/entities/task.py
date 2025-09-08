@@ -413,6 +413,61 @@ class Task:
         
         return assignees_info
     
+    def get_inherited_assignees_for_subtasks(self) -> list[str]:
+        """Get assignees that should be inherited by subtasks that have no assignees assigned.
+        
+        This method provides the default assignees for subtasks when they are created
+        without explicit assignee assignment or when their assignees list is empty.
+        
+        Returns:
+            list[str]: List of assignee strings that subtasks should inherit
+        """
+        return self.assignees.copy() if self.assignees else []
+    
+    def validate_assignee_list(self, assignees: list[str]) -> list[str]:
+        """Validate and normalize a list of assignees using AgentRole enum.
+        
+        Args:
+            assignees: List of assignee strings to validate
+            
+        Returns:
+            list[str]: List of validated and normalized assignees
+            
+        Raises:
+            ValueError: If any assignee is invalid and cannot be resolved
+        """
+        if not assignees:
+            return []
+        
+        validated_assignees = []
+        invalid_assignees = []
+        
+        for assignee in assignees:
+            if assignee and assignee.strip():
+                # Try to resolve legacy role names
+                resolved_assignee = resolve_legacy_role(assignee)
+                if resolved_assignee:
+                    # Ensure resolved assignee has @ prefix
+                    if not resolved_assignee.startswith("@"):
+                        resolved_assignee = f"@{resolved_assignee}"
+                    validated_assignees.append(resolved_assignee)
+                elif AgentRole.is_valid_role(assignee):
+                    # Ensure valid agent role has @ prefix
+                    if not assignee.startswith("@"):
+                        assignee = f"@{assignee}"
+                    validated_assignees.append(assignee)
+                elif assignee.startswith("@"):
+                    # Already has @ prefix, keep as is
+                    validated_assignees.append(assignee)
+                else:
+                    # Invalid assignee - add to invalid list for error reporting
+                    invalid_assignees.append(assignee)
+        
+        if invalid_assignees:
+            raise ValueError(f"Invalid assignees: {invalid_assignees}. Valid assignees must be from AgentRole enum.")
+        
+        return validated_assignees
+    
     def update_labels(self, labels: list[str]) -> None:
         """Update task labels with flexible validation"""
         # Allow all labels - the repository will handle normalization and creation
