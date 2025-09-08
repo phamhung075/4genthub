@@ -209,9 +209,16 @@ class AgentMCPController:
 
     def _validate_required_fields(self, action: str, agent_id: Optional[str], 
                                  name: Optional[str], git_branch_id: Optional[str]) -> Dict[str, Any]:
-        """Validate required fields for different operations."""
+        """Validate required fields for different management operations.
         
-        # Field requirements by action
+        Note: Call action validation is handled separately in _handle_agent_invocation.
+        """
+        
+        # Skip validation for call action (handled separately)
+        if action == "call":
+            return {"valid": True}
+        
+        # Field requirements by action for management operations
         if action == "register" and not name:
             return {
                 "valid": False,

@@ -8,8 +8,14 @@ import uuid
 from typing import Dict, Any, List, Union, Optional
 from datetime import datetime
 
-from ...domain.enums.compliance_enums import ComplianceLevel, ValidationResult
-from ...domain.value_objects.compliance_objects import ValidationReport
+# Removed compliance_enums import - functionality simplified
+from enum import Enum
+
+class ComplianceLevel(Enum):
+    """Simplified compliance levels for audit service"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 logger = logging.getLogger(__name__)
 

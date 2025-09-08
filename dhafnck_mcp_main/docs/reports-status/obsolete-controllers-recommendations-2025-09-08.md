@@ -31,17 +31,17 @@ After analyzing all 16+ MCP controllers across frontend usage, maintenance burde
 - **Maintenance**: Complex file scanning, security risks
 - **Action**: DEPRECATE - Frontend uses API resources
 
-### **5. manage_template**
+### **5. manage_template** ✅ **COMPLETED**
 - **Frontend Usage**: ZERO
 - **Business Value**: Code generation not used by UI
 - **Maintenance**: 863 lines, AI caching complexity
-- **Action**: DEPRECATE - No UI integration
+- **Action**: ✅ **DELETED** - No UI integration (Removed 2025-09-08)
 
-### **6. manage_progress_tools**
+### **6. manage_progress_tools** ✅ **COMPLETED**
 - **Frontend Usage**: ZERO
 - **Business Value**: Progress updates handled by task/subtask
 - **Maintenance**: Duplicates existing progress features
-- **Action**: DEPRECATE - Redundant with task progress
+- **Action**: ✅ **DELETED** - Redundant with task progress (Removed 2025-09-08)
 
 ### **7. manage_rule** (if not using IDE integration)
 - **Frontend Usage**: ZERO
@@ -106,10 +106,10 @@ After analyzing all 16+ MCP controllers across frontend usage, maintenance burde
 2. Delete `manage_compliance` - never used
 3. Delete `manage_logging` - abandoned
 4. Delete `manage_file_resource` - no UI need
-5. Delete `manage_template` - no UI integration
+5. ✅ Delete `manage_template` - no UI integration **COMPLETED**
 6. Delete `manage_progress_tools` - redundant
 
-**Impact**: -6 controllers, -4,000+ lines of code
+**Impact**: -6 controllers, -4,000+ lines of code (1 completed: manage_template)
 
 ### **Phase 2: Consolidation (Week 2)**
 1. Merge `manage_dependency` → `manage_task`

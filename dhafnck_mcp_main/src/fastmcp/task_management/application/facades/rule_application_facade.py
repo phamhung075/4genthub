@@ -23,13 +23,12 @@ class RuleApplicationFacade:
     
     def __init__(self, 
                  path_resolver: "PathResolver" = None,
-                 orchestration_facade=None):
+):
         """
         Initialize the rule application facade.
         
         Args:
             path_resolver: Path resolution service
-            orchestration_facade: Injected RuleOrchestrationFacade for orchestration logic
         """
         
         # Import PathResolver here to avoid circular imports
@@ -38,78 +37,10 @@ class RuleApplicationFacade:
             path_resolver = PathResolver()
         
         self._path_resolver = path_resolver
-        self._orchestration_facade = orchestration_facade
         # --- TEST COMPATIBILITY: Enhanced Orchestrator Adapter ---
         self._enhanced_orchestrator = None  # For test compatibility only
     
-    @property
-    def orchestration_facade(self):
-        """Return the orchestration facade (application layer only)"""
-        if self._orchestration_facade is not None:
-            return self._orchestration_facade
-        # Lazy-load the orchestration facade (application layer only)
-        from .rule_orchestration_facade import RuleOrchestrationFacade
-        from ..use_cases.rule_orchestration_use_case import RuleOrchestrationUseCase
-        from ...domain.services.rule_composition_service import RuleCompositionService
-        from ...infrastructure.services.rule_parser_service import RuleParserService
-        
-        # Create DDD-compliant orchestrator using the new architecture
-        project_root = self._path_resolver.project_root
-        rules_dir = self._path_resolver.get_rules_directory_from_settings()
-        
-        # Create dependencies
-        use_case = RuleOrchestrationUseCase()
-        composition_service = RuleCompositionService()
-        parser_service = RuleParserService()
-        
-        # Create facade
-        facade = RuleOrchestrationFacade(
-            rule_orchestration_use_case=use_case,
-            rule_composition_service=composition_service,
-            rule_parser_service=parser_service,
-            project_root=project_root,
-            rules_dir=rules_dir
-        )
-        
-        self._orchestration_facade = facade
-        return self._orchestration_facade
     
-    @orchestration_facade.setter
-    def orchestration_facade(self, value):
-        """Set the rule orchestrator (useful for dependency injection/testing)"""
-        self._orchestration_facade = value
-    
-    @orchestration_facade.deleter
-    def orchestration_facade(self):
-        """Reset the lazy-loaded rule orchestrator"""
-        self._orchestration_facade = None
-    
-    # --- TEST COMPATIBILITY: Enhanced Orchestrator Adapter ---
-    @property
-    def enhanced_orchestrator(self):
-        """
-        Test compatibility property for enhanced orchestrator (interface layer).
-        Lazily loads RuleOrchestrationController with the current orchestration facade.
-        This is only for test compatibility and should not be used in production code.
-        """
-        if self._enhanced_orchestrator is not None:
-            return self._enhanced_orchestrator
-        # Lazy-load the controller (interface layer)
-        from ...interface.mcp_controllers.rule_orchestration_controller.rule_orchestration_controller import RuleOrchestrationController
-        controller = RuleOrchestrationController(self.orchestration_facade)
-        # Some tests expect initialize() to be called
-        if hasattr(controller, "initialize"):
-            controller.initialize()
-        self._enhanced_orchestrator = controller
-        return self._enhanced_orchestrator
-
-    @enhanced_orchestrator.setter
-    def enhanced_orchestrator(self, value):
-        self._enhanced_orchestrator = value
-
-    @enhanced_orchestrator.deleter
-    def enhanced_orchestrator(self):
-        self._enhanced_orchestrator = None
     
     def validate_rules(self, target: str = "auto_rule") -> Dict[str, Any]:
         """
@@ -138,7 +69,7 @@ class RuleApplicationFacade:
     
     def manage_rule(self, action: str, target: str = "", content: str = "") -> Dict[str, Any]:
         """
-        Manage rules using orchestration facade (application layer only).
+        Manage rules - simplified implementation after removing rule orchestration controller.
         
         Args:
             action: Management action
@@ -149,56 +80,17 @@ class RuleApplicationFacade:
             Management result
         """
         from datetime import datetime
-        try:
-            orchestrator = self.enhanced_orchestrator
-            if hasattr(orchestrator, "execute_action"):
-                result = orchestrator.execute_action(action, target, content)
-                if isinstance(result, dict) and "success" in result:
-                    if result.get("success"):
-                        result.setdefault("metadata", {}).update({
-                            "action": action,
-                            "target": target,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                    else:
-                        result.setdefault("metadata", {}).update({
-                            "action": action,
-                            "target": target,
-                            "content_length": len(content) if content else 0,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                return result
-            elif hasattr(orchestrator, "handle_manage_rule_request"):
-                result = orchestrator.handle_manage_rule_request(action, target, content)
-                if isinstance(result, dict) and "success" in result:
-                    if result.get("success"):
-                        result.setdefault("metadata", {}).update({
-                            "action": action,
-                            "target": target,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                    else:
-                        result.setdefault("metadata", {}).update({
-                            "action": action,
-                            "target": target,
-                            "content_length": len(content) if content else 0,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                return result
-            else:
-                raise NotImplementedError("The orchestrator does not support manage_rule delegation: missing execute_action and handle_manage_rule_request.")
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Rule management failed: {str(e)}",
-                "action": action,
-                "target": target,
-                "content_length": len(content) if content else 0,
-                "metadata": {
-                    "timestamp": datetime.now().isoformat(),
-                    "error_type": type(e).__name__
-                }
+        return {
+            "success": False,
+            "error": "Rule management functionality has been removed. Use cursor rules controller instead.",
+            "action": action,
+            "target": target,
+            "content_length": len(content) if content else 0,
+            "metadata": {
+                "timestamp": datetime.now().isoformat(),
+                "note": "Rule orchestration controller has been deprecated and removed"
             }
+        }
     
     def _create_backup(self, file_path: Path) -> None:
         """Create backup of file if it exists"""

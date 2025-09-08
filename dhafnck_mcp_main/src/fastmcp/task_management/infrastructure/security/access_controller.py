@@ -8,7 +8,14 @@ from typing import Dict, Any
 from datetime import datetime
 import json
 
-from ...domain.enums.compliance_enums import SecurityLevel
+# Removed compliance_enums import - simplified
+from enum import Enum
+
+class SecurityLevel(Enum):
+    """Simplified security levels"""
+    PUBLIC = "public"
+    INTERNAL = "internal"
+    CONFIDENTIAL = "confidential"
 from ...domain.value_objects.compliance_objects import SecurityContext
 
 logger = logging.getLogger(__name__)

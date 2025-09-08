@@ -83,7 +83,6 @@ async def root():
             "/mcp/manage_subtask": "Subtask management (auth required)",
             "/mcp/call_agent": "Agent calls (auth required)",
             "/mcp/manage_agent": "Agent management (auth required)",
-            "/mcp/manage_compliance": "Compliance management (auth required)"
         }
     }
 
@@ -229,23 +228,6 @@ async def manage_agent(
         logger.error(f"Error in manage_agent: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/mcp/manage_compliance")
-async def manage_compliance(
-    request: Dict[str, Any],
-    current_user: Dict[str, Any] = Depends(get_authenticated_user)
-):
-    """Manage compliance - Requires Keycloak authentication"""
-    if not mcp_tools:
-        raise HTTPException(status_code=503, detail="MCP tools not available")
-    
-    try:
-        # Add user context to request
-        request["user_id"] = current_user["sub"]
-        result = mcp_tools.manage_compliance(**request)
-        return result
-    except Exception as e:
-        logger.error(f"Error in manage_compliance: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/mcp/tools")
 async def list_tools(

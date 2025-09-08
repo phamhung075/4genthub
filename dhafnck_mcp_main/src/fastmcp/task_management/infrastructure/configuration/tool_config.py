@@ -14,7 +14,6 @@ class ToolConfig:
             "manage_task": True,
             "manage_subtask": True,
             "manage_agent": True,
-            "manage_rule": True,
             "call_agent": True,
             "manage_document": True,
             "update_auto_rule": True,

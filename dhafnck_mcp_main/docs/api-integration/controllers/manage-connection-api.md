@@ -1,17 +1,18 @@
-# manage_connection - Connection Management API Documentation
+# manage_connection - Simplified Health Check API
 
 ## Overview
 
-The `manage_connection` tool provides unified connection management, health monitoring, and system status operations for the DhafnckMCP platform. It serves as the primary interface for connection diagnostics, server capability discovery, and client session management.
+The `manage_connection` tool provides a basic health check endpoint for system monitoring. This has been simplified from the original complex connection management system to focus only on essential health monitoring functionality.
+
+**Note**: This controller was significantly simplified to remove unused complexity. Only the health check functionality is retained as it's the only feature actually used by the frontend.
 
 ## Base Information
 
 - **Tool Name**: `manage_connection`
 - **Controller**: `ConnectionMCPController`  
-- **Module**: `fastmcp.connection_management.interface.mcp_controllers.connection_mcp_controller`
-- **Authentication**: Optional (varies by operation)
-- **Connection Health**: ✅ Real-time connection monitoring
-- **Server Capabilities**: ✅ Dynamic capability discovery
+- **Module**: `fastmcp.connection_management.interface.controllers.connection_mcp_controller`
+- **Authentication**: Optional
+- **Purpose**: Basic system health monitoring
 
 ## Parameters Schema
 
@@ -19,50 +20,25 @@ The `manage_connection` tool provides unified connection management, health moni
 {
   "type": "object",
   "properties": {
-    "action": {
-      "type": "string",
-      "required": true,
-      "description": "Connection management action to perform"
-    },
     "include_details": {
       "type": "boolean",
       "default": true,
-      "description": "[OPTIONAL] Whether to include detailed information in responses"
-    },
-    "connection_id": {
-      "type": "string",
-      "description": "[OPTIONAL] Specific connection identifier for targeted diagnostics"
-    },
-    "session_id": {
-      "type": "string",
-      "description": "[OPTIONAL] Client session identifier for update registration"
-    },
-    "client_info": {
-      "oneOf": [
-        {"type": "string"},
-        {"type": "object"}
-      ],
-      "description": "[OPTIONAL] Client metadata for registration customization"
+      "description": "[OPTIONAL] Whether to include detailed information in health response"
     },
     "user_id": {
       "type": "string",
       "description": "[OPTIONAL] User identifier for authentication and audit trails"
     }
   },
-  "required": ["action"]
+  "required": []
 }
 ```
 
-## Available Actions
+## Health Check Operation
 
-### Core Operations
-
-#### `health_check` - System Health Check
+### Basic Health Check
 
 Performs a basic health check to verify system availability and responsiveness.
-
-**Required Parameters:**
-- `action`: "health_check"
 
 **Optional Parameters:**
 - `include_details`: Include detailed information (default: true)
@@ -71,205 +47,132 @@ Performs a basic health check to verify system availability and responsiveness.
 **Example Request:**
 ```json
 {
-  "action": "health_check",
   "include_details": true
 }
 ```
 
-**Example Response:**
+**Example Response (Success):**
 ```json
 {
   "success": true,
-  "operation": "health_check",
   "status": "healthy",
+  "server_name": "DhafnckMCP",
+  "version": "1.0.0",
+  "authentication": {
+    "enabled": true,
+    "type": "JWT"
+  },
+  "task_management": {
+    "active_tasks": 5,
+    "status": "operational"
+  },
+  "environment": "development",
+  "connections": {
+    "database": "connected",
+    "cache": "connected"
+  },
   "timestamp": "2025-01-27T15:30:00Z"
 }
 ```
 
-#### `server_capabilities` - Server Capability Discovery
-
-Retrieves information about server capabilities, available tools, and system configuration.
-
-**Required Parameters:**
-- `action`: "server_capabilities"
-
-**Optional Parameters:**
-- `include_details`: Include detailed capability information (default: true)
-- `user_id`: User identifier for audit trails
-
-**Example Request:**
+**Example Response (Error):**
 ```json
 {
-  "action": "server_capabilities"
-}
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "operation": "server_capabilities",
-  "capabilities": {
-    "version": "1.0.0",
-    "tools": ["manage_task", "manage_context", "manage_project"],
-    "features": ["authentication", "real_time_updates"]
-  }
-}
-```
-
-#### `connection_health` - Connection Health Check
-
-Checks the health of specific connections or all system connections.
-
-**Required Parameters:**
-- `action`: "connection_health"
-
-**Optional Parameters:**
-- `connection_id`: Specific connection to check
-- `include_details`: Include detailed connection information (default: true)
-- `user_id`: User identifier for audit trails
-
-**Example Request:**
-```json
-{
-  "action": "connection_health",
-  "connection_id": "conn_123456"
-}
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "operation": "connection_health",
-  "connections": {
-    "conn_123456": {
-      "status": "healthy",
-      "last_ping": "2025-01-27T15:29:45Z"
-    }
-  }
-}
-```
-
-#### `status` - Overall System Status
-
-Retrieves comprehensive system status including uptime, performance metrics, and general health.
-
-**Required Parameters:**
-- `action`: "status"
-
-**Optional Parameters:**
-- `include_details`: Include detailed status information (default: true)
-- `user_id`: User identifier for audit trails
-
-**Example Request:**
-```json
-{
-  "action": "status"
-}
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "operation": "status",
-  "system_status": {
-    "uptime": "7d 14h 32m",
-    "status": "operational",
-    "version": "1.0.0"
-  }
-}
-```
-
-### Client Management
-
-#### `register_updates` - Register Client for Updates
-
-Registers a client session to receive real-time updates and notifications.
-
-**Required Parameters:**
-- `action`: "register_updates"
-
-**Optional Parameters:**
-- `session_id`: Client session identifier for registration
-- `client_info`: Client metadata for registration customization (string or object)
-- `user_id`: User identifier for authentication and audit trails
-
-**Example Request:**
-```json
-{
-  "action": "register_updates",
-  "session_id": "sess_abc123",
-  "client_info": {
-    "type": "web_client",
-    "version": "1.0.0",
-    "capabilities": ["real_time_updates"]
-  }
-}
-```
-
-**Example Response:**
-```json
-{
-  "success": true,
-  "operation": "register_updates",
-  "registration": {
-    "session_id": "sess_abc123",
-    "status": "registered",
-    "update_types": ["task_updates", "system_notifications"]
-  }
+  "success": false,
+  "status": "error",
+  "error": "Database connection failed",
+  "timestamp": "2025-01-27T15:30:00Z"
 }
 ```
 
 ## Error Handling
 
 ### Common Errors
-- `INVALID_ACTION`: Unknown or unsupported action requested
-- `MISSING_PARAMETERS`: Required parameters not provided
-- `CONNECTION_FAILED`: Unable to establish or verify connection
-- `AUTHENTICATION_REQUIRED`: Operation requires user authentication
 - `INTERNAL_SERVER_ERROR`: Unexpected system error occurred
+- `DATABASE_CONNECTION_FAILED`: Unable to connect to database
+- `SERVICE_UNAVAILABLE`: System is temporarily unavailable
 
 ### Example Error Response
 ```json
 {
   "success": false,
-  "error": "Invalid action specified",
-  "error_code": "INVALID_ACTION",
-  "operation": "invalid_operation",
-  "metadata": {
-    "valid_actions": [
-      "health_check",
-      "server_capabilities", 
-      "connection_health",
-      "status",
-      "register_updates"
-    ],
-    "timestamp": "2025-01-27T15:30:00Z"
-  }
+  "error": "Database connection timeout",
+  "action": "health_check",
+  "timestamp": "2025-01-27T15:30:00Z"
 }
 ```
 
 ## Usage Guidelines
 
 ### Best Practices
-1. **Regular Health Checks**: Use `health_check` for routine system monitoring
-2. **Capability Discovery**: Use `server_capabilities` to understand available features
-3. **Connection Monitoring**: Use `connection_health` to diagnose connectivity issues
-4. **System Status**: Use `status` for comprehensive system overview
-5. **Client Registration**: Use `register_updates` for real-time update subscriptions
+1. **Regular Monitoring**: Use this endpoint for routine system health monitoring
+2. **Lightweight Checks**: Set `include_details` to `false` for high-frequency monitoring
+3. **Error Handling**: Always check the `success` field to determine system health
+4. **Timeout Handling**: Implement appropriate timeouts for health check requests
 
-### Parameter Guidelines
-- **include_details**: Set to `false` for lightweight responses when detailed information is not needed
-- **connection_id**: Provide specific connection ID when troubleshooting individual connections
-- **session_id**: Use consistent session IDs for reliable update delivery
-- **client_info**: Provide meaningful client metadata to improve debugging and monitoring
+### Integration Examples
 
-### Response Handling
-- Always check the `success` field to determine operation outcome
-- Use `error_code` for programmatic error handling
-- Review `metadata` for additional context and troubleshooting information
-- Monitor `timestamp` fields for timing analysis and debugging
+#### Frontend Health Check
+```javascript
+// Simple health check
+const healthCheck = async () => {
+  try {
+    const response = await mcpClient.callTool('manage_connection', {
+      include_details: false
+    });
+    
+    return response.success && response.status === 'healthy';
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return false;
+  }
+};
+```
 
-This connection management system provides essential connectivity monitoring and client management capabilities with a clean, consistent API interface.
+#### Monitoring Dashboard
+```javascript
+// Detailed health check for dashboard
+const detailedHealthCheck = async () => {
+  try {
+    const response = await mcpClient.callTool('manage_connection', {
+      include_details: true,
+      user_id: 'monitoring_dashboard'
+    });
+    
+    if (response.success) {
+      return {
+        status: response.status,
+        server: response.server_name,
+        version: response.version,
+        services: {
+          database: response.connections?.database,
+          auth: response.authentication?.enabled,
+          tasks: response.task_management?.status
+        }
+      };
+    }
+  } catch (error) {
+    return { status: 'error', error: error.message };
+  }
+};
+```
+
+## Migration Notes
+
+This API was simplified from a complex connection management system that supported multiple actions:
+- ~~`server_capabilities`~~ - Removed (unused)
+- ~~`connection_health`~~ - Removed (unused)  
+- ~~`status`~~ - Removed (unused)
+- ~~`register_updates`~~ - Removed (unused)
+- ✅ `health_check` - Retained (actively used)
+
+**Breaking Changes:**
+- The `action` parameter is no longer required or supported
+- All complex actions have been removed
+- The tool now functions as a simple health check endpoint
+
+If you need the removed functionality, consider implementing dedicated endpoints or tools for those specific use cases.
+
+## Summary
+
+This simplified connection management endpoint provides essential health monitoring capabilities with a clean, minimal API interface. The complexity has been reduced to focus on the single most important function: verifying system health.

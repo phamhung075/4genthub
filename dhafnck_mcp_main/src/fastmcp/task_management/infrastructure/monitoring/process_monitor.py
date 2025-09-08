@@ -12,7 +12,15 @@ import os
 import uuid
 from typing import Dict, Any, Optional
 
-from ...domain.enums.compliance_enums import ProcessStatus
+# Removed compliance_enums import - simplified
+from enum import Enum
+
+class ProcessStatus(Enum):
+    """Simplified process status"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
 from ...domain.value_objects.compliance_objects import ProcessInfo
 
 logger = logging.getLogger(__name__)

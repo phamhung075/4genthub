@@ -27,6 +27,6 @@ try:
     from ...domain.enums.agent_roles import AgentRole
     from ...domain.enums.estimated_effort import EstimatedEffort, EffortLevel
     from ...domain.enums.common_labels import CommonLabel, LabelValidator
-    from ...domain.enums.compliance_enums import ComplianceLevel, ValidationResult, SecurityLevel, DocumentType, ProcessStatus
+    # compliance_enums removed
 except ImportError as e:
     pass

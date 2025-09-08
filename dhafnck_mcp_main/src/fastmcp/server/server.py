@@ -235,7 +235,6 @@ class FastMCP(Generic[LifespanResultT]):
                             "call_agent": True,
                             "update_auto_rule": False,
                             "validate_rules": False,
-                            "manage_rule": True,
                             "regenerate_auto_rule": False,
                             "validate_tasks_json": False
                         }
@@ -408,7 +407,6 @@ class FastMCP(Generic[LifespanResultT]):
                         "call_agent": True,
                         "update_auto_rule": False,
                         "validate_rules": False,
-                        "manage_rule": True,
                         "regenerate_auto_rule": False,
                         "validate_tasks_json": False
                     }
