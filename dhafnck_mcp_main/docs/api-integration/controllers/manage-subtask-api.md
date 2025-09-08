@@ -257,14 +257,6 @@ Removes a subtask and updates parent task progress.
 - `task_id`: Parent task UUID
 - `subtask_id`: Subtask UUID
 
-#### `reorder` - Reorder Subtasks
-
-Changes the order of subtasks for better workflow organization.
-
-**Required Parameters:**  
-- `action`: "reorder"
-- `task_id`: Parent task UUID
-- `subtask_ids`: Ordered array of subtask UUIDs
 
 ## Automatic Progress Tracking
 
@@ -372,18 +364,18 @@ Parent Progress = (
 ## Example Complete Workflow
 
 ```json
-// 1. Create parent task
+// 1. Create parent task with manage_task
 {"action": "create", "title": "Implement User Authentication"}
 
-// 2. Break into subtasks
+// 2. Break into subtasks with manage_subtask
 {"action": "create", "task_id": "parent-uuid", "title": "Design auth flow"}
 {"action": "create", "task_id": "parent-uuid", "title": "Implement JWT service"} 
 {"action": "create", "task_id": "parent-uuid", "title": "Add refresh tokens"}
 {"action": "create", "task_id": "parent-uuid", "title": "Create login UI"}
 
-// 3. Track progress  
-{"action": "update", "subtask_id": "design-uuid", "progress_percentage": 50}
-{"action": "complete", "subtask_id": "design-uuid", "completion_summary": "..."}
+// 3. Track progress with manage_subtask
+{"action": "update", "task_id": "parent-uuid", "subtask_id": "design-uuid", "progress_percentage": 50}
+{"action": "complete", "task_id": "parent-uuid", "subtask_id": "design-uuid", "completion_summary": "..."}
 
 // 4. Parent automatically updates and completes when all subtasks done
 ```

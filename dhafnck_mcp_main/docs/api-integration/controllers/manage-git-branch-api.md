@@ -277,12 +277,12 @@ Lists branches within a project with filtering and statistics.
 }
 ```
 
-#### `statistics` - Get Branch Statistics
+#### `get_statistics` - Get Branch Statistics
 
 Provides detailed analytics and metrics for a specific branch.
 
 **Required Parameters:**
-- `action`: "statistics"
+- `action`: "get_statistics"
 - `git_branch_id`: Branch UUID
 
 **Optional Parameters:**
@@ -292,7 +292,7 @@ Provides detailed analytics and metrics for a specific branch.
 **Example Request:**
 ```json
 {
-  "action": "statistics",
+  "action": "get_statistics",
   "git_branch_id": "branch-456e7890-f12b-34c5-d678-901234567efg",
   "include_tasks": "true",
   "include_timeline": "true"
@@ -303,7 +303,7 @@ Provides detailed analytics and metrics for a specific branch.
 ```json
 {
   "success": true,
-  "operation": "statistics",
+  "operation": "get_statistics",
   "branch_id": "branch-456e7890-f12b-34c5-d678-901234567efg",
   "overview": {
     "name": "feature/user-authentication",
@@ -411,16 +411,6 @@ Removes agent assignment from branch, making it available for manual task manage
 - `action`: "unassign_agent"
 - `git_branch_id`: Branch UUID
 
-#### `get_agent_activity` - Get Agent Activity Report
-
-Retrieves detailed report of agent activity on the branch.
-
-**Required Parameters:**
-- `action`: "get_agent_activity"
-- `git_branch_id`: Branch UUID
-
-**Optional Parameters:**
-- `days_back`: Number of days to include in report (default: 7)
 
 ## Branch as Task Tree Concept
 

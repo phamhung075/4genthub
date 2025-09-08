@@ -421,29 +421,52 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
 
   return (
     <div className="flex flex-col gap-2 overflow-visible">
-      <div className="flex justify-between items-center mb-2 gap-2">
-        <span className="font-bold text-base shrink-0">DhafnckMCP Projects</span>
-        <div className="flex gap-1 flex-wrap justify-end">
-          <ShimmerButton 
-            onClick={fetchProjects} 
+      {/* Mobile-optimized header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-2">
+        {/* Title section */}
+        <div className="flex items-center justify-between sm:justify-start">
+          <span className="font-bold text-base sm:text-lg">DhafnckMCP Projects</span>
+          {/* Refresh button on mobile - next to title */}
+          <RefreshButton 
+            onClick={fetchProjects}
+            loading={loading}
+            className="sm:hidden"
             size="sm"
-            variant="outline"
-            disabled={loading}
-          >
-            <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full" style={{ display: loading ? 'block' : 'none' }} />
-            {loading ? 'Loading...' : 'Refresh'}
-          </ShimmerButton>
+          />
+        </div>
+        
+        {/* Action buttons - responsive layout */}
+        <div className="flex gap-2 w-full sm:w-auto">
+          {/* Hidden refresh on desktop (shown in different position) */}
+          <RefreshButton 
+            onClick={fetchProjects}
+            loading={loading}
+            className="hidden sm:flex"
+            size="sm"
+          />
+          
+          {/* Global context button */}
           <ShimmerButton 
             size="sm" 
             variant="outline" 
             onClick={() => onShowGlobalContext && onShowGlobalContext()}
             aria-label="View/Edit Global Context"
             title="View and Edit Global Context"
+            className="flex-1 sm:flex-initial"
           >
-            <Globe className="w-4 h-4 mr-1" /> Global
+            <Globe className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Global</span>
           </ShimmerButton>
-          <ShimmerButton size="sm" variant="default" onClick={() => { setShowCreate(true); setForm({ name: "", description: "" }); }}>
-            <Plus className="w-4 h-4 mr-1" /> New
+          
+          {/* New project button */}
+          <ShimmerButton 
+            size="sm" 
+            variant="default" 
+            onClick={() => { setShowCreate(true); setForm({ name: "", description: "" }); }}
+            className="flex-1 sm:flex-initial"
+          >
+            <Plus className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">New</span>
           </ShimmerButton>
         </div>
       </div>

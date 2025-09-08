@@ -58,13 +58,14 @@ function Dashboard() {
         {/* Modern Sidebar */}
         <aside className={`
         fixed lg:static
-        ${sidebarOpen ? 'left-0' : '-left-full'}
-        w-96 lg:w-1/3 lg:min-w-[400px] lg:max-w-[500px]
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        left-0
+        w-full sm:w-96 lg:w-1/3 lg:min-w-[400px] lg:max-w-[500px]
         h-full
-        border-r border-surface-border-hover p-6 overflow-y-auto
+        border-r border-surface-border-hover p-4 sm:p-6 overflow-y-auto
         bg-surface/95 backdrop-blur-xl
-        transition-all duration-300 ease-in-out
-        z-20
+        transition-transform duration-300 ease-in-out
+        z-30
         lg:translate-x-0
         shadow-xl lg:shadow-none
       `}>
@@ -91,18 +92,13 @@ function Dashboard() {
       )}
 
       {/* Modern Toggle button for mobile */}
-      {!isLargeScreen && (
-        <Button
-          variant="outline"
-          size="icon"
-          className={`fixed z-30 lg:hidden bg-surface/95 backdrop-blur-xl border-2 border-surface-border-hover shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl ${
-            sidebarOpen ? 'top-6 right-6' : 'top-6 left-6'
-          }`}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-      )}
+      <button
+        className={`fixed bottom-6 left-6 z-50 flex items-center justify-center w-14 h-14 bg-primary/90 backdrop-blur-xl border-2 border-primary/20 shadow-2xl hover:shadow-primary/25 hover:scale-110 transition-all duration-300 rounded-full ${isLargeScreen ? 'hidden' : 'flex'}`}
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+      >
+        {sidebarOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
+      </button>
 
         {/* Modern Main content */}
         <main className="flex-1 flex flex-col p-6 w-full">

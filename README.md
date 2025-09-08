@@ -1,5 +1,5 @@
 # 🚀 DhafnckMCP - AI-Human Collaboration Platform
-
+Dai Hung PHAM
 <div align="center">
 
 [![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/dhafnck/dhafnck_mcp)
