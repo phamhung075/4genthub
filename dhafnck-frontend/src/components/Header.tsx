@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
 import { Brand } from './ui/Brand';
+import { PixelCanvas } from './ui/pixel-canvas';
 import UserProfileDropdown from './UserProfileDropdown';
 
 export const Header: React.FC = () => {
@@ -16,8 +17,16 @@ export const Header: React.FC = () => {
   const { user } = authContext;
 
   return (
-    <header className="theme-nav px-6 py-4 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]">
-      <div className="flex items-center justify-between">
+    <header className="relative theme-nav px-6 py-4 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme z-[1000] overflow-hidden">
+      <PixelCanvas
+        gap={12}
+        speed={15}
+        colors={["rgb(var(--color-primary) / 0.1)", "rgb(var(--color-primary) / 0.08)", "rgb(var(--color-primary) / 0.05)"]}
+        variant="default"
+        noFocus
+        style={{ opacity: 0.6 }}
+      />
+      <div className="relative z-10 flex items-center justify-between">
         <div className="flex items-center space-x-6">
           <Link to="/dashboard" className="flex items-center space-x-3 group">
 

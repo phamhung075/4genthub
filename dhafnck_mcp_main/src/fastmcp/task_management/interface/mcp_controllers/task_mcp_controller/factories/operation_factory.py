@@ -181,11 +181,15 @@ class OperationFactory:
         elif operation == 'next':
             result = await handler.get_next_task(facade, **search_kwargs)
             
-            # Enrich response with workflow information
-            if result.get("success") and result.get("task"):
-                result = self._workflow_handler.enrich_task_response(
-                    result, operation, result["task"]
-                )
+            # Temporarily disable enrichment to debug the string error
+            # TODO: Re-enable after fixing the root cause
+            # if result.get("success") and result.get("task"):
+            #     task_data = result["task"]
+            #     if "next_item" in task_data and "task" in task_data["next_item"]:
+            #         actual_task = task_data["next_item"]["task"]
+            #         result = self._workflow_handler.enrich_task_response(
+            #             result, operation, actual_task
+            #         )
             
             return result
             

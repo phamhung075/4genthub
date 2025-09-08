@@ -9,6 +9,7 @@ import { formatContextDisplay } from "../utils/contextHelpers";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Settings, Shield, Database, Globe, FolderOpen, Code, GitBranch } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
+import { PixelCanvas } from "./ui/pixel-canvas";
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -499,22 +500,40 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                 </div>
               ) : taskContext ? (
                 <>
-                  {/* Context Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                      <Layers className="w-5 h-5" />
-                      Task Context Data
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Complete hierarchical view of task context and inherited data
-                    </p>
+                  {/* Context Header with PixelCanvas */}
+                  <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 overflow-hidden group">
+                    <PixelCanvas
+                      gap={8}
+                      speed={25}
+                      colors={["#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa"]}
+                      variant="default"
+                      noFocus
+                      style={{ opacity: 0.4 }}
+                    />
+                    <div className="relative z-10">
+                      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        <Layers className="w-5 h-5" />
+                        Task Context Data
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Complete hierarchical view of task context and inherited data
+                      </p>
+                    </div>
                   </div>
                   
                   {/* Task Execution Section */}
                   {(taskContext.task_data || taskContext.execution_context || taskContext.discovered_patterns || taskContext.local_decisions) && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="relative bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600 overflow-hidden group">
+                        <PixelCanvas
+                          gap={6}
+                          speed={20}
+                          colors={["#dcfce7", "#bbf7d0", "#86efac"]}
+                          variant="default"
+                          noFocus
+                          style={{ opacity: 0.3 }}
+                        />
+                        <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                           <Settings className="w-4 h-4" />
                           Task Execution Details
                         </h3>
@@ -578,8 +597,16 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {/* Implementation Notes Section */}
                   {taskContext.implementation_notes && Object.keys(taskContext.implementation_notes).length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="relative bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600 overflow-hidden group">
+                        <PixelCanvas
+                          gap={6}
+                          speed={22}
+                          colors={["#faf5ff", "#f3e8ff", "#e9d5ff", "#d8b4fe"]}
+                          variant="default"
+                          noFocus
+                          style={{ opacity: 0.3 }}
+                        />
+                        <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                           <FileText className="w-4 h-4" />
                           Implementation Notes
                         </h3>
@@ -593,8 +620,16 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {/* Metadata Section */}
                   {taskContext.metadata && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="relative bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600 overflow-hidden group">
+                        <PixelCanvas
+                          gap={6}
+                          speed={18}
+                          colors={["#fefbf2", "#fef3c7", "#fed7aa", "#fb923c"]}
+                          variant="default"
+                          noFocus
+                          style={{ opacity: 0.25 }}
+                        />
+                        <h3 className="relative z-10 text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                           <Info className="w-4 h-4" />
                           Metadata & System Information
                         </h3>

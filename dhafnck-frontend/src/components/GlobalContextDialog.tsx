@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
+import { PixelCanvas } from "./ui/pixel-canvas";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 
 interface GlobalContextDialogProps {
@@ -250,15 +251,25 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
               </div>
             ) : globalContext ? (
               <>
-                {/* Context Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                    <Database className="w-5 h-5" />
-                    Global Context Data
-                  </h3>
-                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                    User-scoped global configuration and settings across all projects
-                  </p>
+                {/* Context Header with PixelCanvas */}
+                <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 overflow-hidden group">
+                  <PixelCanvas
+                    gap={8}
+                    speed={25}
+                    colors={["#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa"]}
+                    variant="default"
+                    noFocus
+                    style={{ opacity: 0.4 }}
+                  />
+                  <div className="relative z-10">
+                    <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                      <Database className="w-5 h-5" />
+                      Global Context Data
+                    </h3>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                      User-scoped global configuration and settings across all projects
+                    </p>
+                  </div>
                 </div>
                 
                 {activeTab === 'edit' && (

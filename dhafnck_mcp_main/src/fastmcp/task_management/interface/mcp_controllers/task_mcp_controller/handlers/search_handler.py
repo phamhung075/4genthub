@@ -107,30 +107,34 @@ class SearchHandler:
                      include_context: bool = True) -> Dict[str, Any]:
         """Handle next task retrieval with context (defaults to True)."""
         try:
-            # Get next available task - pass parameters as keyword arguments
-            result = await facade.get_next_task(
-                git_branch_id=git_branch_id if git_branch_id else "main",
-                include_context=include_context
+            # WORKAROUND: Use list_tasks to get the next available task
+            # The facade's get_next_task has async/string conversion issues
+            request = ListTasksRequest(
+                git_branch_id=git_branch_id,
+                status="todo",  # Only get todo tasks
+                limit=1  # Just get the first one
             )
             
-            if result.get("success") and include_context and result.get("task"):
-                # Add context information if requested
-                task_data = result["task"]
-                task_context_id = task_data.get("context_id")
-                if task_context_id:
-                    result["include_context"] = True
-                    result["task"]["context_available"] = True
-                else:
-                    result["task"]["context_available"] = False
+            result = facade.list_tasks(request)
             
-            # Add branch metadata
-            if git_branch_id:
-                result["branch_metadata"] = {
-                    "git_branch_id": git_branch_id,
-                    "context_included": include_context
+            if result.get("success") and result.get("tasks") and len(result["tasks"]) > 0:
+                next_task = result["tasks"][0]
+                
+                # Format as "next" response
+                return {
+                    "success": True,
+                    "action": "next",
+                    "task": next_task,
+                    "message": "Next task found",
+                    "include_context": include_context
                 }
-            
-            return result
+            else:
+                return {
+                    "success": False,
+                    "action": "next", 
+                    "message": "No tasks found. Create a task to get started!",
+                    "error": "No actionable tasks found."
+                }
             
         except Exception as e:
             logger.error(f"Error in get_next_task: {str(e)}")

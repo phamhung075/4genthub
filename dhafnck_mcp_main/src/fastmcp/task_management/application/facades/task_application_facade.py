@@ -797,8 +797,9 @@ class TaskApplicationFacade:
                         "message": task_response.message
                     }
                 }
-                # Apply unified context format to next response
-                response_dict = ContextResponseFactory.apply_to_next_response(response_dict)
+                # Temporarily disable context response factory to debug string error
+                # TODO: Re-enable after fixing the root cause
+                # response_dict = ContextResponseFactory.apply_to_next_response(response_dict)
                 return response_dict
             else:
                 return {
