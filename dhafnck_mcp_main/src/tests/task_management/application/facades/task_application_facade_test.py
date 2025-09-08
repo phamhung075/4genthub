@@ -9,12 +9,15 @@ from typing import Dict, Any, Optional, List
 import asyncio
 
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+from fastmcp.task_management.application.services.agent_inheritance_service import AgentInheritanceService
+from fastmcp.task_management.application.use_cases.manage_dependencies import ManageDependenciesUseCase
 from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
 from fastmcp.task_management.application.dtos.task.list_tasks_request import ListTasksRequest
 from fastmcp.task_management.application.dtos.task.search_tasks_request import SearchTasksRequest
 from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
 from fastmcp.task_management.domain.exceptions import TaskNotFoundError, AutoRuleGenerationError
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from fastmcp.task_management.application.factories.context_response_factory import ContextResponseFactory
 
 
 # Module-level fixtures for reuse across test classes
@@ -55,11 +58,12 @@ def mock_git_branch_repository():
 @pytest.fixture
 def facade(mock_task_repository, mock_subtask_repository, mock_context_service, mock_git_branch_repository):
     """Create TaskApplicationFacade instance with mocked dependencies."""
-    with patch('fastmcp.task_management.infrastructure.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory, \
+    with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory, \
          patch('fastmcp.task_management.infrastructure.repositories.mock_task_context_repository.MockTaskContextRepository'), \
          patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config'), \
          patch('fastmcp.task_management.application.services.task_context_sync_service.TaskContextSyncService'), \
          patch('fastmcp.task_management.application.services.dependency_resolver_service.DependencyResolverService'), \
+         patch('fastmcp.task_management.application.services.agent_inheritance_service.AgentInheritanceService'), \
          patch('fastmcp.task_management.application.facades.task_application_facade.CreateTaskUseCase') as mock_create_uc, \
          patch('fastmcp.task_management.application.facades.task_application_facade.UpdateTaskUseCase') as mock_update_uc, \
          patch('fastmcp.task_management.application.facades.task_application_facade.GetTaskUseCase') as mock_get_uc, \
@@ -67,7 +71,8 @@ def facade(mock_task_repository, mock_subtask_repository, mock_context_service, 
          patch('fastmcp.task_management.application.facades.task_application_facade.CompleteTaskUseCase') as mock_complete_uc, \
          patch('fastmcp.task_management.application.facades.task_application_facade.ListTasksUseCase') as mock_list_uc, \
          patch('fastmcp.task_management.application.facades.task_application_facade.SearchTasksUseCase') as mock_search_uc, \
-         patch('fastmcp.task_management.application.facades.task_application_facade.NextTaskUseCase') as mock_next_uc:
+         patch('fastmcp.task_management.application.facades.task_application_facade.NextTaskUseCase') as mock_next_uc, \
+         patch('fastmcp.task_management.application.facades.task_application_facade.ManageDependenciesUseCase') as mock_manage_deps_uc:
         
         # Configure mocks
         mock_unified_service = Mock()
@@ -98,9 +103,10 @@ class TestTaskApplicationFacade:
 
     def test_facade_initialization(self, mock_task_repository, mock_subtask_repository, mock_context_service):
         """Test facade initialization with dependencies."""
-        with patch('fastmcp.task_management.infrastructure.factories.unified_context_facade_factory.UnifiedContextFacadeFactory'), \
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory'), \
              patch('fastmcp.task_management.application.services.task_context_sync_service.TaskContextSyncService'), \
-             patch('fastmcp.task_management.application.services.dependency_resolver_service.DependencyResolverService'):
+             patch('fastmcp.task_management.application.services.dependency_resolver_service.DependencyResolverService'), \
+             patch('fastmcp.task_management.application.services.agent_inheritance_service.AgentInheritanceService'):
             
             facade = TaskApplicationFacade(
                 task_repository=mock_task_repository,
@@ -181,9 +187,12 @@ class TestCreateTask:
         assert "task" in result
         facade._create_task_use_case.execute.assert_called_once_with(create_request)
 
-    def test_create_task_no_authentication(self, facade, create_request):
+    @patch('fastmcp.task_management.domain.constants.validate_user_id')
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', return_value=None)
+    def test_create_task_no_authentication(self, mock_get_user, mock_validate_user, facade, create_request):
         """Test task creation without authentication."""
-        # Don't set user_id on request - should fail authentication
+        # Mock validate_user_id to raise authentication error when no user
+        mock_validate_user.side_effect = UserAuthenticationRequiredError("Authentication required for Task creation")
         
         result = facade.create_task(create_request)
         
@@ -295,8 +304,11 @@ class TestCreateTask:
         assert "1000 characters" in result["error"]
     
     @patch('fastmcp.task_management.domain.constants.validate_user_id')
-    def test_create_task_auth_middleware_import_error(self, mock_validate_user, facade, create_request):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id')
+    def test_create_task_auth_middleware_import_error(self, mock_get_user, mock_validate_user, facade, create_request):
         """Test task creation when auth middleware import fails."""
+        # Mock ImportError for get_current_user_id
+        mock_get_user.side_effect = ImportError("Module not found")
         mock_validate_user.return_value = "user123"
         
         # Add user_id to request for fallback
@@ -312,13 +324,83 @@ class TestCreateTask:
         
         # Mock context sync service
         facade._task_context_sync_service = Mock()
-        facade._task_context_sync_service.sync_context_and_get_task = Mock(return_value=mock_task_response.task)
-        facade._await_if_coroutine = Mock(return_value=mock_task_response.task)
+        mock_context_response = Mock()
+        mock_context_response.to_dict.return_value = {"id": "task123", "title": "Test Task"}
+        facade._task_context_sync_service.sync_context_and_get_task = Mock(return_value=mock_context_response)
+        facade._await_if_coroutine = Mock(side_effect=[
+            {'project_id': 'project123', 'git_branch_name': 'feature-branch'},
+            mock_context_response
+        ])
+        
+        # Mock ContextResponseFactory
+        with patch('fastmcp.task_management.application.facades.task_application_facade.ContextResponseFactory') as mock_factory:
+            mock_factory.apply_to_task_response.return_value = {"id": "task123", "title": "Test Task", "context_data": {}}
+            
+            result = facade.create_task(create_request)
+            
+            assert result["success"] is True
+            assert result["action"] == "create"
+            # Should use fallback user_id from request
+            mock_validate_user.assert_called_with("user123", "Task creation")
+    
+    @patch('fastmcp.task_management.domain.constants.validate_user_id')
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id')
+    def test_create_task_with_user_context_object(self, mock_get_user, mock_validate_user, facade, create_request):
+        """Test task creation with BackwardCompatUserContext object."""
+        # Mock user context object
+        mock_user_context = Mock()
+        mock_user_context.user_id = "context_user_123"
+        mock_get_user.return_value = mock_user_context
+        mock_validate_user.return_value = "context_user_123"
+        
+        # Mock use case response
+        mock_task_response = Mock()
+        mock_task_response.success = True
+        mock_task_response.task = Mock()
+        mock_task_response.task.id = "task123"
+        mock_task_response.task.to_dict.return_value = {"id": "task123"}
+        mock_task_response.message = "Task created"
+        facade._create_task_use_case.execute.return_value = mock_task_response
+        
+        # Mock context sync service
+        facade._task_context_sync_service = Mock()
+        facade._task_context_sync_service.sync_context_and_get_task = Mock(return_value=None)
+        facade._await_if_coroutine = Mock(return_value={'project_id': None, 'git_branch_name': None})
         
         result = facade.create_task(create_request)
         
         assert result["success"] is True
-        assert result["action"] == "create"
+        # Should extract user_id from context object
+        mock_validate_user.assert_called_with("context_user_123", "Task creation")
+    
+    @patch('fastmcp.task_management.domain.constants.validate_user_id')
+    def test_create_task_context_sync_exception(self, mock_validate_user, facade, create_request):
+        """Test task creation when context sync raises exception."""
+        create_request.user_id = "user123"
+        mock_validate_user.return_value = "user123"
+        
+        # Mock use case success
+        mock_task_response = Mock()
+        mock_task_response.success = True
+        mock_task_response.task = Mock()
+        mock_task_response.task.id = "task123"
+        mock_task_response.task.to_dict.return_value = {"id": "task123"}
+        mock_task_response.message = "Task created"
+        facade._create_task_use_case.execute.return_value = mock_task_response
+        
+        # Mock context sync to raise exception
+        facade._task_context_sync_service = Mock()
+        facade._task_context_sync_service.sync_context_and_get_task.side_effect = Exception("Context sync failed")
+        facade._await_if_coroutine = Mock(side_effect=[
+            {'project_id': 'project123', 'git_branch_name': 'feature-branch'},
+            Exception("Context sync failed")
+        ])
+        
+        result = facade.create_task(create_request)
+        
+        assert result["success"] is True  # Task creation should still succeed
+        assert "warning" in result
+        assert "Context sync failed" in result["warning"]
 
 
 class TestUpdateTask:
@@ -402,6 +484,31 @@ class TestGetTask:
         
         assert result["success"] is False
         assert "not found" in result["error"]
+    
+    @patch('fastmcp.task_management.application.facades.task_application_facade.ContextResponseFactory')
+    def test_get_task_with_context_response_factory(self, mock_factory, facade):
+        """Test that ContextResponseFactory is applied to task responses."""
+        # Mock task entity
+        mock_task = Mock()
+        mock_task.id = "task123"
+        facade._get_task_use_case._task_repository.find_by_id.return_value = mock_task
+        
+        # Mock get task use case response
+        mock_response = Mock()
+        mock_response.to_dict.return_value = {"id": "task123", "title": "Test Task"}
+        facade._await_if_coroutine = Mock(return_value=mock_response)
+        
+        # Mock ContextResponseFactory
+        mock_factory.apply_to_task_response.return_value = {
+            "id": "task123", 
+            "title": "Test Task",
+            "context_data": {"enhanced": "data"}
+        }
+        
+        result = facade.get_task("task123")
+        
+        assert result["success"] is True
+        mock_factory.apply_to_task_response.assert_called_once()
 
     def test_get_task_empty_id(self, facade):
         """Test getting task with empty ID."""
@@ -712,6 +819,66 @@ class TestListTasks:
         
         assert result["success"] is True
         assert "dependency_summary" in result["tasks"][0]
+    
+    def test_list_tasks_with_context(self, facade, list_request):
+        """Test listing tasks with context information."""
+        # Mock task
+        mock_task = Mock()
+        mock_task.id = "task1"
+        mock_task.to_dict.return_value = {"id": "task1"}
+        mock_task.dependencies = []
+        mock_task.title = "Test Task"
+        mock_task.status = "active"
+        mock_task.created_at = Mock()
+        mock_task.updated_at = Mock()
+        
+        # Mock response
+        mock_response = Mock()
+        mock_response.tasks = [mock_task]
+        mock_response.count = 1
+        mock_response.filters_applied = {}
+        facade._list_tasks_use_case.execute.return_value = mock_response
+        
+        # Mock add_context_to_task
+        facade._add_context_to_task = Mock(return_value={
+            "id": "task1",
+            "context_data": {"test": "context"},
+            "context_available": True
+        })
+        
+        result = facade.list_tasks(list_request, include_context=True, minimal=False)
+        
+        assert result["success"] is True
+        facade._add_context_to_task.assert_called_once()
+    
+    @patch('fastmcp.task_management.application.facades.task_application_facade.PerformanceConfig')
+    @patch('fastmcp.task_management.application.facades.task_application_facade.OptimizedTaskRepository')
+    def test_list_tasks_performance_mode_with_dependencies(self, mock_repo_class, mock_perf_config, facade, list_request):
+        """Test listing tasks in performance mode with dependencies."""
+        mock_perf_config.is_performance_mode.return_value = True
+        
+        # Mock optimized repository
+        mock_repo = mock_repo_class.return_value
+        mock_repo.list_tasks_minimal.return_value = [
+            {"id": "task1", "title": "Task 1", "is_blocked": False},
+            {"id": "task2", "title": "Task 2", "is_blocked": False}
+        ]
+        
+        # Mock dependency resolver
+        facade._dependency_resolver = Mock()
+        mock_dependencies = Mock()
+        mock_dependencies.is_blocked = True
+        facade._dependency_resolver.resolve_dependencies.return_value = mock_dependencies
+        
+        result = facade.list_tasks(list_request, include_dependencies=True, minimal=True)
+        
+        assert result["success"] is True
+        assert result["performance_mode"] is True
+        # Should have called dependency resolver for each task
+        assert facade._dependency_resolver.resolve_dependencies.call_count == 2
+        # Tasks should have is_blocked updated
+        assert result["tasks"][0]["is_blocked"] is True
+        assert result["tasks"][1]["is_blocked"] is True
 
     def test_list_tasks_exception(self, facade, list_request):
         """Test handling exceptions in list tasks."""
@@ -1017,15 +1184,17 @@ class TestContextIntegration:
     @patch('fastmcp.task_management.application.facades.task_application_facade.ProjectManagementService')
     def test_derive_context_from_git_branch_id(self, mock_project_service, facade, mock_git_branch_repository):
         """Test deriving context from git branch ID."""
-        # Mock git branch repository empty
-        mock_git_branch_repository.find_all = AsyncMock(return_value=[])
+        # Mock git branch repository find_by_id returns None
+        mock_git_branch_repository.find_by_id = AsyncMock(return_value=None)
         
-        # Mock project management service
+        # Mock project management service fallback
         mock_service_instance = mock_project_service.return_value
         mock_service_instance.get_git_branch_by_id.return_value = {
             "success": True,
-            "project_id": "project123",
-            "git_branch_name": "feature-branch"
+            "git_branch": {
+                "project_id": "project123",
+                "name": "feature-branch"
+            }
         }
         
         result = facade._await_if_coroutine(
@@ -1034,6 +1203,34 @@ class TestContextIntegration:
         
         assert result["project_id"] == "project123"
         assert result["git_branch_name"] == "feature-branch"
+    
+    def test_derive_context_from_git_branch_repository(self, facade, mock_git_branch_repository):
+        """Test deriving context from git branch repository directly."""
+        # Mock git branch entity
+        mock_branch = Mock()
+        mock_branch.project_id = "project456"
+        mock_branch.name = "main"
+        
+        mock_git_branch_repository.find_by_id = AsyncMock(return_value=mock_branch)
+        
+        result = facade._await_if_coroutine(
+            facade._derive_context_from_git_branch_id("branch123")
+        )
+        
+        assert result["project_id"] == "project456"
+        assert result["git_branch_name"] == "main"
+    
+    def test_derive_context_with_exception(self, facade, mock_git_branch_repository):
+        """Test deriving context when exception occurs."""
+        # Mock exception
+        mock_git_branch_repository.find_by_id = Mock(side_effect=Exception("Database error"))
+        
+        result = facade._await_if_coroutine(
+            facade._derive_context_from_git_branch_id("branch123")
+        )
+        
+        assert result["project_id"] is None
+        assert result["git_branch_name"] is None
 
     def test_add_context_to_task(self, facade):
         """Test adding context to task dictionary."""
@@ -1057,15 +1254,21 @@ class TestContextIntegration:
 class TestErrorHandling:
     """Test error handling scenarios."""
 
-    def test_validation_error_handling(self, facade):
+    @patch('fastmcp.task_management.domain.constants.validate_user_id')
+    def test_validation_error_handling(self, mock_validate_user, facade):
         """Test validation error handling in facade methods."""
+        # Mock authentication to pass and focus on validation
+        mock_validate_user.return_value = "user123"
+        
         # Test with various invalid inputs
         invalid_request = CreateTaskRequest(title="x" * 201, git_branch_id="branch123")
+        invalid_request.user_id = "user123"  # Add user_id for auth
         result = facade.create_task(invalid_request)
         
         assert result["success"] is False
         assert result["action"] == "create"
         assert "error" in result
+        assert "200 characters" in result["error"]
 
     def test_exception_propagation(self, facade):
         """Test proper exception propagation in facade methods."""
@@ -1091,3 +1294,63 @@ class TestErrorHandling:
             facade.delete_task("task123")
             
             mock_logger.error.assert_called()
+
+
+class TestDependencyUseCase:
+    """Test dependency management use case functionality."""
+
+    def test_get_dependencies(self, facade):
+        """Test getting dependencies through use case."""
+        # Mock manage dependencies use case
+        facade._manage_dependencies_use_case = Mock()
+        facade._manage_dependencies_use_case.get_dependencies.return_value = {
+            "dependencies": [
+                {"id": "dep1", "title": "Dependency 1", "status": "completed"},
+                {"id": "dep2", "title": "Dependency 2", "status": "in_progress"}
+            ],
+            "dependency_ids": ["dep1", "dep2"],
+            "can_start": False
+        }
+        
+        result = facade.get_dependencies("task123")
+        
+        assert result["success"] is True
+        assert result["action"] == "get_dependencies"
+        assert len(result["dependencies"]) == 2
+        assert result["can_start"] is False
+
+    def test_clear_dependencies(self, facade):
+        """Test clearing dependencies through use case."""
+        # Mock manage dependencies use case
+        facade._manage_dependencies_use_case = Mock()
+        mock_response = Mock()
+        mock_response.success = True
+        mock_response.task_id = "task123"
+        mock_response.message = "Cleared 3 dependencies"
+        facade._manage_dependencies_use_case.clear_dependencies.return_value = mock_response
+        
+        result = facade.clear_dependencies("task123")
+        
+        assert result["success"] is True
+        assert result["action"] == "clear_dependencies"
+        assert result["dependencies_cleared"] == "3"
+
+    def test_get_blocking_tasks(self, facade):
+        """Test getting blocking tasks through use case."""
+        # Mock manage dependencies use case
+        facade._manage_dependencies_use_case = Mock()
+        facade._manage_dependencies_use_case.get_blocking_tasks.return_value = {
+            "task_id": "task123",
+            "blocking_tasks": [
+                {"id": "blocked1", "title": "Blocked Task 1"},
+                {"id": "blocked2", "title": "Blocked Task 2"}
+            ],
+            "blocking_count": 2
+        }
+        
+        result = facade.get_blocking_tasks("task123")
+        
+        assert result["success"] is True
+        assert result["action"] == "get_blocking_tasks"
+        assert result["blocking_count"] == 2
+        assert len(result["blocking_tasks"]) == 2

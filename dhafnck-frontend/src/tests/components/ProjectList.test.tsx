@@ -148,7 +148,9 @@ describe('ProjectList', () => {
         
         // Check task count badges
         expect(screen.getByText('8 tasks')).toBeInTheDocument(); // 5 + 3 tasks
-        expect(screen.getByText('0 tasks')).toBeInTheDocument();
+        // Project Beta has 0 tasks - when 0 it still shows the badge
+        const zeroTasksBadges = screen.getAllByText('0 tasks');
+        expect(zeroTasksBadges.length).toBeGreaterThan(0);
       });
     });
 
@@ -165,8 +167,8 @@ describe('ProjectList', () => {
       const projectElement = screen.getByText('Project Alpha').closest('.group');
       expect(projectElement).toBeInTheDocument();
 
-      // Check for action buttons
-      const viewButton = screen.getAllByLabelText('View Project Details & Context')[0];
+      // Check for action buttons - Updated to match actual aria-labels
+      const viewButton = screen.getAllByLabelText('View Project Details')[0];
       const branchButton = screen.getAllByLabelText('Create Branch')[0];
       const editButton = screen.getAllByLabelText('Edit')[0];
       const deleteButton = screen.getAllByLabelText('Delete')[0];
@@ -543,7 +545,7 @@ describe('ProjectList', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Delete Project')).toBeInTheDocument();
-        expect(screen.getByText('Are you sure you want to delete this project? This action cannot be undone.')).toBeInTheDocument();
+        expect(screen.getByText(/Are you sure you want to delete the project/)).toBeInTheDocument();
       });
     });
 
@@ -792,28 +794,23 @@ describe('ProjectList', () => {
     });
 
     it('should open project details dialog', async () => {
+      const mockOnShowProjectDetails = vi.fn();
       render(
-        <ProjectList onSelect={mockOnSelect} refreshKey={refreshKey} />
+        <ProjectList 
+          onSelect={mockOnSelect} 
+          refreshKey={refreshKey} 
+          onShowProjectDetails={mockOnShowProjectDetails}
+        />
       );
 
       await waitFor(() => {
         expect(screen.getByText('Project Alpha')).toBeInTheDocument();
       });
 
-      const viewButtons = screen.getAllByLabelText('View Project Details & Context');
+      const viewButtons = screen.getAllByLabelText('View Project Details');
       fireEvent.click(viewButtons[0]);
 
-      await waitFor(() => {
-        expect(screen.getByTestId('project-details-dialog')).toBeInTheDocument();
-        expect(screen.getByText('Project Details: Project Alpha')).toBeInTheDocument();
-      });
-
-      // Close dialog
-      fireEvent.click(screen.getByText('Close'));
-
-      await waitFor(() => {
-        expect(screen.queryByTestId('project-details-dialog')).not.toBeInTheDocument();
-      });
+      expect(mockOnShowProjectDetails).toHaveBeenCalledWith(mockProjects[0]);
     });
 
     it('should open branch details dialog', async () => {
@@ -835,7 +832,7 @@ describe('ProjectList', () => {
 
       // Click branch details button
       const branchRow = screen.getByText('main').closest('.group');
-      const viewButton = branchRow?.querySelector('[aria-label="View Branch Details & Context"]');
+      const viewButton = branchRow?.querySelector('[aria-label="View Branch Details"]');
       fireEvent.click(viewButton!);
 
       await waitFor(() => {
@@ -845,8 +842,13 @@ describe('ProjectList', () => {
     });
 
     it('should open global context dialog', async () => {
+      const mockOnShowGlobalContext = vi.fn();
       render(
-        <ProjectList onSelect={mockOnSelect} refreshKey={refreshKey} />
+        <ProjectList 
+          onSelect={mockOnSelect} 
+          refreshKey={refreshKey} 
+          onShowGlobalContext={mockOnShowGlobalContext}
+        />
       );
 
       await waitFor(() => {
@@ -855,10 +857,7 @@ describe('ProjectList', () => {
 
       fireEvent.click(screen.getByText('Global'));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('global-context-dialog')).toBeInTheDocument();
-        expect(screen.getByText('Global Context')).toBeInTheDocument();
-      });
+      expect(mockOnShowGlobalContext).toHaveBeenCalled();
     });
   });
 

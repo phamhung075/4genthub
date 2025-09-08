@@ -362,43 +362,104 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
         is_migrated = getattr(db_model, "is_migrated", False)
         migration_warnings = getattr(db_model, "migration_warnings", None)
         
-        # Build global_settings from flat structure (backward compatibility)
-        global_settings = {
-            "organization_standards": getattr(db_model, "organization_standards", None) or {},
-            "security_policies": db_model.security_policies or {},
-            "compliance_requirements": getattr(db_model, "compliance_requirements", None) or {},
-            "shared_resources": getattr(db_model, "shared_resources", None) or {},
-            "reusable_patterns": getattr(db_model, "reusable_patterns", None) or {},
-            "delegation_rules": db_model.delegation_rules or {}
-        }
-        
-        # Handle preferences
-        global_preferences = getattr(db_model, "global_preferences", None) or {}
-        
-        # Extract custom fields from global_preferences if they exist
-        if "_custom" in global_preferences:
-            global_preferences_copy = global_preferences.copy()
-            custom_fields = global_preferences_copy.pop("_custom", {})
+        # If we have a nested structure (schema version 2.0), use it as the primary source
+        if nested_structure_dict and schema_version == "2.0":
+            # Build global_settings from nested structure for frontend compatibility
+            global_settings = {
+                # Initialize default frontend fields
+                "user_preferences": {},
+                "ai_agent_settings": {"preferred_agents": []},
+                "workflow_preferences": {},
+                "development_tools": {},
+                "security_settings": {},
+                "dashboard_settings": {},
+                "autonomous_rules": {},
+                "security_policies": {},
+                "coding_standards": {},
+                "workflow_templates": {},
+                "delegation_rules": {},
+                "version": "1.0.0"
+            }
             
-            # Extract frontend-specific fields from custom fields
-            for field_name in ["ai_agent_settings", "workflow_preferences", "development_tools", 
-                              "security_settings", "dashboard_settings"]:
-                if field_name in custom_fields:
-                    global_settings[field_name] = custom_fields[field_name]
-                    
-            # Add any remaining custom fields
-            for key, value in custom_fields.items():
-                if key not in ["ai_agent_settings", "workflow_preferences", "development_tools",
-                               "security_settings", "dashboard_settings"]:
-                    global_settings[key] = value
-                    
-            # Map global_preferences (without _custom) to user_preferences for frontend compatibility
-            global_settings["user_preferences"] = global_preferences_copy
-            global_settings["global_preferences"] = global_preferences_copy
+            # Add the entire nested structure to global_settings
+            # This preserves the organization, development, security, operations, preferences structure
+            if nested_structure_dict:
+                for key, value in nested_structure_dict.items():
+                    if not key.startswith("_"):  # Skip internal fields
+                        global_settings[key] = value
+            
+            # Extract specific fields from nested structure for frontend compatibility
+            if "preferences" in nested_structure_dict:
+                prefs = nested_structure_dict["preferences"]
+                if "user_interface" in prefs:
+                    global_settings["user_preferences"] = prefs.get("user_interface", {})
+                if "agent_behavior" in prefs:
+                    global_settings["ai_agent_settings"] = {"preferred_agents": [], **prefs.get("agent_behavior", {})}
+                if "workflow" in prefs:
+                    global_settings["workflow_preferences"] = prefs.get("workflow", {})
+            
+            if "development" in nested_structure_dict:
+                dev = nested_structure_dict["development"]
+                if "tools" in dev:
+                    global_settings["development_tools"] = dev.get("tools", {})
+                if "patterns" in dev:
+                    global_settings["coding_standards"] = dev.get("patterns", {})
+            
+            if "security" in nested_structure_dict:
+                sec = nested_structure_dict["security"]
+                global_settings["security_settings"] = sec
+                if "access_control" in sec:
+                    global_settings["security_policies"] = sec.get("access_control", {})
+            
+            if "organization" in nested_structure_dict:
+                org = nested_structure_dict["organization"]
+                if "policies" in org and "agent_delegation" in org["policies"]:
+                    global_settings["delegation_rules"] = org["policies"].get("agent_delegation", {})
+            
+            # Add schema version and custom categories
+            if "_schema_version" in nested_structure_dict:
+                global_settings["_schema_version"] = nested_structure_dict["_schema_version"]
+            if "_custom_categories" in nested_structure_dict:
+                global_settings["_custom_categories"] = nested_structure_dict["_custom_categories"]
+                
         else:
-            # Map global_preferences to user_preferences for frontend compatibility
-            global_settings["user_preferences"] = global_preferences
-            global_settings["global_preferences"] = global_preferences
+            # Build global_settings from flat structure (backward compatibility)
+            global_settings = {
+                "organization_standards": getattr(db_model, "organization_standards", None) or {},
+                "security_policies": db_model.security_policies or {},
+                "compliance_requirements": getattr(db_model, "compliance_requirements", None) or {},
+                "shared_resources": getattr(db_model, "shared_resources", None) or {},
+                "reusable_patterns": getattr(db_model, "reusable_patterns", None) or {},
+                "delegation_rules": db_model.delegation_rules or {}
+            }
+            
+            # Handle preferences
+            global_preferences = getattr(db_model, "global_preferences", None) or {}
+            
+            # Extract custom fields from global_preferences if they exist
+            if "_custom" in global_preferences:
+                global_preferences_copy = global_preferences.copy()
+                custom_fields = global_preferences_copy.pop("_custom", {})
+                
+                # Extract frontend-specific fields from custom fields
+                for field_name in ["ai_agent_settings", "workflow_preferences", "development_tools", 
+                                  "security_settings", "dashboard_settings"]:
+                    if field_name in custom_fields:
+                        global_settings[field_name] = custom_fields[field_name]
+                        
+                # Add any remaining custom fields
+                for key, value in custom_fields.items():
+                    if key not in ["ai_agent_settings", "workflow_preferences", "development_tools",
+                                   "security_settings", "dashboard_settings"]:
+                        global_settings[key] = value
+                        
+                # Map global_preferences (without _custom) to user_preferences for frontend compatibility
+                global_settings["user_preferences"] = global_preferences_copy
+                global_settings["global_preferences"] = global_preferences_copy
+            else:
+                # Map global_preferences to user_preferences for frontend compatibility
+                global_settings["user_preferences"] = global_preferences
+                global_settings["global_preferences"] = global_preferences
         
         # Build metadata with nested structure information
         metadata = {
