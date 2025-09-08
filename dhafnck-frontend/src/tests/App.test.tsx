@@ -15,17 +15,14 @@ vi.mock('react-router-dom', () => ({
   useParams: () => ({})
 }));
 
-// Mock the auth context
-vi.mock('../contexts/AuthContext', () => ({
-  AuthContext: {
-    Provider: ({ children }: { children: React.ReactNode }) => children,
-    Consumer: ({ children }: any) => children({
-      user: { id: '123', username: 'testuser', email: 'test@example.com', roles: ['user'] },
-      isAuthenticated: true,
-      login: vi.fn(),
-      logout: vi.fn(),
-    })
-  }
+// Mock the theme context
+vi.mock('../contexts/ThemeContext', () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
+// Mock the toast provider
+vi.mock('../components/ui/toast', () => ({
+  ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 // Mock the auth components
@@ -56,8 +53,22 @@ vi.mock('../pages/TokenManagement', () => ({
   TokenManagement: () => <div>Token Management Page</div>
 }));
 
-vi.mock('../contexts/ThemeContext', () => ({
-  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
+// Mock registration success page
+vi.mock('../pages/RegistrationSuccess', () => ({
+  default: () => <div>Registration Success</div>
+}));
+
+// Mock dialog components
+vi.mock('../components/GlobalContextDialog', () => ({
+  default: ({ open, onOpenChange }: any) => open ? <div data-testid="global-context-dialog">Global Context Dialog</div> : null
+}));
+
+vi.mock('../components/ProjectDetailsDialog', () => ({
+  default: ({ open, onOpenChange }: any) => open ? <div data-testid="project-details-dialog">Project Details Dialog</div> : null
+}));
+
+vi.mock('../components/BranchDetailsDialog', () => ({
+  default: ({ open, onOpenChange }: any) => open ? <div data-testid="branch-details-dialog">Branch Details Dialog</div> : null
 }));
 
 vi.mock('../components/ProjectList', () => ({
@@ -90,7 +101,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(window.location.pathname).toBe('/dashboard');
+      expect(screen.getByText('Navigate to /dashboard')).toBeInTheDocument();
     });
   });
 
@@ -133,7 +144,18 @@ describe('App', () => {
 
     expect(screen.getByText('Test Header')).toBeInTheDocument();
     expect(screen.getByTestId('project-list')).toBeInTheDocument();
-    expect(screen.getByText('Select a project and branch to see tasks.')).toBeInTheDocument();
+    expect(screen.getByText('Choose a workspace')).toBeInTheDocument();
+    expect(screen.getByText('Select a project and branch from the sidebar to start viewing and managing your tasks.')).toBeInTheDocument();
+  });
+
+  it('renders registration success on /registration-success route', () => {
+    window.history.pushState({}, '', '/registration-success');
+    
+    render(
+      <App />
+    );
+
+    expect(screen.getByText('Registration Success')).toBeInTheDocument();
   });
 
   it('renders profile page with AppLayout on /profile route', () => {
