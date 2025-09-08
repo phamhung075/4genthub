@@ -11,7 +11,14 @@ from pathlib import Path
 from typing import Dict, Any
 from datetime import datetime
 
-from ...domain.enums.compliance_enums import DocumentType
+# Removed compliance_enums import - simplified
+from enum import Enum
+
+class DocumentType(Enum):
+    """Simplified document types"""
+    CONFIG = "config"
+    TEMPLATE = "template"
+    DOCUMENT = "document"
 from ...domain.value_objects.compliance_objects import DocumentInfo
 
 logger = logging.getLogger(__name__)

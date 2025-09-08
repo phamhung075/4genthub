@@ -1,7 +1,9 @@
-"""Agent MCP Controller Services Package
+"""Unified Agent MCP Controller Services Package
 
-This package contains business logic services for agent operations.
-Currently empty but reserved for future service layer enhancements.
+This package contains business logic services for all agent operations:
+- AgentDiscoveryService: Service for discovering available agents
 """
 
-__all__ = []
+from .agent_discovery_service import AgentDiscoveryService
+
+__all__ = ['AgentDiscoveryService']

@@ -45,10 +45,6 @@ from .mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import
 from .mcp_controllers.agent_mcp_controller.agent_mcp_controller import AgentMCPController
 # Claude agent controller removed
 from .mcp_controllers.call_agent_mcp_controller.call_agent_mcp_controller import CallAgentMCPController
-from .mcp_controllers.compliance_mcp_controller.compliance_mcp_controller import ComplianceMCPController
-from .mcp_controllers.file_resource_mcp_controller.file_resource_mcp_controller import FileResourceMCPController
-from .mcp_controllers.rule_orchestration_controller.rule_orchestration_controller import RuleOrchestrationController
-from .mcp_controllers.logging_mcp_controller.logging_mcp_controller import LoggingMCPController
 
 # Vision System Enhanced Controllers
 # Enhanced task controller removed - functionality merged into TaskMCPController
@@ -169,24 +165,13 @@ class DDDCompliantMCPTools:
         
         # Claude agent controller removed
         
-        # Initialize compliance controller
-        self._compliance_controller = ComplianceMCPController(project_root=self._path_resolver.project_root)
         
-        # Initialize file resource controller
-        self._file_resource_controller = FileResourceMCPController(project_root=self._path_resolver.project_root)
         
-        # Initialize logging controller
-        self._logging_controller = LoggingMCPController()
         
         # Initialize cursor rules tools (DDD-compliant)
         from .cursor_rules_tools_ddd import CursorRulesToolsDDD
         self._cursor_rules_tools = CursorRulesToolsDDD()
         
-        # Initialize rule orchestration controller
-        from ..application.facades.rule_application_facade import RuleApplicationFacade
-        rule_app_facade = RuleApplicationFacade(path_resolver=self._path_resolver)
-        self._rule_orchestration_facade = rule_app_facade.orchestration_facade
-        self._rule_orchestration_controller = RuleOrchestrationController(self._rule_orchestration_facade)
         
         
         # Vision System Disabled (components removed as requested)
@@ -240,26 +225,17 @@ class DDDCompliantMCPTools:
         # Register git branch management tools
         self._register_git_branch_tools(mcp)
         
-        # Register agent tools
+        # Register unified agent management and invocation tools
         self._register_agent_tools(mcp)
         
         # Register cursor rules tools
         self._register_cursor_rules_tools(mcp)
         
-        # Register rule orchestration tools
-        self._register_rule_orchestration_tools(mcp)
+        # Call agent functionality now integrated into unified agent controller
+        # self._register_call_agent_tool(mcp)  # Deprecated - functionality merged
         
-        # Register call agent tool
-        self._register_call_agent_tool(mcp)
         
-        # Register compliance tools
-        self._register_compliance_tools(mcp)
         
-        # Register file resource tools
-        self._register_file_resource_tools(mcp)
-        
-        # Register logging tools
-        self._register_logging_tools(mcp)
         
         # Register Vision System enhanced tools if enabled
         if self._enable_vision_system:
@@ -299,32 +275,21 @@ class DDDCompliantMCPTools:
             logger.warning("Git branch controller not available - skipping git branch tool registration")
     
     def _register_agent_tools(self, mcp: "FastMCP"):
-        """Register agent management MCP tools via controller"""
-        self._agent_controller.register_tools(mcp)
+        """Register unified agent management and invocation MCP tools via controller"""
+        self._unified_agent_controller.register_tools(mcp)
     
     def _register_cursor_rules_tools(self, mcp: "FastMCP"):
         """Register cursor rules management tools"""
         self._cursor_rules_tools.register_tools(mcp)
     
-    def _register_rule_orchestration_tools(self, mcp: "FastMCP"):
-        """Register rule orchestration MCP tools via controller"""
-        self._rule_orchestration_controller.register_tools(mcp)
-    
     def _register_call_agent_tool(self, mcp: "FastMCP"):
-        """Register call agent MCP tools via controller"""
-        self._call_agent_controller.register_tools(mcp)
+        """Register call agent MCP tools via controller - DEPRECATED: now handled by unified agent controller"""
+        # No longer needed - call functionality integrated into unified agent controller
+        logger.info("Call agent functionality is now integrated into the unified agent controller")
+        pass
     
-    def _register_compliance_tools(self, mcp: "FastMCP"):
-        """Register compliance management MCP tools via controller"""
-        self._compliance_controller.register_tools(mcp)
     
-    def _register_file_resource_tools(self, mcp: "FastMCP"):
-        """Register file resource MCP tools via controller"""
-        self._file_resource_controller.register_resources(mcp)
     
-    def _register_logging_tools(self, mcp: "FastMCP"):
-        """Register logging MCP tools via controller"""
-        self._logging_controller.register_tools(mcp)
     
     def _register_vision_enhanced_tools(self, mcp: "FastMCP"):
         """Register Vision System enhanced tools"""
@@ -382,10 +347,6 @@ class DDDCompliantMCPTools:
         """Get the call agent controller for direct access"""
         return self._call_agent_controller
     
-    @property
-    def compliance_controller(self) -> ComplianceMCPController:
-        """Get the compliance controller for direct access"""
-        return self._compliance_controller
     
     # Vision System Properties
     @property
@@ -448,7 +409,4 @@ class DDDCompliantMCPTools:
         """Wrapper method for agent calls - delegates to call agent controller"""
         return self._call_agent_controller.call_agent(**kwargs)
     
-    def manage_compliance(self, **kwargs) -> Dict[str, Any]:
-        """Wrapper method for compliance management - delegates to compliance controller"""
-        return self._compliance_controller.manage_compliance(**kwargs)
  

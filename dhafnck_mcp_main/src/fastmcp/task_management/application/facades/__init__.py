@@ -12,10 +12,8 @@ from .task_application_facade import TaskApplicationFacade
 from .subtask_application_facade import SubtaskApplicationFacade
 from .dependency_application_facade import DependencyApplicationFacade
 from .rule_application_facade import RuleApplicationFacade
-from .file_resource_application_facade import FileResourceApplicationFacade
 from .git_branch_application_facade import GitBranchApplicationFacade
 from .project_application_facade import ProjectApplicationFacade
-from .rule_orchestration_facade import RuleOrchestrationFacade
 __all__ = [
     'AgentApplicationFacade',
     'ContextApplicationFacade',
@@ -23,8 +21,6 @@ __all__ = [
     'SubtaskApplicationFacade',
     'DependencyApplicationFacade',
     'RuleApplicationFacade',
-    'FileResourceApplicationFacade',
     'GitBranchApplicationFacade',
     'ProjectApplicationFacade',
-    'RuleOrchestrationFacade',
     ] 

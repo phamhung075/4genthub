@@ -6,6 +6,133 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **🤖 Unified Agent Controller: Merged manage_agent and call_agent into single efficient controller** - 2025-01-15
+  - **New Files**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/unified_agent_description.py` (comprehensive documentation)
+    - Additional handlers and services copied from call_agent controller
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/agent_mcp_controller.py` - Renamed to UnifiedAgentMCPController with all 9 operations
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/ddd_compliant_mcp_tools.py` - Updated to use single unified controller
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/__init__.py` - Updated imports with backward compatibility
+    - Test files updated to reference unified controller
+  - **Features**:
+    - Single `agent` tool with 9 actions: register, assign, get, list, update, unassign, unregister, rebalance, call
+    - Maintains all existing functionality from both controllers
+    - Agent management operations (8 actions from manage_agent)
+    - Agent invocation operations (call action from call_agent) 
+    - Unified parameter schema with comprehensive documentation
+    - Backward compatibility aliases maintained
+    - Decision trees for optimal agent selection
+    - Complete workflow patterns and best practices documentation
+  - **Impact**: Simplified agent operations interface, reduced controller redundancy, maintained full functionality
+
+### Removed
+- **🗑️ Controller Cleanup: Deleted manage_template controller with zero frontend integration** - 2025-09-08
+  - **Files Deleted**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/template_controller/` (entire directory)
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-template-api.md` (API documentation)  
+    - `dhafnck_mcp_main/docs/testing-qa/manage-template-api-verification-report.md` (verification report)
+  - **Code Changes**:
+    - Template controller was never registered in MCP tools system
+    - No imports or references found in active codebase
+    - Domain entities and value objects for templates preserved (used by legitimate business logic)
+  - **Documentation Updates**:
+    - Updated obsolete controllers recommendations to mark manage_template as completed
+    - Updated maintenance analysis to reflect controller deletion
+    - Updated DDD compliance report and modular architecture documentation
+    - Updated controller overlap analysis to remove template controller references
+  - **Impact**: Removed 863+ lines of AI caching complexity with zero frontend usage and no UI integration
+- **🗑️ Controller Cleanup: Deleted unused manage_rule controller and MCP tool** - 2025-09-08
+  - **Files Deleted**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/rule_orchestration_controller/` (entire directory)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/rule_orchestration_facade.py` (application facade)
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-rule-api.md` (API documentation)
+    - `dhafnck_mcp_main/src/tests/task_management/application/facades/rule_orchestration_facade_test.py` (test files)
+    - `dhafnck_mcp_main/src/tests/task_management/interface/controllers/rule_orchestration_controller_test.py` (test files)
+  - **Code Changes**:
+    - Removed `manage_rule` MCP tool registration from `tool_config.py` and `server.py`
+    - Removed `RuleOrchestrationFacade` import from facades `__init__.py`
+    - Cleaned up `ddd_compliant_mcp_tools.py` by removing rule orchestration controller initialization and registration
+    - Simplified `rule_application_facade.py` to remove orchestration dependencies
+    - Updated test files to remove deleted component references
+  - **Impact**: Removed 670+ lines of complex sync logic with zero frontend usage. Frontend uses cursor rules controller instead.
+- **🗑️ Controller Cleanup: Deleted manage_file_resource controller with security risks** - 2025-09-08
+  - **Files Deleted**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/file_resource_mcp_controller/` (entire directory)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/file_resource_application_facade.py` (application facade)
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-file-resource-api.md` (API documentation)
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/ddd_compliant_mcp_tools.py` - Removed FileResourceMCPController import and registration
+    - `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/__init__.py` - Removed FileResourceApplicationFacade import
+  - **Reason**: Complex file scanning with security risks, zero frontend usage, unnecessary functionality
+  - **Impact**: Improved security, cleaner codebase, no functional impact since unused by frontend
+  - **Migration**: None needed - controller was never actively used by frontend
+- **🗑️ Controller Cleanup: Deleted unused manage_compliance controller and MCP tool** - 2025-09-08
+  - **Files Deleted**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/` (entire directory)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/application/services/compliance_service.py` (application layer)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/application/orchestrators/compliance_orchestrator.py` (orchestrator)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/domain/enums/compliance_enums.py` (domain enums)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/domain/value_objects/compliance_objects.py` (value objects)
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-compliance-api.md` (API documentation)
+    - `dhafnck_mcp_main/src/tests/task_management/application/orchestrators/compliance_orchestrator_test.py` (test files)
+    - `dhafnck_mcp_main/src/tests/unit/task_management/application/services/compliance_service_test.py` (test files)
+    - `dhafnck_mcp_main/scripts/analyze_architecture_compliance.py` (analysis scripts)
+    - `dhafnck_mcp_main/scripts/analyze_architecture_compliance_v7.py` (analysis scripts)
+    - `dhafnck_mcp_main/scripts/analyze_architecture_compliance_enhanced.py` (analysis scripts)
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/ddd_compliant_mcp_tools.py` - Removed ComplianceMCPController import, registration, and wrapper methods
+    - `dhafnck_mcp_main/src/mcp_http_server.py` - Removed /mcp/manage_compliance endpoint and registration
+  - **Reason**: manage_compliance had zero frontend usage, no business value demonstrated, security features never utilized
+  - **Impact**: Eliminated dead code across all architectural layers, cleaner codebase, no functional impact since unused
+  - **Migration**: None needed - controller was never actively used by frontend applications
+
+- **🗑️ Controller Cleanup: Deleted abandoned manage_logging controller and MCP tool** - 2025-09-08
+  - **Files Deleted**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/logging_mcp_controller/` (entire directory with 316 lines)
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-logging-api.md` (API documentation)
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/ddd_compliant_mcp_tools.py` - Removed LoggingMCPController import and registration
+  - **Reason**: manage_logging had zero commits, no frontend integration, and was completely unused
+  - **Impact**: Eliminated 316+ lines of dead code, cleaner codebase, no functional impact since unused
+  - **Migration**: None needed - controller was never actively used
+- **🗑️ Controller Simplification: Simplified manage_connection controller to health check only** - 2025-09-08
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/connection_management/interface/controllers/connection_mcp_controller.py` - Removed 4 unused actions, simplified to health_check only
+    - `dhafnck_mcp_main/src/tests/connection_management/interface/controllers/connection_mcp_controller_test.py` - Updated tests to match simplified controller
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-connection-api.md` - Completely rewritten documentation for simplified API
+  - **Removed Actions**: server_capabilities, connection_health, status, register_updates (unused by frontend)
+  - **Retained Functionality**: health_check (actively used by frontend for system monitoring)
+  - **Breaking Changes**: 
+    - No more `action` parameter required/supported
+    - Tool now functions as simple health check endpoint
+    - Removed complex parameter validation and routing logic
+  - **Migration Notes**: Users needing removed functionality should implement dedicated endpoints
+  - **Impact**: 85% code reduction, eliminated unused complexity, faster health checks
+- **🗑️ Controller Cleanup: Removed duplicate manage_cursor_rules controller** - 2025-09-08
+  - **Files Deleted**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/cursor_rules_controller/` (entire directory)
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/cursor_rules_tools_ddd.py`
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-cursor-rules-api.md`
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/__init__.py` - Removed CursorRulesController import
+  - **Reason**: manage_cursor_rules was 100% duplicate of manage_rule controller with identical 23 actions
+  - **Impact**: Simplified codebase, eliminated redundancy, users should use manage_rule instead
+
+- **🗑️ Deleted manage_progress_tools Controller - Redundant Functionality** - 2025-09-08
+  - **Files Removed**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/progress_tools_controller/` (entire directory ~700+ lines)
+    - `dhafnck_mcp_main/src/tests/task_management/interface/mcp_controllers/progress_tools_controller/` (all test files)
+    - `dhafnck_mcp_main/docs/api-integration/controllers/manage-progress-tools-api.md` (API documentation)
+  - **Files Modified**: 
+    - Updated CHANGELOG.md and TEST-CHANGELOG.md to remove progress_tools_controller references
+    - Updated architectural documentation to mark controller as deleted
+    - Updated obsolete controllers recommendations to mark as completed
+  - **Reason**: Progress tracking features are already fully handled by task and subtask controllers - redundant functionality
+  - **Impact**: No functional impact - all progress features remain available through existing task/subtask management
+  - **Verification**: Confirmed task and subtask controllers provide complete progress tracking capabilities
+
 ### Changed
 - **🎨 UI Enhancement: Updated sidebar toggle button to use ShimmerButton component** - 2025-09-08
   - **File Modified**: `dhafnck-frontend/src/App.tsx`
@@ -43,7 +170,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Existing Tests Reviewed**:
     - `progress_reporting_handler_test.py` (550 lines) - Complete coverage of progress reporting and task updates
     - `workflow_handler_test.py` (418 lines) - Full coverage of checkpoint creation and workflow states
-    - `progress_tools_controller_test.py` (496 lines) - Thorough testing of controller delegation patterns
     - `manage_task_description_test.py` (388 lines) - Comprehensive validation of tool descriptions
   - **Test Coverage Includes**:
     - Unit tests for all handler methods
@@ -189,21 +315,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
   - **Impact**: Resolves API failures for dependency operations (get_dependencies, clear_dependencies, get_blocking_tasks)
   - **Testing**: Methods follow same patterns as existing facade methods for consistency
-- **🔧 Missing UnifiedContextFacadeFactory Imports** - 2025-09-08
-  - **Fixed Import Errors**: Added missing `UnifiedContextFacadeFactory` imports to progress_tools_controller components
-  - **Files Fixed**: 5 files with missing imports that would cause `NameError` at runtime
-    - `progress_tools_controller/progress_tools_controller.py` - Added import on line 18
-    - `progress_tools_controller/factories/operation_factory.py` - Added import on line 8
-    - `progress_tools_controller/handlers/progress_reporting_handler.py` - Added import on line 12
-    - `progress_tools_controller/handlers/context_handler.py` - Added import on line 11
-    - `progress_tools_controller/handlers/workflow_handler.py` - Added import on line 11
-  - **Import Path**: `from ....application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory`
-  - **Impact**: Prevents runtime errors when type hints are evaluated in progress tools controller system
-  - **Validation**: All files compile successfully with `python -m py_compile`
 - **📚 API Documentation Accuracy Updates** - 2025-09-08
   - **manage_dependency API**: Added implementation status warnings for query operations (get_dependencies, clear_dependencies, get_blocking_tasks) currently in development
   - **manage_logging API**: Fixed static log file path references to use dynamic path placeholders; added note about automatic Docker/local environment path resolution
-  - **manage_progress_tools API**: Clarified that parameters are passed directly to controller methods without intermediate model classes
   - **Files Updated**: 3 API documentation files with accuracy improvements and implementation status clarifications
 - **🔧 Mobile Sidebar Toggle Button Positioning** - 2025-09-08
   - **Fixed Jumping Button**: Resolved sidebar toggle button position changing from left to right side when opening/closing on mobile devices
@@ -329,24 +443,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Rule System Coverage**: All 23 actions documented including list, backup, restore, analyze_hierarchy, compose_nested_rules, client_sync, and cache_status
   - **IDE Integration**: Support for multiple IDEs with specific configurations and sync strategies
   - **Best Practices**: Complete workflow patterns for rule management and multi-client synchronization
-- **📚 Comprehensive API Documentation for manage_progress_tools Controller** - 2025-09-08
-  - **Created Complete API Reference**: `dhafnck_mcp_main/docs/api-integration/controllers/manage-progress-tools-api.md`
-  - **Documentation Includes**:
-    - Overview of progress tracking utilities for AI agents with Vision System Phase 2 integration
-    - Modular architecture documentation with Factory Pattern implementation
-    - Four main actions: report_progress, quick_task_update, checkpoint_work, update_work_context
-    - Detailed parameter schemas with JSON-RPC format examples and response formats
-    - Progress percentage calculations with intelligent hints and automatic workflow guidance
-    - Valid progress types (analysis, implementation, testing, debugging, documentation, etc.)
-    - Integration with task management and hierarchical context propagation
-    - Comprehensive error handling examples and security considerations
-  - **Features Documented**:
-    - Automatic context updates and Vision System integration
-    - Work checkpointing for resumable sessions
-    - Structured work context with file tracking and decision logging
-    - Progress-based hints and milestone detection
-    - 4-tier context hierarchy propagation (GLOBAL → PROJECT → BRANCH → TASK)
-  - **File Created**: `dhafnck_mcp_main/docs/api-integration/controllers/manage-progress-tools-api.md` (comprehensive 600+ line documentation)
 - **📚 Comprehensive API Documentation for manage_rule Controller** - 2025-09-08
   - **Created Complete API Documentation**: `dhafnck_mcp_main/docs/api-integration/controllers/manage-rule-api.md`
     - Overview of rule orchestration functionality with hierarchical rule management

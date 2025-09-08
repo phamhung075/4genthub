@@ -41,13 +41,10 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
+            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedAgentMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ComplianceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FileResourceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.RuleOrchestrationController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
@@ -79,13 +76,10 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
+            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedAgentMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ComplianceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FileResourceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.RuleOrchestrationController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
@@ -115,13 +109,10 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
+            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedAgentMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ComplianceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FileResourceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.RuleOrchestrationController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
@@ -135,11 +126,9 @@ class TestDDDCompliantMCPTools:
             tools._context_controller = Mock()
             tools._project_controller = Mock()
             tools._git_branch_controller = Mock()
-            tools._agent_controller = Mock()
-            tools._call_agent_controller = Mock()
+            tools._unified_agent_controller = Mock()
             tools._compliance_controller = Mock()
             tools._file_resource_controller = Mock()
-            tools._rule_orchestration_controller = Mock()
             
             # Test registration
             tools.register_tools(mock_mcp)
@@ -167,13 +156,10 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedContextMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ProjectMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.GitBranchMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController'))
+            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.UnifiedAgentMCPController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentUseCase'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController'))
             # Claude agent controller removed
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.ComplianceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FileResourceMCPController'))
-            stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.RuleOrchestrationController'))
             stack.enter_context(patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.WorkflowHintEnhancer'))
             
             from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools

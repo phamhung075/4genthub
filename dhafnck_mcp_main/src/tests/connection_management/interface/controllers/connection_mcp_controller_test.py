@@ -1,43 +1,24 @@
-"""Tests for ConnectionMCPController"""
+"""Tests for Simplified ConnectionMCPController"""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, Optional, Union
+from unittest.mock import Mock, patch
 
 from fastmcp.connection_management.interface.controllers.connection_mcp_controller import ConnectionMCPController
-from fastmcp.connection_management.application.dtos.connection_dtos import (
-    HealthCheckResponse, ServerCapabilitiesResponse, ConnectionHealthResponse,
-    ServerStatusResponse, RegisterUpdatesResponse
-)
+from fastmcp.connection_management.application.dtos.connection_dtos import HealthCheckResponse
 
 
 class TestConnectionMCPController:
-    """Test suite for ConnectionMCPController"""
+    """Test suite for Simplified ConnectionMCPController"""
 
     @pytest.fixture
     def mock_connection_facade(self):
         """Create mock connection facade"""
         facade = Mock()
-        # Setup default successful responses
+        # Setup default successful health check response
         facade.check_server_health.return_value = HealthCheckResponse(
             success=True, status="healthy", server_name="test", version="1.0.0",
             uptime_seconds=3600, restart_count=0, authentication={}, 
             task_management={}, environment={}, connections={}, timestamp=123456789
-        )
-        facade.get_server_capabilities.return_value = ServerCapabilitiesResponse(
-            success=True, core_features=[], available_actions={},
-            authentication_enabled=True, mvp_mode=False, version="1.0.0", total_actions=5
-        )
-        facade.check_connection_health.return_value = ConnectionHealthResponse(
-            success=True, status="healthy", connection_info={}, 
-            diagnostics={}, recommendations=[]
-        )
-        facade.get_server_status.return_value = ServerStatusResponse(
-            success=True, server_info={}, connection_stats={},
-            health_status={}, capabilities_summary={}
-        )
-        facade.register_for_status_updates.return_value = RegisterUpdatesResponse(
-            success=True, session_id="session-123", registered=True, update_info={}
         )
         return facade
 
@@ -52,264 +33,136 @@ class TestConnectionMCPController:
         
         assert controller._connection_facade == mock_connection_facade
 
-    def test_manage_connection_health_check_success(self, controller, mock_connection_facade):
-        """Test successful health check action"""
-        result = controller.manage_connection(action="health_check", include_details=True)
+    def test_health_check_success(self, controller, mock_connection_facade):
+        """Test successful health check"""
+        result = controller.health_check(include_details=True)
         
         assert result["success"] is True
         assert result["status"] == "healthy"
+        assert result["server_name"] == "test"
+        assert result["version"] == "1.0.0"
         mock_connection_facade.check_server_health.assert_called_once_with(True, None)
 
-    def test_manage_connection_server_capabilities_success(self, controller, mock_connection_facade):
-        """Test successful server capabilities action"""
-        result = controller.manage_connection(action="server_capabilities", include_details=False)
+    def test_health_check_without_details(self, controller, mock_connection_facade):
+        """Test health check without details"""
+        result = controller.health_check(include_details=False)
         
         assert result["success"] is True
-        assert "core_features" in result
-        mock_connection_facade.get_server_capabilities.assert_called_once_with(False, None)
+        mock_connection_facade.check_server_health.assert_called_once_with(False, None)
 
-    def test_manage_connection_connection_health_success(self, controller, mock_connection_facade):
-        """Test successful connection health action"""
-        result = controller.manage_connection(
-            action="connection_health", 
-            connection_id="conn-123",
-            include_details=True
-        )
-        
-        assert result["success"] is True
-        assert result["status"] == "healthy"
-        mock_connection_facade.check_connection_health.assert_called_once_with("conn-123", True, None)
-
-    def test_manage_connection_status_success(self, controller, mock_connection_facade):
-        """Test successful status action"""
-        result = controller.manage_connection(action="status", include_details=True)
-        
-        assert result["success"] is True
-        assert "server_info" in result
-        mock_connection_facade.get_server_status.assert_called_once_with(True, None)
-
-    def test_manage_connection_register_updates_success(self, controller, mock_connection_facade):
-        """Test successful register updates action"""
-        client_info = {"type": "test-client", "version": "1.0"}
-        result = controller.manage_connection(
-            action="register_updates",
-            session_id="session-123", 
-            client_info=client_info
-        )
-        
-        assert result["success"] is True
-        assert result["session_id"] == "session-123"
-        mock_connection_facade.register_for_status_updates.assert_called_once_with(
-            "session-123", client_info, None
-        )
-
-    def test_manage_connection_register_updates_default_session(self, controller, mock_connection_facade):
-        """Test register updates action with default session ID"""
-        result = controller.manage_connection(action="register_updates")
-        
-        assert result["success"] is True
-        mock_connection_facade.register_for_status_updates.assert_called_once_with(
-            "default_session", None, None
-        )
-
-    def test_manage_connection_invalid_action(self, controller):
-        """Test invalid action handling"""
-        result = controller.manage_connection(action="invalid_action")
-        
-        assert result["success"] is False
-        assert "Unknown action" in result["error"]
-        assert "invalid_action" in result["error"]
-        assert "available_actions" in result
-        
-        expected_actions = ["health_check", "server_capabilities", "connection_health", "status", "register_updates"]
-        for action in expected_actions:
-            assert action in result["available_actions"]
-
-    def test_manage_connection_user_id_propagation(self, controller, mock_connection_facade):
-        """Test user_id parameter is propagated correctly"""
+    def test_health_check_with_user_id(self, controller, mock_connection_facade):
+        """Test health check with user_id parameter"""
         test_user_id = "user-123"
         
-        controller.manage_connection(action="health_check", user_id=test_user_id)
-        
-        mock_connection_facade.check_server_health.assert_called_once_with(True, test_user_id)
-
-    def test_client_info_json_string_parsing(self, controller, mock_connection_facade):
-        """Test client_info JSON string parsing"""
-        client_info_json = '{"type": "test", "version": "1.0"}'
-        
-        result = controller.manage_connection(
-            action="register_updates",
-            session_id="session-123",
-            client_info=client_info_json
-        )
+        result = controller.health_check(user_id=test_user_id)
         
         assert result["success"] is True
-        # Verify the parsed dict was passed to facade
-        call_args = mock_connection_facade.register_for_status_updates.call_args[0]
-        assert call_args[1] == {"type": "test", "version": "1.0"}
+        mock_connection_facade.check_server_health.assert_called_once_with(True, test_user_id)
 
-    def test_client_info_invalid_json_handling(self, controller):
-        """Test invalid JSON in client_info parameter"""
-        invalid_json = '{"invalid": json}'
-        
-        result = controller.manage_connection(
-            action="register_updates",
-            client_info=invalid_json
-        )
-        
-        assert result["success"] is False
-        assert "INVALID_PARAMETER_FORMAT" in result["error_code"]
-        assert "client_info" in result["error"]
-
-    def test_handle_health_check_exception(self, controller, mock_connection_facade):
+    def test_health_check_exception_handling(self, controller, mock_connection_facade):
         """Test health check exception handling"""
         mock_connection_facade.check_server_health.side_effect = Exception("Health check failed")
         
-        result = controller.handle_health_check()
+        result = controller.health_check()
         
         assert result["success"] is False
         assert "Health check failed" in result["error"]
         assert result["action"] == "health_check"
 
-    def test_handle_server_capabilities_exception(self, controller, mock_connection_facade):
-        """Test server capabilities exception handling"""
-        mock_connection_facade.get_server_capabilities.side_effect = Exception("Capabilities failed")
+    def test_response_formatting_success(self, controller):
+        """Test successful health check response formatting"""
+        mock_response = HealthCheckResponse(
+            success=True, status="healthy", server_name="DhafnckMCP", version="1.2.3",
+            uptime_seconds=7200, restart_count=1, 
+            authentication={"enabled": True, "type": "JWT"}, 
+            task_management={"active_tasks": 5, "status": "operational"}, 
+            environment="production", 
+            connections={"database": "connected", "cache": "connected"}, 
+            timestamp=1234567890
+        )
         
-        result = controller.handle_server_capabilities()
+        formatted = controller._format_health_check_response(mock_response)
         
-        assert result["success"] is False
-        assert "Capabilities failed" in result["error"]
-        assert result["action"] == "server_capabilities"
+        assert formatted["success"] is True
+        assert formatted["status"] == "healthy"
+        assert formatted["server_name"] == "DhafnckMCP"
+        assert formatted["version"] == "1.2.3"
+        assert formatted["authentication"]["enabled"] is True
+        assert formatted["task_management"]["active_tasks"] == 5
+        assert formatted["environment"] == "production"
+        assert formatted["connections"]["database"] == "connected"
+        assert formatted["timestamp"] == 1234567890
 
-    def test_handle_connection_health_exception(self, controller, mock_connection_facade):
-        """Test connection health exception handling"""
-        mock_connection_facade.check_connection_health.side_effect = Exception("Connection failed")
-        
-        result = controller.handle_connection_health()
-        
-        assert result["success"] is False
-        assert "Connection failed" in result["error"]
-        assert result["action"] == "connection_health"
-
-    def test_handle_server_status_exception(self, controller, mock_connection_facade):
-        """Test server status exception handling"""
-        mock_connection_facade.get_server_status.side_effect = Exception("Status failed")
-        
-        result = controller.handle_server_status()
-        
-        assert result["success"] is False
-        assert "Status failed" in result["error"]
-        assert result["action"] == "status"
-
-    def test_handle_register_updates_exception(self, controller, mock_connection_facade):
-        """Test register updates exception handling"""
-        mock_connection_facade.register_for_status_updates.side_effect = Exception("Registration failed")
-        
-        result = controller.handle_register_updates("session-123")
-        
-        assert result["success"] is False
-        assert "Registration failed" in result["error"]
-        assert result["action"] == "register_updates"
-
-    def test_manage_connection_general_exception(self, controller):
-        """Test general exception handling in manage_connection"""
-        with patch.object(controller, 'handle_health_check', side_effect=Exception("Unexpected error")):
-            result = controller.manage_connection(action="health_check")
-            
-            assert result["success"] is False
-            assert "Unexpected error" in result["error"]
-            assert result["action"] == "health_check"
-
-    def test_response_formatting_health_check(self, controller):
-        """Test health check response formatting"""
-        # Create a mock response with error
+    def test_response_formatting_error(self, controller):
+        """Test error health check response formatting"""
         mock_response = HealthCheckResponse(
             success=False, status="error", server_name="test", version="1.0.0",
             uptime_seconds=0, restart_count=0, authentication={}, 
             task_management={}, environment={}, connections={}, 
-            timestamp=123456789, error="Test error"
+            timestamp=123456789, error="Database connection failed"
         )
         
         formatted = controller._format_health_check_response(mock_response)
         
         assert formatted["success"] is False
         assert formatted["status"] == "error"
-        assert formatted["error"] == "Test error"
-
-    def test_response_formatting_server_capabilities(self, controller):
-        """Test server capabilities response formatting"""
-        mock_response = ServerCapabilitiesResponse(
-            success=True, core_features=["auth", "task"], available_actions={"test": ["action"]},
-            authentication_enabled=True, mvp_mode=False, version="1.0.0", total_actions=1
-        )
-        
-        formatted = controller._format_server_capabilities_response(mock_response)
-        
-        assert formatted["success"] is True
-        assert formatted["core_features"] == ["auth", "task"]
-        assert formatted["available_actions"] == {"test": ["action"]}
-        assert formatted["authentication_enabled"] is True
-
-    def test_response_formatting_connection_health(self, controller):
-        """Test connection health response formatting"""
-        mock_response = ConnectionHealthResponse(
-            success=True, status="healthy", connection_info={"id": "conn-123"},
-            diagnostics={"latency": "5ms"}, recommendations=["all good"]
-        )
-        
-        formatted = controller._format_connection_health_response(mock_response)
-        
-        assert formatted["success"] is True
-        assert formatted["status"] == "healthy"
-        assert formatted["connection_info"]["id"] == "conn-123"
-
-    def test_response_formatting_server_status(self, controller):
-        """Test server status response formatting"""
-        mock_response = ServerStatusResponse(
-            success=True, server_info={"name": "test"}, connection_stats={"active": 5},
-            health_status={"status": "healthy"}, capabilities_summary={"total": 10}
-        )
-        
-        formatted = controller._format_server_status_response(mock_response)
-        
-        assert formatted["success"] is True
-        assert formatted["server_info"]["name"] == "test"
-        assert formatted["connection_stats"]["active"] == 5
-
-    def test_response_formatting_register_updates(self, controller):
-        """Test register updates response formatting"""
-        mock_response = RegisterUpdatesResponse(
-            success=True, session_id="session-123", registered=True,
-            update_info={"interval": "30s"}
-        )
-        
-        formatted = controller._format_register_updates_response(mock_response)
-        
-        assert formatted["success"] is True
-        assert formatted["session_id"] == "session-123"
-        assert formatted["registered"] is True
-        assert formatted["update_info"]["interval"] == "30s"
+        assert formatted["error"] == "Database connection failed"
+        assert formatted["timestamp"] == 123456789
 
     @patch('fastmcp.connection_management.interface.controllers.connection_mcp_controller.logger')
     def test_initialization_logging(self, mock_logger, mock_connection_facade):
-        """Test that controller initialization is logged"""
+        """Test that simplified controller initialization is logged"""
         ConnectionMCPController(mock_connection_facade)
         
-        mock_logger.info.assert_called_with("ConnectionMCPController initialized")
+        mock_logger.info.assert_called_with("Simplified ConnectionMCPController initialized with health check only")
 
     @patch('fastmcp.connection_management.interface.controllers.connection_mcp_controller.logger')
     def test_error_logging(self, mock_logger, controller, mock_connection_facade):
         """Test that errors are logged"""
         mock_connection_facade.check_server_health.side_effect = Exception("Test error")
         
-        controller.manage_connection(action="health_check")
+        controller.health_check()
         
-        mock_logger.error.assert_called_with("Error in handle_health_check: Test error")
+        mock_logger.error.assert_called_with("Error in health_check: Test error")
 
     def test_register_tools_method_exists(self, controller):
         """Test that register_tools method exists and is callable"""
         assert hasattr(controller, 'register_tools')
         assert callable(controller.register_tools)
 
-    # Note: The register_tools method uses hardcoded descriptions, 
-    # not an external description_loader, so this test was removed
+    def test_health_check_method_exists(self, controller):
+        """Test that health_check method exists and is callable"""
+        assert hasattr(controller, 'health_check')
+        assert callable(controller.health_check)
+
+    def test_no_deprecated_methods(self, controller):
+        """Test that deprecated complex methods have been removed"""
+        deprecated_methods = [
+            'manage_connection',
+            'handle_health_check',
+            'handle_server_capabilities',
+            'handle_connection_health',
+            'handle_server_status',
+            'handle_register_updates',
+            '_format_server_capabilities_response',
+            '_format_connection_health_response',
+            '_format_server_status_response',
+            '_format_register_updates_response'
+        ]
+        
+        for method_name in deprecated_methods:
+            assert not hasattr(controller, method_name), f"Method {method_name} should have been removed"
+
+    def test_only_health_check_functionality(self, controller):
+        """Test that controller only provides health check functionality"""
+        # Should have these methods
+        assert hasattr(controller, 'health_check')
+        assert hasattr(controller, '_format_health_check_response')
+        assert hasattr(controller, 'register_tools')
+        
+        # Should not have complex action routing
+        assert not hasattr(controller, 'manage_connection')
+        
+        # Test that it works
+        result = controller.health_check()
+        assert "success" in result

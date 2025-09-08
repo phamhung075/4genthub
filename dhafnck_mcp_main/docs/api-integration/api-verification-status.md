@@ -111,11 +111,7 @@ The verification process involved:
    - Added note about dynamic path resolution
    - Updated all examples to use generic path placeholders
 
-3. **manage_progress_tools-api.md**:
-   - Added clarification about parameter handling without intermediate models
-   - Confirmed all parameter validation occurs at controller level
-
-4. **api-verification-status.md**:
+3. **api-verification-status.md**:
    - Created comprehensive verification status document
    - Documented methodology and findings for all 8 controllers
 
