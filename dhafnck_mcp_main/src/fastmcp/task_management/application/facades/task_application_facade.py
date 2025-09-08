@@ -22,6 +22,7 @@ from ..use_cases.complete_task import CompleteTaskUseCase
 from ..use_cases.list_tasks import ListTasksUseCase
 from ..use_cases.search_tasks import SearchTasksUseCase
 from ..use_cases.next_task import NextTaskUseCase
+from ..use_cases.manage_dependencies import ManageDependenciesUseCase
 
 
 from ...domain.repositories.task_repository import TaskRepository
@@ -102,6 +103,9 @@ class TaskApplicationFacade:
             self._agent_inheritance_service = AgentInheritanceService(task_repository, subtask_repository)
         else:
             self._agent_inheritance_service = None
+        
+        # Initialize dependency management use case
+        self._manage_dependencies_use_case = ManageDependenciesUseCase(task_repository)
     
     async def _derive_context_from_git_branch_id(self, git_branch_id: str) -> Dict[str, Optional[str]]:
         """Derive project_id and git_branch_name from git_branch_id using git branch repository"""
@@ -1080,6 +1084,90 @@ class TaskApplicationFacade:
             return {
                 "success": False,
                 "error": f"Failed to remove dependency: {str(e)}"
+            }
+    
+    def get_dependencies(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+        """Get all dependencies for a task"""
+        try:
+            if not task_id or not task_id.strip():
+                return {"success": False, "action": "get_dependencies", "error": "Task ID is required"}
+            
+            # Use the manage dependencies use case
+            dependencies_data = self._manage_dependencies_use_case.get_dependencies(task_id)
+            
+            return {
+                "success": True,
+                "action": "get_dependencies",
+                "task_id": task_id,
+                "dependencies": dependencies_data.get("dependencies", []),
+                "dependency_ids": dependencies_data.get("dependency_ids", []),
+                "can_start": dependencies_data.get("can_start", True),
+                "message": f"Retrieved {len(dependencies_data.get('dependencies', []))} dependencies for task {task_id}"
+            }
+            
+        except TaskNotFoundError as e:
+            return {"success": False, "action": "get_dependencies", "error": str(e)}
+        except Exception as e:
+            logger.error(f"Failed to get dependencies: {e}")
+            return {
+                "success": False,
+                "action": "get_dependencies",
+                "error": f"Failed to get dependencies: {str(e)}"
+            }
+    
+    def clear_dependencies(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+        """Clear all dependencies from a task"""
+        try:
+            if not task_id or not task_id.strip():
+                return {"success": False, "action": "clear_dependencies", "error": "Task ID is required"}
+            
+            # Use the manage dependencies use case
+            response = self._manage_dependencies_use_case.clear_dependencies(task_id)
+            
+            return {
+                "success": response.success,
+                "action": "clear_dependencies", 
+                "task_id": response.task_id,
+                "message": response.message,
+                "dependencies_cleared": response.message.split()[1] if "Cleared" in response.message else "0"
+            }
+            
+        except TaskNotFoundError as e:
+            return {"success": False, "action": "clear_dependencies", "error": str(e)}
+        except Exception as e:
+            logger.error(f"Failed to clear dependencies: {e}")
+            return {
+                "success": False,
+                "action": "clear_dependencies",
+                "error": f"Failed to clear dependencies: {str(e)}"
+            }
+    
+    def get_blocking_tasks(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
+        """Get all tasks that are blocked by this task (reverse dependencies)"""
+        try:
+            if not task_id or not task_id.strip():
+                return {"success": False, "action": "get_blocking_tasks", "error": "Task ID is required"}
+            
+            # Use the manage dependencies use case
+            blocking_data = self._manage_dependencies_use_case.get_blocking_tasks(task_id)
+            
+            return {
+                "success": True,
+                "action": "get_blocking_tasks",
+                "task_id": blocking_data.get("task_id", task_id),
+                "blocking_tasks": blocking_data.get("blocking_tasks", []),
+                "blocking_count": blocking_data.get("blocking_count", 0),
+                "message": f"Found {blocking_data.get('blocking_count', 0)} tasks blocked by task {task_id}"
+            }
+            
+        except TaskNotFoundError as e:
+            return {"success": False, "action": "get_blocking_tasks", "error": str(e)}
+        except Exception as e:
+            logger.error(f"Failed to get blocking tasks: {e}")
+            return {
+                "success": False,
+                "action": "get_blocking_tasks", 
+                "error": f"Failed to get blocking tasks: {str(e)}"
             }
     
     # ---------------------------------------------------------------------

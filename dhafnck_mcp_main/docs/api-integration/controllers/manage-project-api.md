@@ -36,18 +36,6 @@ The `manage_project` tool provides comprehensive project lifecycle management in
       "type": "string",
       "description": "[OPTIONAL] Project description"
     },
-    "status": {
-      "type": "string",
-      "description": "[OPTIONAL] Project status: 'active', 'inactive', 'archived', 'completed'"
-    },
-    "settings": {
-      "type": "string",
-      "description": "[OPTIONAL] Project configuration as JSON string"
-    },
-    "metadata": {
-      "type": "string",
-      "description": "[OPTIONAL] Additional metadata as JSON string"
-    },
     "force": {
       "type": "string", 
       "description": "[OPTIONAL] Force operation bypassing safety checks: 'true', 'false'"
@@ -75,18 +63,13 @@ Creates a new project with initial configuration and context setup.
 
 **Optional Parameters:**  
 - `description`: Project description
-- `settings`: Initial configuration as JSON
-- `metadata`: Additional metadata as JSON
-- `status`: Initial status (default: "active")
 
 **Example Request:**
 ```json
 {
   "action": "create",
   "name": "E-commerce Platform V2",
-  "description": "Next generation e-commerce platform with microservices architecture",
-  "settings": "{\"tech_stack\": [\"React\", \"Node.js\", \"PostgreSQL\", \"Redis\"], \"deployment\": \"AWS\", \"ci_cd\": \"GitHub Actions\"}",
-  "metadata": "{\"client\": \"Acme Corp\", \"timeline\": \"6 months\", \"team_size\": 8, \"budget\": \"$250k\"}"
+  "description": "Next generation e-commerce platform with microservices architecture"
 }
 ```
 
@@ -99,19 +82,7 @@ Creates a new project with initial configuration and context setup.
     "id": "proj-123e4567-e89b-12d3-a456-426614174000",
     "name": "E-commerce Platform V2", 
     "description": "Next generation e-commerce platform with microservices architecture",
-    "status": "active",
     "owner_id": "user-550e8400-e29b-41d4-a716-446655440000",
-    "settings": {
-      "tech_stack": ["React", "Node.js", "PostgreSQL", "Redis"],
-      "deployment": "AWS",
-      "ci_cd": "GitHub Actions"
-    },
-    "metadata": {
-      "client": "Acme Corp",
-      "timeline": "6 months", 
-      "team_size": 8,
-      "budget": "$250k"
-    },
     "created_at": "2025-01-27T11:00:00Z"
   },
   "context_setup": {
@@ -152,10 +123,7 @@ Gets complete project information including health metrics and statistics.
     "id": "proj-123e4567-e89b-12d3-a456-426614174000",
     "name": "E-commerce Platform V2",
     "description": "Next generation e-commerce platform with microservices architecture",
-    "status": "active",
     "owner_id": "user-550e8400-e29b-41d4-a716-446655440000",
-    "settings": {...},
-    "metadata": {...},
     "created_at": "2025-01-27T11:00:00Z",
     "updated_at": "2025-01-27T14:30:00Z"
   },
@@ -190,18 +158,13 @@ Updates project properties and configuration settings.
 **Optional Parameters:**
 - `name`: Updated name
 - `description`: Updated description
-- `status`: New status  
-- `settings`: Updated settings as JSON
-- `metadata`: Updated metadata as JSON
 
 **Example Request:**
 ```json
 {
   "action": "update",
   "project_id": "proj-123e4567-e89b-12d3-a456-426614174000",
-  "status": "active",
-  "settings": "{\"tech_stack\": [\"React\", \"Node.js\", \"PostgreSQL\", \"Redis\"], \"deployment\": \"AWS\", \"ci_cd\": \"GitHub Actions\", \"monitoring\": \"DataDog\"}",
-  "metadata": "{\"client\": \"Acme Corp\", \"timeline\": \"6 months\", \"team_size\": 10, \"budget\": \"$280k\"}"
+  "description": "Next generation e-commerce platform with enhanced microservices architecture"
 }
 ```
 
@@ -232,15 +195,13 @@ Lists all projects accessible to the current user with filtering options.
 - `action`: "list"
 
 **Optional Parameters:**
-- `status`: Filter by project status
 - `limit`: Maximum results to return
 - `offset`: Pagination offset
 
 **Example Request:**
 ```json
 {
-  "action": "list",
-  "status": "active"
+  "action": "list"
 }
 ```
 
@@ -253,8 +214,7 @@ Lists all projects accessible to the current user with filtering options.
     {
       "id": "proj-123e4567-e89b-12d3-a456-426614174000",
       "name": "E-commerce Platform V2",
-      "description": "Next generation e-commerce platform with microservices architecture", 
-      "status": "active",
+      "description": "Next generation e-commerce platform with microservices architecture",
       "created_at": "2025-01-27T11:00:00Z",
       "statistics": {
         "total_tasks": 47,
@@ -266,8 +226,7 @@ Lists all projects accessible to the current user with filtering options.
     {
       "id": "proj-456e7890-f12b-34c5-d678-901234567efg",
       "name": "Mobile App Redesign",
-      "description": "Complete UX/UI overhaul of mobile application",
-      "status": "active", 
+      "description": "Complete UX/UI overhaul of mobile application", 
       "created_at": "2025-01-20T09:15:00Z",
       "statistics": {
         "total_tasks": 32,
@@ -379,93 +338,41 @@ Performs detailed health assessment of project status, progress, and potential i
 }
 ```
 
-### Advanced Operations  
+### Maintenance Operations
 
-#### `archive` - Archive Completed Project
+#### `cleanup_obsolete` - Clean Up Obsolete Resources
 
-Archives a completed project while preserving data for historical reference.
+Removes obsolete tasks, files, and resources from the project.
 
 **Required Parameters:**
-- `action`: "archive"
+- `action`: "cleanup_obsolete"
 - `project_id`: Project UUID
 
 **Optional Parameters:**
-- `archive_reason`: Reason for archiving
-- `preserve_contexts`: Whether to keep context data
+- `force`: Skip safety checks and confirmations
 
-#### `restore` - Restore Archived Project
+#### `validate_integrity` - Validate Project Integrity
 
-Restores an archived project back to active status.
+Validates project structure, dependencies, and consistency.
 
 **Required Parameters:**
-- `action`: "restore"
+- `action`: "validate_integrity"
 - `project_id`: Project UUID
 
-#### `clone` - Clone Project Structure
+**Optional Parameters:**
+- `force`: Skip safety checks and perform comprehensive validation
 
-Creates a new project based on an existing project's structure and configuration.
+#### `rebalance_agents` - Optimize Agent Assignments
+
+Optimizes agent assignments across task trees within the project.
 
 **Required Parameters:**
-- `action`: "clone"
-- `project_id`: Source project UUID
-- `name`: New project name
+- `action`: "rebalance_agents"
+- `project_id`: Project UUID
 
 **Optional Parameters:**
-- `clone_tasks`: Whether to clone tasks (default: false)
-- `clone_contexts`: Whether to clone context data (default: false)
+- `force`: Force rebalancing even if current assignments are optimal
 
-## Project Configuration Schema
-
-### Settings Structure
-The `settings` parameter accepts JSON with these common fields:
-
-```json
-{
-  "tech_stack": ["React", "Node.js", "PostgreSQL"],
-  "deployment": "AWS",
-  "ci_cd": "GitHub Actions", 
-  "monitoring": "DataDog",
-  "testing": {
-    "framework": "Jest",
-    "coverage_threshold": 80,
-    "e2e_tools": ["Cypress", "Playwright"]
-  },
-  "code_quality": {
-    "linter": "ESLint",
-    "formatter": "Prettier", 
-    "type_checking": "TypeScript"
-  },
-  "security": {
-    "vulnerability_scanning": true,
-    "dependency_checks": true,
-    "code_analysis": "SonarQube"
-  }
-}
-```
-
-### Metadata Structure
-The `metadata` parameter accepts JSON with project-specific information:
-
-```json
-{
-  "client": "Acme Corporation",
-  "timeline": "6 months",
-  "budget": "$250,000",
-  "team_size": 8,
-  "priority": "high",
-  "stakeholders": ["john.doe@acme.com", "jane.smith@acme.com"],
-  "business_objectives": [
-    "Increase online sales by 30%",
-    "Improve customer satisfaction",
-    "Reduce cart abandonment by 20%"
-  ],
-  "success_metrics": {
-    "performance": "Page load < 2s",
-    "availability": "99.9% uptime", 
-    "user_growth": "25% increase in MAU"
-  }
-}
-```
 
 ## Health Monitoring System
 
@@ -497,14 +404,10 @@ The health score (0-100) is calculated based on:
 - `PROJECT_NOT_FOUND`: Project ID doesn't exist or user lacks access
 - `INVALID_PROJECT_NAME`: Name validation failed (empty, too long, invalid characters)
 - `DUPLICATE_PROJECT_NAME`: Project name already exists for this user
-- `INVALID_STATUS`: Status not in allowed values
-- `INVALID_JSON`: Settings or metadata not valid JSON
 
 ### Business Logic Errors  
 - `PROJECT_HAS_ACTIVE_BRANCHES`: Cannot delete project with active branches
 - `INSUFFICIENT_PERMISSIONS`: User lacks required permissions for operation
-- `ARCHIVE_FAILED`: Cannot archive project with incomplete tasks
-- `CLONE_FAILED`: Source project clone operation failed
 
 ### Example Error Response
 ```json
@@ -563,10 +466,8 @@ The health score (0-100) is calculated based on:
 
 ### Project Organization
 1. **Descriptive Names**: Use clear, specific project names
-2. **Comprehensive Settings**: Configure tech stack and tools upfront  
-3. **Regular Health Checks**: Monitor project health weekly
-4. **Metadata Maintenance**: Keep stakeholder and timeline info current
-5. **Status Updates**: Update project status as work progresses
+2. **Regular Health Checks**: Monitor project health weekly
+3. **Regular Maintenance**: Run cleanup and validation operations periodically
 
 ### Team Collaboration
 - **Shared Context**: Use project-level context for team knowledge
@@ -574,8 +475,8 @@ The health score (0-100) is calculated based on:
 - **Blocker Management**: Address blockers promptly to maintain health
 - **Documentation**: Maintain project metadata for historical reference
 
-### Lifecycle Management  
-- **Proper Archiving**: Archive completed projects with comprehensive metadata
+### Maintenance Management
+- **Regular Cleanup**: Use cleanup_obsolete to remove unused resources
+- **Integrity Checks**: Run validate_integrity periodically to ensure data consistency  
+- **Agent Optimization**: Use rebalance_agents when team composition changes
 - **Clean Deletion**: Only delete projects that are truly no longer needed
-- **Cloning Strategy**: Use cloning for similar project structures
-- **Status Progression**: Follow logical status progression (active → completed → archived)

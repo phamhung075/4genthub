@@ -7,6 +7,7 @@ Handles work context updates and structured information management.
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
+from .....application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
 from ....application.services.facade_service import FacadeService
 from ....utils.response_formatter import StandardResponseFormatter, ResponseStatus, ErrorCodes
 

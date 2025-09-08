@@ -7,6 +7,7 @@ Factory class that coordinates progress operations by routing them to appropriat
 import logging
 from typing import Dict, Any, Optional, List
 from .....application.facades.task_application_facade import TaskApplicationFacade
+from .....application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
 from ....application.services.facade_service import FacadeService
 from ....utils.response_formatter import StandardResponseFormatter, ErrorCodes
 from ..handlers.progress_reporting_handler import ProgressReportingHandler

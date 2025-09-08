@@ -256,7 +256,7 @@ MANAGE_TASK_PARAMS = {
         # Multi-value parameters (accept comma-separated strings)
         "assignees": {
             "type": "string",
-            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., '@coding-agent'). For multiple agents use comma-separated: '@coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 60+ more specialized agents."
+            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., '@coding-agent'). For multiple agents use comma-separated: '@coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 37+ more specialized agents (42 total available)."
         },
         "labels": {
             "type": "string",
