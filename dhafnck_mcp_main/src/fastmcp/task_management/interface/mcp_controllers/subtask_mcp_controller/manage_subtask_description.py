@@ -22,7 +22,7 @@ MANAGE_SUBTASK_DESCRIPTION = """
 
 | Action   | Required Parameters         | Optional Parameters                | Description                                      |
 |----------|----------------------------|------------------------------------|--------------------------------------------------|
-| create   | task_id, title             | description, status, priority, assignees, progress_notes | Create new subtask under parent task             |
+| create   | task_id, title             | description, status, priority, assignees, progress_notes | Create subtask (inherits agents if none specified) |
 | update   | task_id, subtask_id        | title, description, status, priority, assignees, progress_notes, progress_percentage, blockers, insights_found | Modify subtask with progress tracking |
 | delete   | task_id, subtask_id        |                                    | Remove subtask from parent task                  |
 | get      | task_id, subtask_id        |                                    | Retrieve specific subtask details                |
@@ -31,8 +31,12 @@ MANAGE_SUBTASK_DESCRIPTION = """
 
 📝 PRACTICAL EXAMPLES FOR AI:
 1. Breaking down a feature implementation:
-   - Parent task: "Implement user authentication"
-   - Subtasks: "Create login UI", "Add password validation", "Implement JWT tokens", "Add session management"
+   - Parent task: "Implement user authentication" (assigned to: @coding-agent, @security-auditor-agent)
+   - Subtasks (auto-inherit both agents if not specified):
+     • "Create login UI" - inherits both agents
+     • "Add password validation" - inherits both agents  
+     • "Implement JWT tokens" - can override with: assignees: "@security-auditor-agent"
+     • "Add session management" - inherits both agents
 
 2. Updating progress while working:
    - action: "update", task_id: "parent-id", subtask_id: "sub-id", progress_percentage: 50, progress_notes: "Login UI complete, working on validation"
@@ -49,6 +53,7 @@ MANAGE_SUBTASK_DESCRIPTION = """
 • insights_found: Important discoveries (e.g., "Found existing utility function for validation")
 
 🔄 AUTOMATIC FEATURES:
+• **Agent Inheritance**: Subtasks automatically inherit parent task agents when none specified
 • Parent task progress recalculation on all modifications
 • Context updates with timestamps for all actions
 • Progress percentage mapping: 0% → todo, 1-99% → in_progress, 100% → done
@@ -88,7 +93,7 @@ MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = {
     "description": "[OPTIONAL] Detailed subtask description explaining what needs to be done. Include acceptance criteria if relevant",
     "status": "[OPTIONAL] Subtask status: 'todo', 'in_progress', 'done'. Note: use progress_percentage instead for automatic status mapping",
     "priority": "[OPTIONAL] Subtask priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: inherits from parent",
-    "assignees": "[OPTIONAL] List of assignee identifiers. Comma-separated string or JSON array. Example: 'user1,user2' or '[\"user1\", \"user2\"]'",
+    "assignees": "[OPTIONAL] Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: '@coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.",
     "progress_percentage": "[OPTIONAL] Integer 0-100 representing completion. Automatically maps to status (0=todo, 1-99=in_progress, 100=done). Use this instead of status field",
     "progress_notes": "[OPTIONAL] Brief description of current work status. Use this to track what you're doing. Example: 'Completed UI mockup, starting on API integration'",
     "completion_summary": "[OPTIONAL] Detailed summary of what was accomplished. BE SPECIFIC! Required for complete action. Example: 'Implemented JWT authentication with refresh tokens, 2-hour expiry, and secure httpOnly cookies'",

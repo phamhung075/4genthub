@@ -56,6 +56,15 @@ class CRUDHandler:
                 hint="Include 'git_branch_id' in your request body"
             )
         
+        # Validate that at least one agent is assigned
+        if not assignees or len(assignees) == 0:
+            return self._create_standardized_error(
+                operation="create_task",
+                field="assignees",
+                expected="At least one agent must be assigned to the task",
+                hint="Include 'assignees' with at least one valid agent (e.g., ['@coding-agent'] or ['@test-orchestrator-agent'])"
+            )
+        
         # Validate assignees if provided
         if assignees:
             try:

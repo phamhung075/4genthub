@@ -1,5 +1,222 @@
 # DhafnckMCP Maximum Performance Parallel Execution
 
+## 🎯 AGENT DELEGATION RULES
+**CRITICAL**: When Claude Code encounters tasks, it MUST follow these delegation patterns:
+
+### 📋 Delegation Decision Tree
+1. **Task Matches Subagent Expertise** → **MUST DELEGATE** to specialized subagent
+2. **No Agent Match** → **MUST CALL** task-planning-agent to separate into subtasks
+3. **Repetitive Tasks** → **MUST SPAWN** multiple instances of same agent for parallel execution
+4. **Complex Multi-Step Tasks** → **MUST DELEGATE** to multiple specialized agents working independently
+
+### 🔄 Delegation Workflow
+```python
+def handle_task(task):
+    """Main delegation logic for any task"""
+    
+    # Step 1: Check if task matches existing agent expertise
+    if matches_agent_expertise(task):
+        # MUST delegate to specialized agent
+        return delegate_to_specialist(task)
+    
+    # Step 2: No direct match - call task planner
+    elif is_complex_task(task):
+        # MUST call task-planning-agent for breakdown
+        subtasks = Task(
+            subagent_type="task-planning-agent",
+            description="Break down complex task",
+            prompt=f"Separate this task into subtasks: {task}"
+        )
+        # Then delegate each subtask to appropriate agents
+        return parallel_delegate(subtasks)
+    
+    # Step 3: Repetitive tasks - spawn multiple agents
+    elif is_repetitive_task(task):
+        # MUST spawn multiple instances for parallel work
+        instances = determine_instance_count(task)
+        return spawn_multiple_agents(task, instances)
+```
+
+### 🚀 Parallel Delegation Patterns
+
+#### **Pattern 1: Expert Delegation**
+When encountering a task that matches a subagent's expertise, MUST delegate:
+```python
+# MUST use the word "delegate" when assigning to specialized agent
+Task(
+    subagent_type="security-auditor-agent",
+    description="Delegate security review",  # MUST include "delegate"
+    prompt="Review authentication implementation for security vulnerabilities"
+)
+```
+
+#### **Pattern 2: Task Planning Delegation**
+When no single agent matches, MUST call task-planning-agent:
+```python
+# Complex task requiring breakdown
+Task(
+    subagent_type="task-planning-agent",
+    description="Plan and delegate feature implementation",
+    prompt="""
+    Break down this feature into subtasks and identify which agents should handle each:
+    - User authentication system with 2FA
+    - Payment processing integration
+    - Email notification service
+    Return a list of subtasks with recommended agents for delegation.
+    """
+)
+```
+
+#### **Pattern 3: Multiple Instance Delegation**
+For repetitive tasks in same flow, MUST spawn multiple agents:
+```python
+# Multiple files need same processing
+files = ["api.js", "auth.js", "db.js", "utils.js", "config.js"]
+
+# MUST delegate to multiple instances of same agent
+for file in files:
+    Task(
+        subagent_type="code-reviewer-agent",
+        description=f"Delegate code review for {file}",
+        prompt=f"Review {file} for code quality, security, and best practices"
+    )
+# All 5 agents work in parallel
+```
+
+### 🎭 Advanced Delegation Examples
+
+#### **Complete Feature Implementation with Delegation**
+```python
+def implement_ecommerce_feature():
+    """Demonstrates complete delegation workflow for complex feature"""
+    
+    # Step 1: Task Planning (MUST delegate to planner first)
+    Task(
+        subagent_type="task-planning-agent",
+        description="Delegate planning for ecommerce system",
+        prompt="""
+        Plan complete ecommerce implementation:
+        - Product catalog with search
+        - Shopping cart functionality
+        - Payment processing
+        - Order management
+        - User accounts
+        Identify which specialized agents should handle each component.
+        """
+    )
+    
+    # Step 2: Parallel Delegation to Specialists (based on planner output)
+    # Database Design (MUST delegate)
+    Task(
+        subagent_type="system-architect-agent",
+        description="Delegate database architecture design",
+        prompt="Design database schema for ecommerce: products, orders, users, payments"
+    )
+    
+    # Backend APIs (MUST delegate)
+    Task(
+        subagent_type="coding-agent",
+        description="Delegate backend API implementation",
+        prompt="Implement REST APIs for product catalog, cart, checkout, order management"
+    )
+    
+    # Frontend UI (MUST delegate)
+    Task(
+        subagent_type="shadcn-ui-expert-agent",
+        description="Delegate frontend UI development",
+        prompt="Build ecommerce UI: product listings, cart, checkout flow using shadcn/ui"
+    )
+    
+    # Security Audit (MUST delegate)
+    Task(
+        subagent_type="security-auditor-agent",
+        description="Delegate security review",
+        prompt="Audit payment processing, user authentication, data protection"
+    )
+    
+    # Testing Suite (MUST delegate)
+    Task(
+        subagent_type="test-orchestrator-agent",
+        description="Delegate test implementation",
+        prompt="Create comprehensive test suite for all ecommerce features"
+    )
+    
+    return "Delegated to 6 specialized agents working in parallel"
+```
+
+#### **Repetitive Task Pattern - Multiple File Processing**
+```python
+def process_documentation_updates():
+    """MUST delegate repetitive tasks to multiple agent instances"""
+    
+    docs_to_update = [
+        "README.md",
+        "CONTRIBUTING.md",
+        "API.md",
+        "ARCHITECTURE.md",
+        "DEPLOYMENT.md"
+    ]
+    
+    # MUST spawn separate agent for each document
+    for doc in docs_to_update:
+        Task(
+            subagent_type="documentation-agent",
+            description=f"Delegate documentation update for {doc}",
+            prompt=f"""
+            Update {doc} with:
+            - Latest API changes
+            - New feature documentation
+            - Updated examples
+            - Corrected typos and formatting
+            """
+        )
+    
+    # All 5 documentation agents work simultaneously
+    return f"Delegated to {len(docs_to_update)} documentation agents"
+```
+
+#### **Conditional Delegation Based on Expertise**
+```python
+def smart_delegation(task_type, task_details):
+    """MUST delegate based on task expertise matching"""
+    
+    delegation_map = {
+        "security": "security-auditor-agent",
+        "testing": "test-orchestrator-agent",
+        "ui": "shadcn-ui-expert-agent",
+        "api": "coding-agent",
+        "database": "system-architect-agent",
+        "deployment": "devops-agent",
+        "documentation": "documentation-agent",
+        "performance": "performance-load-tester-agent"
+    }
+    
+    # MUST check expertise and delegate accordingly
+    if task_type in delegation_map:
+        # Direct match - MUST delegate
+        Task(
+            subagent_type=delegation_map[task_type],
+            description=f"Delegate {task_type} task to specialist",
+            prompt=task_details
+        )
+    else:
+        # No match - MUST call task planner
+        Task(
+            subagent_type="task-planning-agent",
+            description="Delegate to planner for task breakdown",
+            prompt=f"Analyze and break down: {task_details}"
+        )
+```
+
+### 🚨 DELEGATION RULES SUMMARY
+
+1. **ALWAYS use "delegate" keyword** in description when assigning tasks
+2. **NEVER attempt tasks yourself** when a specialized agent exists
+3. **ALWAYS call task-planning-agent** for complex tasks without clear agent match
+4. **MUST spawn multiple agents** for repetitive tasks (don't serialize)
+5. **PARALLEL by default** - all delegated agents work simultaneously
+6. **Independent execution** - agents don't wait for each other unless dependencies exist
+
 ## 🚀 CLAUDE CODE TASK TOOL PARALLEL AGENTS
 **FOCUS**: Use Claude Code's built-in Task tool to spawn multiple sub-agent sessions for maximum speed
 

@@ -26,7 +26,7 @@ MANAGE_TASK_DESCRIPTION = """
 
 | Action              | Required Parameters                | Optional Parameters                | Description                                      |
 |---------------------|-----------------------------------|------------------------------------|--------------------------------------------------|
-| create              | git_branch_id, title              | description, status, priority, details, estimated_effort, assignees, labels, due_date, dependencies | Create new task with optional dependencies      |
+| create              | git_branch_id, title, assignees  | description, status, priority, details, estimated_effort, labels, due_date, dependencies | Create new task (MUST have at least 1 agent)    |
 | update              | task_id                           | title, description, status, priority, details, estimated_effort, assignees, labels, due_date, context_id | Update existing task           |
 | get                 | task_id                           | include_context                    | Retrieve task details                            |
 | delete              | task_id                           |                                    | Remove task                                      |
@@ -53,7 +53,7 @@ This design provides:
 📋 ACTUAL REQUIRED PARAMETERS BY ACTION (Validated in Business Logic):
 | Action | Required Parameters | Optional But Recommended | Notes |
 |--------|-------------------|--------------------------|-------|
-| create | action, git_branch_id, title | description, priority | git_branch_id contains project context |
+| create | action, git_branch_id, title, assignees | description, priority | MUST have at least 1 agent assigned |
 | update | action, task_id | any field to update | task_id identifies which task to update |
 | get | action, task_id | include_context | task_id identifies which task to retrieve |
 | delete | action, task_id | - | task_id identifies which task to delete |
@@ -71,7 +71,7 @@ This design provides:
 
 📝 PRACTICAL EXAMPLES FOR AI:
 1. Starting a new feature:
-   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440001", title: "Implement user authentication", description: "Add JWT-based authentication with login, logout, and session management", priority: "high", estimated_effort: "3 days"
+   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440001", title: "Implement user authentication", description: "Add JWT-based authentication with login, logout, and session management", assignees: "@coding-agent,@security-auditor-agent", priority: "high", estimated_effort: "3 days"
 
 2. Getting recommended work:
    - action: "next", git_branch_id: "550e8400-e29b-41d4-a716-446655440000", include_context: true
@@ -87,7 +87,7 @@ This design provides:
    - action: "search", query: "authentication login", limit: 10
 
 6. Creating task with dependencies:
-   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440002", title: "Add login tests", description: "Unit and integration tests for login", dependencies: ["550e8400-e29b-41d4-a716-446655440003", "550e8400-e29b-41d4-a716-446655440004"]
+   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440002", title: "Add login tests", description: "Unit and integration tests for login", assignees: "@test-orchestrator-agent", dependencies: ["550e8400-e29b-41d4-a716-446655440003", "550e8400-e29b-41d4-a716-446655440004"]
 
 7. Managing dependencies:
    - action: "add_dependency", task_id: "550e8400-e29b-41d4-a716-446655440007", dependency_id: "550e8400-e29b-41d4-a716-446655440008"
@@ -125,7 +125,7 @@ ELIF testing/verification task:
 • priority: 'low', 'medium', 'high', 'urgent', 'critical' - affects task ordering in 'next' action
 • status: 'todo', 'in_progress', 'blocked', 'review', 'testing', 'done', 'cancelled'
 • estimated_effort: Use realistic estimates (e.g., "2 hours", "3 days", "1 week")
-• assignees: Can be a single string "user1" or list ["user1", "user2"] or comma-separated "user1,user2"
+• assignees: **REQUIRED for task creation** - Must have at least one agent. Use format: "@agent-name" (e.g., "@coding-agent", "@test-orchestrator-agent"). Can be comma-separated for multiple agents: "@coding-agent,@debugger-agent"
 • labels: Can be a single string "frontend" or list ["frontend", "auth"] or comma-separated "frontend,auth,security"
 • dependencies: Task IDs that must be completed first (for create action) - can be list ["task-id-1", "task-id-2"], single string "task-id", or comma-separated "task-id-1,task-id-2"
 • completion_summary: Detailed summary of what was accomplished (for complete action)
@@ -256,7 +256,7 @@ MANAGE_TASK_PARAMS = {
         # Multi-value parameters (accept comma-separated strings)
         "assignees": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["assignees"]
+            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., '@coding-agent'). For multiple agents use comma-separated: '@coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 60+ more specialized agents."
         },
         "labels": {
             "type": "string",

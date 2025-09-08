@@ -7,6 +7,50 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **🎯 Agent Delegation Rules in CLAUDE.md** - 2025-09-08
+  - **Added Comprehensive Delegation Framework**:
+    - Delegation decision tree for task handling
+    - MUST DELEGATE rules when tasks match agent expertise
+    - MUST CALL task-planning-agent for complex tasks without clear match
+    - MUST SPAWN multiple agents for repetitive tasks in parallel
+  - **Delegation Patterns**:
+    - Expert delegation pattern with "delegate" keyword requirement
+    - Task planning delegation for complex multi-step tasks
+    - Multiple instance delegation for repetitive workflows
+  - **Advanced Examples**:
+    - Complete feature implementation with parallel delegation
+    - Repetitive task processing with multiple agent instances
+    - Conditional delegation based on expertise matching
+  - **Delegation Rules Summary**: 6 critical rules for agent delegation
+  - **File Modified**: `CLAUDE.md` - Added comprehensive agent delegation section at the top
+
+- **📖 Tool Description Updates for Agent Requirements** - 2025-09-08
+  - **Updated manage_task Tool Description**:
+    - Added requirement for minimum one agent in task creation examples
+    - Updated parameter tables to show assignees as required for create action
+    - Enhanced assignees parameter description with format examples and available agents
+    - Modified all practical examples to include agent assignments
+  - **Updated manage_subtask Tool Description**:
+    - Added agent inheritance information in automatic features section
+    - Updated create action description to indicate automatic inheritance
+    - Enhanced practical examples showing inheritance behavior
+    - Updated assignees parameter to explain inheritance from parent task
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/manage_task_description.py`
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/manage_subtask_description.py`
+
+- **⚠️ Minimum Agent Requirement for Tasks** - 2025-09-08
+  - **Mandatory Agent Assignment**: Tasks now require at least one agent to be assigned at creation time
+  - **Validation at Multiple Levels**:
+    - Domain entity validation in Task._validate() method
+    - Interface layer validation in CRUD handler with user-friendly error messages
+  - **Error Messages**: Clear guidance when attempting to create tasks without agents
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/task.py` - Added minimum agent validation
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.py` - Added pre-creation validation
+  - **Tests Created**:
+    - `dhafnck_mcp_main/src/tests/unit/task_management/domain/entities/test_task_minimum_agent.py` - 9 comprehensive test cases
+
 - **🎯 Agent Assignment & Inheritance Enhancement** - 2025-09-08
   - **Multiple Agent Assignment at Creation**: Support assigning multiple agents simultaneously when creating tasks/subtasks
   - **Agent Inheritance System**: Subtasks automatically inherit assignees from parent tasks when no explicit assignees provided
