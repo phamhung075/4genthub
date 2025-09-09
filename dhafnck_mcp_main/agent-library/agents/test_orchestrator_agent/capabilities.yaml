@@ -5,18 +5,20 @@ command_execution:
   enabled: true
   restrictions:
   - sandbox_mode
+  - testing_only
   allowed_commands:
   - stat
-  - ls -l
+  - ls
   - git log
   - git diff
   - diff
   - find
-  - date
   - npm test
   - pytest
   - jest
   - playwright
+  - cypress
+  - selenium
 file_operations:
   enabled: true
   permissions:
@@ -34,7 +36,9 @@ mcp_tools:
   - mcp__browsermcp__browser_get_console_logs
   - mcp__browsermcp__browser_screenshot
   - mcp__browsermcp__browser_wait
-  - mcp__ide__getDiagnostics
+  - mcp__browsermcp__browser_hover
+  - mcp__browsermcp__browser_press_key
   - mcp__dhafnck_mcp_http__manage_task
   - mcp__dhafnck_mcp_http__manage_subtask
+  - mcp__dhafnck_mcp_http__manage_agent
   - mcp__sequential-thinking__sequentialthinking

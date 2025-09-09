@@ -5,11 +5,20 @@ import yaml
 import logging
 import traceback
 from pathlib import Path
+try:
+    from .agent_mappings import resolve_agent_name, is_deprecated_agent
+except ImportError:
+    # Fallback if mappings not available
+    def resolve_agent_name(name): return name
+    def is_deprecated_agent(name): return False
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import re
 
 from ...domain.interfaces.utility_service import IAgentDocGenerator
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 def _find_project_root() -> Path:
@@ -74,7 +83,23 @@ class AgentCapabilities:
     
     def get_mcp_tools(self) -> List[str]:
         """Get list of available MCP tools"""
-        return self.capabilities.get('mcp_tools', [])
+        # Try multiple possible locations for MCP tools
+        mcp_tools = []
+        
+        # Check direct mcp_tools field
+        if 'mcp_tools' in self.capabilities:
+            mcp_tools = self.capabilities['mcp_tools']
+        
+        # Check if tools are in a nested structure like {'enabled': True, 'tools': [...]}
+        elif isinstance(self.capabilities, dict):
+            for key, value in self.capabilities.items():
+                if isinstance(value, dict) and 'tools' in value:
+                    potential_tools = value['tools']
+                    if isinstance(potential_tools, list):
+                        # Filter for MCP tools (those starting with 'mcp__')
+                        mcp_tools.extend([tool for tool in potential_tools if tool.startswith('mcp__')])
+        
+        return mcp_tools if isinstance(mcp_tools, list) else []
     
     def can_execute_commands(self) -> bool:
         """Check if agent can execute system commands"""
@@ -343,7 +368,7 @@ class CallAgentUseCase:
         #     name = f"{name}-agent"
         return name
     
-    def execute(self, name_agent: str) -> Dict[str, Any]:
+    def execute(self, name_agent: str, format: str = "default") -> Dict[str, Any]:
         """Execute agent call with enhanced capabilities"""
         if not self._agent_factory:
             return {
@@ -355,36 +380,61 @@ class CallAgentUseCase:
             }
         # Normalize agent name
         normalized_name = self._normalize_agent_name(name_agent)
+        
+        # Resolve deprecated agent names
+        resolved_name = resolve_agent_name(normalized_name)
+        
+        # Log if using deprecated name
+        if is_deprecated_agent(normalized_name):
+            logger.info(f"Deprecated agent '{normalized_name}' mapped to '{resolved_name}'")
+        
         # Try to create executable agent from agent-library
-        executable_agent = self._agent_factory.create_agent(normalized_name)
+        executable_agent = self._agent_factory.create_agent(resolved_name)
         if executable_agent:
-            # Enhanced format with executable capabilities
-            agent_info = executable_agent.get_agent_info()
-            return {
-                "success": True,
-                "agent_info": agent_info,
-                "capabilities_summary": agent_info["capabilities_summary"],
-                "yaml_content": {
-                    "config": executable_agent.config,
-                    "contexts": executable_agent.contexts,
-                    "rules": executable_agent.rules,
-                    "output_formats": executable_agent.output_formats,
-                    "mcp_tools": executable_agent.mcp_tools,
-                    "metadata": executable_agent.metadata
-                },
-                "capabilities": {
-                    "available_actions": executable_agent.get_available_actions(),
-                    "mcp_tools": executable_agent.capabilities.get_mcp_tools(),
-                    "permissions": {
-                        "file_read": executable_agent.capabilities.has_file_read(),
-                        "file_write": executable_agent.capabilities.has_file_write(),
-                        "mcp_tools": executable_agent.capabilities.has_mcp_tools(),
-                        "system_commands": executable_agent.capabilities.can_execute_commands()
-                    }
-                },
-                "executable_agent": executable_agent,
-                "source": "agent-library"
+            # Streamlined Claude Code compatible format
+            config = executable_agent.config
+            agent_info = config.get('agent_info', {})
+            
+            # Extract frontmatter data
+            frontmatter = {
+                "name": agent_info.get('slug', executable_agent.name),
+                "description": agent_info.get('description', 'Agent from DhafnckMCP agent-library')
             }
+            
+            # Add tools if available
+            tools = self._extract_tools_from_capabilities(executable_agent.capabilities.capabilities, executable_agent)
+            if tools:
+                frontmatter["tools"] = tools
+            
+            # Extract system prompt
+            system_prompt = self._extract_system_prompt(executable_agent.contexts)
+            
+            # Extract actual MCP tools from capabilities
+            mcp_tools = self._extract_mcp_tools_from_capabilities(executable_agent.capabilities.capabilities)
+            
+            # Generate the different formats
+            agent_json = self._convert_to_claude_json(executable_agent)
+            agent_markdown = self._convert_to_claude_format(executable_agent)
+            
+            # Return based on requested format
+            if format == "json":
+                return {
+                    "success": True,
+                    "json": agent_json,
+                    "source": "agent-library"
+                }
+            elif format == "markdown":
+                return {
+                    "success": True,
+                    "markdown": agent_markdown,
+                    "source": "agent-library"
+                }
+            else:  # default format
+                return {
+                    "success": True,
+                    "agent": agent_json,
+                    "source": "agent-library"
+                }
         # Agent not found
         available_agents = self._get_available_agents()
         return {
@@ -410,6 +460,192 @@ class CallAgentUseCase:
             logging.error(f"Error scanning agent-library directory: {str(e)}")
         
         return sorted(available_agents)
+    
+    def _extract_system_prompt(self, contexts: List[Dict]) -> str:
+        """Extract system prompt from agent contexts"""
+        system_prompt_parts = []
+        
+        for context in contexts:
+            # Look for custom_instructions or system_prompt fields
+            if 'custom_instructions' in context:
+                system_prompt_parts.append(str(context['custom_instructions']))
+            elif 'system_prompt' in context:
+                system_prompt_parts.append(str(context['system_prompt']))
+            elif 'content' in context:
+                system_prompt_parts.append(str(context['content']))
+        
+        return "\n\n".join(system_prompt_parts) if system_prompt_parts else "You are a helpful AI assistant."
+    
+    def _get_role_based_tools(self, agent_info: Dict[str, Any], capabilities_config: Dict[str, Any]) -> List[str]:
+        """Get tools based on YAML configuration permissions"""
+        tools = []
+        
+        # Always include basic file reading tools for all agents
+        tools.extend(['Read', 'Grep', 'Glob'])
+        
+        # File operations based on YAML permissions
+        file_ops = capabilities_config.get('file_operations', {})
+        if file_ops.get('enabled', False):
+            permissions = file_ops.get('permissions', {})
+            
+            # Add file modification tools based on permissions
+            if permissions.get('write', False):
+                tools.append('Edit')
+            if permissions.get('create', False):
+                tools.extend(['Write', 'MultiEdit'])
+            if permissions.get('delete', False):
+                # Delete is typically part of file system operations
+                pass  # No specific tool for delete in current tool set
+        
+        # Command execution based on YAML configuration
+        cmd_exec = capabilities_config.get('command_execution', {})
+        if cmd_exec.get('enabled', False):
+            tools.append('Bash')
+            
+            # Add specific command-based tools if allowed
+            allowed_commands = cmd_exec.get('allowed_commands', [])
+            if any('npm' in cmd or 'yarn' in cmd or 'pnpm' in cmd for cmd in allowed_commands):
+                # Package management commands already covered by Bash
+                pass
+            if any('git' in cmd for cmd in allowed_commands):
+                # Git commands already covered by Bash
+                pass
+        
+        # MCP Tools from YAML configuration
+        mcp_config = capabilities_config.get('mcp_tools', {})
+        if mcp_config.get('enabled', False) and 'tools' in mcp_config:
+            mcp_tools = mcp_config['tools']
+            if isinstance(mcp_tools, list):
+                tools.extend(mcp_tools)
+        
+        # Additional tools based on collaboration settings
+        collaboration = capabilities_config.get('collaboration', {})
+        if collaboration.get('enabled', False):
+            # Already included task management tools in MCP tools
+            pass
+        
+        # Remove duplicates while preserving order
+        return list(dict.fromkeys(tools))
+
+    def _extract_tools_from_capabilities(self, capabilities_config: Dict[str, Any], executable_agent: ExecutableAgent = None) -> str:
+        """Extract tool list from capabilities configuration with role-based restrictions"""
+        
+        if executable_agent and hasattr(executable_agent, 'config'):
+            agent_info = executable_agent.config.get('agent_info', {})
+            role_tools = self._get_role_based_tools(agent_info, capabilities_config)
+            return ', '.join(role_tools)
+        
+        # Fallback to original logic if no agent info
+        tools = []
+        has_defined_tools = False
+        
+        # Check for file operations capabilities
+        if 'file_operations' in capabilities_config:
+            file_ops = capabilities_config['file_operations']
+            if file_ops.get('enabled') and file_ops.get('permissions', {}).get('read'):
+                tools.extend(['Read', 'Grep', 'Glob'])
+                has_defined_tools = True
+            if file_ops.get('enabled') and file_ops.get('permissions', {}).get('write'):
+                tools.extend(['Edit', 'Write', 'MultiEdit'])
+                has_defined_tools = True
+        
+        # Check for command execution capabilities  
+        if 'command_execution' in capabilities_config:
+            cmd_exec = capabilities_config['command_execution']
+            if cmd_exec.get('enabled'):
+                tools.append('Bash')
+                has_defined_tools = True
+        
+        # Check for MCP tools
+        if 'mcp_tools' in capabilities_config:
+            mcp_config = capabilities_config['mcp_tools']
+            if mcp_config.get('enabled'):
+                if 'tools' in mcp_config and mcp_config['tools']:
+                    tools.extend(mcp_config['tools'])
+                    has_defined_tools = True
+                else:
+                    tools.append('*')
+                    has_defined_tools = True
+        
+        if not has_defined_tools:
+            return '*'
+        
+        unique_tools = list(dict.fromkeys(tools))
+        return ', '.join(unique_tools)
+    
+    def _extract_mcp_tools_from_capabilities(self, capabilities_config: Dict[str, Any]) -> List[str]:
+        """Extract MCP tools list from capabilities configuration"""
+        mcp_tools = []
+        
+        # Check for MCP tools in capabilities
+        if 'mcp_tools' in capabilities_config:
+            mcp_config = capabilities_config['mcp_tools']
+            if mcp_config.get('enabled') and 'tools' in mcp_config:
+                mcp_tools = mcp_config['tools']
+        
+        return mcp_tools
+    
+    def _convert_to_claude_format(self, executable_agent: ExecutableAgent) -> str:
+        """Convert dhafnck_mcp agent-library structure to Claude Code .claude/agents format"""
+        
+        # Extract basic info from config
+        config = executable_agent.config
+        agent_info = config.get('agent_info', {})
+        
+        # Build frontmatter
+        frontmatter_data = {
+            'name': agent_info.get('slug', executable_agent.name),
+            'description': agent_info.get('description', 'Agent from DhafnckMCP agent-library')
+        }
+        
+        # Add tools if available
+        tools = self._extract_tools_from_capabilities(executable_agent.capabilities.capabilities, executable_agent)
+        if tools:
+            frontmatter_data['tools'] = tools
+        
+        # Build frontmatter
+        frontmatter_lines = ['---']
+        for key, value in frontmatter_data.items():
+            frontmatter_lines.append(f'{key}: {value}')
+        frontmatter_lines.append('---')
+        
+        # Extract system prompt
+        system_prompt = self._extract_system_prompt(executable_agent.contexts)
+        
+        # Build final markdown content
+        claude_agent_content = '\n'.join(frontmatter_lines) + '\n\n' + system_prompt
+        
+        return claude_agent_content
+    
+    def _convert_to_claude_json(self, executable_agent: ExecutableAgent) -> Dict[str, Any]:
+        """Convert agent to JSON structure respecting .claude/agents format"""
+        
+        config = executable_agent.config
+        agent_info = config.get('agent_info', {})
+        
+        # Build the JSON structure following the markdown format
+        agent_json = {
+            "name": agent_info.get('slug', executable_agent.name),
+            "description": agent_info.get('description', 'Agent from DhafnckMCP agent-library'),
+            "system_prompt": self._extract_system_prompt(executable_agent.contexts)
+        }
+        
+        # Add tools if available
+        tools = self._extract_tools_from_capabilities(executable_agent.capabilities.capabilities, executable_agent)
+        if tools:
+            # Convert comma-separated string to list
+            if isinstance(tools, str):
+                agent_json["tools"] = [t.strip() for t in tools.split(',') if t.strip()]
+            else:
+                agent_json["tools"] = tools
+            
+        # Add optional metadata
+        if agent_info.get('category'):
+            agent_json["category"] = agent_info['category']
+        if agent_info.get('version'):
+            agent_json["version"] = agent_info['version']
+            
+        return agent_json
 
 
 # Set up project root and path resolution
@@ -432,7 +668,16 @@ else:
         AGENT_LIBRARY_DIR = project_root / "dhafnck_mcp_main/agent-library"
 
 # Convenience function for backward compatibility
-def call_agent(name_agent: str, agent_library_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Convenience function to call an agent (with normalization)"""
+def call_agent(name_agent: str, format: str = "default", agent_library_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Convenience function to call an agent (with normalization)
+    
+    Args:
+        name_agent: Name of the agent to call
+        format: Response format - "default", "json", or "markdown"
+        agent_library_dir: Optional custom agent library directory
+        
+    Returns:
+        Dict with success status and formatted agent data
+    """
     use_case = CallAgentUseCase(agent_library_dir)
-    return use_case.execute(name_agent) 
+    return use_case.execute(name_agent, format) 

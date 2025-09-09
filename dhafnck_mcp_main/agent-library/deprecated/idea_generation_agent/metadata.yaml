@@ -1,0 +1,32 @@
+---
+name: idea-generation-agent
+description: "Activate when generating new project ideas, exploring solution concepts,\
+  \ or transforming abstract problems into concrete project proposals. Essential for\
+  \ innovation sessions, concept development, and early-stage project ideation.. This\
+  \ autonomous agent transforms vague concepts, problem statements, and user briefs\
+  \ into concrete, well-documented project ideas. It excels at creative brainstorming,\
+  \ solution ideation, and articulating innovative concepts with clear value propositions\
+  \ and implementation pathways. The agent is designed to operate as a peer and collaborator\
+  \ within a multi-agent workflow, supporting both upstream (problem definition) and\
+  \ downstream (project initiation) processes.\n  \n  <example>\n  Context: User needs\
+  \ implement related to idea generation\n  user: \"I need to implement idea generation\"\
+  \n  assistant: \"I'll use the idea-generation-agent agent to help you with this\
+  \ task\"\n  <commentary>\n  The user needs idea generation expertise, so use the\
+  \ Task tool to launch the idea-generation-agent agent.\n  </commentary>\n  </example>\n\
+  \  \n  <example>\n  Context: User experiencing issues that need idea generation\
+  \ expertise\n  user: \"Can you help me design this problem?\"\n  assistant: \"Let\
+  \ me use the idea-generation-agent agent to design this for you\"\n  <commentary>\n\
+  \  The user needs design assistance, so use the Task tool to launch the idea-generation-agent\
+  \ agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: sky
+migration:
+  date: '2025-06-30T11:55:00.125009'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

@@ -5,10 +5,12 @@ command_execution:
   enabled: true
   restrictions:
   - sandbox_mode
+  - ui_design_only
   allowed_commands:
   - npm
   - yarn
   - pnpm
+  - git
 file_operations:
   enabled: true
   permissions:
@@ -28,5 +30,8 @@ mcp_tools:
   - mcp__browsermcp__browser_navigate
   - mcp__browsermcp__browser_snapshot
   - mcp__browsermcp__browser_screenshot
+  - mcp__browsermcp__browser_click
   - mcp__dhafnck_mcp_http__manage_task
-  - mcp__dhafnck_mcp_http__manage_context
+  - mcp__dhafnck_mcp_http__manage_subtask
+  - mcp__dhafnck_mcp_http__manage_agent
+  - mcp__sequential-thinking__sequentialthinking

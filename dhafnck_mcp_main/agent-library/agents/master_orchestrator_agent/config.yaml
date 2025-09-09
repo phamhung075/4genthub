@@ -6,8 +6,8 @@ agent_info:
     all project activities, ensuring efficient execution through strategic agent deployment
     and comprehensive project management.
   migration_date: '2025-06-30T11:55:00.238321'
-  name: "\U0001F3A9 Uber Orchestrator Agent (Talk with me)"
-  slug: uber-orchestrator-agent
+  name: "🎯 Master Orchestrator Agent"
+  slug: master-orchestrator-agent
   usage_scenarios: Activate as the primary coordination hub for complex projects,
     multi-phase initiatives, or when managing multiple specialized agents. Essential
     for high-level project orchestration, strategic planning, and cross-functional
