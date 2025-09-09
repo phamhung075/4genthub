@@ -11,9 +11,7 @@ import json
 
 from fastmcp.task_management.interface.mcp_controllers.unified_context_controller.manage_unified_context_description import (
     MANAGE_UNIFIED_CONTEXT_DESCRIPTION,
-    MANAGE_UNIFIED_CONTEXT_PARAMETERS,
-    get_unified_context_description,
-    get_unified_context_parameters
+    MANAGE_UNIFIED_CONTEXT_PARAMETERS
 )
 
 class TestManageUnifiedContextDescription:
@@ -311,36 +309,6 @@ class TestManageUnifiedContextParameters:
         for importance in expected_importance:
             assert importance in importance_desc, f"Importance '{importance}' not mentioned in importance parameter description"
 
-class TestConvenienceFunctions:
-    """Test convenience functions"""
-    
-    def test_get_unified_context_description(self):
-        """Test get_unified_context_description function"""
-        result = get_unified_context_description()
-        
-        assert result == MANAGE_UNIFIED_CONTEXT_DESCRIPTION
-        assert isinstance(result, str)
-        assert len(result) > 0
-    
-    def test_get_unified_context_parameters(self):
-        """Test get_unified_context_parameters function"""
-        result = get_unified_context_parameters()
-        
-        assert result == MANAGE_UNIFIED_CONTEXT_PARAMETERS
-        assert isinstance(result, dict)
-        assert len(result) > 0
-    
-    def test_convenience_functions_return_same_objects(self):
-        """Test that convenience functions return references to same objects"""
-        desc1 = get_unified_context_description()
-        desc2 = get_unified_context_description()
-        
-        params1 = get_unified_context_parameters()
-        params2 = get_unified_context_parameters()
-        
-        # Should return the same objects (not copies)
-        assert desc1 is desc2
-        assert params1 is params2
 
 class TestDocumentationQuality:
     """Test overall documentation quality"""
