@@ -1,17 +1,88 @@
 """
-Unified Agent Management Tool Description
+Agent Management Tool Description
 
-This module contains the comprehensive documentation for the unified agent management MCP tool
-that combines both agent management (register, assign, update, etc.) and agent invocation (call_agent) operations.
+This module contains the comprehensive documentation for the agent management MCP tool
+that handles agent management operations (register, assign, update, etc.).
+Agent invocation is handled separately by the call_agent tool.
 """
 
 UNIFIED_AGENT_DESCRIPTION = """
-🤖 UNIFIED AGENT MANAGEMENT SYSTEM - Complete Agent Operations
+🤖 AGENT MANAGEMENT SYSTEM - Registration and Assignment for 42 Specialized Agents
 
-⭐ WHAT IT DOES: Provides comprehensive agent management including registration, assignment, lifecycle management, and direct agent invocation for task execution. Automatically enriches tasks with vision insights, progress tracking, and intelligent context updates.
-📋 WHEN TO USE: All agent operations including registration, assignment, updates, project management, and dynamic agent invocation.
-🎯 CRITICAL FOR: Multi-agent orchestration, dynamic agent assignment, and specialized task delegation.
-🚀 ENHANCED FEATURES: Integrated progress tracking, automatic parent context updates, blocker management, insight propagation, and intelligent workflow hints.
+⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 42 specialized agents covering development, testing, architecture, DevOps, documentation, and more.
+📋 WHEN TO USE: Agent registration, assignment, updates, and project agent management operations.
+🎯 CRITICAL FOR: Multi-agent orchestration, dynamic agent assignment, and project organization.
+📝 NOTE: For agent invocation/calling, use the separate 'call_agent' tool.
+🚀 AVAILABLE AGENTS (42 Total):
+  Development & Coding:
+    @coding_agent - Implementation and feature development
+    @debugger_agent - Bug fixing and troubleshooting
+    @code_reviewer_agent - Code quality and review
+    @prototyping_agent - Rapid prototyping and POCs
+    
+  Testing & QA:
+    @test_orchestrator_agent - Comprehensive test management
+    @uat_coordinator_agent - User acceptance testing
+    @performance_load_tester_agent - Performance and load testing
+    
+  Architecture & Design:
+    @system_architect_agent - System design and architecture
+    @design_system_agent - Design system and UI patterns
+    @ui_designer_expert_shadcn_agent - Shadcn/UI components and frontend
+    @core_concept_agent - Core concepts and fundamentals
+    
+  DevOps & Deployment:
+    @devops_agent - CI/CD and infrastructure
+    @adaptive_deployment_strategist_agent - Deployment strategies
+    @swarm_scaler_agent - Distributed systems scaling
+    
+  Documentation & Specs:
+    @documentation_agent - Technical documentation
+    @tech_spec_agent - Technical specifications
+    @prd_architect_agent - Product requirements documents
+    
+  Project & Planning:
+    @project_initiator_agent - Project setup and kickoff
+    @task_planning_agent - Task breakdown and planning
+    @uber_orchestrator_agent - Complex workflow orchestration
+    @elicitation_agent - Requirements gathering
+    
+  Security & Compliance:
+    @security_auditor_agent - Security audits and reviews
+    @compliance_scope_agent - Regulatory compliance
+    @ethical_review_agent - Ethical considerations
+    
+  Analytics & Optimization:
+    @analytics_setup_agent - Analytics and tracking setup
+    @efficiency_optimization_agent - Process optimization
+    @health_monitor_agent - System health monitoring
+    
+  Marketing & Growth:
+    @marketing_strategy_orchestrator_agent - Marketing strategy
+    @seo_sem_agent - SEO and SEM optimization
+    @growth_hacking_idea_agent - Growth strategies
+    @content_strategy_agent - Content planning
+    @community_strategy_agent - Community building
+    @branding_agent - Brand identity
+    
+  Research & Analysis:
+    @deep_research_agent - In-depth research
+    @mcp_researcher_agent - MCP and tool research
+    @root_cause_analysis_agent - Problem analysis
+    @technology_advisor_agent - Technology recommendations
+    
+  AI & Machine Learning:
+    @brainjs_ml_agent - Machine learning with Brain.js
+    
+  Configuration & Integration:
+    @mcp_configuration_agent - MCP setup and configuration
+    
+  Creative & Ideation:
+    @idea_generation_agent - Creative idea generation
+    @idea_refinement_agent - Idea improvement
+    
+  Problem Resolution:
+    @remediation_agent - Issue remediation and fixes
 
 | Action      | Required Parameters                  | Optional Parameters                | Description                                      |
 |-------------|-------------------------------------|------------------------------------|--------------------------------------------------|
@@ -23,94 +94,36 @@ UNIFIED_AGENT_DESCRIPTION = """
 | unassign    | project_id, agent_id, git_branch_id  |                                   | Remove agent from a task tree (branch)           |
 | unregister  | project_id, agent_id                |                                    | Remove agent from a project                      |
 | rebalance   | project_id                          |                                    | Rebalance agent assignments in a project         |
-| call        | name_agent                          | project_id                         | Load and invoke specific agent by name           |
 
 💡 USAGE GUIDELINES:
 • Provide all required identifiers for each action (see table above).
 • Optional parameters can be omitted unless updating values.
-• For call action, use @ prefix for agent names (e.g., '@uber_orchestrator_agent').
 • The tool returns detailed error messages for missing or invalid parameters, unknown actions, and internal errors.
-• All business logic is delegated to the application layer (AgentApplicationFacade and CallAgentUseCase).
-
-🔍 DECISION TREES FOR AGENT INVOCATION:
-IF work_type matches "debug|fix|error|bug|troubleshoot":
-    USE @debugger_agent
-ELIF work_type matches "implement|code|build|develop|create":
-    USE @coding_agent
-ELIF work_type matches "test|verify|validate|qa":
-    USE @test_orchestrator_agent
-ELIF work_type matches "plan|analyze|breakdown|organize":
-    USE @task_planning_agent
-ELIF work_type matches "design|ui|interface|ux|frontend":
-    USE @ui_designer_agent
-ELIF work_type matches "security|audit|vulnerability|penetration":
-    USE @security_auditor_agent
-ELIF work_type matches "deploy|infrastructure|devops|ci/cd":
-    USE @devops_agent
-ELIF work_type matches "document|guide|manual|readme":
-    USE @documentation_agent
-ELIF work_type matches "research|investigate|explore|study":
-    USE @deep_research_agent
-ELIF work_type matches "complex|orchestrate|coordinate|multi-step":
-    USE @uber_orchestrator_agent
-ELIF work_type matches "ml|machine learning|ai|neural":
-    USE @brainjs_ml_agent
-ELIF work_type matches "algorithm|optimize|performance":
-    USE @algorithmic_problem_solver_agent
-ELIF work_type matches "marketing|campaign|growth|seo":
-    USE @marketing_strategy_orchestrator_agent
-ELIF work_type matches "compliance|regulatory|legal":
-    USE @compliance_scope_agent
-ELIF work_type matches "architecture|system|design patterns":
-    USE @system_architect_agent
-ELIF work_type matches "workflow|process|automation":
-    USE @workflow_architect_agent
-ELIF work_type matches "api|integration|mcp":
-    USE @mcp_configuration_agent
-ELIF work_type matches "incident|postmortem|root cause":
-    USE @root_cause_analysis_agent
-ELIF work_type matches "project|initiative|kickoff":
-    USE @project_initiator_agent
-ELIF work_type matches "prototype|poc|proof of concept":
-    USE @prototyping_agent
-ELSE:
-    USE @uber_orchestrator_agent  # Default fallback
+• All business logic is delegated to the application layer (AgentApplicationFacade).
+• For invoking agents, use the separate 'call_agent' tool with agent names.
 
 🎯 USE CASES:
-• Register and manage agents across projects (register, assign, update)
-• Invoke @uber_orchestrator_agent for complex multi-step workflows
-• Call specialized agents like @code_architect_agent for code design
-• Call @task_planning_agent to plan a task, split it into subtasks, and assign them
-• Switch between role-specific agents for different task phases
-• Discover available agents before task delegation
-• Multi-agent collaboration and handoff scenarios
-• Project-wide agent management and lifecycle operations
+• Register agents to projects for specialized task handling
+• Assign agents to specific git branches (task trees)
+• Manage agent lifecycle (update, unassign, unregister)
+• List all agents in a project
+• Rebalance agent assignments across projects
 
-📊 WORKFLOW PATTERNS:
-1. Complex Task Orchestration:
-   - Start with @uber_orchestrator_agent
-   - Delegate to @task_planning_agent for breakdown
-   - Switch to specialized agents for execution
-   - Return to @uber_orchestrator_agent for integration
+📊 MANAGEMENT PATTERNS:
+1. Project Setup:
+   - Register required agents to project
+   - Assign agents to initial branches
+   - Configure agent metadata
 
-2. Feature Development:
-   - @task_planning_agent → @system_architect_agent → @coding_agent → @test_orchestrator_agent → @documentation_agent
+2. Team Expansion:
+   - Register additional specialized agents
+   - Assign to specific task areas
+   - Update agent configurations
 
-3. Bug Resolution:
-   - @debugger_agent → @root_cause_analysis_agent → @coding_agent → @test_orchestrator_agent
-
-4. Security Audit:
-   - @security_auditor_agent → @security_penetration_tester_agent → @compliance_testing_agent
-
-💡 BEST PRACTICES FOR AI:
-• Call agent BEFORE starting any work to ensure proper specialization
-• Use descriptive work type keywords to match decision tree
-• Switch agents when task nature changes significantly
-• Default to @uber_orchestrator_agent when unsure
-• Chain multiple agents for complex workflows
-• Maintain context between agent switches
-• Register agents to projects for persistent availability
-• Use assignment operations to bind agents to specific task trees
+3. Project Cleanup:
+   - Unassign agents from completed branches
+   - Unregister unused agents
+   - Rebalance remaining assignments
 
 🛑 ERROR HANDLING:
 • If required fields are missing, a clear error message is returned specifying which fields are needed.
@@ -135,85 +148,12 @@ ELSE:
 • Agents can collaborate as specified in their connectivity
 • Invalid agent names will result in an error with available agents list
 • Agents maintain context during task execution
-
-🔍 AVAILABLE AGENTS:
-    "@adaptive_deployment_strategist_agent"
-    "@algorithmic_problem_solver_agent"
-    "@analytics_setup_agent"
-    "@brainjs_ml_agent"
-    "@branding_agent"
-    "@campaign_manager_agent"
-    "@code_reviewer_agent"
-    "@coding_agent"
-    "@community_strategy_agent"
-    "@compliance_scope_agent"
-    "@compliance_testing_agent"
-    "@content_strategy_agent"
-    "@core_concept_agent"
-    "@debugger_agent"
-    "@deep_research_agent"
-    "@design_qa_analyst"
-    "@design_qa_analyst_agent"
-    "@design_system_agent"
-    "@development_orchestrator_agent"
-    "@devops_agent"
-    "@documentation_agent"
-    "@efficiency_optimization_agent"
-    "@elicitation_agent"
-    "@ethical_review_agent"
-    "@exploratory_tester_agent"
-    "@functional_tester_agent"
-    "@generic_purpose_agent"
-    "@graphic_design_agent"
-    "@growth_hacking_idea_agent"
-    "@health_monitor_agent"
-    "@idea_generation_agent"
-    "@idea_refinement_agent"
-    "@incident_learning_agent"
-    "@knowledge_evolution_agent"
-    "@lead_testing_agent"
-    "@market_research_agent"
-    "@marketing_strategy_orchestrator"
-    "@marketing_strategy_orchestrator_agent"
-    "@mcp_configuration_agent"
-    "@mcp_researcher_agent"
-    "@nlu_processor_agent"
-    "@performance_load_tester_agent"
-    "@prd_architect_agent"
-    "@project_initiator_agent"
-    "@prototyping_agent"
-    "@remediation_agent"
-    "@root_cause_analysis_agent"
-    "@scribe_agent"
-    "@security_auditor_agent"
-    "@security_penetration_tester_agent"
-    "@seo_sem_agent"
-    "@social_media_setup_agent"
-    "@swarm_scaler_agent"
-    "@system_architect_agent"
-    "@task_deep_manager_agent"
-    "@task_planning_agent"
-    "@task_sync_agent"
-    "@tech_spec_agent"
-    "@technology_advisor_agent"
-    "@test_case_generator_agent"
-    "@test_orchestrator_agent"
-    "@uat_coordinator_agent"
-    "@uber_orchestrator_agent"
-    "@ui_designer_agent"
-    "@ui_designer_expert_shadcn_agent"
-    "@usability_heuristic_agent"
-    "@user_feedback_collector_agent"
-    "@ux_researcher_agent"
-    "@video_production_agent"
-    "@visual_regression_testing_agent"
-    "@workflow_architect_agent"
 """
 
 UNIFIED_AGENT_PARAMETERS_DESCRIPTION = {
-    "action": "Agent operation to perform. Valid values: register, assign, get, list, update, unassign, unregister, rebalance, call",
-    "project_id": "[REQUIRED for management actions] Project identifier for agent management. Optional for call action",
-    "agent_id": "[OPTIONAL] Agent identifier. Required for most management actions except register/list/rebalance/call",
+    "action": "Agent operation to perform. Valid values: register, assign, get, list, update, unassign, unregister, rebalance",
+    "project_id": "[REQUIRED] Project identifier for agent management",
+    "agent_id": "[OPTIONAL] Agent identifier. Required for most actions except register/list/rebalance",
     "name": "[OPTIONAL] Agent name. Required for register, optional for update",
     "call_agent": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
     "git_branch_id": "[OPTIONAL] Task tree identifier. Required for assign/unassign actions",

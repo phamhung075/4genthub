@@ -230,11 +230,11 @@ class DDDCompliantMCPTools:
         # Register unified agent management and invocation tools
         self._register_agent_tools(mcp)
         
+        # Register call_agent tool separately for backward compatibility
+        self._register_call_agent_tool(mcp)
+        
         # Register cursor rules tools
         self._register_cursor_rules_tools(mcp)
-        
-        # Call agent functionality now integrated into unified agent controller
-        # self._register_call_agent_tool(mcp)  # Deprecated - functionality merged
         
         
         
@@ -293,10 +293,12 @@ class DDDCompliantMCPTools:
             logger.info("Cursor rules tools disabled - module not available")
     
     def _register_call_agent_tool(self, mcp: "FastMCP"):
-        """Register call agent MCP tools via controller - DEPRECATED: now handled by unified agent controller"""
-        # No longer needed - call functionality integrated into unified agent controller
-        logger.info("Call agent functionality is now integrated into the unified agent controller")
-        pass
+        """Register call agent MCP tool via controller"""
+        if self._call_agent_controller:
+            self._call_agent_controller.register_tools(mcp)
+            logger.info("Call agent tool registered successfully")
+        else:
+            logger.warning("Call agent controller not available - skipping call_agent tool registration")
     
     
     

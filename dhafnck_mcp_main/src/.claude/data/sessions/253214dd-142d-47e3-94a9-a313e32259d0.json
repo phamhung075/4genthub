@@ -1,0 +1,10 @@
+{
+  "session_id": "253214dd-142d-47e3-94a9-a313e32259d0",
+  "prompts": [
+    " Tools for dhafnck_mcp_http (12 tools) not include call agent",
+    "you need registre tool like other tools",
+    "name agents on desction need match update , i have remove reste 40+ agents\ndhafnck_mcp_main/agent-library/agents",
+    "why have dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller?\nexist dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller",
+    "no call agent need separate from manage_agent remove action=\"call\""
+  ]
+}

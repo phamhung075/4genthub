@@ -140,78 +140,76 @@ ELSE:
 • Each agent has specialized knowledge and capabilities
 • Agents can collaborate as specified in their connectivity
 
-🔍 AVAILABLE AGENTS:
-    "@adaptive_deployment_strategist_agent"
-    "@algorithmic_problem_solver_agent"
-    "@analytics_setup_agent"
-    "@brainjs_ml_agent"
-    "@branding_agent"
-    "@campaign_manager_agent"
-    "@code_reviewer_agent"
-    "@coding_agent"
-    "@community_strategy_agent"
-    "@compliance_scope_agent"
-    "@compliance_testing_agent"
-    "@content_strategy_agent"
-    "@core_concept_agent"
-    "@debugger_agent"
-    "@deep_research_agent"
-    "@design_qa_analyst"
-    "@design_qa_analyst_agent"
-    "@design_system_agent"
-    "@development_orchestrator_agent"
-    "@devops_agent"
-    "@documentation_agent"
-    "@efficiency_optimization_agent"
-    "@elicitation_agent"
-    "@ethical_review_agent"
-    "@exploratory_tester_agent"
-    "@functional_tester_agent"
-    "@generic_purpose_agent"
-    "@graphic_design_agent"
-    "@growth_hacking_idea_agent"
-    "@health_monitor_agent"
-    "@idea_generation_agent"
-    "@idea_refinement_agent"
-    "@incident_learning_agent"
-    "@knowledge_evolution_agent"
-    "@lead_testing_agent"
-    "@market_research_agent"
-    "@marketing_strategy_orchestrator"
-    "@marketing_strategy_orchestrator_agent"
-    "@mcp_configuration_agent"
-    "@mcp_researcher_agent"
-    "@nlu_processor_agent"
-    "@performance_load_tester_agent"
-    "@prd_architect_agent"
-    "@project_initiator_agent"
-    "@prototyping_agent"
-    "@remediation_agent"
-    "@root_cause_analysis_agent"
-    "@scribe_agent"
-    "@security_auditor_agent"
-    "@security_penetration_tester_agent"
-    "@seo_sem_agent"
-    "@social_media_setup_agent"
-    "@swarm_scaler_agent"
-    "@system_architect_agent"
-    "@task_deep_manager_agent"
-    "@task_planning_agent"
-    "@task_sync_agent"
-    "@tech_spec_agent"
-    "@technology_advisor_agent"
-    "@test_case_generator_agent"
-    "@test_orchestrator_agent"
-    "@uat_coordinator_agent"
-    "@uber_orchestrator_agent"
-    "@ui_designer_agent"
-    "@ui_designer_expert_shadcn_agent"
-    "@usability_heuristic_agent"
-    "@user_feedback_collector_agent"
-    "@ux_researcher_agent"
-    "@video_production_agent"
-    "@visual_regression_testing_agent"
-    "@workflow_architect_agent"
+🚀 AVAILABLE AGENTS (42 Total):
+  Development & Coding:
+    @coding_agent - Implementation and feature development
+    @debugger_agent - Bug fixing and troubleshooting
+    @code_reviewer_agent - Code quality and review
+    @prototyping_agent - Rapid prototyping and POCs
+    
+  Testing & QA:
+    @test_orchestrator_agent - Comprehensive test management
+    @uat_coordinator_agent - User acceptance testing
+    @performance_load_tester_agent - Performance and load testing
+    
+  Architecture & Design:
+    @system_architect_agent - System design and architecture
+    @design_system_agent - Design system and UI patterns
+    @ui_designer_expert_shadcn_agent - Shadcn/UI components and frontend
+    @core_concept_agent - Core concepts and fundamentals
+    
+  DevOps & Deployment:
+    @devops_agent - CI/CD and infrastructure
+    @adaptive_deployment_strategist_agent - Deployment strategies
+    @swarm_scaler_agent - Distributed systems scaling
+    
+  Documentation & Specs:
+    @documentation_agent - Technical documentation
+    @tech_spec_agent - Technical specifications
+    @prd_architect_agent - Product requirements documents
+    
+  Project & Planning:
+    @project_initiator_agent - Project setup and kickoff
+    @task_planning_agent - Task breakdown and planning
+    @uber_orchestrator_agent - Complex workflow orchestration
+    @elicitation_agent - Requirements gathering
+    
+  Security & Compliance:
+    @security_auditor_agent - Security audits and reviews
+    @compliance_scope_agent - Regulatory compliance
+    @ethical_review_agent - Ethical considerations
+    
+  Analytics & Optimization:
+    @analytics_setup_agent - Analytics and tracking setup
+    @efficiency_optimization_agent - Process optimization
+    @health_monitor_agent - System health monitoring
+    
+  Marketing & Growth:
+    @marketing_strategy_orchestrator_agent - Marketing strategy
+    @seo_sem_agent - SEO and SEM optimization
+    @growth_hacking_idea_agent - Growth strategies
+    @content_strategy_agent - Content planning
+    @community_strategy_agent - Community building
+    @branding_agent - Brand identity
+    
+  Research & Analysis:
+    @deep_research_agent - In-depth research
+    @mcp_researcher_agent - MCP and tool research
+    @root_cause_analysis_agent - Problem analysis
+    @technology_advisor_agent - Technology recommendations
+    
+  AI & Machine Learning:
+    @brainjs_ml_agent - Machine learning with Brain.js
+    
+  Configuration & Integration:
+    @mcp_configuration_agent - MCP setup and configuration
+    
+  Creative & Ideation:
+    @idea_generation_agent - Creative idea generation
+    @idea_refinement_agent - Idea improvement
+    
+  Problem Resolution:
+    @remediation_agent - Issue remediation and fixes
 """
 
 CALL_AGENT_PARAMETERS_DESCRIPTION = {
