@@ -1,154 +1,220 @@
 Task(description: string, prompt: string, subagent_type: string): void
-Purpose: Launch specialized AI agents for complex, multi-step tasks
-autonomously
+// Launch specialized AI agents for complex multi-step tasks
+
 
 Bash(command: string, description?: string, run_in_background?:
 boolean, timeout?: number): void
-Purpose: Execute bash commands in a persistent shell session with
-optional timeout
+// Execute bash commands in a persistent shell session
+
 
 Glob(pattern: string, path?: string): void
-Purpose: Fast file pattern matching that works with any codebase size
+// Fast file pattern matching for finding files by name patterns
 
-Grep(pattern: string, path?: string, glob?: string, type?: string,
-output_mode?: string, -A?: number, -B?: number, -C?: number, -i?:
-boolean, -n?: boolean, multiline?: boolean, head_limit?: number): void
-Purpose: Powerful search tool built on ripgrep for searching file
-contents
+
+Grep(pattern: string, path?: string, output_mode?: string, glob?:
+string, type?: string, ...options): void
+// Powerful search tool using ripgrep for finding content in files
+
 
 ExitPlanMode(plan: string): void
-Purpose: Exit plan mode and prompt user for approval when ready to code
+// Exit plan mode after presenting implementation plan for coding tasks
+
 
 Read(file_path: string, limit?: number, offset?: number): void
-Purpose: Read files from the local filesystem including images, PDFs,
-and notebooks
+// Read files from the filesystem including images, PDFs, and notebooks
+
 
 Edit(file_path: string, old_string: string, new_string: string,
 replace_all?: boolean): void
-Purpose: Perform exact string replacements in files
+// Perform exact string replacements in files
+
 
 MultiEdit(file_path: string, edits: Array<{old_string: string,
 new_string: string, replace_all?: boolean}>): void
-Purpose: Make multiple edits to a single file in one operation
+// Make multiple edits to a single file in one operation
+
 
 Write(file_path: string, content: string): void
-Purpose: Write a file to the local filesystem
+// Write a file to the filesystem (overwrites existing files)
+
 
 NotebookEdit(notebook_path: string, new_source: string, cell_id?:
 string, cell_type?: string, edit_mode?: string): void
-Purpose: Replace contents of specific cells in Jupyter notebooks
+// Edit specific cells in Jupyter notebooks
+
 
 WebFetch(url: string, prompt: string): void
-Purpose: Fetch content from URLs and process with AI model
+// Fetch web content and process it with an AI model
+
 
 TodoWrite(todos: Array<{content: string, status: string, activeForm:
 string}>): void
-Purpose: Create and manage structured task lists for coding sessions
+// Create and manage structured task lists for coding sessions
+
 
 WebSearch(query: string, allowed_domains?: string[], blocked_domains?:
 string[]): void
-Purpose: Search the web and use results to inform responses
+// Search the web for up-to-date information
+
 
 BashOutput(bash_id: string, filter?: string): void
-Purpose: Retrieve output from running or completed background bash
-shells
+// Retrieve output from running or completed background bash shells
+
 
 KillBash(shell_id: string): void
-Purpose: Terminate a running background bash shell by its ID
+// Terminate a running background bash shell
 
-ListMcpResourcesTool(server?: string): void
-Purpose: List available resources from configured MCP servers
-
-ReadMcpResourceTool(server: string, uri: string): void
-Purpose: Read specific resources from MCP servers
-
-mcp__dhafnck_mcp_http__validate_token(token: string): void
-Purpose: Validate an authentication token
-
-mcp__dhafnck_mcp_http__get_rate_limit_status(token: string): void
-Purpose: Get rate limit status for a token
-
-mcp__dhafnck_mcp_http__revoke_token(token: string): void
-Purpose: Revoke an authentication token
-
-mcp__dhafnck_mcp_http__get_auth_status(): void
-Purpose: Get authentication system status
-
-mcp__dhafnck_mcp_http__generate_token(): void
-Purpose: Generate new secure authentication token (deprecated)
-
-mcp__dhafnck_mcp_http__manage_connection(include_details?: boolean,
-user_id?: string): void
-Purpose: Basic health check endpoint for system monitoring
 
 mcp__sequential-thinking__sequentialthinking(thought: string,
 nextThoughtNeeded: boolean, thoughtNumber: number, totalThoughts:
-number, isRevision?: boolean, revisesThought?: number,
-branchFromThought?: number, branchId?: string, needsMoreThoughts?:
-boolean): void
-Purpose: Dynamic problem-solving through flexible chain of thought
-reasoning
+number, ...options): void
+// Dynamic problem-solving through flexible chain of thought analysis
+
+
+mcp__dhafnck_mcp_http__manage_task(action: string, git_branch_id?:
+string, task_id?: string, title?: string, ...options): void
+// Complete task lifecycle operations with vision system integration
+
+
+mcp__dhafnck_mcp_http__manage_subtask(action: string, task_id?: string,
+subtask_id?: string, title?: string, ...options): void
+// Hierarchical task decomposition with automatic context updates
+
+
+mcp__dhafnck_mcp_http__manage_context(action: string, level?: string,
+context_id?: string, data?: string, ...options): void
+// 4-tier hierarchical context management (Global → Project → Branch → 
+Task)
+
+
+mcp__dhafnck_mcp_http__manage_project(action: string, project_id?:
+string, name?: string, description?: string, ...options): void
+// Complete project lifecycle and multi-project orchestration
+
+
+mcp__dhafnck_mcp_http__manage_git_branch(action: string, project_id?:
+string, git_branch_id?: string, git_branch_name?: string, ...options):
+void
+// Git branch operations and task tree organization
+
+
+mcp__dhafnck_mcp_http__manage_agent(action: string, project_id?:
+string, agent_id?: string, name?: string, ...options): void
+// Agent registration, assignment, and lifecycle management
+
+
+mcp__dhafnck_mcp_http__validate_token(token: string): void
+// Validate an authentication token
+
+
+mcp__dhafnck_mcp_http__get_rate_limit_status(token: string): void
+// Get rate limit status for a token
+
+
+mcp__dhafnck_mcp_http__revoke_token(token: string): void
+// Revoke an authentication token
+
+
+mcp__dhafnck_mcp_http__get_auth_status(): void
+// Get authentication system status
+
+
+mcp__dhafnck_mcp_http__generate_token(): void
+// Generate authentication token (deprecated - use API endpoint)
+
+
+mcp__dhafnck_mcp_http__manage_connection(include_details?: boolean,
+user_id?: string): void
+// Basic health check for system monitoring
+
+
+ListMcpResourcesTool(server?: string): void
+// List available resources from configured MCP servers
+
+
+ReadMcpResourceTool(server: string, uri: string): void
+// Read specific resource from an MCP server
+
 
 mcp__shadcn-ui-server__list-components(): void
-Purpose: List available shadcn/ui components
+// List available shadcn/ui components
+
 
 mcp__shadcn-ui-server__get-component-docs(component: string): void
-Purpose: Get documentation for specific shadcn/ui components
+// Get documentation for a specific shadcn/ui component
+
 
 mcp__shadcn-ui-server__install-component(component: string, runtime?:
 string): void
-Purpose: Install shadcn/ui components
+// Install a shadcn/ui component
+
 
 mcp__shadcn-ui-server__list-blocks(): void
-Purpose: List available shadcn/ui blocks
+// List available shadcn/ui blocks
+
 
 mcp__shadcn-ui-server__get-block-docs(block: string): void
-Purpose: Get documentation for specific shadcn/ui blocks
+// Get documentation for a specific shadcn/ui block
+
 
 mcp__shadcn-ui-server__install-blocks(block: string, runtime?: string):
 void
-Purpose: Install shadcn/ui blocks
+// Install shadcn/ui blocks
+
 
 mcp__ide__getDiagnostics(uri?: string): void
-Purpose: Get language diagnostics from VS Code
+// Get language diagnostics from VS Code
+
 
 mcp__ide__executeCode(code: string): void
-Purpose: Execute Python code in Jupyter kernel
+// Execute Python code in Jupyter kernel
+
 
 mcp__browsermcp__browser_navigate(url: string): void
-Purpose: Navigate browser to a URL
+// Navigate browser to a URL
+
 
 mcp__browsermcp__browser_go_back(): void
-Purpose: Navigate browser to previous page
+// Navigate back in browser history
+
 
 mcp__browsermcp__browser_go_forward(): void
-Purpose: Navigate browser to next page
+// Navigate forward in browser history
+
 
 mcp__browsermcp__browser_snapshot(): void
-Purpose: Capture accessibility snapshot of current browser page
+// Capture accessibility snapshot of current page
+
 
 mcp__browsermcp__browser_click(element: string, ref: string): void
-Purpose: Click on web page elements
+// Click on a web page element
+
 
 mcp__browsermcp__browser_hover(element: string, ref: string): void
-Purpose: Hover over web page elements
+// Hover over a web page element
+
 
 mcp__browsermcp__browser_type(element: string, ref: string, text:
 string, submit: boolean): void
-Purpose: Type text into editable web elements
+// Type text into an editable element
+
 
 mcp__browsermcp__browser_select_option(element: string, ref: string,
 values: string[]): void
-Purpose: Select options in dropdowns
+// Select option(s) in a dropdown
+
 
 mcp__browsermcp__browser_press_key(key: string): void
-Purpose: Press keyboard keys in browser
+// Press a keyboard key
+
 
 mcp__browsermcp__browser_wait(time: number): void
-Purpose: Wait for specified time in seconds
+// Wait for specified time in seconds
+
 
 mcp__browsermcp__browser_get_console_logs(): void
-Purpose: Get console logs from browser
+// Get browser console logs
+
 
 mcp__browsermcp__browser_screenshot(): void
-Purpose: Take screenshot of current browser page
+// Take a screenshot of the current browser page
