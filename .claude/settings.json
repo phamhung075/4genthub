@@ -18,9 +18,10 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run .claude/status_lines/status_line.py",
+    "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/status_lines/status_line.py",
     "padding": 0
   },
+  "includeCoAuthoredBy": false,
   "hooks": {
     "PreToolUse": [
       {
@@ -28,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/pre_tool_use.py"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py"
           }
         ]
       }
@@ -39,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/post_tool_use.py"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/post_tool_use.py"
           }
         ]
       }
@@ -50,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/notification.py --notify"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/notification.py --notify"
           }
         ]
       }
@@ -61,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/stop.py --chat"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/stop.py --chat"
           }
         ]
       }
@@ -72,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/subagent_stop.py --notify"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/subagent_stop.py --notify"
           }
         ]
       }
@@ -82,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/user_prompt_submit.py --log-only --store-last-prompt --name-agent"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/user_prompt_submit.py --log-only --store-last-prompt --name-agent"
           }
         ]
       }
@@ -93,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/pre_compact.py"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_compact.py"
           }
         ]
       }
@@ -104,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/hooks/session_start.py"
+            "command": "python3 /home/daihungpham/__projects__/agentic-project/.claude/hooks/session_start.py"
           }
         ]
       }

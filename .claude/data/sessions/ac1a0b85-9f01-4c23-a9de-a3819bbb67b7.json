@@ -1,0 +1,8 @@
+{
+  "session_id": "ac1a0b85-9f01-4c23-a9de-a3819bbb67b7",
+  "prompts": [
+    "/test-mcp ",
+    "for each prompt call agents to fix it"
+  ],
+  "agent_name": "Atlas"
+}

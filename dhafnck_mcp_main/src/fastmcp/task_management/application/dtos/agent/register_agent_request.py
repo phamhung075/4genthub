@@ -45,13 +45,27 @@ class RegisterAgentRequest:
             uuid.UUID(agent_id)
             return agent_id
         except ValueError:
-            # Not a valid UUID - auto-generate a new one
+            # Not a valid UUID - auto-generate a new one with enhanced error message
             new_id = str(uuid.uuid4())
             raise ValueError(
-                f"Agent ID '{agent_id}' is not a valid UUID. "
-                f"Agent IDs must be valid UUIDs. "
-                f"Auto-generated UUID: '{new_id}'. "
-                f"Please use this UUID or provide your own valid UUID."
+                f"AGENT ID FORMAT ERROR: '{agent_id}' is not a valid UUID.\n\n"
+                f"REQUIREMENT: Agent IDs must be valid UUIDs (Universally Unique Identifiers).\n\n"
+                f"VALID UUID FORMAT:\n"
+                f"  • Pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n"
+                f"  • Example: 4d5935de-d191-4c8f-ba89-802671fba5f6\n"
+                f"  • Length: 36 characters (32 hex digits + 4 hyphens)\n\n"
+                f"INVALID EXAMPLES:\n"
+                f"  ✗ 'coding-agent-001' (string with hyphens, not UUID)\n"
+                f"  ✗ 'agent123' (simple string)\n"
+                f"  ✗ '12345' (number as string)\n\n"
+                f"SOLUTIONS:\n"
+                f"  1. Use auto-generated UUID: '{new_id}'\n"
+                f"  2. Generate your own UUID using standard UUID generators\n"
+                f"  3. Omit agent_id parameter to auto-generate (recommended)\n\n"
+                f"HOW TO GENERATE UUIDs:\n"
+                f"  • Python: import uuid; str(uuid.uuid4())\n"
+                f"  • Online: https://www.uuidgenerator.net/\n"
+                f"  • Command line: uuidgen (macOS/Linux)"
             )
     
     def _validate_uuid(self, value: str, field_name: str) -> None:
