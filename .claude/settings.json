@@ -55,17 +55,17 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run .claude/hooks/stop.py --chat"
-          }
-        ]
-      }
-    ],
+    //"Stop": [
+    //  {
+    //    "matcher": "",
+    //    "hooks": [
+    //      {
+    //        "type": "command",
+    //        "command": "uv run .claude/hooks/stop.py --chat"
+    //      }
+    //    ]
+    //  }
+    //],
     "SubagentStop": [
       {
         "matcher": "",
