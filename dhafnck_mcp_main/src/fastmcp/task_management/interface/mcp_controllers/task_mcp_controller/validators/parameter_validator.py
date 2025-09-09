@@ -71,8 +71,8 @@ class ParameterValidator:
         
         if assignees and not self._is_valid_assignees_list(assignees):
             return False, self._create_validation_error(
-                "assignees", "A list of valid user identifiers",
-                "Assignees should be a list of strings"
+                "assignees", "A list of valid agent identifiers or user IDs",
+                "Assignees should be agent identifiers (e.g., '@coding-agent') or user IDs (e.g., 'user123')"
             )
         
         if labels and not self._is_valid_labels_list(labels):
@@ -199,12 +199,29 @@ class ParameterValidator:
                 return False
     
     def _is_valid_assignees_list(self, assignees: List[str]) -> bool:
-        """Check if assignees list is valid."""
+        """Check if assignees list is valid.
+        
+        Accepts various assignee formats:
+        - Agent identifiers with @ prefix (e.g., "@coding-agent")
+        - Agent identifiers without @ prefix (e.g., "coding-agent") 
+        - User IDs (e.g., "user123")
+        """
         if not isinstance(assignees, list):
             return False
         
         for assignee in assignees:
             if not isinstance(assignee, str) or not assignee.strip():
+                return False
+                
+            # Allow agent identifiers with/without @ prefix and user IDs
+            # Basic validation: non-empty string with valid characters
+            clean_assignee = assignee.strip()
+            if not clean_assignee:
+                return False
+                
+            # Allow alphanumeric characters, hyphens, underscores, and @ prefix
+            import re
+            if not re.match(r'^@?[a-zA-Z0-9_-]+$', clean_assignee):
                 return False
         
         return True

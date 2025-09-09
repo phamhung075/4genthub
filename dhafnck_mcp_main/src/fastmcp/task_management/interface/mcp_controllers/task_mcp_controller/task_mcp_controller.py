@@ -220,19 +220,28 @@ class TaskMCPController(ContextPropagationMixin):
             
             # Handle flexible input types for parameters that can be string, list, or comma-separated
             if assignees is not None and isinstance(assignees, str):
-                # Convert comma-separated string to list if needed
+                # Convert string to list - support both single values and comma-separated values
                 if ',' in assignees:
-                    assignees = [a.strip() for a in assignees.split(',')]
+                    assignees = [a.strip() for a in assignees.split(',') if a.strip()]
+                else:
+                    # Single assignee - convert to list
+                    assignees = [assignees.strip()] if assignees.strip() else []
             
             if labels is not None and isinstance(labels, str):
-                # Convert comma-separated string to list if needed
+                # Convert string to list - support both single values and comma-separated values
                 if ',' in labels:
-                    labels = [l.strip() for l in labels.split(',')]
+                    labels = [l.strip() for l in labels.split(',') if l.strip()]
+                else:
+                    # Single label - convert to list
+                    labels = [labels.strip()] if labels.strip() else []
             
             if dependencies is not None and isinstance(dependencies, str):
-                # Convert comma-separated string to list if needed
+                # Convert string to list - support both single values and comma-separated values
                 if ',' in dependencies:
-                    dependencies = [d.strip() for d in dependencies.split(',')]
+                    dependencies = [d.strip() for d in dependencies.split(',') if d.strip()]
+                else:
+                    # Single dependency - convert to list
+                    dependencies = [dependencies.strip()] if dependencies.strip() else []
             
             # Convert string representations of integers to actual integers
             if limit is not None and not isinstance(limit, int):
