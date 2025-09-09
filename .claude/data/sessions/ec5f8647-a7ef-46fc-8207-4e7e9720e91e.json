@@ -1,0 +1,8 @@
+{
+  "session_id": "ec5f8647-a7ef-46fc-8207-4e7e9720e91e",
+  "prompts": [
+    ".claude/hooks/pre_compact.py not working, i see no file",
+    "verify all .claude/hooks is read or write to ./logs not .claude/logs"
+  ],
+  "agent_name": "Vertex"
+}
