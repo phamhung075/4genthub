@@ -10,10 +10,7 @@ from .dependency_mcp_controller.dependency_mcp_controller import DependencyMCPCo
 from .unified_context_controller.unified_context_controller import UnifiedContextMCPController
 from .project_mcp_controller.project_mcp_controller import ProjectMCPController
 from .git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
-from .agent_mcp_controller.agent_mcp_controller import UnifiedAgentMCPController
-
-# Maintain backward compatibility
-AgentMCPController = UnifiedAgentMCPController
+from .agent_mcp_controller import AgentMCPController, UnifiedAgentMCPController
 
 __all__ = [
     "TaskMCPController",
