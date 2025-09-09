@@ -11,8 +11,8 @@ agent_info:
     recommendation systems, NLP, computer vision, and time series forecasting with
     robust fallback strategies and performance monitoring.
   migration_date: '2025-06-30T11:55:00.270076'
-  name: "\U0001F9E0 Brain.js ML Agent"
-  slug: brainjs-ml-agent
+  name: "🤖 ML Specialist Agent"
+  slug: ml-specialist-agent
   usage_scenarios: Activate when implementing ML-powered features (recommendation
     engines, sentiment analysis, image classification), building predictive models
     for user behavior or business metrics, creating real-time inference systems

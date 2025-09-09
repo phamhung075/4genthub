@@ -7,8 +7,8 @@ agent_info:
     accessible, and beautifully designed React components that follow modern design
     principles.
   migration_date: '2025-06-30T11:55:00.128735'
-  name: "\U0001F3A8 Shadcn/UI Expert Agent"
-  slug: shadcn-ui-expert-agent
+  name: "🎨 UI Specialist Agent"
+  slug: ui-specialist-agent
   usage_scenarios: Activate when working with shadcn/ui components, building React
     applications with modern UI patterns, implementing design systems, or when expert
     guidance on component architecture and styling is needed. Essential for creating

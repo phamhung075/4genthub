@@ -1,5 +1,39 @@
 # TEST-CHANGELOG
 
+## [2025-09-09] - Role-Based Agent Tool Assignment Testing
+
+### Added
+- **🔐 Role-Based Agent Testing** (`dhafnck_mcp_main/src/tests/task_management/test_role_based_agents.py`)
+  - **Purpose**: Comprehensive validation of role-based tool assignment system
+  - **Test Coverage**:
+    1. **18 Agents Tested**: Complete coverage of all agent roles
+    2. **Three Role Categories**: COORDINATORS, FILE CREATORS, SPECIALISTS
+    3. **Tool Permission Validation**: Verify read/write/edit permissions per role
+    4. **Delegation Capability**: Confirm task management tools for all agents
+    5. **Domain Tool Verification**: Check specialized MCP tools per agent
+  - **Test Results**: ✅ 18/18 agents pass role validation (100% success rate)
+  - **Report Generation**: Automated markdown report with detailed per-agent results
+
+## [2025-09-09] - Claude Code Agent Delegation Testing
+
+### Added
+- **🔗 Call Agent Conversion Testing** (`dhafnck_mcp_main/src/tests/task_management/test_call_agent_conversion.py`)
+  - **Purpose**: Validate conversion of DhafnckMCP agent-library structure to Claude Code format
+  - **Test Coverage**:
+    1. **Multiple Agent Testing**: coding_agent, debugger_agent, security_auditor_agent
+    2. **Format Validation**: Verify proper frontmatter generation with name, description, tools
+    3. **System Prompt Extraction**: Test extraction from contexts/custom_instructions.yaml
+    4. **Capability Mapping**: Validate tool mapping from capability groups to Claude Code tools
+    5. **Response Structure**: Ensure claude_agent_definition field is properly populated
+  - **Integration Testing**: End-to-end validation of CallAgentUseCase → Claude Code format
+  - **Results**: ✅ All 3 test agents successfully converted with proper formatting
+
+### Documentation
+- **📚 Integration Guide** (`dhafnck_mcp_main/docs/integration-guides/claude-code-agent-delegation-guide.md`)
+  - Comprehensive usage examples and patterns
+  - Agent structure mapping documentation
+  - Troubleshooting and best practices
+
 ## [2025-01-13] - Comprehensive MCP Controller Unit Tests
 
 ### Added

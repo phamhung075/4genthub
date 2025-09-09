@@ -2,16 +2,9 @@ collaboration:
   agent_communication: true
   enabled: true
 command_execution:
-  enabled: true
+  enabled: false
   restrictions:
   - sandbox_mode
-  - research_only
-  allowed_commands:
-  - git log
-  - grep
-  - find
-  - stat
-  - ls
 file_operations:
   enabled: true
   permissions:
@@ -22,9 +15,6 @@ file_operations:
 mcp_tools:
   enabled: true
   tools:
-  - mcp__dhafnck_mcp_http__manage_task
-  - mcp__dhafnck_mcp_http__manage_subtask
-  - mcp__dhafnck_mcp_http__manage_agent
   - mcp__sequential-thinking__sequentialthinking
-  - WebFetch
-  - WebSearch
+  - mcp__dhafnck_mcp_http__manage_context
+  - mcp__dhafnck_mcp_http__manage_task
