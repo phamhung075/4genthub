@@ -1,0 +1,8 @@
+{
+  "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+  "prompts": [
+    "continue",
+    "name on dhafnck_mcp_main/agent-library/agents and .claude/agents must same, source of truth is  dhafnck_mcp_main/agent-library/agents, remove other if no exist on  dhafnck_mcp_main/agent-library/agents",
+    ".claude/agents/coding_agent.md and .claude/agents/ml_specialist_agent.md need correct, do not full here"
+  ]
+}
