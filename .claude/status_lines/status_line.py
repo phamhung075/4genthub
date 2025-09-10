@@ -21,7 +21,7 @@ except ImportError:
 
 # Import the path loader utilities
 sys.path.insert(0, str(Path(__file__).parent.parent / "hooks"))
-from utils.env_loader import get_ai_data_path, get_ai_docs_path, get_log_path
+from utils.env_loader import get_ai_data_path, get_ai_docs_path
 
 
 def log_status_line(input_data, status_line_output):
@@ -92,56 +92,50 @@ def get_git_status():
 
 
 def generate_status_line(input_data):
-    """Generate the status line based on input data."""
+    """Generate a beautiful but simple status line."""
     parts = []
     
-    # Model display name
+    # Model display name - clean and simple
     model_info = input_data.get('model', {})
     model_name = model_info.get('display_name', 'Claude')
-    parts.append(f"\033[36m[{model_name}]\033[0m")  # Cyan color
+    parts.append(f"\033[1;36m◆ {model_name}\033[0m")  # Bold cyan with diamond
     
-    # Current directory
+    # Current directory - just the name
     workspace = input_data.get('workspace', {})
     current_dir = workspace.get('current_dir', '')
     if current_dir:
         dir_name = os.path.basename(current_dir)
-        parts.append(f"\033[34m📁workplace: {dir_name}\033[0m")  # Blue color
+        parts.append(f"\033[94m{dir_name}\033[0m")  # Light blue
     
-    # Git branch and status
+    # Git branch with clean status
     git_branch = get_git_branch()
     if git_branch:
         git_status = get_git_status()
-        git_info = f"🌿git branch: {git_branch}"
         if git_status:
-            git_info += f" {git_status}"
-        parts.append(f"\033[32m{git_info}\033[0m")  # Green color
+            # Modified files indicator
+            parts.append(f"\033[92m{git_branch}\033[0m \033[93m{git_status}\033[0m")
+        else:
+            # Clean state
+            parts.append(f"\033[92m{git_branch} ✓\033[0m")
     
-    # Environment paths (compact display)
+    # Paths - always show for AI memory
     try:
         ai_data = get_ai_data_path()
         ai_docs = get_ai_docs_path()
-        log_path = get_log_path()
         
-        # Show just the folder names for compactness
-        paths_info = []
+        # Always show paths to help AI remember where things are
+        paths = []
         if ai_data:
-            paths_info.append(f"📊data path: {ai_data.name}")
+            paths.append(f"📊 {ai_data.name}")
         if ai_docs:
-            paths_info.append(f"📚docs path: {ai_docs.name}")
-        if log_path and log_path != ai_data:  # Don't show if same as AI_DATA
-            paths_info.append(f"📝log path: {log_path.name}")
+            paths.append(f"📚 {ai_docs.name}")
         
-        if paths_info:
-            parts.append(f"\033[35m{' '.join(paths_info)}\033[0m")  # Magenta color
+        if paths:
+            parts.append(f"\033[95m{' '.join(paths)}\033[0m")
     except Exception:
-        pass  # Fail silently if paths can't be loaded
+        pass
     
-    # Version info (optional, smaller)
-    version = input_data.get('version', '')
-    if version:
-        parts.append(f"\033[90mv{version}\033[0m")  # Gray color
-    
-    return " | ".join(parts)
+    return " • ".join(parts)  # Use bullet separator for cleaner look
 
 
 def main():
