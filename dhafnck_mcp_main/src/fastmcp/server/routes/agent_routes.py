@@ -332,6 +332,60 @@ async def get_project_agent_assignments(
         )
 
 
+@router.post("/call", response_model=dict)
+async def call_agent(
+    request: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Call an agent to get its information and capabilities.
+    
+    Args:
+        request: Dict with 'agent_name' and optional 'params'
+    
+    Returns agent information from the agent-library.
+    """
+    try:
+        agent_name = request.get("agent_name")
+        params = request.get("params", {})
+        
+        if not agent_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="agent_name is required"
+            )
+        
+        # Import the call_agent function directly
+        from ...task_management.application.use_cases.call_agent import call_agent as call_agent_func
+        
+        # Log the access for audit
+        logger.info(f"User {current_user.email} calling agent: {agent_name}")
+        
+        # Call the agent directly - it expects agent-library structure
+        result = call_agent_func(agent_name, format="json")
+        
+        logger.info(f"Agent call result: {result.get('success', False)}")
+        
+        # Add user context to result
+        if result.get("success"):
+            result["called_by"] = current_user.email
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calling agent {agent_name}: {e}", exc_info=True)
+        import traceback
+        return {
+            "success": False,
+            "message": "Failed to call agent",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @router.get("/capabilities", response_model=dict)
 async def get_agent_capabilities(
     current_user: User = Depends(get_current_user),
