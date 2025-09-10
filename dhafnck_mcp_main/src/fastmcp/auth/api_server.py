@@ -29,6 +29,9 @@ from fastmcp.server.routes.user_scoped_project_routes import router as user_scop
 from fastmcp.server.routes.user_scoped_context_routes import router as user_scoped_contexts_router
 from fastmcp.server.routes.token_router import router as token_router
 
+# Import version configuration
+from fastmcp.config.version import VERSION, VERSION_INFO
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -40,7 +43,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="DhafnckMCP Authentication API",
     description="Authentication service for DhafnckMCP platform",
-    version="1.0.0"
+    version=VERSION
 )
 
 # Configure CORS
@@ -77,17 +80,34 @@ logger.info("✅ Token management routes enabled at /api/v2/tokens/")
 #     app.include_router(dev_router)  # Development-only endpoints
 #     logger.warning("⚠️  Development endpoints enabled at /auth/dev/*")
 
-# Health check endpoint
+# Health check endpoint with version information
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "service": "auth-api"}
+    """Health check endpoint with version information"""
+    return {
+        "status": "healthy",
+        "service": "auth-api",
+        "version": VERSION,
+        "server_name": VERSION_INFO["name"],
+        "codename": VERSION_INFO.get("codename", ""),
+        "release_date": VERSION_INFO.get("release_date", "")
+    }
+
+# Public health endpoint (accessible without authentication)
+@app.get("/api/health")
+async def api_health_check():
+    """Public health check endpoint for frontend version display"""
+    return {
+        "status": "healthy",
+        "version": VERSION,
+        "server_name": VERSION_INFO["name"]
+    }
 
 # Root endpoint
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {"message": "DhafnckMCP Authentication API", "version": "1.0.0"}
+    return {"message": "DhafnckMCP Authentication API", "version": VERSION}
 
 def main():
     """Run the authentication API server"""

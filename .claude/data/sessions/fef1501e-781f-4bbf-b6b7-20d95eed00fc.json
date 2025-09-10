@@ -3,7 +3,14 @@
   "prompts": [
     "manage_connection need correction do not expose information sensible to user",
     "manage_connection call for show result",
-    "where i can set version ?"
+    "where i can set version ?",
+    "front end call this on page login for check version and display version on bottom right (just DEFAULT_VERSION)\nneed setup version for frontend\nDEFAULT_VERSION(front end) - DEFAULT_VERSION(backend)\n0.0.2 - 0.0.2c",
+    "  - Hover tooltip: Frontend: v0.0.2 | Backend: v0.0.2c no need",
+    "[plugin:vite:import-analysis] Failed to resolve import \"../../services/api\" from \"src/components/auth/LoginForm.tsx\". Does the file exist?\n/home/daihungpham/__projects__/agentic-project/dhafnck-frontend/src/components/auth/LoginForm.tsx:29:26\n44 |  import FallingGlitch from \"../effects/FallingGlitch\";\n45 |  import VersionDisplay from \"../VersionDisplay\";\n46 |  import { apiClient } from \"../../services/api\";\n   |                             ^\n47 |  export const LoginForm = () => {\n48 |    _s();\n    at TransformPluginContext._formatLog (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:31422:43)\n    at TransformPluginContext.error (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:31419:14)\n    at normalizeUrl (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:29891:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:29949:32\n    at async Promise.all (index 12)\n    at async TransformPluginContext.transform (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:29917:4)\n    at async EnvironmentPluginContainer.transform (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:31220:14)\n    at async loadAndTransform (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:26307:26)\n    at async viteTransformMiddleware (file:///home/daihungpham/__projects__/agentic-project/dhafnck-frontend/node_modules/vite/dist/node/chunks/dep-Bj7gA1-0.js:27392:20)",
+    "Uncaught SyntaxError: The requested module '/src/api.ts' does not provide an export named 'apiClient' (at LoginForm.tsx:29:10)",
+    "remove version api obsolete keep only last version",
+    "i need call api backend for get version backend for asumme it connect to backend",
+    "backend not connected ??"
   ],
   "agent_name": "Nova"
 }
