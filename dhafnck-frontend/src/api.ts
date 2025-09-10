@@ -373,13 +373,51 @@ export const listAgents = async (): Promise<any[]> => {
 };
 
 export const getAvailableAgents = async (): Promise<string[]> => {
-    try {
-        const agents = await listAgents();
-        return agents.map(a => a.name || a.id);
-    } catch (error) {
-        console.error('Error getting available agents:', error);
-        return [];
-    }
+    // Return all 42 available agents from the agent library
+    return [
+        '@coding-agent',
+        '@debugger-agent',
+        '@code-reviewer-agent',
+        '@prototyping-agent',
+        '@test-orchestrator-agent',
+        '@uat-coordinator-agent',
+        '@performance-load-tester-agent',
+        '@system-architect-agent',
+        '@design-system-agent',
+        '@ui-designer-expert-shadcn-agent',
+        '@core-concept-agent',
+        '@devops-agent',
+        '@adaptive-deployment-strategist-agent',
+        '@swarm-scaler-agent',
+        '@documentation-agent',
+        '@tech-spec-agent',
+        '@prd-architect-agent',
+        '@project-initiator-agent',
+        '@task-planning-agent',
+        '@uber-orchestrator-agent',
+        '@elicitation-agent',
+        '@security-auditor-agent',
+        '@compliance-scope-agent',
+        '@ethical-review-agent',
+        '@analytics-setup-agent',
+        '@efficiency-optimization-agent',
+        '@health-monitor-agent',
+        '@marketing-strategy-orchestrator-agent',
+        '@seo-sem-agent',
+        '@growth-hacking-idea-agent',
+        '@content-strategy-agent',
+        '@community-strategy-agent',
+        '@branding-agent',
+        '@deep-research-agent',
+        '@mcp-researcher-agent',
+        '@root-cause-analysis-agent',
+        '@technology-advisor-agent',
+        '@brainjs-ml-agent',
+        '@mcp-configuration-agent',
+        '@idea-generation-agent',
+        '@idea-refinement-agent',
+        '@remediation-agent'
+    ];
 };
 
 export const callAgent = async (agent_name: string, params?: any): Promise<any> => {
