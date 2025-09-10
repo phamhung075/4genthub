@@ -107,13 +107,18 @@ async def validate_keycloak_token(token: str) -> User:
         # Get the signing key from Keycloak
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         
-        # Decode and validate the token
+        # Decode and validate the token with clock skew tolerance
         payload = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
             audience="account",  # Keycloak default audience
-            options={"verify_aud": False}  # Disable audience verification for now
+            options={
+                "verify_aud": False,  # Disable audience verification for now
+                "verify_exp": True,
+                "verify_iat": True
+            },
+            leeway=30  # Allow 30 seconds of clock skew
         )
         
         # Extract user information from Keycloak token
@@ -178,8 +183,13 @@ def validate_local_token(token: str) -> User:
         )
     
     try:
-        # Decode the local JWT token
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        # Decode the local JWT token with clock skew tolerance
+        payload = jwt.decode(
+            token, 
+            JWT_SECRET_KEY, 
+            algorithms=[JWT_ALGORITHM],
+            leeway=30  # Allow 30 seconds of clock skew
+        )
         
         # Extract user information
         user_id = payload.get("sub") or payload.get("user_id")
