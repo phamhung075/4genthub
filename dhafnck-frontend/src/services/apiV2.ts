@@ -94,6 +94,13 @@ const refreshTokenAndRetry = async (): Promise<void> => {
   });
 
   if (!response.ok) {
+    // If refresh fails, clear tokens and redirect to login
+    if (response.status === 401) {
+      console.error('V2 API: Refresh token expired or invalid, clearing tokens');
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // The handleResponse function will redirect to login
+    }
     throw new Error('Token refresh failed');
   }
 
@@ -106,11 +113,14 @@ const refreshTokenAndRetry = async (): Promise<void> => {
     secure: import.meta.env.MODE === 'production'
   });
   
-  Cookies.set('refresh_token', data.refresh_token, { 
-    expires: 30,
-    sameSite: 'strict',
-    secure: import.meta.env.MODE === 'production'
-  });
+  // Only update refresh token if a new one is provided
+  if (data.refresh_token) {
+    Cookies.set('refresh_token', data.refresh_token, { 
+      expires: 30,
+      sameSite: 'strict',
+      secure: import.meta.env.MODE === 'production'
+    });
+  }
   
   console.log('V2 API: Token refreshed successfully');
 };

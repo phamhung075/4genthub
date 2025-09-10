@@ -227,14 +227,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
+        // If refresh token is invalid or expired, clear tokens
+        if (response.status === 401) {
+          console.error('Refresh token expired or invalid');
+          Cookies.remove('access_token');
+          Cookies.remove('refresh_token');
+          logout();
+        }
         throw new Error('Token refresh failed');
       }
 
       const data = await response.json();
-      setTokens({
+      
+      // Update tokens - refresh_token might not always be returned
+      const newTokens = {
         access_token: data.access_token,
-        refresh_token: data.refresh_token
-      });
+        refresh_token: data.refresh_token || refresh_token  // Use existing if not provided
+      };
+      
+      setTokens(newTokens);
+      
+      // Update user info from new access token
+      const userData = decodeToken(data.access_token);
+      if (userData) {
+        setUser(userData);
+      }
+      
     } catch (error) {
       console.error('Token refresh error:', error);
       logout();

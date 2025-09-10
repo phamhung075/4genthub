@@ -1,9 +1,10 @@
 import React from "react";
-import { Play, Info } from "lucide-react";
+import { Play, Info, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Checkbox } from "./ui/checkbox";
 import { Separator } from "./ui/separator";
+import { Input } from "./ui/input";
 import { Task } from "../api";
 import AgentInfoDialog from "./AgentInfoDialog";
 
@@ -31,6 +32,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
   const [selectedAgents, setSelectedAgents] = React.useState<string[]>([]);
   const [selectedAgentForInfo, setSelectedAgentForInfo] = React.useState<string | null>(null);
   const [agentInfoDialogOpen, setAgentInfoDialogOpen] = React.useState(false);
+  const [agentSearchQuery, setAgentSearchQuery] = React.useState("");
 
   // Update selected agents when task changes
   React.useEffect(() => {
@@ -61,6 +63,17 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
     setSelectedAgentForInfo(agentName);
     setAgentInfoDialogOpen(true);
   };
+
+  // Filter available agents based on search query
+  const filteredAvailableAgents = React.useMemo(() => {
+    if (!agentSearchQuery.trim()) {
+      return availableAgents;
+    }
+    const query = agentSearchQuery.toLowerCase();
+    return availableAgents.filter(agentName => 
+      agentName.toLowerCase().includes(query)
+    );
+  }, [availableAgents, agentSearchQuery]);
 
 
   return (
@@ -131,9 +144,26 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
           
           {/* Available Agents from Library */}
           <div>
-            <h4 className="font-medium text-sm mb-3">Available Agents from Library</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-sm">Available Agents from Library ({filteredAvailableAgents.length})</h4>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search agents..."
+                  value={agentSearchQuery}
+                  onChange={(e) => setAgentSearchQuery(e.target.value)}
+                  className="pl-8 pr-3 h-8 text-sm"
+                />
+              </div>
+            </div>
             <div className="space-y-2 max-h-[300px] overflow-y-auto border dark:border-gray-700 rounded p-2">
-              {availableAgents.map((agentName) => (
+              {filteredAvailableAgents.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {agentSearchQuery ? `No agents found matching "${agentSearchQuery}"` : "No agents available"}
+                </p>
+              ) : (
+                filteredAvailableAgents.map((agentName) => (
                 <div key={agentName} className="border dark:border-gray-700 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -166,7 +196,8 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                     </Button>
                   </div>
                 </div>
-              ))}
+              )))
+              }
             </div>
           </div>
           
