@@ -726,6 +726,7 @@ async def refresh_token(request: Request):
     except Exception as e:
         logger.error(f"Failed to parse request body: {e}")
         raise HTTPException(status_code=422, detail="Invalid request body")
+    
     if AUTH_PROVIDER == "keycloak":
         token_url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
         
@@ -739,6 +740,9 @@ async def refresh_token(request: Request):
             data["client_secret"] = KEYCLOAK_CLIENT_SECRET
         
         try:
+            logger.info(f"Attempting to refresh token for client: {KEYCLOAK_CLIENT_ID}")
+            logger.debug(f"Refresh token URL: {token_url}")
+            
             async with httpx.AsyncClient(verify=False) as client:
                 response = await client.post(
                     token_url,
@@ -746,22 +750,70 @@ async def refresh_token(request: Request):
                     headers={"Content-Type": "application/x-www-form-urlencoded"}
                 )
                 
+                logger.debug(f"Keycloak refresh response status: {response.status_code}")
+                
                 if response.status_code == 200:
                     token_data = response.json()
+                    
+                    # Parse the JWT to get user info (without validation, just for user_id)
+                    import jwt
+                    decoded = jwt.decode(token_data["access_token"], options={"verify_signature": False})
+                    
                     return {
                         "access_token": token_data["access_token"],
-                        "refresh_token": token_data.get("refresh_token"),
-                        "expires_in": token_data.get("expires_in")
+                        "refresh_token": token_data.get("refresh_token", refresh_token),  # Return same refresh token if not provided
+                        "expires_in": token_data.get("expires_in"),
+                        "user_id": decoded.get("sub"),
+                        "email": decoded.get("email")
                     }
+                elif response.status_code == 400:
+                    # Handle specific Keycloak errors
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get("error_description", error_data.get("error", ""))
+                        logger.error(f"Keycloak refresh token failed: {error_msg}")
+                        
+                        if "invalid_grant" in str(error_msg).lower():
+                            if "token is not active" in str(error_msg).lower() or "token expired" in str(error_msg).lower():
+                                raise HTTPException(
+                                    status_code=401, 
+                                    detail="Refresh token has expired. Please log in again."
+                                )
+                            else:
+                                raise HTTPException(
+                                    status_code=401,
+                                    detail="Invalid refresh token. Please log in again."
+                                )
+                        else:
+                            raise HTTPException(status_code=401, detail=f"Token refresh failed: {error_msg}")
+                    except:
+                        logger.error(f"Keycloak refresh token failed with status {response.status_code}: {response.text}")
+                        raise HTTPException(status_code=401, detail="Invalid refresh token")
                 else:
+                    logger.error(f"Unexpected response from Keycloak: {response.status_code} - {response.text}")
                     raise HTTPException(status_code=401, detail="Invalid refresh token")
                     
         except httpx.RequestError as e:
-            logger.error(f"Failed to refresh token: {e}")
+            logger.error(f"Failed to connect to Keycloak for token refresh: {e}")
             raise HTTPException(status_code=503, detail="Authentication service unavailable")
     
+    elif AUTH_PROVIDER == "supabase":
+        # For Supabase, implement refresh token logic here
+        raise HTTPException(
+            status_code=501, 
+            detail="Supabase token refresh is not yet implemented"
+        )
+    
     else:
-        raise HTTPException(status_code=501, detail="Token refresh not implemented for this provider")
+        # Test mode - return a dummy refreshed token
+        logger.info("Test mode: Returning dummy refreshed token")
+        return {
+            "access_token": "test-refreshed-token-" + str(int(time.time())),
+            "refresh_token": refresh_token,  # Return the same refresh token
+            "expires_in": 3600,
+            "user_id": "test-user-001",
+            "email": "test@example.com"
+        }
 
 async def cleanup_incomplete_account_internal(email: str) -> dict:
     """

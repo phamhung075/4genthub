@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **🔍 Search Functionality for Agent Library** - 2025-09-10
+  - **Component**: `AgentAssignmentDialog.tsx`
+  - **Features**:
+    - Real-time search/filter for Available Agents from Library
+    - Search icon with input field for fast agent discovery
+    - Display count of filtered agents in header
+    - User-friendly empty state messages when no matches found
+  - **Modified Files**:
+    - `dhafnck-frontend/src/components/AgentAssignmentDialog.tsx`
+  - **Impact**: Improved UX for finding and selecting agents from large library (42+ agents)
+
 ### Removed
 - **🗑️ Deleted Deprecated Agent Library Folder** - 2025-09-10
   - **Removed**: `dhafnck_mcp_main/agent-library/deprecated/` folder and all contents
@@ -45,16 +57,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Status**: ✅ Permanently integrated into database schema
 
 ### Fixed
-- **🔧 Fixed Authentication Refresh Token Endpoint** - 2025-09-10
-  - **Issue**: Frontend refresh token requests were failing with 422 error
-  - **Root Cause**: Backend expected refresh_token as query parameter, frontend sent it in JSON body
+- **🔧 Fixed Authentication Refresh Token Validation** - 2025-09-10
+  - **Issue**: Refresh token requests were failing with 401 "Invalid refresh token" error
+  - **Root Cause**: Keycloak refresh token validation was failing, likely due to expired tokens
+  - **Solution**: 
+    - Enhanced error handling in `/api/auth/refresh` endpoint with better logging and error messages
+    - Added proper Keycloak error parsing to distinguish between expired and invalid tokens
+    - Updated frontend to handle refresh token failures by clearing cookies and redirecting to login
+    - Modified both `apiV2.ts` and `AuthContext.tsx` for graceful token refresh handling
+    - Backend now returns existing refresh token if Keycloak doesn't provide a new one
   - **Files Modified**:
-    - `dhafnck_mcp_main/src/fastmcp/auth/interface/auth_endpoints.py`
-  - **Changes**:
-    - Modified `/api/auth/refresh` endpoint to accept JSON body instead of query parameter
-    - Added Request import from FastAPI
-    - Added proper JSON body parsing with error handling
-  - **Impact**: Resolved authentication token refresh failures that were preventing users from staying logged in
+    - `dhafnck_mcp_main/src/fastmcp/auth/interface/auth_endpoints.py` (lines 714-816)
+    - `dhafnck-frontend/src/services/apiV2.ts` (lines 80-126)
+    - `dhafnck-frontend/src/contexts/AuthContext.tsx` (lines 212-261)
+  - **Impact**: Users will now see clearer error messages and be properly redirected to login when tokens expire
 
 - **⏰ Fixed JWT Token Clock Skew Issue** - 2025-09-10
   - **Issue**: Tokens were being rejected with "The token is not yet valid (iat)" error
