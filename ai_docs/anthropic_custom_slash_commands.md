@@ -21,7 +21,7 @@
 | `/mcp`                    | Manage MCP server connections and OAuth authentication                         |
 | `/memory`                 | Edit CLAUDE.md memory files                                                    |
 | `/model`                  | Select or change the AI model                                                  |
-| `/permissions`            | View or update [permissions](/en/docs/claude-code/iam#configuring-permissions) |
+| `/permissions`            | View or update [permissions](/en/ai_docs/claude-code/iam#configuring-permissions) |
 | `/pr_comments`            | View pull request comments                                                     |
 | `/review`                 | Request code review                                                            |
 | `/status`                 | View account and system statuses                                               |
@@ -126,7 +126,7 @@ Based on the above changes, create a single git commit.
 
 #### File references
 
-Include file contents in commands using the `@` prefix to [reference files](/en/docs/claude-code/common-workflows#reference-files-and-directories).
+Include file contents in commands using the `@` prefix to [reference files](/en/ai_docs/claude-code/common-workflows#reference-files-and-directories).
 
 For example:
 
@@ -142,7 +142,7 @@ Compare @src/old-version.js with @src/new-version.js
 
 #### Thinking mode
 
-Slash commands can trigger extended thinking by including [extended thinking keywords](/en/docs/claude-code/common-workflows#use-extended-thinking).
+Slash commands can trigger extended thinking by including [extended thinking keywords](/en/ai_docs/claude-code/common-workflows#use-extended-thinking).
 
 ### Frontmatter
 
@@ -153,7 +153,7 @@ Command files support frontmatter, useful for specifying metadata about the comm
 | `allowed-tools` | List of tools the command can use                                                                                                                                                     | Inherits from the conversation      |
 | `argument-hint` | The arguments expected for the slash command. Example: `argument-hint: add [tagId] \| remove [tagId] \| list`. This hint is shown to the user when auto-completing the slash command. | None                                |
 | `description`   | Brief description of the command                                                                                                                                                      | Uses the first line from the prompt |
-| `model`         | Specific model string (see [Models overview](/en/docs/about-claude/models/overview))                                                                                                  | Inherits from the conversation      |
+| `model`         | Specific model string (see [Models overview](/en/ai_docs/about-claude/models/overview))                                                                                                  | Inherits from the conversation      |
 
 For example:
 
@@ -221,7 +221,7 @@ Use the `/mcp` command to:
 
 ## See also
 
-* [Interactive mode](/en/docs/claude-code/interactive-mode) - Shortcuts, input modes, and interactive features
-* [CLI reference](/en/docs/claude-code/cli-reference) - Command-line flags and options
-* [Settings](/en/docs/claude-code/settings) - Configuration options
-* [Memory management](/en/docs/claude-code/memory) - Managing Claude's memory across sessions
+* [Interactive mode](/en/ai_docs/claude-code/interactive-mode) - Shortcuts, input modes, and interactive features
+* [CLI reference](/en/ai_docs/claude-code/cli-reference) - Command-line flags and options
+* [Settings](/en/ai_docs/claude-code/settings) - Configuration options
+* [Memory management](/en/ai_docs/claude-code/memory) - Managing Claude's memory across sessions

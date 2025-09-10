@@ -298,7 +298,7 @@ class TestNextTaskUseCaseExecute:
         assert result.next_item["subtask"]["title"] == "Subtask 1"
         assert "Work on subtask 'Subtask 1'" in result.message
         
-        # Should generate docs for both task and subtask assignees
+        # Should generate ai_docs for both task and subtask assignees
         assert mock_generate_docs.call_count == 2
     
     @pytest.mark.asyncio

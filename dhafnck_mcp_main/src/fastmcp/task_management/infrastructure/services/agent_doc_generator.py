@@ -169,7 +169,7 @@ class AgentDocGenerator:
             f.write('\n'.join(md_lines))
     
     def generate_docs_for_assignees(self, assignees: Optional[List[str]], clear_all: bool = False):
-        """Generate agent docs for all unique assignees in the list."""
+        """Generate agent ai_docs for all unique assignees in the list."""
         if not assignees:
             return
             
@@ -221,7 +221,7 @@ def generate_agent_docs(agent_name=None, clear_all=False):
 
 
 def generate_docs_for_assignees(assignees, clear_all=False):
-    """Generate agent docs for all unique assignees in the list."""
+    """Generate agent ai_docs for all unique assignees in the list."""
     try:
         generator = AgentDocGenerator(
             agent_yaml_lib=AGENT_YAML_LIB,
@@ -232,13 +232,13 @@ def generate_docs_for_assignees(assignees, clear_all=False):
         # Log error and continue gracefully - don't break task operations
         import logging
         logger = logging.getLogger(__name__)
-        logger.warning(f"Could not generate agent docs for assignees {assignees}: {e}")
+        logger.warning(f"Could not generate agent ai_docs for assignees {assignees}: {e}")
         # Return silently to not break task operations
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate agent documentation.")
     parser.add_argument('--agent', type=str, help='Name of the agent directory (e.g., coding_agent)')
-    parser.add_argument('--clear-all', action='store_true', help='Clear all agent docs before generating')
+    parser.add_argument('--clear-all', action='store_true', help='Clear all agent ai_docs before generating')
     args = parser.parse_args()
     generate_agent_docs(agent_name=args.agent, clear_all=args.clear_all) 

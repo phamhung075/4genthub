@@ -66,7 +66,7 @@ ELIF branch_type == "security":
     ASSIGN @security_auditor_agent
 ELIF branch_type == "test":
     ASSIGN @test_orchestrator_agent
-ELIF branch_type == "docs":
+ELIF branch_type == "ai_docs":
     ASSIGN @documentation_agent
 
 🛑 ERROR HANDLING:

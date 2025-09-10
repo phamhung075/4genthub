@@ -143,4 +143,4 @@ For migration issues:
 2. Verify user permissions
 3. Review RLS policy configurations
 4. Test with minimal data set
-5. Consult troubleshooting guides in `docs/troubleshooting-guides/`
+5. Consult troubleshooting guides in `ai_docs/troubleshooting-guides/`

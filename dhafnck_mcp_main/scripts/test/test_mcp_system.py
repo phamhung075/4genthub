@@ -29,7 +29,7 @@ def test_api_endpoints():
     """Test various API endpoints"""
     endpoints = [
         ("/", "GET"),
-        ("/docs", "GET"),
+        ("/ai_docs", "GET"),
         ("/mcp/manage_task", "POST"),
         ("/mcp/manage_context", "POST"),
         ("/mcp/manage_project", "POST"),

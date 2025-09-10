@@ -311,7 +311,7 @@ class TestTaskRepositoryFindOperations:
                 status=TaskStatus.done(),
                 priority=Priority.low(),
                 assignees=["@documentation_agent"],
-                labels=["docs"]
+                labels=["ai_docs"]
             ),
             Task.create(
                 id=TaskId.from_string("550e8400-e29b-41d4-a716-446655440004"),
@@ -416,7 +416,7 @@ class TestTaskRepositoryFindOperations:
         assert bug_tasks[0].title == "High Priority Bug"
         
         # Find tasks with multiple labels (OR operation)
-        ui_or_docs_tasks = populated_repo.find_by_labels(["ui", "docs"])
+        ui_or_docs_tasks = populated_repo.find_by_labels(["ui", "ai_docs"])
         assert len(ui_or_docs_tasks) == 2
         
         # Find tasks with non-existent label

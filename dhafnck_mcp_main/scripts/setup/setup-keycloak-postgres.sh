@@ -31,7 +31,7 @@ echo -e "\n${YELLOW}Step 1: Checking prerequisites...${NC}"
 # Check Docker
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}❌ Docker is not installed${NC}"
-    echo "Please install Docker: https://docs.docker.com/get-docker/"
+    echo "Please install Docker: https://ai_docs.docker.com/get-docker/"
     exit 1
 fi
 echo -e "${GREEN}✓ Docker is installed${NC}"
@@ -39,7 +39,7 @@ echo -e "${GREEN}✓ Docker is installed${NC}"
 # Check Docker Compose
 if ! command -v docker-compose &> /dev/null; then
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
-    echo "Please install Docker Compose: https://docs.docker.com/compose/install/"
+    echo "Please install Docker Compose: https://ai_docs.docker.com/compose/install/"
     exit 1
 fi
 echo -e "${GREEN}✓ Docker Compose is installed${NC}"

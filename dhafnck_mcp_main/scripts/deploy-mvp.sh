@@ -166,7 +166,7 @@ cat << EOF
 🔗 Quick Start:
    docker run -p 8000:8000 dhafnck/mcp-server:$VERSION
 
-📖 Full documentation available in docs/
+📖 Full documentation available in ai_docs/
 
 Thank you for using DhafnckMCP! 🎉
 
@@ -191,7 +191,7 @@ $([ "$PRODUCTION_MODE" = "production" ] && echo "- ✅ Docker image published to
 ### Access Information:
 - **Docker Image**: \`dhafnck/mcp-server:$VERSION\`
 - **Frontend**: Check Vercel deployment output
-- **Documentation**: Available in \`docs/\` directory
+- **Documentation**: Available in \`ai_docs/\` directory
 
 ### Post-Deployment Tasks:
 - [ ] Verify all services are running correctly

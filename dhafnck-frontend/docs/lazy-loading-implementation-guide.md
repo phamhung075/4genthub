@@ -383,10 +383,10 @@ export function backgroundSync() {
 
 ## 📚 Resources
 
-- [React Lazy Loading Best Practices](https://reactjs.org/docs/code-splitting.html)
+- [React Lazy Loading Best Practices](https://reactjs.org/ai_docs/code-splitting.html)
 - [FastAPI Background Tasks](https://fastapi.tiangolo.com/tutorial/background-tasks/)
 - [Web Performance Optimization](https://web.dev/performance/)
-- [Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
+- [Service Worker API](https://developer.mozilla.org/en-US/ai_docs/Web/API/Service_Worker_API)
 
 ## 🤝 Support
 

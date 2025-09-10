@@ -105,12 +105,12 @@ dhafnck_mcp_main/
 ├── .cursor/rules/                    # AI assistant rules and context
 │   ├── technical_architect/          # Architecture documentation
 │   ├── contexts/                     # Task contexts
-│   └── 02_AI-DOCS/                  # Multi-agent orchestration docs
+│   └── 02_AI-DOCS/                  # Multi-agent orchestration ai_docs
 ├── src/                              # Source code
 │   └── fastmcp/                      # FastMCP implementation
 ├── tests/                            # Test suites
 ├── examples/                         # Usage examples
-├── docs/                             # Documentation
+├── ai_docs/                             # Documentation
 ├── scripts/                          # Utility scripts
 └── agent-library/                         # Agent configurations
 ```

@@ -3,6 +3,6 @@ call agent to review document of context, analyze these document and actual moda
 │   must know my server mcp is not on local, is on cloud , ai need update context each time, it not automatic update, ai may be forgot to update                                                                                       │
 │   thingking to metter modal for ai when complete subtask --> update context & detail on task, checklist on task, complete task --> update context & detail on branch, checklist on branch,  complete branch --> update context &     │
 │   detail on project, when get branch, context project need include, context sumary of task finish need include,  when get task, context branch need include, context sumary of subtask finish need include                           │
-│   all document create when analyze need put inside subfolder of docs, separate par categorie file, need separate file for new modal |
+│   all document create when analyze need put inside subfolder of ai_docs, separate par categorie file, need separate file for new modal |
  |  The MCP system is like a cloud-based notebook where AI agents can write and read notes, but it CANNOT modify the AI's built-in tools (file read/write). | 
 The AI must manually check this notebook and update it

@@ -247,7 +247,7 @@ I've successfully completed **Iteration 2** of the DDD architecture compliance a
    - Low impact - only in API layer, not core business logic
 
 4. **Documentation Created**:
-   - Comprehensive compliance report at `docs/architecture-design/ddd-compliance-report-iteration-2.md`
+   - Comprehensive compliance report at `ai_docs/architecture-design/ddd-compliance-report-iteration-2.md`
    - CHANGELOG.md updated with analysis results
 
 ### ✅ Verification Results:
@@ -283,7 +283,7 @@ I've completed a comprehensive analysis of your DDD architecture implementation 
 
 The system demonstrates excellent DDD compliance with proper separation of concerns, no business logic leakage, and robust security implementation. The architecture successfully maintains the integrity of each layer while ensuring data isolation through comprehensive user_id filtering.
 
-The detailed report has been saved to `/dhafnck_mcp_main/docs/architecture-design/ddd-compliance-report-iteration-1.md`.
+The detailed report has been saved to `/ai_docs/architecture-design/ddd-compliance-report-iteration-1.md`.
 
 ---
 
@@ -571,7 +571,7 @@ I've successfully completed **Iteration 7** of the DDD architecture compliance c
 
 4. **Documentation Updated**:
    - CHANGELOG.md updated with all fixes
-   - Created verification report at `docs/architecture-design/ddd-mcp-request-flow-verification-iteration-7.md`
+   - Created verification report at `ai_docs/architecture-design/ddd-mcp-request-flow-verification-iteration-7.md`
 
 The system now strictly follows DDD principles with no hardcoded values, no fallback mechanisms, and proper user authentication required for every operation.
 
@@ -647,7 +647,7 @@ I've successfully completed **Iteration 5** of the DDD architecture verification
    - Multi-tenant security properly enforced
 
 4. **Documentation Created**:
-   - Comprehensive verification report saved to `docs/architecture-design/ddd-mcp-request-flow-verification-iteration-5.md`
+   - Comprehensive verification report saved to `ai_docs/architecture-design/ddd-mcp-request-flow-verification-iteration-5.md`
    - CHANGELOG.md updated with all fixes
 
 ### 📊 Compliance Status:
@@ -683,7 +683,7 @@ MCP Tool → Controller → Facade → Use Case → Domain Service → Repositor
 - Repository uses SQLAlchemy ORM (task_repository.py:87-92)
 - No hardcoded values or legacy patterns in production code
 
-The verification report has been saved to `/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/docs/architecture-design/ddd-mcp-request-flow-verification.md`
+The verification report has been saved to `/home/daihungpham/__projects__/agentic-project/ai_docs/architecture-design/ddd-mcp-request-flow-verification.md`
 
 ---
 
@@ -709,7 +709,7 @@ MCP Tool → Controller → Facade Service → Application Facade → Use Case �
 1. One hardcoded system user ID that should use environment variable
 2. Mock repository fallback that could use better error handling
 
-The analysis has been documented in `/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/docs/architecture-design/ddd-complete-mcp-request-flow-analysis.md` with detailed evidence from the code review.
+The analysis has been documented in `/home/daihungpham/__projects__/agentic-project/ai_docs/architecture-design/ddd-complete-mcp-request-flow-analysis.md` with detailed evidence from the code review.
 
 ---
 

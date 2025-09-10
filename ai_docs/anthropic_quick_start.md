@@ -10,7 +10,7 @@ You will need:
 - An [API key](https://console.anthropic.com/settings/keys)
 - Python 3.7+ or TypeScript 4.5+
 
-Anthropic provides [Python and TypeScript SDKs](https://docs.anthropic.com/en/api/client-sdks), although you can make direct HTTP requests to the API.
+Anthropic provides [Python and TypeScript SDKs](https://ai_docs.anthropic.com/en/api/client-sdks), although you can make direct HTTP requests to the API.
 
 ## Start with the Workbench
 
@@ -129,7 +129,7 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 
 ## Call the API
 
-Call the API by passing the proper parameters to the [/messages](https://docs.anthropic.com/en/api/messages) endpoint.
+Call the API by passing the proper parameters to the [/messages](https://ai_docs.anthropic.com/en/api/messages) endpoint.
 
 Note that the code provided by the Workbench sets the API key in the constructor. If you set the API key as an environment variable, you can omit that line as below.
 

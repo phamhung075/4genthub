@@ -173,7 +173,7 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         """
         skip_paths = [
             '/health',
-            '/docs',
+            '/ai_docs',
             '/redoc',
             '/openapi.json',
             '/favicon.ico',

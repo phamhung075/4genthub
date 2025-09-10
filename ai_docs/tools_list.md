@@ -140,7 +140,7 @@ mcp__shadcn-ui-server__list-components(): void
 // List available shadcn/ui components
 
 
-mcp__shadcn-ui-server__get-component-docs(component: string): void
+mcp__shadcn-ui-server__get-component-ai_docs(component: string): void
 // Get documentation for a specific shadcn/ui component
 
 
@@ -153,7 +153,7 @@ mcp__shadcn-ui-server__list-blocks(): void
 // List available shadcn/ui blocks
 
 
-mcp__shadcn-ui-server__get-block-docs(block: string): void
+mcp__shadcn-ui-server__get-block-ai_docs(block: string): void
 // Get documentation for a specific shadcn/ui block
 
 

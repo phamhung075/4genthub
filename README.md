@@ -120,7 +120,7 @@ graph TD
 
 ## 🤖 **Agent Gallery - Meet Your Optimized AI Team**
 
-> **✨ Recently optimized from 69 to 43 agents** for better maintainability and clearer specialization. [View cleanup analysis →](dhafnck_mcp_main/docs/architecture-design/agent-library-cleanup-recommendations.md)
+> **✨ Recently optimized from 69 to 43 agents** for better maintainability and clearer specialization. [View cleanup analysis →](ai_docs/architecture-design/agent-library-cleanup-recommendations.md)
 
 <table>
 <tr>
@@ -268,7 +268,7 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 2. `@system_architect_agent` → Designs architecture  
 3. `@coding_agent` → Implements code
 4. `@test_orchestrator_agent` → Creates tests
-5. `@documentation_agent` → Writes docs
+5. `@documentation_agent` → Writes ai_docs
 
 </td>
 </tr>
@@ -302,7 +302,7 @@ task = mcp__dhafnck_mcp_http__manage_task(
     action="create",
     git_branch_id=branch["git_branch"]["id"],
     title="Build complete authentication system",
-    description="JWT backend + React frontend + tests + docs",
+    description="JWT backend + React frontend + tests + ai_docs",
     priority="high"
 )
 
@@ -343,11 +343,11 @@ mcp__dhafnck_mcp_http__manage_context(
 
 | Resource | Description | Link |
 |----------|-------------|------|
-| 🏗️ **Architecture Guide** | Deep dive into system design | `dhafnck_mcp_main/docs/CORE_ARCHITECTURE/` |
-| 🔧 **Development Guide** | Setup and contribution guide | `dhafnck_mcp_main/docs/DEVELOPMENT_GUIDES/` |
-| 🛠️ **Operations Manual** | Deployment and maintenance | `dhafnck_mcp_main/docs/OPERATIONS/` |
-| 🔍 **Troubleshooting** | Common issues and solutions | `dhafnck_mcp_main/docs/TROUBLESHOOTING/` |
-| ✨ **Vision System** | AI enhancement documentation | `dhafnck_mcp_main/docs/vision/` |
+| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/CORE_ARCHITECTURE/` |
+| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/DEVELOPMENT_GUIDES/` |
+| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/OPERATIONS/` |
+| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/TROUBLESHOOTING/` |
+| ✨ **Vision System** | AI enhancement documentation | `ai_docs/vision/` |
 
 ---
 

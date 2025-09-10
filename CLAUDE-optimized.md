@@ -95,7 +95,7 @@ def auto_select_agent(user_request, work_context):
         return mcp__dhafnck_mcp_http__call_agent(name_agent="@prd_architect_agent")
     
     # DOCUMENTATION
-    elif any(kw in request_lower for kw in ["documentation", "docs", "readme", "guide", "manual", "wiki", "help", "instructions", "api docs", "document", "tutorial", "reference", "specification"]):
+    elif any(kw in request_lower for kw in ["documentation", "ai_docs", "readme", "guide", "manual", "wiki", "help", "instructions", "api ai_docs", "document", "tutorial", "reference", "specification"]):
         return mcp__dhafnck_mcp_http__call_agent(name_agent="@documentation_agent")
     
     # MARKETING & BUSINESS
@@ -372,7 +372,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 - **Backend**: http://localhost:8000
 - **Frontend**: http://localhost:3800  
 - **Database**: `/data/dhafnck_mcp.db` (Docker)
-- **Docs**: `dhafnck_mcp_main/docs/`
+- **Docs**: `ai_docs/`
 - **Tests**: `dhafnck_mcp_main/src/tests/`
 - **Docker Menu**: `docker-system/docker-menu.sh`
 - **Environment**: `.env` file in project root

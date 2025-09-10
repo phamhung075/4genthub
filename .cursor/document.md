@@ -9,7 +9,7 @@ globs: path/to/concerned/files/**
 
 #documentation
 
-This document explains **how to write correct and useful documentation** for a software or technical project. It serves as a reference for all contributors to ensure consistent quality across the `.md` files in the `docs/` folder.
+This document explains **how to write correct and useful documentation** for a software or technical project. It serves as a reference for all contributors to ensure consistent quality across the `.md` files in the `ai_docs/` folder.
 
 ---
 

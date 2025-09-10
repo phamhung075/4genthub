@@ -228,7 +228,7 @@ def smart_delegation(task_type, task_details):
 def parallel_document_search():
     """Spawn multiple sub-agents for document search across locations"""
     
-    locations = ["docs/", "src/", "tests/", "config/", "scripts/"]
+    locations = ["ai_docs/", "src/", "tests/", "config/", "scripts/"]
     
     # Launch multiple Task tool sessions simultaneously  
     for i, location in enumerate(locations):
@@ -528,7 +528,7 @@ def complete_project_parallel():
     # Documentation (parallel)
     Task(
         subagent_type="documentation-agent", 
-        description="Complete docs",
+        description="Complete ai_docs",
         prompt="Create comprehensive documentation for entire project"
     )
     

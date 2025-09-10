@@ -362,9 +362,9 @@ The test suite is designed for integration with CI/CD pipelines:
 
 ## 📚 Additional Resources
 
-- [Pytest Documentation](https://docs.pytest.org/)
+- [Pytest Documentation](https://ai_docs.pytest.org/)
 - [pytest-asyncio Documentation](https://pytest-asyncio.readthedocs.io/)
-- [unittest.mock Documentation](https://docs.python.org/3/library/unittest.mock.html)
+- [unittest.mock Documentation](https://ai_docs.python.org/3/library/unittest.mock.html)
 - [Python Testing 101](https://realpython.com/python-testing/)
 
 ---

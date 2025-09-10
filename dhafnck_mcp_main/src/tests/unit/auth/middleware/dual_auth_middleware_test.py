@@ -92,8 +92,8 @@ class TestDualAuthMiddleware:
         assert result is True
     
     def test_should_skip_auth_docs_endpoint(self, middleware, mock_request):
-        """Test skipping auth for docs endpoint."""
-        mock_request.url.path = "/docs"
+        """Test skipping auth for ai_docs endpoint."""
+        mock_request.url.path = "/ai_docs"
         result = middleware._should_skip_auth(mock_request)
         assert result is True
     

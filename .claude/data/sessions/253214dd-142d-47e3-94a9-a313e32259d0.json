@@ -1,7 +1,9 @@
 {
   "session_id": "253214dd-142d-47e3-94a9-a313e32259d0",
   "prompts": [
-    "call_agent tools not registre, need fix"
+    "call_agent tools not registre, need fix",
+    "./dhafnck_mcp_main/docs/ is not exist anymore i want change to ./ai_docs/",
+    "you need read what i change on this session for correct"
   ],
   "agent_name": "Nova"
 }

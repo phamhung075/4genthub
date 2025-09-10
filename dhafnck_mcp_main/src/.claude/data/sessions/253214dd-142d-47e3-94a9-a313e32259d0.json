@@ -5,6 +5,7 @@
     "you need registre tool like other tools",
     "name agents on desction need match update , i have remove reste 40+ agents\ndhafnck_mcp_main/agent-library/agents",
     "why have dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller?\nexist dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller",
-    "no call agent need separate from manage_agent remove action=\"call\""
+    "no call agent need separate from manage_agent remove action=\"call\"",
+    "i have change docs to ai_docs but is not correct in some case\nneed review all document change on this session and and code change on this session for correct"
   ]
 }

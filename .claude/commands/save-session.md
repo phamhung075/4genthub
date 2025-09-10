@@ -4,4 +4,4 @@ Please create a comprehensive summary of our current session including:
 - Next steps planned
 - Important context to remember
 
-Save this summary to docs/sessions/sessionYYMMDD-$ARGUMENTS.md for future reference.
+Save this summary to ai_docs/sessions/sessionYYMMDD-$ARGUMENTS.md for future reference.
