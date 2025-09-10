@@ -26,6 +26,7 @@ interface SubtaskSummary {
   status: string;
   priority: string;
   assignees_count: number;
+  assignees?: string[]; // Add full assignee information
   progress_percentage?: number;
 }
 
@@ -90,6 +91,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         status: subtask.status,
         priority: subtask.priority,
         assignees_count: subtask.assignees?.length || 0,
+        assignees: subtask.assignees, // Include full assignee information
         progress_percentage: subtask.progress_percentage
       }));
       
@@ -299,10 +301,18 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           </TableCell>
           
           <TableCell>
-            {summary.assignees_count > 0 ? (
-              <Badge variant="secondary" className="text-xs">
-                {summary.assignees_count} assigned
-              </Badge>
+            {summary.assignees && summary.assignees.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {summary.assignees.map((assignee, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                  >
+                    {assignee}
+                  </Badge>
+                ))}
+              </div>
             ) : (
               <span className="text-xs text-muted-foreground">Unassigned</span>
             )}

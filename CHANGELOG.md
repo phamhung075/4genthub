@@ -6,6 +6,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Security
+- **🔒 Enhanced Security for manage_connection Health Check Endpoint** - 2025-09-10
+  - **Issue**: Health check endpoint was exposing sensitive environment information
+  - **Security Risk**: Exposed file paths, database URLs, and internal configuration details
+  - **Solution**: Implemented multi-layer security sanitization
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/connection_management/infrastructure/services/mcp_server_health_service.py`
+    - `dhafnck_mcp_main/src/fastmcp/connection_management/interface/controllers/connection_mcp_controller.py`
+  - **Security Improvements**:
+    - Removed exposure of file system paths (PYTHONPATH, TASKS_JSON_PATH, etc.)
+    - Removed exposure of database URLs and connection strings
+    - Sanitized error messages to prevent information leakage
+    - Added allowlist filtering for response fields
+    - Double-layer sanitization at both service and controller levels
+  - **Testing**: Added comprehensive security test suite in `test_secure_health_check.py`
+  - **Impact**: Health check now only returns safe, non-sensitive operational status
+
 ### Fixed
 - **✅ Fixed "Unassigned" Tasks in Frontend - Assignees Now Display Correctly** - 2025-09-10
   - **Issue**: All tasks showed as "Unassigned" in frontend despite having assignees in database
