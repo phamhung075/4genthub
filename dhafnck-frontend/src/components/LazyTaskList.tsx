@@ -3,6 +3,7 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from
 import { deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { getFullTask } from "../api-lazy";
 import TaskSearch from "./TaskSearch";
+import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
@@ -34,6 +35,7 @@ interface TaskSummary {
   priority: string;
   subtask_count: number;
   assignees_count: number;
+  assignees: string[];  // Add assignees array to summary
   has_dependencies: boolean;
   has_context: boolean;
 }
@@ -93,6 +95,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         priority: task.priority,
         subtask_count: task.subtasks?.length || 0,
         assignees_count: task.assignees?.length || 0,
+        assignees: task.assignees || [],  // Include actual assignees array
         has_dependencies: Boolean(task.dependencies?.length),
         has_context: Boolean(task.context_id || task.context_data)
       }));
@@ -312,10 +315,17 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                     Has deps
                   </Badge>
                 )}
-                {summary.assignees_count > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {summary.assignees_count} assigned
-                  </Badge>
+                {summary.assignees && summary.assignees.length > 0 && (
+                  <ClickableAssignees
+                    assignees={summary.assignees}
+                    task={fullTasks.get(summary.id) || summary as any}
+                    onAgentClick={(agentName, task) => {
+                      console.log('Agent clicked:', agentName, 'for task:', task.title);
+                      // TODO: Implement agent assignment dialog
+                    }}
+                    variant="secondary"
+                    className="text-xs"
+                  />
                 )}
               </div>
             </div>
@@ -453,7 +463,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             <HolographicPriorityBadge priority={summary.priority as any} size="sm" />
           </TableCell>
           
-          <TableCell className="hidden lg:table-cell">
+          <TableCell className="hidden xl:table-cell">
             {summary.has_dependencies ? (
               <Badge variant="outline" className="text-xs">
                 Has dependencies
@@ -463,11 +473,19 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             )}
           </TableCell>
           
-          <TableCell className="hidden xl:table-cell">
-            {summary.assignees_count > 0 ? (
-              <Badge variant="secondary" className="text-xs">
-                {summary.assignees_count} assigned
-              </Badge>
+          <TableCell className="hidden md:table-cell max-w-[200px] p-2 align-top">
+            {summary.assignees && summary.assignees.length > 0 ? (
+              <ClickableAssignees
+                assignees={summary.assignees}
+                task={fullTasks.get(summary.id) || summary as any}
+                onAgentClick={(agentName, task) => {
+                  console.log('Agent clicked:', agentName, 'for task:', task.title);
+                  // TODO: Implement agent assignment dialog
+                }}
+                variant="secondary"
+                className=""
+                compact={true}
+              />
             ) : (
               <span className="text-xs text-muted-foreground">Unassigned</span>
             )}
@@ -617,8 +635,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                 <TableHead>Title</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden md:table-cell">Priority</TableHead>
-                <TableHead className="hidden lg:table-cell">Dependencies</TableHead>
-                <TableHead className="hidden xl:table-cell">Assignees</TableHead>
+                <TableHead className="hidden xl:table-cell">Dependencies</TableHead>
+                <TableHead className="hidden md:table-cell">Assignees</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>

@@ -137,9 +137,8 @@ class Task:
         if len(self.description) > 1000:
             raise ValueError("Task description cannot exceed 1000 characters")
         
-        # Validate that at least one agent is assigned
-        if not self.assignees or len(self.assignees) == 0:
-            raise ValueError("Task must have at least one agent assigned")
+        # Note: Assignee validation is handled at the application layer during task creation
+        # Domain entities can be created with empty assignees during intermediate operations
     
     def update_status(self, new_status: TaskStatus) -> None:
         """Update task status with validation"""

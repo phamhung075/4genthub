@@ -910,6 +910,25 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                         )
                         session.add(new_dependency)
                     
+                    # Update assignees
+                    # First, remove all existing assignees
+                    from ...database.models import TaskAssignee
+                    session.query(TaskAssignee).filter(TaskAssignee.task_id == str(task.id)).delete()
+                    
+                    # Then add new assignees
+                    if hasattr(task, 'assignees') and task.assignees:
+                        import uuid
+                        for assignee in task.assignees:
+                            # Create task-assignee relationship
+                            new_assignee = TaskAssignee(
+                                id=str(uuid.uuid4()),
+                                task_id=str(task.id),
+                                assignee_id=assignee,  # This is the agent role like '@coding_agent'
+                                role="agent",  # Role indicating this is an AI agent assignment
+                                user_id=self.user_id  # CRITICAL: User ID required for data isolation
+                            )
+                            session.add(new_assignee)
+                    
                     # Update labels
                     # First, remove all existing labels
                     session.query(TaskLabel).filter(TaskLabel.task_id == str(task.id)).delete()
@@ -984,6 +1003,21 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                             user_id=task_user_id
                         )
                         session.add(new_dependency)
+                    
+                    # Add assignees for new task
+                    from ...database.models import TaskAssignee
+                    if hasattr(task, 'assignees') and task.assignees:
+                        import uuid
+                        for assignee in task.assignees:
+                            # Create task-assignee relationship
+                            new_assignee = TaskAssignee(
+                                id=str(uuid.uuid4()),
+                                task_id=str(task.id),
+                                assignee_id=assignee,  # This is the agent role like '@coding_agent'
+                                role="agent",  # Role indicating this is an AI agent assignment
+                                user_id=task_user_id  # CRITICAL: User ID required for data isolation
+                            )
+                            session.add(new_assignee)
                     
                     # Add labels for new task
                     from ...database.models import Label

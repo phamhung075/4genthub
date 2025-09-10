@@ -1,5 +1,34 @@
 # Frontend Changelog
 
+## [Unreleased]
+
+### Fixed
+- **🎯 Enhanced Task List Assignees Display & Fixed Table Layout** - 2025-09-10
+  - Updated LazyTaskList to properly display assigned agents in both card and table views
+  - Modified TaskSummary interface to include `assignees: string[]` field
+  - Updated task summary conversion logic to include assignees from API response  
+  - Changed both card and table views to use summary.assignees instead of relying on fullTasks
+  - **Improved responsive design**: Made Assignees column visible on medium screens (md+) instead of extra-large (xl+)
+  - **Better prioritization**: Dependencies column moved to xl+ screens, Assignees more prominent at md+ screens
+  - **Fixed table layout**: Added compact mode to ClickableAssignees component to prevent agents from displaying as separate rows
+  - **Enhanced compact display**: Smaller badges with reduced padding and gap for table cells
+  - Files modified:
+    - `src/components/LazyTaskList.tsx` (lines 38, 98, 318-329, 476-492, 637-638)
+    - `src/components/ClickableAssignees.tsx` (lines 12, 22, 72-84)
+  - Impact: 
+    - Assignees column now displays actual agent names (e.g., @coding_agent, @devops_agent) instead of "Unassigned"
+    - Assignees column visible on tablets and larger screens (768px+) instead of only desktop (1280px+)
+    - **Agents display inline as badges within the table cell**, not as separate rows
+    - Compact design optimized for table display with proper alignment
+- **🎯 Task List Now Shows Agent Names** - 2025-09-10
+  - Modified `LazyTaskList.tsx` to display actual agent names instead of just count
+  - Added `ClickableAssignees` component to both card and table views
+  - Each agent now shows as a clickable badge with their name (e.g., `@coding_agent`)
+  - Maintains click-to-call functionality for agent interaction
+  - Files modified:
+    - `src/components/LazyTaskList.tsx` (lines 316-327, 475-485)
+  - Impact: Users can now see which specific agents are assigned to each task directly in the task list
+
 ## 2025-08-16
 
 ### Added
