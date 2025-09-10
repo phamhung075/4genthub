@@ -6,14 +6,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **🧹 Documentation Reorganization** - 2025-09-11
+  - **Component**: ai_docs/core-architecture folder restructuring
+  - **Achievement**: Reduced core-architecture from 48 files to 6 core files (87% reduction)
+  - **Organization**: Moved specialized documentation to appropriate folders for better maintainability
+  - **Files Moved**:
+    - **Authentication** (6 files): AUTHENTICATION_REFACTOR_*.md, authentication-system*.md, TOKEN_SECURITY_GUIDE.md, token-flow.md → `ai_docs/authentication/`
+    - **Context System** (11 files): AI-CONTEXT-*.md, CONTEXT_UPDATE_*.md, manual-context-*.md, user-scoped-global-context.md → `ai_docs/context-system/`
+    - **Agent Architecture** (15+ files): AGENT_ARCHITECTURE_*.md, agent-*.md, role-based-tool-assignment-system.md → `ai_docs/development-guides/`
+    - **DDD Patterns** (5 files): DDD-*.md, DOMAIN_SERVICES_*.md, domain-driven-design.md → `ai_docs/development-guides/`
+    - **Repository Patterns** (3 files): REPOSITORY_*.md → `ai_docs/development-guides/`
+    - **Controller Architecture** (4 files): CONTROLLER_*.md, modular-controller-architecture.md, parameter-enforcement-technical-spec.md → `ai_docs/development-guides/`
+    - **MCP Integration** (3 files): MCP_SERVER_*.md, mcp-*.md → `ai_docs/api-integration/`
+    - **Performance** (1 file): REDIS_CACHE_INVALIDATION_ANALYSIS.md → `ai_docs/development-guides/`
+    - **Issues & Reports** (2 files): issues_report.md → `ai_docs/issues/`, workplace.md → `ai_docs/reports-status/`
+  - **Core Files Remaining**: PRD.md, Architecture_Technique.md, architecture.md, database-architecture.md, index.md, README.md
+  - **Updated Documentation**: Comprehensive cross-references and navigation between related documentation folders
+  - **Impact**: Improved documentation discoverability, reduced folder clutter, better topic-based organization
+
 ### Fixed
-- **🐛 Log Path Resolution** - 2025-09-11
-  - **Issue**: Hooks were creating `logs` folders in current working directory instead of project root
-  - **Root Cause**: `Path.cwd()` was used instead of project root path
-  - **Solution**: Updated `env_loader.py` functions to always resolve paths relative to project root
+- **🐛 Log Path Resolution (Complete Fix)** - 2025-09-11
+  - **Issue**: Hooks were creating `logs` and `ai_docs` folders in current working directory instead of project root
+  - **Root Cause**: Multiple uses of `Path.cwd()` throughout hooks without proper project root detection
+  - **Solution**: 
+    - Implemented `find_project_root()` function that walks up directory tree to find `.env.claude` or `.git`
+    - Added `PROJECT_ROOT` constant loaded at module initialization
+    - Updated all path resolution functions to use `PROJECT_ROOT` instead of `Path.cwd()`
+    - Added `get_project_root()` helper function for other modules
   - **Modified Files**:
-    - `.claude/hooks/utils/env_loader.py` - Fixed `get_ai_data_path()`, `get_ai_docs_path()`, and `get_log_path()`
-  - **Impact**: Log files will now always be created in the root `logs/` directory regardless of current working directory
+    - `.claude/hooks/utils/env_loader.py` - Complete rewrite of path resolution with project root detection
+    - `.claude/hooks/utils/docs_indexer.py` - Updated to use `get_project_root()` instead of `Path.cwd()`
+  - **Impact**: 
+    - Log files will always be created in root `logs/` directory
+    - No more spurious `logs` or `ai_docs` folders in subdirectories
+    - Hooks work correctly regardless of current working directory
 
 ### Added
 - **🔐 Claude Environment Configuration** - 2025-09-10

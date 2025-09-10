@@ -125,9 +125,20 @@ def check_documentation_requirement(file_path, ai_docs_path):
     if 'ai_docs' in file_path.parts:
         return (True, None, False)
     
+    # Import env_loader to get project root
+    from env_loader import get_project_root
+    project_root = get_project_root()
+    
     # Build expected documentation path
     doc_name = f"{file_path.name}.md"
-    doc_path = ai_docs_path / '_absolute_docs' / file_path.parent.relative_to(Path.cwd()) / doc_name
+    
+    # Make file path relative to project root
+    try:
+        relative_path = file_path.relative_to(project_root)
+        doc_path = ai_docs_path / '_absolute_docs' / relative_path.parent / doc_name
+    except ValueError:
+        # If file is not under project root, try with cwd
+        doc_path = ai_docs_path / '_absolute_docs' / file_path.parent.relative_to(Path.cwd()) / doc_name
     
     if doc_path.exists():
         # Check if source file is newer than doc
@@ -161,8 +172,11 @@ def move_to_obsolete(doc_path, ai_docs_path):
     timestamp_file.write_text(f"Moved to obsolete: {datetime.now().isoformat()}\n")
 
 if __name__ == "__main__":
-    # Get ai_docs path
-    ai_docs_path = Path.cwd() / 'ai_docs'
+    # Import env_loader to get project root
+    from env_loader import get_project_root
+    
+    # Get ai_docs path relative to project root
+    ai_docs_path = get_project_root() / 'ai_docs'
     
     # Update index
     index = update_index(ai_docs_path)
