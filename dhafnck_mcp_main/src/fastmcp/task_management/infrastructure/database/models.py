@@ -115,6 +115,15 @@ class Task(Base):
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED (using String for Keycloak UUID)
     
+    # AI Agent System Prompts and Context - Permanent fields for AI task execution
+    ai_system_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # System prompt for AI agent to understand task context
+    ai_request_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # Specific request prompt for AI to execute
+    ai_work_context: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")  # Additional context for AI work
+    ai_completion_criteria: Mapped[str] = mapped_column(Text, default="", server_default="")  # Criteria for AI to determine task completion
+    ai_execution_history: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, default=list, server_default="[]")  # History of AI executions
+    ai_last_execution: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Last time AI worked on this task
+    ai_model_preferences: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
+    
     # Relationships
     git_branch: Mapped[ProjectGitBranch] = relationship("ProjectGitBranch", back_populates="tasks")
     subtasks: Mapped[List["TaskSubtask"]] = relationship("TaskSubtask", back_populates="task", cascade="all, delete-orphan")
@@ -154,6 +163,15 @@ class TaskSubtask(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    
+    # AI Agent System Prompts and Context for Subtasks - Permanent fields for AI subtask execution
+    ai_system_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # System prompt for AI agent to understand subtask context
+    ai_request_prompt: Mapped[str] = mapped_column(Text, default="", server_default="")  # Specific request prompt for AI to execute
+    ai_work_context: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")  # Additional context for AI work
+    ai_completion_criteria: Mapped[str] = mapped_column(Text, default="", server_default="")  # Criteria for AI to determine subtask completion
+    ai_execution_history: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, default=list, server_default="[]")  # History of AI executions
+    ai_last_execution: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Last time AI worked on this subtask
+    ai_model_preferences: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
     
     # Relationships
     task: Mapped[Task] = relationship("Task", back_populates="subtasks")

@@ -1,0 +1,8 @@
+{
+  "session_id": "b9d4dd35-ad58-44c6-a34a-d5569c1ace40",
+  "prompts": [
+    "no backward, is permanent",
+    "7 AI-related columns to\n  both tasks and task_subtasks tables:\n    - ai_system_prompt - System context for AI agents\n    - ai_request_prompt - Execution instructions\n    - ai_work_context - Additional JSON context\n    - ai_completion_criteria - Success criteria\n    - ai_execution_history - Execution history tracking\n    - ai_last_execution - Last execution timestamp\n    - ai_model_preferences - Model configuration\nyou need check all layer DDD for assume is correct add on each layer, update description tool for new change",
+    "continue"
+  ]
+}

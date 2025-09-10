@@ -1,0 +1,111 @@
+research_methodology:
+  objective: |
+    To understand how AI/LLM systems work, identify all relevant research papers, repositories, and implementations.
+    Locate where specific AI techniques are implemented and track latest developments in the field.
+    This comprehensive understanding prevents outdated implementations and ensures cutting-edge AI integration.
+    
+  importance: |
+    A misunderstanding at the AI research stage can lead to implementing obsolete or inefficient AI solutions.
+    Staying current with AI developments is crucial for competitive advantage and technical excellence.
+    Human review of AI research findings helps validate applicability to specific use cases.
+    
+  critical_areas:
+    - ai_architectures: Latest LLM architectures, training methods, and optimization techniques
+    - implementation_patterns: How AI systems are implemented in production
+    - repository_locations: Exact paths to reference implementations and examples
+    - paper_references: Academic papers with page numbers and equations
+    - tool_ecosystem: Current AI tools, frameworks, and libraries
+    
+  method:
+    description: Use detailed research prompts to gather actionable AI/ML intelligence
+    deliverables:
+      - repository_urls: Complete URLs to relevant GitHub repositories
+      - paper_citations: Academic papers with specific section references
+      - implementation_files: Exact file:line_number in reference implementations
+      - benchmark_results: Performance metrics and comparison data
+      - tool_recommendations: Specific tools and versions for implementation
+      
+  output_specification:
+    ai_research_inventory:
+      - model_releases: Latest LLM releases with capabilities and limitations
+      - repository_list: GitHub repos with star counts and last update
+      - paper_references: Papers with citation counts and key findings
+      - implementation_examples: Code snippets with file:line_number
+      
+    technology_understanding:
+      - architecture_evolution: How AI architectures have evolved
+      - current_sota: State-of-the-art techniques and benchmarks
+      - implementation_patterns: Common patterns in production AI systems
+      - integration_approaches: How to integrate AI into existing systems
+      
+    development_insights:
+      - exact_references: repository:file:line_number for implementations
+      - code_examples: Working code with context
+      - framework_comparisons: Pros/cons of different AI frameworks
+      - performance_metrics: Benchmarks and optimization opportunities
+      
+    actionable_findings:
+      - immediate_applications: What can be implemented today
+      - tool_selections: Which tools/libraries to use
+      - migration_paths: How to upgrade existing AI implementations
+      - risk_assessments: Potential pitfalls and mitigations
+      
+  research_process:
+    steps:
+      - current_date_establishment:
+          description: Establish current date for recency filtering
+          tools: [date, time]
+          output: Current timestamp for filtering
+          
+      - broad_search:
+          description: Search for latest AI/ML developments
+          tools: [WebSearch, mcp__firecrawl-mcp__firecrawl_search]
+          output: List of recent developments
+          
+      - deep_investigation:
+          description: Detailed analysis of promising findings
+          tools: [WebFetch, mcp__firecrawl-mcp__firecrawl_scrape]
+          output: Detailed technical information
+          
+      - code_analysis:
+          description: Examine implementation details
+          tools: [Read, Grep]
+          output: Code patterns and best practices
+          
+      - synthesis:
+          description: Compile actionable insights
+          tools: [Write, mcp__sequential-thinking__sequentialthinking]
+          output: Structured research report
+          
+  quality_metrics:
+    - recency: Information must be less than 1 week old for news, 1 month for research
+    - authority: Sources must be from recognized AI organizations or researchers
+    - reproducibility: Code examples must be runnable
+    - applicability: Findings must be relevant to engineering practice
+    - accuracy: All repository paths and paper citations must be exact
+    
+  specialized_focus:
+    companies_to_track:
+      - OpenAI: GPT models, ChatGPT, Codex
+      - Anthropic: Claude models, Constitutional AI
+      - Google: Gemini, PaLM, Bard
+      - DeepSeek: DeepSeek models, coding capabilities
+      - Alibaba: Qwen models, multilingual capabilities
+      - Meta: Llama models, open-source initiatives
+      - Microsoft: Azure AI, Copilot integrations
+      - Mistral: Mistral models, efficient architectures
+      
+    topics_to_monitor:
+      - new_model_releases: Architecture, capabilities, benchmarks
+      - agent_frameworks: AutoGPT, LangChain, CrewAI, AutoGen
+      - evaluation_benchmarks: MMLU, HumanEval, GSM8K, MT-Bench
+      - optimization_techniques: Quantization, distillation, fine-tuning
+      - deployment_patterns: Serving, scaling, monitoring
+      - cost_optimization: Token usage, caching, batching
+      
+  risk_mitigation:
+    - verify_claims: Cross-reference performance claims with multiple sources
+    - test_locally: Validate code examples before recommending
+    - check_licenses: Ensure compliance with licensing requirements
+    - monitor_deprecations: Track deprecated features and migration paths
+    - assess_maturity: Evaluate production-readiness of new technologies

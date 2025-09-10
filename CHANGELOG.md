@@ -6,6 +6,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Removed
+- **🗑️ Deleted Deprecated Agent Library Folder** - 2025-09-10
+  - **Removed**: `dhafnck_mcp_main/agent-library/deprecated/` folder and all contents
+  - **Deprecated Agents Removed**:
+    - mcp_researcher_agent
+    - prd_architect_agent
+    - tech_spec_agent
+    - mcp_configuration_agent
+  - **Verification**: No active code references found in the codebase
+  - **Impact**: Cleaned up deprecated code, reducing project size and maintenance burden
+
+### Added
+- **🤖 AI System Prompts Support for Tasks and Subtasks (Permanent Implementation)** - 2025-09-10
+  - **Feature**: Permanently integrated AI system prompts and execution context columns into database schema
+  - **Files Created/Modified**:
+    - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/models.py`
+    - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
+    - Created: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/ensure_ai_columns.py`
+    - Created: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/migrations/add_ai_prompts_columns.py`
+    - Created: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/migrations/run_ai_prompts_migration.py`
+    - Created: `dhafnck_mcp_main/add_ai_columns.sql` (Direct SQL migration)
+  - **New Permanent Columns** (with server_default values):
+    - `ai_system_prompt`: System prompt for AI agent to understand task/subtask context (TEXT, default: "")
+    - `ai_request_prompt`: Specific request prompt for AI to execute (TEXT, default: "")
+    - `ai_work_context`: JSON field for additional context for AI work (JSON, default: {})
+    - `ai_completion_criteria`: Criteria for AI to determine task completion (TEXT, default: "")
+    - `ai_execution_history`: JSON array tracking history of AI executions (JSON, default: [])
+    - `ai_last_execution`: Timestamp of last AI work on the task (TIMESTAMP, nullable)
+    - `ai_model_preferences`: JSON field for model preferences and parameters (JSON, default: {})
+  - **Permanent Integration**:
+    - ORM models updated with server_default values (no backward compatibility mode)
+    - Database initialization automatically ensures AI columns exist
+    - Columns are created on database init for new installations
+    - Existing databases are automatically migrated on startup
+    - Verification runs on every application startup
+  - **Purpose**: Enable AI agents to work on tasks with proper context, instructions, and track execution history
+  - **Status**: ✅ Permanently integrated into database schema
+
 ### Fixed
 - **🔧 Fixed Authentication Refresh Token Endpoint** - 2025-09-10
   - **Issue**: Frontend refresh token requests were failing with 422 error
