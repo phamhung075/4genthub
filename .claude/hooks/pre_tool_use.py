@@ -25,6 +25,17 @@ from pathlib import Path
 # Import the AI_DATA path loader for logging
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.env_loader import get_ai_data_path
+try:
+    from utils.docs_indexer import check_documentation_requirement
+except ImportError:
+    check_documentation_requirement = None
+try:
+    from utils.session_tracker import is_file_in_session, is_folder_in_session, add_modified_file, add_modified_folder
+except ImportError:
+    is_file_in_session = None
+    is_folder_in_session = None
+    add_modified_file = None
+    add_modified_folder = None
 
 def load_allowed_root_files():
     """
@@ -104,6 +115,58 @@ def load_valid_test_paths():
             return default_paths
     
     return default_paths
+
+def check_documentation_enforcement(file_path):
+    """
+    Check if a file has existing documentation that must be updated.
+    Only blocks if:
+    1. Documentation exists in _absolute_docs
+    2. File is not already in current session
+    
+    Returns:
+        tuple (should_block, doc_path, is_folder)
+    """
+    if not file_path:
+        return (False, None, False)
+    
+    path_obj = Path(file_path)
+    ai_docs_path = Path.cwd() / 'ai_docs' / '_absolute_docs'
+    
+    # Skip if in ai_docs itself
+    if 'ai_docs' in path_obj.parts:
+        return (False, None, False)
+    
+    # Check for folder documentation (f_index.md)
+    if path_obj.is_dir():
+        try:
+            folder_doc = ai_docs_path / path_obj.relative_to(Path.cwd()) / 'f_index.md'
+        except ValueError:
+            # If path is not relative to cwd, use the path as is
+            folder_doc = ai_docs_path / Path(*path_obj.parts[1:]) / 'f_index.md' if path_obj.is_absolute() else ai_docs_path / path_obj / 'f_index.md'
+        if folder_doc.exists():
+            # Check if folder is in current session
+            if is_folder_in_session and is_folder_in_session(path_obj):
+                return (False, str(folder_doc), True)  # Don't block, already working on it
+            return (True, str(folder_doc), True)  # Block, documentation exists
+    else:
+        # Check for file documentation
+        doc_name = f"{path_obj.name}.md"
+        try:
+            doc_path = ai_docs_path / path_obj.relative_to(Path.cwd()).parent / doc_name
+        except ValueError:
+            # If path is not relative to cwd, handle absolute paths
+            if path_obj.is_absolute():
+                doc_path = ai_docs_path / Path(*path_obj.parts[1:]).parent / doc_name
+            else:
+                doc_path = ai_docs_path / path_obj.parent / doc_name
+        
+        if doc_path.exists():
+            # Check if file is in current session
+            if is_file_in_session and is_file_in_session(path_obj):
+                return (False, str(doc_path), False)  # Don't block, already working on it
+            return (True, str(doc_path), False)  # Block, documentation exists
+    
+    return (False, None, False)
 
 def is_dangerous_rm_command(command):
     """
@@ -271,8 +334,10 @@ def is_prohibited_file_creation(tool_name, tool_input):
                     return 'subfolder_ai_docs'
             
             # Check if creating docs folder (should use ai_docs instead)
-            if path_obj.name == 'docs' or '/docs/' in str(path_obj):
-                return 'docs_folder'
+            # Exception: Allow _absolute_docs and _obsolete_docs within ai_docs
+            if ('_absolute_docs' not in str(path_obj) and '_obsolete_docs' not in str(path_obj)):
+                if path_obj.name == 'docs' or '/docs/' in str(path_obj):
+                    return 'docs_folder'
             
             # Check for .md files - must be in ai_docs (except root allowed)
             if path_obj.suffix == '.md':
@@ -283,6 +348,23 @@ def is_prohibited_file_creation(tool_name, tool_input):
                 # Check if it's in ai_docs
                 elif 'ai_docs' not in path_obj.parts:
                     return 'md_not_in_ai_docs'
+            
+            # Check for subdirectory naming convention in ai_docs - must be kebab-case (lowercase-with-dashes)
+            # Exception: Allow _absolute_docs and _obsolete_docs special folders
+            if 'ai_docs' in path_obj.parts:
+                # Get the index of ai_docs in the path
+                ai_docs_index = path_obj.parts.index('ai_docs')
+                # Check all subdirectories after ai_docs
+                for i in range(ai_docs_index + 1, len(path_obj.parts) - 1):  # -1 to exclude the filename
+                    part = path_obj.parts[i]
+                    # Allow special underscore folders
+                    if part in ['_absolute_docs', '_obsolete_docs']:
+                        continue
+                    # Check if subdirectory follows kebab-case pattern: lowercase letters and hyphens only
+                    # Valid: "api-integration", "test-results", "documentation"
+                    # Invalid: "API_Integration", "Test Results", "Documentation123"
+                    if not re.match(r'^[a-z]+(-[a-z]+)*$', part):
+                        return 'invalid_ai_docs_folder_name'
             
             # Check for test files - must be in specific test directories
             if ('test_' in path_obj.name or '_test.' in path_obj.name or 
@@ -319,9 +401,11 @@ def is_prohibited_file_creation(tool_name, tool_input):
                 if re.search(r'mkdir\s+(?:-[pm]\s+)?(?!.*/)[^/\s]+(?:\s|$)', command):
                     return 'root_folder'
                 
-                # Block docs folder creation anywhere
+                # Block docs folder creation anywhere (except _absolute_docs and _obsolete_docs)
                 if re.search(r'mkdir\s+.*docs', command):
-                    return 'docs_folder'
+                    # Allow special documentation folders
+                    if '_absolute_docs' not in command and '_obsolete_docs' not in command:
+                        return 'docs_folder'
                 
                 # Block ai_docs in subfolders (must be in root only)
                 if re.search(r'mkdir\s+.*/ai_docs', command):
@@ -435,8 +519,46 @@ def main():
             print("BLOCKED: Shell scripts (.sh) must be in scripts/ folder", file=sys.stderr)
             print("Create shell scripts in: scripts/ or docker-system/ folders", file=sys.stderr)
             sys.exit(2)
+        elif creation_check == 'invalid_ai_docs_folder_name':
+            file_path = tool_input.get('file_path', '')
+            print(f"BLOCKED: Invalid folder name in ai_docs: '{file_path}'", file=sys.stderr)
+            print("REQUIRED: Use kebab-case pattern (lowercase-with-dashes)", file=sys.stderr)
+            print("VALID: 'api-integration', 'test-results', 'setup-guides'", file=sys.stderr)
+            print("INVALID: 'API_Integration', 'Test Results', 'SetupGuides', 'setup123'", file=sys.stderr)
+            sys.exit(2)
         
-        # VALIDATION STEP 3: Check for dangerous bash commands (rm -rf, etc.)
+        # VALIDATION STEP 3: Check documentation enforcement for files with existing docs
+        # Block ONLY if documentation already exists (indicating it's important)
+        if tool_name in ['Write', 'Edit', 'MultiEdit']:
+            file_path = tool_input.get('file_path', '')
+            if file_path:
+                should_block, doc_path, is_folder = check_documentation_enforcement(file_path)
+                
+                if should_block:
+                    if is_folder:
+                        print(f"BLOCKED: Folder has documentation that must be updated first", file=sys.stderr)
+                        print(f"Documentation: {doc_path}", file=sys.stderr)
+                        print(f"Please update the folder documentation before modifying files in: {file_path}", file=sys.stderr)
+                    else:
+                        print(f"BLOCKED: File has documentation that must be updated", file=sys.stderr)
+                        print(f"Documentation: {doc_path}", file=sys.stderr)
+                        print(f"Please update the documentation before modifying: {file_path}", file=sys.stderr)
+                    print("HINT: Documentation exists, indicating this is an important file/folder", file=sys.stderr)
+                    sys.exit(2)
+                else:
+                    # Add to session if not blocking
+                    if add_modified_file and not is_folder:
+                        try:
+                            add_modified_file(file_path)
+                        except:
+                            pass
+                    elif add_modified_folder and is_folder:
+                        try:
+                            add_modified_folder(file_path)
+                        except:
+                            pass
+        
+        # VALIDATION STEP 4: Check for dangerous bash commands (rm -rf, etc.)
         if tool_name == 'Bash':
             command = tool_input.get('command', '')
             

@@ -7,6 +7,83 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **🔒 Selective Documentation Enforcement** - 2025-09-10
+  - **Component**: Smart documentation blocking system
+  - **Features**:
+    - Blocks file modifications ONLY when documentation already exists (indicating importance)
+    - Session tracking prevents blocking during active work (2-hour sessions)
+    - Folder documentation support with `f_index.md` files
+    - Pattern: Files/folders with existing docs require documentation updates before modification
+    - Non-disruptive: Only blocks on first access in new session, allows continued work
+  - **Created Files**:
+    - `.claude/hooks/utils/session_tracker.py` - Session management for avoiding workflow disruption
+    - `ai_docs/_absolute_docs/scripts/docker-menu.sh.md` - Example file documentation
+    - `ai_docs/_absolute_docs/scripts/f_index.md` - Example folder documentation
+  - **Modified Files**:
+    - `.claude/hooks/pre_tool_use.py` - Added selective blocking based on existing documentation
+  - **Purpose**: Ensures important files (marked by having documentation) stay synchronized with their docs
+
+- **📚 Automatic Documentation System** - 2025-09-10
+  - **Component**: Documentation tracking and indexing system
+  - **Features**:
+    - Converted `ai_docs/index.md` to `ai_docs/index.json` for programmatic access
+    - Created automatic index.json generation via `docs_indexer.py` utility
+    - Added `_absolute_docs` directory for file-specific documentation
+      - Pattern: `ai_docs/_absolute_docs/path/to/file.ext.md` for `path/to/file.ext`
+      - Example: `scripts/test.sh` documented in `ai_docs/_absolute_docs/scripts/test.sh.md`
+    - Added `_obsolete_docs` directory for automatic archival when source files are deleted
+    - Implemented post-tool hook for automatic index updates when ai_docs changes
+    - Added documentation tracking warnings in pre-tool hook for code files
+    - Documentation warnings for missing docs (non-blocking to maintain workflow)
+  - **Created Files**:
+    - `.claude/hooks/utils/docs_indexer.py` - Documentation indexing utility
+    - `ai_docs/index.json` - Generated documentation index (79KB)
+    - `ai_docs/_absolute_docs/` - Directory for absolute path documentation
+    - `ai_docs/_obsolete_docs/` - Directory for obsolete documentation
+  - **Modified Files**:
+    - `.claude/hooks/post_tool_use.py` - Added documentation tracking
+    - `.claude/hooks/pre_tool_use.py` - Added documentation warnings and exceptions for special folders
+
+### Changed
+- **📂 AI Documentation Folder Restructure** - 2025-09-10
+  - **Component**: ai_docs subdirectories
+  - **Actions**:
+    - Renamed uppercase folders to kebab-case pattern:
+      - `CORE ARCHITECTURE` → `core-architecture`
+      - `DEVELOPMENT GUIDES` → `development-guides`
+      - `OPERATIONS` → merged into existing `operations`
+    - Consolidated duplicate folders:
+      - Merged `architecture` and `architecture-design` into `core-architecture`
+      - Merged `troubleshooting` into `troubleshooting-guides`
+    - Final structure (17 folders, all kebab-case):
+      - api-behavior, api-integration, assets, authentication, claude-code, context-system,
+      - core-architecture, development-guides, integration-guides, issues, migration-guides,
+      - operations, product-requirements, reports-status, setup-guides, testing-qa, troubleshooting-guides
+  - **Result**: Clean, consistent folder structure following kebab-case naming convention
+
+- **🔧 Enhanced File System Protection Rules** - 2025-09-10
+  - **Component**: Claude hooks pre_tool_use.py
+  - **New Rule**: ai_docs subdirectories must follow kebab-case pattern (lowercase-with-dashes)
+  - **Valid Examples**: `api-integration`, `test-results`, `setup-guides`
+  - **Invalid Examples**: `API_Integration`, `Test Results`, `SetupGuides`, `setup123`
+  - **Purpose**: Enforce consistent naming convention for better organization
+  - **Modified Files**: `.claude/hooks/pre_tool_use.py`
+
+- **📁 Project Root Cleanup** - 2025-09-10
+  - **Component**: File organization
+  - **Actions**:
+    - Moved test Python files to `dhafnck_mcp_main/src/tests/integration/`
+    - Moved shell scripts to `scripts/` directory
+    - Moved Caprover deployment docs to `ai_docs/OPERATIONS/`
+    - Moved Keycloak configuration docs to `ai_docs/authentication/`
+    - Moved test result files to `ai_docs/reports-status/`
+    - Moved SQL migration files to `dhafnck_mcp_main/migrations/`
+    - Moved captain definition files to `docker-system/`
+    - Moved Keycloak JSON configs to `ai_docs/authentication/`
+    - Removed obsolete `CLAUDE-optimized.md` file
+  - **Result**: Only allowed root files remain (README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md)
+
+### Added
 - **🔒 Enhanced File System Protection Hooks** - 2025-09-10
   - **Component**: Claude hooks pre_tool_use.py
   - **Features**:
