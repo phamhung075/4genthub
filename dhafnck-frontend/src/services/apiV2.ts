@@ -616,6 +616,22 @@ export const agentApiV2 = {
     });
     return handleResponse(response);
   },
+
+  // Call an agent
+  callAgent: async (agentName: string, params?: any) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/call`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        agent_name: agentName,
+        params: params || {}
+      }),
+    });
+    return handleResponse(response);
+  },
 };
 
 // Export a function to check if user is authenticated

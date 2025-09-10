@@ -43,6 +43,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Integrates with existing `callAgent` API from `../api`
     - Reuses RawJSONDisplay component for consistent JSON rendering
 
+- **🔌 Implemented Backend API Route for Agent Calls** - 2025-09-10
+  - **Feature**: Connected frontend agent calls to backend MCP call_agent tool
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/mcp_http_server.py` - Added `/api/v2/agents/call` endpoint
+    - `dhafnck-frontend/src/services/apiV2.ts` - Added `callAgent` method to agentApiV2
+    - `dhafnck-frontend/src/api.ts` - Updated `callAgent` to use new V2 API endpoint
+  - **Technical Implementation**:
+    - Backend endpoint at `/api/v2/agents/call` accepts POST requests with `agent_name` and optional `params`
+    - Converts frontend request format to MCP tool format (`name_agent` parameter)
+    - Includes user authentication via Keycloak (`user_id` from JWT token)
+    - Proper error handling with HTTP status codes
+  - **Data Flow**:
+    1. Frontend calls `callAgent(agentName)` 
+    2. Sends POST to `/api/v2/agents/call` with JSON body
+    3. Backend extracts agent_name and converts to MCP format
+    4. Calls `mcp_tools.call_agent()` with proper parameters
+    5. Returns MCP tool response to frontend
+  - **Impact**: Agent information can now be retrieved from the backend MCP tools
+
 ### Fixed
 - **🐛 Fixed RawJSONDisplay Component Crashing on Undefined Data** - 2025-09-10
   - **Issue**: RawJSONDisplay component was crashing with "Cannot read properties of undefined (reading 'split')" error

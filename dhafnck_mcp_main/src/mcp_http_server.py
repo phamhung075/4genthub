@@ -255,6 +255,9 @@ async def list_tools(
     except Exception as e:
         return {"tools": [], "error": str(e)}
 
+# ===== API V2 Endpoints =====
+# Note: Agent routes including /call are now handled in fastmcp/server/routes/agent_routes.py
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"

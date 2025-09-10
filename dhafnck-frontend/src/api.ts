@@ -382,11 +382,19 @@ export const getAvailableAgents = async (): Promise<string[]> => {
     }
 };
 
-export const callAgent = async (agent_name: string, params: any): Promise<any> => {
-    // Agent operations might need a different approach
-    // This is a placeholder that might need backend support
-    console.warn('callAgent not fully implemented in V2 API');
-    return { success: false, message: 'Agent operations need backend implementation' };
+export const callAgent = async (agent_name: string, params?: any): Promise<any> => {
+    try {
+        const response = await agentApiV2.callAgent(agent_name, params);
+        return response;
+    } catch (error: any) {
+        console.error('Error calling agent:', error);
+        const errorMessage = error?.message || error?.detail || 'Failed to call agent';
+        return { 
+            success: false, 
+            message: errorMessage,
+            error: error?.toString() || 'Unknown error'
+        };
+    }
 };
 
 // --- Rule Operations (Placeholder) ---
