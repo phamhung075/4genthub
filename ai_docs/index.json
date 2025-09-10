@@ -466,7 +466,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 6,
+      "count": 7,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -502,6 +502,13 @@
           "name": "PRD.md",
           "path": "core-architecture/PRD.md",
           "size": 10155
+        },
+        {
+          "hash": "ef3b6262171ec8e8c99df95dd690ab5b",
+          "modified": "2025-09-11T00:20:59.397359",
+          "name": "implementation-methodology-pattern.md",
+          "path": "core-architecture/implementation-methodology-pattern.md",
+          "size": 4263
         },
         {
           "hash": "63bfd6956e986ff293a07cd4d07482b0",
@@ -1888,7 +1895,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T00:11:14.245110",
+  "generated_at": "2025-09-11T00:20:59.492337",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -1990,6 +1997,7 @@
         "README.md",
         "architecture.md",
         "database-architecture.md",
+        "implementation-methodology-pattern.md",
         "index.md"
       ]
     },
@@ -2227,5 +2235,5 @@
     }
   },
   "total_directories": 24,
-  "total_files": 248
+  "total_files": 249
 }
