@@ -375,7 +375,7 @@ main() {
     echo "  3. Run 'session_health_check' tool to verify everything is working"
     echo
     print_status "If you encounter issues:"
-    echo "  - Check the documentation: dhafnck_mcp_main/docs/session_persistence_setup.md"
+    echo "  - Check the documentation: ai_docs/session_persistence_setup.md"
     echo "  - Run: redis-cli ping (should return PONG)"
     echo "  - Check server logs for detailed error information"
     echo

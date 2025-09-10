@@ -29,7 +29,7 @@
   - **Results**: ✅ All 3 test agents successfully converted with proper formatting
 
 ### Documentation
-- **📚 Integration Guide** (`dhafnck_mcp_main/docs/integration-guides/claude-code-agent-delegation-guide.md`)
+- **📚 Integration Guide** (`ai_docs/integration-guides/claude-code-agent-delegation-guide.md`)
   - Comprehensive usage examples and patterns
   - Agent structure mapping documentation
   - Troubleshooting and best practices
@@ -140,7 +140,7 @@ python test_runner.py --ci
   - Tests error handling for all failure scenarios (not found, duplicates, validation errors)
   - Tests concurrent operations and edge cases
   - 25+ test methods, 600+ lines of comprehensive test coverage
-- Created detailed agent management test report (`dhafnck_mcp_main/docs/testing-qa/agent_management_test_report.md`)
+- Created detailed agent management test report (`ai_docs/testing-qa/agent_management_test_report.md`)
   - Comprehensive documentation of test results and findings
   - Architecture analysis and system component evaluation
   - Performance and security analysis

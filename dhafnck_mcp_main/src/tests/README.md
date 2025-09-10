@@ -248,7 +248,7 @@ When adding new tests:
 
 ## Related Documentation
 
-- [Architecture Overview](../docs/architecture-design/architecture.md)
-- [Testing Guide](../docs/testing/testing.md)
-- [Mock Implementation Guide](../docs/fixes/DATABASE_UNAVAILABLE_MOCK_IMPLEMENTATION_FIX.md)
-- [Troubleshooting Guide](../docs/troubleshooting/index.md)
+- [Architecture Overview](../ai_docs/architecture-design/architecture.md)
+- [Testing Guide](../ai_docs/testing/testing.md)
+- [Mock Implementation Guide](../ai_docs/fixes/DATABASE_UNAVAILABLE_MOCK_IMPLEMENTATION_FIX.md)
+- [Troubleshooting Guide](../ai_docs/troubleshooting/index.md)

@@ -9,7 +9,7 @@
 ☐ Test subtask management actions (create 4 subtasks for each task on first branch, TDD steps, update, list, get, complete)
 ☐ Try to complete a task
 ☐ Verify context management is working on different layers
-☐ Summarize all issues that appear during testing, write in .md file format in docs folder
+☐ Summarize all issues that appear during testing, write in .md file format in ai_docs folder
 ☐ For each issue, write detailed prompts per issue for fixes in new chat, write in same .md file
 ☐ Update global context
 

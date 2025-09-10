@@ -71,7 +71,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 - **Backend URL**: http://localhost:8000
 - **Frontend URL**: http://localhost:3800
 - **Database Path**: `/data/dhafnck_mcp.db` (Docker volume)
-- **Documentation**: `dhafnck_mcp_main/docs/`
+- **Documentation**: `ai_docs/`
 - **Tests**: `dhafnck_mcp_main/src/tests/`
 - **Docker Menu**: `docker-system/docker-menu.sh`
 - **Environment Config**: `.env` file in project root
@@ -86,14 +86,14 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 
 ## Documentation Architecture
 ```
-dhafnck_mcp_main/docs/
+ai_docs/
 ├── CORE ARCHITECTURE/        # System understanding
 ├── DEVELOPMENT GUIDES/        # Developer resources
 ├── OPERATIONS/               # Deployment & config
 ├── TROUBLESHOOTING/          # Problem resolution
 ├── api-integration/          # API documentation
 ├── architecture-design/      # DDD and system design
-├── context-system/           # Context management docs
+├── context-system/           # Context management ai_docs
 ├── issues/                   # Issue tracking and resolution
 ├── migration-guides/         # Version migration guides
 ├── reports-status/           # Status reports and analysis
@@ -103,15 +103,15 @@ dhafnck_mcp_main/docs/
 
 ### Documentation Structure Rules
 - **Test files**: Must write in correct location (`dhafnck_mcp_main/src/tests/`)
-- **Document files**: Must write in correct location (`dhafnck_mcp_main/docs/`)
+- **Document files**: Must write in correct location (`ai_docs/`)
 - **Organization**: Create subfolders for easy management
 - **Index files**: Create/update `index.md` for all document folders
 - **NO LOOSE DOCUMENTATION IN ROOT**: All documentation MUST be in appropriate folders:
-  - Troubleshooting guides → `dhafnck_mcp_main/docs/troubleshooting-guides/`
-  - Migration guides → `dhafnck_mcp_main/docs/migration-guides/`
-  - Issue documentation → `dhafnck_mcp_main/docs/issues/`
-  - Reports & status → `dhafnck_mcp_main/docs/reports-status/`
-  - Operations guides → `dhafnck_mcp_main/docs/operations/`
+  - Troubleshooting guides → `ai_docs/troubleshooting-guides/`
+  - Migration guides → `ai_docs/migration-guides/`
+  - Issue documentation → `ai_docs/issues/`
+  - Reports & status → `ai_docs/reports-status/`
+  - Operations guides → `ai_docs/operations/`
   - **ONLY 5 .md FILES ALLOWED IN PROJECT ROOT**: 
     - README.md (project overview)
     - CHANGELOG.md (project-wide changes)
@@ -141,7 +141,7 @@ dhafnck_mcp_main/docs/
 - Rebuild Docker to view code changes
 
 ### Documentation & Changelog Rules
-- Check `docs/index.md` first for structure
+- Check `ai_docs/index.md` first for structure
 - **MANDATORY**: Update CHANGELOG.md for ALL project changes
 - **CHANGELOG LOCATION RULES**:
   - **Use ONLY ONE CHANGELOG.md in project root** (`/home/daihungpham/agentic-project/CHANGELOG.md`)
@@ -164,7 +164,7 @@ See CHANGELOG.md for version history and recent changes.
 
 ### AI Workflow Rules
 1. **ALWAYS update CHANGELOG.md for project changes, NEVER CLAUDE.local.md**
-2. Check `docs/index.md` first for documentation structure
+2. Check `ai_docs/index.md` first for documentation structure
 3. Test all code examples before including in documentation
 4. Follow Domain-Driven Design (DDD) patterns in codebase
 5. Use existing libraries and utilities - check package.json/requirements
@@ -177,7 +177,7 @@ See CHANGELOG.md for version history and recent changes.
 
 ## Quick Reference
 1. **UPDATE CHANGELOG.md for ALL project changes (NOT CLAUDE.local.md)**
-2. Check existing docs structure before creating files
+2. Check existing ai_docs structure before creating files
 3. Follow DDD patterns in codebase
 4. Test code examples before documentation
 5. Use Docker menu: `docker-system/docker-menu.sh`
@@ -204,7 +204,7 @@ Follow [Conventional Commits 1.0.0](https://conventionalcommits.org/) specificat
 **Common Types**:
 - `feat:` - New feature
 - `fix:` - Bug fix  
-- `docs:` - Documentation changes
+- `ai_docs:` - Documentation changes
 - `style:` - Code style changes (formatting, etc)
 - `refactor:` - Code refactoring
 - `test:` - Adding/updating tests
@@ -213,5 +213,5 @@ Follow [Conventional Commits 1.0.0](https://conventionalcommits.org/) specificat
 **Examples**:
 - `feat(auth): add JWT token validation`
 - `fix(ui): resolve login form validation error`
-- `docs: update API documentation`
+- `ai_docs: update API documentation`
 - `test: add unit tests for context management`

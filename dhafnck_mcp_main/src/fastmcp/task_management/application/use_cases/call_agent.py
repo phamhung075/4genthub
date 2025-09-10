@@ -287,9 +287,9 @@ class AgentFactory:
             try:
                 with open(metadata_file, 'r', encoding='utf-8') as f:
                     # Handle multiple YAML documents
-                    docs = list(yaml.safe_load_all(f))
+                    ai_docs = list(yaml.safe_load_all(f))
                     # Return the first non-empty document
-                    for doc in docs:
+                    for doc in ai_docs:
                         if doc and isinstance(doc, dict):
                             return doc
                     return {}

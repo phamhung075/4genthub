@@ -10,9 +10,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - **📚 Comprehensive Agent Documentation Update** - 2025-09-09
   - **Created Documentation**:
     - `agent-library/README.md` - Complete library overview with 31 agents
-    - `docs/architecture-design/agent-interaction-patterns.md` - Detailed interaction patterns
-    - `docs/architecture-design/agent-flow-diagrams.md` - Visual flow diagrams with Mermaid
-    - `docs/reports-status/agent-consolidation-complete-2025-09-09.md` - Consolidation report
+    - `ai_docs/architecture-design/agent-interaction-patterns.md` - Detailed interaction patterns
+    - `ai_docs/architecture-design/agent-flow-diagrams.md` - Visual flow diagrams with Mermaid
+    - `ai_docs/reports-status/agent-consolidation-complete-2025-09-09.md` - Consolidation report
   - **Key Features Documented**:
     - Agent hierarchy and roles (3-tier system)
     - Delegation workflows and patterns
@@ -103,7 +103,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Updated 18+ agent YAML files with correct permissions in `dhafnck_mcp_main/agent-library/agents/*/capabilities.yaml`
     - Updated agent instructions to reflect delegation patterns
     - Created comprehensive test suite: `dhafnck_mcp_main/src/tests/task_management/test_role_based_agents.py`
-    - Created architecture documentation: `dhafnck_mcp_main/docs/architecture-design/role-based-tool-assignment-system.md`
+    - Created architecture documentation: `ai_docs/architecture-design/role-based-tool-assignment-system.md`
   - **Testing**: All 18 agents validated - 100% pass rate
   - **Impact**: Secure, scalable agent workflows with clear separation of analysis vs. implementation responsibilities
 
@@ -128,7 +128,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Files Modified**:
     - `dhafnck_mcp_main/src/fastmcp/task_management/application/use_cases/call_agent.py` - Added conversion functions
     - Added `claude_agent_definition` field to call_agent response
-    - Created integration guide: `dhafnck_mcp_main/docs/integration-guides/claude-code-agent-delegation-guide.md`
+    - Created integration guide: `ai_docs/integration-guides/claude-code-agent-delegation-guide.md`
     - Added test suite: `dhafnck_mcp_main/src/tests/task_management/test_call_agent_conversion.py`
   - **Impact**: Claude Code can now seamlessly delegate to DhafnckMCP's 42+ specialized agents using familiar `.claude/agents` format
 - **🎛️ Format Parameter Control** - 2025-09-09
@@ -171,9 +171,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
        - Tools: File operations for tests, browser automation, test execution
        - Example: `test-orchestrator-agent` can write tests and control browsers
     5. **Documentation Agents**: Write documentation files and specs
-       - Tools: File operations for docs, web research tools
+       - Tools: File operations for ai_docs, web research tools
        - Example: `documentation-agent` can create/update documentation files
-    6. **Architecture Agents**: Write specs and design docs, UI component access
+    6. **Architecture Agents**: Write specs and design ai_docs, UI component access
        - Tools: File operations for specs, shadcn/ui components
        - Example: `system-architect-agent` can create architectural documents
   - **Universal Tools**: All agents can use task management and agent delegation tools
@@ -201,7 +201,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Files Modified**:
     - Enhanced `CallAgentUseCase._convert_to_claude_json()` method
     - Streamlined response structure in `execute()` method
-    - Created documentation: `dhafnck_mcp_main/docs/integration-guides/claude-json-agent-format.md`
+    - Created documentation: `ai_docs/integration-guides/claude-json-agent-format.md`
   - **Backward Compatibility**: Maintained while providing cleaner new format
 - **🧪 MCP Tools Testing Framework** - 2025-09-09
   - **Purpose**: Comprehensive testing framework for all MCP tools and controllers
@@ -328,7 +328,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 - **Controller Cleanup** - Removed 6 unused controllers (template, rule, file_resource, compliance, logging, progress_tools)
-- **Documentation Cleanup** - Consolidated scattered authentication docs and removed duplicates
+- **Documentation Cleanup** - Consolidated scattered authentication ai_docs and removed duplicates
 - **Cache Cleanup** - Removed Python cache directories and temporary files
 
 ## Key System Features

@@ -8,9 +8,9 @@ Synchronize project documentation, architecture, and context layers to maintain 
 
 KEY REQUIREMENTS
 ----------------
-- Document Location: All documentation in dhafnck_mcp_main/docs/ with proper subfolders
-- PRD Location: dhafnck_mcp_main/docs/architecture-design/PRD.md
-- Architecture: dhafnck_mcp_main/docs/architecture-design/Architecture_Technique.md
+- Document Location: All documentation in ai_docs/ with proper subfolders
+- PRD Location: ai_docs/architecture-design/PRD.md
+- Architecture: ai_docs/architecture-design/Architecture_Technique.md
 - Context Hierarchy: Global → Project → Branch → Task (inheritance flows downward)
 - Git Integration: Project and branch names must match actual git repository
 - No Duplicates: Check for existing documents before creating new ones
@@ -65,7 +65,7 @@ IF synchronizing documentation:
         ELSE:
             - GENERATE comprehensive PRD.md
             - INCLUDE all current features
-            - SAVE to dhafnck_mcp_main/docs/architecture-design/PRD.md
+            - SAVE to ai_docs/architecture-design/PRD.md
     
     CHECK existing Architecture_Technique.md:
         IF exists:
@@ -75,7 +75,7 @@ IF synchronizing documentation:
         ELSE:
             - GENERATE detailed architecture document
             - INCLUDE DDD patterns used
-            - SAVE to dhafnck_mcp_main/docs/architecture-design/Architecture_Technique.md
+            - SAVE to ai_docs/architecture-design/Architecture_Technique.md
     
     IF any_error:
         STOP → CREATE todo_list → FIX → RETRY
@@ -270,9 +270,9 @@ OUTPUT LOCATIONS
 
 Files and Directories:
 ----------------------
-- PRD: dhafnck_mcp_main/docs/architecture-design/PRD.md
-- Architecture: dhafnck_mcp_main/docs/architecture-design/Architecture_Technique.md
-- Issues Log: dhafnck_mcp_main/docs/issues/sync-issues-{date}.md
+- PRD: ai_docs/architecture-design/PRD.md
+- Architecture: ai_docs/architecture-design/Architecture_Technique.md
+- Issues Log: ai_docs/issues/sync-issues-{date}.md
 - Context Data: Stored in DhafnckMCP database (all 4 layers)
 
 CONTEXT DATA STRUCTURE

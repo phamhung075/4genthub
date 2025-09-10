@@ -2,7 +2,7 @@
 
 Take your first steps with the OpenAI API.
 
-The OpenAI API provides a simple interface to state-of-the-art AI [models](https://platform.openai.com/docs/models) for text generation, natural language processing, computer vision, and more. This example generates [text output](https://platform.openai.com/docs/guides/text) from a prompt, as you might using [ChatGPT](https://chatgpt.com/).
+The OpenAI API provides a simple interface to state-of-the-art AI [models](https://platform.openai.com/ai_docs/models) for text generation, natural language processing, computer vision, and more. This example generates [text output](https://platform.openai.com/ai_docs/guides/text) from a prompt, as you might using [ChatGPT](https://chatgpt.com/).
 
 ## Generate text from a model
 
@@ -50,15 +50,15 @@ curl "https://api.openai.com/v1/responses" \
 
 Response objects are saved for 30 days by default. They can be viewed in the dashboard
 [logs](https://platform.openai.com/logs?api=responses) page or
-[retrieved](https://platform.openai.com/docs/api-reference/responses/get) via the API.
+[retrieved](https://platform.openai.com/ai_docs/api-reference/responses/get) via the API.
 You can disable this behavior by setting `store` to `false`
 when creating a Response.
 
-OpenAI does not use data sent via API to train our models without your explicit consent— [learn more](https://platform.openai.com/docs/guides/your-data).
+OpenAI does not use data sent via API to train our models without your explicit consent— [learn more](https://platform.openai.com/ai_docs/guides/your-data).
 
 ## Analyze image inputs
 
-You can provide image inputs to the model as well. Scan receipts, analyze screenshots, or find objects in the real world with [computer vision](https://platform.openai.com/docs/guides/images).
+You can provide image inputs to the model as well. Scan receipts, analyze screenshots, or find objects in the real world with [computer vision](https://platform.openai.com/ai_docs/guides/images).
 
 ### Analyze the content of an image
 
@@ -140,7 +140,7 @@ curl "https://api.openai.com/v1/responses" \
 
 ## Extend the model with tools
 
-Give the model access to new data and capabilities using [tools](https://platform.openai.com/docs/guides/tools). You can either call your own [custom code](https://platform.openai.com/docs/guides/function-calling), or use one of OpenAI's [powerful built-in tools](https://platform.openai.com/docs/guides/tools). This example uses [web search](https://platform.openai.com/docs/guides/tools-web-search) to give the model access to the latest information on the Internet.
+Give the model access to new data and capabilities using [tools](https://platform.openai.com/ai_docs/guides/tools). You can either call your own [custom code](https://platform.openai.com/ai_docs/guides/function-calling), or use one of OpenAI's [powerful built-in tools](https://platform.openai.com/ai_docs/guides/tools). This example uses [web search](https://platform.openai.com/ai_docs/guides/tools-web-search) to give the model access to the latest information on the Internet.
 
 ### Get information for the response from the Internet
 
@@ -189,7 +189,7 @@ curl "https://api.openai.com/v1/responses" \
 
 ## Deliver blazing fast AI experiences
 
-Using either the new [Realtime API](https://platform.openai.com/docs/guides/realtime) or server-sent [streaming events](https://platform.openai.com/docs/guides/streaming-responses), you can build high performance, low-latency experiences for your users.
+Using either the new [Realtime API](https://platform.openai.com/ai_docs/guides/realtime) or server-sent [streaming events](https://platform.openai.com/ai_docs/guides/streaming-responses), you can build high performance, low-latency experiences for your users.
 
 ### Stream server-sent events from the API
 
@@ -238,7 +238,7 @@ for event in stream:
 
 ## Build agents
 
-Use the OpenAI platform to build [agents](https://platform.openai.com/docs/guides/agents) capable of taking action—like [controlling computers](https://platform.openai.com/docs/guides/tools-computer-use)—on behalf of your users. Use the Agents SDK for [Python](https://openai.github.io/openai-agents-python) or [TypeScript](https://openai.github.io/openai-agents-js) to create orchestration logic on the backend.
+Use the OpenAI platform to build [agents](https://platform.openai.com/ai_docs/guides/agents) capable of taking action—like [controlling computers](https://platform.openai.com/ai_docs/guides/tools-computer-use)—on behalf of your users. Use the Agents SDK for [Python](https://openai.github.io/openai-agents-python) or [TypeScript](https://openai.github.io/openai-agents-js) to create orchestration logic on the backend.
 
 ### Build a language triage agent
 

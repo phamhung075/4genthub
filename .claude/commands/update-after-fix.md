@@ -72,7 +72,7 @@ pytest tests/unit/
 - [ ] Check memory usage patterns
 - [ ] Validate response times within acceptable limits
 
-### 3.4 Add issue know content `docs/issues/` if this is a fix probleme
+### 3.4 Add issue know content `ai_docs/issues/` if this is a fix probleme
 
 % ## 4. Integration Verification
 

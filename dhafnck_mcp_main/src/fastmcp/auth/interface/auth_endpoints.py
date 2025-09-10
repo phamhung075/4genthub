@@ -1111,7 +1111,7 @@ async def handle_registration_success(user_id: str, email: str):
             }
         ],
         "quick_links": [
-            {"title": "Documentation", "url": "/docs"},
+            {"title": "Documentation", "url": "/ai_docs"},
             {"title": "Profile Settings", "url": "/settings/profile"},
             {"title": "Create Project", "url": "/projects/new"},
             {"title": "Support", "url": "/support"}

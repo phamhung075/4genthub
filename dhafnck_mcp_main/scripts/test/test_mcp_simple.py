@@ -39,7 +39,7 @@ def test_mcp_server():
     # Test 2: API Documentation
     print("\n[TEST 2] API Documentation")
     try:
-        response = requests.get(f"{base_url}/docs", timeout=5)
+        response = requests.get(f"{base_url}/ai_docs", timeout=5)
         if response.status_code == 200:
             print("✅ API documentation accessible")
             tests_passed += 1

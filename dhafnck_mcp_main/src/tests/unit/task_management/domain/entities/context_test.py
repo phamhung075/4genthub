@@ -640,7 +640,7 @@ class TestUnifiedContextEntities:
             task_data={"title": "Test Task", "status": "in_progress"},
             progress=50,
             insights=[{"type": "performance", "note": "Optimized query"}],
-            next_steps=["Add tests", "Update docs"],
+            next_steps=["Add tests", "Update ai_docs"],
             metadata={"agent": "@coding_agent"}
         )
         

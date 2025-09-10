@@ -405,8 +405,8 @@ dhafnck_mcp_main/
 │   ├── application/         # Use cases
 │   ├── infrastructure/      # PostgreSQL, integrations
 │   └── interface/           # MCP tools
-├── docs/                    # Comprehensive documentation
-│   ├── vision/             # Vision System docs
+├── ai_docs/                    # Comprehensive documentation
+│   ├── vision/             # Vision System ai_docs
 │   ├── architecture.md     # System architecture
 │   └── api-reference.md    # Complete API docs
 ├── agent-library/          # 60+ agent definitions

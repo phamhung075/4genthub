@@ -161,7 +161,7 @@ PHASE 7: DOCUMENTATION & FIX GENERATION
 ----------------------------------------
 IF all tests complete OR errors encountered:
     - DOCUMENT all issues in MD format
-    - SAVE to dhafnck_mcp_main/docs/issues/
+    - SAVE to ai_docs/issues/
     - CREATE detailed fix prompts
     - UPDATE all context layers
 
@@ -172,7 +172,7 @@ ON ERROR:
 ---------
 1. STOP current test immediately
 2. CREATE todo list with specific error details
-3. WRITE issue to dhafnck_mcp_main/docs/issues/mcp-testing-issues-{date}.md
+3. WRITE issue to ai_docs/issues/mcp-testing-issues-{date}.md
 4. GENERATE fix prompt with DDD compliance requirements
 5. APPLY fixes following Domain-Driven Design patterns
 6. RESTART backend: docker-compose down && docker-compose up
@@ -211,7 +211,7 @@ OUTPUT LOCATIONS
 
 Files and Directories:
 ----------------------
-- Issues: dhafnck_mcp_main/docs/issues/mcp-testing-issues-{date}.md
+- Issues: ai_docs/issues/mcp-testing-issues-{date}.md
 - Fix Prompts: Same MD file, section "Fix Prompts"
 - Context Updates: All 4 context layers (global, project, branch, task)
 

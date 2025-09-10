@@ -416,8 +416,8 @@ class TestWorkHandoff:
             remaining_items=["Password reset", "OAuth integration"],
             known_issues=["Token expiry handling"],
             handoff_notes="Check security requirements",
-            artifacts={"api_docs": "/docs/api.md", "tests": "/tests/auth"},
-            documentation_links=["http://docs.example.com/auth"],
+            artifacts={"api_docs": "/ai_docs/api.md", "tests": "/tests/auth"},
+            documentation_links=["http://ai_docs.example.com/auth"],
             accepted_at=now + timedelta(minutes=30)
         )
         
@@ -427,8 +427,8 @@ class TestWorkHandoff:
         assert handoff.remaining_items == ["Password reset", "OAuth integration"]
         assert handoff.known_issues == ["Token expiry handling"]
         assert handoff.handoff_notes == "Check security requirements"
-        assert handoff.artifacts == {"api_docs": "/docs/api.md", "tests": "/tests/auth"}
-        assert handoff.documentation_links == ["http://docs.example.com/auth"]
+        assert handoff.artifacts == {"api_docs": "/ai_docs/api.md", "tests": "/tests/auth"}
+        assert handoff.documentation_links == ["http://ai_docs.example.com/auth"]
         assert handoff.accepted_at == now + timedelta(minutes=30)
     
     def test_accept_handoff(self):

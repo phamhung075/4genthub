@@ -147,4 +147,4 @@ docker-compose up
 
 ---
 
-**Need Help?** Check `dhafnck_mcp_main/docs/troubleshooting-guides/frontend-development-environment-fix.md` for detailed troubleshooting.
+**Need Help?** Check `ai_docs/troubleshooting-guides/frontend-development-environment-fix.md` for detailed troubleshooting.

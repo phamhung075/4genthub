@@ -1,7 +1,7 @@
 {
   "session_id": "88814a75-a2cb-4a14-81b8-9e76c7445a5c",
   "prompts": [
-    "No MCP servers configured. Please run /doctor if this is unexpected. \n     Otherwise, run `claude mcp` or visit \n     https://docs.anthropic.com/en/docs/claude-code/mcp to learn more."
+    "No MCP servers configured. Please run /doctor if this is unexpected. \n     Otherwise, run `claude mcp` or visit \n     https://ai_docs.anthropic.com/en/ai_docs/claude-code/mcp to learn more."
   ],
   "agent_name": "Sage"
 }

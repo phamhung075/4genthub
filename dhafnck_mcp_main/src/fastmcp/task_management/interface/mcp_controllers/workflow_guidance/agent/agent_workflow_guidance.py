@@ -246,7 +246,7 @@ class AgentWorkflowGuidance(BaseWorkflowGuidance):
             "register": [
                 "💡 Use descriptive agent names that indicate their specialization",
                 "🔍 The call_agent parameter should match the agent's @handle format",
-                "🤖 Consider creating agents for specific roles: frontend, backend, testing, docs"
+                "🤖 Consider creating agents for specific roles: frontend, backend, testing, ai_docs"
             ],
             "list": [
                 "📊 Review agent workload to identify who might need help",

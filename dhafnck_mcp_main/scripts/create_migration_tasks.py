@@ -266,7 +266,7 @@ def main():
     print("\n8. Creating Documentation Tasks...")
     doc_subtasks = [
         {"title": "Document repository changes",
-         "description": "Update docs for BaseUserScopedRepository pattern"},
+         "description": "Update ai_docs for BaseUserScopedRepository pattern"},
         {"title": "Document service layer changes",
          "description": "Explain user context propagation"},
         {"title": "Document API authentication",
@@ -274,7 +274,7 @@ def main():
         {"title": "Create migration guide",
          "description": "Step-by-step migration instructions"},
         {"title": "Update API documentation",
-         "description": "Update OpenAPI/Swagger docs"},
+         "description": "Update OpenAPI/Swagger ai_docs"},
         {"title": "Create developer guide",
          "description": "Guide for working with user-scoped data"}
     ]

@@ -605,7 +605,7 @@ The MCP platform continues to demonstrate perfect stability and enterprise-grade
 **Deliverables Created:**
 1. ✅ Comprehensive test report: `mcp-testing-iteration-17-report-2025-09-06.md`
 2. ✅ Updated CHANGELOG.md with Iteration 17 results
-3. ✅ Updated index.md in docs/issues folder
+3. ✅ Updated index.md in ai_docs/issues folder
 
 The MCP platform demonstrates perfect stability and enterprise-grade reliability. No fixes required - system ready for production deployment with complete confidence.
 
@@ -624,7 +624,7 @@ The MCP platform demonstrates perfect stability and enterprise-grade reliability
 **Deliverables Created:**
 1. ✅ Comprehensive test report: `mcp-testing-iteration-16-report-2025-09-06.md`
 2. ✅ Updated CHANGELOG.md with Iteration 16 results
-3. ✅ Updated index.md in docs/issues folder
+3. ✅ Updated index.md in ai_docs/issues folder
 
 The MCP platform demonstrates perfect stability and enterprise-grade reliability. No fixes required - system ready for production deployment.
 
@@ -657,7 +657,7 @@ The MCP platform demonstrates perfect stability with all previous fixes from ite
 - **95.8% success rate** - 46/48 operations tested successfully
 - **2 issues found** with clear workarounds and fix recommendations
 - **All 6 phases completed** comprehensively
-- **Report created** at `dhafnck_mcp_main/docs/issues/mcp-testing-iteration-14-report-2025-09-06.md`
+- **Report created** at `ai_docs/issues/mcp-testing-iteration-14-report-2025-09-06.md`
 - **CHANGELOG updated** with iteration 14 results
 
 **Issues requiring fixes:**

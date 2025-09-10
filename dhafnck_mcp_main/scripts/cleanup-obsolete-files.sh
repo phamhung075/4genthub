@@ -53,8 +53,8 @@ create_backup() {
     
     # Archive development artifacts
     log "Archiving development artifacts..."
-    if [ -d "$PROJECT_ROOT/dhafnck_mcp_main/docs/architecture/working/" ]; then
-        tar -czf "$BACKUP_DIR/docs-working.tar.gz" "$PROJECT_ROOT/dhafnck_mcp_main/docs/architecture/working/"
+    if [ -d "$PROJECT_ROOT/ai_docs/architecture/working/" ]; then
+        tar -czf "$BACKUP_DIR/ai_docs-working.tar.gz" "$PROJECT_ROOT/ai_docs/architecture/working/"
         log "Development artifacts archived"
     fi
     
@@ -213,7 +213,7 @@ cleanup_test_files() {
 cleanup_development_artifacts() {
     log "${GREEN}Phase 4: Cleaning up development artifacts...${NC}"
     
-    local artifacts_dir="$PROJECT_ROOT/dhafnck_mcp_main/docs/architecture/working"
+    local artifacts_dir="$PROJECT_ROOT/ai_docs/architecture/working"
     
     if [ -d "$artifacts_dir" ]; then
         local file_count=$(find "$artifacts_dir" -type f | wc -l)
@@ -290,9 +290,9 @@ rollback() {
     fi
     
     # Restore development artifacts
-    if [ -f "$BACKUP_DIR/docs-working.tar.gz" ]; then
+    if [ -f "$BACKUP_DIR/ai_docs-working.tar.gz" ]; then
         cd "$PROJECT_ROOT"
-        tar -xzf "$BACKUP_DIR/docs-working.tar.gz"
+        tar -xzf "$BACKUP_DIR/ai_docs-working.tar.gz"
         log "Restored development artifacts"
     fi
     
@@ -317,7 +317,7 @@ verify_cleanup() {
     fi
     
     # Check for broken references
-    local broken_refs=$(grep -r "docs/architecture/working" "$PROJECT_ROOT/dhafnck_mcp_main/docs/" 2>/dev/null || true)
+    local broken_refs=$(grep -r "ai_docs/architecture/working" "$PROJECT_ROOT/ai_docs/" 2>/dev/null || true)
     if [ -z "$broken_refs" ]; then
         log "✅ No broken references found"
     else
@@ -410,8 +410,8 @@ dry_run() {
     
     echo ""
     echo "4. Development artifacts:"
-    if [ -d "$PROJECT_ROOT/dhafnck_mcp_main/docs/architecture/working" ]; then
-        echo "   - docs/architecture/working/ ($(du -sh "$PROJECT_ROOT/dhafnck_mcp_main/docs/architecture/working" | cut -f1))"
+    if [ -d "$PROJECT_ROOT/ai_docs/architecture/working" ]; then
+        echo "   - ai_docs/architecture/working/ ($(du -sh "$PROJECT_ROOT/ai_docs/architecture/working" | cut -f1))"
     fi
     
     echo ""

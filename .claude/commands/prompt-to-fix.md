@@ -140,7 +140,7 @@ For each issue, generate a prompt following this structured format:
 - [ ] CHANGELOG.md updated
 - [ ] CLAUDE.local.md updated
 - [ ] API documentation (if tools changed)
-- [ ] Architecture docs (if system changed)
+- [ ] Architecture ai_docs (if system changed)
 - [ ] Troubleshooting guides (if fixing known issues)
 
 ### 5. System Integration
@@ -158,7 +158,7 @@ For each issue, generate a prompt following this structured format:
 3. **Test Files**: [Comprehensive test coverage]
 
 ### Documentation
-1. **Fix Documentation**: Create `docs/fixes/[issue-name]-fix.md`
+1. **Fix Documentation**: Create `ai_docs/fixes/[issue-name]-fix.md`
 2. **Changelog Entry**: Update with fix details
 3. **API Updates**: If MCP tools are affected
 
@@ -267,7 +267,7 @@ After implementing any fix, systematically follow the verification checklist fro
 ### Documentation Updates
 1. **CHANGELOG.md**: Add fix entry with proper categorization
 2. **CLAUDE.local.md**: Update project changelog with technical details
-3. **Issue Documentation**: Create fix documentation in `docs/issues/`
+3. **Issue Documentation**: Create fix documentation in `ai_docs/issues/`
 4. **API Reference**: Update if MCP tools were modified
 
 ### System Validation

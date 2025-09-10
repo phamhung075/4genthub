@@ -78,7 +78,7 @@ rm -f dhafnck_mcp_main/test_keycloak_mcp.py
 
 # Remove duplicate setup guides
 echo "Removing duplicate setup documentation..."
-rm -rf dhafnck_mcp_main/docs/setup-guides/
+rm -rf ai_docs/setup-guides/
 rm -f CLEAN_SETUP_GUIDE.md
 rm -f KEYCLOAK_CLOUD_SETUP_GUIDE.md
 rm -f SETUP_SUMMARY.md

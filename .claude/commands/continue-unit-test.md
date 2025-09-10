@@ -10,7 +10,7 @@ No legacy patterns or fallback or migration mechanisms are allowed
 Architecture Context Review
 
 Step 0a Review Architecture Documentation
-Read dhafnck_mcp_main/docs/architecture-design/Architecture_Technique.md for technical architecture
+Read ai_docs/architecture-design/Architecture_Technique.md for technical architecture
 Understand Domain Layer with rich entities value objects and business logic
 Review Application Layer with use cases facades DTOs and event handlers
 Check Infrastructure Layer with SQLite repositories caching database management
@@ -18,7 +18,7 @@ Study Interface Layer with MCP controllers and tool registration
 Review Frontend Layer with React TypeScript Tailwind CSS application
 
 Step 0b Review Product Requirements
-Read dhafnck_mcp_main/docs/architecture-design/PRD.md for product context
+Read ai_docs/architecture-design/PRD.md for product context
 Understand 60 plus specialized AI agents across 15 categories
 Review 4 tier context hierarchy Global Project Branch Task
 Check core features agent orchestration context management

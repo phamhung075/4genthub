@@ -70,7 +70,7 @@ manage_task(action="complete", task_id=task_id,
 | UI Design | `@ui_designer_agent` | Interface design, UX patterns |
 | Security | `@security_auditor_agent` | Security review, vulnerability assessment |
 | DevOps | `@devops_agent` | Infrastructure, deployment, CI/CD |
-| Documentation | `@documentation_agent` | Writing docs, API documentation |
+| Documentation | `@documentation_agent` | Writing ai_docs, API documentation |
 | Research | `@deep_research_agent` | Technology analysis, requirements gathering |
 | Complex Coordination | `@uber_orchestrator_agent` | Multi-step workflows, agent coordination |
 

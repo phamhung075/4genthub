@@ -190,7 +190,7 @@ echo ""
 echo -e "${BLUE}Services Running:${NC}"
 echo -e "  • PostgreSQL:    ${GREEN}localhost:5432${NC}"
 echo -e "  • MCP Server:    ${GREEN}http://localhost:8001${NC}"
-echo -e "  • API Docs:      ${GREEN}http://localhost:8001/docs${NC}"
+echo -e "  • API Docs:      ${GREEN}http://localhost:8001/ai_docs${NC}"
 
 if [ -n "$KEYCLOAK_URL" ]; then
     echo -e "  • Keycloak:      ${GREEN}$KEYCLOAK_URL${NC}"

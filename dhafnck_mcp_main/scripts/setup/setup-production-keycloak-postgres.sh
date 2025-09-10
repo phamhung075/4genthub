@@ -203,7 +203,7 @@ docker-compose -f "$DOCKER_COMPOSE_FILE" ps
 echo -e "\n${YELLOW}Service URLs:${NC}"
 echo -e "  MCP Backend:  ${GREEN}http://localhost:8001${NC}"
 echo -e "  Health Check: ${GREEN}http://localhost:8001/health${NC}"
-echo -e "  API Docs:     ${GREEN}http://localhost:8001/docs${NC}"
+echo -e "  API Docs:     ${GREEN}http://localhost:8001/ai_docs${NC}"
 
 if [ "$start_pgadmin" = "y" ]; then
     echo -e "  PgAdmin:      ${GREEN}http://localhost:5050${NC}"

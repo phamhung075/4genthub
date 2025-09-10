@@ -15,8 +15,8 @@ FORCE_CONTINUE_AUTOMATIC: ON       # Force automatic continuation without ask
 USE_ABSOLUTE_PATH_FROM_ROOT_PROJECT: ON  # Always use absolute paths from project root
 project_id: dhafnck_mcp_main
 PROJECT_ROOT: /home/<username>/agentic-project
-AI_DOCS_PATH: /home/<username>/agentic-project/dhafnck_mcp_main/docs
-UI_DOCS_PATH: /home/<username>/agentic-project/dhafnck_mcp_main/docs/ui
+AI_DOCS_PATH: /home/<username>/agentic-project/ai_docs
+UI_DOCS_PATH: /home/<username>/agentic-project/ai_docs/ui
 
   
 
@@ -52,7 +52,7 @@ Load: use manage_rule() load `rules/core/master-tasks.md` #MASTER-TASK
 9. #P00-MT06
 10. `call_agent` assigned to perform this task  
 11. Update the context to complete the task  
-12. Write documentation in the `docs` folder after completing the task
+12. Write documentation in the `ai_docs` folder after completing the task
 
 ---
 

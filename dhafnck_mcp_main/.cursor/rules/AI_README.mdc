@@ -11,11 +11,11 @@ alwaysApply: false
 
 `dhafnck_mcp_main/.venv` is correct path for virtual environment use `uv` for test (`uv run python -m pytest tests -v --tb=short`), try to recheck path if fail, must command on project folder `dhafnck_mcp_main`
 `*test.py` file need save on correct location of `dhafnck_mcp_main/tests`
-document `*.md` using for develop this project need save on `dhafnck_mcp_main/docs`, always clean/update document or content obsolete first, then continue task
+document `*.md` using for develop this project need save on `ai_docs`, always clean/update document or content obsolete first, then continue task
 
 ## AI Automation Rules
 
-**CRITICAL RULE**: AI need automatique add task to update test and docs when code is change
+**CRITICAL RULE**: AI need automatique add task to update test and ai_docs when code is change
 - When any code file is modified, AI must automatically create tasks to:
   - Update corresponding unit tests
   - Update integration tests if applicable
@@ -52,11 +52,11 @@ Docker container actual run with the HTTP stream# DhafnckMCP - Cloud-Scale Archi
 
 `dhafnck_mcp_main/.venv` is correct path for virtual environment use `uv` for test (`uv run python -m pytest tests -v --tb=short`), try to recheck path if fail, must command on project folder `dhafnck_mcp_main`
 `*test.py` file need save on correct location of `dhafnck_mcp_main/tests`
-document `*.md` using for develop this project need save on `dhafnck_mcp_main/docs`, always clean/update document or content obsolete first, then continue task
+document `*.md` using for develop this project need save on `ai_docs`, always clean/update document or content obsolete first, then continue task
 
 ## AI Automation Rules
 
-**CRITICAL RULE**: AI need automatique add task to update test and docs when code is change
+**CRITICAL RULE**: AI need automatique add task to update test and ai_docs when code is change
 - When any code file is modified, AI must automatically create tasks to:
   - Update corresponding unit tests
   - Update integration tests if applicable
