@@ -2,7 +2,7 @@
 Agent Documentation Standards (from 00_RULES/core/P00-S00-T03-Agents Information.md)
 
 - Each agent has specific expertise and can be invoked using @agent-name syntax.
-- MUST switch to a role agent if no role is specified; otherwise, the default agent @uber_orchestrator_agent will be used.
+- MUST switch to a role agent if no role is specified; otherwise, the default agent @master_orchestrator_agent will be used.
 - Use @agent-name to invoke a specific agent.
 - Agents can collaborate as specified in their connectivity.
 - Each agent has specialized knowledge and capabilities.
@@ -40,7 +40,7 @@ CALL_AGENT_DESCRIPTION = """
 | call_agent | name_agent | | Load and invoke specific agent by name |
 
 🎯 USE CASES:
-• Invoke @uber_orchestrator_agent for complex multi-step workflows
+• Invoke @master_orchestrator_agent for complex multi-step workflows
 • Call specialized agents like @code_architect_agent for code design
 • Call @task_planning_agent to plan a task, split it into subtasks, and assign them to the appropriate agents.
 • Switch between role-specific agents for different task phases
@@ -49,7 +49,7 @@ CALL_AGENT_DESCRIPTION = """
 
 💡 USAGE GUIDELINES:
 • Provide valid agent name for invocation
-• Switch to a role agent if no role is specified; otherwise, the default agent @uber_orchestrator_agent will be used.
+• Switch to a role agent if no role is specified; otherwise, the default agent @master_orchestrator_agent will be used.
 
 🔍 DECISION TREES:
 IF work_type matches "debug|fix|error|bug|troubleshoot":
@@ -61,7 +61,7 @@ ELIF work_type matches "test|verify|validate|qa":
 ELIF work_type matches "plan|analyze|breakdown|organize":
     USE @task_planning_agent
 ELIF work_type matches "design|ui|interface|ux|frontend":
-    USE @ui_designer_agent
+    USE @ui_specialist_agent
 ELIF work_type matches "security|audit|vulnerability|penetration":
     USE @security_auditor_agent
 ELIF work_type matches "deploy|infrastructure|devops|ci/cd":
@@ -70,37 +70,57 @@ ELIF work_type matches "document|guide|manual|readme":
     USE @documentation_agent
 ELIF work_type matches "research|investigate|explore|study":
     USE @deep_research_agent
-ELIF work_type matches "complex|orchestrate|coordinate|multi-step":
-    USE @uber_orchestrator_agent
+ELIF work_type matches "orchestrate|coordinate|multi-step|complex":
+    USE @master_orchestrator_agent
 ELIF work_type matches "ml|machine learning|ai|neural":
-    USE @brainjs_ml_agent
-ELIF work_type matches "algorithm|optimize|performance":
-    USE @algorithmic_problem_solver_agent
+    USE @ml_specialist_agent or @llm_ai_agents_research
+ELIF work_type matches "performance|load|stress|benchmark":
+    USE @performance_load_tester_agent
 ELIF work_type matches "marketing|campaign|growth|seo":
     USE @marketing_strategy_orchestrator_agent
 ELIF work_type matches "compliance|regulatory|legal":
     USE @compliance_scope_agent
 ELIF work_type matches "architecture|system|design patterns":
     USE @system_architect_agent
-ELIF work_type matches "workflow|process|automation":
-    USE @workflow_architect_agent
-ELIF work_type matches "api|integration|mcp":
-    USE @mcp_configuration_agent
+ELIF work_type matches "efficiency|optimize|process":
+    USE @efficiency_optimization_agent
 ELIF work_type matches "incident|postmortem|root cause":
     USE @root_cause_analysis_agent
 ELIF work_type matches "project|initiative|kickoff":
     USE @project_initiator_agent
 ELIF work_type matches "prototype|poc|proof of concept":
     USE @prototyping_agent
+ELIF work_type matches "brand|branding|identity":
+    USE @branding_agent
+ELIF work_type matches "community|social|engagement":
+    USE @community_strategy_agent
+ELIF work_type matches "creative|idea|ideation|brainstorm":
+    USE @creative_ideation_agent
+ELIF work_type matches "ethics|ethical|responsible":
+    USE @ethical_review_agent
+ELIF work_type matches "health|monitor|monitoring|status":
+    USE @health_monitor_agent
+ELIF work_type matches "technology|tech stack|framework":
+    USE @technology_advisor_agent
+ELIF work_type matches "elicit|requirements|gathering":
+    USE @elicitation_agent
+ELIF work_type matches "uat|acceptance testing|user testing":
+    USE @uat_coordinator_agent
+ELIF work_type matches "analytics|tracking|metrics":
+    USE @analytics_setup_agent
+ELIF work_type matches "design system|component library|ui patterns":
+    USE @design_system_agent
+ELIF work_type matches "core concept|fundamental|foundation":
+    USE @core_concept_agent
 ELSE:
-    USE @uber_orchestrator_agent  # Default fallback
+    USE @master_orchestrator_agent  # Default fallback
 
 📊 WORKFLOW PATTERNS:
 1. Complex Task Orchestration:
-   - Start with @uber_orchestrator_agent
+   - Start with @master_orchestrator_agent
    - Delegate to @task_planning_agent for breakdown
    - Switch to specialized agents for execution
-   - Return to @uber_orchestrator_agent for integration
+   - Return to @master_orchestrator_agent for integration
 
 2. Feature Development:
    - @task_planning_agent → @system_architect_agent → @coding_agent → @test_orchestrator_agent → @documentation_agent
@@ -109,13 +129,13 @@ ELSE:
    - @debugger_agent → @root_cause_analysis_agent → @coding_agent → @test_orchestrator_agent
 
 4. Security Audit:
-   - @security_auditor_agent → @security_penetration_tester_agent → @compliance_testing_agent
+   - @security_auditor_agent → @compliance_scope_agent → @ethical_review_agent
 
 💡 BEST PRACTICES FOR AI:
 • Call agent BEFORE starting any work to ensure proper specialization
 • Use descriptive work type keywords to match decision tree
 • Switch agents when task nature changes significantly
-• Default to @uber_orchestrator_agent when unsure
+• Default to @master_orchestrator_agent when unsure
 • Chain multiple agents for complex workflows
 • Maintain context between agent switches
 
@@ -123,7 +143,7 @@ ELSE:
 • If agent name is invalid, error response includes available agents list
 • Missing name_agent parameter returns clear error with field requirements
 • Internal errors are logged and returned with generic error message
-• Agent loading failures provide fallback to @uber_orchestrator_agent
+• Agent loading failures provide fallback to @master_orchestrator_agent
 
 ✅ VALIDATION CHECKPOINTS:
 • Check: Is the agent name prefixed with @?
@@ -140,80 +160,66 @@ ELSE:
 • Each agent has specialized knowledge and capabilities
 • Agents can collaborate as specified in their connectivity
 
-🚀 AVAILABLE AGENTS (42 Total):
-  Development & Coding:
+🚀 AVAILABLE AGENTS (33 Total - Based on agent-library):
+  Development & Coding (4):
     @coding_agent - Implementation and feature development
     @debugger_agent - Bug fixing and troubleshooting
     @code_reviewer_agent - Code quality and review
     @prototyping_agent - Rapid prototyping and POCs
     
-  Testing & QA:
+  Testing & QA (3):
     @test_orchestrator_agent - Comprehensive test management
     @uat_coordinator_agent - User acceptance testing
     @performance_load_tester_agent - Performance and load testing
     
-  Architecture & Design:
+  Architecture & Design (4):
     @system_architect_agent - System design and architecture
     @design_system_agent - Design system and UI patterns
-    @ui_designer_expert_shadcn_agent - Shadcn/UI components and frontend
+    @ui_specialist_agent - UI/UX design and frontend development
     @core_concept_agent - Core concepts and fundamentals
     
-  DevOps & Deployment:
+  DevOps & Infrastructure (1):
     @devops_agent - CI/CD and infrastructure
-    @adaptive_deployment_strategist_agent - Deployment strategies
-    @swarm_scaler_agent - Distributed systems scaling
     
-  Documentation & Specs:
+  Documentation (1):
     @documentation_agent - Technical documentation
-    @tech_spec_agent - Technical specifications
-    @prd_architect_agent - Product requirements documents
     
-  Project & Planning:
+  Project & Planning (4):
     @project_initiator_agent - Project setup and kickoff
     @task_planning_agent - Task breakdown and planning
-    @uber_orchestrator_agent - Complex workflow orchestration
+    @master_orchestrator_agent - Complex workflow orchestration
     @elicitation_agent - Requirements gathering
     
-  Security & Compliance:
+  Security & Compliance (3):
     @security_auditor_agent - Security audits and reviews
     @compliance_scope_agent - Regulatory compliance
     @ethical_review_agent - Ethical considerations
     
-  Analytics & Optimization:
+  Analytics & Optimization (3):
     @analytics_setup_agent - Analytics and tracking setup
     @efficiency_optimization_agent - Process optimization
     @health_monitor_agent - System health monitoring
     
-  Marketing & Growth:
+  Marketing & Branding (3):
     @marketing_strategy_orchestrator_agent - Marketing strategy
-    @seo_sem_agent - SEO and SEM optimization
-    @growth_hacking_idea_agent - Growth strategies
-    @content_strategy_agent - Content planning
     @community_strategy_agent - Community building
     @branding_agent - Brand identity
     
-  Research & Analysis:
+  Research & Analysis (4):
     @deep_research_agent - In-depth research
-    @mcp_researcher_agent - MCP and tool research
+    @llm_ai_agents_research - AI/ML research and innovations
     @root_cause_analysis_agent - Problem analysis
     @technology_advisor_agent - Technology recommendations
     
-  AI & Machine Learning:
-    @brainjs_ml_agent - Machine learning with Brain.js
+  AI & Machine Learning (1):
+    @ml_specialist_agent - Machine learning implementation
     
-  Configuration & Integration:
-    @mcp_configuration_agent - MCP setup and configuration
-    
-  Creative & Ideation:
-    @idea_generation_agent - Creative idea generation
-    @idea_refinement_agent - Idea improvement
-    
-  Problem Resolution:
-    @remediation_agent - Issue remediation and fixes
+  Creative & Ideation (1):
+    @creative_ideation_agent - Creative idea generation
 """
 
 CALL_AGENT_PARAMETERS_DESCRIPTION = {
-    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., '@uber_orchestrator_agent')"
+    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., '@master_orchestrator_agent')"
 }
 
 CALL_AGENT_PARAMS = {
@@ -239,5 +245,5 @@ def get_call_agent_description():
 
 # Legacy parameter descriptions for backward compatibility
 CALL_AGENT_PARAMETERS = {
-    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., '@uber_orchestrator_agent')"
+    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., '@master_orchestrator_agent')"
 } 

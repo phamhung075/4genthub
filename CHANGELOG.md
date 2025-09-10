@@ -6,6 +6,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+- **🤖 Agent Registry Update** - 2025-09-11
+  - **Component**: Agent management and invocation system
+  - **Updated Files**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_description.py`
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/manage_agent_description.py`
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service.py`
+  - **Changes**:
+    - Updated agent list from 42 to 33 agents based on actual agent-library contents
+    - Corrected agent names (e.g., @uber_orchestrator_agent → @master_orchestrator_agent, @ui_designer_agent → @ui_specialist_agent)
+    - Removed non-existent agents (adaptive_deployment_strategist_agent, remediation_agent, etc.)
+    - Added missing agents (llm_ai_agents_research, creative_ideation_agent)
+    - Updated decision trees to use correct agent names
+    - Aligned workflow patterns with available agents
+    - Fixed agent discovery service path to correctly locate agent-library directory
+    - Removed all legacy references to uber_orchestrator_agent
+  - **Impact**: Accurate agent discovery and invocation, prevents errors from calling non-existent agents, proper validation of agent names
+
 ### Added
 - **🧹 Documentation Reorganization** - 2025-09-11
   - **Component**: ai_docs/core-architecture folder restructuring
