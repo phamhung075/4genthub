@@ -1,0 +1,81 @@
+implementation_methodology:
+  objective: |
+    To implement security measures and fixes based on audit findings.
+    Maintain context under 40% for focused security implementation.
+    Enable parallel security hardening across different vectors.
+    
+  importance: |
+    Security implementation requires focused context on vulnerabilities.
+    Context under 40% prevents security blind spots.
+    Parallel hardening addresses multiple threats simultaneously.
+    
+  context_management:
+    max_utilization: 40%
+    security_context:
+      essential:
+        - vulnerabilities: Identified issues
+        - attack_vectors: Threat models
+        - security_requirements: Compliance needs
+        - sensitive_data: What to protect
+      exclude:
+        - ui_code: Frontend details
+        - business_logic: Non-security code
+        - test_code: Test implementations
+        - documentation: Non-security docs
+        
+  parallel_security_implementation:
+    strategy: |
+      Address multiple security concerns simultaneously.
+      Each agent handles specific security domain.
+      
+    security_delegation:
+      authentication:
+        agent: "@security_auditor_agent"
+        context: "Auth mechanisms, sessions"
+        size: "9,000 tokens"
+        
+      authorization:
+        agent: "@security_auditor_agent"
+        context: "Access control, permissions"
+        size: "8,000 tokens"
+        
+      data_protection:
+        agent: "@security_auditor_agent"
+        context: "Encryption, sanitization"
+        size: "7,000 tokens"
+        
+      api_security:
+        agent: "@security_auditor_agent"
+        context: "Rate limiting, validation"
+        size: "7,000 tokens"
+        
+  implementation_process:
+    phases:
+      - vulnerability_assessment:
+          context_budget: "10,000 tokens"
+          actions:
+            - identify_threats: Security risks
+            - prioritize_fixes: Critical first
+            - plan_mitigation: Fix strategies
+            
+      - security_implementation:
+          context_budget: "18,000 tokens"
+          actions:
+            - implement_auth: Authentication
+            - add_validation: Input sanitization
+            - encrypt_data: Sensitive data
+            - secure_apis: Endpoint protection
+            
+      - verification:
+          context_budget: "10,000 tokens"
+          actions:
+            - penetration_test: Attack simulation
+            - compliance_check: Standards met
+            - security_scan: Vulnerability scan
+            
+  output_specification:
+    primary_output:
+      - security_code: Hardened implementation
+      - security_config: Security settings
+      - audit_report: Findings and fixes
+      - compliance_docs: Standards met

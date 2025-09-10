@@ -1,0 +1,81 @@
+implementation_methodology:
+  objective: |
+    To implement analytics tracking and monitoring based on specifications.
+    Maintain context under 40% for focused tracking implementation.
+    Enable parallel setup of different analytics services.
+    
+  importance: |
+    Analytics implementation requires minimal context per service.
+    Context under 40% prevents tracking conflicts.
+    Parallel setup accelerates monitoring deployment.
+    
+  context_management:
+    max_utilization: 40%
+    analytics_context:
+      essential:
+        - tracking_events: What to track
+        - data_schema: Event properties
+        - privacy_rules: GDPR/compliance
+        - reporting_needs: Dashboard requirements
+      exclude:
+        - business_logic: Core application code
+        - ui_details: Frontend implementation
+        - backend_apis: Server details
+        - user_data: Actual user information
+        
+  parallel_analytics_setup:
+    strategy: |
+      Configure multiple analytics services simultaneously.
+      Each service gets isolated context.
+      
+    service_delegation:
+      google_analytics:
+        agent: "@analytics_setup_agent"
+        context: "GA4 events, conversions"
+        size: "6,000 tokens"
+        
+      mixpanel:
+        agent: "@analytics_setup_agent"
+        context: "User properties, funnels"
+        size: "7,000 tokens"
+        
+      custom_metrics:
+        agent: "@analytics_setup_agent"
+        context: "Internal metrics, database"
+        size: "8,000 tokens"
+        
+      monitoring:
+        agent: "@analytics_setup_agent"
+        context: "Error tracking, performance"
+        size: "6,000 tokens"
+        
+  implementation_process:
+    phases:
+      - tracking_setup:
+          context_budget: "10,000 tokens"
+          actions:
+            - install_sdks: Analytics libraries
+            - configure_services: API keys, settings
+            - define_events: Event taxonomy
+            
+      - implementation:
+          context_budget: "18,000 tokens"
+          actions:
+            - add_tracking: Event triggers
+            - implement_identify: User tracking
+            - create_properties: Event metadata
+            - setup_conversions: Goal tracking
+            
+      - dashboard_creation:
+          context_budget: "10,000 tokens"
+          actions:
+            - configure_reports: Analytics dashboards
+            - setup_alerts: Threshold notifications
+            - create_segments: User groups
+            
+  output_specification:
+    primary_output:
+      - tracking_code: Analytics implementation
+      - event_catalog: Documented events
+      - dashboard_config: Report setups
+      - privacy_compliance: GDPR implementation

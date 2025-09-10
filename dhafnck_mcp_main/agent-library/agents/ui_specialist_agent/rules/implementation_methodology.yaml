@@ -1,0 +1,81 @@
+implementation_methodology:
+  objective: |
+    To implement UI components and interfaces based on detailed design plans.
+    Maintain context under 40% by focusing only on relevant components.
+    Enable parallel UI development across different sections.
+    
+  importance: |
+    UI implementation benefits from focused context per component.
+    Keeping context under 40% prevents style and logic conflicts.
+    Parallel component development accelerates frontend delivery.
+    
+  context_management:
+    max_utilization: 40%
+    ui_context:
+      essential:
+        - component_specs: Specific component requirements
+        - design_tokens: Colors, spacing, typography needed
+        - parent_props: Interface with parent components
+        - api_contracts: Data structures from backend
+      exclude:
+        - unrelated_components: Other UI sections
+        - backend_logic: Server implementation details
+        - database_schemas: Storage layer information
+        - deployment_configs: Infrastructure settings
+        
+  parallel_ui_development:
+    strategy: |
+      Divide UI into independent components for parallel implementation.
+      Each agent handles specific UI sections with minimal shared context.
+      
+    component_delegation:
+      header_navigation:
+        agent: "@ui_specialist_agent"
+        context: "Nav specs, routes, auth state"
+        size: "8,000 tokens"
+        
+      form_components:
+        agent: "@ui_specialist_agent"
+        context: "Form validation, field specs"
+        size: "10,000 tokens"
+        
+      data_display:
+        agent: "@ui_specialist_agent"
+        context: "Table/list specs, data models"
+        size: "9,000 tokens"
+        
+      responsive_layout:
+        agent: "@design_system_agent"
+        context: "Breakpoints, grid system"
+        size: "7,000 tokens"
+        
+  implementation_process:
+    phases:
+      - component_setup:
+          context_budget: "10,000 tokens"
+          actions:
+            - create_structure: Component files and folders
+            - import_dependencies: Required libraries
+            - define_interfaces: Props and types
+            
+      - ui_implementation:
+          context_budget: "20,000 tokens"
+          actions:
+            - build_components: JSX/TSX structure
+            - apply_styles: Tailwind/CSS styling
+            - add_interactivity: Event handlers
+            - integrate_state: State management
+            
+      - integration:
+          context_budget: "8,000 tokens"
+          actions:
+            - connect_components: Wire up to parents
+            - test_responsiveness: Various screen sizes
+            - verify_accessibility: ARIA and semantics
+            
+  output_specification:
+    primary_output:
+      - component_files: React/Vue/Angular components
+      - style_files: CSS/SCSS/Tailwind classes
+      - type_definitions: TypeScript interfaces
+      - storybook_stories: Component documentation
