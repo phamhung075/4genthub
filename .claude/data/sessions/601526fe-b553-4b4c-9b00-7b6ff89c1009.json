@@ -1,0 +1,7 @@
+{
+  "session_id": "601526fe-b553-4b4c-9b00-7b6ff89c1009",
+  "prompts": [
+    "on dialog Assign Agents to Task\nwhen click on button play or name agent on sections\nClick functionality on agent assignee names appear om this dialog  to display agent information"
+  ],
+  "agent_name": "Oracle"
+}

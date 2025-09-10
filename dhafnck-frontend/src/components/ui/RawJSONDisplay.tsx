@@ -11,15 +11,18 @@ interface RawJSONDisplayProps {
 export default function RawJSONDisplay({ jsonData, title = "Global Context Management", fileName = "context.json" }: RawJSONDisplayProps) {
   const [copied, setCopied] = useState(false);
 
+  // Handle null/undefined data
+  const safeJsonData = jsonData ?? {};
+
   const copyToClipboard = () => {
-    const jsonString = JSON.stringify(jsonData, null, 2);
+    const jsonString = JSON.stringify(safeJsonData, null, 2);
     navigator.clipboard.writeText(jsonString);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const getLineCount = () => {
-    const jsonString = JSON.stringify(jsonData, null, 2);
+    const jsonString = JSON.stringify(safeJsonData, null, 2);
     return jsonString.split('\n').length;
   };
 
@@ -163,7 +166,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
 
           <div className="relative flex overflow-x-auto">
             <code className="font-mono text-xs md:text-sm lg:text-base w-full">
-              {formatJSON(jsonData)}
+              {formatJSON(safeJsonData)}
             </code>
           </div>
         </div>

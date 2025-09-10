@@ -1,0 +1,11 @@
+{
+  "session_id": "38a371e2-a8ab-4263-8445-02cd5f006a29",
+  "prompts": [
+    "when click on name agents Assignees on list task, i want it display information of agent via call agent (format json)",
+    "Agent clicked: @documentation_agent for task: Test 4: Five agent collaboration\ni need dialog information on this agent apear, not only console log, information get by call_agent format json",
+    "need make component generic for display name agent clicable because is resuse on entire project",
+    "ClickableAssignees received: {assignees: Array(1), isArray: true, length: 1, taskTitle: 'Test 1: Single agent assignment', stringified: '[\"@coding_agent\"]'}\nneed get oinformation from call_agent",
+    "Agent clicked: @documentation_agent for task: Test 4: Five agent collaboration\nbut no dialog appear for show agent information"
+  ],
+  "agent_name": "Axiom"
+}
