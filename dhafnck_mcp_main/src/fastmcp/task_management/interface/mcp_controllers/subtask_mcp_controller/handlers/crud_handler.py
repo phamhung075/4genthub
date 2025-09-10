@@ -8,8 +8,8 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
-from .....application.facades.subtask_application_facade import SubtaskApplicationFacade
-from ....utils.response_formatter import StandardResponseFormatter, ErrorCodes
+from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
+from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter, ErrorCodes
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class SubtaskCRUDHandler:
         if assignees:
             try:
                 # Validate assignees using AgentRole enum
-                from ....domain.entities.task import Task
+                from ......domain.entities.task import Task
                 dummy_task = Task(title="dummy", description="dummy")
                 validated_assignees = dummy_task.validate_assignee_list(assignees)
                 assignees = validated_assignees

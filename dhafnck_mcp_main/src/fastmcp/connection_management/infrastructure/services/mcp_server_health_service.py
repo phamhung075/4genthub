@@ -20,16 +20,20 @@ class MCPServerHealthService(ServerHealthService):
         return server.check_health()
     
     def get_environment_info(self) -> Dict[str, Any]:
-        """Get server environment information"""
+        """Get server environment information (sanitized for security)"""
+        # Only expose non-sensitive configuration flags
+        # Do NOT expose paths, URLs, or internal configuration details
         return {
-            "pythonpath": os.environ.get("PYTHONPATH", "not set"),
-            "tasks_json_path": os.environ.get("TASKS_JSON_PATH", "not set"),
-            "projects_file_path": os.environ.get("PROJECTS_FILE_PATH", "not set"),
-            "agent_library_dir": os.environ.get("AGENT_LIBRARY_DIR_PATH", "not set"),
-            "auth_enabled": os.environ.get("AUTH_ENABLED", "true"),
-            "cursor_tools_disabled": os.environ.get("DHAFNCK_DISABLE_CURSOR_TOOLS", "false"),
-            "mvp_mode": os.environ.get("PRODUCTION", "false"),
-            "supabase_configured": bool(os.environ.get("SUPABASE_URL"))
+            "auth_enabled": os.environ.get("AUTH_ENABLED", "true").lower() == "true",
+            "cursor_tools_disabled": os.environ.get("DHAFNCK_DISABLE_CURSOR_TOOLS", "false").lower() == "true",
+            "mvp_mode": os.environ.get("PRODUCTION", "false").lower() == "true",
+            "database_configured": bool(os.environ.get("SUPABASE_URL") or os.environ.get("DATABASE_URL")),
+            # Only indicate if services are configured, not their actual values
+            "services_configured": {
+                "database": bool(os.environ.get("SUPABASE_URL") or os.environ.get("DATABASE_URL")),
+                "authentication": os.environ.get("AUTH_ENABLED", "true").lower() == "true",
+                "task_management": True  # Always enabled
+            }
         }
     
     def get_authentication_status(self) -> Dict[str, Any]:
@@ -49,16 +53,14 @@ class MCPServerHealthService(ServerHealthService):
         }
     
     def validate_server_configuration(self) -> Dict[str, Any]:
-        """Validate server configuration and dependencies"""
+        """Validate server configuration and dependencies (sanitized)"""
         try:
             # Try to import and use the existing connection manager
             from ....server.connection_manager import get_connection_manager
             from ....server.connection_status_broadcaster import get_status_broadcaster
             
             # Get connection manager info
-            connection_manager = None
             connection_stats = {}
-            reconnection_info = {}
             
             try:
                 # This is async, so we'll handle it differently in the actual implementation
@@ -67,34 +69,29 @@ class MCPServerHealthService(ServerHealthService):
                     "connections": {"active_connections": 0},
                     "server_info": {"restart_count": 0, "uptime_seconds": 0}
                 }
-                reconnection_info = {"recommended_action": "no_action_needed"}
             except Exception as e:
-                logger.warning(f"Could not get connection manager stats: {e}")
-                connection_stats = {"error": str(e)}
-                reconnection_info = {"error": str(e)}
+                logger.warning(f"Could not get connection manager stats")
+                # Don't expose error details to users
+                connection_stats = {"connections": {"active_connections": 0}}
             
             # Get status broadcaster info
-            status_broadcasting = {}
+            status_broadcasting_active = False
             try:
                 # This would be async in real implementation
-                status_broadcasting = {
-                    "active": True,
-                    "registered_clients": 0,
-                    "last_broadcast": None,
-                    "last_broadcast_time": None
-                }
+                status_broadcasting_active = True
             except Exception as e:
-                logger.warning(f"Could not get status broadcaster info: {e}")
-                status_broadcasting = {"error": str(e)}
+                logger.warning(f"Could not get status broadcaster info")
+                status_broadcasting_active = False
             
             return {
                 "active_connections": connection_stats.get("connections", {}).get("active_connections", 0),
                 "server_restart_count": connection_stats.get("server_info", {}).get("restart_count", 0),
                 "uptime_seconds": connection_stats.get("server_info", {}).get("uptime_seconds", 0),
-                "recommended_action": reconnection_info.get("recommended_action", "unknown"),
-                "status_broadcasting": status_broadcasting
+                "status": "healthy",  # Simplified status instead of detailed error info
+                "broadcasting_enabled": status_broadcasting_active
             }
             
         except Exception as e:
             logger.error(f"Error validating server configuration: {e}")
-            return {"error": str(e)} 
+            # Don't expose internal error details
+            return {"status": "configuration_error", "message": "Unable to validate configuration"} 

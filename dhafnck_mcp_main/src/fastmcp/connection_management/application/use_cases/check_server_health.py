@@ -8,6 +8,7 @@ from ..dtos.connection_dtos import HealthCheckRequest, HealthCheckResponse
 from ...domain.repositories.server_repository import ServerRepository
 from ...domain.services.server_health_service import ServerHealthService
 from ...domain.exceptions.connection_exceptions import ServerHealthCheckFailedError
+from ....config.version import VERSION, VERSION_INFO
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +33,8 @@ class CheckServerHealthUseCase:
                 task_management = self._health_service.get_task_management_info()
                 
                 server = self._server_repository.create_server(
-                    name="DhafnckMCP - Task Management & Agent Orchestration",
-                    version="2.1.0",
+                    name=VERSION_INFO["name"],
+                    version=VERSION,
                     environment=environment,
                     authentication=authentication,
                     task_management=task_management

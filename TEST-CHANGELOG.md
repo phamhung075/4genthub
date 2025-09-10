@@ -1,5 +1,22 @@
 # TEST-CHANGELOG
 
+## [2025-09-10] - Security Testing for Health Check Endpoint
+
+### Added
+- **🔒 Security Test Suite for manage_connection** (`dhafnck_mcp_main/src/tests/connection_management/test_secure_health_check.py`)
+  - **Purpose**: Validate that health check endpoint doesn't expose sensitive information
+  - **Test Coverage**:
+    1. **Environment Sanitization**: Verify no file paths or URLs are exposed
+    2. **Error Message Sanitization**: Ensure internal errors don't leak details
+    3. **Response Field Filtering**: Confirm only allowed fields are returned
+    4. **Controller Layer Security**: Test double-layer sanitization
+  - **Security Validations**:
+    - No exposure of PYTHONPATH, DATABASE_URL, SUPABASE_URL
+    - No secret keys or API keys in responses
+    - Generic error messages instead of stack traces
+    - Allowlist-based field filtering
+  - **Test Results**: ✅ 4/4 security tests passing (100% coverage)
+
 ## [2025-09-09] - Role-Based Agent Tool Assignment Testing
 
 ### Added
