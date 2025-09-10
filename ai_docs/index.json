@@ -1,0 +1,2210 @@
+{
+  "absolute_docs": {
+    "obsolete_docs": [],
+    "tracked_files": {
+      "scripts/docker-menu.sh": {
+        "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
+        "hash": "8084d90907ff76d6457d539616f99f28",
+        "last_updated": "2025-09-10T23:38:31.229487"
+      },
+      "scripts/f_index": {
+        "doc_path": "_absolute_docs/scripts/f_index.md",
+        "hash": "1e895a939dfea4a1c4e26ae927adbf2a",
+        "last_updated": "2025-09-10T23:38:41.262553"
+      },
+      "scripts/test-doc-system.sh": {
+        "doc_path": "_absolute_docs/scripts/test-doc-system.sh.md",
+        "hash": "10dff18917b8e015b85b7f34d44c07b2",
+        "last_updated": "2025-09-10T23:32:27.014730"
+      }
+    }
+  },
+  "categories": {
+    "_absolute_docs/scripts": {
+      "count": 3,
+      "files": [
+        {
+          "hash": "1e895a939dfea4a1c4e26ae927adbf2a",
+          "modified": "2025-09-10T23:38:41.262553",
+          "name": "f_index.md",
+          "path": "_absolute_docs/scripts/f_index.md",
+          "size": 1021
+        },
+        {
+          "hash": "8084d90907ff76d6457d539616f99f28",
+          "modified": "2025-09-10T23:38:31.229487",
+          "name": "docker-menu.sh.md",
+          "path": "_absolute_docs/scripts/docker-menu.sh.md",
+          "size": 835
+        },
+        {
+          "hash": "10dff18917b8e015b85b7f34d44c07b2",
+          "modified": "2025-09-10T23:32:27.014730",
+          "name": "test-doc-system.sh.md",
+          "path": "_absolute_docs/scripts/test-doc-system.sh.md",
+          "size": 591
+        }
+      ],
+      "path": "_absolute_docs/scripts"
+    },
+    "api-behavior": {
+      "count": 3,
+      "files": [
+        {
+          "hash": "bc0a191370138f90a6ed290b1e606214",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "parameter-type-conversion-verification.md",
+          "path": "api-behavior/parameter-type-conversion-verification.md",
+          "size": 4264
+        },
+        {
+          "hash": "b754bd6338c3ad1d5647354c8db9f5d8",
+          "modified": "2025-09-10T01:44:55.102466",
+          "name": "parameter-type-validation.md",
+          "path": "api-behavior/parameter-type-validation.md",
+          "size": 6084
+        },
+        {
+          "hash": "a0ba333221f5d1f56abc3ebe94823fa3",
+          "modified": "2025-07-31T09:20:08.908962",
+          "name": "json-parameter-parsing.md",
+          "path": "api-behavior/json-parameter-parsing.md",
+          "size": 6697
+        }
+      ],
+      "path": "api-behavior"
+    },
+    "api-integration": {
+      "count": 5,
+      "files": [
+        {
+          "hash": "a8eeeb00c9940218bd9e4338f587b9b0",
+          "modified": "2025-07-31T09:20:08.908962",
+          "name": "README.md",
+          "path": "api-integration/README.md",
+          "size": 2020
+        },
+        {
+          "hash": "42052e7d91ae704f97cc449ec7e270ab",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "api-verification-status.md",
+          "path": "api-integration/api-verification-status.md",
+          "size": 6421
+        },
+        {
+          "hash": "0cd1440abad5a8cb52f2005cf0b5fd17",
+          "modified": "2025-09-08T04:01:41.881138",
+          "name": "api-reference.md",
+          "path": "api-integration/api-reference.md",
+          "size": 23647
+        },
+        {
+          "hash": "dbcd4249c05ad525ed1f9a5903a327a2",
+          "modified": "2025-09-05T09:32:46.680938",
+          "name": "configuration.md",
+          "path": "api-integration/configuration.md",
+          "size": 19635
+        },
+        {
+          "hash": "be181eafb2fe8a475d393ac7fa73c6a8",
+          "modified": "2025-09-08T12:01:28.950561",
+          "name": "agent-assignment-enhancement.md",
+          "path": "api-integration/agent-assignment-enhancement.md",
+          "size": 9662
+        }
+      ],
+      "path": "api-integration"
+    },
+    "api-integration/controllers": {
+      "count": 8,
+      "files": [
+        {
+          "hash": "6bdb0e0db30a765cd01a486dcf66118e",
+          "modified": "2025-09-03T12:08:14.522342",
+          "name": "manage-context-api.md",
+          "path": "api-integration/controllers/manage-context-api.md",
+          "size": 15462
+        },
+        {
+          "hash": "98dce5009795c8ce546beced59cf57cb",
+          "modified": "2025-09-08T18:21:37.806650",
+          "name": "manage-subtask-api.md",
+          "path": "api-integration/controllers/manage-subtask-api.md",
+          "size": 11916
+        },
+        {
+          "hash": "0ad16374d644c9b157bf5b791b2ef368",
+          "modified": "2025-09-08T18:29:20.403736",
+          "name": "manage-git-branch-api.md",
+          "path": "api-integration/controllers/manage-git-branch-api.md",
+          "size": 17904
+        },
+        {
+          "hash": "980f2df068cedd6508d6f847946d3bea",
+          "modified": "2025-09-08T18:35:24.840926",
+          "name": "manage-agent-api.md",
+          "path": "api-integration/controllers/manage-agent-api.md",
+          "size": 12295
+        },
+        {
+          "hash": "38c0a6665779ccd541ef58257558d7ae",
+          "modified": "2025-09-08T22:10:39.799712",
+          "name": "manage-connection-api.md",
+          "path": "api-integration/controllers/manage-connection-api.md",
+          "size": 4883
+        },
+        {
+          "hash": "0a5f71f257a4af1b7dbd02f5dc204267",
+          "modified": "2025-09-08T18:26:14.844864",
+          "name": "manage-task-api.md",
+          "path": "api-integration/controllers/manage-task-api.md",
+          "size": 21712
+        },
+        {
+          "hash": "f102c10e543c4c86b27a78d52d2a379a",
+          "modified": "2025-09-08T17:58:57.952202",
+          "name": "manage-dependency-api.md",
+          "path": "api-integration/controllers/manage-dependency-api.md",
+          "size": 16028
+        },
+        {
+          "hash": "7579b31101ae80217236a99afff308d6",
+          "modified": "2025-09-08T18:27:21.121186",
+          "name": "manage-project-api.md",
+          "path": "api-integration/controllers/manage-project-api.md",
+          "size": 13686
+        }
+      ],
+      "path": "api-integration/controllers"
+    },
+    "authentication": {
+      "count": 5,
+      "files": [
+        {
+          "hash": "0a29141bf61233aea0634fc6541aa838",
+          "modified": "2025-09-07T15:55:15.941329",
+          "name": "KEYCLOAK_SCRIPTS_README.md",
+          "path": "authentication/KEYCLOAK_SCRIPTS_README.md",
+          "size": 4952
+        },
+        {
+          "hash": "7618b118c2df55c77d8a6a894797751a",
+          "modified": "2025-09-07T18:37:43.072581",
+          "name": "MCP_TOKEN_AUTHENTICATION.md",
+          "path": "authentication/MCP_TOKEN_AUTHENTICATION.md",
+          "size": 7694
+        },
+        {
+          "hash": "05a732ed181a156ee9e69f39afe3c923",
+          "modified": "2025-09-03T00:49:08.592475",
+          "name": "KEYCLOAK_SETUP.md",
+          "path": "authentication/KEYCLOAK_SETUP.md",
+          "size": 6576
+        },
+        {
+          "hash": "25b4b6a0324e33dca52e57a9100e4a7e",
+          "modified": "2025-09-02T06:59:13.866076",
+          "name": "POSTGRESQL_KEYCLOAK_SETUP.md",
+          "path": "authentication/POSTGRESQL_KEYCLOAK_SETUP.md",
+          "size": 9989
+        },
+        {
+          "hash": "c14a19fed4327f1621ae94fefd95d63c",
+          "modified": "2025-09-07T05:34:09.325455",
+          "name": "KEYCLOAK_CONFIGURATION.md",
+          "path": "authentication/KEYCLOAK_CONFIGURATION.md",
+          "size": 3057
+        }
+      ],
+      "path": "authentication"
+    },
+    "claude-code": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "5ecfc308bae2180356fc84a3e597ad26",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "hooks-reference.md",
+          "path": "claude-code/hooks-reference.md",
+          "size": 23055
+        }
+      ],
+      "path": "claude-code"
+    },
+    "context-system": {
+      "count": 13,
+      "files": [
+        {
+          "hash": "e896edace08e6c2a53cf4b1e08657d9c",
+          "modified": "2025-08-03T08:32:07.045168",
+          "name": "02-synchronization.md",
+          "path": "context-system/02-synchronization.md",
+          "size": 8487
+        },
+        {
+          "hash": "e82e77d89ac6ea2a1dafc7515d5457c1",
+          "modified": "2025-08-03T08:58:20.673831",
+          "name": "05-workflow-patterns.md",
+          "path": "context-system/05-workflow-patterns.md",
+          "size": 15268
+        },
+        {
+          "hash": "e820139040aea477c9eb0c25d73604b6",
+          "modified": "2025-08-03T08:30:09.113443",
+          "name": "00-understanding-mcp-context.md",
+          "path": "context-system/00-understanding-mcp-context.md",
+          "size": 6767
+        },
+        {
+          "hash": "6d51c04e481c5d369ccb1b3a2e546157",
+          "modified": "2025-09-03T21:02:01.392619",
+          "name": "index.md",
+          "path": "context-system/index.md",
+          "size": 2739
+        },
+        {
+          "hash": "d8bc026580f64271823b4583af0ffabf",
+          "modified": "2025-08-03T08:18:58.039351",
+          "name": "04-implementation-guide.md",
+          "path": "context-system/04-implementation-guide.md",
+          "size": 14898
+        },
+        {
+          "hash": "276b169a3ec899ca5cc09a727949214a",
+          "modified": "2025-09-03T21:01:29.863512",
+          "name": "CONTEXT_UPDATE_EXAMPLES.md",
+          "path": "context-system/CONTEXT_UPDATE_EXAMPLES.md",
+          "size": 9880
+        },
+        {
+          "hash": "b69c433e21faa937a32c24662553060b",
+          "modified": "2025-09-10T01:44:55.110715",
+          "name": "REORGANIZATION_SUMMARY.md",
+          "path": "context-system/REORGANIZATION_SUMMARY.md",
+          "size": 4243
+        },
+        {
+          "hash": "b154e86e34b9af6f9872a4decbb3f0bb",
+          "modified": "2025-09-10T01:44:55.110715",
+          "name": "README.md",
+          "path": "context-system/README.md",
+          "size": 4429
+        },
+        {
+          "hash": "85f7316c881a02c3cdf4cdb20bfd151a",
+          "modified": "2025-08-03T08:17:43.297803",
+          "name": "03-api-reference.md",
+          "path": "context-system/03-api-reference.md",
+          "size": 8558
+        },
+        {
+          "hash": "9b1fd156f0adeaf76a801dce152b056e",
+          "modified": "2025-08-27T12:03:28.097413",
+          "name": "01-architecture.md",
+          "path": "context-system/01-architecture.md",
+          "size": 4484
+        },
+        {
+          "hash": "389b101c182bc81234aee07c0ebd22aa",
+          "modified": "2025-08-03T08:33:51.212565",
+          "name": "CORRECTIONS_SUMMARY.md",
+          "path": "context-system/CORRECTIONS_SUMMARY.md",
+          "size": 3087
+        },
+        {
+          "hash": "97e0cbd72b25d26607393ff0d5d728f2",
+          "modified": "2025-09-10T01:44:55.106591",
+          "name": "CONTEXT_DATA_MODELS.md",
+          "path": "context-system/CONTEXT_DATA_MODELS.md",
+          "size": 33283
+        },
+        {
+          "hash": "450c3408a08594a6b876d2e0a7b39c88",
+          "modified": "2025-08-28T10:51:37.636058",
+          "name": "context-database-schema-complete.md",
+          "path": "context-system/context-database-schema-complete.md",
+          "size": 12580
+        }
+      ],
+      "path": "context-system"
+    },
+    "core-architecture": {
+      "count": 48,
+      "files": [
+        {
+          "hash": "7078ee58a5ae9017f0075cac85c73e3c",
+          "modified": "2025-09-08T22:11:59.491402",
+          "name": "controller-overlap-analysis.md",
+          "path": "core-architecture/controller-overlap-analysis.md",
+          "size": 9387
+        },
+        {
+          "hash": "bc7bea35f9e0ad299468c3faf420e102",
+          "modified": "2025-07-31T09:20:08.908962",
+          "name": "AI-CONTEXT-REALISTIC-APPROACH.md",
+          "path": "core-architecture/AI-CONTEXT-REALISTIC-APPROACH.md",
+          "size": 14035
+        },
+        {
+          "hash": "93beda12cf890c27acd9270df253ec7b",
+          "modified": "2025-08-20T17:13:10.018682",
+          "name": "authentication-system.md",
+          "path": "core-architecture/authentication-system.md",
+          "size": 8729
+        },
+        {
+          "hash": "be451fa5d1f52d457619a09efc3d36aa",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "agent-optimization-implementation-plan.md",
+          "path": "core-architecture/agent-optimization-implementation-plan.md",
+          "size": 7738
+        },
+        {
+          "hash": "25fded2f28154ce60935ac683c1757c6",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "index.md",
+          "path": "core-architecture/index.md",
+          "size": 7407
+        },
+        {
+          "hash": "fdcd995176eddc47d308db77c6d22787",
+          "modified": "2025-08-28T17:22:35.490564",
+          "name": "issues_report.md",
+          "path": "core-architecture/issues_report.md",
+          "size": 11313
+        },
+        {
+          "hash": "6e2383efa70ce873a7e0a16e0002986c",
+          "modified": "2025-08-25T10:14:49.502274",
+          "name": "context-management-architectural-review.md",
+          "path": "core-architecture/context-management-architectural-review.md",
+          "size": 11038
+        },
+        {
+          "hash": "6f12b6e61ea5dd58963c432731ae6c7b",
+          "modified": "2025-08-20T21:46:56.626409",
+          "name": "AUTHENTICATION_REFACTOR_ANALYSIS.md",
+          "path": "core-architecture/AUTHENTICATION_REFACTOR_ANALYSIS.md",
+          "size": 7344
+        },
+        {
+          "hash": "1b42465a7a588bfeb11abe7be1c7ff6b",
+          "modified": "2025-08-27T11:13:24.844275",
+          "name": "token-flow.md",
+          "path": "core-architecture/token-flow.md",
+          "size": 10708
+        },
+        {
+          "hash": "6fd741c31c52fbffbe33f332074c4a9e",
+          "modified": "2025-08-28T13:28:07.154058",
+          "name": "REPOSITORY_SWITCHING_GUIDE.md",
+          "path": "core-architecture/REPOSITORY_SWITCHING_GUIDE.md",
+          "size": 12657
+        },
+        {
+          "hash": "c40404d1fcc43e502556bb7eba6a0db5",
+          "modified": "2025-08-08T00:31:35.445955",
+          "name": "database-architecture.md",
+          "path": "core-architecture/database-architecture.md",
+          "size": 9144
+        },
+        {
+          "hash": "9ed75b21aab8784efbc4fbc10fad2754",
+          "modified": "2025-08-28T13:23:03.474732",
+          "name": "MCP_SERVER_ARCHITECTURE_GUIDE.md",
+          "path": "core-architecture/MCP_SERVER_ARCHITECTURE_GUIDE.md",
+          "size": 11983
+        },
+        {
+          "hash": "e6943bf2854720f8d96b01aae20cd76f",
+          "modified": "2025-08-29T15:00:49.881651",
+          "name": "architecture.md",
+          "path": "core-architecture/architecture.md",
+          "size": 11273
+        },
+        {
+          "hash": "c74857d2818efdfddd9ecef354f288b3",
+          "modified": "2025-09-06T14:57:36.782107",
+          "name": "README.md",
+          "path": "core-architecture/README.md",
+          "size": 1906
+        },
+        {
+          "hash": "db452a977d1b039cd7d2ee0299bc4b79",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "agent-interaction-patterns.md",
+          "path": "core-architecture/agent-interaction-patterns.md",
+          "size": 10510
+        },
+        {
+          "hash": "7786f152020036efb3c170548ccdc74d",
+          "modified": "2025-07-31T09:20:08.908962",
+          "name": "domain-driven-design.md",
+          "path": "core-architecture/domain-driven-design.md",
+          "size": 11837
+        },
+        {
+          "hash": "42987435633c787f94d1e3da7bf6914a",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "manual-context-system-implementation-phases.md",
+          "path": "core-architecture/manual-context-system-implementation-phases.md",
+          "size": 21200
+        },
+        {
+          "hash": "501f1a3b6515862298eeca108094abe8",
+          "modified": "2025-08-03T09:07:18.432612",
+          "name": "manual-context-system-technical-architecture.md",
+          "path": "core-architecture/manual-context-system-technical-architecture.md",
+          "size": 19672
+        },
+        {
+          "hash": "c65dcef80fa903596c3d8dd06b37508c",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "DDD-schema.md",
+          "path": "core-architecture/DDD-schema.md",
+          "size": 47069
+        },
+        {
+          "hash": "70fa27560b554f55db6b122ee00a447d",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "role-based-tool-assignment-system.md",
+          "path": "core-architecture/role-based-tool-assignment-system.md",
+          "size": 9492
+        },
+        {
+          "hash": "37954849edc2d1a3532b9290c9b27e9a",
+          "modified": "2025-09-04T11:47:01.537157",
+          "name": "REPOSITORY_ARCHITECTURE_FINAL.md",
+          "path": "core-architecture/REPOSITORY_ARCHITECTURE_FINAL.md",
+          "size": 12591
+        },
+        {
+          "hash": "6bc25529de43e9084cda5333f0bdc80d",
+          "modified": "2025-09-08T22:11:54.979017",
+          "name": "DDD_COMPLIANCE_UPDATE_REPORT.md",
+          "path": "core-architecture/DDD_COMPLIANCE_UPDATE_REPORT.md",
+          "size": 10884
+        },
+        {
+          "hash": "08cc937e96d02d232771f4e3b2751fe4",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "PRD.md",
+          "path": "core-architecture/PRD.md",
+          "size": 10155
+        },
+        {
+          "hash": "d2465340682a9784173891bdb4f7cd17",
+          "modified": "2025-08-29T02:09:36.798977",
+          "name": "DOMAIN_SERVICES_REFACTORING_ANALYSIS.md",
+          "path": "core-architecture/DOMAIN_SERVICES_REFACTORING_ANALYSIS.md",
+          "size": 11449
+        },
+        {
+          "hash": "53d7282db12f666cb5098f4592c2d7e6",
+          "modified": "2025-09-06T14:53:41.332250",
+          "name": "agent-library-cleanup-recommendations.md",
+          "path": "core-architecture/agent-library-cleanup-recommendations.md",
+          "size": 13641
+        },
+        {
+          "hash": "0e2ee30ff584597f962af740c7059140",
+          "modified": "2025-08-28T21:03:41.492702",
+          "name": "workplace.md",
+          "path": "core-architecture/workplace.md",
+          "size": 7098
+        },
+        {
+          "hash": "b9079e1a5e25a5e76249023cab6a4012",
+          "modified": "2025-08-29T09:46:03.938255",
+          "name": "DDD_COMPLIANCE_ANALYSIS_REPORT.md",
+          "path": "core-architecture/DDD_COMPLIANCE_ANALYSIS_REPORT.md",
+          "size": 12998
+        },
+        {
+          "hash": "cfe22ec6637630c5e5f3cc368b9ebfc8",
+          "modified": "2025-09-03T20:59:07.050404",
+          "name": "CONTEXT_UPDATE_IMPLEMENTATION.md",
+          "path": "core-architecture/CONTEXT_UPDATE_IMPLEMENTATION.md",
+          "size": 86040
+        },
+        {
+          "hash": "f6b3c6b237dba50da1fb236499f38c9a",
+          "modified": "2025-08-28T12:34:42.409966",
+          "name": "REPOSITORY_LAYER_ARCHITECTURE_ANALYSIS.md",
+          "path": "core-architecture/REPOSITORY_LAYER_ARCHITECTURE_ANALYSIS.md",
+          "size": 7709
+        },
+        {
+          "hash": "9aa9071cf1aaf6e721fe4edb1698498f",
+          "modified": "2025-09-05T09:32:28.899441",
+          "name": "authentication-system-current.md",
+          "path": "core-architecture/authentication-system-current.md",
+          "size": 7663
+        },
+        {
+          "hash": "6b22afe63974f5ccced52d263b74a7cc",
+          "modified": "2025-08-29T13:37:25.328760",
+          "name": "CONTROLLER_REFACTORING_PLAN.md",
+          "path": "core-architecture/CONTROLLER_REFACTORING_PLAN.md",
+          "size": 3328
+        },
+        {
+          "hash": "6fffed1c76602e6724e8c8727ee932aa",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "parameter-enforcement-technical-spec.md",
+          "path": "core-architecture/parameter-enforcement-technical-spec.md",
+          "size": 28713
+        },
+        {
+          "hash": "ea9788e66a5b30426182b79cab64976f",
+          "modified": "2025-08-28T13:36:14.416231",
+          "name": "VISUAL_FLOW_VERIFICATION_PROMPT.md",
+          "path": "core-architecture/VISUAL_FLOW_VERIFICATION_PROMPT.md",
+          "size": 14430
+        },
+        {
+          "hash": "77495fa6a0c03a1580797d1c477e229e",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "manual-context-implementation-guide.md",
+          "path": "core-architecture/manual-context-implementation-guide.md",
+          "size": 67147
+        },
+        {
+          "hash": "953338305ddeedc0a4ee1d3405c61145",
+          "modified": "2025-09-10T01:23:19.832039",
+          "name": "agent-flow-diagrams.md",
+          "path": "core-architecture/agent-flow-diagrams.md",
+          "size": 9628
+        },
+        {
+          "hash": "5a2c5f36214ebcea89088e275df19f75",
+          "modified": "2025-08-25T23:04:29.476014",
+          "name": "AUTHENTICATION_REFACTOR_STRATEGY.md",
+          "path": "core-architecture/AUTHENTICATION_REFACTOR_STRATEGY.md",
+          "size": 12515
+        },
+        {
+          "hash": "4b5b804fb5bcc6d19e521340746024fa",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "TOKEN_SECURITY_GUIDE.md",
+          "path": "core-architecture/TOKEN_SECURITY_GUIDE.md",
+          "size": 4904
+        },
+        {
+          "hash": "c3a616a3fb8c7741dce8084105afa5b6",
+          "modified": "2025-09-03T10:35:42.172321",
+          "name": "mcp-parameter-type-resolution-guide.md",
+          "path": "core-architecture/mcp-parameter-type-resolution-guide.md",
+          "size": 30556
+        },
+        {
+          "hash": "3d147e564239fd7860786999e9e11ecc",
+          "modified": "2025-08-28T12:09:34.960045",
+          "name": "REDIS_CACHE_INVALIDATION_ANALYSIS.md",
+          "path": "core-architecture/REDIS_CACHE_INVALIDATION_ANALYSIS.md",
+          "size": 9003
+        },
+        {
+          "hash": "76e262b99baa880762f05b89869b1683",
+          "modified": "2025-08-03T09:18:08.400206",
+          "name": "manual-context-system-gap-analysis.md",
+          "path": "core-architecture/manual-context-system-gap-analysis.md",
+          "size": 16833
+        },
+        {
+          "hash": "fd8f5684d9825fc176607a388f45e03f",
+          "modified": "2025-09-03T10:19:13.374970",
+          "name": "mcp-controller-implementation-changes.md",
+          "path": "core-architecture/mcp-controller-implementation-changes.md",
+          "size": 7877
+        },
+        {
+          "hash": "8283e131aebed195660d63ff3781b81c",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "modular-controller-architecture.md",
+          "path": "core-architecture/modular-controller-architecture.md",
+          "size": 19858
+        },
+        {
+          "hash": "60d3bb36ca865b4447b7653396915ec0",
+          "modified": "2025-09-06T15:05:59.482530",
+          "name": "agent-capacity-improvement-recommendations.md",
+          "path": "core-architecture/agent-capacity-improvement-recommendations.md",
+          "size": 18414
+        },
+        {
+          "hash": "361971c15807c24540b6456eb15d8082",
+          "modified": "2025-09-10T00:26:15.060015",
+          "name": "agent-optimization-analysis.md",
+          "path": "core-architecture/agent-optimization-analysis.md",
+          "size": 7802
+        },
+        {
+          "hash": "63bfd6956e986ff293a07cd4d07482b0",
+          "modified": "2025-08-29T15:01:21.160426",
+          "name": "Architecture_Technique.md",
+          "path": "core-architecture/Architecture_Technique.md",
+          "size": 19926
+        },
+        {
+          "hash": "7a05afa10f8b93bab5c844a2633c6f11",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "agent-capability-matrix.md",
+          "path": "core-architecture/agent-capability-matrix.md",
+          "size": 8080
+        },
+        {
+          "hash": "495287d937e8a723181251cb86ab1a71",
+          "modified": "2025-08-29T01:22:52.371236",
+          "name": "AGENT_ARCHITECTURE_PROMPT.md",
+          "path": "core-architecture/AGENT_ARCHITECTURE_PROMPT.md",
+          "size": 43144
+        },
+        {
+          "hash": "55b3a07454ae21802b0585e262c56353",
+          "modified": "2025-08-27T12:15:11.344505",
+          "name": "user-scoped-global-context.md",
+          "path": "core-architecture/user-scoped-global-context.md",
+          "size": 4845
+        }
+      ],
+      "path": "core-architecture"
+    },
+    "development-guides": {
+      "count": 16,
+      "files": [
+        {
+          "hash": "6a92594b0b637de68709a6cdd7315aa3",
+          "modified": "2025-07-31T23:50:19.061060",
+          "name": "error-handling-and-logging.md",
+          "path": "development-guides/error-handling-and-logging.md",
+          "size": 15995
+        },
+        {
+          "hash": "d13b33b2136e889d0aeb3ef565a12df0",
+          "modified": "2025-08-19T15:03:28.426992",
+          "name": "agent-bridge-examples.md",
+          "path": "development-guides/agent-bridge-examples.md",
+          "size": 7638
+        },
+        {
+          "hash": "3da5fa8fa280fbe75b426f1191d81a5b",
+          "modified": "2025-09-10T01:44:55.110715",
+          "name": "index.md",
+          "path": "development-guides/index.md",
+          "size": 1591
+        },
+        {
+          "hash": "31e030d65d799c81f43ab2e964660b04",
+          "modified": "2025-09-10T01:44:55.110715",
+          "name": "test-organization-guide.md",
+          "path": "development-guides/test-organization-guide.md",
+          "size": 12253
+        },
+        {
+          "hash": "51e08689b597a8d1e03d995cafb3a219",
+          "modified": "2025-08-29T13:24:55.498197",
+          "name": "README.md",
+          "path": "development-guides/README.md",
+          "size": 2765
+        },
+        {
+          "hash": "1fce34288ac94186c039410867618ff2",
+          "modified": "2025-09-03T00:01:27.836989",
+          "name": "email-authentication-setup.md",
+          "path": "development-guides/email-authentication-setup.md",
+          "size": 9278
+        },
+        {
+          "hash": "5662082fd6c9e4fd1676f78d420e57fe",
+          "modified": "2025-08-16T10:52:31.389350",
+          "name": "server-initialization-patterns.md",
+          "path": "development-guides/server-initialization-patterns.md",
+          "size": 5302
+        },
+        {
+          "hash": "0e5acfffbe94945c88010288dbc159b8",
+          "modified": "2025-08-19T15:02:46.558449",
+          "name": "claude-code-integration.md",
+          "path": "development-guides/claude-code-integration.md",
+          "size": 8159
+        },
+        {
+          "hash": "c9199df0367b1220b9146144011f5b0d",
+          "modified": "2025-08-20T00:30:08.813700",
+          "name": "token-management-analysis.md",
+          "path": "development-guides/token-management-analysis.md",
+          "size": 6248
+        },
+        {
+          "hash": "4b52f5d9411be6d95db6ce551028eebf",
+          "modified": "2025-08-25T23:26:52.653324",
+          "name": "authentication-testing-patterns.md",
+          "path": "development-guides/authentication-testing-patterns.md",
+          "size": 14089
+        },
+        {
+          "hash": "b162d6e7f2019938a3dc7f8eced813b0",
+          "modified": "2025-08-30T03:12:54.053340",
+          "name": "test_creation_guide.md",
+          "path": "development-guides/test_creation_guide.md",
+          "size": 13872
+        },
+        {
+          "hash": "6ea317c64b50a76946289af6265da4aa",
+          "modified": "2025-09-10T01:44:55.110715",
+          "name": "mcp-integration-guide.md",
+          "path": "development-guides/mcp-integration-guide.md",
+          "size": 12265
+        },
+        {
+          "hash": "6ad251086e4f41d65809b80a643fad76",
+          "modified": "2025-07-31T09:20:08.912989",
+          "name": "orm-agent-repository-implementation.md",
+          "path": "development-guides/orm-agent-repository-implementation.md",
+          "size": 4997
+        },
+        {
+          "hash": "3e1cd4d325f3f190fadd1df8c4535824",
+          "modified": "2025-09-03T00:49:08.631887",
+          "name": "jwt-authentication-guide.md",
+          "path": "development-guides/jwt-authentication-guide.md",
+          "size": 4637
+        },
+        {
+          "hash": "0ebc71ab4e9c1fbaff716b0efd1d7490",
+          "modified": "2025-09-03T00:49:08.631887",
+          "name": "docker-system-guide.md",
+          "path": "development-guides/docker-system-guide.md",
+          "size": 13337
+        },
+        {
+          "hash": "6a1b03eb07ac514f2edde37030348e14",
+          "modified": "2025-09-06T10:07:25.467267",
+          "name": "frontend-ux-enhancements.md",
+          "path": "development-guides/frontend-ux-enhancements.md",
+          "size": 7921
+        }
+      ],
+      "path": "development-guides"
+    },
+    "integration-guides": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "d965ad108bca0a46531431f4e3da45be",
+          "modified": "2025-09-09T22:58:03.824773",
+          "name": "claude-json-agent-format.md",
+          "path": "integration-guides/claude-json-agent-format.md",
+          "size": 7454
+        },
+        {
+          "hash": "396bfdaf2a933d485947149f3a29d787",
+          "modified": "2025-09-09T22:48:40.938026",
+          "name": "claude-code-agent-delegation-guide.md",
+          "path": "integration-guides/claude-code-agent-delegation-guide.md",
+          "size": 8118
+        }
+      ],
+      "path": "integration-guides"
+    },
+    "issues": {
+      "count": 16,
+      "files": [
+        {
+          "hash": "70341abb5aae98a2ee9d965baf534c86",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "mcp-authentication-fix-prompts-2025-09-05.md",
+          "path": "issues/mcp-authentication-fix-prompts-2025-09-05.md",
+          "size": 10215
+        },
+        {
+          "hash": "f770207f476da1d139245cdaed197411",
+          "modified": "2025-09-10T03:00:27.147954",
+          "name": "task-creation-assignees-bug.md",
+          "path": "issues/task-creation-assignees-bug.md",
+          "size": 7261
+        },
+        {
+          "hash": "7fca794b2572aba03c09fb384b39ef5d",
+          "modified": "2025-09-10T03:12:38.923798",
+          "name": "task-creation-assignees-final-report.md",
+          "path": "issues/task-creation-assignees-final-report.md",
+          "size": 5939
+        },
+        {
+          "hash": "d239f7de6a3cec7103abf79b84a24475",
+          "modified": "2025-09-06T08:49:27.564088",
+          "name": "index.md",
+          "path": "issues/index.md",
+          "size": 15526
+        },
+        {
+          "hash": "3382d0cc46a2332f956bbe70a941bb4c",
+          "modified": "2025-09-05T10:19:22.725492",
+          "name": "mcp-task-creation-fix-prompt-2025-09-05.md",
+          "path": "issues/mcp-task-creation-fix-prompt-2025-09-05.md",
+          "size": 11932
+        },
+        {
+          "hash": "8a24c6e9ef7d4206c27347018982b3e2",
+          "modified": "2025-09-05T10:51:16.706506",
+          "name": "mcp-subtask-session-management-fix-2025-09-05.md",
+          "path": "issues/mcp-subtask-session-management-fix-2025-09-05.md",
+          "size": 3832
+        },
+        {
+          "hash": "c5a298b27a64d7416898e5e718236348",
+          "modified": "2025-09-05T10:52:43.400872",
+          "name": "mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
+          "path": "issues/mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
+          "size": 4333
+        },
+        {
+          "hash": "4fde21cbe15c19c152ae865ec0ce49d7",
+          "modified": "2025-09-05T09:47:34.344634",
+          "name": "mcp-authentication-testing-blocker-2025-09-05.md",
+          "path": "issues/mcp-authentication-testing-blocker-2025-09-05.md",
+          "size": 8120
+        },
+        {
+          "hash": "0eec47a565e9382041b58919dd3b13fd",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "mcp-task-creation-import-error-2025-09-09.md",
+          "path": "issues/mcp-task-creation-import-error-2025-09-09.md",
+          "size": 5233
+        },
+        {
+          "hash": "c1cab2ec6384dffe2a2bd0eb30b95f3c",
+          "modified": "2025-09-06T02:32:24.228120",
+          "name": "mcp-fixes-verification-report-2025-09-06.md",
+          "path": "issues/mcp-fixes-verification-report-2025-09-06.md",
+          "size": 5412
+        },
+        {
+          "hash": "a2c1fc97014f139cae89d5ec412d913a",
+          "modified": "2025-09-06T08:48:49.857772",
+          "name": "mcp-testing-iteration-45-report-2025-09-06.md",
+          "path": "issues/mcp-testing-iteration-45-report-2025-09-06.md",
+          "size": 8444
+        },
+        {
+          "hash": "0fe08e389a1034114a444df87c9abaeb",
+          "modified": "2025-09-05T10:41:28.773204",
+          "name": "mcp-subtask-persistence-fix-2025-09-05.md",
+          "path": "issues/mcp-subtask-persistence-fix-2025-09-05.md",
+          "size": 9195
+        },
+        {
+          "hash": "c47d32e442127bf2b9440009e93acf6c",
+          "modified": "2025-09-05T11:31:53.420363",
+          "name": "mcp-subtask-persistence-iteration5-final-2025-09-05.md",
+          "path": "issues/mcp-subtask-persistence-iteration5-final-2025-09-05.md",
+          "size": 4698
+        },
+        {
+          "hash": "e7a639dd9713c862ba2b190340a24f0b",
+          "modified": "2025-09-05T10:46:26.780153",
+          "name": "mcp-subtask-persistence-critical-2025-09-05.md",
+          "path": "issues/mcp-subtask-persistence-critical-2025-09-05.md",
+          "size": 3587
+        },
+        {
+          "hash": "5125d77151bb92564a800977c1411a54",
+          "modified": "2025-09-05T10:58:14.895266",
+          "name": "mcp-subtask-persistence-ddd-fix-prompt-2025-09-05.md",
+          "path": "issues/mcp-subtask-persistence-ddd-fix-prompt-2025-09-05.md",
+          "size": 9875
+        },
+        {
+          "hash": "cddb4ade4ab6430ca87aa8ca08eb30ca",
+          "modified": "2025-09-06T10:55:41.690351",
+          "name": "project-deletion-fix-2025-09-06.md",
+          "path": "issues/project-deletion-fix-2025-09-06.md",
+          "size": 2272
+        }
+      ],
+      "path": "issues"
+    },
+    "migration-guides": {
+      "count": 7,
+      "files": [
+        {
+          "hash": "cb99d29edfea6c5d55772ecc95a4b447",
+          "modified": "2025-08-13T19:44:42.346229",
+          "name": "HIERARCHICAL_CONTEXT_MIGRATION.md",
+          "path": "migration-guides/HIERARCHICAL_CONTEXT_MIGRATION.md",
+          "size": 10224
+        },
+        {
+          "hash": "b4cedce094f2deaa138bfed3796675d3",
+          "modified": "2025-08-13T19:44:42.346229",
+          "name": "unified_context_migration_guide.md",
+          "path": "migration-guides/unified_context_migration_guide.md",
+          "size": 11109
+        },
+        {
+          "hash": "1243c7b3b67f4dcb231395bf3680eced",
+          "modified": "2025-09-06T19:21:27.093458",
+          "name": "agent-library-cleanup-migration-guide.md",
+          "path": "migration-guides/agent-library-cleanup-migration-guide.md",
+          "size": 16953
+        },
+        {
+          "hash": "d6460c69629611dc5b06b58cbda7f183",
+          "modified": "2025-09-06T14:59:43.573346",
+          "name": "README.md",
+          "path": "migration-guides/README.md",
+          "size": 2631
+        },
+        {
+          "hash": "1a8bff9a5addc7a1e5e783cd62fa19b6",
+          "modified": "2025-08-27T15:27:03.847730",
+          "name": "database-clean-migration-v3.md",
+          "path": "migration-guides/database-clean-migration-v3.md",
+          "size": 8672
+        },
+        {
+          "hash": "fa37ff1d38fce44ec03fee8edbd97111",
+          "modified": "2025-08-13T19:44:42.346229",
+          "name": "CONTEXT_AUTO_DETECTION_FIX.md",
+          "path": "migration-guides/CONTEXT_AUTO_DETECTION_FIX.md",
+          "size": 9288
+        },
+        {
+          "hash": "534142094a760db7397e80fbaa67cc2a",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "authentication-config-migration-2025-09-05.md",
+          "path": "migration-guides/authentication-config-migration-2025-09-05.md",
+          "size": 4135
+        }
+      ],
+      "path": "migration-guides"
+    },
+    "operations": {
+      "count": 12,
+      "files": [
+        {
+          "hash": "8a089beed43dd67720e00a56eabc2edd",
+          "modified": "2025-09-07T05:34:09.325455",
+          "name": "CAPROVER_DEPLOYMENT_FIX.md",
+          "path": "operations/CAPROVER_DEPLOYMENT_FIX.md",
+          "size": 5463
+        },
+        {
+          "hash": "362e6bab03b727adaa5b5ef15538a6dd",
+          "modified": "2025-08-13T18:14:11.710973",
+          "name": "index.md",
+          "path": "operations/index.md",
+          "size": 1902
+        },
+        {
+          "hash": "3d8237970285321679933471ac8caaeb",
+          "modified": "2025-09-02T23:35:34.646085",
+          "name": "database-configuration-guide.md",
+          "path": "operations/database-configuration-guide.md",
+          "size": 5445
+        },
+        {
+          "hash": "5a763cc337b88f1b02613365cc59c932",
+          "modified": "2025-08-20T03:33:00.683618",
+          "name": "TDD_REMEDIATION_TASK_PLAN.md",
+          "path": "operations/TDD_REMEDIATION_TASK_PLAN.md",
+          "size": 12426
+        },
+        {
+          "hash": "43d34d2a4a16346f1c7ff05c0b55b40a",
+          "modified": "2025-09-10T01:44:55.110715",
+          "name": "cloud-storage-solutions.md",
+          "path": "operations/cloud-storage-solutions.md",
+          "size": 7441
+        },
+        {
+          "hash": "9d61af9d10c9e5eb0b9fc31c6ec13426",
+          "modified": "2025-08-19T13:10:56.709230",
+          "name": "complete-database-reset-guide.md",
+          "path": "operations/complete-database-reset-guide.md",
+          "size": 6992
+        },
+        {
+          "hash": "218d6436cc52b3f1da87a36c962d1fce",
+          "modified": "2025-09-07T18:37:43.072581",
+          "name": "CAPROVER_ENV_VARIABLES.md",
+          "path": "operations/CAPROVER_ENV_VARIABLES.md",
+          "size": 4014
+        },
+        {
+          "hash": "7158c08d1105e3cf2f9f201ee8c3ffb9",
+          "modified": "2025-09-07T05:34:09.325455",
+          "name": "CAPROVER_CRITICAL_FIX.md",
+          "path": "operations/CAPROVER_CRITICAL_FIX.md",
+          "size": 2185
+        },
+        {
+          "hash": "a26f43dc578ab8b2e5610f7bfff0d062",
+          "modified": "2025-08-20T17:11:03.056805",
+          "name": "mcp-registration-system.md",
+          "path": "operations/mcp-registration-system.md",
+          "size": 7145
+        },
+        {
+          "hash": "0b94ac1b3aead9d88d5ca53e207db9e8",
+          "modified": "2025-09-07T18:37:43.080590",
+          "name": "KEYCLOAK_POSTGRESQL_SETUP.md",
+          "path": "operations/KEYCLOAK_POSTGRESQL_SETUP.md",
+          "size": 9915
+        },
+        {
+          "hash": "7d84de67309e51ac202c3e7ec12d7e07",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "postgresql-configuration-guide.md",
+          "path": "operations/postgresql-configuration-guide.md",
+          "size": 2714
+        },
+        {
+          "hash": "db0fa6f2da9f13ee137daf4087a04d11",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "environment-setup.md",
+          "path": "operations/environment-setup.md",
+          "size": 7584
+        }
+      ],
+      "path": "operations"
+    },
+    "product-requirements": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "6b9da45b60fe925e67cadc78c0b08635",
+          "modified": "2025-07-31T09:20:08.912989",
+          "name": "README.md",
+          "path": "product-requirements/README.md",
+          "size": 1994
+        },
+        {
+          "hash": "e13369e26bc5b5e407fa75902c0058aa",
+          "modified": "2025-07-31T09:20:08.912989",
+          "name": "PRD.md",
+          "path": "product-requirements/PRD.md",
+          "size": 15728
+        }
+      ],
+      "path": "product-requirements"
+    },
+    "reports-status": {
+      "count": 25,
+      "files": [
+        {
+          "hash": "056e07b4f0f3e095d499162f84490104",
+          "modified": "2025-09-10T03:02:09.555386",
+          "name": "mcp-tools-test-report-2025-09-10.md",
+          "path": "reports-status/mcp-tools-test-report-2025-09-10.md",
+          "size": 4565
+        },
+        {
+          "hash": "04caac94b5720b2dc70c89ef6b7d0c5d",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "project-wide-cleanup-final-2025-09-02.md",
+          "path": "reports-status/project-wide-cleanup-final-2025-09-02.md",
+          "size": 6803
+        },
+        {
+          "hash": "64c0e3e27b2e65da16d75449c42daa88",
+          "modified": "2025-09-08T22:10:32.652845",
+          "name": "obsolete-controllers-recommendations-2025-09-08.md",
+          "path": "reports-status/obsolete-controllers-recommendations-2025-09-08.md",
+          "size": 6293
+        },
+        {
+          "hash": "790aaf2225a54c49e697670d8adf881c",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "documentation-consolidation-strategy-2025-09-08.md",
+          "path": "reports-status/documentation-consolidation-strategy-2025-09-08.md",
+          "size": 21525
+        },
+        {
+          "hash": "578b6e0e484ab967f2fd96a69e9cad1f",
+          "modified": "2025-09-08T22:11:24.127951",
+          "name": "mcp-controllers-maintenance-analysis.md",
+          "path": "reports-status/mcp-controllers-maintenance-analysis.md",
+          "size": 8125
+        },
+        {
+          "hash": "ac092c7d27a6f2f5da9e8c704dfd23d1",
+          "modified": "2025-08-28T20:20:18.540775",
+          "name": "architecture_test_report.md",
+          "path": "reports-status/architecture_test_report.md",
+          "size": 6982
+        },
+        {
+          "hash": "e58d1a2d7214c3f7dec36ef2bc7c46cf",
+          "modified": "2025-09-08T04:03:49.715835",
+          "name": "README.md",
+          "path": "reports-status/README.md",
+          "size": 5810
+        },
+        {
+          "hash": "5b23be1b3bf16a07b7a198cf25ba329a",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "agent-optimization-progress-2025-09-09.md",
+          "path": "reports-status/agent-optimization-progress-2025-09-09.md",
+          "size": 5435
+        },
+        {
+          "hash": "504a98ce2756a0b7738edb2d8f8b9aef",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "comprehensive-documentation-cleanup-2025-09-02.md",
+          "path": "reports-status/comprehensive-documentation-cleanup-2025-09-02.md",
+          "size": 11186
+        },
+        {
+          "hash": "5fce7f92506cc4157088086b153ea1be",
+          "modified": "2025-09-06T19:21:27.097595",
+          "name": "agent-library-audit-report.md",
+          "path": "reports-status/agent-library-audit-report.md",
+          "size": 5208
+        },
+        {
+          "hash": "62f020919d37cb61e6b09e72e3fee18e",
+          "modified": "2025-09-10T03:39:47.137974",
+          "name": "assignee-persistence-fix-report-2025-09-10.md",
+          "path": "reports-status/assignee-persistence-fix-report-2025-09-10.md",
+          "size": 6691
+        },
+        {
+          "hash": "44e53bbc02a39cf4f7e1ced9a87e73fc",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "safe-cleanup-execution-report-2025-09-08.md",
+          "path": "reports-status/safe-cleanup-execution-report-2025-09-08.md",
+          "size": 4444
+        },
+        {
+          "hash": "d03a0704531fc76deb9ae1eaf33715fc",
+          "modified": "2025-09-08T04:02:07.214631",
+          "name": "final-cleanup-report-2025-09-08.md",
+          "path": "reports-status/final-cleanup-report-2025-09-08.md",
+          "size": 15676
+        },
+        {
+          "hash": "63ed3814777552a220e868683dc9b915",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "agent-library-cleanup-final-report.md",
+          "path": "reports-status/agent-library-cleanup-final-report.md",
+          "size": 12653
+        },
+        {
+          "hash": "b7cc7417dcba2920ab85cb170b749bec",
+          "modified": "2025-09-04T17:16:45.600567",
+          "name": "ddd-compliance-verification-2025-01-04.md",
+          "path": "reports-status/ddd-compliance-verification-2025-01-04.md",
+          "size": 4432
+        },
+        {
+          "hash": "57c4652372e7104d7a4aed3dcfb94447",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "system-health-report-2025-09-09.md",
+          "path": "reports-status/system-health-report-2025-09-09.md",
+          "size": 7079
+        },
+        {
+          "hash": "8ebb2d86a3862ba17c8e788ec2ca59ef",
+          "modified": "2025-09-10T04:02:09.832314",
+          "name": "task-assignees-test-report-2025-09-10.md",
+          "path": "reports-status/task-assignees-test-report-2025-09-10.md",
+          "size": 5255
+        },
+        {
+          "hash": "38d6f086947afdd9b3bbecbdc61928c1",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "corrected-cleanup-recommendations-2025-09-08.md",
+          "path": "reports-status/corrected-cleanup-recommendations-2025-09-08.md",
+          "size": 5558
+        },
+        {
+          "hash": "d71cc1d464a625bada0da7711a80d0bf",
+          "modified": "2025-09-04T18:01:54.578663",
+          "name": "ddd-compliance-iteration-3-report.md",
+          "path": "reports-status/ddd-compliance-iteration-3-report.md",
+          "size": 6152
+        },
+        {
+          "hash": "c56503c86a0a17166b27b72d320b9828",
+          "modified": "2025-09-09T21:51:01.436098",
+          "name": "mcp-controllers-import-analysis-2025-09-09.md",
+          "path": "reports-status/mcp-controllers-import-analysis-2025-09-09.md",
+          "size": 8663
+        },
+        {
+          "hash": "336c1831a74aefd483f9498bffe1ed9c",
+          "modified": "2025-09-04T16:17:34.365900",
+          "name": "ddd-violations-audit-report.md",
+          "path": "reports-status/ddd-violations-audit-report.md",
+          "size": 7491
+        },
+        {
+          "hash": "16d7a4a5bb0bbfa81185d3a236a28c94",
+          "modified": "2025-09-04T21:37:06.235671",
+          "name": "ddd-compliance-iteration-4-report.md",
+          "path": "reports-status/ddd-compliance-iteration-4-report.md",
+          "size": 5018
+        },
+        {
+          "hash": "891a9c589365b19231812624eeada3a4",
+          "modified": "2025-09-10T03:22:33.196358",
+          "name": "mcp-test-success-report-2025-09-10.md",
+          "path": "reports-status/mcp-test-success-report-2025-09-10.md",
+          "size": 3796
+        },
+        {
+          "hash": "bd2b9fb3d974007c3b9447b87b154e1a",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "agent-consolidation-complete-2025-09-09.md",
+          "path": "reports-status/agent-consolidation-complete-2025-09-09.md",
+          "size": 6614
+        },
+        {
+          "hash": "b36debbaeeb9e3cdc676f08ce70c1ef7",
+          "modified": "2025-09-10T00:15:16.578730",
+          "name": "role-based-implementation-summary-2025-09-09.md",
+          "path": "reports-status/role-based-implementation-summary-2025-09-09.md",
+          "size": 5481
+        }
+      ],
+      "path": "reports-status"
+    },
+    "root": {
+      "count": 10,
+      "files": [
+        {
+          "hash": "f36bd93e951295ca30e9d85b3b31cbad",
+          "modified": "2025-09-09T14:50:14.377209",
+          "name": "user_prompt_submit_hook.md",
+          "path": "user_prompt_submit_hook.md",
+          "size": 10561
+        },
+        {
+          "hash": "42b2d04f206c4fa810f4410070d043d3",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "cc_hooks_docs.md",
+          "path": "cc_hooks_docs.md",
+          "size": 9515
+        },
+        {
+          "hash": "a2ed3aa7230b94313cb0fe030caea786",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "anthropic_output_styles.md",
+          "path": "anthropic_output_styles.md",
+          "size": 3657
+        },
+        {
+          "hash": "4c79778dd8f4ff2d891dc3b7091aa735",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "anthropic_docs_subagents.md",
+          "path": "anthropic_docs_subagents.md",
+          "size": 11816
+        },
+        {
+          "hash": "ea2e21e685fd8d59ae148b4a182cb9f4",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "anthropic_quick_start.md",
+          "path": "anthropic_quick_start.md",
+          "size": 6661
+        },
+        {
+          "hash": "ee56cb3f6dfc6327b850a4548bfbcb92",
+          "modified": "2025-09-09T14:50:14.377209",
+          "name": "uv-single-file-scripts.md",
+          "path": "uv-single-file-scripts.md",
+          "size": 4132
+        },
+        {
+          "hash": "64a3e8dad60db8e9fa9cf270732ff852",
+          "modified": "2025-09-09T22:43:33.895040",
+          "name": "sub-agent-format.md",
+          "path": "sub-agent-format.md",
+          "size": 434
+        },
+        {
+          "hash": "01f903a8aac3031b21d12f25b4d43787",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "openai_quick_start.md",
+          "path": "openai_quick_start.md",
+          "size": 9456
+        },
+        {
+          "hash": "921587851e4ca5ba0eff92016f0c22ff",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "tools_list.md",
+          "path": "tools_list.md",
+          "size": 6202
+        },
+        {
+          "hash": "4ac31144a6145b6274f55ff69851666b",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "anthropic_custom_slash_commands.md",
+          "path": "anthropic_custom_slash_commands.md",
+          "size": 9823
+        }
+      ],
+      "path": ""
+    },
+    "setup-guides": {
+      "count": 9,
+      "files": [
+        {
+          "hash": "96bd4cceca4513f357842eb7dd5b89db",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "index.md",
+          "path": "setup-guides/index.md",
+          "size": 2235
+        },
+        {
+          "hash": "407f4ea508b34f9b56c66627054d80a8",
+          "modified": "2025-09-07T05:34:09.325455",
+          "name": "BRANCH_SETUP.md",
+          "path": "setup-guides/BRANCH_SETUP.md",
+          "size": 2235
+        },
+        {
+          "hash": "93f2d6f48300aa1192bb21aad435d352",
+          "modified": "2025-09-07T16:52:14.961493",
+          "name": "keycloak-authentication-fix.md",
+          "path": "setup-guides/keycloak-authentication-fix.md",
+          "size": 4376
+        },
+        {
+          "hash": "9f5912f510fe2c01ed933af11933d7e8",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "DATABASE_UI_GUIDE.md",
+          "path": "setup-guides/DATABASE_UI_GUIDE.md",
+          "size": 8079
+        },
+        {
+          "hash": "90ef8c3345d791aed29474a644d363fd",
+          "modified": "2025-09-10T01:44:54.764257",
+          "name": "POSTGRESQL_KEYCLOAK_PRODUCTION.md",
+          "path": "setup-guides/POSTGRESQL_KEYCLOAK_PRODUCTION.md",
+          "size": 8448
+        },
+        {
+          "hash": "d7acd3649c13ccd8b7864a8cb570a6e1",
+          "modified": "2025-09-07T14:51:21.303360",
+          "name": "keycloak-email-verification-setup.md",
+          "path": "setup-guides/keycloak-email-verification-setup.md",
+          "size": 4891
+        },
+        {
+          "hash": "03e3d618903ed7e91f29f38cef58ac32",
+          "modified": "2025-09-07T15:07:55.264473",
+          "name": "keycloak-email-verification-fix.md",
+          "path": "setup-guides/keycloak-email-verification-fix.md",
+          "size": 7913
+        },
+        {
+          "hash": "41be06cea77c58da44e8b69b75757c23",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "PRODUCTION_SETUP_SUMMARY.md",
+          "path": "setup-guides/PRODUCTION_SETUP_SUMMARY.md",
+          "size": 3827
+        },
+        {
+          "hash": "6b49829ccb3bfb1f4e7ecbb33545fcad",
+          "modified": "2025-09-05T09:33:44.804427",
+          "name": "keycloak-authentication-setup.md",
+          "path": "setup-guides/keycloak-authentication-setup.md",
+          "size": 8297
+        }
+      ],
+      "path": "setup-guides"
+    },
+    "testing-qa": {
+      "count": 38,
+      "files": [
+        {
+          "hash": "5e586785c2108b83d593b7245969cdac",
+          "modified": "2025-09-09T21:57:46.587452",
+          "name": "task-creation-request-2025-09-09.md",
+          "path": "testing-qa/task-creation-request-2025-09-09.md",
+          "size": 6490
+        },
+        {
+          "hash": "fbbac553c6ef029240eeb8432aceab1f",
+          "modified": "2025-08-25T23:25:00.368147",
+          "name": "test-modernization-guide.md",
+          "path": "testing-qa/test-modernization-guide.md",
+          "size": 11583
+        },
+        {
+          "hash": "ef1d56063e82d863327b80e2395942fe",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "mcp-phase-5-testing-blocked-final-report-2025-09-05.md",
+          "path": "testing-qa/mcp-phase-5-testing-blocked-final-report-2025-09-05.md",
+          "size": 6846
+        },
+        {
+          "hash": "4196b61542bbff29e1ce9a785571370e",
+          "modified": "2025-09-05T10:18:34.383684",
+          "name": "mcp-test-results-2025-09-05.md",
+          "path": "testing-qa/mcp-test-results-2025-09-05.md",
+          "size": 8735
+        },
+        {
+          "hash": "bad353e582cb0e3b8dd3b528fdc68343",
+          "modified": "2025-09-08T03:40:03.906223",
+          "name": "mcp-tools-test-issues.md",
+          "path": "testing-qa/mcp-tools-test-issues.md",
+          "size": 12552
+        },
+        {
+          "hash": "630d299807d61909bea527285ad29377",
+          "modified": "2025-09-08T17:50:18.592609",
+          "name": "manage-dependency-api-verification-report.md",
+          "path": "testing-qa/manage-dependency-api-verification-report.md",
+          "size": 6432
+        },
+        {
+          "hash": "4d386e08457a5a2855498d3ce0168e14",
+          "modified": "2025-09-08T03:38:01.462224",
+          "name": "testing.md",
+          "path": "testing-qa/testing.md",
+          "size": 7876
+        },
+        {
+          "hash": "f471e21c8c0df10ef8a1733958197945",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "call_agent_verification_report.md",
+          "path": "testing-qa/call_agent_verification_report.md",
+          "size": 12888
+        },
+        {
+          "hash": "f84ea0ff502042887067568b4ada4829",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "configuration-cleanup-strategy.md",
+          "path": "testing-qa/configuration-cleanup-strategy.md",
+          "size": 17900
+        },
+        {
+          "hash": "9a8db966566bfe2c64a8880f7f19f463",
+          "modified": "2025-09-09T22:39:53.947502",
+          "name": "README.md",
+          "path": "testing-qa/README.md",
+          "size": 7909
+        },
+        {
+          "hash": "68b18ec5b7b92f8cac7e46843dd27d5e",
+          "modified": "2025-09-08T03:46:34.515865",
+          "name": "context_resolution_tests_summary.md",
+          "path": "testing-qa/context_resolution_tests_summary.md",
+          "size": 15889
+        },
+        {
+          "hash": "c39ea8011279870f5d5e04dbfb687515",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "file-cleanup-recommendations.md",
+          "path": "testing-qa/file-cleanup-recommendations.md",
+          "size": 11767
+        },
+        {
+          "hash": "be013688f3686ddcfff3b8e3606cb9c8",
+          "modified": "2025-09-09T22:06:11.646956",
+          "name": "subtask-tdd-findings-2025-09-09.md",
+          "path": "testing-qa/subtask-tdd-findings-2025-09-09.md",
+          "size": 9581
+        },
+        {
+          "hash": "19a5f522e4b0cd1fd45552ae357fe718",
+          "modified": "2025-09-05T12:37:10.073735",
+          "name": "mcp-test-results-iteration10-2025-09-05.md",
+          "path": "testing-qa/mcp-test-results-iteration10-2025-09-05.md",
+          "size": 12818
+        },
+        {
+          "hash": "d6897bf1d3449b56cfa4a2e718351e6e",
+          "modified": "2025-09-05T10:57:08.888107",
+          "name": "mcp-subtask-persistence-critical-issue-2025-09-05.md",
+          "path": "testing-qa/mcp-subtask-persistence-critical-issue-2025-09-05.md",
+          "size": 6599
+        },
+        {
+          "hash": "a146528436e4963a071f0f3340300fe3",
+          "modified": "2025-09-05T11:37:52.736324",
+          "name": "mcp-subtask-persistence-critical-failure-2025-09-05.md",
+          "path": "testing-qa/mcp-subtask-persistence-critical-failure-2025-09-05.md",
+          "size": 5628
+        },
+        {
+          "hash": "c1fb1e3dbd8a288d8a69c5ed5f6d9310",
+          "modified": "2025-09-09T22:03:44.350988",
+          "name": "subtask-tdd-methodology.md",
+          "path": "testing-qa/subtask-tdd-methodology.md",
+          "size": 11753
+        },
+        {
+          "hash": "8e1dff94095cac2bcbbd56732fd2bacd",
+          "modified": "2025-09-09T21:55:52.312193",
+          "name": "task-creation-import-fix-test-results.md",
+          "path": "testing-qa/task-creation-import-fix-test-results.md",
+          "size": 6277
+        },
+        {
+          "hash": "0f74c91b45e8e16244d8a1335b5c85d8",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "mcp-phase-5-testing-complete-2025-09-05.md",
+          "path": "testing-qa/mcp-phase-5-testing-complete-2025-09-05.md",
+          "size": 7084
+        },
+        {
+          "hash": "535e7a34e5b5db31ce9a2f265084907e",
+          "modified": "2025-09-09T21:41:30.389553",
+          "name": "mcp-tools-test-results-2025-09-09.md",
+          "path": "testing-qa/mcp-tools-test-results-2025-09-09.md",
+          "size": 5905
+        },
+        {
+          "hash": "decea03d6d2fc55b880b38cd9e40d591",
+          "modified": "2025-09-08T03:40:58.558388",
+          "name": "MCP_TESTING_REPORT.md",
+          "path": "testing-qa/MCP_TESTING_REPORT.md",
+          "size": 10426
+        },
+        {
+          "hash": "186ec321feb176345123f08d5f77897f",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "manage-project-api-verification-report.md",
+          "path": "testing-qa/manage-project-api-verification-report.md",
+          "size": 9077
+        },
+        {
+          "hash": "daa20d03e14ee0d9509a41a44b349b5a",
+          "modified": "2025-09-08T03:45:07.814076",
+          "name": "POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
+          "path": "testing-qa/POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
+          "size": 14550
+        },
+        {
+          "hash": "3f063ca69b867ddea283dfbdf7777d06",
+          "modified": "2025-09-03T12:08:32.556028",
+          "name": "mcp-tools-comprehensive-test-report.md",
+          "path": "testing-qa/mcp-tools-comprehensive-test-report.md",
+          "size": 9839
+        },
+        {
+          "hash": "6c7a1b70361af52884b60eb445767671",
+          "modified": "2025-09-08T03:43:20.870414",
+          "name": "POSTGRESQL_TDD_FIXES_SUMMARY.md",
+          "path": "testing-qa/POSTGRESQL_TDD_FIXES_SUMMARY.md",
+          "size": 10194
+        },
+        {
+          "hash": "e3f55058a9e0cea12d55d1e2fd15fea3",
+          "modified": "2025-09-05T09:58:14.325194",
+          "name": "mcp-testing-results-2025-09-05.md",
+          "path": "testing-qa/mcp-testing-results-2025-09-05.md",
+          "size": 5735
+        },
+        {
+          "hash": "4b86df2fe9250021c96fe3c446052743",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "mcp-test-results-iteration7-2025-09-05.md",
+          "path": "testing-qa/mcp-test-results-iteration7-2025-09-05.md",
+          "size": 10508
+        },
+        {
+          "hash": "b81aae68a7f9663ca9d3db5239614fc9",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "documentation-quality-prevention-strategy.md",
+          "path": "testing-qa/documentation-quality-prevention-strategy.md",
+          "size": 20177
+        },
+        {
+          "hash": "cc166b5f351e1fa79b7f37211348d724",
+          "modified": "2025-09-08T03:48:46.388277",
+          "name": "context_resolution_tdd_tests.md",
+          "path": "testing-qa/context_resolution_tdd_tests.md",
+          "size": 20706
+        },
+        {
+          "hash": "8062a17ca07c621bd5c4499e8579e11d",
+          "modified": "2025-09-08T03:38:44.583029",
+          "name": "test-results-and-issues.md",
+          "path": "testing-qa/test-results-and-issues.md",
+          "size": 7910
+        },
+        {
+          "hash": "3820210d84cb4f159f879948719edd48",
+          "modified": "2025-09-09T22:23:38.665574",
+          "name": "agent_management_test_report.md",
+          "path": "testing-qa/agent_management_test_report.md",
+          "size": 10860
+        },
+        {
+          "hash": "9a755e64b63cda7d63a570054a5359e3",
+          "modified": "2025-08-25T00:30:42.579211",
+          "name": "comprehensive-mcp-tools-test-suite.md",
+          "path": "testing-qa/comprehensive-mcp-tools-test-suite.md",
+          "size": 9842
+        },
+        {
+          "hash": "4852b8d3c94672c5c960a1b2c154cfc3",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "mcp-test-results-iteration4-2025-09-05.md",
+          "path": "testing-qa/mcp-test-results-iteration4-2025-09-05.md",
+          "size": 5559
+        },
+        {
+          "hash": "7bb8401836345566eb452c09c14c0cd8",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "test-summary-2025-09-09.md",
+          "path": "testing-qa/test-summary-2025-09-09.md",
+          "size": 10452
+        },
+        {
+          "hash": "936af0c8be472aa0d3088ade597c37d1",
+          "modified": "2025-09-05T12:44:24.824415",
+          "name": "mcp-iteration-11-test-success-2025-09-05.md",
+          "path": "testing-qa/mcp-iteration-11-test-success-2025-09-05.md",
+          "size": 7519
+        },
+        {
+          "hash": "4ed608e725092e1154504b80f7547919",
+          "modified": "2025-09-05T09:49:31.569618",
+          "name": "mcp-test-architecture-requirements.md",
+          "path": "testing-qa/mcp-test-architecture-requirements.md",
+          "size": 13128
+        },
+        {
+          "hash": "deeafc5964988cbf2e6273f500149914",
+          "modified": "2025-09-05T12:22:21.198111",
+          "name": "mcp-iteration-8-test-success-2025-09-05.md",
+          "path": "testing-qa/mcp-iteration-8-test-success-2025-09-05.md",
+          "size": 5660
+        },
+        {
+          "hash": "ce49476d887086ccce2714805308816c",
+          "modified": "2025-09-09T22:01:41.868358",
+          "name": "task-management-crud-test-results-2025-09-09.md",
+          "path": "testing-qa/task-management-crud-test-results-2025-09-09.md",
+          "size": 8527
+        }
+      ],
+      "path": "testing-qa"
+    },
+    "testing-qa/e2e": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "719b5344d5fe7d6eddee64147a6ccac1",
+          "modified": "2025-08-13T19:44:42.350244",
+          "name": "End_to_End_Testing_Guidelines.md",
+          "path": "testing-qa/e2e/End_to_End_Testing_Guidelines.md",
+          "size": 3351
+        }
+      ],
+      "path": "testing-qa/e2e"
+    },
+    "troubleshooting-guides": {
+      "count": 23,
+      "files": [
+        {
+          "hash": "2d646ec1c8c846e5236923503f7a8516",
+          "modified": "2025-08-26T10:42:14.016386",
+          "name": "legacy-database-columns.md",
+          "path": "troubleshooting-guides/legacy-database-columns.md",
+          "size": 10256
+        },
+        {
+          "hash": "1f5aacc2420086ffda20de725a65cd27",
+          "modified": "2025-09-02T21:56:01.661495",
+          "name": "index.md",
+          "path": "troubleshooting-guides/index.md",
+          "size": 2238
+        },
+        {
+          "hash": "db64e22459b7cfbc7c36bf93fb36d198",
+          "modified": "2025-09-10T01:44:55.090092",
+          "name": "AGENT-SECURITY-FRAMEWORK.md",
+          "path": "troubleshooting-guides/AGENT-SECURITY-FRAMEWORK.md",
+          "size": 19289
+        },
+        {
+          "hash": "180656b4f7bf7477200c2b8860afd1e1",
+          "modified": "2025-08-25T00:23:41.688905",
+          "name": "task-persistence-fix-guide.md",
+          "path": "troubleshooting-guides/task-persistence-fix-guide.md",
+          "size": 6100
+        },
+        {
+          "hash": "8f8d1f8b076f0e86dd2ae9cf2ebfd929",
+          "modified": "2025-08-16T15:14:13.468176",
+          "name": "tdd-remediation-fixes.md",
+          "path": "troubleshooting-guides/tdd-remediation-fixes.md",
+          "size": 5101
+        },
+        {
+          "hash": "228caad46ffee8d8cc3c00d8292509b5",
+          "modified": "2025-08-26T10:42:54.348964",
+          "name": "README.md",
+          "path": "troubleshooting-guides/README.md",
+          "size": 2425
+        },
+        {
+          "hash": "8a5c9f96f002b64d76a68e9bc2085bc0",
+          "modified": "2025-09-10T01:44:41.997400",
+          "name": "frontend-development-environment-fix.md",
+          "path": "troubleshooting-guides/frontend-development-environment-fix.md",
+          "size": 5202
+        },
+        {
+          "hash": "8a0fd0c3d1a0eedb8389c4acfc4681a1",
+          "modified": "2025-09-02T21:44:48.474512",
+          "name": "global-context-singleton-setup-solution.md",
+          "path": "troubleshooting-guides/global-context-singleton-setup-solution.md",
+          "size": 6507
+        },
+        {
+          "hash": "177144a114284af63b5a3ad07b13a349",
+          "modified": "2025-09-05T11:38:43.003363",
+          "name": "subtask-persistence-debugging-guide.md",
+          "path": "troubleshooting-guides/subtask-persistence-debugging-guide.md",
+          "size": 6436
+        },
+        {
+          "hash": "708bf5e5432e3857503a5133100c658e",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "frontend-debugging-summary.md",
+          "path": "troubleshooting-guides/frontend-debugging-summary.md",
+          "size": 9921
+        },
+        {
+          "hash": "41c44dc5920d04376527d139ea7be59e",
+          "modified": "2025-08-25T00:14:24.711933",
+          "name": "task-persistence-issue-analysis.md",
+          "path": "troubleshooting-guides/task-persistence-issue-analysis.md",
+          "size": 7008
+        },
+        {
+          "hash": "ff84fd0d1a63690d3080c4c84297292b",
+          "modified": "2025-09-03T00:49:08.675678",
+          "name": "SECURITY-REMEDIATION-GUIDE.md",
+          "path": "troubleshooting-guides/SECURITY-REMEDIATION-GUIDE.md",
+          "size": 11657
+        },
+        {
+          "hash": "75b342653a5c48b79099bb429f0a152e",
+          "modified": "2025-09-08T03:36:23.715878",
+          "name": "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
+          "path": "troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
+          "size": 20403
+        },
+        {
+          "hash": "93100cf7c21136ce7a675fd8a53b9126",
+          "modified": "2025-09-02T13:50:35.531911",
+          "name": "FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
+          "path": "troubleshooting-guides/FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
+          "size": 7223
+        },
+        {
+          "hash": "5bb3e3aed283d98fe89521688118187a",
+          "modified": "2025-08-24T17:23:54.505038",
+          "name": "v2-api-git-branch-filtering-fix.md",
+          "path": "troubleshooting-guides/v2-api-git-branch-filtering-fix.md",
+          "size": 12661
+        },
+        {
+          "hash": "b790720fb3c5b95b7857454f92451956",
+          "modified": "2025-09-03T00:49:08.680057",
+          "name": "frontend-task-listing-fix.md",
+          "path": "troubleshooting-guides/frontend-task-listing-fix.md",
+          "size": 5851
+        },
+        {
+          "hash": "f13bd568cc062ba8f8828df190f3f077",
+          "modified": "2025-08-25T23:24:36.086315",
+          "name": "CONTEXT-ISOLATION-SECURITY.md",
+          "path": "troubleshooting-guides/CONTEXT-ISOLATION-SECURITY.md",
+          "size": 20662
+        },
+        {
+          "hash": "1df9f8387eef1797c085b3dc7a789808",
+          "modified": "2025-09-06T09:52:14.690016",
+          "name": "comprehensive-branch-cascade-deletion-fix.md",
+          "path": "troubleshooting-guides/comprehensive-branch-cascade-deletion-fix.md",
+          "size": 6179
+        },
+        {
+          "hash": "45009d4d33f616e50710f6025811834a",
+          "modified": "2025-08-24T12:30:53.470587",
+          "name": "task-list-git-branch-filtering-fix.md",
+          "path": "troubleshooting-guides/task-list-git-branch-filtering-fix.md",
+          "size": 6247
+        },
+        {
+          "hash": "ab0c1fda459ddb96aa2ac19332032723",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "DMAIC-D1-Authentication-Security-Requirements.md",
+          "path": "troubleshooting-guides/DMAIC-D1-Authentication-Security-Requirements.md",
+          "size": 18226
+        },
+        {
+          "hash": "501317cc8523391f12683ddb837cb8d6",
+          "modified": "2025-08-13T22:34:39.028905",
+          "name": "task-context-completion-summary-fixes.md",
+          "path": "troubleshooting-guides/task-context-completion-summary-fixes.md",
+          "size": 6597
+        },
+        {
+          "hash": "026da6676725cc99e43f4f05b4bc6a3b",
+          "modified": "2025-08-25T23:27:27.759161",
+          "name": "mcp-connection-issues.md",
+          "path": "troubleshooting-guides/mcp-connection-issues.md",
+          "size": 7036
+        },
+        {
+          "hash": "5c8b81d9269adffe7da7aeef9d5193d1",
+          "modified": "2025-09-10T01:44:55.085968",
+          "name": "TROUBLESHOOTING.md",
+          "path": "troubleshooting-guides/TROUBLESHOOTING.md",
+          "size": 3820
+        }
+      ],
+      "path": "troubleshooting-guides"
+    }
+  },
+  "generated_at": "2025-09-10T23:39:37.163466",
+  "structure": {
+    "_absolute_docs": {
+      "scripts": {
+        "files": [
+          "docker-menu.sh.md",
+          "f_index.md",
+          "test-doc-system.sh.md"
+        ]
+      }
+    },
+    "_obsolete_docs": {},
+    "api-behavior": {
+      "files": [
+        "json-parameter-parsing.md",
+        "parameter-type-conversion-verification.md",
+        "parameter-type-validation.md"
+      ]
+    },
+    "api-integration": {
+      "controllers": {
+        "files": [
+          "manage-agent-api.md",
+          "manage-connection-api.md",
+          "manage-context-api.md",
+          "manage-dependency-api.md",
+          "manage-git-branch-api.md",
+          "manage-project-api.md",
+          "manage-subtask-api.md",
+          "manage-task-api.md"
+        ]
+      },
+      "files": [
+        "README.md",
+        "agent-assignment-enhancement.md",
+        "api-reference.md",
+        "api-verification-status.md",
+        "configuration.md"
+      ]
+    },
+    "assets": {
+      "images": {},
+      "updates": {}
+    },
+    "authentication": {
+      "files": [
+        "KEYCLOAK_CONFIGURATION.md",
+        "KEYCLOAK_SCRIPTS_README.md",
+        "KEYCLOAK_SETUP.md",
+        "MCP_TOKEN_AUTHENTICATION.md",
+        "POSTGRESQL_KEYCLOAK_SETUP.md"
+      ]
+    },
+    "claude-code": {
+      "files": [
+        "hooks-reference.md"
+      ]
+    },
+    "context-system": {
+      "files": [
+        "00-understanding-mcp-context.md",
+        "01-architecture.md",
+        "02-synchronization.md",
+        "03-api-reference.md",
+        "04-implementation-guide.md",
+        "05-workflow-patterns.md",
+        "CONTEXT_DATA_MODELS.md",
+        "CONTEXT_UPDATE_EXAMPLES.md",
+        "CORRECTIONS_SUMMARY.md",
+        "README.md",
+        "REORGANIZATION_SUMMARY.md",
+        "context-database-schema-complete.md",
+        "index.md"
+      ]
+    },
+    "core-architecture": {
+      "files": [
+        "AGENT_ARCHITECTURE_PROMPT.md",
+        "AI-CONTEXT-REALISTIC-APPROACH.md",
+        "AUTHENTICATION_REFACTOR_ANALYSIS.md",
+        "AUTHENTICATION_REFACTOR_STRATEGY.md",
+        "Architecture_Technique.md",
+        "CONTEXT_UPDATE_IMPLEMENTATION.md",
+        "CONTROLLER_REFACTORING_PLAN.md",
+        "DDD-schema.md",
+        "DDD_COMPLIANCE_ANALYSIS_REPORT.md",
+        "DDD_COMPLIANCE_UPDATE_REPORT.md",
+        "DOMAIN_SERVICES_REFACTORING_ANALYSIS.md",
+        "MCP_SERVER_ARCHITECTURE_GUIDE.md",
+        "PRD.md",
+        "README.md",
+        "REDIS_CACHE_INVALIDATION_ANALYSIS.md",
+        "REPOSITORY_ARCHITECTURE_FINAL.md",
+        "REPOSITORY_LAYER_ARCHITECTURE_ANALYSIS.md",
+        "REPOSITORY_SWITCHING_GUIDE.md",
+        "TOKEN_SECURITY_GUIDE.md",
+        "VISUAL_FLOW_VERIFICATION_PROMPT.md",
+        "agent-capability-matrix.md",
+        "agent-capacity-improvement-recommendations.md",
+        "agent-flow-diagrams.md",
+        "agent-interaction-patterns.md",
+        "agent-library-cleanup-recommendations.md",
+        "agent-optimization-analysis.md",
+        "agent-optimization-implementation-plan.md",
+        "architecture.md",
+        "authentication-system-current.md",
+        "authentication-system.md",
+        "context-management-architectural-review.md",
+        "controller-overlap-analysis.md",
+        "database-architecture.md",
+        "domain-driven-design.md",
+        "index.md",
+        "issues_report.md",
+        "manual-context-implementation-guide.md",
+        "manual-context-system-gap-analysis.md",
+        "manual-context-system-implementation-phases.md",
+        "manual-context-system-technical-architecture.md",
+        "mcp-controller-implementation-changes.md",
+        "mcp-parameter-type-resolution-guide.md",
+        "modular-controller-architecture.md",
+        "parameter-enforcement-technical-spec.md",
+        "role-based-tool-assignment-system.md",
+        "token-flow.md",
+        "user-scoped-global-context.md",
+        "workplace.md"
+      ]
+    },
+    "development-guides": {
+      "files": [
+        "README.md",
+        "agent-bridge-examples.md",
+        "authentication-testing-patterns.md",
+        "claude-code-integration.md",
+        "docker-system-guide.md",
+        "email-authentication-setup.md",
+        "error-handling-and-logging.md",
+        "frontend-ux-enhancements.md",
+        "index.md",
+        "jwt-authentication-guide.md",
+        "mcp-integration-guide.md",
+        "orm-agent-repository-implementation.md",
+        "server-initialization-patterns.md",
+        "test-organization-guide.md",
+        "test_creation_guide.md",
+        "token-management-analysis.md"
+      ]
+    },
+    "files": [
+      "anthropic_custom_slash_commands.md",
+      "anthropic_docs_subagents.md",
+      "anthropic_output_styles.md",
+      "anthropic_quick_start.md",
+      "cc_hooks_docs.md",
+      "openai_quick_start.md",
+      "sub-agent-format.md",
+      "tools_list.md",
+      "user_prompt_submit_hook.md",
+      "uv-single-file-scripts.md"
+    ],
+    "integration-guides": {
+      "files": [
+        "claude-code-agent-delegation-guide.md",
+        "claude-json-agent-format.md"
+      ]
+    },
+    "issues": {
+      "files": [
+        "index.md",
+        "mcp-authentication-fix-prompts-2025-09-05.md",
+        "mcp-authentication-testing-blocker-2025-09-05.md",
+        "mcp-fixes-verification-report-2025-09-06.md",
+        "mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
+        "mcp-subtask-persistence-critical-2025-09-05.md",
+        "mcp-subtask-persistence-ddd-fix-prompt-2025-09-05.md",
+        "mcp-subtask-persistence-fix-2025-09-05.md",
+        "mcp-subtask-persistence-iteration5-final-2025-09-05.md",
+        "mcp-subtask-session-management-fix-2025-09-05.md",
+        "mcp-task-creation-fix-prompt-2025-09-05.md",
+        "mcp-task-creation-import-error-2025-09-09.md",
+        "mcp-testing-iteration-45-report-2025-09-06.md",
+        "project-deletion-fix-2025-09-06.md",
+        "task-creation-assignees-bug.md",
+        "task-creation-assignees-final-report.md"
+      ]
+    },
+    "migration-guides": {
+      "files": [
+        "CONTEXT_AUTO_DETECTION_FIX.md",
+        "HIERARCHICAL_CONTEXT_MIGRATION.md",
+        "README.md",
+        "agent-library-cleanup-migration-guide.md",
+        "authentication-config-migration-2025-09-05.md",
+        "database-clean-migration-v3.md",
+        "unified_context_migration_guide.md"
+      ]
+    },
+    "operations": {
+      "files": [
+        "CAPROVER_CRITICAL_FIX.md",
+        "CAPROVER_DEPLOYMENT_FIX.md",
+        "CAPROVER_ENV_VARIABLES.md",
+        "KEYCLOAK_POSTGRESQL_SETUP.md",
+        "TDD_REMEDIATION_TASK_PLAN.md",
+        "cloud-storage-solutions.md",
+        "complete-database-reset-guide.md",
+        "database-configuration-guide.md",
+        "environment-setup.md",
+        "index.md",
+        "mcp-registration-system.md",
+        "postgresql-configuration-guide.md"
+      ]
+    },
+    "product-requirements": {
+      "files": [
+        "PRD.md",
+        "README.md"
+      ]
+    },
+    "reports-status": {
+      "files": [
+        "README.md",
+        "agent-consolidation-complete-2025-09-09.md",
+        "agent-library-audit-report.md",
+        "agent-library-cleanup-final-report.md",
+        "agent-optimization-progress-2025-09-09.md",
+        "architecture_test_report.md",
+        "assignee-persistence-fix-report-2025-09-10.md",
+        "comprehensive-documentation-cleanup-2025-09-02.md",
+        "corrected-cleanup-recommendations-2025-09-08.md",
+        "ddd-compliance-iteration-3-report.md",
+        "ddd-compliance-iteration-4-report.md",
+        "ddd-compliance-verification-2025-01-04.md",
+        "ddd-violations-audit-report.md",
+        "documentation-consolidation-strategy-2025-09-08.md",
+        "final-cleanup-report-2025-09-08.md",
+        "mcp-controllers-import-analysis-2025-09-09.md",
+        "mcp-controllers-maintenance-analysis.md",
+        "mcp-test-success-report-2025-09-10.md",
+        "mcp-tools-test-report-2025-09-10.md",
+        "obsolete-controllers-recommendations-2025-09-08.md",
+        "project-wide-cleanup-final-2025-09-02.md",
+        "role-based-implementation-summary-2025-09-09.md",
+        "safe-cleanup-execution-report-2025-09-08.md",
+        "system-health-report-2025-09-09.md",
+        "task-assignees-test-report-2025-09-10.md"
+      ]
+    },
+    "setup-guides": {
+      "files": [
+        "BRANCH_SETUP.md",
+        "DATABASE_UI_GUIDE.md",
+        "POSTGRESQL_KEYCLOAK_PRODUCTION.md",
+        "PRODUCTION_SETUP_SUMMARY.md",
+        "index.md",
+        "keycloak-authentication-fix.md",
+        "keycloak-authentication-setup.md",
+        "keycloak-email-verification-fix.md",
+        "keycloak-email-verification-setup.md"
+      ]
+    },
+    "testing-qa": {
+      "e2e": {
+        "files": [
+          "End_to_End_Testing_Guidelines.md"
+        ]
+      },
+      "files": [
+        "MCP_TESTING_REPORT.md",
+        "POSTGRESQL_TDD_FIXES_SUMMARY.md",
+        "POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
+        "README.md",
+        "agent_management_test_report.md",
+        "call_agent_verification_report.md",
+        "comprehensive-mcp-tools-test-suite.md",
+        "configuration-cleanup-strategy.md",
+        "context_resolution_tdd_tests.md",
+        "context_resolution_tests_summary.md",
+        "documentation-quality-prevention-strategy.md",
+        "file-cleanup-recommendations.md",
+        "manage-dependency-api-verification-report.md",
+        "manage-project-api-verification-report.md",
+        "mcp-iteration-11-test-success-2025-09-05.md",
+        "mcp-iteration-8-test-success-2025-09-05.md",
+        "mcp-phase-5-testing-blocked-final-report-2025-09-05.md",
+        "mcp-phase-5-testing-complete-2025-09-05.md",
+        "mcp-subtask-persistence-critical-failure-2025-09-05.md",
+        "mcp-subtask-persistence-critical-issue-2025-09-05.md",
+        "mcp-test-architecture-requirements.md",
+        "mcp-test-results-2025-09-05.md",
+        "mcp-test-results-iteration10-2025-09-05.md",
+        "mcp-test-results-iteration4-2025-09-05.md",
+        "mcp-test-results-iteration7-2025-09-05.md",
+        "mcp-testing-results-2025-09-05.md",
+        "mcp-tools-comprehensive-test-report.md",
+        "mcp-tools-test-issues.md",
+        "mcp-tools-test-results-2025-09-09.md",
+        "subtask-tdd-findings-2025-09-09.md",
+        "subtask-tdd-methodology.md",
+        "task-creation-import-fix-test-results.md",
+        "task-creation-request-2025-09-09.md",
+        "task-management-crud-test-results-2025-09-09.md",
+        "test-modernization-guide.md",
+        "test-results-and-issues.md",
+        "test-summary-2025-09-09.md",
+        "testing.md"
+      ]
+    },
+    "troubleshooting-guides": {
+      "files": [
+        "AGENT-SECURITY-FRAMEWORK.md",
+        "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
+        "CONTEXT-ISOLATION-SECURITY.md",
+        "DMAIC-D1-Authentication-Security-Requirements.md",
+        "FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
+        "README.md",
+        "SECURITY-REMEDIATION-GUIDE.md",
+        "TROUBLESHOOTING.md",
+        "comprehensive-branch-cascade-deletion-fix.md",
+        "frontend-debugging-summary.md",
+        "frontend-development-environment-fix.md",
+        "frontend-task-listing-fix.md",
+        "global-context-singleton-setup-solution.md",
+        "index.md",
+        "legacy-database-columns.md",
+        "mcp-connection-issues.md",
+        "subtask-persistence-debugging-guide.md",
+        "task-context-completion-summary-fixes.md",
+        "task-list-git-branch-filtering-fix.md",
+        "task-persistence-fix-guide.md",
+        "task-persistence-issue-analysis.md",
+        "tdd-remediation-fixes.md",
+        "v2-api-git-branch-filtering-fix.md"
+      ]
+    }
+  },
+  "total_directories": 24,
+  "total_files": 247
+}
