@@ -19,12 +19,15 @@ try:
 except ImportError:
     pass  # dotenv is optional
 
+# Import the path loader utilities
+sys.path.insert(0, str(Path(__file__).parent.parent / "hooks"))
+from utils.env_loader import get_ai_data_path, get_ai_docs_path, get_log_path
+
 
 def log_status_line(input_data, status_line_output):
-    """Log status line event to logs directory."""
-    # Ensure logs directory exists
-    log_dir = Path("logs")
-    log_dir.mkdir(parents=True, exist_ok=True)
+    """Log status line event to AI_DATA directory."""
+    # Get AI_DATA path from environment
+    log_dir = get_ai_data_path()
     log_file = log_dir / 'status_line.json'
     
     # Read existing log data or initialize empty list
@@ -102,16 +105,36 @@ def generate_status_line(input_data):
     current_dir = workspace.get('current_dir', '')
     if current_dir:
         dir_name = os.path.basename(current_dir)
-        parts.append(f"\033[34m📁 {dir_name}\033[0m")  # Blue color
+        parts.append(f"\033[34m📁workplace: {dir_name}\033[0m")  # Blue color
     
     # Git branch and status
     git_branch = get_git_branch()
     if git_branch:
         git_status = get_git_status()
-        git_info = f"🌿 {git_branch}"
+        git_info = f"🌿git branch: {git_branch}"
         if git_status:
             git_info += f" {git_status}"
         parts.append(f"\033[32m{git_info}\033[0m")  # Green color
+    
+    # Environment paths (compact display)
+    try:
+        ai_data = get_ai_data_path()
+        ai_docs = get_ai_docs_path()
+        log_path = get_log_path()
+        
+        # Show just the folder names for compactness
+        paths_info = []
+        if ai_data:
+            paths_info.append(f"📊data path: {ai_data.name}")
+        if ai_docs:
+            paths_info.append(f"📚docs path: {ai_docs.name}")
+        if log_path and log_path != ai_data:  # Don't show if same as AI_DATA
+            paths_info.append(f"📝log path: {log_path.name}")
+        
+        if paths_info:
+            parts.append(f"\033[35m{' '.join(paths_info)}\033[0m")  # Magenta color
+    except Exception:
+        pass  # Fail silently if paths can't be loaded
     
     # Version info (optional, smaller)
     version = input_data.get('version', '')
