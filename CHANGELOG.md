@@ -6,6 +6,69 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **🎯 Enhanced Agent Assignment Dialog with Interactive Agent Information Display** - 2025-09-10
+  - **Feature**: Clickable agent names in "Assign Agents to Task" dialog now show detailed agent information
+  - **Files Modified**:
+    - `dhafnck-frontend/src/components/AgentAssignmentDialog.tsx`
+  - **Enhancements**:
+    - Added Info icon next to agent names (both project registered and library agents)
+    - Clicking agent names toggles detailed information display
+    - Shows agent category (e.g., Development & Coding, Testing & QA)
+    - Displays comprehensive agent description
+    - Lists specific skills as colored badge tags
+    - Added descriptions for all 42 specialized agents in the system
+  - **User Experience**: Users can now understand agent capabilities before assigning them to tasks
+  - **Technical**: Uses React state management for toggling info display, Alert component for styled information
+
+- **🚀 New AgentInfoDialog Component for Displaying Agent Call Results** - 2025-09-10
+  - **Feature**: Created dedicated dialog for displaying agent information when clicking on agent names in task list
+  - **Files Created/Modified**:
+    - Created: `dhafnck-frontend/src/components/AgentInfoDialog.tsx`
+    - Modified: `dhafnck-frontend/src/components/LazyTaskList.tsx`
+  - **Functionality**:
+    - Clicking agent names in task list now opens AgentInfoDialog instead of assignment dialog
+    - Automatically calls the agent API when dialog opens
+    - Displays agent response in JSON format using RawJSONDisplay component
+    - Shows agent category, description, and skills at the top
+    - Includes "Call Agent" button to refresh the agent response
+    - Loading state with spinner while calling agent
+    - Error handling with clear error messages
+  - **User Experience**: 
+    - Users can click on any agent name to see detailed JSON response from `callAgent` API
+    - Dedicated dialog for viewing agent information separate from assignment functionality
+    - Clean JSON display with copy functionality built into RawJSONDisplay component
+  - **Technical Details**:
+    - Uses lazy loading for performance
+    - Integrates with existing `callAgent` API from `../api`
+    - Reuses RawJSONDisplay component for consistent JSON rendering
+
+### Fixed
+- **🐛 Fixed RawJSONDisplay Component Crashing on Undefined Data** - 2025-09-10
+  - **Issue**: RawJSONDisplay component was crashing with "Cannot read properties of undefined (reading 'split')" error
+  - **Root Cause**: Component didn't handle null/undefined data gracefully
+  - **Solution**: Added null safety checks and proper prop naming
+  - **Files Modified**:
+    - `dhafnck-frontend/src/components/ui/RawJSONDisplay.tsx` - Added `safeJsonData` null coalescing
+    - `dhafnck-frontend/src/components/AgentInfoDialog.tsx` - Fixed prop name from `data` to `jsonData`
+  - **Technical Details**:
+    - Used nullish coalescing operator (`??`) to provide empty object fallback
+    - Updated all references to use `safeJsonData` instead of raw `jsonData`
+    - Enhanced error handling in `handleCallAgent` to ensure valid responses
+  - **Impact**: AgentInfoDialog now displays agent responses without crashing
+
+- **🔧 Fixed Agent Click Handler in Task List Not Opening Assignment Dialog** - 2025-09-10
+  - **Issue**: Clicking agent names in task list logged to console but didn't open the assignment dialog
+  - **Root Cause**: The `openDialog` function was being called but without proper error handling for missing task IDs
+  - **Solution**: Added validation to ensure task ID exists before opening dialog
+  - **Files Modified**:
+    - `dhafnck-frontend/src/components/LazyTaskList.tsx` (lines 481-488, 322-329)
+  - **Technical Details**:
+    - Added task ID validation before calling `openDialog('assign', task.id)`
+    - Enhanced console logging to show task ID for debugging
+    - Added error logging when task ID is missing
+  - **Impact**: Users can now click on agent names in the task list to open the assignment dialog
+
 ### Security
 - **🔒 Enhanced Security for manage_connection Health Check Endpoint** - 2025-09-10
   - **Issue**: Health check endpoint was exposing sensitive environment information
@@ -37,6 +100,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Data flow: Database → OptimizedTaskRepository → TaskApplicationFacade → HTTP API → Frontend
   - **Impact**: Frontend now correctly displays assigned agents (e.g., "@coding_agent", "@devops_agent") instead of showing "Unassigned"
   - **Testing**: Verified with 4 test tasks containing 1-5 agents each - all now display correctly
+
+- **🖱️ Fixed Non-Functional Agent Name Clicks in Task List** - 2025-09-10  
+  - **Issue**: Clicking on agent names in task list only logged to console with message "Agent clicked: @agent_name for task: Task Name" but showed no agent information
+  - **Root Cause**: LazyTaskList.tsx had TODO comments instead of actual functionality to open AgentAssignmentDialog
+  - **Solution**: Implemented missing click handlers to open AgentAssignmentDialog with full agent information
+  - **Files Modified**:
+    - `dhafnck-frontend/src/components/LazyTaskList.tsx` (lines 322-325, 481-484, 659-663)
+  - **Technical Details**:
+    - Replaced console.log TODO placeholders with `openDialog('assign', task.id)` calls
+    - Fixed both mobile card view and desktop table view click handlers  
+    - Added proper dialog handoff from TaskDetailsDialog to AgentAssignmentDialog
+    - Maintained existing console logging for debugging purposes
+  - **Impact**: Users can now click agent names to view detailed agent information, skills, categories, and assign/unassign agents to tasks
+  - **User Experience**: AgentAssignmentDialog displays 42+ specialized agents with descriptions, skills tags, and interactive assignment interface
 - **🔧 Fixed Assignees Not Being Persisted to Database** - 2025-09-10
   - **Issue**: Tasks were created successfully but assignees weren't saved to task_assignees table
   - **Root Cause**: ORMTaskRepository.save() method was missing assignee persistence logic

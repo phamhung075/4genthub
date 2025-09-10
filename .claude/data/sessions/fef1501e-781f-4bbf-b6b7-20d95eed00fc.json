@@ -10,7 +10,8 @@
     "Uncaught SyntaxError: The requested module '/src/api.ts' does not provide an export named 'apiClient' (at LoginForm.tsx:29:10)",
     "remove version api obsolete keep only last version",
     "i need call api backend for get version backend for asumme it connect to backend",
-    "backend not connected ??"
+    "backend not connected ??",
+    "r"
   ],
   "agent_name": "Nova"
 }

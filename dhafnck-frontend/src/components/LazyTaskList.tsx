@@ -15,6 +15,7 @@ const LazySubtaskList = lazy(() => import("./LazySubtaskList"));
 const TaskDetailsDialog = lazy(() => import("./TaskDetailsDialog"));
 const TaskEditDialog = lazy(() => import("./TaskEditDialog"));
 const AgentAssignmentDialog = lazy(() => import("./AgentAssignmentDialog"));
+const AgentInfoDialog = lazy(() => import("./AgentInfoDialog"));
 const TaskContextDialog = lazy(() => import("./TaskContextDialog"));
 const DeleteConfirmDialog = lazy(() => import("./DeleteConfirmDialog"));
 
@@ -57,7 +58,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   
   // Dialog states - simplified
   const [activeDialog, setActiveDialog] = useState<{
-    type: 'details' | 'edit' | 'create' | 'assign' | 'context' | 'complete' | 'delete' | 'agent-response' | null;
+    type: 'details' | 'edit' | 'create' | 'assign' | 'context' | 'complete' | 'delete' | 'agent-response' | 'agent-info' | null;
     taskId?: string;
     data?: any;
   }>({ type: null });
@@ -320,8 +321,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                     assignees={summary.assignees}
                     task={fullTasks.get(summary.id) || summary as any}
                     onAgentClick={(agentName, task) => {
-                      console.log('Agent clicked:', agentName, 'for task:', task.title);
-                      // TODO: Implement agent assignment dialog
+                      console.log('Agent clicked:', agentName, 'for task:', task.title, 'with id:', task.id);
+                      openDialog('agent-info', undefined, { agentName, taskTitle: task.title });
                     }}
                     variant="secondary"
                     className="text-xs"
@@ -479,8 +480,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                 assignees={summary.assignees}
                 task={fullTasks.get(summary.id) || summary as any}
                 onAgentClick={(agentName, task) => {
-                  console.log('Agent clicked:', agentName, 'for task:', task.title);
-                  // TODO: Implement agent assignment dialog
+                  console.log('Agent clicked:', agentName, 'for task:', task.title, 'with id:', task.id);
+                  openDialog('agent-info', undefined, { agentName, taskTitle: task.title });
                 }}
                 variant="secondary"
                 className=""
@@ -656,7 +657,11 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             onOpenChange={closeDialog}
             task={fullTasks.get(activeDialog.taskId) || null}
             onClose={closeDialog}
-            onAgentClick={() => {}} // TODO: implement
+            onAgentClick={(agentName, task) => {
+              console.log('Agent clicked in details dialog:', agentName, 'for task:', task.title);
+              closeDialog();
+              openDialog('assign', task.id);
+            }}
           />
         )}
         
@@ -703,6 +708,16 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             title="Delete Task"
             description="Are you sure you want to delete this task? This action cannot be undone."
             itemName={fullTasks.get(activeDialog.taskId)?.title || taskSummaries.find(t => t.id === activeDialog.taskId)?.title}
+          />
+        )}
+        
+        {activeDialog.type === 'agent-info' && activeDialog.data && (
+          <AgentInfoDialog
+            open={true}
+            onOpenChange={closeDialog}
+            agentName={activeDialog.data.agentName}
+            taskTitle={activeDialog.data.taskTitle}
+            onClose={closeDialog}
           />
         )}
       </Suspense>

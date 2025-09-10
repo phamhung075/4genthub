@@ -1,10 +1,11 @@
 import React from "react";
-import { Play } from "lucide-react";
+import { Play, Info } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Checkbox } from "./ui/checkbox";
 import { Separator } from "./ui/separator";
 import { Task, callAgent } from "../api";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 interface AgentAssignmentDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
   const [selectedAgents, setSelectedAgents] = React.useState<string[]>([]);
   const [callingAgent, setCallingAgent] = React.useState(false);
   const [agentResponses, setAgentResponses] = React.useState<Record<string, any>>({});
+  const [selectedAgentInfo, setSelectedAgentInfo] = React.useState<string | null>(null);
 
   // Update selected agents when task changes
   React.useEffect(() => {
@@ -76,6 +78,234 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
     }
   };
 
+  const handleAgentInfoClick = (agentName: string) => {
+    setSelectedAgentInfo(agentName === selectedAgentInfo ? null : agentName);
+  };
+
+  // Agent descriptions mapping
+  const agentDescriptions: Record<string, { description: string; category: string; skills: string[] }> = {
+    '@coding-agent': {
+      description: 'Implementation and feature development specialist. Transforms specifications into production-ready code.',
+      category: 'Development & Coding',
+      skills: ['Feature implementation', 'Code refactoring', 'Multiple languages/frameworks', 'Test creation']
+    },
+    '@debugger-agent': {
+      description: 'Bug fixing and troubleshooting expert. Identifies and resolves complex issues.',
+      category: 'Development & Coding',
+      skills: ['Bug diagnosis', 'Error resolution', 'Performance debugging', 'Memory leak detection']
+    },
+    '@test-orchestrator-agent': {
+      description: 'Comprehensive test management specialist. Creates and manages test suites.',
+      category: 'Testing & QA',
+      skills: ['Unit testing', 'Integration testing', 'E2E testing', 'Test automation']
+    },
+    '@security-auditor-agent': {
+      description: 'Security audits and vulnerability assessment expert.',
+      category: 'Security & Compliance',
+      skills: ['Security audits', 'Vulnerability scanning', 'Penetration testing', 'Compliance checks']
+    },
+    '@devops-agent': {
+      description: 'CI/CD and infrastructure specialist. Manages deployment pipelines.',
+      category: 'DevOps & Deployment',
+      skills: ['CI/CD pipelines', 'Container orchestration', 'Cloud deployment', 'Infrastructure as code']
+    },
+    '@ui-designer-expert-shadcn-agent': {
+      description: 'Shadcn/UI components and frontend design specialist.',
+      category: 'Architecture & Design',
+      skills: ['React components', 'Tailwind CSS', 'Responsive design', 'Design systems']
+    },
+    '@documentation-agent': {
+      description: 'Technical documentation specialist. Creates comprehensive documentation.',
+      category: 'Documentation & Specs',
+      skills: ['API documentation', 'User guides', 'Technical writing', 'Knowledge management']
+    },
+    '@system-architect-agent': {
+      description: 'System design and architecture specialist.',
+      category: 'Architecture & Design',
+      skills: ['System architecture', 'Design patterns', 'Database design', 'Scalability planning']
+    },
+    '@performance-load-tester-agent': {
+      description: 'Performance testing and optimization specialist.',
+      category: 'Testing & QA',
+      skills: ['Load testing', 'Performance metrics', 'Bottleneck analysis', 'Scalability testing']
+    },
+    '@task-planning-agent': {
+      description: 'Task breakdown and planning specialist.',
+      category: 'Project & Planning',
+      skills: ['Task decomposition', 'Sprint planning', 'Dependency management', 'Resource planning']
+    },
+    '@code-reviewer-agent': {
+      description: 'Code quality and review specialist. Ensures code standards and best practices.',
+      category: 'Development & Coding',
+      skills: ['Code review', 'Quality checks', 'Standards enforcement', 'Refactoring guidance']
+    },
+    '@prototyping-agent': {
+      description: 'Rapid prototyping and proof-of-concept specialist.',
+      category: 'Development & Coding',
+      skills: ['Quick prototypes', 'POC development', 'Iterative design', 'Concept validation']
+    },
+    '@uat-coordinator-agent': {
+      description: 'User acceptance testing coordination specialist.',
+      category: 'Testing & QA',
+      skills: ['UAT planning', 'User testing', 'Acceptance criteria', 'Feedback collection']
+    },
+    '@adaptive-deployment-strategist-agent': {
+      description: 'Deployment strategies and release management specialist.',
+      category: 'DevOps & Deployment',
+      skills: ['Deployment planning', 'Release management', 'Blue-green deployment', 'Rollout strategies']
+    },
+    '@swarm-scaler-agent': {
+      description: 'Distributed systems scaling and orchestration specialist.',
+      category: 'DevOps & Deployment',
+      skills: ['Container orchestration', 'Docker Swarm', 'Horizontal scaling', 'Load distribution']
+    },
+    '@design-system-agent': {
+      description: 'Design system and UI patterns specialist.',
+      category: 'Architecture & Design',
+      skills: ['Component libraries', 'UI patterns', 'Design tokens', 'Style guides']
+    },
+    '@core-concept-agent': {
+      description: 'Core concepts and fundamentals specialist.',
+      category: 'Architecture & Design',
+      skills: ['Concept definition', 'Theoretical framework', 'Fundamental principles', 'Abstract concepts']
+    },
+    '@tech-spec-agent': {
+      description: 'Technical specifications and documentation specialist.',
+      category: 'Documentation & Specs',
+      skills: ['Tech specs', 'API documentation', 'System specifications', 'Implementation guides']
+    },
+    '@prd-architect-agent': {
+      description: 'Product requirements documentation specialist.',
+      category: 'Documentation & Specs',
+      skills: ['PRD creation', 'Requirements analysis', 'Feature specifications', 'User stories']
+    },
+    '@project-initiator-agent': {
+      description: 'Project setup and kickoff specialist.',
+      category: 'Project & Planning',
+      skills: ['Project bootstrap', 'Initial setup', 'Team onboarding', 'Environment configuration']
+    },
+    '@uber-orchestrator-agent': {
+      description: 'Complex workflow orchestration specialist.',
+      category: 'Project & Planning',
+      skills: ['Multi-agent coordination', 'Complex workflows', 'Strategic planning', 'Project oversight']
+    },
+    '@elicitation-agent': {
+      description: 'Requirements gathering and analysis specialist.',
+      category: 'Project & Planning',
+      skills: ['Requirements elicitation', 'Stakeholder interviews', 'Needs assessment', 'Scope definition']
+    },
+    '@compliance-scope-agent': {
+      description: 'Regulatory compliance and scope assessment specialist.',
+      category: 'Security & Compliance',
+      skills: ['Compliance audits', 'Regulatory requirements', 'Risk assessment', 'Governance framework']
+    },
+    '@ethical-review-agent': {
+      description: 'Ethical considerations and responsible development specialist.',
+      category: 'Security & Compliance',
+      skills: ['Ethics assessment', 'Bias detection', 'Privacy review', 'Responsible AI']
+    },
+    '@analytics-setup-agent': {
+      description: 'Analytics and tracking setup specialist.',
+      category: 'Analytics & Optimization',
+      skills: ['Analytics implementation', 'Event tracking', 'Dashboard creation', 'KPI monitoring']
+    },
+    '@efficiency-optimization-agent': {
+      description: 'Process optimization and efficiency improvement specialist.',
+      category: 'Analytics & Optimization',
+      skills: ['Process improvement', 'Workflow optimization', 'Performance tuning', 'Resource allocation']
+    },
+    '@health-monitor-agent': {
+      description: 'System health monitoring and alerting specialist.',
+      category: 'Analytics & Optimization',
+      skills: ['Health checks', 'Performance metrics', 'Alerting setup', 'Incident detection']
+    },
+    '@marketing-strategy-orchestrator-agent': {
+      description: 'Marketing strategy and campaign management specialist.',
+      category: 'Marketing & Growth',
+      skills: ['Marketing campaigns', 'Strategy planning', 'Customer acquisition', 'Brand marketing']
+    },
+    '@seo-sem-agent': {
+      description: 'SEO and SEM optimization specialist.',
+      category: 'Marketing & Growth',
+      skills: ['Search optimization', 'Keyword research', 'PPC campaigns', 'SERP rankings']
+    },
+    '@growth-hacking-idea-agent': {
+      description: 'Growth strategies and viral marketing specialist.',
+      category: 'Marketing & Growth',
+      skills: ['Growth hacking', 'Viral loops', 'User acquisition', 'Conversion optimization']
+    },
+    '@content-strategy-agent': {
+      description: 'Content planning and editorial strategy specialist.',
+      category: 'Marketing & Growth',
+      skills: ['Content planning', 'Editorial calendar', 'Content marketing', 'Brand messaging']
+    },
+    '@community-strategy-agent': {
+      description: 'Community building and engagement specialist.',
+      category: 'Marketing & Growth',
+      skills: ['Community management', 'User engagement', 'Social strategy', 'Community growth']
+    },
+    '@branding-agent': {
+      description: 'Brand identity and strategy specialist.',
+      category: 'Marketing & Growth',
+      skills: ['Brand development', 'Visual identity', 'Brand guidelines', 'Market positioning']
+    },
+    '@deep-research-agent': {
+      description: 'In-depth research and analysis specialist.',
+      category: 'Research & Analysis',
+      skills: ['Market research', 'Technical research', 'Competitive analysis', 'Data analysis']
+    },
+    '@mcp-researcher-agent': {
+      description: 'MCP and tool research specialist.',
+      category: 'Research & Analysis',
+      skills: ['Tool evaluation', 'Platform research', 'Integration assessment', 'Technology stack']
+    },
+    '@root-cause-analysis-agent': {
+      description: 'Problem analysis and root cause identification specialist.',
+      category: 'Research & Analysis',
+      skills: ['Problem investigation', 'Failure analysis', 'Incident investigation', 'Causal analysis']
+    },
+    '@technology-advisor-agent': {
+      description: 'Technology recommendations and advisory specialist.',
+      category: 'Research & Analysis',
+      skills: ['Tech evaluation', 'Framework comparison', 'Stack optimization', 'Architecture advice']
+    },
+    '@brainjs-ml-agent': {
+      description: 'Machine learning with Brain.js specialist.',
+      category: 'AI & Machine Learning',
+      skills: ['Neural networks', 'ML implementation', 'Model training', 'Predictive models']
+    },
+    '@mcp-configuration-agent': {
+      description: 'MCP setup and configuration specialist.',
+      category: 'Configuration & Integration',
+      skills: ['MCP setup', 'Server configuration', 'Protocol implementation', 'Integration management']
+    },
+    '@idea-generation-agent': {
+      description: 'Creative idea generation and brainstorming specialist.',
+      category: 'Creative & Ideation',
+      skills: ['Brainstorming', 'Creative thinking', 'Innovation methods', 'Concept creation']
+    },
+    '@idea-refinement-agent': {
+      description: 'Idea improvement and iteration specialist.',
+      category: 'Creative & Ideation',
+      skills: ['Idea enhancement', 'Concept refinement', 'Proposal development', 'Vision polishing']
+    },
+    '@remediation-agent': {
+      description: 'Issue remediation and corrective action specialist.',
+      category: 'Problem Resolution',
+      skills: ['Issue resolution', 'Corrective measures', 'Recovery procedures', 'Fix implementation']
+    }
+  };
+
+  const getAgentInfo = (agentName: string) => {
+    // Normalize agent name (add @ if missing)
+    const normalizedName = agentName.startsWith('@') ? agentName : `@${agentName}`;
+    return agentDescriptions[normalizedName] || {
+      description: 'Specialized agent for various development tasks.',
+      category: 'General',
+      skills: ['Task automation', 'Specialized workflows']
+    };
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl w-[90vw]">
@@ -114,13 +344,39 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                       htmlFor={`agent-${agent.id || agent.name}`}
                       className="flex-1 cursor-pointer"
                     >
-                      <div>
-                        <p className="font-medium text-sm">{agent.name}</p>
+                      <div
+                        className="group"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAgentInfoClick(agent.name);
+                        }}
+                      >
+                        <p className="font-medium text-sm flex items-center gap-1 hover:text-blue-600">
+                          {agent.name}
+                          <Info className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                        </p>
                         {agent.id && (
                           <p className="text-xs text-muted-foreground">ID: {agent.id}</p>
                         )}
                       </div>
                     </label>
+                    {selectedAgentInfo === agent.name && (
+                      <div className="col-span-2 mt-2">
+                        <Alert>
+                          <AlertTitle className="text-sm">{getAgentInfo(agent.name).category}</AlertTitle>
+                          <AlertDescription className="text-xs">
+                            <p className="mb-2">{getAgentInfo(agent.name).description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {getAgentInfo(agent.name).skills.map((skill, idx) => (
+                                <span key={idx} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -144,10 +400,21 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                       />
                       <label
                         htmlFor={`lib-${agentName}`}
-                        className="cursor-pointer"
+                        className="cursor-pointer flex-1"
                       >
-                        <p className="font-medium text-sm">{agentName}</p>
-                        <p className="text-xs text-muted-foreground">From agent library</p>
+                        <div
+                          className="group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAgentInfoClick(agentName);
+                          }}
+                        >
+                          <p className="font-medium text-sm flex items-center gap-1 hover:text-blue-600">
+                            {agentName}
+                            <Info className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                          </p>
+                          <p className="text-xs text-muted-foreground">From agent library</p>
+                        </div>
                       </label>
                     </div>
                     <Button
@@ -161,6 +428,23 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                       <Play className="w-4 h-4" />
                     </Button>
                   </div>
+                  {selectedAgentInfo === agentName && (
+                    <div className="mt-2">
+                      <Alert>
+                        <AlertTitle className="text-sm">{getAgentInfo(agentName).category}</AlertTitle>
+                        <AlertDescription className="text-xs">
+                          <p className="mb-2">{getAgentInfo(agentName).description}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {getAgentInfo(agentName).skills.map((skill, idx) => (
+                              <span key={idx} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
                   {agentResponses[agentName] && (
                     <div className="mt-2 p-2 bg-gray-100 rounded">
                       <p className="text-xs font-medium mb-1">Call Agent Response:</p>
