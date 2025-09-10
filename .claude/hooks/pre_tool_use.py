@@ -24,7 +24,7 @@ from pathlib import Path
 
 # Import the AI_DATA path loader for logging
 sys.path.insert(0, str(Path(__file__).parent))
-from utils.env_loader import get_ai_data_path
+from utils.env_loader import get_ai_data_path, is_claude_edit_enabled
 try:
     from utils.docs_indexer import check_documentation_requirement
 except ImportError:
@@ -248,8 +248,8 @@ def is_env_file_access(tool_name, tool_input):
             file_path = tool_input.get('file_path', '')
             path_obj = Path(file_path)
             
-            # Block ANY file that starts with .env (except .env.sample)
-            if path_obj.name.startswith('.env') and not path_obj.name.endswith('.sample'):
+            # Block ANY file that starts with .env (except .env.sample and .env.claude)
+            if path_obj.name.startswith('.env') and not path_obj.name.endswith('.sample') and not path_obj.name == '.env.claude':
                 return True
             
             # Block creation of .env* files in subfolders (only allow in root)
@@ -262,23 +262,25 @@ def is_env_file_access(tool_name, tool_input):
         # Check bash commands for .env file access
         elif tool_name == 'Bash':
             command = tool_input.get('command', '')
-            # Pattern to detect ANY .env* file access (but allow .env.sample)
-            env_patterns = [
-                r'\.env[^\s]*(?<!\.sample)',  # Any .env* file but not .env.sample
-                r'cat\s+.*\.env[^\s]*(?<!\.sample)',  # cat .env*
-                r'echo\s+.*>\s*\.env[^\s]*(?<!\.sample)',  # echo > .env*
-                r'touch\s+.*\.env[^\s]*(?<!\.sample)',  # touch .env*
-                r'cp\s+.*\.env[^\s]*(?<!\.sample)',  # cp .env*
-                r'mv\s+.*\.env[^\s]*(?<!\.sample)',  # mv .env*
-                r'vim\s+.*\.env[^\s]*(?<!\.sample)',  # vim .env*
-                r'nano\s+.*\.env[^\s]*(?<!\.sample)',  # nano .env*
-                r'less\s+.*\.env[^\s]*(?<!\.sample)',  # less .env*
-                r'more\s+.*\.env[^\s]*(?<!\.sample)',  # more .env*
-            ]
-            
-            for pattern in env_patterns:
-                if re.search(pattern, command):
-                    return True
+            # Pattern to detect ANY .env* file access (but allow .env.sample and .env.claude)
+            # Skip check if command contains .env.claude
+            if '.env.claude' not in command:
+                env_patterns = [
+                    r'\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # Any .env* file but not .env.sample or .env.claude
+                    r'cat\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # cat .env*
+                    r'echo\s+.*>\s*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # echo > .env*
+                    r'touch\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # touch .env*
+                    r'cp\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # cp .env*
+                    r'mv\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # mv .env*
+                    r'vim\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # vim .env*
+                    r'nano\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # nano .env*
+                    r'less\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # less .env*
+                    r'more\s+.*\.env[^\s]*(?<!\.sample)(?<!\.claude)',  # more .env*
+                ]
+                
+                for pattern in env_patterns:
+                    if re.search(pattern, command):
+                        return True
     
     return False
 
@@ -460,6 +462,15 @@ def main():
         
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
+        
+        # VALIDATION STEP 0: Check if editing .claude files is allowed
+        if tool_name in ['Write', 'Edit', 'MultiEdit']:
+            file_path = tool_input.get('file_path', '')
+            if file_path and '.claude' in file_path:
+                if not is_claude_edit_enabled():
+                    print("BLOCKED: Editing .claude files is disabled", file=sys.stderr)
+                    print("Set ENABLE_CLAUDE_EDIT=true in .env.claude to allow editing", file=sys.stderr)
+                    sys.exit(2)
         
         # VALIDATION STEP 1: Check for .env file access (security protection)
         env_check = is_env_file_access(tool_name, tool_input)

@@ -6,7 +6,38 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **🐛 Log Path Resolution** - 2025-09-11
+  - **Issue**: Hooks were creating `logs` folders in current working directory instead of project root
+  - **Root Cause**: `Path.cwd()` was used instead of project root path
+  - **Solution**: Updated `env_loader.py` functions to always resolve paths relative to project root
+  - **Modified Files**:
+    - `.claude/hooks/utils/env_loader.py` - Fixed `get_ai_data_path()`, `get_ai_docs_path()`, and `get_log_path()`
+  - **Impact**: Log files will now always be created in the root `logs/` directory regardless of current working directory
+
 ### Added
+- **🔐 Claude Environment Configuration** - 2025-09-10
+  - **Component**: Claude-specific environment variables
+  - **Features**:
+    - Migrated all Claude-specific environment variables to `.env.claude`
+    - Implemented `ENABLE_CLAUDE_EDIT` flag to control editing permissions for `.claude` files
+    - Added permission check in pre-tool hook to prevent unauthorized `.claude` file modifications
+    - Updated all hooks to use `.env.claude` instead of `.env` for configuration
+    - Allows `.env.claude` access while blocking other `.env` files
+  - **Created Files**:
+    - `.env.claude` - Dedicated environment file for Claude-specific variables
+  - **Modified Files**:
+    - `.claude/hooks/utils/env_loader.py` - Updated to load from `.env.claude` with fallback to `.env`
+    - `.claude/hooks/pre_tool_use.py` - Added ENABLE_CLAUDE_EDIT permission check
+    - `.allowed_root_files` - Added `.env.claude` to allowed list
+    - All hook files updated to use new env_loader utility
+  - **Environment Variables**:
+    - `ENABLE_CLAUDE_EDIT` - Controls whether AI can edit `.claude` files (true/false)
+    - `AI_DATA` - Path for AI-generated data (default: logs)
+    - `AI_DOCS` - Path for AI documentation (default: ai_docs)
+    - `LOG_PATH` - Path for log files (default: logs)
+  - **Purpose**: Separates Claude-specific configuration from main application environment
+
 - **🔒 Selective Documentation Enforcement** - 2025-09-10
   - **Component**: Smart documentation blocking system
   - **Features**:
