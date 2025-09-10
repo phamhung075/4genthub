@@ -16,7 +16,15 @@
     "3. Implement Phase\n\u2022 Objective: To write the code based on the detailed plan.\n\u2022 Method: If the plan is of high quality, the agent can write the code efficiently. The plan is constantly updated as progress is made, and a new context window is utilized for each phase. A critical aspect is to consistently keep context utilization under 40% during this phase.\n\u2022 Importance: A well-defined plan is crucial for the agent to generate code effectively. Maintaining context utilization below 40% is a key principle for optimizing LLM performance, as the quality of output is directly tied to the quality of the context input.\n\u2022 Output: The primary output is the production-ready code itself.\ni want update this to agents\ncall sub-agents work paralelle for each agent, give subagent context necessaire for each agent, do not include all context",
     "what agents not update on list ?",
     "continue, dont stop if all agent on list not update, give me list agent update on end",
-    "dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_description.py need update for show correct agents list dispo on /dhafnck_mcp_main/agent-library/agents/"
+    "dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/call_agent_description.py need update for show correct agents list dispo on /dhafnck_mcp_main/agent-library/agents/",
+    "analyze all list agent to make workflow non stop for  all agent\nfor each phase debut projet to deploy",
+    "i want only master_orchestrator_agent is agent work first after user input demande(add on CLAUDE.md), then modify master_orchestrator_agent instruction reformat demande of user for delegate to other agent , prioty task_planning_agent for create tasks, if demande is complexe, call specialize agent for make documents then delegate document(user path for economize tokens), master_orchestrator_agent know all agent and know what worflow and what phase working  he is the chef of all agents",
+    "Master Orchestrator send context to other agent by send path file + ligne if more precise for gagne token context if file is exist",
+    "add TOKEN ECONOMY: File Path + Line References to CLAUDE.md too",
+    "CLAUDE.md after 410 is delegation now is master_orchestrator_agent handle it, then send it on base of master_orchestrator_agent, remake more comprehensible for master_orchestrator_agent",
+    "no you must clean that content on CLAUDE.md and move to master_orchestrator_agent base",
+    "master_orchestrator_agent job is call and give correct context for other agents",
+    ".claude/agents list must correspondre to dhafnck_mcp_main/agent-library/agents"
   ],
   "agent_name": "Axiom"
 }

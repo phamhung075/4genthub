@@ -521,7 +521,7 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 39,
+      "count": 41,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -529,6 +529,13 @@
           "name": "controller-overlap-analysis.md",
           "path": "development-guides/controller-overlap-analysis.md",
           "size": 9387
+        },
+        {
+          "hash": "a0091f3fc0e0b578c2b4587df06debc5",
+          "modified": "2025-09-11T00:42:00.995645",
+          "name": "complete-agent-workflow-phases.md",
+          "path": "development-guides/complete-agent-workflow-phases.md",
+          "size": 18854
         },
         {
           "hash": "6a92594b0b637de68709a6cdd7315aa3",
@@ -767,6 +774,13 @@
           "name": "agent-capacity-improvement-recommendations.md",
           "path": "development-guides/agent-capacity-improvement-recommendations.md",
           "size": 18414
+        },
+        {
+          "hash": "b241e49bd1b1fbb0b9cf31b3bb183457",
+          "modified": "2025-09-11T00:44:23.862207",
+          "name": "automated-agent-workflow-patterns.md",
+          "path": "development-guides/automated-agent-workflow-patterns.md",
+          "size": 24362
         },
         {
           "hash": "361971c15807c24540b6456eb15d8082",
@@ -1895,7 +1909,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T00:20:59.492337",
+  "generated_at": "2025-09-11T00:44:23.959345",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2024,7 +2038,9 @@
         "agent-optimization-analysis.md",
         "agent-optimization-implementation-plan.md",
         "authentication-testing-patterns.md",
+        "automated-agent-workflow-patterns.md",
         "claude-code-integration.md",
+        "complete-agent-workflow-phases.md",
         "controller-overlap-analysis.md",
         "docker-system-guide.md",
         "domain-driven-design.md",
@@ -2235,5 +2251,5 @@
     }
   },
   "total_directories": 24,
-  "total_files": 249
+  "total_files": 251
 }

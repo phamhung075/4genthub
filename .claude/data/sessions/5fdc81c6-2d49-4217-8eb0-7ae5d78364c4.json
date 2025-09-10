@@ -16,7 +16,8 @@
     "add absolute documentation of .claude/hooks/pre_tool_use.py",
     "update CLAUDE.local.md for ai_docs systeme\nai can view documentation for get context fast \nupdate Documentation Architecture match actual architecture",
     "ai_docs/core-architecture/logs why autogenerate logs folder here, auto generate only on root logs",
-    "need verify all other code if have same probleme because actual is continue generate on ai_docs/core-architecture/logs"
+    "need verify all other code if have same probleme because actual is continue generate on ai_docs/core-architecture/logs",
+    "dhafnck_mcp_main/agent-library/agents/.claude/data/sessions why create here ??"
   ],
   "agent_name": "Echo"
 }

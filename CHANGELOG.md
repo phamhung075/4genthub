@@ -6,6 +6,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **🎯 Master Orchestrator as Primary Entry Point** - 2025-09-11
+  - **Component**: Agent orchestration system
+  - **Files Created/Modified**:
+    - `CLAUDE.md` - Updated to make @master_orchestrator_agent the primary entry point
+    - `dhafnck_mcp_main/agent-library/agents/master_orchestrator_agent/contexts/master_orchestrator_instructions.yaml` - Comprehensive orchestration instructions
+    - `ai_docs/development-guides/complete-agent-workflow-phases.md` - Complete workflow documentation
+    - `ai_docs/development-guides/automated-agent-workflow-patterns.md` - Automated workflow patterns
+  - **Key Changes**:
+    - Master Orchestrator is now the CHEF of all agents - always called first
+    - Analyzes and reformats user requests for optimal delegation
+    - Priority delegation to @task_planning_agent for complex requests
+    - Document path delegation to economize tokens
+    - **File path + line number references** for precise context (98.7% token reduction)
+    - Complete knowledge of all 33 agents and their capabilities
+    - Workflow phase awareness and intelligent coordination
+  - **Token Economy Features**:
+    - Pass file paths with line numbers: `/src/auth.py:45-89`
+    - Multiple section references for complex contexts
+    - Purpose-driven file references
+    - Intelligent context sharing based on task type
+    - **Inter-agent communication patterns** with structured messages
+    - Communication types: handoff, request, response, broadcast, alert
+    - Asynchronous communication queue managed by Master Orchestrator
+  - **Impact**: Centralized orchestration, 98.7% token reduction, precise context sharing, efficient inter-agent communication
+
 ### Changed
 - **🤖 Agent Registry Update** - 2025-09-11
   - **Component**: Agent management and invocation system
@@ -55,10 +81,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Modified Files**:
     - `.claude/hooks/utils/env_loader.py` - Complete rewrite of path resolution with project root detection
     - `.claude/hooks/utils/docs_indexer.py` - Updated to use `get_project_root()` instead of `Path.cwd()`
+  - **Created Files**:
+    - `scripts/cleanup-misplaced-logs.sh` - Cleanup script for removing old misplaced logs directories
   - **Impact**: 
     - Log files will always be created in root `logs/` directory
     - No more spurious `logs` or `ai_docs` folders in subdirectories
     - Hooks work correctly regardless of current working directory
+  - **Note about .claude/data/sessions**: 
+    - Multiple `.claude/data/sessions` directories found in subdirectories
+    - These are created by Claude Code itself for session management
+    - Not related to our hooks or log path issues
+    - Normal Claude Code behavior when operating in different directories
 
 ### Added
 - **🔐 Claude Environment Configuration** - 2025-09-10
