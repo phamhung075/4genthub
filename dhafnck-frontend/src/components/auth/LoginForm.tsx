@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { ThemeToggle } from '../ThemeToggle';
 import FallingGlitch from '../effects/FallingGlitch';
+import VersionDisplay from '../VersionDisplay';
 
 interface LoginFormData {
   email: string;
@@ -39,6 +40,7 @@ export const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [backendVersion, setBackendVersion] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -51,6 +53,31 @@ export const LoginForm: React.FC = () => {
       rememberMe: false,
     },
   });
+
+  // Fetch backend version on component mount to verify connection
+  useEffect(() => {
+    const fetchBackendVersion = async () => {
+      try {
+        // Try to fetch from the backend health endpoint (port 8000)
+        const response = await fetch('http://localhost:8000/health');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.version) {
+            setBackendVersion(data.version);
+          }
+        } else {
+          // Backend is not responding properly
+          setBackendVersion(undefined);
+        }
+      } catch (err) {
+        // Backend is not reachable
+        console.debug('Backend not connected:', err);
+        setBackendVersion(undefined);
+      }
+    };
+
+    fetchBackendVersion();
+  }, []);
 
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
@@ -253,6 +280,9 @@ export const LoginForm: React.FC = () => {
           </Paper>
         </Box>
       </FallingGlitch>
+      
+      {/* Version display in bottom right */}
+      <VersionDisplay backendVersion={backendVersion} />
     </Box>
   );
 };

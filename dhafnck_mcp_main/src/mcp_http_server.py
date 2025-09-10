@@ -16,6 +16,9 @@ import uvicorn
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
+# Import version configuration
+from fastmcp.config.version import VERSION
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,7 +64,7 @@ async def health():
     return {
         "status": "healthy",
         "service": "dhafnck-mcp",
-        "version": "1.0.0",
+        "version": VERSION,
         "authentication": mcp_auth is not None,
         "mcp_tools": mcp_tools is not None,
         "keycloak_auth_enabled": os.getenv("AUTH_ENABLED", "true").lower() == "true"
