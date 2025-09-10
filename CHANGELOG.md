@@ -7,6 +7,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **📊 Status Line Environment Path Display** - 2025-09-10
+  - **Component**: Claude status line
+  - **Features**:
+    - Added AI_DOCS and LOG_PATH loading to `env_loader.py`
+    - Status line now displays configured environment paths with icons
+    - Shows AI_DATA (📊), AI_DOCS (📚), and LOG_PATH (📝) in status line
+    - Compact display shows only folder names for better readability
+  - **Modified Files**:
+    - Updated: `.claude/hooks/utils/env_loader.py` (added get_ai_docs_path, get_log_path, get_all_paths functions)
+    - Updated: `.claude/status_lines/status_line.py` (integrated path display)
+  - **Impact**: Users can see configured data paths directly in the status line
+
+- **🔧 Dynamic AI_DATA Path Configuration** - 2025-09-10
+  - **Component**: Claude hooks system
+  - **Features**:
+    - Created `utils/env_loader.py` utility to load AI_DATA path from .env file
+    - Updated all hook files to use configurable AI_DATA path instead of hardcoded "logs"
+    - Falls back to "logs" directory if AI_DATA not set in .env
+    - Automatically creates AI_DATA directory if it doesn't exist
+  - **Modified Files**:
+    - Created: `.claude/hooks/utils/env_loader.py`
+    - Updated: `.claude/hooks/user_prompt_submit.py`
+    - Updated: `.claude/hooks/session_start.py`
+    - Updated: `.claude/hooks/pre_compact.py`
+    - Updated: `.claude/hooks/pre_tool_use.py`
+    - Updated: `.claude/hooks/post_tool_use.py`
+    - Updated: `.claude/hooks/notification.py`
+    - Updated: `.claude/hooks/stop.py`
+    - Updated: `.claude/hooks/subagent_stop.py`
+  - **Impact**: Allows flexible configuration of where Claude hooks save data via .env file
+
 - **🔍 Search Functionality for Agent Library** - 2025-09-10
   - **Component**: `AgentAssignmentDialog.tsx`
   - **Features**:

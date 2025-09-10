@@ -20,12 +20,15 @@ try:
 except ImportError:
     pass  # dotenv is optional
 
+# Import the AI_DATA path loader
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.env_loader import get_ai_data_path
+
 
 def log_session_start(input_data):
-    """Log session start event to logs directory."""
-    # Ensure logs directory exists
-    log_dir = Path("logs")
-    log_dir.mkdir(parents=True, exist_ok=True)
+    """Log session start event to AI_DATA directory."""
+    # Get AI_DATA path from environment
+    log_dir = get_ai_data_path()
     log_file = log_dir / 'session_start.json'
     
     # Read existing log data or initialize empty list

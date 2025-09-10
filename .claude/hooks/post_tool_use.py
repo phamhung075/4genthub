@@ -8,14 +8,17 @@ import os
 import sys
 from pathlib import Path
 
+# Import the AI_DATA path loader
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.env_loader import get_ai_data_path
+
 def main():
     try:
         # Read JSON input from stdin
         input_data = json.load(sys.stdin)
         
-        # Ensure log directory exists
-        log_dir = Path.cwd() / 'logs'
-        log_dir.mkdir(parents=True, exist_ok=True)
+        # Get AI_DATA path from environment
+        log_dir = get_ai_data_path()
         log_path = log_dir / 'post_tool_use.json'
         
         # Read existing log data or initialize empty list

@@ -8,6 +8,10 @@ import sys
 import re
 from pathlib import Path
 
+# Import the AI_DATA path loader
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.env_loader import get_ai_data_path
+
 def is_dangerous_rm_command(command):
     """
     Comprehensive detection of dangerous rm commands.
@@ -104,9 +108,8 @@ def main():
                 print("BLOCKED: Dangerous rm command detected and prevented", file=sys.stderr)
                 sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
         
-        # Ensure log directory exists
-        log_dir = Path.cwd() / 'logs'
-        log_dir.mkdir(parents=True, exist_ok=True)
+        # Get AI_DATA path from environment
+        log_dir = get_ai_data_path()
         log_path = log_dir / 'pre_tool_use.json'
         
         # Read existing log data or initialize empty list

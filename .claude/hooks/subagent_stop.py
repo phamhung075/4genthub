@@ -20,6 +20,10 @@ try:
 except ImportError:
     pass  # dotenv is optional
 
+# Import the AI_DATA path loader
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.env_loader import get_ai_data_path
+
 
 def get_tts_script_path():
     """
@@ -91,10 +95,9 @@ def main():
         session_id = input_data.get("session_id", "")
         stop_hook_active = input_data.get("stop_hook_active", False)
 
-        # Ensure log directory exists
-        log_dir = os.path.join(os.getcwd(), "logs")
-        os.makedirs(log_dir, exist_ok=True)
-        log_path = os.path.join(log_dir, "subagent_stop.json")
+        # Get AI_DATA path from environment
+        log_dir = get_ai_data_path()
+        log_path = log_dir / "subagent_stop.json"
 
         # Read existing log data or initialize empty list
         if os.path.exists(log_path):
@@ -129,8 +132,8 @@ def main():
                                 except json.JSONDecodeError:
                                     pass  # Skip invalid lines
                     
-                    # Write to logs/chat.json
-                    chat_file = os.path.join(log_dir, 'chat.json')
+                    # Write to AI_DATA/chat.json
+                    chat_file = log_dir / 'chat.json'
                     with open(chat_file, 'w') as f:
                         json.dump(chat_data, f, indent=2)
                 except Exception:

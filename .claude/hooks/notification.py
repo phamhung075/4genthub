@@ -20,6 +20,10 @@ try:
 except ImportError:
     pass  # dotenv is optional
 
+# Import the AI_DATA path loader
+sys.path.insert(0, str(Path(__file__).parent))
+from utils.env_loader import get_ai_data_path
+
 
 def get_tts_script_path():
     """
@@ -92,11 +96,9 @@ def main():
         # Read JSON input from stdin
         input_data = json.loads(sys.stdin.read())
         
-        # Ensure log directory exists
-        import os
-        log_dir = os.path.join(os.getcwd(), 'logs')
-        os.makedirs(log_dir, exist_ok=True)
-        log_file = os.path.join(log_dir, 'notification.json')
+        # Get AI_DATA path from environment
+        log_dir = get_ai_data_path()
+        log_file = log_dir / 'notification.json'
         
         # Read existing log data or initialize empty list
         if os.path.exists(log_file):
