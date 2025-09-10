@@ -26,22 +26,23 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
     return jsonString.split('\n').length;
   };
 
-  const formatJSON = (data: any, indent: number = 0): JSX.Element[] => {
+  const formatJSON = (data: any, indent: number = 0, path: string = 'root'): JSX.Element[] => {
     const elements: JSX.Element[] = [];
     const spacing = '  '.repeat(indent);
 
     if (Array.isArray(data)) {
       elements.push(
-        <div key={`array-open-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
+        <div key={`${path}-array-open`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}[</span>
         </div>
       );
       data.forEach((item, index) => {
+        const itemPath = `${path}[${index}]`;
         if (typeof item === 'object' && item !== null) {
-          elements.push(...formatJSON(item, indent + 1));
+          elements.push(...formatJSON(item, indent + 1, itemPath));
         } else {
           elements.push(
-            <div key={`array-item-${indent}-${index}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
+            <div key={itemPath} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
               <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
               {typeof item === 'string' ? (
                 <span className="text-green-600 dark:text-green-400 break-all">"{item}"</span>
@@ -54,35 +55,36 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
         }
       });
       elements.push(
-        <div key={`array-close-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
+        <div key={`${path}-array-close`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}]</span>
         </div>
       );
     } else if (typeof data === 'object' && data !== null) {
       elements.push(
-        <div key={`object-open-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
+        <div key={`${path}-object-open`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}{"{"}</span>
         </div>
       );
       const entries = Object.entries(data);
       entries.forEach(([key, value], index) => {
+        const keyPath = `${path}.${key}`;
         if (typeof value === 'object' && value !== null) {
           elements.push(
-            <div key={`object-key-${indent}-${key}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
+            <div key={`${keyPath}-key`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
               <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
               <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
               <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-zinc-600 dark:text-gray-400">{Array.isArray(value) ? '[' : '{'}</span>
             </div>
           );
-          elements.push(...formatJSON(value, indent + 2));
+          elements.push(...formatJSON(value, indent + 2, keyPath));
           // Add comma after closing bracket/brace if not last item
           if (index < entries.length - 1) {
             const lastIdx = elements.length - 1;
             const lastElement = elements[lastIdx];
             // Create a new element with comma appended
             elements[lastIdx] = (
-              <div key={lastElement.key} className={lastElement.props.className}>
+              <div key={`${lastElement.key}-comma`} className={lastElement.props.className}>
                 {lastElement.props.children}
                 <span className="text-zinc-600 dark:text-gray-400">,</span>
               </div>
@@ -92,7 +94,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
           // Handle long strings differently
           if (typeof value === 'string' && value.length > 100) {
             elements.push(
-              <div key={`object-pair-${indent}-${key}`} className="my-1">
+              <div key={keyPath} className="my-1">
                 <div className="flex items-start">
                   <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
                   <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
@@ -108,7 +110,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
             );
           } else {
             elements.push(
-              <div key={`object-pair-${indent}-${key}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start flex-wrap">
+              <div key={keyPath} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start flex-wrap">
                 <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
                 <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
                 <span className="text-zinc-600 dark:text-gray-400">: </span>
@@ -128,7 +130,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
         }
       });
       elements.push(
-        <div key={`object-close-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
+        <div key={`${path}-object-close`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}{"}"}</span>
         </div>
       );
