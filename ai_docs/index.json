@@ -469,11 +469,11 @@
       "count": 6,
       "files": [
         {
-          "hash": "25fded2f28154ce60935ac683c1757c6",
-          "modified": "2025-09-10T01:44:54.764257",
+          "hash": "134c4b083eb9ca196677d3c8c6200b2c",
+          "modified": "2025-09-11T00:07:43.280531",
           "name": "index.md",
           "path": "core-architecture/index.md",
-          "size": 7407
+          "size": 9607
         },
         {
           "hash": "c40404d1fcc43e502556bb7eba6a0db5",
@@ -490,11 +490,11 @@
           "size": 11273
         },
         {
-          "hash": "c74857d2818efdfddd9ecef354f288b3",
-          "modified": "2025-09-06T14:57:36.782107",
+          "hash": "d3f01b57186bb1adeb6eec88f26528f8",
+          "modified": "2025-09-11T00:08:03.441982",
           "name": "README.md",
           "path": "core-architecture/README.md",
-          "size": 1906
+          "size": 2319
         },
         {
           "hash": "08cc937e96d02d232771f4e3b2751fe4",
@@ -1888,7 +1888,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T00:07:36.521065",
+  "generated_at": "2025-09-11T00:11:14.245110",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -1991,8 +1991,7 @@
         "architecture.md",
         "database-architecture.md",
         "index.md"
-      ],
-      "logs": {}
+      ]
     },
     "development-guides": {
       "files": [
@@ -2227,6 +2226,6 @@
       ]
     }
   },
-  "total_directories": 25,
+  "total_directories": 24,
   "total_files": 248
 }
