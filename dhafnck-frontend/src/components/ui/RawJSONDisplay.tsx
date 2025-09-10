@@ -32,7 +32,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
 
     if (Array.isArray(data)) {
       elements.push(
-        <div key={`array-open-${indent}`} className="h-6 md:h-7 lg:h-8 flex items-center">
+        <div key={`array-open-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}[</span>
         </div>
       );
@@ -41,10 +41,10 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
           elements.push(...formatJSON(item, indent + 1));
         } else {
           elements.push(
-            <div key={`array-item-${indent}-${index}`} className="h-6 md:h-7 lg:h-8 flex items-center">
+            <div key={`array-item-${indent}-${index}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
               <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
               {typeof item === 'string' ? (
-                <span className="text-green-600 dark:text-green-400">"{item}"</span>
+                <span className="text-green-600 dark:text-green-400 break-all">"{item}"</span>
               ) : (
                 <span className="text-amber-600 dark:text-amber-400">{String(item)}</span>
               )}
@@ -54,13 +54,13 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
         }
       });
       elements.push(
-        <div key={`array-close-${indent}`} className="h-6 md:h-7 lg:h-8 flex items-center">
+        <div key={`array-close-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}]</span>
         </div>
       );
     } else if (typeof data === 'object' && data !== null) {
       elements.push(
-        <div key={`object-open-${indent}`} className="h-6 md:h-7 lg:h-8 flex items-center">
+        <div key={`object-open-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}{"{"}</span>
         </div>
       );
@@ -68,7 +68,7 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
       entries.forEach(([key, value], index) => {
         if (typeof value === 'object' && value !== null) {
           elements.push(
-            <div key={`object-key-${indent}-${key}`} className="h-6 md:h-7 lg:h-8 flex items-center">
+            <div key={`object-key-${indent}-${key}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
               <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
               <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
               <span className="text-zinc-600 dark:text-gray-400">: </span>
@@ -89,27 +89,46 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
             );
           }
         } else {
-          elements.push(
-            <div key={`object-pair-${indent}-${key}`} className="h-6 md:h-7 lg:h-8 flex items-center">
-              <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
-              <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
-              <span className="text-zinc-600 dark:text-gray-400">: </span>
-              {typeof value === 'string' ? (
-                <span className="text-green-600 dark:text-green-400">"{value}"</span>
-              ) : typeof value === 'boolean' ? (
-                <span className="text-purple-600 dark:text-purple-400">{String(value)}</span>
-              ) : value === null ? (
-                <span className="text-gray-600 dark:text-gray-400">null</span>
-              ) : (
-                <span className="text-amber-600 dark:text-amber-400">{String(value)}</span>
-              )}
-              {index < entries.length - 1 && <span className="text-zinc-600 dark:text-gray-400">,</span>}
-            </div>
-          );
+          // Handle long strings differently
+          if (typeof value === 'string' && value.length > 100) {
+            elements.push(
+              <div key={`object-pair-${indent}-${key}`} className="my-1">
+                <div className="flex items-start">
+                  <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
+                  <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
+                  <span className="text-zinc-600 dark:text-gray-400">: </span>
+                </div>
+                <div className="ml-8 mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                  <pre className="text-green-600 dark:text-green-400 text-xs whitespace-pre-wrap break-words">
+                    "{value}"
+                  </pre>
+                </div>
+                {index < entries.length - 1 && <span className="text-zinc-600 dark:text-gray-400 ml-8">,</span>}
+              </div>
+            );
+          } else {
+            elements.push(
+              <div key={`object-pair-${indent}-${key}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start flex-wrap">
+                <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}  </span>
+                <span className="text-blue-600 dark:text-blue-400">"{key}"</span>
+                <span className="text-zinc-600 dark:text-gray-400">: </span>
+                {typeof value === 'string' ? (
+                  <span className="text-green-600 dark:text-green-400 break-all">"{value}"</span>
+                ) : typeof value === 'boolean' ? (
+                  <span className="text-purple-600 dark:text-purple-400">{String(value)}</span>
+                ) : value === null ? (
+                  <span className="text-gray-600 dark:text-gray-400">null</span>
+                ) : (
+                  <span className="text-amber-600 dark:text-amber-400">{String(value)}</span>
+                )}
+                {index < entries.length - 1 && <span className="text-zinc-600 dark:text-gray-400">,</span>}
+              </div>
+            );
+          }
         }
       });
       elements.push(
-        <div key={`object-close-${indent}`} className="h-6 md:h-7 lg:h-8 flex items-center">
+        <div key={`object-close-${indent}`} className="min-h-6 md:min-h-7 lg:min-h-8 flex items-start">
           <span className="text-zinc-600 dark:text-gray-400 whitespace-pre">{spacing}{"}"}</span>
         </div>
       );

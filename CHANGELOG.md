@@ -6,6 +6,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **🔧 Fixed Authentication Refresh Token Endpoint** - 2025-09-10
+  - **Issue**: Frontend refresh token requests were failing with 422 error
+  - **Root Cause**: Backend expected refresh_token as query parameter, frontend sent it in JSON body
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/auth/interface/auth_endpoints.py`
+  - **Changes**:
+    - Modified `/api/auth/refresh` endpoint to accept JSON body instead of query parameter
+    - Added Request import from FastAPI
+    - Added proper JSON body parsing with error handling
+  - **Impact**: Resolved authentication token refresh failures that were preventing users from staying logged in
+
+- **⏰ Fixed JWT Token Clock Skew Issue** - 2025-09-10
+  - **Issue**: Tokens were being rejected with "The token is not yet valid (iat)" error
+  - **Root Cause**: Clock synchronization issue between server and Keycloak
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/auth/keycloak_dependencies.py`
+  - **Changes**:
+    - Added 30-second leeway parameter to JWT decode for clock skew tolerance
+    - Applied to both Keycloak token validation and local token validation
+    - Updated JWT decode options for proper verification
+  - **Impact**: Resolved token validation failures caused by minor time differences between systems
+
 ### Added
 - **🎯 Enhanced Agent Assignment Dialog with Interactive Agent Information Display** - 2025-09-10
   - **Feature**: Clickable agent names in "Assign Agents to Task" dialog now show detailed agent information

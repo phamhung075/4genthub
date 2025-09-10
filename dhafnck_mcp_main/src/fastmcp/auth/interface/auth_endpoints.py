@@ -10,7 +10,7 @@ import httpx
 import logging
 import time
 import asyncio
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, validator
 from typing import Optional, Dict, Any, List
@@ -712,10 +712,20 @@ async def login(request: LoginRequest):
         )
 
 @router.post("/refresh")
-async def refresh_token(refresh_token: str):
+async def refresh_token(request: Request):
     """
     Refresh access token using refresh token.
+    Accepts refresh_token in JSON body.
     """
+    # Handle JSON body
+    try:
+        body = await request.json()
+        refresh_token = body.get("refresh_token")
+        if not refresh_token:
+            raise HTTPException(status_code=422, detail="refresh_token is required")
+    except Exception as e:
+        logger.error(f"Failed to parse request body: {e}")
+        raise HTTPException(status_code=422, detail="Invalid request body")
     if AUTH_PROVIDER == "keycloak":
         token_url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
         
