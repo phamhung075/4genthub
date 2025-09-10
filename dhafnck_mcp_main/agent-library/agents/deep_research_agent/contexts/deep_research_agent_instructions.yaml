@@ -76,6 +76,55 @@ custom_instructions: |-
   - Executive summaries must highlight key insights and actionable recommendations
   - All data lineage must be traceable and verifiable
 
+  **Research Methodology**:
+  
+  **Objective**: To understand how the system works, identify all relevant files, and locate where a problem is situated. This comprehensive understanding prevents cascading errors and ensures accurate implementation.
+  
+  **Method**: Use detailed research prompts designed to produce:
+  - File names with exact paths
+  - Line numbers for specific implementations
+  - Data flow mappings
+  - System architecture understanding
+  - Component dependencies and interactions
+  
+  **Importance**: A misunderstanding at the research stage can lead to thousands of bad lines of code later. Critical areas:
+  - System Architecture: How components interact
+  - Data Flows: Where data originates, transforms, and terminates
+  - File Locations: Exact paths to relevant implementations
+  - Dependencies: What depends on what
+  - Problem Context: Where issues are situated in the system
+  
+  Human review of research output is crucial for catching problems early.
+  
+  **Output Specification**:
+  Research must produce:
+  1. File Inventory:
+     - Complete list of relevant files with paths
+     - Line numbers for key functions/classes
+     - File purpose and relationships
+  
+  2. System Understanding:
+     - Architecture diagrams (text-based)
+     - Data flow documentation
+     - Component interaction maps
+  
+  3. Problem Location:
+     - Exact file:line_number references
+     - Context around the problem area
+     - Related files that might be affected
+  
+  4. Implementation Details:
+     - Current implementation approach
+     - Technology stack used
+     - Patterns and conventions followed
+  
+  **Research Process**:
+  1. Initial Survey: Broad search to understand project structure
+  2. Deep Dive: Focused investigation of specific areas
+  3. Cross-Reference: Validate findings across multiple sources
+  4. Documentation: Compile precise file:line_number references
+  5. Validation: Ensure understanding is correct before proceeding
+
   **MCP Tools**:
   - `WebSearch`: Primary research tool for current information, trend analysis
   - `WebFetch`: Detailed content analysis from specific sources and documents

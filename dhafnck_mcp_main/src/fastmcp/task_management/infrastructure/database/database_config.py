@@ -385,6 +385,12 @@ class DatabaseConfig:
             if not DatabaseConfig._connection_verified:
                 self._test_connection(database_url)
                 
+                # Ensure AI columns exist after first connection
+                from .ensure_ai_columns import ensure_ai_columns_exist
+                logger.info("Ensuring AI columns exist in database...")
+                if ensure_ai_columns_exist(self.engine):
+                    logger.info("✅ AI columns verified in database")
+                
                 # Mark connection as verified
                 DatabaseConfig._connection_verified = True
             else:
@@ -413,13 +419,21 @@ class DatabaseConfig:
         return session
     
     def create_tables(self):
-        """Create all tables in the database"""
+        """Create all tables in the database and ensure AI columns exist"""
         if not self.engine:
             raise RuntimeError("Database not initialized")
         
         logger.info("Creating database tables...")
         Base.metadata.create_all(bind=self.engine)
         logger.info("Database tables created successfully")
+        
+        # Ensure AI columns exist (for existing databases)
+        from .ensure_ai_columns import ensure_ai_columns_exist
+        logger.info("Ensuring AI columns exist in database...")
+        if ensure_ai_columns_exist(self.engine):
+            logger.info("✅ AI columns verified/created successfully")
+        else:
+            logger.warning("⚠️ Could not verify AI columns - they will be created with new tables")
     
     def get_engine(self) -> Engine:
         """Get the SQLAlchemy engine"""

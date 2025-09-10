@@ -1,0 +1,164 @@
+output_specification:
+  type: 'AI/ML research reports with repository references, paper citations, and actionable engineering insights with exact file:line_number references'
+  
+  format: |
+    Structured AI/ML Research Update:
+    
+    {
+      "report_date": "Current date of research",
+      "summary": "Executive summary of major AI/ML developments",
+      
+      "major_developments": [
+        {
+          "title": "Development name",
+          "source": "Company/Organization",
+          "announcement_date": "ISO date",
+          "repository": "GitHub URL if available",
+          "paper": "arXiv or paper URL",
+          "key_files": [
+            {
+              "path": "repo/path/to/file.py",
+              "line_numbers": [45, 123, 456],
+              "description": "What this code does"
+            }
+          ],
+          "impact": "Why this matters for engineers"
+        }
+      ],
+      
+      "language_models": {
+        "new_releases": [
+          {
+            "model": "Model name",
+            "organization": "Creator",
+            "release_date": "ISO date",
+            "capabilities": ["capability1", "capability2"],
+            "benchmarks": {
+              "MMLU": 0.85,
+              "HumanEval": 0.72,
+              "GSM8K": 0.91
+            },
+            "implementation": {
+              "repository": "GitHub URL",
+              "key_files": ["file1.py:45", "file2.py:123"],
+              "setup_guide": "Path to setup documentation"
+            }
+          }
+        ],
+        "benchmark_updates": "Latest benchmark results and comparisons"
+      },
+      
+      "ai_agents": {
+        "frameworks": [
+          {
+            "name": "Framework name",
+            "version": "Latest version",
+            "repository": "GitHub URL",
+            "stars": 15000,
+            "last_update": "ISO date",
+            "key_features": ["feature1", "feature2"],
+            "implementation_examples": [
+              {
+                "use_case": "Example use case",
+                "file": "examples/agent.py",
+                "line_numbers": [10, 50, 100],
+                "code_snippet": "Key code example"
+              }
+            ]
+          }
+        ],
+        "patterns": "Emerging patterns in agent development"
+      },
+      
+      "engineering_insights": {
+        "best_practices": [
+          {
+            "practice": "Best practice description",
+            "implementation": "How to implement",
+            "example_repository": "GitHub URL",
+            "relevant_files": ["file1.py:45-89", "file2.py:123-456"]
+          }
+        ],
+        "optimization_techniques": [
+          {
+            "technique": "Optimization name",
+            "performance_gain": "30% reduction in latency",
+            "implementation_complexity": "medium",
+            "code_reference": "repo/optimization.py:234"
+          }
+        ],
+        "deployment_patterns": "Production deployment recommendations"
+      },
+      
+      "tools_and_resources": {
+        "new_libraries": [
+          {
+            "name": "Library name",
+            "version": "1.2.3",
+            "purpose": "What it does",
+            "installation": "pip install library",
+            "documentation": "docs URL",
+            "example_usage": "examples/demo.py:45"
+          }
+        ],
+        "useful_repositories": [
+          {
+            "url": "GitHub URL",
+            "description": "What it provides",
+            "stars": 5000,
+            "key_files": ["README.md", "src/main.py:100"]
+          }
+        ]
+      },
+      
+      "actionable_recommendations": [
+        {
+          "recommendation": "Specific action to take",
+          "priority": "high|medium|low",
+          "implementation_effort": "hours|days|weeks",
+          "resources": [
+            {
+              "type": "repository|paper|tool",
+              "url": "Resource URL",
+              "specific_reference": "file:line_number or section"
+            }
+          ]
+        }
+      ],
+      
+      "trends_to_watch": [
+        {
+          "trend": "Emerging trend description",
+          "timeline": "Expected timeline",
+          "preparation": "How to prepare",
+          "early_adopters": ["Company1", "Company2"]
+        }
+      ],
+      
+      "metadata": {
+        "sources_analyzed": 42,
+        "repositories_reviewed": 15,
+        "papers_cited": 8,
+        "confidence_score": 0.92,
+        "last_updated": "ISO datetime"
+      }
+    }
+    
+  validation_rules:
+    - all_dates_must_be_recent: true
+    - repository_urls_must_be_valid: true
+    - file_references_must_include_line_numbers: true
+    - benchmarks_must_include_source: true
+    - code_snippets_must_be_runnable: true
+    
+  example:
+    report_date: "2025-01-10"
+    summary: "Major breakthrough in efficient LLM inference with 50% latency reduction"
+    major_developments:
+      - title: "Flash Attention 3.0 Released"
+        source: "Stanford/Meta"
+        repository: "https://github.com/Dao-AILab/flash-attention"
+        key_files:
+          - path: "flash_attn/flash_attention.py"
+            line_numbers: [234, 567]
+            description: "Core attention implementation"

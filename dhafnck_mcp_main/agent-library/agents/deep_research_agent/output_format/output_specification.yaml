@@ -1,15 +1,136 @@
 output_specification:
-  type: 'Research reports, analyses, insights, recommendations, data visualizations. Output is a JSON object with fields: { summary: string, findings: array, recommendations: array, confidenceScore: number, sources: array, errors?: array }'
+  type: 'Comprehensive research reports with file-level precision, including file inventories, system analysis, and actionable recommendations with exact file:line_number references'
+  
   format: |
-    JSON object. Example:
+    JSON object with detailed research findings:
     
     {
-      "summary": "AI adoption is accelerating in SaaS.",
-      "findings": [ ... ],
-      "recommendations": [ ... ],
-      "confidenceScore": 0.92,
-      "sources": [ ... ],
-      "errors": [ ... ] }
-  schema: Example schema for outputSpec
-  validationRules: Example validationRules for outputSpec
-  example: Example example for outputSpec
+      "summary": "Executive summary of research findings",
+      "file_inventory": {
+        "files": [
+          {
+            "path": "/absolute/path/to/file.py",
+            "purpose": "Description of file's role",
+            "key_elements": [
+              {
+                "type": "function|class|variable",
+                "name": "element_name",
+                "line_number": 42,
+                "description": "What it does"
+              }
+            ],
+            "dependencies": ["file1.py", "file2.js"],
+            "impacts": ["affected_file1.py", "affected_file2.js"]
+          }
+        ],
+        "total_files": 15,
+        "file_relationships": "Dependency graph description"
+      },
+      "system_understanding": {
+        "architecture": "Text-based architecture diagram",
+        "data_flows": [
+          {
+            "source": "file:line_number",
+            "destination": "file:line_number",
+            "data_type": "Type of data",
+            "transformation": "How data changes"
+          }
+        ],
+        "components": [
+          {
+            "name": "Component name",
+            "files": ["file1.py", "file2.py"],
+            "responsibility": "What it does",
+            "interactions": ["Component B", "Component C"]
+          }
+        ]
+      },
+      "problem_location": {
+        "primary_issue": {
+          "file": "/path/to/problem/file.py",
+          "line_number": 156,
+          "description": "Nature of the problem",
+          "context": "Surrounding code logic"
+        },
+        "affected_areas": [
+          {
+            "file": "/path/to/affected/file.py",
+            "line_numbers": [45, 67, 89],
+            "impact": "How it's affected"
+          }
+        ],
+        "ripple_effects": "Potential downstream impacts"
+      },
+      "findings": [
+        {
+          "finding": "Detailed research finding",
+          "evidence": ["file1.py:45", "file2.js:123"],
+          "confidence": 0.95,
+          "impact": "high|medium|low"
+        }
+      ],
+      "recommendations": [
+        {
+          "recommendation": "Specific action to take",
+          "target_files": ["file1.py:45-50", "file2.py:100-120"],
+          "priority": "critical|high|medium|low",
+          "implementation_notes": "How to implement"
+        }
+      ],
+      "confidence_score": 0.92,
+      "sources": [
+        {
+          "type": "file|documentation|analysis",
+          "location": "path or description",
+          "relevance": "Why this source matters"
+        }
+      ],
+      "validation": {
+        "cross_references": "How findings were validated",
+        "confidence_levels": {
+          "file_inventory": 0.98,
+          "system_understanding": 0.90,
+          "problem_location": 0.95
+        }
+      },
+      "errors": []
+    }
+    
+  schema:
+    required_fields:
+      - summary
+      - file_inventory
+      - system_understanding
+      - findings
+      - recommendations
+      - confidence_score
+      - sources
+    optional_fields:
+      - problem_location
+      - validation
+      - errors
+      
+  validation_rules:
+    - all_file_paths_must_be_absolute: true
+    - line_numbers_must_be_integers: true
+    - confidence_scores_between_0_and_1: true
+    - file_references_format: "file:line_number"
+    - minimum_confidence_score: 0.7
+    
+  example:
+    summary: "Authentication system analysis reveals security vulnerability in session management"
+    file_inventory:
+      files:
+        - path: "/home/project/src/auth/session.py"
+          purpose: "Session management and token validation"
+          key_elements:
+            - type: "function"
+              name: "validate_token"
+              line_number: 45
+              description: "Validates JWT tokens"
+      total_files: 8
+    findings:
+      - finding: "Token expiration not properly validated"
+        evidence: ["session.py:45", "middleware.py:78"]
+        confidence: 0.92
+        impact: "high"
