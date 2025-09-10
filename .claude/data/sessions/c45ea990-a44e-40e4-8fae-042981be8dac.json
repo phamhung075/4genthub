@@ -1,0 +1,7 @@
+{
+  "session_id": "c45ea990-a44e-40e4-8fae-042981be8dac",
+  "prompts": [
+    "call agent to review ai_docs/core-architecture for make this folder clean because actual is multiple files, if keep files need put files on categorie folder,\nPRD.md and Architecture_Technique.md the most keep, need keep and update this"
+  ],
+  "agent_name": "Axiom"
+}

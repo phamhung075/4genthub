@@ -1,224 +1,209 @@
-# Architecture Design Documentation
+# Core Architecture Documentation
 
 ## Overview
 
-This directory contains architectural design documentation for the DhafnckMCP system, covering design patterns, implementation guidelines, and technical architecture decisions.
+This directory contains the **core architectural design documentation** for the DhafnckMCP system, focusing on fundamental system design, technical architecture, and foundational patterns.
 
-## Documents
+**📁 Reorganization Complete (2025-09-11)**: This folder has been cleaned and reorganized from 48 files to 6 core files. Specialized documentation has been moved to appropriate folders:
+- **Authentication**: [ai_docs/authentication/](../authentication/)
+- **Context System**: [ai_docs/context-system/](../context-system/)
+- **Agent Architecture**: [ai_docs/development-guides/](../development-guides/) (agent-*.md files)
+- **DDD Patterns**: [ai_docs/development-guides/](../development-guides/) (DDD-*.md files)
+- **MCP Integration**: [ai_docs/api-integration/](../api-integration/) (MCP-*.md files)
+- **Controller Architecture**: [ai_docs/development-guides/](../development-guides/) (controller-*.md files)
+- **Repository Patterns**: [ai_docs/development-guides/](../development-guides/) (repository-*.md files)
+- **Issues & Reports**: [ai_docs/issues/](../issues/) and [ai_docs/reports-status/](../reports-status/)
 
-### Agent Architecture ⭐ NEW (2025-09-09)
+## Core Documents
 
-1. **[Agent Interaction Patterns](./agent-interaction-patterns.md)** ⭐ NEW
-   - Post-consolidation interaction patterns (31 agents)
-   - 3-tier hierarchy: Orchestrators, Implementers, Specialists
-   - Delegation workflows and communication protocols
-   - Parallel execution patterns
+### 📋 Product Requirements & Architecture
 
-2. **[Agent Flow Diagrams](./agent-flow-diagrams.md)** ⭐ NEW
-   - Visual architecture with Mermaid diagrams
-   - Feature development, bug resolution, research flows
-   - Consolidated agent capabilities visualization
-   - Performance optimization workflows
+1. **[Product Requirements Document (PRD)](./PRD.md)** ⭐ **CORE**
+   - Complete product vision and requirements
+   - 60+ specialized AI agents overview
+   - 4-tier context hierarchy design
+   - Technical requirements and roadmap
+   - Success metrics and compliance standards
 
-3. **[Agent Capability Matrix](./agent-capability-matrix.md)**
-   - Role definitions and tool boundaries
-   - Coordinator vs Creator vs Specialist roles
-   - Tool assignment patterns
+2. **[Technical Architecture](./Architecture_Technique.md)** ⭐ **CORE**
+   - Domain-Driven Design (DDD) implementation
+   - FastMCP 2.0 framework integration
+   - Complete system layers and components
+   - MCP protocol integration (15+ categories)
+   - Vision System architecture (6 phases)
+   - Database schema and performance targets
 
-4. **[Role-Based Tool Assignment System](./role-based-tool-assignment-system.md)**
-   - Binary tool constraints and delegation
-   - Dynamic tool resolution from YAML
-   - Delegation patterns for coordinators
+3. **[System Architecture Overview](./architecture.md)** ⭐ **CORE**
+   - High-level system design and components
+   - Technology stack overview
+   - Integration patterns and workflows
+   - Service architecture and communication
 
-5. **[Agent Optimization Analysis](./agent-optimization-analysis.md)**
-   - Redundancy analysis of original 42 agents
-   - Consolidation opportunities identified
-   - Performance improvement projections
+4. **[Database Architecture](./database-architecture.md)** ⭐ **CORE**
+   - Database design patterns and schemas
+   - SQLite and PostgreSQL configurations
+   - Performance optimization strategies
+   - Data modeling and relationships
 
-6. **[Agent Optimization Implementation Plan](./agent-optimization-implementation-plan.md)**
-   - 4-phase migration strategy
-   - Consolidation roadmap (42 → 31 agents)
-   - Backward compatibility approach
+## Related Documentation
 
-### Core Architecture
+### Specialized Architecture Documentation
 
-1. **[Domain-Driven Design Implementation](./ddd-architecture.md)**
-   - DDD patterns and principles
-   - Layer separation and boundaries
-   - Entity and value object design
+**Authentication System**:
+- See [ai_docs/authentication/](../authentication/) for authentication architecture, token security, and Keycloak integration
 
-2. **[System Architecture Overview](./system-architecture.md)**
-   - High-level system design
-   - Component interactions
-   - Technology stack
+**Context Management**:
+- See [ai_docs/context-system/](../context-system/) for hierarchical context implementation, inheritance patterns, and context update strategies
 
-### MCP Framework
+**Agent Architecture**:
+- See [ai_docs/development-guides/](../development-guides/) for agent interaction patterns, capability matrices, optimization analysis, and role-based assignments
 
-3. **[MCP Parameter Type Resolution Guide](./mcp-parameter-type-resolution-guide.md)** ⭐ NEW
-   - Complete guide for handling MCP parameter type display issues
-   - Standardized pattern for MCP tool controllers
-   - Type conversion strategies and best practices
-   - Generic implementation template
+**Domain-Driven Design**:
+- See [ai_docs/development-guides/](../development-guides/) for DDD compliance analysis, domain services, and implementation patterns
 
-4. **[MCP Controller Implementation Changes](./mcp-controller-implementation-changes.md)** ⭐ NEW
-   - Detailed documentation of fixes applied to task, compliance, and context controllers
-   - Before/after comparisons
-   - Migration guide for other controllers
-   - Testing and verification procedures
+**MCP Integration**:
+- See [ai_docs/api-integration/](../api-integration/) for MCP server architecture, parameter resolution, and controller implementation guides
 
-### Design Patterns
+**Controller & Repository Patterns**:
+- See [ai_docs/development-guides/](../development-guides/) for modular controller architecture, repository switching guides, and refactoring plans
 
-5. **[Factory Pattern Implementation](./factory-pattern.md)**
-   - Factory pattern usage across the system
-   - Repository factories
-   - Service factories
+### Cross-Reference Guide
 
-6. **[Repository Pattern](./repository-pattern.md)**
-   - Repository abstraction design
-   - ORM integration
-   - Mock implementations
-
-### Context Management
-
-7. **[Hierarchical Context System](./hierarchical-context.md)**
-   - 4-tier context hierarchy (Global → Project → Branch → Task)
-   - Context inheritance and delegation
-   - Vision system integration
-
-8. **[Context Update Implementation Technical Specification](./CONTEXT_UPDATE_IMPLEMENTATION.md)** ⭐ NEW
-   - Comprehensive technical specification for safe, atomic, and intelligent context update patterns
-   - Context Update API Design with 5 distinct update operation types (REPLACE, MERGE, APPEND, PREPEND, ATOMIC)
-   - 7-step Agent Context Update Workflow for safe updates without data loss
-   - Field-specific merge strategies with conflict resolution for each context level
-   - Implementation examples in Python (backend) and TypeScript (frontend)
-   - MCP tool usage examples for AI agents with proper error handling
-   - Concurrency handling with optimistic locking and retry strategies
-   - Performance optimization with batch processing and intelligent caching
-   - Complete error handling with recovery strategies and audit trail
-
-9. **[Context Synchronization](./context-synchronization.md)**
-   - Cross-level context updates
-   - Propagation strategies
-   - Conflict resolution
-
-### API Design
-
-10. **[RESTful API Design](./restful-api.md)**
-    - API endpoint structure
-    - Request/response formats
-    - Error handling patterns
-
-11. **[MCP Tool Interface Design](./mcp-tool-interface.md)**
-    - Tool registration patterns
-    - Parameter handling
-    - Response standardization
+**For Implementation Details**:
+- **Agent Development**: [Agent guides in development-guides/](../development-guides/)
+- **API Integration**: [MCP integration in api-integration/](../api-integration/)
+- **Authentication**: [Auth system in authentication/](../authentication/)
+- **Context Management**: [Context system in context-system/](../context-system/)
+- **Testing**: [Testing guides in testing-qa/](../testing-qa/)
+- **Setup & Operations**: [Setup guides](../setup-guides/) and [Operations](../operations/)
+- **Troubleshooting**: [Issue resolution in troubleshooting-guides/](../troubleshooting-guides/)
+- **Migration**: [Migration guides in migration-guides/](../migration-guides/)
 
 ## Key Architectural Decisions
 
-### MCP Parameter Handling (2025-09-03)
+### Domain-Driven Design (DDD)
 
-**Problem:** MCP framework shows Union and Optional types as "unknown" in tool interfaces.
+**Decision**: Strict layer separation with clear boundaries and rich domain models.
 
-**Solution:** Use simple base types in signatures with type conversion in function body.
+**Layers**:
+- **Domain**: Business logic, entities, value objects, domain services
+- **Application**: Use cases, facades, DTOs, event handlers
+- **Infrastructure**: Database, external services, repositories
+- **Interface**: MCP controllers, HTTP endpoints, UI components
 
-**Pattern:**
-```python
-# Signature: Simple types
-param: Annotated[str, Field(description="[OPTIONAL] ...")] = None
+**Benefits**: Maintainable code, clear separation of concerns, testable architecture
 
-# Body: Handle flexible inputs
-if param and ',' in param:
-    param = param.split(',')
+### 4-Tier Context Hierarchy
+
+**Decision**: Hierarchical context system with automatic inheritance.
+
+**Structure**:
+```
+GLOBAL (per-user) → PROJECT → BRANCH → TASK
 ```
 
-### Domain-Driven Design
+**Benefits**:
+- Clear scope boundaries and data isolation
+- Automatic context inheritance and delegation
+- Efficient data sharing across hierarchy levels
+- Multi-tenant support with user-scoped global contexts
 
-**Decision:** Strict layer separation with clear boundaries.
+### Agent Orchestration Architecture
 
-**Layers:**
-- Domain: Business logic and entities
-- Application: Use cases and orchestration
-- Infrastructure: External concerns
-- Interface: User/system interaction
+**Decision**: 60+ specialized agents with dynamic loading and capability-based assignment.
 
-### Context Hierarchy
-
-**Decision:** 4-tier hierarchical context system with inheritance.
-
-**Benefits:**
-- Clear scope boundaries
-- Automatic inheritance
-- Efficient data sharing
-- Multi-tenant support
+**Benefits**:
+- Specialized expertise for different tasks
+- Parallel execution and workflow optimization
+- Intelligent work distribution and load balancing
+- Modular and extensible agent system
 
 ## Implementation Guidelines
 
-### Creating New MCP Controllers
-
-Follow the pattern documented in [MCP Parameter Type Resolution Guide](./mcp-parameter-type-resolution-guide.md):
-
-1. Create separate description module
-2. Use simple types in signatures
-3. Add "[OPTIONAL]" to descriptions
-4. Implement type conversion in body
-5. Test parameter display
-
 ### Adding New Features
 
-1. Start with domain model
-2. Define application use cases
-3. Implement infrastructure
-4. Create interface layer
-5. Add comprehensive tests
+1. **Start with Domain Model**: Define entities, value objects, and domain services
+2. **Define Use Cases**: Create application services and use case handlers
+3. **Implement Infrastructure**: Add repositories, external service integrations
+4. **Create Interface Layer**: Build MCP controllers and API endpoints
+5. **Add Comprehensive Tests**: Unit, integration, and E2E tests
+6. **Update Documentation**: Keep architecture documentation current
 
 ### Modifying Existing Components
 
-1. Maintain layer boundaries
-2. Follow existing patterns
-3. Update documentation
-4. Add migration guides
-5. Test thoroughly
+1. **Maintain DDD Boundaries**: Respect layer separation and domain integrity
+2. **Follow Established Patterns**: Use existing architectural patterns consistently
+3. **Update Related Documentation**: Keep all documentation synchronized
+4. **Create Migration Guides**: Document breaking changes and upgrade paths
+5. **Test Thoroughly**: Ensure changes don't break existing functionality
+
+### MCP Controller Development
+
+For MCP controller patterns and implementation guidelines, see:
+- [MCP Integration Documentation](../api-integration/)
+- [Controller Architecture Guides](../development-guides/)
+- [Parameter Resolution Patterns](../api-integration/)
 
 ## Best Practices
 
 ### Code Organization
-- One class per file
-- Clear module structure
-- Descriptive naming
-- Comprehensive docstrings
+- **One class per file** with clear responsibility
+- **Clear module structure** following DDD layers
+- **Descriptive naming** that reflects domain concepts
+- **Comprehensive docstrings** with examples and context
 
 ### Testing Strategy
-- Unit tests per layer
-- Integration tests for workflows
-- E2E tests for critical paths
-- Performance benchmarks
+- **Unit tests per layer** with appropriate mocking
+- **Integration tests for workflows** and cross-layer interactions
+- **E2E tests for critical paths** and user journeys
+- **Performance benchmarks** for optimization validation
 
 ### Documentation
-- Keep ai_docs next to code
-- Update with changes
-- Include examples
-- Explain decisions
+- **Keep documentation current** with code changes
+- **Include practical examples** and usage patterns
+- **Explain architectural decisions** and trade-offs
+- **Cross-reference related documents** for comprehensive understanding
 
 ## Recent Updates
 
-- **2025-09-09**: Major agent architecture consolidation (42 → 31 agents)
-  - Added comprehensive agent interaction patterns documentation
-  - Created visual flow diagrams for all agent workflows
-  - Documented consolidated agent capabilities
-  - Implemented full backward compatibility
-- **2025-09-03**: Added Context Update Implementation Technical Specification with comprehensive update patterns and strategies
-- **2025-09-03**: Added MCP parameter type resolution documentation
-- **2025-09-03**: Documented controller implementation fixes
+- **2025-09-11**: 🧹 **MAJOR REORGANIZATION** - Cleaned and reorganized core-architecture folder
+  - **Reduced from 48 files to 6 core files** (87% reduction)
+  - **Moved specialized docs to appropriate folders**:
+    - Authentication → [ai_docs/authentication/](../authentication/)
+    - Context System → [ai_docs/context-system/](../context-system/)
+    - Agent Architecture → [ai_docs/development-guides/](../development-guides/)
+    - DDD Patterns → [ai_docs/development-guides/](../development-guides/)
+    - MCP Integration → [ai_docs/api-integration/](../api-integration/)
+    - Controller/Repository Patterns → [ai_docs/development-guides/](../development-guides/)
+  - **Updated cross-references** and navigation
+  - **Maintained all content** while improving organization
+- **2025-09-09**: Major agent architecture consolidation (60+ agents)
+- **2025-09-03**: Context Update Implementation Technical Specification
+- **2025-09-03**: MCP parameter type resolution and controller fixes
 - **2025-09-02**: Updated context hierarchy documentation
-- **2025-09-01**: Added factory pattern documentation
 
 ## Quick Links
 
-- [Project README](../../README.md)
-- [API Documentation](../api-integration/index.md)
-- [Testing Guide](../testing-qa/index.md)
-- [Setup Guide](../setup-guides/index.md)
+### Core Documentation
+- [Project README](../../README.md) - Main project overview
+- [CHANGELOG](../../CHANGELOG.md) - Project change history
+- [CLAUDE.md](../../CLAUDE.md) - AI agent instructions
+
+### Specialized Architecture
+- [Authentication System](../authentication/) - Auth architecture and security
+- [Context Management](../context-system/) - Hierarchical context implementation
+- [Development Guides](../development-guides/) - Agent, DDD, controller patterns
+- [API Integration](../api-integration/) - MCP framework and API design
+- [Testing Guide](../testing-qa/) - Testing strategies and frameworks
+- [Setup Guides](../setup-guides/) - Installation and configuration
+- [Operations](../operations/) - Deployment and maintenance
+- [Troubleshooting](../troubleshooting-guides/) - Issue resolution
+
+### Project Management
+- [Issues](../issues/) - Known issues and resolutions
+- [Migration Guides](../migration-guides/) - Version upgrade guides
+- [Reports & Status](../reports-status/) - Status reports and analysis
 
 ---
 
-*For questions or updates to these documents, please follow the contribution guidelines in the main README.*
+*This core architecture documentation provides the foundation for understanding the DhafnckMCP system. For specific implementation details, refer to the specialized documentation folders listed above.*

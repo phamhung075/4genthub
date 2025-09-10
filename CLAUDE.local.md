@@ -85,27 +85,61 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 - **Audit Trails**: All operations logged for security compliance
 
 ## Documentation Architecture
+
+### AI Documentation System Overview
+The documentation system provides intelligent tracking, automatic indexing, and selective enforcement to help AI agents maintain high-quality documentation while not disrupting workflow.
+
 ```
 ai_docs/
-├── CORE ARCHITECTURE/        # System understanding
-├── DEVELOPMENT GUIDES/        # Developer resources
-├── OPERATIONS/               # Deployment & config
-├── TROUBLESHOOTING/          # Problem resolution
-├── api-integration/          # API documentation
-├── architecture-design/      # DDD and system design
-├── context-system/           # Context management ai_docs
-├── issues/                   # Issue tracking and resolution
-├── migration-guides/         # Version migration guides
-├── reports-status/           # Status reports and analysis
-├── setup-guides/             # Setup and configuration
-└── testing-qa/               # Testing documentation
+├── _absolute_docs/           # File-specific documentation (marks importance)
+│   ├── scripts/             # Documentation for scripts folder
+│   │   ├── f_index.md       # Folder documentation (marks folder as important)
+│   │   └── docker-menu.sh.md # Specific file documentation
+│   └── claude-hooks-pre-tool-use.py.md  # Hook documentation
+├── _obsolete_docs/          # Auto-archived when source files deleted
+├── index.json               # Auto-generated documentation index (by hooks)
+├── api-integration/         # API documentation
+├── authentication/          # Auth system documentation
+├── claude-code/             # Claude Code specific docs
+├── context-system/          # Context management docs
+├── core-architecture/       # System architecture (kebab-case)
+├── development-guides/      # Developer resources (kebab-case)
+├── issues/                  # Issue tracking and resolution
+├── keycloak/                # Keycloak integration docs
+├── migration-guides/        # Version migration guides
+├── operations/              # Deployment & configuration
+├── reports-status/          # Status reports and analysis
+├── setup-guides/            # Setup and configuration
+├── testing-qa/              # Testing documentation
+└── troubleshooting-guides/ # Problem resolution (kebab-case)
 ```
+
+### Key Features for AI Agents
+
+#### 1. Fast Context Access
+- **index.json**: Machine-readable index with all documentation metadata
+- **Automatic updates**: Hooks update index.json when docs change
+- **Quick lookup**: AI can quickly find relevant documentation via index
+- **MD5 hashing**: Track document changes and versions
+
+#### 2. Selective Documentation Enforcement
+- **_absolute_docs pattern**: Files with docs here are marked as "important"
+- **Smart blocking**: Only blocks modifications if documentation exists
+- **Session tracking**: 2-hour sessions prevent workflow disruption
+- **f_index.md**: Mark entire folders as important with folder documentation
+
+#### 3. Automatic Documentation Management
+- **Post-tool hook**: Updates index.json after any ai_docs changes
+- **Obsolete tracking**: Moves docs to _obsolete_docs when source deleted
+- **Warning system**: Non-blocking warnings for missing documentation
+- **Path mapping**: `ai_docs/_absolute_docs/{path}/file.ext.md` for `/path/file.ext`
 
 ### Documentation Structure Rules
 - **Test files**: Must write in correct location (`dhafnck_mcp_main/src/tests/`)
 - **Document files**: Must write in correct location (`ai_docs/`)
+- **Kebab-case folders**: All ai_docs subfolders must use lowercase-with-dashes
 - **Organization**: Create subfolders for easy management
-- **Index files**: Create/update `index.md` for all document folders
+- **Index files**: Auto-generated index.json (not index.md anymore)
 - **NO LOOSE DOCUMENTATION IN ROOT**: All documentation MUST be in appropriate folders:
   - Troubleshooting guides → `ai_docs/troubleshooting-guides/`
   - Migration guides → `ai_docs/migration-guides/`
@@ -118,6 +152,27 @@ ai_docs/
     - TEST-CHANGELOG.md (tests changes)
     - CLAUDE.md (AI agent instructions - checked in)
     - CLAUDE.local.md (local AI rules - not checked in)
+
+### How AI Should Use Documentation System
+
+1. **Check index.json for existing docs**:
+   - Located at `ai_docs/index.json`
+   - Contains all documentation with metadata
+   - Use to quickly find relevant documentation
+
+2. **Create absolute documentation for important files**:
+   - Place in `ai_docs/_absolute_docs/` with path structure
+   - This marks the file as important and requires doc updates
+   - Example: For `scripts/test.sh` → `ai_docs/_absolute_docs/scripts/test.sh.md`
+
+3. **Follow kebab-case for all folders**:
+   - Valid: `api-integration`, `test-results`, `setup-guides`
+   - Invalid: `API_Integration`, `Test Results`, `SetupGuides`
+
+4. **Respect session tracking**:
+   - First modification might trigger warning
+   - Subsequent modifications in same session won't be blocked
+   - Sessions last 2 hours for uninterrupted work
 
 ## Essential Rules
 
