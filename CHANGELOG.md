@@ -6,6 +6,50 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **✅ Fixed "Unassigned" Tasks in Frontend - Assignees Now Display Correctly** - 2025-09-10
+  - **Issue**: All tasks showed as "Unassigned" in frontend despite having assignees in database
+  - **Root Cause**: OptimizedTaskRepository's `list_tasks_minimal()` method only returned `assignees_count` but not the actual `assignees` array that frontend needed
+  - **Solution**: Enhanced minimal task response to include both count and actual assignees array
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/optimized_task_repository.py` (lines 229-260)
+  - **Technical Details**:
+    - Added separate assignees query to fetch assignee_id values
+    - Modified minimal response builder to include `assignees` field alongside existing `assignees_count`
+    - Maintains performance optimization while providing complete data to frontend
+    - Data flow: Database → OptimizedTaskRepository → TaskApplicationFacade → HTTP API → Frontend
+  - **Impact**: Frontend now correctly displays assigned agents (e.g., "@coding_agent", "@devops_agent") instead of showing "Unassigned"
+  - **Testing**: Verified with 4 test tasks containing 1-5 agents each - all now display correctly
+- **🔧 Fixed Assignees Not Being Persisted to Database** - 2025-09-10
+  - **Issue**: Tasks were created successfully but assignees weren't saved to task_assignees table
+  - **Root Cause**: ORMTaskRepository.save() method was missing assignee persistence logic
+  - **Solution**: Added assignee persistence for both new tasks and updates
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
+  - **Technical Details**:
+    - Added assignee persistence logic at lines 913-930 (for updates) and 1007-1020 (for new tasks)
+    - Follows same pattern as dependencies and labels persistence
+    - Properly handles user_id for data isolation in multi-tenant system
+    - Each assignee gets a unique UUID and is linked to the task
+  - **Impact**: Tasks now correctly save their assigned agents to the PostgreSQL database
+
+- **🔧 Critical Interface Layer Bug Fix - Assignees Parameter Not Reaching CRUD Handler** - 2025-09-10
+  - **Issue**: The `assignees` parameter was not properly reaching the CRUD handler during task creation
+  - **Root Cause**: Domain entity validation was preventing validation of assignees during dummy task creation
+  - **Solution**: 
+    - Moved assignees validation from domain entity to interface layer (respecting DDD boundaries)
+    - Added direct AgentRole enum validation without creating dummy tasks
+    - Enhanced validation to support both underscore (`@coding_agent`) and hyphen (`@coding-agent`) formats
+    - Added legacy role resolution for backward compatibility
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.py`
+    - `dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/task.py`
+  - **Technical Details**:
+    - Respects DDD architecture: validation moved to appropriate Interface layer
+    - Maintains domain entity integrity without compromising business rules
+    - Supports 68 available agent roles with proper validation
+    - Added comprehensive logging for debugging parameter flow
+
 ### Added
 - **📚 Comprehensive Agent Documentation Update** - 2025-09-09
   - **Created Documentation**:

@@ -68,18 +68,66 @@ class CRUDHandler:
         # Validate assignees if provided
         if assignees:
             try:
-                # Validate assignees using AgentRole enum
-                from .....domain.entities.task import Task
-                dummy_task = Task(title="dummy", description="dummy")
-                validated_assignees = dummy_task.validate_assignee_list(assignees)
+                # Import domain validation functions directly without creating a dummy task
+                from .....domain.enums.agent_roles import AgentRole, resolve_legacy_role
+                
+                validated_assignees = []
+                invalid_assignees = []
+                
+                for assignee in assignees:
+                    if assignee and assignee.strip():
+                        # Clean the assignee string
+                        clean_assignee = assignee.strip()
+                        
+                        # Try to resolve legacy role names
+                        resolved_assignee = resolve_legacy_role(clean_assignee)
+                        if resolved_assignee:
+                            # Ensure resolved assignee has @ prefix
+                            if not resolved_assignee.startswith("@"):
+                                resolved_assignee = f"@{resolved_assignee}"
+                            validated_assignees.append(resolved_assignee)
+                            logger.info(f"Resolved legacy assignee '{assignee}' to '{resolved_assignee}'")
+                        elif AgentRole.is_valid_role(clean_assignee.lstrip('@')):
+                            # Valid agent role - ensure @ prefix
+                            if not clean_assignee.startswith("@"):
+                                clean_assignee = f"@{clean_assignee}"
+                            validated_assignees.append(clean_assignee)
+                            logger.info(f"Validated assignee: '{clean_assignee}'")
+                        elif clean_assignee.startswith("@") and AgentRole.is_valid_role(clean_assignee[1:]):
+                            # Already has @ prefix and is valid
+                            validated_assignees.append(clean_assignee)
+                            logger.info(f"Validated assignee with @ prefix: '{clean_assignee}'")
+                        else:
+                            # Invalid assignee
+                            invalid_assignees.append(assignee)
+                            logger.warning(f"Invalid assignee: '{assignee}'")
+                
+                if invalid_assignees:
+                    return self._create_standardized_error(
+                        operation="create_task",
+                        field="assignees",
+                        expected="Valid agent roles from AgentRole enum",
+                        hint=f"Invalid assignees: {invalid_assignees}. Use valid agent roles like '@coding_agent', '@test_orchestrator_agent'"
+                    )
+                
+                if not validated_assignees:
+                    return self._create_standardized_error(
+                        operation="create_task",
+                        field="assignees",
+                        expected="At least one valid agent must be assigned",
+                        hint="Provide at least one valid agent role like '@coding_agent' or '@test_orchestrator_agent'"
+                    )
+                
                 assignees = validated_assignees
                 logger.info(f"Validated {len(assignees)} assignees for task creation: {assignees}")
-            except ValueError as e:
+                
+            except Exception as e:
+                logger.error(f"Unexpected error during assignee validation: {str(e)}")
                 return self._create_standardized_error(
                     operation="create_task",
                     field="assignees",
                     expected="Valid agent roles from AgentRole enum",
-                    hint=f"Invalid assignees: {str(e)}. Use valid agent roles like '@coding-agent', '@test-orchestrator-agent'"
+                    hint=f"Error validating assignees: {str(e)}. Use valid agent roles like '@coding_agent', '@test_orchestrator_agent'"
                 )
         
         request = CreateTaskRequest(

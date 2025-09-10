@@ -54,7 +54,6 @@ class OperationFactory:
         Returns:
             Operation result
         """
-        print(f"[OPERATION DEBUG] handle_operation called with operation={operation}, kwargs keys: {list(kwargs.keys())}")
         try:
             # Route to appropriate handler based on operation
             if operation in ['create', 'update', 'delete', 'get', 'complete']:
@@ -96,8 +95,6 @@ class OperationFactory:
                 'labels', 'due_date', 'dependencies', 'user_id'
             }
             crud_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
-            logger.debug(f"Create operation - Original kwargs: {list(kwargs.keys())}")
-            logger.debug(f"Create operation - Filtered kwargs: {list(crud_kwargs.keys())}")
             result = handler.create_task(facade, **crud_kwargs)
             
             # Auto-create context if task creation was successful

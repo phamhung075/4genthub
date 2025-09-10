@@ -9,6 +9,7 @@ interface ClickableAssigneesProps {
   variant?: "default" | "secondary" | "destructive" | "outline";
   className?: string;
   showAsString?: boolean; // Option to show as comma-separated string instead of badges
+  compact?: boolean; // Option for compact inline display in tables
 }
 
 export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
@@ -17,7 +18,8 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
   onAgentClick,
   variant = "secondary",
   className = "",
-  showAsString = false
+  showAsString = false,
+  compact = false
 }) => {
   // Debug logging
   console.log('ClickableAssignees received:', {
@@ -67,12 +69,12 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
 
   // Show as clickable badges
   return (
-    <div className={`flex flex-wrap gap-1 ${className}`}>
+    <div className={`${compact ? 'inline-flex flex-wrap gap-0.5' : 'flex flex-wrap gap-1'} ${className}`}>
       {cleanAssignees.map((assignee: string, index: number) => (
         <Badge
           key={index}
           variant={variant}
-          className="px-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+          className={`${compact ? 'px-1 py-0 text-xs h-auto' : 'px-2'} cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors whitespace-nowrap`}
           onClick={() => onAgentClick(assignee, task)}
           title={`Click to call ${assignee}`}
         >

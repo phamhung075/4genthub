@@ -211,9 +211,10 @@ class OptimizedTaskRepository(ORMTaskRepository):
             
             results = query.all()
             
-            # Get labels separately (more efficient than join)
+            # Get labels and assignees separately (more efficient than join)
             task_ids = [r.id for r in results]
             if task_ids:
+                # Get labels
                 labels_query = session.query(
                     TaskLabel.task_id,
                     Label.name
@@ -224,12 +225,26 @@ class OptimizedTaskRepository(ORMTaskRepository):
                     if task_id not in labels_by_task:
                         labels_by_task[task_id] = []
                     labels_by_task[task_id].append(label_name)
+                
+                # Get assignees
+                assignees_query = session.query(
+                    TaskAssignee.task_id,
+                    TaskAssignee.assignee_id
+                ).filter(TaskAssignee.task_id.in_(task_ids))
+                
+                assignees_by_task = {}
+                for task_id, assignee_id in assignees_query:
+                    if task_id not in assignees_by_task:
+                        assignees_by_task[task_id] = []
+                    assignees_by_task[task_id].append(assignee_id)
             else:
                 labels_by_task = {}
+                assignees_by_task = {}
             
             # Build minimal response
             minimal_tasks = []
             for r in results:
+                task_assignees = assignees_by_task.get(r.id, [])
                 minimal_tasks.append({
                     'id': r.id,
                     'title': r.title,
@@ -237,6 +252,7 @@ class OptimizedTaskRepository(ORMTaskRepository):
                     'priority': r.priority,
                     'progress_percentage': r.progress_percentage,
                     'assignees_count': r.assignees_count,
+                    'assignees': task_assignees,  # Add actual assignees array
                     'labels': labels_by_task.get(r.id, []),
                     'due_date': r.due_date,
                     'git_branch_id': r.git_branch_id,  # Include git_branch_id in response
