@@ -1,0 +1,8 @@
+{
+  "session_id": "530db9ba-8daf-40f4-866c-b6f5d4f3c8d9",
+  "prompts": [
+    "/test-mcp ",
+    "call agent to correct this probleme on task"
+  ],
+  "agent_name": "Vertex"
+}
