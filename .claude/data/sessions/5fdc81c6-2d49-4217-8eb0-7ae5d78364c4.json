@@ -2,7 +2,11 @@
   "session_id": "5fdc81c6-2d49-4217-8eb0-7ae5d78364c4",
   "prompts": [
     "correct generate_status_line need present beautiful but simple",
-    "alway  Shows AI_DATA (\ud83d\udcca) and AI_DOCS (\ud83d\udcda) only when customized because for remember ai"
+    "alway  Shows AI_DATA (\ud83d\udcca) and AI_DOCS (\ud83d\udcda) only when customized because for remember ai",
+    "add hooks block creation files on root, creation .env * on subfolder, reading all .env* (begin by .env, not only .env), block creation ai_docs on subfodler, creation docs on subfolder and root (use unque ai_docs)",
+    "no other folder can create by ai on root",
+    "need add comment on .claude/hooks/pre_tool_use.py for describe what do",
+    "all .md can write only on ai_docs\nall test file can write only on dhafnck_mcp_main/src/tests and dhafnck-frontend/src/tests\nonly 1 .venv on dhafnck_mcp_main/.venv\nonly 1 logs on root"
   ],
   "agent_name": "Echo"
 }

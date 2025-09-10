@@ -1,0 +1,17 @@
+# Valid paths for test files
+# One path per line (relative to project root)
+# Test files can ONLY be created in these directories
+
+# Backend tests
+dhafnck_mcp_main/src/tests
+dhafnck_mcp_main/src/tests/unit
+dhafnck_mcp_main/src/tests/integration
+dhafnck_mcp_main/src/tests/e2e
+dhafnck_mcp_main/src/tests/performance
+
+# Frontend tests
+dhafnck-frontend/src/tests
+dhafnck-frontend/src/__tests__
+dhafnck-frontend/src/components/__tests__
+dhafnck-frontend/cypress
+dhafnck-frontend/e2e

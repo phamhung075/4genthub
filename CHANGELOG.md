@@ -7,6 +7,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **🔒 Enhanced File System Protection Hooks** - 2025-09-10
+  - **Component**: Claude hooks pre_tool_use.py
+  - **Features**:
+    - Blocks creation of ANY folders in project root by AI
+    - Blocks creation of files in project root (except allowed config files)
+    - Blocks reading ANY .env* files (not just .env) for security
+    - Blocks creation of .env* files in subfolders (must be in root)
+    - Blocks creation of ai_docs folder in subfolders (only root allowed)
+    - Blocks creation of docs folders anywhere (must use ai_docs instead)
+    - ALL .md files must be in ai_docs folder (except root allowed ones)
+    - Test files restricted to directories listed in `.valid_test_paths`
+    - Only one .venv allowed at dhafnck_mcp_main/.venv
+    - Only one logs folder allowed in project root
+    - All .sh scripts must be in scripts/ or docker-system/ folders
+    - Added `.allowed_root_files` configuration for managing allowed files
+    - Added `.valid_test_paths` configuration for test directories
+    - Enforces unique file names - root-allowed files can't exist in subfolders
+    - Detailed error messages with suggestions for AI auto-correction
+    - Comprehensive validation with specific error messages for each case
+  - **Modified Files**:
+    - Updated: `.claude/hooks/pre_tool_use.py` (added multiple validation functions, enhanced error messages, comprehensive documentation)
+    - Created: `.allowed_root_files` (configuration file listing allowed root files)
+    - Created: `.valid_test_paths` (configuration file for valid test directories)
+    - Updated: `.allowed_root_files` (added .valid_test_paths to allowed files)
+  - **Impact**: Enforces strict project structure, prevents file/folder chaos, protects sensitive files, maintains clean organization, and provides clear guidance for AI to auto-correct violations
+
 - **✨ Beautiful Status Line Redesign** - 2025-09-10
   - **Component**: Claude status line
   - **Features**:
