@@ -17,10 +17,14 @@ class AgentDiscoveryService:
         Returns:
             List of available agent names
         """
-        AGENT_DIR = os.path.join(
-            os.path.dirname(__file__), 
-            '../../../agent-library/agents'
-        )
+        # Navigate to the correct agent-library path
+        # From this file's location, we need to go up to the project root
+        # then into dhafnck_mcp_main/agent-library/agents
+        current_dir = os.path.dirname(__file__)
+        # Go up to src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller
+        # then up 7 levels to project root
+        project_root = os.path.abspath(os.path.join(current_dir, '../../../../../../..'))
+        AGENT_DIR = os.path.join(project_root, 'dhafnck_mcp_main/agent-library/agents')
         available_agents = []
         
         try:
