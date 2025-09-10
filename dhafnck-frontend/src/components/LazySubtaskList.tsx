@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 const DeleteConfirmDialog = lazy(() => import("./DeleteConfirmDialog"));
 const SubtaskCompleteDialog = lazy(() => import("./SubtaskCompleteDialog"));
 const SubtaskDetailsDialog = lazy(() => import("./SubtaskDetailsDialog"));
+const AgentInfoDialog = lazy(() => import("./AgentInfoDialog"));
 
 interface LazySubtaskListProps {
   projectId: string;
@@ -78,6 +79,16 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   
   const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
+  
+  // Agent info dialog state
+  const [selectedAgentForInfo, setSelectedAgentForInfo] = useState<string | null>(null);
+  const [agentInfoDialogOpen, setAgentInfoDialogOpen] = useState(false);
+
+  // Handle agent info click
+  const handleAgentInfoClick = (agentName: string) => {
+    setSelectedAgentForInfo(agentName);
+    setAgentInfoDialogOpen(true);
+  };
 
   // Fallback to current implementation
   const loadFullSubtasksFallback = useCallback(async () => {
@@ -307,7 +318,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
                   <Badge 
                     key={index} 
                     variant="secondary" 
-                    className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                    className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    onClick={() => handleAgentInfoClick(assignee)}
+                    title={`View ${assignee} information`}
                   >
                     {assignee}
                   </Badge>
@@ -566,6 +579,22 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
             subtask={detailsDialog.subtask}
             parentTaskId={parentTaskId}
             onClose={() => setDetailsDialog({ open: false, subtask: null })}
+          />
+        )}
+      </Suspense>
+      
+      {/* Agent Info Dialog */}
+      <Suspense fallback={null}>
+        {selectedAgentForInfo && (
+          <AgentInfoDialog
+            open={agentInfoDialogOpen}
+            onOpenChange={setAgentInfoDialogOpen}
+            agentName={selectedAgentForInfo}
+            taskTitle={`Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`}
+            onClose={() => {
+              setAgentInfoDialogOpen(false);
+              setSelectedAgentForInfo(null);
+            }}
           />
         )}
       </Suspense>
