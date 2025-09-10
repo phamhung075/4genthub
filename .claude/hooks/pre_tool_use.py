@@ -3,19 +3,124 @@
 # requires-python = ">=3.8"
 # ///
 
+"""
+Pre-tool use hook for Claude AI to enforce file system protection rules.
+
+This hook runs before any tool execution and validates:
+1. File/folder creation restrictions in project root
+2. Environment file access protection
+3. Documentation folder structure enforcement
+4. Dangerous command prevention (rm -rf, etc.)
+5. File naming uniqueness across the project
+
+The hook blocks operations that violate project structure rules and
+provides clear error messages to guide the AI toward correct behavior.
+"""
+
 import json
 import sys
 import re
 from pathlib import Path
 
-# Import the AI_DATA path loader
+# Import the AI_DATA path loader for logging
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.env_loader import get_ai_data_path
+
+def load_allowed_root_files():
+    """
+    Load allowed root files from .allowed_root_files config file.
+    Falls back to default list if file doesn't exist.
+    
+    Returns:
+        list: List of filenames that are allowed in the project root.
+              These names should be unique across the entire project.
+    """
+    project_root = Path.cwd()
+    allowed_files_path = project_root / '.allowed_root_files'
+    
+    # Default allowed files - only essential config and documentation files
+    # These files should ONLY exist in the project root, nowhere else
+    default_allowed = [
+        'README.md', 'CHANGELOG.md', 'TEST-CHANGELOG.md', 
+        'CLAUDE.md', 'CLAUDE.local.md', '.gitignore',
+        'package.json', 'package-lock.json', 'requirements.txt',
+        'pyproject.toml', 'poetry.lock', 'Pipfile', 'Pipfile.lock',
+        'docker-compose.yml', 'Dockerfile', '.dockerignore',
+        'Makefile', 'setup.py', 'setup.cfg', '.allowed_root_files',
+        '.valid_test_paths'
+    ]
+    
+    if allowed_files_path.exists():
+        try:
+            with open(allowed_files_path, 'r') as f:
+                lines = f.readlines()
+                # Parse non-empty, non-comment lines
+                allowed_files = []
+                for line in lines:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        allowed_files.append(line)
+                
+                # Always include .allowed_root_files itself
+                if '.allowed_root_files' not in allowed_files:
+                    allowed_files.append('.allowed_root_files')
+                
+                return allowed_files if allowed_files else default_allowed
+        except Exception:
+            return default_allowed
+    
+    return default_allowed
+
+def load_valid_test_paths():
+    """
+    Load valid test paths from .valid_test_paths config file.
+    Falls back to default list if file doesn't exist.
+    
+    Returns:
+        list: List of directory paths where test files are allowed.
+    """
+    project_root = Path.cwd()
+    test_paths_file = project_root / '.valid_test_paths'
+    
+    # Default test paths
+    default_paths = [
+        'dhafnck_mcp_main/src/tests',
+        'dhafnck-frontend/src/tests'
+    ]
+    
+    if test_paths_file.exists():
+        try:
+            with open(test_paths_file, 'r') as f:
+                lines = f.readlines()
+                # Parse non-empty, non-comment lines
+                test_paths = []
+                for line in lines:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        test_paths.append(line)
+                
+                return test_paths if test_paths else default_paths
+        except Exception:
+            return default_paths
+    
+    return default_paths
 
 def is_dangerous_rm_command(command):
     """
     Comprehensive detection of dangerous rm commands.
     Matches various forms of rm -rf and similar destructive patterns.
+    
+    Blocks commands like:
+    - rm -rf /
+    - rm -fr ~
+    - rm --recursive --force
+    - Any recursive rm targeting critical paths
+    
+    Args:
+        command (str): The bash command to validate
+        
+    Returns:
+        bool: True if the command is dangerous and should be blocked
     """
     # Normalize command by removing extra spaces and converting to lowercase
     normalized = ' '.join(command.lower().split())
@@ -57,26 +162,55 @@ def is_dangerous_rm_command(command):
 
 def is_env_file_access(tool_name, tool_input):
     """
-    Check if any tool is trying to access .env files containing sensitive data.
+    Check if any tool is trying to access ANY .env* files containing sensitive data.
+    Blocks reading all .env files and creation of .env files in subfolders.
+    
+    Protection rules:
+    1. Blocks reading ANY file starting with .env (except .env.sample)
+    2. Blocks creation of .env* files in subfolders (must be in root)
+    3. Blocks bash commands that try to access .env files
+    
+    Args:
+        tool_name (str): Name of the tool being used (Read, Write, Bash, etc.)
+        tool_input (dict): Parameters passed to the tool
+        
+    Returns:
+        bool or str: True if access should be blocked, 
+                    'subfolder_env' if trying to create .env in subfolder,
+                    False otherwise
     """
     if tool_name in ['Read', 'Edit', 'MultiEdit', 'Write', 'Bash']:
         # Check file paths for file-based tools
         if tool_name in ['Read', 'Edit', 'MultiEdit', 'Write']:
             file_path = tool_input.get('file_path', '')
-            if '.env' in file_path and not file_path.endswith('.env.sample'):
+            path_obj = Path(file_path)
+            
+            # Block ANY file that starts with .env (except .env.sample)
+            if path_obj.name.startswith('.env') and not path_obj.name.endswith('.sample'):
                 return True
+            
+            # Block creation of .env* files in subfolders (only allow in root)
+            if tool_name == 'Write' and path_obj.name.startswith('.env'):
+                # Get project root (where .git exists)
+                project_root = Path.cwd()
+                if path_obj.parent.resolve() != project_root:
+                    return 'subfolder_env'
         
         # Check bash commands for .env file access
         elif tool_name == 'Bash':
             command = tool_input.get('command', '')
-            # Pattern to detect .env file access (but allow .env.sample)
+            # Pattern to detect ANY .env* file access (but allow .env.sample)
             env_patterns = [
-                r'\b\.env\b(?!\.sample)',  # .env but not .env.sample
-                r'cat\s+.*\.env\b(?!\.sample)',  # cat .env
-                r'echo\s+.*>\s*\.env\b(?!\.sample)',  # echo > .env
-                r'touch\s+.*\.env\b(?!\.sample)',  # touch .env
-                r'cp\s+.*\.env\b(?!\.sample)',  # cp .env
-                r'mv\s+.*\.env\b(?!\.sample)',  # mv .env
+                r'\.env[^\s]*(?<!\.sample)',  # Any .env* file but not .env.sample
+                r'cat\s+.*\.env[^\s]*(?<!\.sample)',  # cat .env*
+                r'echo\s+.*>\s*\.env[^\s]*(?<!\.sample)',  # echo > .env*
+                r'touch\s+.*\.env[^\s]*(?<!\.sample)',  # touch .env*
+                r'cp\s+.*\.env[^\s]*(?<!\.sample)',  # cp .env*
+                r'mv\s+.*\.env[^\s]*(?<!\.sample)',  # mv .env*
+                r'vim\s+.*\.env[^\s]*(?<!\.sample)',  # vim .env*
+                r'nano\s+.*\.env[^\s]*(?<!\.sample)',  # nano .env*
+                r'less\s+.*\.env[^\s]*(?<!\.sample)',  # less .env*
+                r'more\s+.*\.env[^\s]*(?<!\.sample)',  # more .env*
             ]
             
             for pattern in env_patterns:
@@ -85,30 +219,234 @@ def is_env_file_access(tool_name, tool_input):
     
     return False
 
+def is_prohibited_file_creation(tool_name, tool_input):
+    """
+    Check if tool is trying to create prohibited files or folders.
+    
+    Validation rules:
+    1. NO folders can be created in project root by AI
+    2. Only files listed in .allowed_root_files can be created in root
+    3. Files with names from .allowed_root_files cannot exist in subfolders (unique names)
+    4. ai_docs folder can only exist in project root
+    5. 'docs' folders are prohibited - must use 'ai_docs' instead
+    6. ALL .md files must be in ai_docs folder (except root allowed ones)
+    7. Test files must be in dhafnck_mcp_main/src/tests or dhafnck-frontend/src/tests
+    8. Only one .venv allowed in dhafnck_mcp_main/.venv
+    9. Only one logs folder allowed in project root
+    
+    Args:
+        tool_name (str): Name of the tool being used (Write, Bash, etc.)
+        tool_input (dict): Parameters passed to the tool
+        
+    Returns:
+        str or False: Type of violation or False if allowed
+    """
+    if tool_name in ['Write', 'Bash']:
+        if tool_name == 'Write':
+            file_path = tool_input.get('file_path', '')
+            if not file_path:
+                return False
+            
+            path_obj = Path(file_path)
+            project_root = Path.cwd()
+            
+            # Load allowed root files
+            allowed_root_files = load_allowed_root_files()
+            
+            # Check if creating file in root directory
+            if path_obj.parent.resolve() == project_root:
+                if path_obj.name not in allowed_root_files:
+                    return 'root_file'
+            else:
+                # Check if trying to create a file with same name as allowed root files in subfolders
+                # These names should be unique to root
+                if path_obj.name in allowed_root_files:
+                    return 'unique_root_file'
+            
+            # Check if creating ai_docs in subfolder (only allow in root)
+            if 'ai_docs' in path_obj.parts[:-1]:  # ai_docs in path but not the file name
+                pass  # This is OK - files inside ai_docs
+            elif path_obj.name == 'ai_docs' or '/ai_docs/' in str(path_obj):
+                if path_obj.parent != project_root:
+                    return 'subfolder_ai_docs'
+            
+            # Check if creating docs folder (should use ai_docs instead)
+            if path_obj.name == 'docs' or '/docs/' in str(path_obj):
+                return 'docs_folder'
+            
+            # Check for .md files - must be in ai_docs (except root allowed)
+            if path_obj.suffix == '.md':
+                # Check if it's in root and allowed
+                if path_obj.parent.resolve() == project_root:
+                    if path_obj.name not in allowed_root_files:
+                        return 'md_not_in_ai_docs'
+                # Check if it's in ai_docs
+                elif 'ai_docs' not in path_obj.parts:
+                    return 'md_not_in_ai_docs'
+            
+            # Check for test files - must be in specific test directories
+            if ('test_' in path_obj.name or '_test.' in path_obj.name or 
+                path_obj.name.endswith('.test.py') or path_obj.name.endswith('.test.js') or
+                path_obj.name.endswith('.test.ts') or path_obj.name.endswith('.spec.js') or
+                path_obj.name.endswith('.spec.ts')):
+                # Load valid test paths from config
+                valid_test_paths = load_valid_test_paths()
+                if not any(test_path in str(path_obj) for test_path in valid_test_paths):
+                    return 'test_wrong_location'
+            
+            # Check for .venv - only allowed in dhafnck_mcp_main/.venv
+            if '.venv' in str(path_obj) or path_obj.name == '.venv':
+                if str(path_obj) != str(project_root / 'dhafnck_mcp_main' / '.venv'):
+                    return 'venv_wrong_location'
+            
+            # Check for logs folder - only allowed in root
+            if path_obj.name == 'logs' and path_obj.parent != project_root:
+                return 'logs_not_in_root'
+            
+            # Check for .sh files - must be in scripts folder
+            if path_obj.suffix == '.sh':
+                if 'scripts' not in path_obj.parts and 'docker-system' not in path_obj.parts:
+                    return 'sh_not_in_scripts'
+        
+        elif tool_name == 'Bash':
+            command = tool_input.get('command', '')
+            
+            # Check for mkdir commands
+            if 'mkdir' in command:
+                # Block ANY folder creation in root directory
+                # Pattern: mkdir [options] folder_name (where folder_name has no /)
+                # Matches: mkdir test, mkdir -p test, but NOT mkdir test/sub
+                if re.search(r'mkdir\s+(?:-[pm]\s+)?(?!.*/)[^/\s]+(?:\s|$)', command):
+                    return 'root_folder'
+                
+                # Block docs folder creation anywhere
+                if re.search(r'mkdir\s+.*docs', command):
+                    return 'docs_folder'
+                
+                # Block ai_docs in subfolders (must be in root only)
+                if re.search(r'mkdir\s+.*/ai_docs', command):
+                    return 'subfolder_ai_docs'
+            
+            # Check for file creation in root via bash
+            # Patterns: touch file.txt (no path), echo > file.txt (redirect to root file)
+            if re.search(r'touch\s+[^/]+$', command) or re.search(r'>\s*[^/]+$', command):
+                return 'root_file'
+            
+            # Check for .md file creation outside ai_docs
+            if re.search(r'(touch|>|echo.*>).*\.md', command):
+                if 'ai_docs' not in command and not any(f in command for f in ['README.md', 'CHANGELOG.md', 'CLAUDE.md']):
+                    return 'md_not_in_ai_docs'
+            
+            # Check for test file creation in wrong location
+            if re.search(r'(touch|>).*test[_\-].*\.(py|js|ts)', command):
+                valid_test_paths = load_valid_test_paths()
+                if not any(test_path in command for test_path in valid_test_paths):
+                    return 'test_wrong_location'
+            
+            # Check for .venv creation in wrong location
+            if 'python -m venv' in command or 'virtualenv' in command:
+                if 'dhafnck_mcp_main/.venv' not in command:
+                    return 'venv_wrong_location'
+            
+            # Check for logs folder creation outside root
+            if re.search(r'mkdir\s+.*/logs', command):
+                return 'logs_not_in_root'
+            
+            # Check for .sh file creation outside scripts folder
+            if re.search(r'(touch|>|echo.*>).*\.sh', command):
+                if 'scripts' not in command and 'docker-system' not in command:
+                    return 'sh_not_in_scripts'
+    
+    return False
+
 def main():
+    """
+    Main entry point for the pre-tool use hook.
+    
+    This function:
+    1. Receives tool call data from Claude via stdin
+    2. Validates the tool operation against all protection rules
+    3. Blocks prohibited operations with specific error messages
+    4. Logs allowed operations to AI_DATA directory
+    5. Exits with code 0 (allow) or 2 (block with error message)
+    """
     try:
-        # Read JSON input from stdin
+        # Read JSON input from stdin containing tool name and parameters
         input_data = json.load(sys.stdin)
         
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
         
-        # Check for .env file access (blocks access to sensitive environment files)
-        if is_env_file_access(tool_name, tool_input):
-            print("BLOCKED: Access to .env files containing sensitive data is prohibited", file=sys.stderr)
+        # VALIDATION STEP 1: Check for .env file access (security protection)
+        env_check = is_env_file_access(tool_name, tool_input)
+        if env_check == 'subfolder_env':
+            print("BLOCKED: .env* files must be created in project root only", file=sys.stderr)
+            print("Place environment files in the project root directory", file=sys.stderr)
+            sys.exit(2)
+        elif env_check:
+            print("BLOCKED: Access to .env* files containing sensitive data is prohibited", file=sys.stderr)
             print("Use .env.sample for template files instead", file=sys.stderr)
-            sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
+            sys.exit(2)
         
-        # Check for dangerous rm -rf commands
+        # VALIDATION STEP 2: Check for prohibited file/folder creation
+        creation_check = is_prohibited_file_creation(tool_name, tool_input)
+        if creation_check == 'root_file':
+            print("BLOCKED: Creating files in project root is restricted", file=sys.stderr)
+            print("Place files in appropriate subdirectories (e.g., ai_docs/, src/, tests/)", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'root_folder':
+            print("BLOCKED: Creating folders in project root is not allowed", file=sys.stderr)
+            print("All folders should already exist. Use existing folders like ai_docs/, dhafnck_mcp_main/, etc.", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'unique_root_file':
+            print("BLOCKED: This filename is reserved for project root only", file=sys.stderr)
+            print("Files like README.md, CHANGELOG.md, etc. must be unique to the root directory", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'subfolder_ai_docs':
+            print("BLOCKED: ai_docs folder must exist only in project root", file=sys.stderr)
+            print("Use the root ai_docs/ folder for all documentation", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'docs_folder':
+            print("BLOCKED: Use 'ai_docs' folder instead of 'docs'", file=sys.stderr)
+            print("All documentation should go in ai_docs/ folder", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'md_not_in_ai_docs':
+            file_path = tool_input.get('file_path', '')
+            print(f"BLOCKED: Markdown file '{file_path}' must be in ai_docs/ folder", file=sys.stderr)
+            print("SUGGESTION: Move to ai_docs/ folder (e.g., ai_docs/your_file.md)", file=sys.stderr)
+            print("EXCEPTION: Only README.md, CHANGELOG.md, CLAUDE.md allowed in root", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'test_wrong_location':
+            file_path = tool_input.get('file_path', '')
+            valid_paths = load_valid_test_paths()
+            print(f"BLOCKED: Test file '{file_path}' in wrong location", file=sys.stderr)
+            print(f"ALLOWED LOCATIONS: {', '.join(valid_paths)}", file=sys.stderr)
+            print("SUGGESTION: Move test file to one of the allowed test directories", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'venv_wrong_location':
+            print("BLOCKED: Virtual environment must be in dhafnck_mcp_main/.venv", file=sys.stderr)
+            print("Only one .venv is allowed at: dhafnck_mcp_main/.venv", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'logs_not_in_root':
+            print("BLOCKED: 'logs' folder must be in project root only", file=sys.stderr)
+            print("Use the root logs/ folder for all log files", file=sys.stderr)
+            sys.exit(2)
+        elif creation_check == 'sh_not_in_scripts':
+            print("BLOCKED: Shell scripts (.sh) must be in scripts/ folder", file=sys.stderr)
+            print("Create shell scripts in: scripts/ or docker-system/ folders", file=sys.stderr)
+            sys.exit(2)
+        
+        # VALIDATION STEP 3: Check for dangerous bash commands (rm -rf, etc.)
         if tool_name == 'Bash':
             command = tool_input.get('command', '')
             
             # Block rm -rf commands with comprehensive pattern matching
             if is_dangerous_rm_command(command):
                 print("BLOCKED: Dangerous rm command detected and prevented", file=sys.stderr)
-                sys.exit(2)  # Exit code 2 blocks tool call and shows error to Claude
+                sys.exit(2)
         
-        # Get AI_DATA path from environment
+        # LOGGING: If all validations pass, log the tool use for auditing
+        # Get AI_DATA path from environment (configured in .env)
         log_dir = get_ai_data_path()
         log_path = log_dir / 'pre_tool_use.json'
         
@@ -122,21 +460,25 @@ def main():
         else:
             log_data = []
         
-        # Append new data
+        # Append new data to the log for auditing
         log_data.append(input_data)
         
-        # Write back to file with formatting
+        # Write back to file with formatting for readability
         with open(log_path, 'w') as f:
             json.dump(log_data, f, indent=2)
         
+        # Exit with success - tool operation is allowed
         sys.exit(0)
         
     except json.JSONDecodeError:
-        # Gracefully handle JSON decode errors
+        # Gracefully handle JSON decode errors - allow operation to proceed
+        # This prevents the hook from blocking operations due to parsing issues
         sys.exit(0)
     except Exception:
-        # Handle any other errors gracefully
+        # Handle any other errors gracefully - allow operation to proceed
+        # Better to allow operations than to block everything on error
         sys.exit(0)
 
+# Entry point when run as a hook script
 if __name__ == '__main__':
     main()
