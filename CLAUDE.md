@@ -75,6 +75,10 @@ Responses collected by Claude
 Concentrated response to @master_orchestrator_agent
     ↓
 Final coordinated result to User
+    ↓
+User Request
+    ↓
+continue same loop
 ```
 
 ## 🔄 RESPONSE CONCENTRATION PATTERN:

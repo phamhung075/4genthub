@@ -6,6 +6,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **🔧 Agent Name Standardization - uber_orchestrator_agent → master_orchestrator_agent** - 2025-01-15
+  - **Component**: Agent system consistency and naming
+  - **Files Modified**:
+    - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/unified_agent_description.py`
+    - `dhafnck_mcp_main/src/fastmcp/task_management/domain/enums/agent_roles.py`
+    - `dhafnck-frontend/src/api.ts`
+    - `dhafnck-frontend/src/components/AgentInfoDialog.tsx`
+  - **Changes Applied**:
+    - **Enum Update**: AgentRole enum completely rewritten to match actual 32 agents in agent-library
+    - **Frontend Alignment**: Updated frontend references from @uber-orchestrator-agent to @master-orchestrator-agent
+    - **API Consistency**: Unified agent descriptions and fallback references
+    - **Agent Count Correction**: Reduced from 68 outdated entries to 32 actual agents
+  - **Agent Categories Organized**:
+    - Development & Coding (4): analytics_setup, coding, code_reviewer, debugger
+    - Architecture & Design (4): core_concept, design_system, system_architect, ui_specialist
+    - Testing & QA (3): performance_load_tester, test_orchestrator, uat_coordinator
+    - Project & Planning (4): elicitation, master_orchestrator, project_initiator, task_planning
+    - Security & Compliance (3): compliance_scope, ethical_review, security_auditor
+    - Research & Analysis (4): deep_research, llm_ai_agents_research, root_cause_analysis, technology_advisor
+    - And others: DevOps (1), Documentation (1), Analytics & Optimization (2), Marketing & Branding (3), AI & ML (1), Creative (1), Prototyping (1)
+  - **Impact**: Ensures consistent agent naming across backend APIs, frontend UI, and agent management system
+
 ### Added
 - **🤖 Agent System Configuration Completion - Orchestration Agents Enhancement** - 2025-01-15
   - **Component**: Agent orchestration and delegation system

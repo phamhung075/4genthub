@@ -44,7 +44,7 @@ UNIFIED_AGENT_DESCRIPTION = """
   Project & Planning:
     @project_initiator_agent - Project setup and kickoff
     @task_planning_agent - Task breakdown and planning
-    @uber_orchestrator_agent - Complex workflow orchestration
+    @master_orchestrator_agent - Complex workflow orchestration
     @elicitation_agent - Requirements gathering
     
   Security & Compliance:
@@ -130,7 +130,7 @@ UNIFIED_AGENT_DESCRIPTION = """
 • Unknown actions return an error listing valid actions.
 • Invalid agent names will result in an error with available agents list.
 • Internal errors are logged and returned with a generic error message.
-• Agent loading failures provide fallback to @uber_orchestrator_agent.
+• Agent loading failures provide fallback to @master_orchestrator_agent.
 
 ✅ VALIDATION CHECKPOINTS:
 • Check: Are all required parameters provided for the action?
@@ -143,7 +143,7 @@ UNIFIED_AGENT_DESCRIPTION = """
 ⚠️ IMPORTANT NOTES:
 • Agent names must include the @ prefix for call action
 • project_id is required for all management actions (register, assign, get, list, update, unassign, unregister, rebalance)
-• Switch to a role agent if no role is specified; otherwise, the default agent @uber_orchestrator_agent will be used
+• Switch to a role agent if no role is specified; otherwise, the default agent @master_orchestrator_agent will be used
 • Each agent has specialized knowledge and capabilities
 • Agents can collaborate as specified in their connectivity
 • Invalid agent names will result in an error with available agents list
@@ -158,7 +158,7 @@ UNIFIED_AGENT_PARAMETERS_DESCRIPTION = {
     "call_agent": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
     "git_branch_id": "[OPTIONAL] Task tree identifier. Required for assign/unassign actions",
     "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
-    "name_agent": "[REQUIRED for call action] Name of the agent to load and invoke. Must be a valid, registered agent name with @ prefix (e.g., '@uber_orchestrator_agent')"
+    "name_agent": "[REQUIRED for call action] Name of the agent to load and invoke. Must be a valid, registered agent name with @ prefix (e.g., '@master_orchestrator_agent')"
 }
 
 UNIFIED_AGENT_PARAMS = {
