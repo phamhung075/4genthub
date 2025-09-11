@@ -11,7 +11,7 @@ I'll activate the uber-orchestrator bridge agent to coordinate this multi-phase 
 
 ```python
 # Connect to the orchestration system
-mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
 
 # Check existing project context
 mcp__dhafnck_mcp_http__manage_context(
@@ -183,7 +183,7 @@ I'll coordinate multiple bridge agents for this complex requirement.
 
 ```python
 # Start with orchestrator for coordination
-mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
 
 # Create master coordination task
 mcp__dhafnck_mcp_http__manage_task(

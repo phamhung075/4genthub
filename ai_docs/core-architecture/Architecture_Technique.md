@@ -215,7 +215,7 @@ Sophisticated enterprise-grade architecture implementing Domain-Driven Design pr
 - **Design Agents**: ui_designer_agent, design_system_agent, ux_researcher_agent
 - **DevOps Agents**: devops_agent, security_auditor_agent, performance_load_tester_agent
 - **Analytics Agents**: analytics_setup_agent, market_research_agent, user_feedback_collector_agent
-- **Management Agents**: project_initiator_agent, task_planning_agent, uber_orchestrator_agent
+- **Management Agents**: project_initiator_agent, task_planning_agent, master_orchestrator_agent
 - **Marketing Agents**: campaign_manager_agent, content_strategy_agent, seo_sem_agent
 - **Specialized Agents**: compliance_scope_agent, ethical_review_agent, documentation_agent
 

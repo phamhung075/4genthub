@@ -125,7 +125,7 @@ custom_instructions: |-
 2. `test_orchestrator_agent` - Critical for QA
 3. `debugger_agent` - Essential for troubleshooting
 4. `system_architect_agent` - Key for system design
-5. `uber_orchestrator_agent` - Central coordination
+5. `master_orchestrator_agent` - Central coordination
 
 **Medium Priority (Complete Second - 1 week)**:
 6. `security_auditor_agent` - Security critical

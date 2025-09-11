@@ -19,7 +19,7 @@
 
 ### ✅ High-Risk Agents (Administrative/System Control) - SECURED
 ```yaml
-@uber_orchestrator_agent:
+@master_orchestrator_agent:
   risk_level: CRITICAL ✅ SECURED
   capabilities: [system_orchestration, multi_agent_coordination, workflow_control]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
@@ -129,7 +129,7 @@ PERMISSION_CATEGORIES = {
 ```python
 AGENT_AUTHORIZATION_MATRIX = {
     # === CRITICAL RISK AGENTS ===
-    "@uber_orchestrator_agent": {
+    "@master_orchestrator_agent": {
         "risk_level": "CRITICAL",
         "required_permissions": [
             "system:control", "agent:manage", "workflow:orchestrate"

@@ -19,7 +19,7 @@ KEY REQUIREMENTS
 ENTRY POINT
 -----------
 READ PRD and Architecture
-START → Call @uber_orchestrator_agent or @documentation_agent
+START → Call @master_orchestrator_agent or @documentation_agent
 Or use MCP tools directly: mcp__dhafnck_mcp_http__manage_context
 
 SYNCHRONIZATION DECISION TREE

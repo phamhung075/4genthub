@@ -118,7 +118,7 @@ All deprecated agent names automatically resolve to their consolidated replaceme
 'mcp_configuration_agent' → 'devops_agent'
 
 # Renamings
-'uber_orchestrator_agent' → 'master_orchestrator_agent'
+'master_orchestrator_agent' → 'master_orchestrator_agent'
 'brainjs_ml_agent' → 'ml_specialist_agent'
 'ui_designer_expert_shadcn_agent' → 'ui_specialist_agent'
 ```

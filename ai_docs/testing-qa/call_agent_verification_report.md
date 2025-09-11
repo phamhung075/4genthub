@@ -191,7 +191,7 @@ prd_architect_agent, project_initiator_agent, prototyping_agent,
 remediation_agent, root_cause_analysis_agent, security_auditor_agent,
 seo_sem_agent, swarm_scaler_agent, system_architect_agent,
 task_planning_agent, tech_spec_agent, technology_advisor_agent,
-test_orchestrator_agent, uat_coordinator_agent, uber_orchestrator_agent,
+test_orchestrator_agent, uat_coordinator_agent, master_orchestrator_agent,
 ui_designer_expert_shadcn_agent
 ```
 
@@ -235,7 +235,7 @@ ELIF work_type matches "implement|code|build|develop|create":
     USE @coding_agent
 ...
 ELSE:
-    USE @uber_orchestrator_agent  # Default fallback
+    USE @master_orchestrator_agent  # Default fallback
 ```
 
 **Coverage:** 14 different work type patterns mapped to specialized agents

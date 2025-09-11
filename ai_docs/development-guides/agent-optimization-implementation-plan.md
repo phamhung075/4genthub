@@ -126,7 +126,7 @@ domains:
 
 | Old Name | New Name | Update Locations |
 |----------|----------|------------------|
-| `uber_orchestrator_agent` | `master_orchestrator_agent` | All references |
+| `master_orchestrator_agent` | `master_orchestrator_agent` | All references |
 | `brainjs_ml_agent` | `ml_specialist_agent` | Generalize ML |
 | `ui_designer_expert_shadcn_agent` | `ui_specialist_agent` | Simplify name |
 
@@ -136,7 +136,7 @@ domains:
 # Update call_agent.py mappings
 AGENT_NAME_MAPPING = {
     # Deprecated names → New names
-    "uber_orchestrator_agent": "master_orchestrator_agent",
+    "master_orchestrator_agent": "master_orchestrator_agent",
     "tech_spec_agent": "documentation_agent",
     "prd_architect_agent": "documentation_agent",
     "mcp_researcher_agent": "deep_research_agent",

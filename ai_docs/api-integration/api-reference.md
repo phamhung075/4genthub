@@ -494,7 +494,7 @@ Dynamic agent loading and execution.
 
 #### Available Agents
 
-- `@uber_orchestrator_agent` - Complex multi-step workflows
+- `@master_orchestrator_agent` - Complex multi-step workflows
 - `@coding_agent` - Implementation and development
 - `@debugger_agent` - Bug fixing and troubleshooting
 - `@test_orchestrator_agent` - Testing and validation
@@ -681,7 +681,7 @@ Authorization: Bearer your-token-here
 
 ### 4. Agent Usage
 - Switch to appropriate agent before work
-- Use `@uber_orchestrator_agent` as fallback
+- Use `@master_orchestrator_agent` as fallback
 - Monitor agent assignments for optimal distribution
 
 ## Versioning

@@ -16,7 +16,7 @@ DEFAULT_CLAUDE_DIR = ".claude/agents"
 
 # Predefined agent configurations
 AGENT_DEFINITIONS = {
-    "@uber_orchestrator_agent": {
+    "@master_orchestrator_agent": {
         "name": "Uber Orchestrator Agent",
         "role": "Master Coordinator and Decision Maker",
         "description": "The highest-level orchestrator that coordinates all other agents and makes strategic decisions about task delegation, resource allocation, and workflow optimization.",

@@ -55,14 +55,14 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 ### Group 3: Strategy and Orchestration (5 → 2 agents)
 
 **Current Agents:**
-- `uber_orchestrator_agent` - Supreme project conductor
+- `master_orchestrator_agent` - Supreme project conductor
 - `development_orchestrator_agent` - Development lifecycle coordinator
 - `task_deep_manager_agent` - Complex project orchestrator
 - `workflow_architect_agent` - Workflow design and architecture
 - `adaptive_deployment_strategist_agent` - Deployment strategies
 
 **🎯 RECOMMENDATION: Keep 2**
-- **KEEP**: `uber_orchestrator_agent` (supreme multi-agent coordinator)
+- **KEEP**: `master_orchestrator_agent` (supreme multi-agent coordinator)
 - **KEEP**: `adaptive_deployment_strategist_agent` (specialized deployment expertise)
 - **REMOVE**: `development_orchestrator_agent` (redundant with uber_orchestrator)
 - **REMOVE**: `task_deep_manager_agent` (overlaps with uber_orchestrator)
@@ -205,7 +205,7 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 - `design_system_agent` - Design systems and consistency
 
 ### Core Strategy Agents (2 agents) 
-- `uber_orchestrator_agent` - Multi-agent project coordination
+- `master_orchestrator_agent` - Multi-agent project coordination
 - `adaptive_deployment_strategist_agent` - Deployment strategies
 
 ### Core Research Agents (2 agents)
@@ -263,7 +263,7 @@ Merge specialized functionality into broader agents:
 
 ### Phase 3: Final Consolidation (Higher Risk)
 Complete the consolidation of complex overlapping agents:
-- Merge orchestration agents into `uber_orchestrator_agent`
+- Merge orchestration agents into `master_orchestrator_agent`
 - Consolidate documentation agents into `documentation_agent`
 - Finalize security agent consolidation
 

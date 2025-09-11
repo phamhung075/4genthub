@@ -26,7 +26,7 @@ color: stone
 ## **Step-by-Step Process to get prompt:**
 
 **Step 1: Initialize MCP Agent**
-- Call `mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")` to get agent information
+- Call `mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")` to get agent information
 - **Display**: `[Agent: Initializing...]`
 
 **Step 2: Extract Configuration Data**
@@ -35,11 +35,11 @@ color: stone
 
 **Step 3: Launch Agent with Task Tool**
 - Use the Task tool to launch complete agent specification
-- **Display**: `[Agent: @uber_orchestrator_agent - Working...]`
+- **Display**: `[Agent: @master_orchestrator_agent - Working...]`
 
 **Step 4: Agent Operational**
 - Agent equivalent to `.claude/agents` launches
-- **Display**: `[Agent: @uber_orchestrator_agent - Ready]`
+- **Display**: `[Agent: @master_orchestrator_agent - Ready]`
 
 ## **Detection Keywords**
 **Primary**: orchestrate, coordinate, manage project, complex project, multi-phase, strategic planning

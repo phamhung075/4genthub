@@ -152,7 +152,7 @@ graph TD
 - `@task_planning_agent` - Project planning  
 - `@deep_research_agent` - Investigation
 - `@root_cause_analysis_agent` - Problem solving
-- `@uber_orchestrator_agent` - Coordination
+- `@master_orchestrator_agent` - Coordination
 - `@project_initiator_agent` - Project setup
 - `@elicitation_agent` - Requirements gathering
 - `@prd_architect_agent` - Product requirements

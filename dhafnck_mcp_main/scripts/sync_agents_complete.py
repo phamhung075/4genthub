@@ -17,7 +17,7 @@ DEFAULT_CLAUDE_DIR = ".claude/agents"
 # Complete agent definitions - 60+ specialized agents
 AGENT_DEFINITIONS = {
     # Orchestrators and Coordinators
-    "@uber_orchestrator_agent": {
+    "@master_orchestrator_agent": {
         "name": "Uber Orchestrator Agent",
         "role": "Master Coordinator and Decision Maker",
         "description": "The highest-level orchestrator that coordinates all other agents and makes strategic decisions",
@@ -547,7 +547,7 @@ It has access to the specified tools and follows the project's established patte
 
 ## Collaboration
 This agent can work with other specialized agents for complex tasks. Common collaborations:
-- Works with @uber_orchestrator_agent for coordination
+- Works with @master_orchestrator_agent for coordination
 - Can delegate to more specialized agents when needed
 - Participates in multi-agent workflows
 
