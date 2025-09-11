@@ -31,7 +31,7 @@ MANAGE_SUBTASK_DESCRIPTION = """
 
 📝 PRACTICAL EXAMPLES FOR AI:
 1. Breaking down a feature implementation:
-   - Parent task: "Implement user authentication" (assigned to: @coding-agent, @security-auditor-agent)
+   - Parent task: "Implement user authentication" (assigned to: @@coding_agent, @security-auditor-agent)
    - Subtasks (auto-inherit both agents if not specified):
      • "Create login UI" - inherits both agents
      • "Add password validation" - inherits both agents  
@@ -93,7 +93,7 @@ MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = {
     "description": "[OPTIONAL] Detailed subtask description explaining what needs to be done. Include acceptance criteria if relevant",
     "status": "[OPTIONAL] Subtask status: 'todo', 'in_progress', 'done'. Note: use progress_percentage instead for automatic status mapping",
     "priority": "[OPTIONAL] Subtask priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: inherits from parent",
-    "assignees": "[OPTIONAL] Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: '@coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.",
+    "assignees": "[OPTIONAL] Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: '@@coding_agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.",
     "progress_percentage": "[OPTIONAL] Integer 0-100 representing completion. Automatically maps to status (0=todo, 1-99=in_progress, 100=done). Use this instead of status field",
     "progress_notes": "[OPTIONAL] Brief description of current work status. Use this to track what you're doing. Example: 'Completed UI mockup, starting on API integration'",
     "completion_summary": "[OPTIONAL] Detailed summary of what was accomplished. BE SPECIFIC! Required for complete action. Example: 'Implemented JWT authentication with refresh tokens, 2-hour expiry, and secure httpOnly cookies'",

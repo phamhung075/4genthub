@@ -5,7 +5,12 @@
     "review CLAUDE.md and correct misunderstand be cause actually claude not follow Claude\u2192orchestrator(force)",
     "update master_orchestrator_agent and task_planning_agent too because he working task, not continue delegate",
     "can make it clean for ai easy follow ?",
-    "update CLAUDE.md\nCLAUDE use TodoWrite for prepare to call multiple agent for paralelle working  only, sub agent can use TodoWrite for working"
+    "update CLAUDE.md\nCLAUDE use TodoWrite for prepare to call multiple agent for paralelle working  only, sub agent can use TodoWrite for working",
+    "i want merge master_orchestrator_agent and task_planning_agent because they do same job and need combine 2 job for working better",
+    "Claude take  \nClaude\u2192orchestrator(force) change to Avtive Role: @master_orchestrator_agent\n@master_orchestrator_agent is core of CLAUDE.md, now no need delegate to @master_orchestrator_agent  because CLAUDE is @master_orchestrator_agent ",
+    "update Claude\u2192orchestrator(force) status line to Active role",
+    "on start, claude direct use tool mcp__dhafnck_mcp_http__call_agent(\"@master_orchestrator_agent\") ```typescript\nmcp__dhafnck_mcp_http__call_agent(name_agent: string): any\n```\nLoad and invoke specialized agents by name for task execution with vision insights\n\n\nfor load capacity of @master_orchestrator_agent",
+    "Claude must use mcp__dhafnck_mcp_http__manage_task(action: string, git_branch_id?: string, title?: string, assignees?: string, ...various optional params): any\nand mcp__dhafnck_mcp_http__manage_subtask(action: string, task_id?: string, subtask_id?: string, title?: string, ...various optional params): any\nfor give task and context to delegate agent\nTodoWrite on main chat for delegate multiple agents works paralele on claude only\nneed create task or subtask on MCP for subagent working, donot delegate if no task or subtask or working"
   ],
   "agent_name": "Atlas"
 }

@@ -98,7 +98,7 @@ def sample_git_branch_data(sample_git_branch_id, sample_project_id, current_time
         "updated_at": current_timestamp.isoformat(),
         "tasks": [],
         "tasks_count": 0,
-        "assigned_agents": ["@coding-agent"],
+        "assigned_agents": ["@@coding_agent"],
         "statistics": {
             "total_tasks": 0,
             "completed_tasks": 0,
@@ -119,7 +119,7 @@ def sample_task_data(sample_task_id, sample_git_branch_id, current_timestamp):
         "priority": "medium",
         "details": "Detailed implementation notes for the test task",
         "estimated_effort": "2 hours",
-        "assignees": ["@coding-agent", "@test-orchestrator-agent"],
+        "assignees": ["@@coding_agent", "@test-orchestrator-agent"],
         "labels": ["backend", "api", "unit-test"],
         "due_date": "2024-12-31T23:59:59Z",
         "dependencies": [],
@@ -142,7 +142,7 @@ def sample_subtask_data(sample_subtask_id, sample_task_id, current_timestamp):
         "description": "A test subtask for unit testing",
         "status": "todo",
         "priority": "medium",
-        "assignees": ["@coding-agent"],
+        "assignees": ["@@coding_agent"],
         "progress_notes": "Starting implementation",
         "progress_percentage": 0,
         "blockers": [],
@@ -275,7 +275,7 @@ def create_test_task():
             "description": f"Description for {title}",
             "status": status,
             "priority": priority,
-            "assignees": assignees or ["@coding-agent"],
+            "assignees": assignees or ["@@coding_agent"],
             "labels": ["test"],
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
@@ -362,9 +362,9 @@ def valid_priorities():
 def valid_agent_types():
     """List of valid agent types for parametrized tests."""
     return [
-        "@coding-agent", "@test-orchestrator-agent", "@code-reviewer-agent",
+        "@@coding_agent", "@test-orchestrator-agent", "@@code_reviewer_agent",
         "@security-auditor-agent", "@performance-load-tester-agent", 
-        "@devops-agent", "@documentation-agent"
+        "@devops-agent", "@@documentation_agent"
     ]
 
 

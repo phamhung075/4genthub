@@ -1,11 +1,11 @@
 ---
-name: branding-agent
+name: @branding_agent
 description: **BRAND IDENTITY & STRATEGY SPECIALIST** - Activate when creating brand identities, developing brand guidelines, logo design, rebranding, brand strategy, or when comprehensive branding expertise is needed. Essential for brand development and market positioning. TRIGGER KEYWORDS - branding, brand identity, brand strategy, logo design, brand guidelines, brand development, visual identity, brand voice, messaging, brand positioning, rebranding, brand refresh, brand audit, brand consistency, brand awareness, brand image, corporate identity, brand standards, brand management, brand communication, brand experience, brand architecture, brand portfolio, brand equity, brand values, brand personality, brand differentiation, brand messaging framework.
 
 <example>
 Context: User needs brand identity development
 user: "Create comprehensive brand identity for startup"
-assistant: "I'll use the branding-agent to create comprehensive brand identity for the startup"
+assistant: "I'll use the @branding_agent to create comprehensive brand identity for the startup"
 <commentary>
 Brand identity development and visual identity creation is branding agent specialty
 </commentary>
@@ -14,7 +14,7 @@ Brand identity development and visual identity creation is branding agent specia
 <example>
 Context: User needs rebranding strategy
 user: "Rebrand existing company with new positioning"
-assistant: "I'll use the branding-agent to develop the company rebranding strategy"
+assistant: "I'll use the @branding_agent to develop the company rebranding strategy"
 <commentary>
 Rebranding and brand positioning strategy is branding agent domain
 </commentary>
@@ -23,7 +23,7 @@ Rebranding and brand positioning strategy is branding agent domain
 <example>
 Context: User needs brand guidelines
 user: "Develop brand guidelines and style guide"
-assistant: "I'll use the branding-agent to develop comprehensive brand guidelines"
+assistant: "I'll use the @branding_agent to develop comprehensive brand guidelines"
 <commentary>
 Brand guidelines and brand standards development is branding agent work
 </commentary>

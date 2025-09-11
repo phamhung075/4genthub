@@ -22,13 +22,13 @@ class TestAgentInheritance:
             id=TaskId("task-001"),
             title="Multi-agent task",
             description="Task with multiple agents",
-            assignees=["@coding-agent", "@test-orchestrator-agent", "@code-reviewer-agent"]
+            assignees=["@@coding_agent", "@test-orchestrator-agent", "@@code_reviewer_agent"]
         )
         
         assert len(task.assignees) == 3
-        assert "@coding-agent" in task.assignees
+        assert "@@coding_agent" in task.assignees
         assert "@test-orchestrator-agent" in task.assignees
-        assert "@code-reviewer-agent" in task.assignees
+        assert "@@code_reviewer_agent" in task.assignees
     
     def test_subtask_inherits_parent_assignees(self):
         """Test subtask inheriting assignees from parent task"""
@@ -48,13 +48,13 @@ class TestAgentInheritance:
         assert subtask.should_inherit_assignees() is True
         
         # Inherit assignees from parent
-        parent_assignees = ["@coding-agent", "@test-orchestrator-agent"]
+        parent_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
         subtask.inherit_assignees_from_parent(parent_assignees)
         
         # Verify inheritance
         assert subtask.has_assignees() is True
         assert len(subtask.assignees) == 2
-        assert "@coding-agent" in subtask.assignees
+        assert "@@coding_agent" in subtask.assignees
         assert "@test-orchestrator-agent" in subtask.assignees
     
     def test_subtask_does_not_inherit_if_has_assignees(self):
@@ -75,13 +75,13 @@ class TestAgentInheritance:
         assert subtask.should_inherit_assignees() is False
         
         # Try to inherit (should not change existing assignees)
-        parent_assignees = ["@coding-agent", "@test-orchestrator-agent"]
+        parent_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
         subtask.inherit_assignees_from_parent(parent_assignees)
         
         # Verify original assignees remain unchanged
         assert len(subtask.assignees) == 1
         assert "@security-auditor-agent" in subtask.assignees
-        assert "@coding-agent" not in subtask.assignees
+        assert "@@coding_agent" not in subtask.assignees
     
     def test_get_inherited_assignees_for_subtasks(self):
         """Test getting assignees that subtasks should inherit"""
@@ -89,13 +89,13 @@ class TestAgentInheritance:
             id=TaskId("task-001"),
             title="Parent task",
             description="Task with agents to inherit",
-            assignees=["@coding-agent", "@debugger-agent"]
+            assignees=["@@coding_agent", "@debugger-agent"]
         )
         
         inherited = task.get_inherited_assignees_for_subtasks()
         
         assert len(inherited) == 2
-        assert "@coding-agent" in inherited
+        assert "@@coding_agent" in inherited
         assert "@debugger-agent" in inherited
         # Ensure it's a copy, not the original list
         inherited.append("@new-agent")
@@ -134,14 +134,14 @@ class TestAgentInheritance:
         )
         
         # Parent has valid and invalid assignees
-        parent_assignees = ["@coding-agent", "invalid-agent", "@test-orchestrator-agent", ""]
+        parent_assignees = ["@@coding_agent", "invalid-agent", "@test-orchestrator-agent", ""]
         
         # Apply inheritance
         subtask.inherit_assignees_from_parent(parent_assignees)
         
         # Should inherit all provided assignees (validation is done at task level)
         assert len(subtask.assignees) == 4  # All assignees including empty string preserved
-        assert "@coding-agent" in subtask.assignees
+        assert "@@coding_agent" in subtask.assignees
         assert "invalid-agent" in subtask.assignees  # Kept as-is per current logic
         assert "@test-orchestrator-agent" in subtask.assignees
         assert "" in subtask.assignees  # Empty string is preserved in inheritance
@@ -159,13 +159,13 @@ class TestAgentInheritance:
         )
         
         # Parent has assignees with and without @ prefix
-        parent_assignees = ["@coding-agent", "test-orchestrator-agent", "@security-auditor-agent"]
+        parent_assignees = ["@@coding_agent", "test-orchestrator-agent", "@security-auditor-agent"]
         
         subtask.inherit_assignees_from_parent(parent_assignees)
         
         # All assignees should be inherited as-is
         assert len(subtask.assignees) == 3
-        assert "@coding-agent" in subtask.assignees
+        assert "@@coding_agent" in subtask.assignees
         assert "test-orchestrator-agent" in subtask.assignees
         assert "@security-auditor-agent" in subtask.assignees
     
@@ -185,7 +185,7 @@ class TestAgentInheritance:
         subtask.get_events()
         
         # Apply inheritance
-        parent_assignees = ["@coding-agent", "@test-orchestrator-agent"]
+        parent_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
         subtask.inherit_assignees_from_parent(parent_assignees)
         
         # Check that domain event was generated
@@ -214,7 +214,7 @@ class TestAgentInheritance:
             assignees=[]
         )
         
-        parent_assignees = ["@coding-agent", "@test-orchestrator-agent"]
+        parent_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
         
         # Apply inheritance multiple times
         subtask.inherit_assignees_from_parent(parent_assignees)
@@ -247,7 +247,7 @@ class TestAgentInheritance:
         time.sleep(0.01)
         
         # Apply inheritance
-        parent_assignees = ["@coding-agent"]
+        parent_assignees = ["@@coding_agent"]
         subtask.inherit_assignees_from_parent(parent_assignees)
         
         # Timestamp should be updated
@@ -262,7 +262,7 @@ class TestAgentInheritance:
         )
         
         # Test valid assignees
-        valid_assignees = ["@coding-agent", "@test-orchestrator-agent"]
+        valid_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
         validated = task.validate_assignee_list(valid_assignees)
         assert len(validated) == 2
         assert all(assignee.startswith("@") for assignee in validated)
@@ -286,7 +286,7 @@ class TestAgentInheritanceIntegration:
             id=TaskId("parent-001"),
             title="Parent Task",
             description="Task with multiple agents",
-            assignees=["@coding-agent", "@test-orchestrator-agent", "@security-auditor-agent"]
+            assignees=["@@coding_agent", "@test-orchestrator-agent", "@security-auditor-agent"]
         )
         
         # Create multiple subtasks with different scenarios
@@ -306,7 +306,7 @@ class TestAgentInheritanceIntegration:
             title="Subtask 2 - Has assignees",
             description="Should keep own assignees",
             parent_task_id=parent_task.id,
-            assignees=["@code-reviewer-agent"]
+            assignees=["@@code_reviewer_agent"]
         )
         
         # Apply inheritance to subtask 1
@@ -321,7 +321,7 @@ class TestAgentInheritanceIntegration:
         assert set(subtask1.assignees) == set(parent_task.assignees)
         
         assert len(subtask2.assignees) == 1
-        assert subtask2.assignees[0] == "@code-reviewer-agent"
+        assert subtask2.assignees[0] == "@@code_reviewer_agent"
     
     def test_inheritance_with_task_update(self):
         """Test that subtask inheritance works when parent task assignees are updated"""
@@ -330,7 +330,7 @@ class TestAgentInheritanceIntegration:
             id=TaskId("parent-002"),
             title="Dynamic Parent Task",
             description="Task that will have assignees updated",
-            assignees=["@coding-agent"]
+            assignees=["@@coding_agent"]
         )
         
         # Create subtask without assignees
@@ -347,10 +347,10 @@ class TestAgentInheritanceIntegration:
         subtask.inherit_assignees_from_parent(initial_assignees)
         
         assert len(subtask.assignees) == 1
-        assert "@coding-agent" in subtask.assignees
+        assert "@@coding_agent" in subtask.assignees
         
         # Update parent task assignees
-        parent_task.update_assignees(["@coding-agent", "@test-orchestrator-agent", "@security-auditor-agent"])
+        parent_task.update_assignees(["@@coding_agent", "@test-orchestrator-agent", "@security-auditor-agent"])
         
         # For new subtasks, they would inherit the updated assignees
         new_subtask = Subtask(
@@ -373,7 +373,7 @@ class TestAgentInheritanceIntegration:
             id=TaskId("parent-003"),
             title="Agent Info Parent",
             description="Parent with agent info",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["@@coding_agent", "@test-orchestrator-agent"]
         )
         
         subtask = Subtask(

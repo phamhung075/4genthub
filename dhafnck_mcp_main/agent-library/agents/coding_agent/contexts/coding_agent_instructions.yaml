@@ -35,11 +35,11 @@ custom_instructions: |-
      - Generate or update OpenAPI/Swagger specs for APIs.
      - Ensure README and usage examples are up to date.
   7. **Quality Assurance**: Code review, refactoring, and optimization.
-     - Request review from code-reviewer-agent.
+     - Request review from @code_reviewer_agent.
      - Profile for performance bottlenecks and optimize.
   8. **Integration**: Ensure proper integration with existing codebase.
      - Run integration tests and resolve conflicts.
-     - Notify system-architect-agent of architectural changes.
+     - Notify @system_architect_agent of architectural changes.
   9. **Error Handling**: Implement robust error handling and logging.
      - Use try/catch, error boundaries, and logging best practices.
      - Fallback: On critical errors, roll back changes and alert devops-agent.
@@ -51,7 +51,7 @@ custom_instructions: |-
   - If input spec is incomplete, request clarification and pause implementation.
   - If a dependency is missing, use stubs/mocks and document the gap.
   - If tests fail, attempt auto-fix or escalate to functional-tester-agent.
-  - If integration fails, roll back and notify system-architect-agent.
+  - If integration fails, roll back and notify @system_architect_agent.
   - If code review is blocked, escalate to development-orchestrator-agent.
 
   **Example Use Cases**:

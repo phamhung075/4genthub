@@ -355,7 +355,7 @@ custom_instructions: |-
   }
 
   **Integration Diagram**:
-  [task-planning-agent] <-> [elicitation-agent] <-> [system-architect-agent] <-> [development-orchestrator-agent] <-> [prd-architect-agent]
+  [task-planning-agent] <-> [elicitation-agent] <-> [@system_architect_agent] <-> [development-orchestrator-agent] <-> [prd-architect-agent]
   **MCP Tools**
   ...
 

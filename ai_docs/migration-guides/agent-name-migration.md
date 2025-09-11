@@ -257,7 +257,7 @@ A: No, deprecated names still work. However, migrating ensures better long-term 
 A: No, all deprecated names are automatically resolved to active names.
 
 **Q: Can I use both underscore and hyphen formats?**
-A: Yes, both formats are supported: `@documentation_agent` (recommended) and `documentation-agent` (legacy).
+A: Yes, both formats are supported: `@documentation_agent` (recommended) and `@documentation_agent` (legacy).
 
 **Q: How do I know if an agent name is deprecated?**
 A: Use the `is_deprecated_agent()` function or check this migration guide.

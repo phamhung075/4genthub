@@ -6,7 +6,7 @@ agent_info:
     agents.
   migration_date: '2025-06-30T11:55:00.285368'
   name: "\U0001F9D0 Code Reviewer Agent"
-  slug: code-reviewer-agent
+  slug: @code_reviewer_agent
   usage_scenarios: Activate when reviewing code for quality, correctness, and standards
     compliance, or when providing feedback and improvement suggestions. Essential
     for maintaining code quality and best practices.

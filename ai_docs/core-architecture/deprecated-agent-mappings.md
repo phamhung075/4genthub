@@ -43,7 +43,7 @@ Research-related agents have been consolidated:
 ```python
 # Deprecated → Active
 "mcp_researcher_agent" → "deep_research_agent"
-"mcp-researcher-agent" → "deep-research-agent"
+"mcp-researcher-agent" → "@deep_research_agent"
 ```
 
 **Rationale**: MCP-specific research is now handled by the more comprehensive deep research agent.

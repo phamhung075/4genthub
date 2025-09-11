@@ -9,7 +9,7 @@ agent_info:
     and self-testing.
   migration_date: '2025-06-30T11:55:00.205335'
   name: "\U0001F4CA Analytics Setup Agent"
-  slug: analytics-setup-agent
+  slug: @analytics_setup_agent
   usage_scenarios: Activate when setting up analytics tracking, implementing data
     collection systems, creating performance dashboards, or when comprehensive analytics
     expertise is needed. Essential for data-driven optimization and business intelligence.

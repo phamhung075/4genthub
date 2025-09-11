@@ -53,7 +53,7 @@ This indicates a many-to-many relationship between tasks and assignees.
 2. `assignees="developer"` - Same error
 3. `assignees="coding_agent"` - Same error
 4. `assignees="senior_developer"` - Same error (legacy mapping exists)
-5. `assignees="@coding-agent"` - Same error
+5. `assignees="@@coding_agent"` - Same error
 6. `assignees="CODING"` - Same error
 
 ### Error Message Consistency
@@ -105,7 +105,7 @@ crud_handler.py (never receives assignees)
 - **Tasks**: 0 tasks exist in the database
 - **Projects**: 2 test projects created successfully
 - **Git Branches**: 2 branches created successfully
-- **Agents**: 1 agent registered (@coding-agent)
+- **Agents**: 1 agent registered (@@coding_agent)
 
 ## Recommendations for Fix
 

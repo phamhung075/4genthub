@@ -45,7 +45,7 @@ if result['success']:
     # The claude_agent_definition can be used by Claude Code's Task tool
     claude_definition = result['claude_agent_definition']
     
-    # This creates an equivalent to .claude/agents/coding-agent.md
+    # This creates an equivalent to .claude/agents/@coding_agent.md
     print(claude_definition)
 ```
 
@@ -53,7 +53,7 @@ if result['success']:
 
 ```markdown
 ---
-name: coding-agent
+name: @coding_agent
 description: This autonomous agent transforms detailed specifications and algorithmic designs into high-quality, production-ready code. It specializes in implementing features across multiple programming languages and frameworks, complete with comprehensive testing, documentation, and adherence to best practices.
 tools: Read, Grep, Glob, Edit, Write, MultiEdit, Bash, *
 ---
@@ -79,7 +79,7 @@ agent_result = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
 if agent_result['success']:
     # The Task tool can now use this agent definition
     Task(
-        subagent_type="coding-agent",  # from claude_agent_definition
+        subagent_type="@coding_agent",  # from claude_agent_definition
         description="Implement user authentication",
         prompt="Create a JWT-based authentication system with login, logout, and session management"
     )
@@ -146,14 +146,14 @@ Task(
 
 # 2. Delegate implementation via Task Tool
 Task(
-    subagent_type="coding-agent",
+    subagent_type="@coding_agent",
     description="Implement the features",
     prompt="Implement the authentication system based on the plan"
 )
 
 # 3. Delegate code review via Task Tool
 Task(
-    subagent_type="code-reviewer-agent",
+    subagent_type="@code_reviewer_agent",
     description="Review the implementation",
     prompt="Review the authentication implementation for quality and security"
 )
@@ -176,11 +176,11 @@ def delegate_to_best_agent(task_type, task_description, task_prompt):
         'security': 'security-auditor-agent',
         'testing': 'test-orchestrator-agent', 
         'ui': 'ui-designer-expert-shadcn-agent',
-        'api': 'coding-agent',
-        'architecture': 'system-architect-agent'
+        'api': '@coding_agent',
+        'architecture': '@system_architect_agent'
     }
     
-    agent_name = agent_mapping.get(task_type, 'coding-agent')
+    agent_name = agent_mapping.get(task_type, '@coding_agent')
     
     # Delegate via Task Tool
     Task(
@@ -206,7 +206,7 @@ def delegate_to_best_agent(task_type, task_description, task_prompt):
         "context": "...",
         "capabilities_summary": {...}
     },
-    "claude_agent_definition": "---\nname: coding-agent\n...",  # ← Claude Code format
+    "claude_agent_definition": "---\nname: @coding_agent\n...",  # ← Claude Code format
     "yaml_content": {
         "config": {...},
         "contexts": [...],

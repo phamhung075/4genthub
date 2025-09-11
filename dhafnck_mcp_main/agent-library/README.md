@@ -134,7 +134,7 @@ use_case = CallAgentUseCase()
 result = use_case.execute('documentation_agent')
 
 # Returns agent configuration with tools, system prompt, etc.
-print(result['agent']['name'])  # "documentation-agent"
+print(result['agent']['name'])  # "@documentation_agent"
 print(result['agent']['tools'])  # ['Read', 'Grep', 'Glob', 'Edit', 'Write', ...]
 ```
 

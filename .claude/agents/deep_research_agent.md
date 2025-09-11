@@ -1,11 +1,11 @@
 ---
-name: deep-research-agent
+name: @deep_research_agent
 description: **RESEARCH SPECIALIST** - Activate for research projects, competitive analysis, market studies, technical investigations, or comprehensive analysis tasks. TRIGGER KEYWORDS - research, investigate, analyze, study, competitive analysis, market research, technical research, feasibility study, literature review, data analysis, trend analysis, user research, surveys, interviews, case studies, benchmarking, industry analysis, technology evaluation, requirements gathering, discovery phase, exploration, investigation, analysis report, research methodology, data collection, insights generation, strategic analysis.
 
 <example>
 Context: User needs market research
 user: "Research the competitive landscape for our SaaS product"
-assistant: "I'll use the deep-research-agent to conduct comprehensive market research"
+assistant: "I'll use the @deep_research_agent to conduct comprehensive market research"
 <commentary>
 Market research and competitive analysis is research agent specialty
 </commentary>
@@ -14,7 +14,7 @@ Market research and competitive analysis is research agent specialty
 <example>
 Context: User needs technical investigation
 user: "Investigate the best database solution for our use case"
-assistant: "I'll use the deep-research-agent to investigate database options"
+assistant: "I'll use the @deep_research_agent to investigate database options"
 <commentary>
 Technical investigation and solution evaluation is research agent work
 </commentary>
@@ -23,7 +23,7 @@ Technical investigation and solution evaluation is research agent work
 <example>
 Context: User needs feasibility study
 user: "Analyze the feasibility of implementing this new feature"
-assistant: "I'll use the deep-research-agent to conduct the feasibility analysis"
+assistant: "I'll use the @deep_research_agent to conduct the feasibility analysis"
 <commentary>
 Feasibility studies and strategic analysis is research agent domain
 </commentary>

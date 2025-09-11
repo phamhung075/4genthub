@@ -1,16 +1,16 @@
 // API service - Direct V2 API usage (no backward compatibility)
 // All operations use the V2 authenticated endpoints
 
-import { 
-  taskApiV2, 
-  projectApiV2, 
-  subtaskApiV2, 
-  contextApiV2, 
-  branchApiV2, 
-  connectionApiV2,
-  agentApiV2,
-  isAuthenticated,
-  getCurrentUserId
+import {
+    agentApiV2,
+    branchApiV2,
+    connectionApiV2,
+    contextApiV2,
+    getCurrentUserId,
+    isAuthenticated,
+    projectApiV2,
+    subtaskApiV2,
+    taskApiV2
 } from './services/apiV2';
 
 // --- Interfaces for Type Safety ---
@@ -375,21 +375,21 @@ export const listAgents = async (): Promise<any[]> => {
 export const getAvailableAgents = async (): Promise<string[]> => {
     // Return all 42 available agents from the agent library
     return [
-        '@coding-agent',
+        '@@coding_agent',
         '@debugger-agent',
-        '@code-reviewer-agent',
+        '@@code_reviewer_agent',
         '@prototyping-agent',
         '@test-orchestrator-agent',
         '@uat-coordinator-agent',
         '@performance-load-tester-agent',
-        '@system-architect-agent',
+        '@@system_architect_agent',
         '@design-system-agent',
         '@ui-designer-expert-shadcn-agent',
         '@core-concept-agent',
         '@devops-agent',
         '@adaptive-deployment-strategist-agent',
         '@swarm-scaler-agent',
-        '@documentation-agent',
+        '@@documentation_agent',
         '@tech-spec-agent',
         '@prd-architect-agent',
         '@project-initiator-agent',
@@ -399,7 +399,7 @@ export const getAvailableAgents = async (): Promise<string[]> => {
         '@security-auditor-agent',
         '@compliance-scope-agent',
         '@ethical-review-agent',
-        '@analytics-setup-agent',
+        '@@analytics_setup_agent',
         '@efficiency-optimization-agent',
         '@health-monitor-agent',
         '@marketing-strategy-orchestrator-agent',
@@ -407,8 +407,8 @@ export const getAvailableAgents = async (): Promise<string[]> => {
         '@growth-hacking-idea-agent',
         '@content-strategy-agent',
         '@community-strategy-agent',
-        '@branding-agent',
-        '@deep-research-agent',
+        '@@branding_agent',
+        '@@deep_research_agent',
         '@mcp-researcher-agent',
         '@root-cause-analysis-agent',
         '@technology-advisor-agent',
@@ -473,4 +473,4 @@ export const checkHealth = async (): Promise<boolean> => {
 };
 
 // Export utility functions
-export { isAuthenticated, getCurrentUserId };
+export { getCurrentUserId, isAuthenticated };

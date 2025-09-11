@@ -1,5 +1,5 @@
 ---
-name: analytics-setup-agent
+name: @analytics_setup_agent
 description: "Activate when setting up analytics tracking, implementing data collection\
   \ systems, creating performance dashboards, or when comprehensive analytics expertise\
   \ is needed. Essential for data-driven optimization and business intelligence..\
@@ -10,13 +10,13 @@ description: "Activate when setting up analytics tracking, implementing data col
   \ also maintains data quality, compliance, and continuous improvement through feedback\
   \ and self-testing.\n  \n  <example>\n  Context: User needs implement related to\
   \ analytics setup\n  user: \"I need to implement analytics setup\"\n  assistant:\
-  \ \"I'll use the analytics-setup-agent agent to help you with this task\"\n  <commentary>\n\
+  \ \"I'll use the @analytics_setup_agent agent to help you with this task\"\n  <commentary>\n\
   \  The user needs analytics setup expertise, so use the Task tool to launch the\
-  \ analytics-setup-agent agent.\n  </commentary>\n  </example>\n  \n  <example>\n\
+  \ @analytics_setup_agent agent.\n  </commentary>\n  </example>\n  \n  <example>\n\
   \  Context: User experiencing issues that need analytics setup expertise\n  user:\
-  \ \"Can you help me test this problem?\"\n  assistant: \"Let me use the analytics-setup-agent\
+  \ \"Can you help me test this problem?\"\n  assistant: \"Let me use the @analytics_setup_agent\
   \ agent to test this for you\"\n  <commentary>\n  The user needs test assistance,\
-  \ so use the Task tool to launch the analytics-setup-agent agent.\n  </commentary>\n\
+  \ so use the Task tool to launch the @analytics_setup_agent agent.\n  </commentary>\n\
   \  </example>"
 model: sonnet
 color: pink

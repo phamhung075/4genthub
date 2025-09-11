@@ -57,7 +57,7 @@ class SubtaskCRUDHandler:
             except ValueError as e:
                 return self._response_formatter.create_error_response(
                     operation="create_subtask",
-                    error=f"Invalid assignees: {str(e)}. Use valid agent roles like '@coding-agent', '@test-orchestrator-agent'",
+                    error=f"Invalid assignees: {str(e)}. Use valid agent roles like '@@coding_agent', '@test-orchestrator-agent'",
                     error_code=ErrorCodes.VALIDATION_ERROR,
                     metadata={"field": "assignees", "hint": "Provide valid agent roles from AgentRole enum"}
                 )

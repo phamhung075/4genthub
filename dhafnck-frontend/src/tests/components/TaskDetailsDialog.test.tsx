@@ -1,10 +1,10 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
 import '@testing-library/jest-dom';
-import TaskDetailsDialog from '../../components/TaskDetailsDialog';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { vi } from 'vitest';
 import * as api from '../../api';
-import { Task, Subtask } from '../../api';
+import { Task } from '../../api';
+import TaskDetailsDialog from '../../components/TaskDetailsDialog';
 
 // Mock the api module
 vi.mock('../../api');
@@ -90,7 +90,7 @@ describe('TaskDetailsDialog', () => {
         metadata: {
           created_at: '2025-08-27T09:00:00Z',
           updated_at: '2025-08-27T12:00:00Z',
-          agent_id: 'coding-agent'
+          agent_id: '@coding_agent'
         },
         _inheritance: {
           chain: ['global', 'project', 'branch', 'task'],

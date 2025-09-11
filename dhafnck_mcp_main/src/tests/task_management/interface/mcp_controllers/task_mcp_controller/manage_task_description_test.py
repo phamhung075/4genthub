@@ -290,7 +290,7 @@ class TestSpecialParameters:
         desc = MANAGE_TASK_DESCRIPTION
         assert "MUST have at least 1 agent" in desc
         assert "@agent-name" in desc
-        assert "@coding-agent" in desc
+        assert "@@coding_agent" in desc
         assert "@test-orchestrator-agent" in desc
         
         # Check in parameter description

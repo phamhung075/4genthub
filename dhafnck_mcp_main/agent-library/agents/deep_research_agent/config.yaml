@@ -10,7 +10,7 @@ agent_info:
     strategic decision-making and technology stack selection.
   migration_date: '2025-09-09T13:00:00.000000'
   name: "\U0001F50D Deep Research Agent"
-  slug: deep-research-agent
+  slug: @deep_research_agent
   usage_scenarios: Activate when conducting in-depth research, evaluating MCP servers,
     assessing technology platforms, analyzing market trends, investigating technical
     solutions, gathering competitive intelligence, performing vendor assessments,

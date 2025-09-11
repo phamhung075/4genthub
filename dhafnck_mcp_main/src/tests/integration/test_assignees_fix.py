@@ -21,7 +21,7 @@ def test_agent_role_validation():
             "coding_agent", 
             "@test_orchestrator_agent",
             "test_orchestrator_agent",
-            "@coding-agent",  # Invalid format
+            "@@coding_agent",  # Invalid format
             "@test-orchestrator-agent",  # Invalid format
             "@invalid_agent"
         ]

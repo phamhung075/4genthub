@@ -1,10 +1,10 @@
+import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, Copy, FileText, Info, Loader2, Play, Wrench } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { Info, Loader2, Play, ChevronDown, ChevronRight, FileText, Wrench, AlertCircle, Copy, CheckCircle } from "lucide-react";
+import { callAgent } from "../api";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { callAgent } from "../api";
-import { Badge } from "./ui/badge";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 
 interface AgentInfoDialogProps {
@@ -30,7 +30,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
 
   // Agent descriptions mapping
   const agentDescriptions: Record<string, { description: string; category: string; skills: string[] }> = {
-    '@coding-agent': {
+    '@@coding_agent': {
       description: 'Implementation and feature development specialist. Transforms specifications into production-ready code.',
       category: 'Development & Coding',
       skills: ['Feature implementation', 'Code refactoring', 'Multiple languages/frameworks', 'Test creation']
@@ -55,7 +55,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
       category: 'DevOps & Deployment',
       skills: ['CI/CD pipelines', 'Container orchestration', 'Cloud deployment', 'Infrastructure as code']
     },
-    '@system-architect-agent': {
+    '@@system_architect_agent': {
       description: 'System design and architecture specialist.',
       category: 'Architecture & Design',
       skills: ['System architecture', 'Design patterns', 'Database design', 'Scalability planning']
@@ -65,7 +65,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
       category: 'Architecture & Design',
       skills: ['React components', 'Tailwind CSS', 'Responsive design', 'Design systems']
     },
-    '@documentation-agent': {
+    '@@documentation_agent': {
       description: 'Technical documentation specialist. Creates comprehensive documentation.',
       category: 'Documentation & Specs',
       skills: ['API documentation', 'User guides', 'Technical writing', 'Knowledge management']

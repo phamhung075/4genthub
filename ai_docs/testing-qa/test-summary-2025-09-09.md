@@ -94,8 +94,8 @@ dhafnck_mcp_main/src/tests/unit/mcp_controllers/
 - **Test File**: `assignees_validation_fix_test.py` (140+ lines)
 - **Coverage**: Single agents, multiple agents, user IDs, edge cases, error conditions
 - **Validation Formats**: 
-  - Single agent: `@coding-agent`
-  - Multiple agents: `@coding-agent,@security-auditor-agent`
+  - Single agent: `@@coding_agent`
+  - Multiple agents: `@@coding_agent,@security-auditor-agent`
   - User ID: `user123`
   - Mixed formats and edge cases
 - **Status**: ✅ **COMPREHENSIVE VALIDATION IMPLEMENTED**

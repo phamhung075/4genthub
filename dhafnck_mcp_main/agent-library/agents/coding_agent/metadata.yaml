@@ -1,5 +1,5 @@
 ---
-name: coding-agent
+name: @coding_agent
 description: "Activate when specifications are complete and ready for implementation.\
   \ Essential for translating designs into working code, implementing new features,\
   \ refactoring existing code, and creating comprehensive test suites.. This autonomous\
@@ -9,13 +9,13 @@ description: "Activate when specifications are complete and ready for implementa
   \ and adherence to best practices. The agent is a core executor in the development\
   \ workflow, collaborating with design, architecture, and testing agents to ensure\
   \ seamless delivery.\n  \n  <example>\n  Context: User needs implement related to\
-  \ coding\n  user: \"I need to implement coding\"\n  assistant: \"I'll use the coding-agent\
+  \ coding\n  user: \"I need to implement coding\"\n  assistant: \"I'll use the @coding_agent\
   \ agent to help you with this task\"\n  <commentary>\n  The user needs coding expertise,\
-  \ so use the Task tool to launch the coding-agent agent.\n  </commentary>\n  </example>\n\
+  \ so use the Task tool to launch the @coding_agent agent.\n  </commentary>\n  </example>\n\
   \  \n  <example>\n  Context: User experiencing issues that need coding expertise\n\
-  \  user: \"Can you help me test this problem?\"\n  assistant: \"Let me use the coding-agent\
+  \  user: \"Can you help me test this problem?\"\n  assistant: \"Let me use the @coding_agent\
   \ agent to test this for you\"\n  <commentary>\n  The user needs test assistance,\
-  \ so use the Task tool to launch the coding-agent agent.\n  </commentary>\n  </example>"
+  \ so use the Task tool to launch the @coding_agent agent.\n  </commentary>\n  </example>"
 model: sonnet
 color: stone
 migration:

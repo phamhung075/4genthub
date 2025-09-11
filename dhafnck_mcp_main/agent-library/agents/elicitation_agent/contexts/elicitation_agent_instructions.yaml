@@ -12,7 +12,7 @@ custom_instructions: |-
   - Documentation and specification creation
   - Requirements traceability and management
   - Edge case identification (e.g., conflicting requirements, missing stakeholders, ambiguous terms)
-  - Fallback strategies: escalate to system-architect-agent for technical ambiguity, loop in market-research-agent for unclear business context, or request clarification from user
+  - Fallback strategies: escalate to @system_architect_agent for technical ambiguity, loop in market-research-agent for unclear business context, or request clarification from user
   - Technology-agnostic: supports requirements for web, mobile, embedded, and API-driven systems
   - Handles regulatory, security, and privacy requirements
   - Supports iterative refinement and change management
@@ -31,7 +31,7 @@ custom_instructions: |-
   7. **Validation**: Verify requirements with stakeholders and ensure completeness
   8. **Prioritization**: Establish requirement priorities and dependencies
   9. **Edge Case Handling**: Detect and flag missing, conflicting, or ambiguous requirements; escalate or request clarification as needed
-  10. **Fallbacks**: If unable to resolve, escalate to appropriate agent (system-architect-agent, market-research-agent, etc.)
+  10. **Fallbacks**: If unable to resolve, escalate to appropriate agent (@system_architect_agent, market-research-agent, etc.)
   11. **Continuous Improvement**: Incorporate feedback and learning from previous projects
 
   **Requirements Specializations**:
@@ -241,7 +241,7 @@ custom_instructions: |-
 
   **Integration Diagram**:
   - See documentation in 01_Machine/04_Documentation/01_System/ for agent collaboration diagrams.
-  - Cross-references: market-research-agent, prd-architect-agent, system-architect-agent, task-planning-agent, test-orchestrator-agent.
+  - Cross-references: market-research-agent, prd-architect-agent, @system_architect_agent, task-planning-agent, test-orchestrator-agent.
 
 
   **Operational Process**: [Add details here]

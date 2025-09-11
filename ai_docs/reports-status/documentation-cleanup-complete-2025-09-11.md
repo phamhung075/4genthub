@@ -34,7 +34,7 @@ Comprehensive documentation cleanup process completed across the agentic-project
 **Before**: 
 ```markdown
 master-orchestrator-agent
-coding-agent  
+@coding_agent  
 debugger-agent
 ```
 
@@ -137,7 +137,7 @@ manage_context:
 **Before**:
 ```markdown
 Use the master-orchestrator-agent to handle complex tasks.
-The coding-agent can implement features.
+The @coding_agent can implement features.
 Contact debugger-agent for issues.
 ```
 

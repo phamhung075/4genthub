@@ -62,7 +62,7 @@ class CRUDHandler:
                 operation="create_task",
                 field="assignees",
                 expected="At least one agent must be assigned to the task",
-                hint="Include 'assignees' with at least one valid agent (e.g., ['@coding-agent'] or ['@test-orchestrator-agent'])"
+                hint="Include 'assignees' with at least one valid agent (e.g., ['@@coding_agent'] or ['@test-orchestrator-agent'])"
             )
         
         # Validate assignees if provided

@@ -91,7 +91,7 @@ custom_instructions: |-
   - Designing a cross-platform engagement program for a product launch (Discord, Reddit, Twitter).
   - Running a community health assessment and recommending improvements.
   - Responding to a negative sentiment spike with a rapid engagement and moderation plan.
-  - Collaborating with analytics-setup-agent to build a real-time dashboard for community KPIs.
+  - Collaborating with @analytics_setup_agent to build a real-time dashboard for community KPIs.
 
   **Input Example**:
   ```json
@@ -120,7 +120,7 @@ custom_instructions: |-
 
   **Integration Diagram**:
   - See README.md for a diagram of agent collaboration and data flow.
-  - Cross-references: social-media-setup-agent, content-strategy-agent, ux-researcher-agent, analytics-setup-agent.
+  - Cross-references: social-media-setup-agent, content-strategy-agent, ux-researcher-agent, @analytics_setup_agent.
 
   **MCP Tools**
   ...

@@ -37,7 +37,7 @@ This document describes the enhanced agent assignment and inheritance features i
 {
   "title": "Implement user authentication",
   "description": "Add login and registration",
-  "assignees": ["coding-agent"]
+  "assignees": ["@coding_agent"]
 }
 ```
 
@@ -47,10 +47,10 @@ This document describes the enhanced agent assignment and inheritance features i
   "title": "Implement user authentication", 
   "description": "Add login and registration",
   "assignees": [
-    "coding-agent",
+    "@coding_agent",
     "@test-orchestrator-agent", 
     "security-auditor-agent",
-    "@documentation-agent"
+    "@@documentation_agent"
   ]
 }
 ```
@@ -62,7 +62,7 @@ This document describes the enhanced agent assignment and inheritance features i
 {
   "task_id": "task-123",
   "title": "Create login form",
-  "assignees": ["@ui-designer-agent", "@coding-agent"]
+  "assignees": ["@ui-designer-agent", "@@coding_agent"]
 }
 ```
 
@@ -84,10 +84,10 @@ This document describes the enhanced agent assignment and inheritance features i
   "subtask": {
     "id": "subtask-456",
     "title": "Create login form", 
-    "assignees": ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
+    "assignees": ["@@coding_agent", "@test-orchestrator-agent", "@@documentation_agent"]
   },
   "agent_inheritance_applied": true,
-  "inherited_assignees": ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"],
+  "inherited_assignees": ["@@coding_agent", "@test-orchestrator-agent", "@@documentation_agent"],
   "inheritance_info": {
     "applied": true,
     "inherited_from": "parent_task",
@@ -209,10 +209,10 @@ POST /api/tasks
   "description": "Complete user auth implementation",
   "git_branch_id": "auth-feature-branch",
   "assignees": [
-    "coding-agent",
+    "@coding_agent",
     "@test-orchestrator-agent", 
     "@security-auditor-agent",
-    "documentation-agent"
+    "@documentation_agent"
   ]
 }
 ```
@@ -241,12 +241,12 @@ POST /api/subtasks
 ```python
 # Valid agent roles (sample)
 VALID_AGENTS = [
-    "@coding-agent",
+    "@@coding_agent",
     "@test-orchestrator-agent", 
     "@security-auditor-agent",
-    "@documentation-agent",
+    "@@documentation_agent",
     "@ui-designer-agent",
-    "@system-architect-agent",
+    "@@system_architect_agent",
     "@devops-agent",
     "@performance-load-tester-agent"
     # ... and 60+ more

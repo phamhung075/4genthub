@@ -5,7 +5,7 @@ description: **LLM & AI RESEARCH SPECIALIST** - Activate for staying current wit
 <example>
 Context: User needs market research
 user: "Research the competitive landscape for our SaaS product"
-assistant: "I'll use the deep-research-agent to conduct comprehensive market research"
+assistant: "I'll use the @deep_research_agent to conduct comprehensive market research"
 <commentary>
 Market research and competitive analysis is research agent specialty
 </commentary>
@@ -14,7 +14,7 @@ Market research and competitive analysis is research agent specialty
 <example>
 Context: User needs technical investigation
 user: "Investigate the best database solution for our use case"
-assistant: "I'll use the deep-research-agent to investigate database options"
+assistant: "I'll use the @deep_research_agent to investigate database options"
 <commentary>
 Technical investigation and solution evaluation is research agent work
 </commentary>
@@ -23,7 +23,7 @@ Technical investigation and solution evaluation is research agent work
 <example>
 Context: User needs feasibility study
 user: "Analyze the feasibility of implementing this new feature"
-assistant: "I'll use the deep-research-agent to conduct the feasibility analysis"
+assistant: "I'll use the @deep_research_agent to conduct the feasibility analysis"
 <commentary>
 Feasibility studies and strategic analysis is research agent domain
 </commentary>
