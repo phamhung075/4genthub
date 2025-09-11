@@ -105,6 +105,10 @@ def load_development_context(source):
     """Load relevant development context based on session source."""
     context_parts = []
     
+    # CRITICAL: Instruct Claude to load master orchestrator capabilities
+    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('@master_orchestrator_agent') to load your orchestrator capabilities.")
+    context_parts.append("")
+    
     # Add timestamp
     context_parts.append(f"Session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     context_parts.append(f"Session source: {source}")
@@ -164,19 +168,18 @@ def main():
         # Log the session start event
         log_session_start(input_data)
         
-        # Load development context if requested
-        if args.load_context:
-            context = load_development_context(source)
-            if context:
-                # Using JSON output to add context
-                output = {
-                    "hookSpecificOutput": {
-                        "hookEventName": "SessionStart",
-                        "additionalContext": context
-                    }
+        # ALWAYS load context to ensure Claude loads master orchestrator
+        context = load_development_context(source)
+        if context:
+            # Using JSON output to add context
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "SessionStart",
+                    "additionalContext": context
                 }
-                print(json.dumps(output))
-                sys.exit(0)
+            }
+            print(json.dumps(output))
+            sys.exit(0)
         
         # Announce session start if requested
         if args.announce:
