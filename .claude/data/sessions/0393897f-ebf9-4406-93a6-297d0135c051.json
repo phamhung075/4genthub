@@ -5,7 +5,9 @@
     "ok do this solution",
     "can you fix this ? \u274c Wrong - Task tool always calls master-orchestrator-agent:\n  Task(subagent_type=\"coding-agent\", prompt=\"Fix this bug\")\n  # Results in: master-orchestrator-agent being called",
     "is CLAUDE.md make confuse for sub agent Session ?",
-    "1. `CLAUDE_SESSION_TYPE` environment variable\n2. `CLAUDE_AGENT_ROLE` environment variable  \n\nprobleme is claude call sub agent on his chat, how can i change subagent and master-orchestrator-agent ???"
+    "1. `CLAUDE_SESSION_TYPE` environment variable\n2. `CLAUDE_AGENT_ROLE` environment variable  \n\nprobleme is claude call sub agent on his chat, how can i change subagent and master-orchestrator-agent ???",
+    " I need to understand what specific task you want me to work on. The session context shows that\n  environment variables CLAUDE_SESSION_TYPE and CLAUDE_AGENT_ROLE were mentioned in the\n  session-type-detection.md file.\ni need set these variable on env ?",
+    "then remove code or documentation, actual claude ask me this on startup nes session"
   ],
   "agent_name": "Cipher"
 }
