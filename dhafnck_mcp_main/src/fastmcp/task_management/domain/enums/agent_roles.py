@@ -1,10 +1,10 @@
 """
-Auto-generated Agent Roles Enum
-Generated on: 2025-06-19 13:25:05
-Total agents: 68
+Agent Roles Enum - Updated to match agent-library
+Updated on: 2025-09-11
+Total agents: 32
 
-This file contains all available agent roles from the YAML library.
-Do not edit manually - regenerate using tools/generate_enum_agents.py
+This file contains all available agent roles from dhafnck_mcp_main/agent-library/agents.
+Manually updated to match actual agent directories.
 """
 
 from enum import Enum
@@ -14,76 +14,65 @@ import yaml
 
 
 class AgentRole(Enum):
-    """Enumeration of all available agent roles"""
+    """Enumeration of all available agent roles - matches dhafnck_mcp_main/agent-library/agents"""
     
-    ADAPTIVE_DEPLOYMENT_STRATEGIST = "adaptive_deployment_strategist_agent"
-    ALGORITHMIC_PROBLEM_SOLVER = "algorithmic_problem_solver_agent"
+    # Development & Coding (4)
     ANALYTICS_SETUP = "analytics_setup_agent"
-    BRAINJS_ML = "brainjs_ml_agent"
-    BRANDING = "branding_agent"
-    CAMPAIGN_MANAGER = "campaign_manager_agent"
-    CODE_REVIEWER = "code_reviewer_agent"
     CODING = "coding_agent"
-    COMMUNITY_STRATEGY = "community_strategy_agent"
-    COMPLIANCE_SCOPE = "compliance_scope_agent"
-    COMPLIANCE_TESTING = "compliance_testing_agent"
-    CONTENT_STRATEGY = "content_strategy_agent"
-    CORE_CONCEPT = "core_concept_agent"
+    CODE_REVIEWER = "code_reviewer_agent"
     DEBUGGER = "debugger_agent"
-    DEEP_RESEARCH = "deep_research_agent"
-    DESIGN_QA_ANALYST = "design_qa_analyst"
+    
+    # Architecture & Design (4)
+    CORE_CONCEPT = "core_concept_agent"
     DESIGN_SYSTEM = "design_system_agent"
-    DEVELOPMENT_ORCHESTRATOR = "development_orchestrator_agent"
-    DEVOPS = "devops_agent"
-    DOCUMENTATION = "documentation_agent"
-    EFFICIENCY_OPTIMIZATION = "efficiency_optimization_agent"
-    ELICITATION = "elicitation_agent"
-    ETHICAL_REVIEW = "ethical_review_agent"
-    EXPLORATORY_TESTER = "exploratory_tester_agent"
-    FUNCTIONAL_TESTER = "functional_tester_agent"
-    GENERIC_PURPOSE = "generic_purpose_agent"
-    GRAPHIC_DESIGN = "graphic_design_agent"
-    GROWTH_HACKING_IDEA = "growth_hacking_idea_agent"
-    HEALTH_MONITOR = "health_monitor_agent"
-    IDEA_GENERATION = "idea_generation_agent"
-    IDEA_REFINEMENT = "idea_refinement_agent"
-    INCIDENT_LEARNING = "incident_learning_agent"
-    KNOWLEDGE_EVOLUTION = "knowledge_evolution_agent"
-    LEAD_TESTING = "lead_testing_agent"
-    MARKETING_STRATEGY_ORCHESTRATOR = "marketing_strategy_orchestrator"
-    MARKET_RESEARCH = "market_research_agent"
-    MCP_CONFIGURATION = "mcp_configuration_agent"
-    MCP_RESEARCHER = "mcp_researcher_agent"
-    NLU_PROCESSOR = "nlu_processor_agent"
-    PERFORMANCE_LOAD_TESTER = "performance_load_tester_agent"
-    PRD_ARCHITECT = "prd_architect_agent"
-    PROJECT_INITIATOR = "project_initiator_agent"
-    PROTOTYPING = "prototyping_agent"
-    REMEDIATION = "remediation_agent"
-    ROOT_CAUSE_ANALYSIS = "root_cause_analysis_agent"
-    SCRIBE = "scribe_agent"
-    SECURITY_AUDITOR = "security_auditor_agent"
-    SECURITY_PENETRATION_TESTER = "security_penetration_tester_agent"
-    SEO_SEM = "seo_sem_agent"
-    SOCIAL_MEDIA_SETUP = "social_media_setup_agent"
-    SWARM_SCALER = "swarm_scaler_agent"
     SYSTEM_ARCHITECT = "system_architect_agent"
-    TASK_DEEP_MANAGER = "task_deep_manager_agent"
-    TASK_PLANNING = "task_planning_agent"
-    TASK_SYNC = "task_sync_agent"
-    TECHNOLOGY_ADVISOR = "technology_advisor_agent"
-    TECH_SPEC = "tech_spec_agent"
-    TEST_CASE_GENERATOR = "test_case_generator_agent"
+    UI_SPECIALIST = "ui_specialist_agent"
+    
+    # Testing & QA (3)
+    PERFORMANCE_LOAD_TESTER = "performance_load_tester_agent"
     TEST_ORCHESTRATOR = "test_orchestrator_agent"
     UAT_COORDINATOR = "uat_coordinator_agent"
-    UBER_ORCHESTRATOR = "uber_orchestrator_agent"
-    UI_DESIGNER = "ui_designer_agent"
-    USABILITY_HEURISTIC = "usability_heuristic_agent"
-    USER_FEEDBACK_COLLECTOR = "user_feedback_collector_agent"
-    UX_RESEARCHER = "ux_researcher_agent"
-    VIDEO_PRODUCTION = "video_production_agent"
-    VISUAL_REGRESSION_TESTING = "visual_regression_testing_agent"
-    WORKFLOW_ARCHITECT = "workflow_architect_agent"
+    
+    # DevOps & Infrastructure (1)
+    DEVOPS = "devops_agent"
+    
+    # Documentation (1)
+    DOCUMENTATION = "documentation_agent"
+    
+    # Project & Planning (4)
+    ELICITATION = "elicitation_agent"
+    MASTER_ORCHESTRATOR = "master_orchestrator_agent"
+    PROJECT_INITIATOR = "project_initiator_agent"
+    TASK_PLANNING = "task_planning_agent"
+    
+    # Security & Compliance (3)
+    COMPLIANCE_SCOPE = "compliance_scope_agent"
+    ETHICAL_REVIEW = "ethical_review_agent"
+    SECURITY_AUDITOR = "security_auditor_agent"
+    
+    # Analytics & Optimization (2)
+    EFFICIENCY_OPTIMIZATION = "efficiency_optimization_agent"
+    HEALTH_MONITOR = "health_monitor_agent"
+    
+    # Marketing & Branding (3)
+    BRANDING = "branding_agent"
+    COMMUNITY_STRATEGY = "community_strategy_agent"
+    MARKETING_STRATEGY_ORCHESTRATOR = "marketing_strategy_orchestrator_agent"
+    
+    # Research & Analysis (4)
+    DEEP_RESEARCH = "deep_research_agent"
+    LLM_AI_AGENTS_RESEARCH = "llm_ai_agents_research"
+    ROOT_CAUSE_ANALYSIS = "root_cause_analysis_agent"
+    TECHNOLOGY_ADVISOR = "technology_advisor_agent"
+    
+    # AI & Machine Learning (1)
+    ML_SPECIALIST = "ml_specialist_agent"
+    
+    # Creative & Ideation (1)
+    CREATIVE_IDEATION = "creative_ideation_agent"
+    
+    # Prototyping (1)
+    PROTOTYPING = "prototyping_agent"
 
 
     @classmethod

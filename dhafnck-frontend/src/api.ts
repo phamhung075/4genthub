@@ -394,7 +394,7 @@ export const getAvailableAgents = async (): Promise<string[]> => {
         '@prd-architect-agent',
         '@project-initiator-agent',
         '@task-planning-agent',
-        '@uber-orchestrator-agent',
+        '@master-orchestrator-agent',
         '@elicitation-agent',
         '@security-auditor-agent',
         '@compliance-scope-agent',

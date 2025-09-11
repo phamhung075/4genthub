@@ -75,7 +75,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
       category: 'Project & Planning',
       skills: ['Task decomposition', 'Sprint planning', 'Dependency management', 'Resource planning']
     },
-    '@uber-orchestrator-agent': {
+    '@master-orchestrator-agent': {
       description: 'Complex workflow orchestration specialist.',
       category: 'Project & Planning',
       skills: ['Multi-agent coordination', 'Complex workflows', 'Strategic planning', 'Project oversight']
