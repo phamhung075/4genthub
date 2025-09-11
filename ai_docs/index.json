@@ -493,7 +493,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 8,
+      "count": 13,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -531,6 +531,20 @@
           "size": 12523
         },
         {
+          "hash": "94295d019477c894cefd3cf809073a1a",
+          "modified": "2025-09-11T15:24:35.592126",
+          "name": "architecture-thinking.md",
+          "path": "core-architecture/architecture-thinking.md",
+          "size": 15183
+        },
+        {
+          "hash": "f32f3f13ea374f4c12c40c1485ffa2f1",
+          "modified": "2025-09-11T13:05:03.400096",
+          "name": "initial-problem.md",
+          "path": "core-architecture/initial-problem.md",
+          "size": 4409
+        },
+        {
           "hash": "08cc937e96d02d232771f4e3b2751fe4",
           "modified": "2025-09-10T01:44:41.997400",
           "name": "PRD.md",
@@ -538,11 +552,32 @@
           "size": 10155
         },
         {
+          "hash": "06ecc70235b07f405b5e6ff3c9077941",
+          "modified": "2025-09-11T16:28:57.280618",
+          "name": "mcp-injection-task-dependencies.md",
+          "path": "core-architecture/mcp-injection-task-dependencies.md",
+          "size": 7604
+        },
+        {
           "hash": "ef3b6262171ec8e8c99df95dd690ab5b",
           "modified": "2025-09-11T00:20:59.397359",
           "name": "implementation-methodology-pattern.md",
           "path": "core-architecture/implementation-methodology-pattern.md",
           "size": 4263
+        },
+        {
+          "hash": "79569ca0a9a87456f4796ff9fe7c4abc",
+          "modified": "2025-09-11T13:12:50.157924",
+          "name": "prompt-analyze.md",
+          "path": "core-architecture/prompt-analyze.md",
+          "size": 20654
+        },
+        {
+          "hash": "fb53b710d4b178c756050b3aeb8a5830",
+          "modified": "2025-09-11T15:59:42.658934",
+          "name": "mcp-auto-injection-architecture.md",
+          "path": "core-architecture/mcp-auto-injection-architecture.md",
+          "size": 64835
         },
         {
           "hash": "916a7b57e69bf1d623a9f5352dc76aa6",
@@ -555,7 +590,7 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 41,
+      "count": 42,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -605,6 +640,13 @@
           "name": "test-organization-guide.md",
           "path": "development-guides/test-organization-guide.md",
           "size": 12253
+        },
+        {
+          "hash": "20830ab87f10625c0fac8c0c9c30705b",
+          "modified": "2025-09-11T12:15:23.748766",
+          "name": "mcp-simple-wrapper-design.md",
+          "path": "development-guides/mcp-simple-wrapper-design.md",
+          "size": 10587
         },
         {
           "hash": "f67b8cd9130fca937a156582d8224db7",
@@ -993,7 +1035,7 @@
       "path": "issues"
     },
     "migration-guides": {
-      "count": 8,
+      "count": 10,
       "files": [
         {
           "hash": "cb99d29edfea6c5d55772ecc95a4b447",
@@ -1024,6 +1066,13 @@
           "size": 2631
         },
         {
+          "hash": "50abe65df3877b0950031181846eba28",
+          "modified": "2025-09-11T12:14:01.326989",
+          "name": "mcp-implementation-change-plan.md",
+          "path": "migration-guides/mcp-implementation-change-plan.md",
+          "size": 8680
+        },
+        {
           "hash": "1a8bff9a5addc7a1e5e783cd62fa19b6",
           "modified": "2025-08-27T15:27:03.847730",
           "name": "database-clean-migration-v3.md",
@@ -1050,6 +1099,13 @@
           "name": "authentication-config-migration-2025-09-05.md",
           "path": "migration-guides/authentication-config-migration-2025-09-05.md",
           "size": 4135
+        },
+        {
+          "hash": "d8b7a5562973d04f937e09e46464d1b8",
+          "modified": "2025-09-11T12:41:40.249939",
+          "name": "mcp-complete-implementation-plan.md",
+          "path": "migration-guides/mcp-complete-implementation-plan.md",
+          "size": 12543
         }
       ],
       "path": "migration-guides"
@@ -1811,7 +1867,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 23,
+      "count": 24,
       "files": [
         {
           "hash": "2d646ec1c8c846e5236923503f7a8516",
@@ -1840,6 +1896,13 @@
           "name": "task-persistence-fix-guide.md",
           "path": "troubleshooting-guides/task-persistence-fix-guide.md",
           "size": 6100
+        },
+        {
+          "hash": "4d20f3e0f16e9e201bb041ced6cdf8a3",
+          "modified": "2025-09-11T11:45:06.070761",
+          "name": "orchestrator-bypass-analysis.md",
+          "path": "troubleshooting-guides/orchestrator-bypass-analysis.md",
+          "size": 7088
         },
         {
           "hash": "8f8d1f8b076f0e86dd2ae9cf2ebfd929",
@@ -1978,7 +2041,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T11:14:14.662787",
+  "generated_at": "2025-09-11T16:28:57.507938",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2086,11 +2149,16 @@
         "Architecture_Technique.md",
         "PRD.md",
         "README.md",
+        "architecture-thinking.md",
         "architecture.md",
         "database-architecture.md",
         "deprecated-agent-mappings.md",
         "implementation-methodology-pattern.md",
-        "index.md"
+        "index.md",
+        "initial-problem.md",
+        "mcp-auto-injection-architecture.md",
+        "mcp-injection-task-dependencies.md",
+        "prompt-analyze.md"
       ]
     },
     "development-guides": {
@@ -2128,6 +2196,7 @@
         "index.md",
         "jwt-authentication-guide.md",
         "mcp-integration-guide.md",
+        "mcp-simple-wrapper-design.md",
         "modular-controller-architecture.md",
         "orm-agent-repository-implementation.md",
         "parameter-enforcement-technical-spec.md",
@@ -2186,6 +2255,8 @@
         "agent-name-migration.md",
         "authentication-config-migration-2025-09-05.md",
         "database-clean-migration-v3.md",
+        "mcp-complete-implementation-plan.md",
+        "mcp-implementation-change-plan.md",
         "unified_context_migration_guide.md"
       ]
     },
@@ -2323,6 +2394,7 @@
         "index.md",
         "legacy-database-columns.md",
         "mcp-connection-issues.md",
+        "orchestrator-bypass-analysis.md",
         "subtask-persistence-debugging-guide.md",
         "task-context-completion-summary-fixes.md",
         "task-list-git-branch-filtering-fix.md",
@@ -2334,5 +2406,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 260
+  "total_files": 269
 }

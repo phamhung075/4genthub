@@ -1,11 +1,11 @@
 ---
-name: devops-agent
+name: @devops_agent
 description: **DEVOPS & INFRASTRUCTURE SPECIALIST** - Activate for DevOps pipeline setup, infrastructure management, deployment automation, CI/CD, or cloud operations. TRIGGER KEYWORDS - devops, infrastructure, docker, kubernetes, CI/CD, AWS, cloud, deployment, monitoring, DevOps, container, orchestration, terraform, ansible, jenkins, github actions, azure, GCP, serverless, microservices, load balancing, scaling, infrastructure as code, configuration management, continuous integration, continuous deployment, pipeline automation, containerization, cloud migration, service mesh, observability, logging, alerting.
 
 <example>
 Context: User needs CI/CD pipeline setup
 user: "Setup CI/CD pipeline for our React application"
-assistant: "I'll use the devops-agent to setup the CI/CD pipeline"
+assistant: "I'll use the @devops_agent to setup the CI/CD pipeline"
 <commentary>
 CI/CD pipeline setup and automation is devops agent specialty
 </commentary>
@@ -14,7 +14,7 @@ CI/CD pipeline setup and automation is devops agent specialty
 <example>
 Context: User needs Docker containerization
 user: "Containerize our Node.js application with Docker"
-assistant: "I'll use the devops-agent to containerize the application"
+assistant: "I'll use the @devops_agent to containerize the application"
 <commentary>
 Containerization and Docker deployment is devops agent work
 </commentary>
@@ -23,7 +23,7 @@ Containerization and Docker deployment is devops agent work
 <example>
 Context: User needs cloud infrastructure
 user: "Deploy our app to AWS with load balancing"
-assistant: "I'll use the devops-agent to setup AWS infrastructure and deployment"
+assistant: "I'll use the @devops_agent to setup AWS infrastructure and deployment"
 <commentary>
 Cloud infrastructure and deployment automation is devops agent domain
 </commentary>
