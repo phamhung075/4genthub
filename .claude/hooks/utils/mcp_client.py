@@ -205,6 +205,8 @@ class MCPHTTPClient:
         self.token_manager = TokenManager()
         self.session = requests.Session()
         self.timeout = int(os.getenv("MCP_SERVER_TIMEOUT", "10"))
+        self.max_retries = int(os.getenv("MCP_MAX_RETRIES", "3"))
+        self.retry_delay = float(os.getenv("MCP_RETRY_DELAY", "1.0"))
         
         # Configure session with required headers
         self.session.headers.update({
@@ -224,11 +226,10 @@ class MCPHTTPClient:
         return False
     
     def query_pending_tasks(self, limit: int = 5, user_id: Optional[str] = None) -> Optional[List[Dict]]:
-        """Query MCP server for pending tasks via HTTP."""
-        # Try without authentication first (for local dev with AUTH_ENABLED=false)
+        """Query MCP server for pending tasks via MCP protocol over HTTP."""
         try:
-            # First try the JSON-RPC endpoint (how MCP tools work)
-            payload = {
+            # Prepare MCP JSON-RPC request
+            mcp_request = {
                 "jsonrpc": "2.0",
                 "method": "tools/call",
                 "params": {
@@ -242,204 +243,287 @@ class MCPHTTPClient:
                 "id": 1
             }
             
-            response = self.session.post(
-                f"{self.base_url}/",  # FastMCP server root handles JSON-RPC
-                json=payload,
-                timeout=self.timeout
-            )
+            if user_id:
+                mcp_request["params"]["arguments"]["user_id"] = user_id
             
-            if response.status_code == 200:
-                result = response.json()
-                # Handle JSON-RPC response
-                if "result" in result:
-                    task_result = result["result"]
-                    if isinstance(task_result, dict):
-                        if "data" in task_result and "tasks" in task_result["data"]:
-                            return task_result["data"]["tasks"]
-                        elif "tasks" in task_result:
-                            return task_result["tasks"]
-                    elif isinstance(task_result, list):
-                        return task_result
-            
-            # If JSON-RPC fails, try authenticated REST endpoint
+            # Authenticate and send MCP request
             if self.authenticate():
-                payload = {
-                    "action": "list",
-                    "status": "todo",
-                    "limit": limit
-                }
-                if user_id:
-                    payload["user_id"] = user_id
+                # Update headers for MCP protocol
+                self.session.headers.update({
+                    "Accept": "application/json, text/event-stream"
+                })
                 
                 response = self.session.post(
-                    f"{self.base_url}/mcp/manage_task",
-                    json=payload,
+                    f"{self.base_url}/mcp",
+                    json=mcp_request,
                     timeout=self.timeout
                 )
                 
                 if response.status_code == 200:
                     result = response.json()
-                    if isinstance(result, dict):
-                        if "success" in result and result["success"]:
-                            data = result.get("data", {})
-                            if isinstance(data, dict) and "tasks" in data:
-                                return data["tasks"]
-                            elif isinstance(data, list):
-                                return data
-                        elif "tasks" in result:
-                            return result["tasks"]
+                    
+                    # Handle MCP JSON-RPC response
+                    if "result" in result:
+                        mcp_result = result["result"]
+                        if isinstance(mcp_result, dict):
+                            # Extract tasks from MCP response
+                            if "data" in mcp_result and isinstance(mcp_result["data"], dict):
+                                tasks = mcp_result["data"].get("tasks", [])
+                                logger.info(f"Successfully retrieved {len(tasks)} tasks via MCP protocol")
+                                return tasks
+                            elif "tasks" in mcp_result:
+                                tasks = mcp_result["tasks"]
+                                logger.info(f"Successfully retrieved {len(tasks)} tasks via MCP protocol")
+                                return tasks
+                    elif "error" in result:
+                        logger.warning(f"MCP error: {result['error']}")
+                else:
+                    logger.warning(f"MCP request returned: {response.status_code}")
             else:
-                logger.debug("Authentication not available, using unauthenticated mode")
+                logger.warning("Authentication failed for MCP request")
                 
         except Exception as e:
-            logger.warning(f"Failed to query tasks: {e}")
+            logger.warning(f"Failed to query tasks via MCP: {e}")
         
         return None
     
-    def get_next_recommended_task(self, git_branch_id: str, user_id: Optional[str] = None) -> Optional[Dict]:
-        """Get next recommended task via HTTP."""
+    def query_project_context(self, project_id: Optional[str] = None) -> Optional[Dict]:
+        """Query project context via MCP protocol."""
         if not self.authenticate():
             return None
         
         try:
-            payload = {
-                "action": "next",
-                "git_branch_id": git_branch_id,
-                "include_context": True
+            # Prepare MCP JSON-RPC request for project context
+            mcp_request = {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "manage_context",
+                    "arguments": {
+                        "action": "get",
+                        "level": "project"
+                    }
+                },
+                "id": 3
             }
-            if user_id:
-                payload["user_id"] = user_id
+            
+            if project_id:
+                mcp_request["params"]["arguments"]["project_id"] = project_id
+            
+            # Update headers for MCP protocol
+            self.session.headers.update({
+                "Accept": "application/json, text/event-stream"
+            })
             
             response = self.session.post(
-                f"{self.base_url}/mcp/manage_task",
-                json=payload,
+                f"{self.base_url}/mcp",
+                json=mcp_request,
                 timeout=self.timeout
             )
             
             if response.status_code == 200:
                 result = response.json()
-                if result.get("success"):
-                    return result.get("data", {}).get("task")
+                
+                # Handle MCP JSON-RPC response
+                if "result" in result:
+                    mcp_result = result["result"]
+                    if isinstance(mcp_result, dict):
+                        logger.info("Retrieved project context successfully")
+                        return mcp_result
+                elif "error" in result:
+                    logger.warning(f"MCP error getting project context: {result['error']}")
         except Exception as e:
-            logger.warning(f"Failed to get next task: {e}")
+            logger.warning(f"Failed to get project context via MCP: {e}")
         
         return None
     
-    def make_request(self, endpoint: str, payload: dict) -> Optional[dict]:
-        """Make authenticated HTTP request to MCP server."""
+    def query_git_branch_info(self) -> Optional[Dict]:
+        """Query git branch information via MCP protocol."""
         if not self.authenticate():
             return None
         
         try:
+            # Prepare MCP JSON-RPC request for git branch info
+            mcp_request = {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "manage_git_branch",
+                    "arguments": {
+                        "action": "list",
+                        "limit": 5
+                    }
+                },
+                "id": 4
+            }
+            
+            # Update headers for MCP protocol
+            self.session.headers.update({
+                "Accept": "application/json, text/event-stream"
+            })
+            
             response = self.session.post(
-                f"{self.base_url}{endpoint}",
-                json=payload,
+                f"{self.base_url}/mcp",
+                json=mcp_request,
                 timeout=self.timeout
             )
             
-            if response.status_code == 401:
-                # Token expired, try to refresh and retry once
-                logger.info("Token expired, attempting refresh")
-                self.token_manager._request_new_token()
-                if self.authenticate():
-                    response = self.session.post(
-                        f"{self.base_url}{endpoint}",
-                        json=payload,
-                        timeout=self.timeout
-                    )
-            
             if response.status_code == 200:
-                return response.json()
-            else:
-                logger.warning(f"Request failed: {response.status_code}")
-        except requests.exceptions.RequestException as e:
-            logger.error(f"HTTP request failed: {e}")
+                result = response.json()
+                
+                # Handle MCP JSON-RPC response
+                if "result" in result:
+                    mcp_result = result["result"]
+                    if isinstance(mcp_result, dict):
+                        logger.info("Retrieved git branch info successfully")
+                        return mcp_result
+                elif "error" in result:
+                    logger.warning(f"MCP error getting git branch info: {result['error']}")
+        except Exception as e:
+            logger.warning(f"Failed to get git branch info via MCP: {e}")
         
         return None
+    
+    def get_next_recommended_task(self, git_branch_id: str, user_id: Optional[str] = None) -> Optional[Dict]:
+        """Get next recommended task via MCP protocol."""
+        if not self.authenticate():
+            return None
+        
+        try:
+            # Prepare MCP JSON-RPC request
+            mcp_request = {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "manage_task",
+                    "arguments": {
+                        "action": "next",
+                        "git_branch_id": git_branch_id,
+                        "include_context": True
+                    }
+                },
+                "id": 2
+            }
+            
+            if user_id:
+                mcp_request["params"]["arguments"]["user_id"] = user_id
+            
+            # Update headers for MCP protocol
+            self.session.headers.update({
+                "Accept": "application/json, text/event-stream"
+            })
+            
+            response = self.session.post(
+                f"{self.base_url}/mcp",
+                json=mcp_request,
+                timeout=self.timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Handle MCP JSON-RPC response
+                if "result" in result:
+                    mcp_result = result["result"]
+                    if isinstance(mcp_result, dict):
+                        # Extract task from MCP response
+                        if "data" in mcp_result and isinstance(mcp_result["data"], dict):
+                            task = mcp_result["data"].get("task")
+                            if task:
+                                logger.info(f"Retrieved next task: {task.get('title', 'Unknown')}")
+                                return task
+                        elif "task" in mcp_result:
+                            task = mcp_result["task"]
+                            logger.info(f"Retrieved next task: {task.get('title', 'Unknown')}")
+                            return task
+                elif "error" in result:
+                    logger.warning(f"MCP error: {result['error']}")
+        except Exception as e:
+            logger.warning(f"Failed to get next task via MCP: {e}")
+        
+        return None
+    
+    def _execute_with_retry(self, func, *args, **kwargs) -> Optional[Any]:
+        """Execute a function with retry logic for resilience."""
+        last_error = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                result = func(*args, **kwargs)
+                if result is not None:
+                    return result
+                    
+            except requests.exceptions.Timeout:
+                logger.warning(f"Request timeout (attempt {attempt + 1}/{self.max_retries})")
+                last_error = "timeout"
+                
+            except requests.exceptions.ConnectionError:
+                logger.warning(f"Connection error (attempt {attempt + 1}/{self.max_retries})")
+                last_error = "connection"
+                
+            except Exception as e:
+                logger.warning(f"Request failed: {e} (attempt {attempt + 1}/{self.max_retries})")
+                last_error = str(e)
+            
+            # Wait before retry (exponential backoff)
+            if attempt < self.max_retries - 1:
+                wait_time = self.retry_delay * (2 ** attempt)
+                logger.debug(f"Waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
+        
+        logger.error(f"All retries exhausted. Last error: {last_error}")
+        return None
+    
+    def make_request(self, endpoint: str, payload: dict) -> Optional[dict]:
+        """Make authenticated HTTP request to MCP server with retry."""
+        if not self.authenticate():
+            return None
+        
+        def _request():
+            try:
+                response = self.session.post(
+                    f"{self.base_url}{endpoint}",
+                    json=payload,
+                    timeout=self.timeout
+                )
+                
+                if response.status_code == 401:
+                    # Token expired, try to refresh and retry once
+                    logger.info("Token expired, attempting refresh")
+                    self.token_manager._request_new_token()
+                    if self.authenticate():
+                        response = self.session.post(
+                            f"{self.base_url}{endpoint}",
+                            json=payload,
+                            timeout=self.timeout
+                        )
+                
+                if response.status_code == 200:
+                    return response.json()
+                else:
+                    logger.warning(f"Request failed: {response.status_code}")
+                    return None
+                    
+            except requests.exceptions.RequestException as e:
+                logger.error(f"HTTP request failed: {e}")
+                raise
+        
+        return self._execute_with_retry(_request)
 
 
 class ResilientMCPClient(MCPHTTPClient):
-    """HTTP client with fallback strategies for MCP server issues."""
+    """HTTP client for MCP server - uses hook endpoint directly."""
     
     def __init__(self):
         super().__init__()
-        self.fallback_cache = Path.home() / ".claude" / ".mcp_fallback_cache.json"
-        self.cache_ttl = int(os.getenv("FALLBACK_CACHE_TTL", "3600"))  # 1 hour
-        self.fallback_strategy = os.getenv("FALLBACK_STRATEGY", "cache_then_skip")
-    
-    def query_with_fallback(self, query_func, *args, **kwargs) -> Optional[Any]:
-        """Query MCP with multiple fallback strategies."""
-        
-        # Strategy 1: Try primary MCP server
-        try:
-            result = query_func(*args, **kwargs)
-            if result is not None:
-                self._cache_fallback_data(result)
-                return result
-        except (requests.ConnectionError, requests.Timeout, requests.RequestException):
-            logger.warning("MCP server unavailable, trying fallbacks")
-        
-        # Strategy 2: Use cached data if recent
-        if self.fallback_strategy in ["cache_then_skip", "cache_then_error"]:
-            cached_data = self._get_cached_fallback()
-            if cached_data and self._is_cache_valid(cached_data):
-                logger.info("Using cached MCP data")
-                return cached_data.get("data")
-        
-        # Strategy 3: Handle based on strategy
-        if self.fallback_strategy == "cache_then_skip":
-            logger.warning("All MCP queries failed, continuing without injection")
-            return None
-        elif self.fallback_strategy == "skip":
-            return None
-        else:  # error strategy
-            raise ConnectionError("MCP server unavailable and no valid fallback data")
     
     def query_pending_tasks(self, limit: int = 5, user_id: Optional[str] = None) -> Optional[List[Dict]]:
-        """Query pending tasks with fallback strategies."""
-        return self.query_with_fallback(
-            super().query_pending_tasks,
-            limit=limit,
-            user_id=user_id
-        )
+        """Query pending tasks via hook endpoint."""
+        return super().query_pending_tasks(limit=limit, user_id=user_id)
     
     def get_next_recommended_task(self, git_branch_id: str, user_id: Optional[str] = None) -> Optional[Dict]:
-        """Get next recommended task with fallback strategies."""
-        return self.query_with_fallback(
-            super().get_next_recommended_task,
-            git_branch_id=git_branch_id,
-            user_id=user_id
-        )
-    
-    def _cache_fallback_data(self, data: Any):
-        """Cache data for fallback use."""
-        try:
-            self.fallback_cache.parent.mkdir(exist_ok=True)
-            cache_data = {
-                "timestamp": time.time(),
-                "data": data
-            }
-            with open(self.fallback_cache, 'w') as f:
-                json.dump(cache_data, f)
-        except Exception as e:
-            logger.warning(f"Failed to cache fallback data: {e}")
-    
-    def _get_cached_fallback(self) -> Optional[Dict]:
-        """Get cached fallback data."""
-        if not self.fallback_cache.exists():
-            return None
-        
-        try:
-            with open(self.fallback_cache, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Failed to load cached fallback data: {e}")
-            return None
-    
-    def _is_cache_valid(self, cache_data: Dict) -> bool:
-        """Check if cached data is recent enough."""
-        cache_time = cache_data.get("timestamp", 0)
-        return (time.time() - cache_time) < self.cache_ttl
+        """Get next recommended task via hook endpoint."""
+        return super().get_next_recommended_task(git_branch_id=git_branch_id, user_id=user_id)
 
 
 class OptimizedMCPClient(ResilientMCPClient):

@@ -6,7 +6,12 @@
     "you can Authentication by using same token of .mcp.json dhafnck_mcp_http",
     "no you must authenthicate like mcp because mcp is authenticate success",
     "mcp can connect, i confirm\nreponse me what you try for connect, what you want do",
-    " 1. Check how the actual MCP tools authenticate in Claude (they might use a different token\n  mechanism)?"
+    " 1. Check how the actual MCP tools authenticate in Claude (they might use a different token\n  mechanism)?",
+    "create route for /hook/manage_task for authentification same way as mcp",
+    "create a new route /hook/manage_task that works use authentication like /mcp for the hooks",
+    "no not  Fallback on code",
+    "good, now remove all code is not working  created on this session for test and for try to impliment ",
+    "## Next Steps\n1. Monitor actual session injections\n2. Add more context types (git branch, project info)\n3. Optimize caching for better performance\n4. Add error recovery mechanisms"
   ],
   "agent_name": "Cipher"
 }

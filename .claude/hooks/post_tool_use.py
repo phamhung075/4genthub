@@ -31,6 +31,14 @@ except ImportError:
     update_context_sync = None
     CONTEXT_UPDATES_ENABLED = False
 
+# Import agent context manager
+try:
+    from utils.agent_context_manager import switch_to_agent
+    AGENT_CONTEXT_ENABLED = True
+except ImportError:
+    switch_to_agent = None
+    AGENT_CONTEXT_ENABLED = False
+
 def get_modified_file(tool_name, tool_input):
     """Extract the file path that was modified by the tool."""
     if tool_name == 'Write' or tool_name == 'Edit' or tool_name == 'MultiEdit':
@@ -55,6 +63,17 @@ def main():
         
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
+        
+        # AGENT CONTEXT SWITCHING: Detect call_agent tool and provide runtime context switch
+        if AGENT_CONTEXT_ENABLED and tool_name == 'mcp__dhafnck_mcp_http__call_agent':
+            agent_name = tool_input.get('name_agent', '')
+            if agent_name and agent_name != 'master-orchestrator-agent':
+                try:
+                    # Provide runtime context switch instructions
+                    context_instructions = switch_to_agent(agent_name)
+                    print(f"\n<system-reminder>\n{context_instructions}\n</system-reminder>\n", file=sys.stderr)
+                except Exception as e:
+                    print(f"Warning: Agent context switch failed: {e}", file=sys.stderr)
         
         # Get paths
         log_dir = get_ai_data_path()

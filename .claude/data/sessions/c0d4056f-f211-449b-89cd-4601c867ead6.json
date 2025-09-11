@@ -1,0 +1,7 @@
+{
+  "session_id": "c0d4056f-f211-449b-89cd-4601c867ead6",
+  "prompts": [
+    "call agent to remove debug log not important, keep only important"
+  ],
+  "agent_name": "Oracle"
+}
