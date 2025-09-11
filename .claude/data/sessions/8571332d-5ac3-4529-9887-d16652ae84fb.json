@@ -14,7 +14,9 @@
     "context and task description must save on mcp__dhafnck_mcp_http task or subtask\nwhen delegate give only id task or subtask to sub-agent, subagent can read task or subtask by call mcp for economie token",
     "because claude load information of @master_orchestrator_agent on start up then need verify base master_orchestrator_agent for remove doublicate information on CLAUDE.md and correct base too",
     "need define what is simple task",
-    "simple task must more simple"
+    "simple task must more simple",
+    "can we for claude load core base before user input use hook on startup ?",
+    "must use tool call_agent, do not use hardcord on local"
   ],
   "agent_name": "Atlas"
 }
