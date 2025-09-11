@@ -1,0 +1,10 @@
+{
+  "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+  "prompts": [
+    "add ai_docs is source of knownlege of ai, and worplace for search information beetween ai\nto CLAUDE.md and to master_orchestrator_agent",
+    "review CLAUDE.md and correct misunderstand be cause actually claude not follow Claude\u2192orchestrator(force)",
+    "update master_orchestrator_agent and task_planning_agent too because he working task, not continue delegate",
+    "can make it clean for ai easy follow ?"
+  ],
+  "agent_name": "Atlas"
+}
