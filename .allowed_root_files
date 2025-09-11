@@ -36,11 +36,7 @@ Pipfile
 Pipfile.lock
 
 # Build and deployment
-Dockerfile
-docker-compose.yml
-docker-compose.yaml
-.dockerignore
-Makefile
+docker-menu.sh
 
 # Python configuration
 setup.py

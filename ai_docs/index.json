@@ -221,11 +221,11 @@
           "size": 13686
         },
         {
-          "hash": "310b94bd3a87f69b8b2a2637d7d01830",
-          "modified": "2025-09-11T02:02:16.999747",
+          "hash": "3d93ed31c46b65f9ae6d281239079b75",
+          "modified": "2025-09-11T02:04:21.887473",
           "name": "call-agent-api.md",
           "path": "api-integration/controllers/call-agent-api.md",
-          "size": 11562
+          "size": 11283
         }
       ],
       "path": "api-integration/controllers"
@@ -1484,7 +1484,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 38,
+      "count": 39,
       "files": [
         {
           "hash": "5e586785c2108b83d593b7245969cdac",
@@ -1646,6 +1646,13 @@
           "name": "POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
           "path": "testing-qa/POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
           "size": 14550
+        },
+        {
+          "hash": "4d1f13b4a00731f46d4c6f0dd3833fe0",
+          "modified": "2025-09-11T03:04:53.124995",
+          "name": "mcp-testing-protocol-report-2025-09-11.md",
+          "path": "testing-qa/mcp-testing-protocol-report-2025-09-11.md",
+          "size": 7793
         },
         {
           "hash": "3f063ca69b867ddea283dfbdf7777d06",
@@ -1936,7 +1943,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T02:02:17.071844",
+  "generated_at": "2025-09-11T03:04:53.238599",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -1951,6 +1958,7 @@
       }
     },
     "_obsolete_docs": {},
+    "_workplace": {},
     "api-behavior": {
       "files": [
         "json-parameter-parsing.md",
@@ -2241,6 +2249,7 @@
         "mcp-test-results-iteration10-2025-09-05.md",
         "mcp-test-results-iteration4-2025-09-05.md",
         "mcp-test-results-iteration7-2025-09-05.md",
+        "mcp-testing-protocol-report-2025-09-11.md",
         "mcp-testing-results-2025-09-05.md",
         "mcp-tools-comprehensive-test-report.md",
         "mcp-tools-test-issues.md",
@@ -2284,6 +2293,6 @@
       ]
     }
   },
-  "total_directories": 25,
-  "total_files": 254
+  "total_directories": 26,
+  "total_files": 255
 }
