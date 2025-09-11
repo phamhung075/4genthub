@@ -9,7 +9,13 @@
     "fix",
     "create all tasks and sub task for make complete systeme",
     "analyse dependencie of task",
-    "ok update dependencie of task"
+    "ok update dependencie of task",
+    "next",
+    "yes",
+    "yes",
+    "how you can authentification ? you use same token on .mcp.json ?",
+    "verify all task if you not miss, conplete it if done",
+    "next"
   ],
   "agent_name": "Vertex"
 }

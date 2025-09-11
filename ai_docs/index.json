@@ -93,8 +93,15 @@
       "path": "api-behavior"
     },
     "api-integration": {
-      "count": 8,
+      "count": 13,
       "files": [
+        {
+          "hash": "229288008418e159381b52ab6afad102",
+          "modified": "2025-09-11T20:02:20.181612",
+          "name": "mcp-client-configuration-guide.md",
+          "path": "api-integration/mcp-client-configuration-guide.md",
+          "size": 17072
+        },
         {
           "hash": "2b0428083f2cfb2bc75de2a008a81dc5",
           "modified": "2025-09-11T10:14:13.454643",
@@ -124,11 +131,39 @@
           "size": 23819
         },
         {
+          "hash": "bd95f6cf5e0f5367e050ef8ccd1ba660",
+          "modified": "2025-09-11T20:01:04.032174",
+          "name": "mcp-client-api-reference.md",
+          "path": "api-integration/mcp-client-api-reference.md",
+          "size": 14506
+        },
+        {
           "hash": "a427540a34b16c69665c48d377d4095f",
           "modified": "2025-09-11T10:13:21.334100",
           "name": "configuration.md",
           "path": "api-integration/configuration.md",
           "size": 19251
+        },
+        {
+          "hash": "5ee07991ec84ea2086d2754645ef67b8",
+          "modified": "2025-09-11T19:59:52.589632",
+          "name": "mcp-http-client-architecture.md",
+          "path": "api-integration/mcp-http-client-architecture.md",
+          "size": 16373
+        },
+        {
+          "hash": "d3482fdff391015ba16acdf6c9042a9d",
+          "modified": "2025-09-11T20:07:28.659046",
+          "name": "mcp-client-troubleshooting.md",
+          "path": "api-integration/mcp-client-troubleshooting.md",
+          "size": 38707
+        },
+        {
+          "hash": "cdc09ffe6c80cfd3bb7c8ce123bc0909",
+          "modified": "2025-09-11T20:04:34.627100",
+          "name": "mcp-client-usage-examples.md",
+          "path": "api-integration/mcp-client-usage-examples.md",
+          "size": 32343
         },
         {
           "hash": "c3a616a3fb8c7741dce8084105afa5b6",
@@ -244,8 +279,15 @@
       "path": "architecture-design"
     },
     "authentication": {
-      "count": 11,
+      "count": 12,
       "files": [
+        {
+          "hash": "8b08db53d3022e3e96f944f3c6865cfb",
+          "modified": "2025-09-11T18:07:39.946048",
+          "name": "keycloak-service-account-setup.md",
+          "path": "authentication/keycloak-service-account-setup.md",
+          "size": 11775
+        },
         {
           "hash": "93beda12cf890c27acd9270df253ec7b",
           "modified": "2025-08-20T17:13:10.018682",
@@ -493,7 +535,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 13,
+      "count": 14,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -566,11 +608,11 @@
           "size": 4263
         },
         {
-          "hash": "79569ca0a9a87456f4796ff9fe7c4abc",
-          "modified": "2025-09-11T13:12:50.157924",
+          "hash": "3e8655875e5419e4816635dccf2f33d4",
+          "modified": "2025-09-11T17:53:21.709664",
           "name": "prompt-analyze.md",
           "path": "core-architecture/prompt-analyze.md",
-          "size": 20654
+          "size": 20661
         },
         {
           "hash": "fb53b710d4b178c756050b3aeb8a5830",
@@ -585,6 +627,13 @@
           "name": "Architecture_Technique.md",
           "path": "core-architecture/Architecture_Technique.md",
           "size": 19956
+        },
+        {
+          "hash": "74555e59cd276a716a1038d0353fdafe",
+          "modified": "2025-09-11T18:25:19.342034",
+          "name": "real-time-injection-system.md",
+          "path": "core-architecture/real-time-injection-system.md",
+          "size": 11877
         }
       ],
       "path": "core-architecture"
@@ -1111,7 +1160,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 12,
+      "count": 17,
       "files": [
         {
           "hash": "8a089beed43dd67720e00a56eabc2edd",
@@ -1126,6 +1175,13 @@
           "name": "index.md",
           "path": "operations/index.md",
           "size": 1902
+        },
+        {
+          "hash": "f7dbcfbb2847623efc0720d70a3dc8b1",
+          "modified": "2025-09-11T20:42:29.747969",
+          "name": "production-deployment-guide.md",
+          "path": "operations/production-deployment-guide.md",
+          "size": 13619
         },
         {
           "hash": "3d8237970285321679933471ac8caaeb",
@@ -1149,11 +1205,39 @@
           "size": 7441
         },
         {
+          "hash": "911ea5301b45c1e04d78b35e5ab93c84",
+          "modified": "2025-09-11T20:43:29.750279",
+          "name": "disaster-recovery-procedures.md",
+          "path": "operations/disaster-recovery-procedures.md",
+          "size": 12318
+        },
+        {
+          "hash": "a797b09000e19b13e1d8c8fb1ef9b524",
+          "modified": "2025-09-11T20:46:16.480120",
+          "name": "deployment-summary.md",
+          "path": "operations/deployment-summary.md",
+          "size": 11966
+        },
+        {
+          "hash": "a06abde04fa9c0584e447d3f5e1eb8cd",
+          "modified": "2025-09-11T20:44:57.895294",
+          "name": "performance-tuning-guide.md",
+          "path": "operations/performance-tuning-guide.md",
+          "size": 17185
+        },
+        {
           "hash": "9d61af9d10c9e5eb0b9fc31c6ec13426",
           "modified": "2025-08-19T13:10:56.709230",
           "name": "complete-database-reset-guide.md",
           "path": "operations/complete-database-reset-guide.md",
           "size": 6992
+        },
+        {
+          "hash": "7139618e6991d2f27f2cc1a6af6b6f3a",
+          "modified": "2025-09-11T18:59:56.136078",
+          "name": "performance-optimization-guide.md",
+          "path": "operations/performance-optimization-guide.md",
+          "size": 13699
         },
         {
           "hash": "218d6436cc52b3f1da87a36c962d1fce",
@@ -1221,7 +1305,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 29,
+      "count": 31,
       "files": [
         {
           "hash": "ca2ce2fe3341b9258884079f9119a5a5",
@@ -1355,6 +1439,20 @@
           "name": "system-health-report-2025-09-09.md",
           "path": "reports-status/system-health-report-2025-09-09.md",
           "size": 7079
+        },
+        {
+          "hash": "7a2e73fb725276f99c8e92935d16aa82",
+          "modified": "2025-09-11T19:40:57.094862",
+          "name": "phase1-foundation-code-review.md",
+          "path": "reports-status/phase1-foundation-code-review.md",
+          "size": 12493
+        },
+        {
+          "hash": "be5ed041d0829c0ff98ee39c6d28f261",
+          "modified": "2025-09-11T19:37:01.606703",
+          "name": "phase1-foundation-security-audit-report.md",
+          "path": "reports-status/phase1-foundation-security-audit-report.md",
+          "size": 11589
         },
         {
           "hash": "f5ee9cf9c9840e03fe9f4bec7dc96bb5",
@@ -1575,7 +1673,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 39,
+      "count": 41,
       "files": [
         {
           "hash": "97ee282a5beadb1ced885028b5ca623a",
@@ -1590,6 +1688,13 @@
           "name": "test-modernization-guide.md",
           "path": "testing-qa/test-modernization-guide.md",
           "size": 11583
+        },
+        {
+          "hash": "0ef46f9b3850782261b4b27b93b04fef",
+          "modified": "2025-09-11T20:29:09.398773",
+          "name": "mcp-auto-injection-test-suite.md",
+          "path": "testing-qa/mcp-auto-injection-test-suite.md",
+          "size": 13792
         },
         {
           "hash": "ef1d56063e82d863327b80e2395942fe",
@@ -1758,6 +1863,13 @@
           "name": "POSTGRESQL_TDD_FIXES_SUMMARY.md",
           "path": "testing-qa/POSTGRESQL_TDD_FIXES_SUMMARY.md",
           "size": 10194
+        },
+        {
+          "hash": "1fd2d35071da4fe971f6918fa1bab71b",
+          "modified": "2025-09-11T19:56:09.117966",
+          "name": "session-hook-performance-tests.md",
+          "path": "testing-qa/session-hook-performance-tests.md",
+          "size": 11103
         },
         {
           "hash": "e3f55058a9e0cea12d55d1e2fd15fea3",
@@ -2041,7 +2153,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T16:28:57.507938",
+  "generated_at": "2025-09-11T20:46:16.764598",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2086,7 +2198,12 @@
         "api-reference.md",
         "api-verification-status.md",
         "configuration.md",
+        "mcp-client-api-reference.md",
+        "mcp-client-configuration-guide.md",
+        "mcp-client-troubleshooting.md",
+        "mcp-client-usage-examples.md",
         "mcp-controller-implementation-changes.md",
+        "mcp-http-client-architecture.md",
         "mcp-parameter-type-resolution-guide.md"
       ]
     },
@@ -2111,6 +2228,7 @@
         "TOKEN_SECURITY_GUIDE.md",
         "authentication-system-current.md",
         "authentication-system.md",
+        "keycloak-service-account-setup.md",
         "token-flow.md"
       ]
     },
@@ -2158,7 +2276,8 @@
         "initial-problem.md",
         "mcp-auto-injection-architecture.md",
         "mcp-injection-task-dependencies.md",
-        "prompt-analyze.md"
+        "prompt-analyze.md",
+        "real-time-injection-system.md"
       ]
     },
     "development-guides": {
@@ -2270,10 +2389,15 @@
         "cloud-storage-solutions.md",
         "complete-database-reset-guide.md",
         "database-configuration-guide.md",
+        "deployment-summary.md",
+        "disaster-recovery-procedures.md",
         "environment-setup.md",
         "index.md",
         "mcp-registration-system.md",
-        "postgresql-configuration-guide.md"
+        "performance-optimization-guide.md",
+        "performance-tuning-guide.md",
+        "postgresql-configuration-guide.md",
+        "production-deployment-guide.md"
       ]
     },
     "product-requirements": {
@@ -2307,6 +2431,8 @@
         "mcp-test-success-report-2025-09-10.md",
         "mcp-tools-test-report-2025-09-10.md",
         "obsolete-controllers-recommendations-2025-09-08.md",
+        "phase1-foundation-code-review.md",
+        "phase1-foundation-security-audit-report.md",
         "project-wide-cleanup-final-2025-09-02.md",
         "role-based-implementation-summary-2025-09-09.md",
         "safe-cleanup-execution-report-2025-09-08.md",
@@ -2349,6 +2475,7 @@
         "file-cleanup-recommendations.md",
         "manage-dependency-api-verification-report.md",
         "manage-project-api-verification-report.md",
+        "mcp-auto-injection-test-suite.md",
         "mcp-iteration-11-test-success-2025-09-05.md",
         "mcp-iteration-8-test-success-2025-09-05.md",
         "mcp-phase-5-testing-blocked-final-report-2025-09-05.md",
@@ -2365,6 +2492,7 @@
         "mcp-tools-comprehensive-test-report.md",
         "mcp-tools-test-issues.md",
         "mcp-tools-test-results-2025-09-09.md",
+        "session-hook-performance-tests.md",
         "subtask-tdd-findings-2025-09-09.md",
         "subtask-tdd-methodology.md",
         "task-creation-import-fix-test-results.md",
@@ -2406,5 +2534,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 269
+  "total_files": 285
 }

@@ -54,6 +54,21 @@ try:
     from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
     mcp_tools = DDDCompliantMCPTools()
     logger.info("MCP tools initialized successfully")
+    
+    # Include performance metrics routes
+    from fastmcp.server.routes.performance_metrics_routes import router as performance_router
+    app.include_router(performance_router)
+    logger.info("Performance metrics routes initialized successfully")
+    
+    # Include analytics routes
+    from fastmcp.server.routes.analytics_routes import router as analytics_router
+    app.include_router(analytics_router)
+    logger.info("Analytics routes initialized successfully")
+    
+    # Include alert system routes
+    from fastmcp.server.routes.alert_system_routes import router as alerts_router
+    app.include_router(alerts_router)
+    logger.info("Alert system routes initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize services: {e}")
     raise
@@ -86,6 +101,12 @@ async def root():
             "/mcp/manage_subtask": "Subtask management (auth required)",
             "/mcp/call_agent": "Agent calls (auth required)",
             "/mcp/manage_agent": "Agent management (auth required)",
+            "/api/v1/performance/metrics/overview": "Performance metrics overview (auth required)",
+            "/api/v1/performance/metrics/timeseries": "Performance time series data (auth required)",
+            "/api/v1/performance/metrics/alerts": "Performance alerts (auth required)",
+            "/api/v1/analytics/context-usage": "Context usage analytics (auth required)",
+            "/api/v1/analytics/agent-performance": "Agent performance analytics (auth required)",
+            "/api/v1/analytics/system-insights": "System insights and recommendations (auth required)",
         }
     }
 
