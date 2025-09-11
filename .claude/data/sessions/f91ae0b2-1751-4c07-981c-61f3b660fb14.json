@@ -2,7 +2,7 @@
   "session_id": "f91ae0b2-1751-4c07-981c-61f3b660fb14",
   "prompts": [
     "continue",
-    "@uber_orchestrator_agent is change name  to master_orchestrator_agent, need correct all",
+    "@master_orchestrator_agent is change name  to master_orchestrator_agent, need correct all",
     "need update all other agent need call back to master_orchestrator_agent. after finish work"
   ],
   "agent_name": "Zenith"

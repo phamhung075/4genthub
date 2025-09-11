@@ -25,7 +25,7 @@ This guide provides step-by-step instructions to implement the agent library cle
   - Average quality score: 42.1 → 50.1 (+8 points)
 
 **Completed Agents**:
-1. ✅ uber_orchestrator_agent (already excellent)
+1. ✅ master_orchestrator_agent (already excellent)
 2. ✅ ui_designer_expert_shadcn_agent (already excellent) 
 3. ✅ coding_agent ⭐ HIGH PRIORITY
 4. ✅ test_orchestrator_agent ⭐ HIGH PRIORITY
@@ -257,9 +257,9 @@ rm -rf dhafnck_mcp_main/agent-library/agents/ux_researcher_agent
 
 #### Step 3.1: Strategy/Orchestration Consolidation
 
-##### Step 3.1.1: Enhance uber_orchestrator_agent
+##### Step 3.1.1: Enhance master_orchestrator_agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/uber_orchestrator_agent/contexts/uber_orchestrator_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/master_orchestrator_agent/contexts/uber_orchestrator_agent_instructions.yaml
 
 supreme_orchestration_capabilities:
   development_orchestration:

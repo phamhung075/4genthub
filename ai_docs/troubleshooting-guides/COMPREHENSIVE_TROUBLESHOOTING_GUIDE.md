@@ -36,7 +36,7 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Agent System Check
 ```bash
 # Verify agent is active
-mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
 
 # Check agent assignments
 mcp__dhafnck_mcp_http__manage_agent(action="list", project_id="your-project-id")
@@ -364,7 +364,7 @@ health = mcp__dhafnck_mcp_http__manage_connection(action="health_check")
 projects = mcp__dhafnck_mcp_http__manage_project(action="list")
 
 # 3. Check agent system
-agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")
+agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
 ```
 
 ### Step 2: Context Validation
@@ -483,7 +483,7 @@ elif "cache_inconsistency" in validation.errors:
 ```bash
 # Solution: Use available agents
 available_agents = [
-    "@uber_orchestrator_agent",
+    "@master_orchestrator_agent",
     "@coding_agent", 
     "@debugger_agent",
     "@test_orchestrator_agent",
@@ -710,7 +710,7 @@ When reporting issues, include:
 1. Verify agent name has @ prefix
 2. Check available agents list
 3. Ensure no permission errors
-4. Try @uber_orchestrator_agent as fallback
+4. Try @master_orchestrator_agent as fallback
 
 #### "Context data isn't inheriting"
 1. Validate inheritance chain

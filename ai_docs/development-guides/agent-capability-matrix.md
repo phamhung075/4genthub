@@ -26,7 +26,7 @@
 
 | Current Name | New Name | Reason |
 |-------------|----------|---------|
-| `uber_orchestrator_agent` | `master_orchestrator_agent` | "Uber" is unclear |
+| `master_orchestrator_agent` | `master_orchestrator_agent` | "Uber" is unclear |
 | `brainjs_ml_agent` | `ml_specialist_agent` | Too library-specific |
 | `ui_designer_expert_shadcn_agent` | `ui_specialist_agent` | Too framework-specific |
 

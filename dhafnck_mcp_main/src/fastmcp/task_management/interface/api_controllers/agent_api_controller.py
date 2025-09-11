@@ -254,9 +254,9 @@ class AgentAPIController:
         """Get static agent metadata for fallback"""
         return [
             {
-                "id": "@uber_orchestrator_agent",
+                "id": "@master_orchestrator_agent",
                 "name": "Uber Orchestrator Agent",
-                "call_name": "@uber_orchestrator_agent",
+                "call_name": "@master_orchestrator_agent",
                 "role": "Master Coordinator and Decision Maker",
                 "description": "The highest-level orchestrator that coordinates all other agents",
                 "category": "orchestration",

@@ -28,7 +28,7 @@ CREATE TABLE project_git_branchs (
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     UNIQUE(id, project_id)
 );
-INSERT INTO project_git_branchs VALUES('main_branch','default_project','main','Main development branch for system tasks','2025-07-16 07:44:51','2025-07-16 07:44:51','@uber_orchestrator_agent','high','active','{"branch_type":"main","auto_created":true,"protected":true}',0,0);
+INSERT INTO project_git_branchs VALUES('main_branch','default_project','main','Main development branch for system tasks','2025-07-16 07:44:51','2025-07-16 07:44:51','@master_orchestrator_agent','high','active','{"branch_type":"main","auto_created":true,"protected":true}',0,0);
 CREATE TABLE tasks (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     title TEXT NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE project_agents (
     PRIMARY KEY (id, project_id),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
-INSERT INTO project_agents VALUES('@uber_orchestrator_agent','default_project','Uber Orchestrator Agent','Primary coordination agent for complex multi-step workflows and system orchestration','@uber_orchestrator_agent','["orchestration","coordination","planning","decision_making","workflow_management"]','["complex_workflows","multi_agent_coordination","strategic_planning","resource_allocation"]','[]','[]','available',10,0,0,0.0,100.0,'{}','UTC','high','2025-07-16 07:44:51','2025-07-16 07:44:51');
+INSERT INTO project_agents VALUES('@master_orchestrator_agent','default_project','Uber Orchestrator Agent','Primary coordination agent for complex multi-step workflows and system orchestration','@master_orchestrator_agent','["orchestration","coordination","planning","decision_making","workflow_management"]','["complex_workflows","multi_agent_coordination","strategic_planning","resource_allocation"]','[]','[]','available',10,0,0,0.0,100.0,'{}','UTC','high','2025-07-16 07:44:51','2025-07-16 07:44:51');
 INSERT INTO project_agents VALUES('@task_planning_agent','default_project','Task Planning Agent','Specialized agent for breaking down complex tasks and creating execution plans','@task_planning_agent','["task_decomposition","planning","estimation","dependency_analysis"]','["project_planning","task_breakdown","workflow_design","resource_planning"]','[]','[]','available',5,0,0,0.0,100.0,'{}','UTC','high','2025-07-16 07:44:51','2025-07-16 07:44:51');
 INSERT INTO project_agents VALUES('@coding_agent','default_project','Coding Agent','Development agent for implementing features and writing code','@coding_agent','["programming","implementation","code_writing","debugging"]','["python","typescript","api_development","database_design"]','[]','[]','available',3,0,0,0.0,100.0,'{}','UTC','high','2025-07-16 07:44:51','2025-07-16 07:44:51');
 INSERT INTO project_agents VALUES('@test_orchestrator_agent','default_project','Test Orchestrator Agent','Testing coordination agent for quality assurance and test automation','@test_orchestrator_agent','["testing","quality_assurance","test_automation","validation"]','["unit_testing","integration_testing","test_planning","qa_coordination"]','[]','[]','available',5,0,0,0.0,100.0,'{}','UTC','high','2025-07-16 07:44:51','2025-07-16 07:44:51');

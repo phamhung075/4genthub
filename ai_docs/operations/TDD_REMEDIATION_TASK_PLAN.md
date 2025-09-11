@@ -70,7 +70,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
       "MCP authentication endpoints"
     ]
   },
-  "agent_assignment": "@uber_orchestrator_agent"
+  "agent_assignment": "@master_orchestrator_agent"
 }
 ```
 
@@ -268,7 +268,7 @@ graph TD
 
 ## **Agent Specialization Assignments**
 
-### **@uber_orchestrator_agent**
+### **@master_orchestrator_agent**
 - Task 2: End-to-End Authentication Validation
 - Overall coordination and progress monitoring
 

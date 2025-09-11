@@ -30,7 +30,7 @@
 ### Project & Planning (5 agents)
 15. **project_initiator_agent** - Project setup and kickoff
 16. **task_planning_agent** - Task breakdown and planning
-17. **uber_orchestrator_agent** - Complex workflow orchestration
+17. **master_orchestrator_agent** - Complex workflow orchestration
 18. **elicitation_agent** - Requirements gathering
 19. **adaptive_deployment_strategist_agent** - Deployment strategies
 
@@ -117,12 +117,12 @@
 
 ### 5. Planning/Orchestration Confusion
 **Problem**: Unclear hierarchy between orchestrators
-- `uber_orchestrator_agent` - "Complex workflows"
+- `master_orchestrator_agent` - "Complex workflows"
 - `task_planning_agent` - Task breakdown
 - `project_initiator_agent` - Project setup
 
 **Recommendation**:
-- Clarify hierarchy: `uber_orchestrator_agent` → `task_planning_agent` → specific agents
+- Clarify hierarchy: `master_orchestrator_agent` → `task_planning_agent` → specific agents
 - `project_initiator_agent` becomes setup specialist
 
 ### 6. Testing Agent Clarity
@@ -160,7 +160,7 @@
 ### Clear Role Definitions Needed
 
 #### Tier 1: Orchestrators (Coordinators)
-- `uber_orchestrator_agent` - Top-level coordination
+- `master_orchestrator_agent` - Top-level coordination
 - `task_planning_agent` - Task breakdown and delegation
 - `marketing_strategy_orchestrator_agent` - Marketing coordination
 
@@ -180,7 +180,7 @@
 **Current Issues**:
 - Inconsistent suffixes: `_agent`, `_orchestrator_agent`, `_coordinator_agent`
 - Some names too long: `adaptive_deployment_strategist_agent`
-- Unclear names: `uber_orchestrator_agent`
+- Unclear names: `master_orchestrator_agent`
 
 **Proposed Convention**:
 - Format: `{domain}_{role}_agent`

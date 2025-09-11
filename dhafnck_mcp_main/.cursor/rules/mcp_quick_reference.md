@@ -12,7 +12,7 @@
 ### Session Startup (Every Time)
 ```python
 # 1. Switch to orchestrator
-call_agent(name_agent="@uber_orchestrator_agent")
+call_agent(name_agent="@master_orchestrator_agent")
 
 # 2. Health check
 manage_connection(action="health_check")
@@ -72,7 +72,7 @@ manage_task(action="complete", task_id=task_id,
 | DevOps | `@devops_agent` | Infrastructure, deployment, CI/CD |
 | Documentation | `@documentation_agent` | Writing ai_docs, API documentation |
 | Research | `@deep_research_agent` | Technology analysis, requirements gathering |
-| Complex Coordination | `@uber_orchestrator_agent` | Multi-step workflows, agent coordination |
+| Complex Coordination | `@master_orchestrator_agent` | Multi-step workflows, agent coordination |
 
 ## 📊 MCP Tool Schema Reference
 
@@ -207,7 +207,7 @@ Task Context
 ```
 Start Session
     ↓
-Switch to @uber_orchestrator_agent
+Switch to @master_orchestrator_agent
     ↓
 Health Check
     ↓

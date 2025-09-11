@@ -47,7 +47,7 @@ def get_available_agents() -> List[str]:
     # This would typically call an API endpoint to get available agents
     # For now, returning the known agents from the documentation
     return [
-        "@uber_orchestrator_agent",
+        "@master_orchestrator_agent",
         "@coding_agent", 
         "@debugger_agent",
         "@test_orchestrator_agent",

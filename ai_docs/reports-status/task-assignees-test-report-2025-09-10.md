@@ -13,7 +13,7 @@ Successfully created 4 test tasks with various agent combinations:
 1. **Single agent**: `@coding_agent`
 2. **Three agents**: `@coding_agent`, `@debugger_agent`, `@test_orchestrator_agent`
 3. **Two agents**: `@devops_agent`, `@system_architect_agent`
-4. **Five agents**: `@uber_orchestrator_agent`, `@task_planning_agent`, `@documentation_agent`, `@security_auditor_agent`, `@performance_load_tester_agent`
+4. **Five agents**: `@master_orchestrator_agent`, `@task_planning_agent`, `@documentation_agent`, `@security_auditor_agent`, `@performance_load_tester_agent`
 
 #### Database Verification
 ```sql
@@ -29,7 +29,7 @@ SELECT task_id, assignee_id, role FROM task_assignees;
 Task retrieval returns complete assignee arrays:
 ```json
 "assignees": [
-  "@uber_orchestrator_agent",
+  "@master_orchestrator_agent",
   "@task_planning_agent",
   "@documentation_agent",
   "@security_auditor_agent",

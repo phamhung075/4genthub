@@ -50,7 +50,7 @@ Successfully consolidated the DhafnckMCP agent library from 42 agents to 31 agen
 
 ## Phase 3: Agent Renamings
 ### Clarity Improvements
-- `uber_orchestrator_agent` → **master_orchestrator_agent**
+- `master_orchestrator_agent` → **master_orchestrator_agent**
 - `brainjs_ml_agent` → **ml_specialist_agent**
 - `ui_designer_expert_shadcn_agent` → **ui_specialist_agent**
 

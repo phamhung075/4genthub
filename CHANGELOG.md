@@ -23,7 +23,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - **Performance Metrics**: Updated to reflect "parallel Task tool approach"
     - **Core Rules**: Added emphasis on Task tool usage for all delegations
   - **Impact**: Ensures master orchestrator uses proper delegation methodology via Task tools instead of incorrect direct agent calling, maintaining consistent agent interaction patterns throughout the system
-- **🔧 Agent Name Standardization - uber_orchestrator_agent → master_orchestrator_agent** - 2025-01-15
+- **🔧 Agent Name Standardization - master_orchestrator_agent → master_orchestrator_agent** - 2025-01-15
   - **Component**: Agent system consistency and naming
   - **Files Modified**:
     - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/unified_agent_description.py`
@@ -148,13 +148,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service.py`
   - **Changes**:
     - Updated agent list from 42 to 33 agents based on actual agent-library contents
-    - Corrected agent names (e.g., @uber_orchestrator_agent → @master_orchestrator_agent, @ui_designer_agent → @ui_specialist_agent)
+    - Corrected agent names (e.g., @master_orchestrator_agent → @master_orchestrator_agent, @ui_designer_agent → @ui_specialist_agent)
     - Removed non-existent agents (adaptive_deployment_strategist_agent, remediation_agent, etc.)
     - Added missing agents (llm_ai_agents_research, creative_ideation_agent)
     - Updated decision trees to use correct agent names
     - Aligned workflow patterns with available agents
     - Fixed agent discovery service path to correctly locate agent-library directory
-    - Removed all legacy references to uber_orchestrator_agent
+    - Removed all legacy references to master_orchestrator_agent
   - **Impact**: Accurate agent discovery and invocation, prevents errors from calling non-existent agents, proper validation of agent names
 
 ### Added
@@ -639,7 +639,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Debug: remediation_agent merged into → debugger_agent v2.0
     - DevOps: swarm_scaler_agent + adaptive_deployment_strategist_agent + mcp_configuration_agent → devops_agent v2.0
   - **Phase 3 Renamings**:
-    - uber_orchestrator_agent → master_orchestrator_agent
+    - master_orchestrator_agent → master_orchestrator_agent
     - brainjs_ml_agent → ml_specialist_agent
     - ui_designer_expert_shadcn_agent → ui_specialist_agent
   - **Phase 4 Implementation**:
@@ -667,7 +667,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     5. DevOps agents (4→1): Merge swarm/deployment/config into devops_agent
     6. Debug agents (2→1): remediation → debugger_agent
   - **Renamings for Clarity**:
-    - uber_orchestrator_agent → master_orchestrator_agent
+    - master_orchestrator_agent → master_orchestrator_agent
     - brainjs_ml_agent → ml_specialist_agent
     - ui_designer_expert_shadcn_agent → ui_specialist_agent
   - **Benefits**:

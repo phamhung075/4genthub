@@ -99,7 +99,7 @@ When a bridge agent is activated, it will:
 
 1. **Connect to your DhafnckMCP agent**:
    ```
-   mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")
+   mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
    ```
 
 2. **Check existing project context**:
@@ -143,7 +143,7 @@ When a bridge agent is activated, it will:
 
 | Claude Code Agent | DhafnckMCP Agents | Use Cases |
 |------------------|-------------------|-----------|
-| `uber-orchestrator` | @uber_orchestrator_agent, @task_planning_agent | Complex projects, coordination |
+| `uber-orchestrator` | @master_orchestrator_agent, @task_planning_agent | Complex projects, coordination |
 | `coding-specialist` | @coding_agent, @system_architect_agent, @algorithmic_problem_solver_agent | Implementation work |
 | `debugging-expert` | @debugger_agent, @root_cause_analysis_agent | Bug fixes, troubleshooting |
 | `testing-orchestrator` | @test_orchestrator_agent, @functional_tester_agent | Quality assurance |
@@ -250,7 +250,7 @@ When multiple agents are needed:
 
 ```python
 # Start with orchestrator
-mcp__dhafnck_mcp_http__call_agent(name_agent="@uber_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
 
 # Then delegate to specialists
 mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
