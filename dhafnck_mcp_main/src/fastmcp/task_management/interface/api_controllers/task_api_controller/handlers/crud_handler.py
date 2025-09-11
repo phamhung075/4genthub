@@ -213,8 +213,8 @@ class TaskCrudHandler:
                 user_id=user_id
             )
             
-            # Delegate to facade
-            result = task_facade.list_tasks(request)
+            # Delegate to facade - include dependencies for proper display
+            result = task_facade.list_tasks(request, include_dependencies=True, minimal=False)
             
             logger.info(f"Listed {len(result.get('tasks', []))} tasks for user {user_id}")
             

@@ -38,6 +38,7 @@ interface TaskSummary {
   assignees_count: number;
   assignees: string[];  // Add assignees array to summary
   has_dependencies: boolean;
+  dependency_count: number;  // Add count of dependencies
   has_context: boolean;
 }
 
@@ -67,6 +68,10 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   const [agents, setAgents] = useState<any[]>([]);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
 
+  // Dependency highlighting state
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+  const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
+
   // Memoized filtered and sorted tasks
   const displayTasks = useMemo(() => {
     // Defensive check to prevent crashes
@@ -82,24 +87,52 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       console.log('Loading tasks for branch:', taskTreeId);
       const taskList = await listTasks({ git_branch_id: taskTreeId });
       
-      // Log the response to debug
+      // Log the response to debug dependencies
       console.log('Task list response:', taskList);
+      if (taskList && taskList.length > 0) {
+        console.log('First task dependencies:', {
+          dependencies: taskList[0].dependencies,
+          dependency_relationships: taskList[0].dependency_relationships,
+          full_task: taskList[0]
+        });
+      }
       
       // Ensure taskList is a valid array
       const validTaskList = Array.isArray(taskList) ? taskList : [];
       
       // Convert to task summaries
-      const summaries: TaskSummary[] = validTaskList.map(task => ({
-        id: task.id,
-        title: task.title,
-        status: task.status,
-        priority: task.priority,
-        subtask_count: task.subtasks?.length || 0,
-        assignees_count: task.assignees?.length || 0,
-        assignees: task.assignees || [],  // Include actual assignees array
-        has_dependencies: Boolean(task.dependencies?.length),
-        has_context: Boolean(task.context_id || task.context_data)
-      }));
+      const summaries: TaskSummary[] = validTaskList.map(task => {
+        // Check multiple possible locations for dependency data
+        const depFromArray = task.dependencies?.length || 0;
+        const depFromRelationships = task.dependency_relationships?.depends_on?.length || 0;
+        const depFromSummary = task.dependency_summary?.total_dependencies || 0;
+        
+        // Use the maximum of all possible sources
+        const dependencyCount = Math.max(depFromArray, depFromRelationships, depFromSummary);
+        
+        // Debug log for first task with dependencies
+        if (dependencyCount > 0) {
+          console.log(`Task "${task.title}" dependencies:`, {
+            dependencies_array: task.dependencies,
+            dependency_relationships: task.dependency_relationships,
+            dependency_summary: task.dependency_summary,
+            computed_count: dependencyCount
+          });
+        }
+        
+        return {
+          id: task.id,
+          title: task.title,
+          status: task.status,
+          priority: task.priority,
+          subtask_count: task.subtasks?.length || 0,
+          assignees_count: task.assignees?.length || 0,
+          assignees: task.assignees || [],  // Include actual assignees array
+          has_dependencies: dependencyCount > 0,
+          dependency_count: dependencyCount,
+          has_context: Boolean(task.context_id || task.context_data)
+        };
+      });
       
       console.log('Converted summaries:', summaries);
       
@@ -111,9 +144,14 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       validTaskList.forEach(task => taskMap.set(task.id, task));
       setFullTasks(taskMap);
       
+      // Clear any existing errors on successful load
+      setError(null);
+      
     } catch (e: any) {
       console.error('Error loading tasks:', e);
       setError(e.message);
+      // Ensure we clear the loading state even on error
+      throw e;
     }
   }, [taskTreeId]);
 
@@ -122,10 +160,16 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     setLoading(true);
     setError(null);
     
-    // Skip the non-existent summaries endpoint and go directly to fallback
-    // TODO: Implement /api/tasks/summaries endpoint for better performance
-    await loadFullTasksFallback();
-    setLoading(false);
+    try {
+      // Skip the non-existent summaries endpoint and go directly to fallback
+      // TODO: Implement /api/tasks/summaries endpoint for better performance
+      await loadFullTasksFallback();
+    } catch (error) {
+      console.error('Failed to load task summaries:', error);
+      // Error is already set by loadFullTasksFallback
+    } finally {
+      setLoading(false);
+    }
   }, [loadFullTasksFallback]);
 
   // Load full task data on demand
@@ -290,14 +334,65 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Handle task hover for dependency highlighting
+  const handleTaskHover = useCallback((taskId: string | null) => {
+    setHoveredTaskId(taskId);
+    
+    if (taskId) {
+      // Find dependencies of the hovered task
+      const task = fullTasks.get(taskId) || taskSummaries.find(t => t.id === taskId);
+      const dependencies = new Set<string>();
+      
+      if (task) {
+        // Add direct dependencies
+        const taskDeps = (task as any).dependencies || [];
+        taskDeps.forEach((dep: string) => dependencies.add(dep));
+        
+        // Add dependencies from dependency relationships
+        const depRels = (task as any).dependency_relationships;
+        if (depRels?.depends_on) {
+          depRels.depends_on.forEach((dep: string) => dependencies.add(dep));
+        }
+        
+        // Also highlight tasks that this task blocks (reverse dependencies)
+        taskSummaries.forEach(otherTask => {
+          const otherTaskFull = fullTasks.get(otherTask.id) || otherTask;
+          const otherDeps = (otherTaskFull as any).dependencies || [];
+          const otherDepRels = (otherTaskFull as any).dependency_relationships;
+          
+          // If this task depends on the hovered task, highlight it
+          if (otherDeps.includes(taskId) || 
+              otherDepRels?.depends_on?.includes(taskId)) {
+            dependencies.add(otherTask.id);
+          }
+        });
+      }
+      
+      setHighlightedDependencies(dependencies);
+    } else {
+      setHighlightedDependencies(new Set());
+    }
+  }, [fullTasks, taskSummaries]);
+
   // Render task row for mobile (card view)
   const renderMobileTaskCard = useCallback((summary: TaskSummary) => {
     const isExpanded = expandedTasks.has(summary.id);
     const isLoading = loadingTasks.has(summary.id);
     const fullTask = fullTasks.get(summary.id) || null;
+    const isHighlighted = highlightedDependencies.has(summary.id);
+    const isHovered = hoveredTaskId === summary.id;
     
     return (
-      <div key={summary.id} className="bg-surface dark:bg-gray-800 rounded-lg shadow-sm border border-surface-border dark:border-gray-700 mb-3">
+      <div 
+        key={summary.id} 
+        className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border mb-3 transition-all duration-200 cursor-pointer ${
+          isHighlighted ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 shadow-md scale-102' :
+          isHovered ? 'border-violet-400 shadow-lg scale-102 bg-violet-50 dark:bg-violet-950' :
+          'border-surface-border dark:border-gray-700'
+        }`}
+        onMouseEnter={() => handleTaskHover(summary.id)}
+        onMouseLeave={() => handleTaskHover(null)}
+      >
         <div className="p-4">
           {/* Task Header */}
           <div className="flex items-start justify-between mb-3">
@@ -312,8 +407,12 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                   </Badge>
                 )}
                 {summary.has_dependencies && (
-                  <Badge variant="outline" className="text-xs">
-                    Has deps
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs cursor-help" 
+                    title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}. Hover over the task to see dependencies highlighted.`}
+                  >
+                    {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
                   </Badge>
                 )}
                 {summary.assignees && summary.assignees.length > 0 && (
@@ -417,17 +516,26 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         )}
       </div>
     );
-  }, [expandedTasks, loadingTasks, fullTasks, toggleTaskExpansion, openDialog, projectId, taskTreeId]);
+  }, [expandedTasks, loadingTasks, fullTasks, toggleTaskExpansion, openDialog, projectId, taskTreeId, highlightedDependencies, hoveredTaskId, handleTaskHover]);
 
   // Render task row for desktop (table view)
   const renderDesktopTaskRow = useCallback((summary: TaskSummary) => {
     const isExpanded = expandedTasks.has(summary.id);
     const isLoading = loadingTasks.has(summary.id);
     const fullTask = fullTasks.get(summary.id) || null;
+    const isHighlighted = highlightedDependencies.has(summary.id);
+    const isHovered = hoveredTaskId === summary.id;
     
     return (
       <React.Fragment key={summary.id}>
-        <TableRow>
+        <TableRow 
+          className={`transition-all duration-200 cursor-pointer ${
+            isHighlighted ? 'bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-400' :
+            isHovered ? 'bg-violet-50 dark:bg-violet-950 border-l-4 border-l-violet-400' : ''
+          }`}
+          onMouseEnter={() => handleTaskHover(summary.id)}
+          onMouseLeave={() => handleTaskHover(null)}
+        >
           <TableCell className="w-[50px]">
             <Button 
               variant="ghost" 
@@ -464,10 +572,14 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             <HolographicPriorityBadge priority={summary.priority as any} size="sm" />
           </TableCell>
           
-          <TableCell className="hidden xl:table-cell">
+          <TableCell className="hidden lg:table-cell">
             {summary.has_dependencies ? (
-              <Badge variant="outline" className="text-xs">
-                Has dependencies
+              <Badge 
+                variant="outline" 
+                className="text-xs cursor-help" 
+                title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}. Hover over the task to see dependencies highlighted.`}
+              >
+                {summary.dependency_count} {summary.dependency_count === 1 ? 'dependency' : 'dependencies'}
               </Badge>
             ) : (
               <span className="text-xs text-muted-foreground">None</span>
@@ -566,7 +678,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         )}
       </React.Fragment>
     );
-  }, [expandedTasks, loadingTasks, fullTasks, toggleTaskExpansion, openDialog, projectId, taskTreeId]);
+  }, [expandedTasks, loadingTasks, fullTasks, toggleTaskExpansion, openDialog, projectId, taskTreeId, highlightedDependencies, hoveredTaskId, handleTaskHover]);
 
   if (loading && taskSummaries.length === 0) {
     return <div className="p-4 text-center">Loading tasks...</div>;
@@ -598,7 +710,10 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           </h2>
           <div className="flex gap-2">
             <ShimmerButton
-              onClick={() => loadTaskSummaries(1)}
+              onClick={async () => {
+                console.log('Refresh button clicked');
+                await loadTaskSummaries(1);
+              }}
               size="sm"
               variant="outline"
               disabled={loading}
@@ -636,7 +751,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                 <TableHead>Title</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden md:table-cell">Priority</TableHead>
-                <TableHead className="hidden xl:table-cell">Dependencies</TableHead>
+                <TableHead className="hidden lg:table-cell">Dependencies</TableHead>
                 <TableHead className="hidden md:table-cell">Assignees</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
