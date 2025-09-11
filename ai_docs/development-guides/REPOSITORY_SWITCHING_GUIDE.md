@@ -17,10 +17,11 @@ This guide explains how the system automatically switches between different repo
 
 ### 1. Local Development (Testing)
 ```bash
-# .env.test
+# .env.test  
 ENVIRONMENT=test
-SQLITE_DB_PATH=./test.db
-# Database type and Redis settings are ignored in test mode
+DATABASE_TYPE=postgresql
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dhafnck_test
+# Test with PostgreSQL for consistency with production
 ```
 
 ### 2. Production with Supabase + Redis
@@ -166,7 +167,7 @@ graph TD
 # src/fastmcp/task_management/infrastructure/repositories/task_repository_factory.py
 
 class TaskRepositoryFactory:
-    def create_repository(self, project_id: str, git_branch_name: str, user_id: str):
+    def create_repository(self, project_id: str, git_branch_name: str, user_id: str):  # Note: Consider updating to git_branch_id (UUID)
         """Create task repository with automatic environment detection"""
         
         # Check if we're in test mode
@@ -270,16 +271,21 @@ def test_supabase_without_cache():
 
 ## Docker Compose Configurations
 
-### Development (SQLite)
+### Development (PostgreSQL)
 ```yaml
 # docker-compose.dev.yml
 services:
   app:
     environment:
-      - ENVIRONMENT=test
-      - SQLITE_DB_PATH=/app/test.db
-    volumes:
-      - ./test.db:/app/test.db
+      - ENVIRONMENT=development
+      - DATABASE_TYPE=postgresql
+      - DATABASE_URL=postgresql://dev_user:dev_password@postgres:5432/dhafnck_dev
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: dhafnck_dev
 ```
 
 ### Production (Supabase + Redis)

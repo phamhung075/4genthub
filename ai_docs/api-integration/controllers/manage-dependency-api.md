@@ -31,9 +31,13 @@ The `manage_dependency` tool provides comprehensive task dependency management o
       "type": "string",
       "description": "[OPTIONAL] Project identifier for context"
     },
+    "git_branch_id": {
+      "type": "string",
+      "description": "[OPTIONAL] Branch UUID identifier for hierarchical context"
+    },
     "git_branch_name": {
       "type": "string",
-      "description": "[OPTIONAL] Task tree identifier for hierarchical context"
+      "description": "[DEPRECATED] Use git_branch_id (UUID) instead. Task tree identifier for hierarchical context"
     },
     "user_id": {
       "type": "string",
@@ -63,7 +67,7 @@ Adds a dependency relationship between two tasks, establishing workflow sequenci
 
 **Optional Parameters:**
 - `project_id`: Project context (derived from task if not provided)
-- `git_branch_name`: Branch context (default: "main")
+- `git_branch_id`: Branch UUID (for branch context)
 - `user_id`: User identifier for audit trails
 
 **Example Request:**
@@ -107,7 +111,7 @@ Removes an existing dependency relationship between tasks.
 
 **Optional Parameters:**
 - `project_id`: Project context
-- `git_branch_name`: Branch context
+- `git_branch_id`: Branch UUID
 - `user_id`: User identifier
 
 **Example Request:**
@@ -148,7 +152,7 @@ Retrieves all dependencies for a specific task with detailed dependency informat
 
 **Optional Parameters:**
 - `project_id`: Project context
-- `git_branch_name`: Branch context
+- `git_branch_id`: Branch UUID
 - `user_id`: User identifier
 
 **Example Request:**
@@ -206,7 +210,7 @@ Removes all dependency relationships from a task.
 
 **Optional Parameters:**
 - `project_id`: Project context
-- `git_branch_name`: Branch context  
+- `git_branch_id`: Branch UUID  
 - `user_id`: User identifier
 
 **Example Request:**
@@ -245,7 +249,7 @@ Retrieves all tasks that are currently blocking the specified task from proceedi
 
 **Optional Parameters:**
 - `project_id`: Project context
-- `git_branch_name`: Branch context
+- `git_branch_id`: Branch UUID
 - `user_id`: User identifier
 
 **Example Request:**
@@ -516,7 +520,7 @@ Dependencies affect task workflow:
 ```json
 // Project-level dependency coordination
 // 1. Use project_id to scope dependencies within projects
-// 2. Coordinate cross-branch dependencies via git_branch_name
+// 2. Coordinate cross-branch dependencies via git_branch_id (UUID)
 // 3. Maintain audit trails with user_id tracking
 ```
 

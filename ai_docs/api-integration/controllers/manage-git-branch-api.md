@@ -35,7 +35,7 @@ The `manage_git_branch` tool manages git branches as task trees, providing branc
     },
     "git_branch_name": {
       "type": "string",
-      "description": "[OPTIONAL] Branch name (e.g., 'feature/user-authentication')"
+      "description": "[OPTIONAL] Branch name (e.g., 'feature/user-authentication') - DEPRECATED: Use git_branch_id (UUID) instead"
     },
     "git_branch_description": {
       "type": "string",

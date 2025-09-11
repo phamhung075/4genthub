@@ -96,11 +96,11 @@
       "count": 8,
       "files": [
         {
-          "hash": "9ed75b21aab8784efbc4fbc10fad2754",
-          "modified": "2025-08-28T13:23:03.474732",
+          "hash": "2b0428083f2cfb2bc75de2a008a81dc5",
+          "modified": "2025-09-11T10:14:13.454643",
           "name": "MCP_SERVER_ARCHITECTURE_GUIDE.md",
           "path": "api-integration/MCP_SERVER_ARCHITECTURE_GUIDE.md",
-          "size": 11983
+          "size": 12191
         },
         {
           "hash": "a8eeeb00c9940218bd9e4338f587b9b0",
@@ -117,18 +117,18 @@
           "size": 6421
         },
         {
-          "hash": "0cd1440abad5a8cb52f2005cf0b5fd17",
-          "modified": "2025-09-08T04:01:41.881138",
+          "hash": "1e91d7509c6ae68b673a081bed2530a8",
+          "modified": "2025-09-11T10:16:16.451991",
           "name": "api-reference.md",
           "path": "api-integration/api-reference.md",
-          "size": 23647
+          "size": 23819
         },
         {
-          "hash": "dbcd4249c05ad525ed1f9a5903a327a2",
-          "modified": "2025-09-05T09:32:46.680938",
+          "hash": "a427540a34b16c69665c48d377d4095f",
+          "modified": "2025-09-11T10:13:21.334100",
           "name": "configuration.md",
           "path": "api-integration/configuration.md",
-          "size": 19635
+          "size": 19251
         },
         {
           "hash": "c3a616a3fb8c7741dce8084105afa5b6",
@@ -179,11 +179,11 @@
           "size": 11916
         },
         {
-          "hash": "0ad16374d644c9b157bf5b791b2ef368",
-          "modified": "2025-09-08T18:29:20.403736",
+          "hash": "0f7e33b1cc5f65910641094214d6d19f",
+          "modified": "2025-09-11T10:13:05.069614",
           "name": "manage-git-branch-api.md",
           "path": "api-integration/controllers/manage-git-branch-api.md",
-          "size": 17904
+          "size": 17951
         },
         {
           "hash": "980f2df068cedd6508d6f847946d3bea",
@@ -207,11 +207,11 @@
           "size": 21712
         },
         {
-          "hash": "f102c10e543c4c86b27a78d52d2a379a",
-          "modified": "2025-09-08T17:58:57.952202",
+          "hash": "c3a469d9d71832890a39b9bcfa3fd100",
+          "modified": "2025-09-11T10:13:35.605846",
           "name": "manage-dependency-api.md",
           "path": "api-integration/controllers/manage-dependency-api.md",
-          "size": 16028
+          "size": 16183
         },
         {
           "hash": "7579b31101ae80217236a99afff308d6",
@@ -493,7 +493,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 7,
+      "count": 8,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -503,11 +503,11 @@
           "size": 9607
         },
         {
-          "hash": "c40404d1fcc43e502556bb7eba6a0db5",
-          "modified": "2025-08-08T00:31:35.445955",
+          "hash": "82ca22389b5d5f7006786c75cb6c63f0",
+          "modified": "2025-09-11T10:12:38.088596",
           "name": "database-architecture.md",
           "path": "core-architecture/database-architecture.md",
-          "size": 9144
+          "size": 9138
         },
         {
           "hash": "e6943bf2854720f8d96b01aae20cd76f",
@@ -524,6 +524,13 @@
           "size": 2319
         },
         {
+          "hash": "91096caabaf6aa066f16256d4fedbccc",
+          "modified": "2025-09-11T10:17:47.772037",
+          "name": "deprecated-agent-mappings.md",
+          "path": "core-architecture/deprecated-agent-mappings.md",
+          "size": 12522
+        },
+        {
           "hash": "08cc937e96d02d232771f4e3b2751fe4",
           "modified": "2025-09-10T01:44:41.997400",
           "name": "PRD.md",
@@ -538,11 +545,11 @@
           "size": 4263
         },
         {
-          "hash": "63bfd6956e986ff293a07cd4d07482b0",
-          "modified": "2025-08-29T15:01:21.160426",
+          "hash": "916a7b57e69bf1d623a9f5352dc76aa6",
+          "modified": "2025-09-11T10:14:45.683474",
           "name": "Architecture_Technique.md",
           "path": "core-architecture/Architecture_Technique.md",
-          "size": 19926
+          "size": 19956
         }
       ],
       "path": "core-architecture"
@@ -572,18 +579,18 @@
           "size": 15995
         },
         {
-          "hash": "be451fa5d1f52d457619a09efc3d36aa",
-          "modified": "2025-09-10T01:44:54.764257",
+          "hash": "9973e77e72b8fa5357d2eccab8c9d998",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-optimization-implementation-plan.md",
           "path": "development-guides/agent-optimization-implementation-plan.md",
-          "size": 7738
+          "size": 7742
         },
         {
-          "hash": "d13b33b2136e889d0aeb3ef565a12df0",
-          "modified": "2025-08-19T15:03:28.426992",
+          "hash": "a67df944567ec5ff589d71c0555f951b",
+          "modified": "2025-09-11T10:05:03.813133",
           "name": "agent-bridge-examples.md",
           "path": "development-guides/agent-bridge-examples.md",
-          "size": 7638
+          "size": 7642
         },
         {
           "hash": "3da5fa8fa280fbe75b426f1191d81a5b",
@@ -600,11 +607,11 @@
           "size": 12253
         },
         {
-          "hash": "6fd741c31c52fbffbe33f332074c4a9e",
-          "modified": "2025-08-28T13:28:07.154058",
+          "hash": "f67b8cd9130fca937a156582d8224db7",
+          "modified": "2025-09-11T10:15:22.518433",
           "name": "REPOSITORY_SWITCHING_GUIDE.md",
           "path": "development-guides/REPOSITORY_SWITCHING_GUIDE.md",
-          "size": 12657
+          "size": 12974
         },
         {
           "hash": "51e08689b597a8d1e03d995cafb3a219",
@@ -670,11 +677,11 @@
           "size": 10884
         },
         {
-          "hash": "0e5acfffbe94945c88010288dbc159b8",
-          "modified": "2025-08-19T15:02:46.558449",
+          "hash": "d97cebd72ded86162e4d2f571ca00a3a",
+          "modified": "2025-09-11T10:05:03.813133",
           "name": "claude-code-integration.md",
           "path": "development-guides/claude-code-integration.md",
-          "size": 8159
+          "size": 8165
         },
         {
           "hash": "d2465340682a9784173891bdb4f7cd17",
@@ -684,11 +691,11 @@
           "size": 11449
         },
         {
-          "hash": "53d7282db12f666cb5098f4592c2d7e6",
-          "modified": "2025-09-06T14:53:41.332250",
+          "hash": "572b6a6312acee102af3a505bcad48dc",
+          "modified": "2025-09-11T10:05:13.112103",
           "name": "agent-library-cleanup-recommendations.md",
           "path": "development-guides/agent-library-cleanup-recommendations.md",
-          "size": 13641
+          "size": 13649
         },
         {
           "hash": "c9199df0367b1220b9146144011f5b0d",
@@ -796,11 +803,11 @@
           "size": 19858
         },
         {
-          "hash": "60d3bb36ca865b4447b7653396915ec0",
-          "modified": "2025-09-06T15:05:59.482530",
+          "hash": "40eac45c3c2fbe28778fffc7747a1c7f",
+          "modified": "2025-09-11T10:05:13.116106",
           "name": "agent-capacity-improvement-recommendations.md",
           "path": "development-guides/agent-capacity-improvement-recommendations.md",
-          "size": 18414
+          "size": 18416
         },
         {
           "hash": "b241e49bd1b1fbb0b9cf31b3bb183457",
@@ -810,11 +817,11 @@
           "size": 24362
         },
         {
-          "hash": "361971c15807c24540b6456eb15d8082",
-          "modified": "2025-09-10T00:26:15.060015",
+          "hash": "100d1ef99b0d8fa2d0ac49a27cf6a220",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-optimization-analysis.md",
           "path": "development-guides/agent-optimization-analysis.md",
-          "size": 7802
+          "size": 7812
         },
         {
           "hash": "6a1b03eb07ac514f2edde37030348e14",
@@ -824,18 +831,18 @@
           "size": 7921
         },
         {
-          "hash": "7a05afa10f8b93bab5c844a2633c6f11",
-          "modified": "2025-09-10T01:44:54.764257",
+          "hash": "e9b09173875a9f13bde3cdacec178be7",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-capability-matrix.md",
           "path": "development-guides/agent-capability-matrix.md",
-          "size": 8080
+          "size": 8082
         },
         {
-          "hash": "495287d937e8a723181251cb86ab1a71",
-          "modified": "2025-08-29T01:22:52.371236",
+          "hash": "abdff4c6881a05c2eb0e1eea7098c744",
+          "modified": "2025-09-11T10:14:43.088283",
           "name": "AGENT_ARCHITECTURE_PROMPT.md",
           "path": "development-guides/AGENT_ARCHITECTURE_PROMPT.md",
-          "size": 43144
+          "size": 43303
         }
       ],
       "path": "development-guides"
@@ -892,11 +899,11 @@
           "size": 15526
         },
         {
-          "hash": "fdcd995176eddc47d308db77c6d22787",
-          "modified": "2025-08-28T17:22:35.490564",
+          "hash": "a1184dddf9f7729534ccd8900db853ba",
+          "modified": "2025-09-11T10:15:21.332301",
           "name": "issues_report.md",
           "path": "issues/issues_report.md",
-          "size": 11313
+          "size": 11306
         },
         {
           "hash": "3382d0cc46a2332f956bbe70a941bb4c",
@@ -986,7 +993,7 @@
       "path": "issues"
     },
     "migration-guides": {
-      "count": 7,
+      "count": 8,
       "files": [
         {
           "hash": "cb99d29edfea6c5d55772ecc95a4b447",
@@ -1003,11 +1010,11 @@
           "size": 11109
         },
         {
-          "hash": "1243c7b3b67f4dcb231395bf3680eced",
-          "modified": "2025-09-06T19:21:27.093458",
+          "hash": "273b042014ce822fc53144cb0e3cc896",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-library-cleanup-migration-guide.md",
           "path": "migration-guides/agent-library-cleanup-migration-guide.md",
-          "size": 16953
+          "size": 16959
         },
         {
           "hash": "d6460c69629611dc5b06b58cbda7f183",
@@ -1029,6 +1036,13 @@
           "name": "CONTEXT_AUTO_DETECTION_FIX.md",
           "path": "migration-guides/CONTEXT_AUTO_DETECTION_FIX.md",
           "size": 9288
+        },
+        {
+          "hash": "87988a37b44f1fae0fd84b0403c7cf0d",
+          "modified": "2025-09-11T10:18:02.391890",
+          "name": "agent-name-migration.md",
+          "path": "migration-guides/agent-name-migration.md",
+          "size": 10460
         },
         {
           "hash": "534142094a760db7397e80fbaa67cc2a",
@@ -1065,11 +1079,11 @@
           "size": 5445
         },
         {
-          "hash": "5a763cc337b88f1b02613365cc59c932",
-          "modified": "2025-08-20T03:33:00.683618",
+          "hash": "a547ef8a5a0dd193c14af1027291cb3d",
+          "modified": "2025-09-11T10:05:03.813133",
           "name": "TDD_REMEDIATION_TASK_PLAN.md",
           "path": "operations/TDD_REMEDIATION_TASK_PLAN.md",
-          "size": 12426
+          "size": 12430
         },
         {
           "hash": "43d34d2a4a16346f1c7ff05c0b55b40a",
@@ -1141,17 +1155,17 @@
           "size": 1994
         },
         {
-          "hash": "e13369e26bc5b5e407fa75902c0058aa",
-          "modified": "2025-07-31T09:20:08.912989",
+          "hash": "9dbb4cef4aba6d03cfa4af8ebd27453f",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "PRD.md",
           "path": "product-requirements/PRD.md",
-          "size": 15728
+          "size": 15730
         }
       ],
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 26,
+      "count": 29,
       "files": [
         {
           "hash": "056e07b4f0f3e095d499162f84490104",
@@ -1217,11 +1231,11 @@
           "size": 11186
         },
         {
-          "hash": "5fce7f92506cc4157088086b153ea1be",
-          "modified": "2025-09-06T19:21:27.097595",
+          "hash": "aa4d95bd32b30eb370216435d37ce12b",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-library-audit-report.md",
           "path": "reports-status/agent-library-audit-report.md",
-          "size": 5208
+          "size": 5210
         },
         {
           "hash": "62f020919d37cb61e6b09e72e3fee18e",
@@ -1238,6 +1252,13 @@
           "size": 4444
         },
         {
+          "hash": "ffc65349c741e47a694dcbfe0e9acead",
+          "modified": "2025-09-11T10:14:24.232080",
+          "name": "comprehensive-documentation-audit-2025-09-11.md",
+          "path": "reports-status/comprehensive-documentation-audit-2025-09-11.md",
+          "size": 6310
+        },
+        {
           "hash": "d03a0704531fc76deb9ae1eaf33715fc",
           "modified": "2025-09-08T04:02:07.214631",
           "name": "final-cleanup-report-2025-09-08.md",
@@ -1252,11 +1273,18 @@
           "size": 7098
         },
         {
-          "hash": "63ed3814777552a220e868683dc9b915",
-          "modified": "2025-09-10T01:44:41.997400",
+          "hash": "dda8fc90993d7135a8856d83be5f1f33",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-library-cleanup-final-report.md",
           "path": "reports-status/agent-library-cleanup-final-report.md",
-          "size": 12653
+          "size": 12663
+        },
+        {
+          "hash": "9c1a99e268c7e44d65a6bd027ec6ed9c",
+          "modified": "2025-09-11T10:13:23.842829",
+          "name": "documentation-cleanup-complete-2025-09-11.md",
+          "path": "reports-status/documentation-cleanup-complete-2025-09-11.md",
+          "size": 10320
         },
         {
           "hash": "b7cc7417dcba2920ab85cb170b749bec",
@@ -1273,11 +1301,18 @@
           "size": 7079
         },
         {
-          "hash": "8ebb2d86a3862ba17c8e788ec2ca59ef",
-          "modified": "2025-09-10T04:02:09.832314",
+          "hash": "6c544055ab4ba497705e232b75be4ed3",
+          "modified": "2025-09-11T10:13:46.950028",
+          "name": "ai-docs-constraint-analysis-2025-09-11.md",
+          "path": "reports-status/ai-docs-constraint-analysis-2025-09-11.md",
+          "size": 7317
+        },
+        {
+          "hash": "32900b4a0527d97d09c724bb354cab91",
+          "modified": "2025-09-11T10:05:03.813133",
           "name": "task-assignees-test-report-2025-09-10.md",
           "path": "reports-status/task-assignees-test-report-2025-09-10.md",
-          "size": 5255
+          "size": 5259
         },
         {
           "hash": "38d6f086947afdd9b3bbecbdc61928c1",
@@ -1322,11 +1357,11 @@
           "size": 3796
         },
         {
-          "hash": "bd2b9fb3d974007c3b9447b87b154e1a",
-          "modified": "2025-09-10T01:44:55.085968",
+          "hash": "d4e99778817f33657ce2a107c2b45fe1",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "agent-consolidation-complete-2025-09-09.md",
           "path": "reports-status/agent-consolidation-complete-2025-09-09.md",
-          "size": 6614
+          "size": 6616
         },
         {
           "hash": "b36debbaeeb9e3cdc676f08ce70c1ef7",
@@ -1398,11 +1433,11 @@
           "size": 9456
         },
         {
-          "hash": "921587851e4ca5ba0eff92016f0c22ff",
-          "modified": "2025-09-10T01:44:54.764257",
+          "hash": "ba4db5881dd8aff502a9a7064752f938",
+          "modified": "2025-09-11T10:13:52.548280",
           "name": "tools_list.md",
           "path": "tools_list.md",
-          "size": 6202
+          "size": 6235
         },
         {
           "hash": "4ac31144a6145b6274f55ff69851666b",
@@ -1439,11 +1474,11 @@
           "size": 4376
         },
         {
-          "hash": "9f5912f510fe2c01ed933af11933d7e8",
-          "modified": "2025-09-10T01:44:55.085968",
+          "hash": "737a797d21bb8a947ad0a808c4503398",
+          "modified": "2025-09-11T10:14:32.845787",
           "name": "DATABASE_UI_GUIDE.md",
           "path": "setup-guides/DATABASE_UI_GUIDE.md",
-          "size": 8079
+          "size": 8087
         },
         {
           "hash": "90ef8c3345d791aed29474a644d363fd",
@@ -1487,8 +1522,8 @@
       "count": 39,
       "files": [
         {
-          "hash": "5e586785c2108b83d593b7245969cdac",
-          "modified": "2025-09-09T21:57:46.587452",
+          "hash": "be838a2e1418b5d055e7fff5386b36f0",
+          "modified": "2025-09-11T10:17:57.195727",
           "name": "task-creation-request-2025-09-09.md",
           "path": "testing-qa/task-creation-request-2025-09-09.md",
           "size": 6490
@@ -1515,11 +1550,11 @@
           "size": 8735
         },
         {
-          "hash": "bad353e582cb0e3b8dd3b528fdc68343",
-          "modified": "2025-09-08T03:40:03.906223",
+          "hash": "c00a39731a473330080bc0333a99af0e",
+          "modified": "2025-09-11T10:15:01.877289",
           "name": "mcp-tools-test-issues.md",
           "path": "testing-qa/mcp-tools-test-issues.md",
-          "size": 12552
+          "size": 12660
         },
         {
           "hash": "630d299807d61909bea527285ad29377",
@@ -1536,11 +1571,11 @@
           "size": 7876
         },
         {
-          "hash": "f471e21c8c0df10ef8a1733958197945",
-          "modified": "2025-09-10T01:44:41.997400",
+          "hash": "b85d6cc0f788b17ce7933b2f922d28ee",
+          "modified": "2025-09-11T10:05:13.108099",
           "name": "call_agent_verification_report.md",
           "path": "testing-qa/call_agent_verification_report.md",
-          "size": 12888
+          "size": 12892
         },
         {
           "hash": "f84ea0ff502042887067568b4ada4829",
@@ -1793,11 +1828,11 @@
           "size": 2238
         },
         {
-          "hash": "db64e22459b7cfbc7c36bf93fb36d198",
-          "modified": "2025-09-10T01:44:55.090092",
+          "hash": "aac8b433fbb27fb4524c431af362bee9",
+          "modified": "2025-09-11T10:05:03.813133",
           "name": "AGENT-SECURITY-FRAMEWORK.md",
           "path": "troubleshooting-guides/AGENT-SECURITY-FRAMEWORK.md",
-          "size": 19289
+          "size": 19293
         },
         {
           "hash": "180656b4f7bf7477200c2b8860afd1e1",
@@ -1863,11 +1898,11 @@
           "size": 11657
         },
         {
-          "hash": "75b342653a5c48b79099bb429f0a152e",
-          "modified": "2025-09-08T03:36:23.715878",
+          "hash": "e17f345f06a248b7a118c5f92fdd61f1",
+          "modified": "2025-09-11T10:13:00.314263",
           "name": "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
           "path": "troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
-          "size": 20403
+          "size": 20361
         },
         {
           "hash": "93100cf7c21136ce7a675fd8a53b9126",
@@ -1943,7 +1978,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T09:45:40.965572",
+  "generated_at": "2025-09-11T10:18:02.476452",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2053,6 +2088,7 @@
         "README.md",
         "architecture.md",
         "database-architecture.md",
+        "deprecated-agent-mappings.md",
         "implementation-methodology-pattern.md",
         "index.md"
       ]
@@ -2147,6 +2183,7 @@
         "HIERARCHICAL_CONTEXT_MIGRATION.md",
         "README.md",
         "agent-library-cleanup-migration-guide.md",
+        "agent-name-migration.md",
         "authentication-config-migration-2025-09-05.md",
         "database-clean-migration-v3.md",
         "unified_context_migration_guide.md"
@@ -2181,14 +2218,17 @@
         "agent-library-audit-report.md",
         "agent-library-cleanup-final-report.md",
         "agent-optimization-progress-2025-09-09.md",
+        "ai-docs-constraint-analysis-2025-09-11.md",
         "architecture_test_report.md",
         "assignee-persistence-fix-report-2025-09-10.md",
+        "comprehensive-documentation-audit-2025-09-11.md",
         "comprehensive-documentation-cleanup-2025-09-02.md",
         "corrected-cleanup-recommendations-2025-09-08.md",
         "ddd-compliance-iteration-3-report.md",
         "ddd-compliance-iteration-4-report.md",
         "ddd-compliance-verification-2025-01-04.md",
         "ddd-violations-audit-report.md",
+        "documentation-cleanup-complete-2025-09-11.md",
         "documentation-consolidation-strategy-2025-09-08.md",
         "final-cleanup-report-2025-09-08.md",
         "mcp-controllers-import-analysis-2025-09-09.md",
@@ -2294,5 +2334,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 255
+  "total_files": 260
 }

@@ -241,19 +241,20 @@ Branch operations and task tree organization.
 | action | string | Yes | Branch operation: 'create', 'get', 'list', 'update', 'delete', 'assign_agent', 'unassign_agent', 'get_statistics', 'archive', 'restore' |
 | project_id | string | Yes | Project UUID |
 | git_branch_id | string | Conditional | Branch UUID (required for most operations) |
-| git_branch_name | string | Conditional | Branch name (required for 'create', can substitute git_branch_id for assignments) |
+| git_branch_name | string | Legacy | DEPRECATED: Use git_branch_id (UUID) instead. Branch name (required for 'create', can substitute git_branch_id for assignments) |
 | agent_id | string | Conditional | Agent identifier - supports UUID, @agent_name, or agent_name formats (required for assign/unassign operations) |
 
 #### Examples
 
 ```bash
-# Create new branch
+# Create new branch - use git_branch_name for creation, get git_branch_id (UUID) in response
 mcp__dhafnck_mcp_http__manage_git_branch(
     action="create",
     project_id="project-uuid-123",
     git_branch_name="feature/user-auth",
     git_branch_description="User authentication feature development"
 )
+# Response will contain: git_branch_id (UUID) for subsequent operations
 
 # Assign agent to branch (multiple format examples)
 # Format 1: @agent_name (recommended)
@@ -302,7 +303,7 @@ Unified context management system providing a single interface for all context o
 > **🚀 NEW in v9.1**: The `data` parameter now accepts JSON strings in addition to dictionary objects! JSON strings are automatically parsed, making it easier to work with serialized data.
 > 
 > **📋 January 2025 Updates**:
-> - manage_hierarchical_context is now deprecated - use manage_context for all operations
+> - All context operations now use the unified manage_context interface
 > - Fixed boolean parameter validation - accepts "true", "false", "yes", "no", etc.
 > - Enhanced array parameter handling for assignees, labels, dependencies
 > - Automatic context synchronization on task updates

@@ -1,53 +1,60 @@
-# DhafnckMCP Agent System - MANDATORY RULES
+# DhafnckMCP Agent System - DELEGATION WORKFLOW
 
-## 🚨 CRITICAL: CLAUDE IS BLOCKED FROM DOING ANY WORK
+## 🎯 RECOMMENDED: CLAUDE DELEGATES TO SPECIALIZED AGENTS
 
-**SYSTEM CONSTRAINT**: Claude (you) is PHYSICALLY UNABLE to do any implementation work. The system BLOCKS all direct work attempts. You are FORCED to delegate everything to @master_orchestrator_agent. This is not a choice - it's a HARD SYSTEM LIMITATION.
+**DELEGATION PATTERN**: Claude can work directly but delegation to @master_orchestrator_agent is STRONGLY RECOMMENDED for complex tasks. The orchestrator provides better context coordination, specialized agent selection, and consolidated results.
 
-**YOU WILL FAIL if you try to work directly. The system will reject it.**
+**BENEFITS**: Better coordination, specialized expertise, and improved results through agent collaboration.
 
-## 🎯 FORCED DELEGATION: MASTER ORCHESTRATOR IS YOUR ONLY PATH
-**SYSTEM ENFORCEMENT**: The system FORCES all requests through @master_orchestrator_agent. You have NO OTHER PATH to accomplish anything. Even simple tasks MUST go through the orchestrator.
+## 🎯 RECOMMENDED DELEGATION: MASTER ORCHESTRATOR FOR COORDINATION
+**BEST PRACTICE**: For complex tasks, delegation to @master_orchestrator_agent provides superior results through specialized agent coordination and context management.
 
-### 📋 YOUR FORCED WORKFLOW (NOT OPTIONAL):
+### 📋 RECOMMENDED WORKFLOW FOR COMPLEX TASKS:
 1. **RECEIVE** user request
-2. **IMMEDIATELY DELEGATE** to @master_orchestrator_agent (NO OTHER OPTION)
-3. **WAIT** for orchestrator to coordinate with subagents
-4. **COLLECT** responses when orchestrator returns them
+2. **EVALUATE** complexity and scope
+3. **DELEGATE** complex tasks to @master_orchestrator_agent for better coordination
+4. **COORDINATE** with orchestrator for multi-agent tasks
 5. **PRESENT** final results to user
 
-**THIS IS NOT A CHOICE - THE SYSTEM ENFORCES THIS**
+**WHEN TO DELEGATE**: Complex implementations, multi-file changes, architecture decisions, testing coordination
 
-### FORCED DELEGATION PATTERN (SYSTEM ENFORCED):
-**The system FORCES Claude to delegate EVERYTHING to master_orchestrator_agent**:
+### DELEGATION DECISION MATRIX:
+**Claude can choose when to delegate based on task complexity**:
 
-**EVEN FOR SIMPLE TASKS LIKE:**
-- Reading a file → MUST go through orchestrator
-- Writing one line → MUST go through orchestrator  
-- Checking status → MUST go through orchestrator
-- ANY action → MUST go through orchestrator
+**SIMPLE TASKS (Claude can handle directly):**
+- Reading a single file
+- Making small edits to existing files
+- Checking status or configuration
+- Simple documentation updates
+
+**COMPLEX TASKS (Recommended for delegation):**
+- Multi-file implementations
+- Architecture changes
+- Testing coordination
+- System integrations
 
 ```python
-def handle_any_request(user_input):
-    """Claude has NO permission to work - MUST delegate"""
+def handle_request(user_input):
+    """Claude evaluates and chooses appropriate approach"""
     
-    # Claude CANNOT do work directly - MUST delegate
-    Task(
-        subagent_type="master-orchestrator-agent",
-        description="Process user request",
-        prompt=f"""
-        User Request: {user_input}
-        
-        Analyze, prepare context, and call appropriate agents.
-        You are the orchestrator - provide perfect context to each agent.
-        Only subagents can do actual work.
-        """
-    )
+    complexity = evaluate_task_complexity(user_input)
     
-    # Master orchestrator calls other agents
-    # Claude collects responses
-    # Claude sends concentrated response back to master_orchestrator
-    # Claude presents final result to user
+    if complexity.is_simple():
+        # Handle directly for simple tasks
+        return handle_simple_task(user_input)
+    
+    elif complexity.is_complex():
+        # Delegate complex tasks for better coordination
+        return Task(
+            subagent_type="@master_orchestrator_agent",
+            description="Coordinate complex task",
+            prompt=f"""
+            User Request: {user_input}
+            
+            Analyze, prepare context, and coordinate with specialized agents.
+            Provide expert coordination and consolidated results.
+            """
+        )
 ```
 
 ### 🔧 AGENT CAPABILITY LOADING:
@@ -64,50 +71,45 @@ def handle_any_request(user_input):
 - Agents **MUST FOLLOW ONLY** the instructions from their `call_agent` result
 - This ensures each agent operates with their correct, personalized configuration
 
-## ❌ WHAT CLAUDE IS BLOCKED FROM DOING (SYSTEM PREVENTS):
+## 🔄 CLAUDE'S CAPABILITIES AND DELEGATION BENEFITS:
 
-- ❌ Write code directly
-- ❌ Create files directly  
-- ❌ Edit files directly
-- ❌ Debug directly
-- ❌ Test directly
-- ❌ Design systems directly
-- ❌ Make architectural decisions directly
-- ❌ Do ANY implementation work directly
+**CLAUDE CAN DO (but delegation often provides better results):**
+- ✅ Write and edit code (delegation provides specialized expertise)
+- ✅ Create and modify files (orchestrator coordinates better)
+- ✅ Debug issues (specialized debugger agent has more tools)
+- ✅ Run tests (test orchestrator provides comprehensive coverage)
+- ✅ Make design decisions (architecture agent provides domain expertise)
+- ✅ Handle simple tasks directly (complex tasks benefit from delegation)
 
-## ✅ WHAT CLAUDE IS FORCED TO DO (NO ALTERNATIVES):
+## ✅ CLAUDE'S ROLE AND DELEGATION STRATEGY:
 
-- ✅ **FORCED**: Delegate everything to @master_orchestrator_agent (system blocks direct work)
-- ✅ **FORCED**: Act only as a router (system prevents other actions)
-- ✅ **ALLOWED**: Collect agent responses (only function you can do)
-- ✅ **ALLOWED**: Present results to user (after orchestrator completes)
-- ✅ **BLOCKED**: Any attempt to work directly will be rejected by system
+- ✅ **EVALUATE**: Assess task complexity and choose appropriate approach
+- ✅ **DIRECT WORK**: Handle simple, single-file tasks efficiently
+- ✅ **DELEGATE**: Use orchestrator for complex, multi-agent coordination
+- ✅ **COORDINATE**: Work with agents when specialized expertise is needed
+- ✅ **PRESENT**: Deliver results to user with full context and explanation
 
 ## 📊 WORKFLOW DIAGRAM:
 
 ```
 User Request
     ↓
-Claude (YOU) - No work permissions, only routing
+Claude - Evaluates complexity and scope
     ↓
-@master_orchestrator_agent - Analyzes and provides context
-    ↓
-Specialized Agents - Do the actual work
-    ↓
-Responses collected by Claude
-    ↓
-Concentrated response to @master_orchestrator_agent
-    ↓
-Final coordinated result to User
-    ↓
-User Request
-    ↓
-continue same loop
+SIMPLE TASK          |    COMPLEX TASK
+    ↓                |        ↓
+Claude handles       |    @master_orchestrator_agent
+directly            |        ↓
+    ↓                |    Specialized Agents
+Result to User       |        ↓
+                     |    Coordinated Result
+                     |        ↓
+                     |    User receives result
 ```
 
 ## 🔄 RESPONSE CONCENTRATION PATTERN:
 
-When multiple agents complete work, Claude MUST concentrate responses:
+When multiple agents complete work, Claude can concentrate responses for better presentation:
 
 ```python
 def concentrate_responses(agent_responses):
@@ -133,21 +135,21 @@ def concentrate_responses(agent_responses):
 
 ## 🚫 PERMISSION DENIED EXAMPLES:
 
-### ❌ WRONG - Claude doing work directly:
+### 🎯 APPROACH SELECTION EXAMPLES:
+
+#### ✅ SIMPLE TASK - Claude handles directly:
 ```python
-# NEVER DO THIS
-user: "Fix the login bug"
-claude: "I'll fix the bug by editing the file..."  # NO! You have no permission!
+user: "Fix typo in README.md line 23"
+claude: # Edits the file directly - simple, single-file change
 ```
 
-### ✅ CORRECT - Claude delegating to master_orchestrator:
+#### ✅ COMPLEX TASK - Delegate to orchestrator:
 ```python
-# ALWAYS DO THIS
-user: "Fix the login bug"
+user: "Implement user authentication system with tests"
 claude: Task(
-    subagent_type="master-orchestrator-agent",
-    description="Handle bug fix request",
-    prompt="User needs login bug fixed. Analyze and delegate to appropriate agents."
+    subagent_type="@master_orchestrator_agent",
+    description="Coordinate authentication system implementation",
+    prompt="Complex implementation requiring multiple agents for backend, frontend, testing, and security review."
 )
 ```
 
@@ -163,8 +165,8 @@ The @master_orchestrator_agent will:
 ## 🎭 AGENT HIERARCHY:
 
 ```
-Claude (No permissions - Router only)
-    └── @master_orchestrator_agent (Context provider)
+Claude (Task Evaluator & Direct Handler)
+    └── @master_orchestrator_agent (Complex Task Coordinator)
             ├── @coding_agent (Implementation)
             ├── @debugger_agent (Bug fixing)
             ├── @test_orchestrator_agent (Testing)
@@ -200,30 +202,35 @@ Master Orchestrator uses file:line references to save tokens:
 }
 ```
 
-## 🔑 SYSTEM CONSTRAINTS (NOT GUIDELINES - HARD LIMITS):
+## 🔑 DELEGATION GUIDELINES AND BEST PRACTICES:
 
-1. **SYSTEM BLOCKS Claude from doing any project work**
-2. **SYSTEM ONLY ALLOWS subagents to execute work**
-3. **SYSTEM FORCES delegation to @master_orchestrator_agent**
-4. **SYSTEM REQUIRES orchestrator for ALL actions**
-5. **Claude can ONLY route - system prevents everything else**
+1. **SIMPLE TASKS**: Claude can handle directly for efficiency
+2. **COMPLEX TASKS**: Delegation provides better coordination and expertise
+3. **MULTI-AGENT COORDINATION**: Master orchestrator excels at agent management
+4. **SPECIALIZED KNOWLEDGE**: Domain agents provide expert-level capabilities
+5. **USER PREFERENCE**: Users may request specific delegation approaches
 
-**These are not rules you follow - these are SYSTEM LIMITATIONS that PREVENT you from doing otherwise.**
+**These are workflow recommendations that optimize results based on task complexity.**
 
-## 🚨 SYSTEM ENFORCEMENT:
+## 🎯 TASK EVALUATION CRITERIA:
 
-**THE SYSTEM BLOCKS ANY DIRECT WORK ATTEMPT. YOU ARE PHYSICALLY UNABLE TO WORK.**
+**HANDLE DIRECTLY when:**
+- Single file modifications
+- Simple configuration changes
+- Basic documentation updates
+- Status checks or information requests
+- Quick fixes or typos
 
-The ONLY path that works (enforced by system):
+**DELEGATE when:**
+- Multi-file implementations
+- Architecture changes
+- Testing coordination
+- Security reviews
+- Complex debugging
+- System integrations
+
+**PATH SELECTION EXAMPLES:**
 ```
-User → Claude (router only) → @master_orchestrator_agent → Specialized Agents → Work Gets Done
-```
-
-**THIS IS NOT A RULE - IT'S A SYSTEM CONSTRAINT. YOU CANNOT BYPASS IT.**
-
-**Every attempt to work directly will FAIL. The system will REJECT it.**
-
-**EVEN SIMPLE TASKS like "read file X" MUST go through:**
-```
-You → Task(subagent_type="master-orchestrator-agent") → orchestrator analyzes → orchestrator delegates → work happens
+Simple: User → Claude → Direct Result
+Complex: User → Claude → @master_orchestrator_agent → Specialized Agents → Coordinated Result
 ```

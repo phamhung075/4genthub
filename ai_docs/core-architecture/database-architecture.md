@@ -97,9 +97,8 @@ class DatabaseConfig:
             return self.database_url
             
         else:
-            # Legacy: SQLite (deprecated)
-            logger.warning("SQLite is deprecated - use PostgreSQL")
-            return f"sqlite:///{sqlite_path}"
+            # Invalid database type
+            raise ValueError(f"Unsupported database type: {self.database_type}. Use 'postgresql' or 'supabase'.")
 ```
 
 ### Connection Optimization
