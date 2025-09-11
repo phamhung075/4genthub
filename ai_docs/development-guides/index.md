@@ -19,7 +19,7 @@ If you're looking to integrate your advanced agent system with Claude Code:
 
 ## Related Documentation
 
-- **Main Documentation**: [ai_docs/index.md](../index.md)
+- **Main Documentation**: [ai_docs/index.json](../index.json)
 - **Vision System**: [ai_docs/vision/](../vision/)
 - **Core Architecture**: [ai_docs/CORE ARCHITECTURE/](../CORE%20ARCHITECTURE/)
 
