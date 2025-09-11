@@ -32,7 +32,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck-frontend/src/components/AgentInfoDialog.tsx`
   - **Changes Applied**:
     - **Enum Update**: AgentRole enum completely rewritten to match actual 32 agents in agent-library
-    - **Frontend Alignment**: Updated frontend references from @uber-orchestrator-agent to @master-orchestrator-agent
+    - **Frontend Alignment**: Updated frontend references from @master-orchestrator-agent to @master-orchestrator-agent
     - **API Consistency**: Unified agent descriptions and fallback references
     - **Agent Count Correction**: Reduced from 68 outdated entries to 32 actual agents
   - **Agent Categories Organized**:

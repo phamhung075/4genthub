@@ -44,7 +44,7 @@ DEPRECATED_AGENT_MAPPINGS = {
     
     # Renamings
     "uber_orchestrator_agent": "master_orchestrator_agent",
-    "uber-orchestrator-agent": "master-orchestrator-agent",
+    "master-orchestrator-agent": "master-orchestrator-agent",
     "brainjs_ml_agent": "ml_specialist_agent",
     "brainjs-ml-agent": "ml-specialist-agent",
     "ui_designer_expert_shadcn_agent": "ui_specialist_agent",
