@@ -142,7 +142,7 @@ ORDER BY table_name;
 
 ```sql
 -- View recent tasks
-SELECT t.*, p.name as project_name, gb.git_branch_name
+SELECT t.*, p.name as project_name, gb.name as git_branch_name
 FROM tasks t
 JOIN git_branches gb ON t.git_branch_id = gb.id
 JOIN projects p ON gb.project_id = p.id

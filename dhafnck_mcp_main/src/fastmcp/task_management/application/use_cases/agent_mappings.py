@@ -7,48 +7,48 @@ Purpose: Support deprecated agent names during migration period
 # Agent consolidation mappings (deprecated → active)
 DEPRECATED_AGENT_MAPPINGS = {
     # Documentation consolidation
-    "tech_spec_agent": "documentation_agent",
-    "tech-spec-agent": "documentation-agent",
-    "prd_architect_agent": "documentation_agent",
-    "prd-architect-agent": "documentation-agent",
+    "tech_spec_agent": "@documentation_agent",
+    "tech-spec-agent": "@documentation_agent",
+    "prd_architect_agent": "@documentation_agent",
+    "prd-architect-agent": "@documentation_agent",
     
     # Research consolidation  
-    "mcp_researcher_agent": "deep_research_agent",
-    "mcp-researcher-agent": "deep-research-agent",
+    "mcp_researcher_agent": "@deep_research_agent",
+    "mcp-researcher-agent": "@deep_research_agent",
     
     # Creative consolidation
-    "idea_generation_agent": "creative_ideation_agent",
-    "idea-generation-agent": "creative-ideation-agent",
-    "idea_refinement_agent": "creative_ideation_agent",
-    "idea-refinement-agent": "creative-ideation-agent",
+    "idea_generation_agent": "@creative_ideation_agent",
+    "idea-generation-agent": "@creative_ideation_agent",
+    "idea_refinement_agent": "@creative_ideation_agent",
+    "idea-refinement-agent": "@creative_ideation_agent",
     
     # Marketing consolidation
-    "seo_sem_agent": "marketing_strategy_orchestrator_agent",
-    "seo-sem-agent": "marketing-strategy-orchestrator-agent",
-    "growth_hacking_idea_agent": "marketing_strategy_orchestrator_agent",
-    "growth-hacking-idea-agent": "marketing-strategy-orchestrator-agent",
-    "content_strategy_agent": "marketing_strategy_orchestrator_agent",
-    "content-strategy-agent": "marketing-strategy-orchestrator-agent",
+    "seo_sem_agent": "@marketing_strategy_orchestrator_agent",
+    "seo-sem-agent": "@marketing_strategy_orchestrator_agent",
+    "growth_hacking_idea_agent": "@marketing_strategy_orchestrator_agent",
+    "growth-hacking-idea-agent": "@marketing_strategy_orchestrator_agent",
+    "content_strategy_agent": "@marketing_strategy_orchestrator_agent",
+    "content-strategy-agent": "@marketing_strategy_orchestrator_agent",
     
     # DevOps consolidation
-    "swarm_scaler_agent": "devops_agent",
-    "swarm-scaler-agent": "devops-agent",
-    "adaptive_deployment_strategist_agent": "devops_agent",
-    "adaptive-deployment-strategist-agent": "devops-agent",
-    "mcp_configuration_agent": "devops_agent",
-    "mcp-configuration-agent": "devops-agent",
+    "swarm_scaler_agent": "@devops_agent",
+    "swarm-scaler-agent": "@devops_agent",
+    "adaptive_deployment_strategist_agent": "@devops_agent",
+    "adaptive-deployment-strategist-agent": "@devops_agent",
+    "mcp_configuration_agent": "@devops_agent",
+    "mcp-configuration-agent": "@devops_agent",
     
     # Debug consolidation
-    "remediation_agent": "debugger_agent",
-    "remediation-agent": "debugger-agent",
+    "remediation_agent": "@debugger_agent",
+    "remediation-agent": "@debugger_agent",
     
     # Renamings
-    "master_orchestrator_agent": "master_orchestrator_agent",
-    "master-orchestrator-agent": "master-orchestrator-agent",
-    "brainjs_ml_agent": "ml_specialist_agent",
-    "brainjs-ml-agent": "ml-specialist-agent",
-    "ui_designer_expert_shadcn_agent": "ui_specialist_agent",
-    "ui-designer-expert-shadcn-agent": "ui-specialist-agent",
+    "master_orchestrator_agent": "@master_orchestrator_agent",
+    "master-orchestrator-agent": "@master_orchestrator_agent",
+    "brainjs_ml_agent": "@ml_specialist_agent",
+    "brainjs-ml-agent": "@ml_specialist_agent",
+    "ui_designer_expert_shadcn_agent": "@ui_specialist_agent",
+    "ui-designer-expert-shadcn-agent": "@ui_specialist_agent",
 }
 
 def resolve_agent_name(agent_name: str) -> str:

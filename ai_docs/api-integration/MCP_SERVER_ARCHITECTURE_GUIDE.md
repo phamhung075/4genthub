@@ -210,20 +210,20 @@ class CacheStrategy:
 
 ### 5. Repository Implementations
 
-#### SQLite Repository (Testing)
+#### PostgreSQL Repository (Local Development)
 ```python
-# src/fastmcp/task_management/infrastructure/repositories/sqlite/sqlite_task_repository.py
-class SQLiteTaskRepository(TaskRepository):
+# src/fastmcp/task_management/infrastructure/repositories/postgresql/postgresql_task_repository.py
+class PostgreSQLTaskRepository(TaskRepository):
     """
-    USED FOR: Testing only
-    DATABASE: Local SQLite file
+    USED FOR: Local development with Docker PostgreSQL
+    DATABASE: PostgreSQL container
     """
     def __init__(self):
-        self.db_path = os.getenv('SQLITE_DB_PATH', 'test.db')
-        self.connection = sqlite3.connect(self.db_path)
+        self.database_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/dhafnck_dev')
+        self.engine = create_engine(self.database_url)
     
     async def create_task(self, task: Task) -> Task:
-        # SQLite implementation
+        # PostgreSQL implementation with SQLAlchemy
         pass
 ```
 
@@ -282,22 +282,22 @@ class CachedContextRepository(ContextRepository):
 # .env file configuration
 
 # Environment Mode
-ENVIRONMENT=production  # or 'test' for SQLite
+ENVIRONMENT=production  # 'development' for local PostgreSQL
 
 # Database Configuration
-DATABASE_TYPE=supabase  # or 'postgresql', 'sqlite'
+DATABASE_TYPE=supabase  # or 'postgresql' for local development
 SUPABASE_URL=https://xxxxx.supabase.co
 SUPABASE_ANON_KEY=xxxxx
 SUPABASE_SERVICE_KEY=xxxxx
+
+# PostgreSQL Configuration (Local Development)
+DATABASE_URL=postgresql://user:pass@localhost:5432/dhafnck_dev
 
 # Redis Configuration
 REDIS_ENABLED=true  # or 'false' to disable cache
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_DB=0
-
-# SQLite (Testing Only)
-SQLITE_DB_PATH=./test.db
 ```
 
 ## 📊 Decision Flow

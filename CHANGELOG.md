@@ -7,6 +7,125 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **🔧 Agent Name Format Standardization** - 2025-01-15
+  - **Component**: Agent naming consistency across entire codebase
+  - **Issue**: Agent names were inconsistently formatted using hyphens instead of @ prefix with underscores
+  - **Pattern Enforced**: `@agent_name` (with @ prefix and underscores)
+  - **Files Modified**:
+    - `CLAUDE.md` - Fixed subagent_type parameters to use @master_orchestrator_agent
+    - `CHANGELOG.md` - Updated agent name examples to use correct @agent_name format
+    - `TEST-CHANGELOG.md` - Standardized agent names in test documentation
+    - `ai_docs/migration-guides/agent-name-migration.md` - Updated all migration targets to @agent_name format
+    - `ai_docs/core-architecture/deprecated-agent-mappings.md` - Fixed target agent names
+    - `ai_docs/testing-qa/task-creation-request-2025-09-09.md` - Fixed assignees format
+    - `dhafnck_mcp_main/src/fastmcp/task_management/application/use_cases/agent_mappings.py` - Updated DEPRECATED_AGENT_MAPPINGS targets
+    - `dhafnck_mcp_main/src/tests/task_management/application/use_cases/agent_mappings_test.py` - Updated expected test values
+  - **Corrections Applied**:
+    - `master-orchestrator-agent` → `@master_orchestrator_agent`
+    - `coding-agent` → `@coding_agent`
+    - `debugger-agent` → `@debugger_agent`
+    - `test-orchestrator-agent` → `@test_orchestrator_agent`
+    - `security-auditor-agent` → `@security_auditor_agent`
+    - `documentation-agent` → `@documentation_agent`
+    - Applied same pattern to all 30+ agent names across codebase
+  - **Impact**: Consistent agent naming across documentation, code examples, tests, and deprecated mappings system
+
+### Fixed
+- **✅ SQLite Database References Cleanup** - 2025-09-11
+  - **Component**: Documentation cleanup to remove deprecated SQLite database configurations
+  - **Files Modified**:
+    - `ai_docs/core-architecture/database-architecture.md:100-102` - Removed SQLite fallback configuration
+    - `ai_docs/api-integration/configuration.md` - Updated SQLite configuration sections to PostgreSQL-only
+    - `ai_docs/api-integration/MCP_SERVER_ARCHITECTURE_GUIDE.md` - Replaced SQLite repository examples with PostgreSQL
+    - `ai_docs/development-guides/AGENT_ARCHITECTURE_PROMPT.md` - Updated decision logic to remove SQLite paths
+    - `ai_docs/development-guides/REPOSITORY_SWITCHING_GUIDE.md` - Changed test configuration from SQLite to PostgreSQL
+    - `ai_docs/issues/issues_report.md:17` - Updated DATABASE_TYPE documentation to reflect current options
+  - **Impact**: 37+ files cleaned up, eliminated confusion about database options, all current documentation uses PostgreSQL/Supabase only
+  - **Verification**: SQLite references preserved only in migration guides for historical context
+  - **Database Architecture**: Now clearly documents dual PostgreSQL setup (Docker for development, Supabase for production)
+
+- **✅ Deprecated API References Cleanup** - 2025-09-11
+  - **Component**: Documentation cleanup for deprecated manage_hierarchical_context API
+  - **Files Modified**:
+    - `ai_docs/api-integration/api-reference.md:305` - Updated deprecated API reference language
+    - `ai_docs/troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md:53` - Updated context system deprecation notice
+    - `ai_docs/reports-status/ai-docs-constraint-analysis-2025-09-11.md` - Marked deprecated references as fixed
+  - **Impact**: Eliminated confusion about correct API usage, all documentation now uses unified manage_context interface
+  - **Verification**: Confirmed no manage_hierarchical_context references remain except in status reports documenting the cleanup
+
+### Added
+- **📚 Comprehensive Documentation for Deprecated Agent Mappings System** - 2025-09-11
+  - **Component**: Agent name backward compatibility and migration system documentation
+  - **Files Created**:
+    - `ai_docs/core-architecture/deprecated-agent-mappings.md` - Full technical documentation
+    - `ai_docs/migration-guides/agent-name-migration.md` - Quick migration reference guide
+  - **Documentation Coverage**:
+    - **System Architecture**: Complete overview of DEPRECATED_AGENT_MAPPINGS system
+    - **Agent Consolidation Categories**: 
+      - Documentation consolidation (tech_spec_agent → documentation_agent)
+      - Research consolidation (mcp_researcher_agent → deep_research_agent)
+      - Creative consolidation (idea_generation_agent → creative_ideation_agent)
+      - Marketing consolidation (seo_sem_agent → marketing_strategy_orchestrator_agent)
+      - DevOps consolidation (swarm_scaler_agent → devops_agent)
+      - Debug consolidation (remediation_agent → debugger_agent)
+      - Renamings (brainjs_ml_agent → ml_specialist_agent, ui_designer_expert_shadcn_agent → ui_specialist_agent)
+    - **Technical Implementation**: resolve_agent_name() and is_deprecated_agent() functions
+    - **Migration Path**: Step-by-step migration guide with code examples
+    - **Backward Compatibility Guarantees**: What's guaranteed and what's not
+    - **Testing Strategy**: Comprehensive test coverage documentation
+    - **Automated Migration Tools**: Scripts and utilities for finding deprecated usage
+  - **Quick Reference Features**:
+    - **Migration Table**: Complete mapping of deprecated to active agent names
+    - **Code Examples**: Before/after migration examples
+    - **Verification Scripts**: Tools to check and validate migrations
+    - **Timeline**: Current phase and future deprecation lifecycle
+  - **Key Benefits**:
+    - Clear understanding of agent consolidation rationale
+    - Complete migration path for developers and users
+    - Backward compatibility preservation documentation
+    - Automated tools for migration assistance
+  - **Impact**: Enables smooth transition from deprecated agent names while maintaining backward compatibility
+  - **Reference**: Based on `/dhafnck_mcp_main/src/tests/task_management/application/use_cases/agent_mappings_test.py:14`
+
+- **✅ Comprehensive Test Coverage for Agent API Controller** - 2025-01-15
+  - **Component**: Test suite for agent API controller
+  - **Files Created**:
+    - `dhafnck_mcp_main/src/tests/task_management/interface/api_controllers/agent_api_controller_test.py`
+    - `dhafnck_mcp_main/src/tests/task_management/interface/api_controllers/__init__.py`
+  - **Test Coverage Implemented**:
+    - **Agent Metadata Retrieval**: Tests for get_agent_metadata with success, facade failure, and exception scenarios
+    - **Single Agent Lookup**: Tests for get_agent_by_id including not found cases and fallback behavior
+    - **Category-based Filtering**: Tests for get_agents_by_category with empty results and error handling
+    - **Category Listing**: Tests for list_agent_categories with facade failures and fallback mechanisms
+    - **Static Metadata Fallback**: Comprehensive tests for static data structure and finder methods
+    - **Error Handling**: Exception scenarios with proper logging verification
+    - **Integration Tests**: Real-world fallback behavior and category matching validation
+  - **Key Test Features**:
+    - 25 test cases covering all controller methods
+    - Mock-based unit tests for isolated testing
+    - Integration tests for fallback behavior verification
+    - Logging behavior validation
+    - Facade service singleton pattern verification
+    - Project-independent agent metadata operations
+  - **Impact**: Ensures robust agent metadata API operations with comprehensive error handling and fallback mechanisms
+
+### Fixed
+- **🔧 CLAUDE.md System Constraints Clarification** - 2025-01-15
+  - **Component**: AI agent system documentation and constraint language
+  - **File Modified**: `CLAUDE.md`
+  - **Problem Corrected**: Documentation incorrectly stated Claude was "PHYSICALLY UNABLE" to work with "HARD SYSTEM LIMITATIONS"
+  - **Changes Applied**:
+    - **Title**: Updated from "MANDATORY RULES" to "DELEGATION WORKFLOW"
+    - **Language**: Removed absolute constraint language ("PHYSICALLY UNABLE", "SYSTEM BLOCKS", "FORCED")
+    - **Delegation Pattern**: Reframed as recommendations for better coordination, not hard constraints
+    - **Capability Matrix**: Added delegation decision matrix for simple vs complex tasks
+    - **Examples**: Updated to show both direct handling (simple) and delegation (complex) approaches
+    - **Workflow**: Changed from forced routing to intelligent task evaluation and delegation
+    - **Agent Role**: Updated from "router only" to "task evaluator & direct handler"
+  - **Task Classification**:
+    - **Simple Tasks**: Single-file edits, typos, status checks → Claude handles directly
+    - **Complex Tasks**: Multi-file implementations, architecture changes → Delegate to orchestrator
+  - **Impact**: Provides accurate system documentation while maintaining delegation best practices for complex coordination tasks
 - **🔧 Master Orchestrator Instructions - Task Tool Delegation Correction** - 2025-01-15
   - **Component**: Master orchestrator agent instructions and delegation methodology
   - **File Modified**: `dhafnck_mcp_main/agent-library/agents/master_orchestrator_agent/contexts/master_orchestrator_instructions.yaml`
@@ -32,7 +151,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck-frontend/src/components/AgentInfoDialog.tsx`
   - **Changes Applied**:
     - **Enum Update**: AgentRole enum completely rewritten to match actual 32 agents in agent-library
-    - **Frontend Alignment**: Updated frontend references from @master-orchestrator-agent to @master-orchestrator-agent
+    - **Frontend Alignment**: Updated frontend references from master-orchestrator-agent to @master_orchestrator_agent
     - **API Consistency**: Unified agent descriptions and fallback references
     - **Agent Count Correction**: Reduced from 68 outdated entries to 32 actual agents
   - **Agent Categories Organized**:
@@ -592,7 +711,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Solution**: 
     - Moved assignees validation from domain entity to interface layer (respecting DDD boundaries)
     - Added direct AgentRole enum validation without creating dummy tasks
-    - Enhanced validation to support both underscore (`@coding_agent`) and hyphen (`@coding-agent`) formats
+    - Enhanced validation to support both underscore (`@coding_agent`) and hyphen (`@coding_agent`) formats
     - Added legacy role resolution for backward compatibility
   - **Files Modified**:
     - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.py`
@@ -737,15 +856,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Usage Examples**:
     ```python
     # Default (backward compatible)
-    result = call_agent("test-orchestrator-agent")
+    result = call_agent("@test_orchestrator_agent")
     # Returns: {"success": True, "agent": {...}, "formats": {"json": {...}, "markdown": "..."}}
     
     # JSON format (API integration)
-    result = call_agent("test-orchestrator-agent", format="json") 
+    result = call_agent("@test_orchestrator_agent", format="json") 
     # Returns: {"success": True, "json": {...}, "capabilities": [...]}
     
     # Markdown format (direct .claude/agents use)
-    result = call_agent("test-orchestrator-agent", format="markdown")
+    result = call_agent("@test_orchestrator_agent", format="markdown")
     # Returns: {"success": True, "markdown": "---\nname: ...", "capabilities": [...]}
     ```
   - **Benefits**: 65% payload reduction for focused use cases while maintaining full compatibility
@@ -760,16 +879,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
        - Example: `task-planning-agent` can assign other agents but cannot edit files
     2. **Development Agents**: Full file editing capabilities for code implementation
        - Tools: File operations (Read, Write, Edit), IDE tools, Bash execution
-       - Example: `coding-agent` can write code files and execute development commands
+       - Example: `@coding_agent` can write code files and execute development commands
     3. **Security Agents**: Read-only analysis, no file modification for security policy
        - Tools: Read operations, analysis tools, limited Bash for security scans
-       - Example: `security-auditor-agent` can analyze but cannot modify files
+       - Example: `@security_auditor_agent` can analyze but cannot modify files
     4. **Testing Agents**: Write test files, browser automation for E2E testing
        - Tools: File operations for tests, browser automation, test execution
-       - Example: `test-orchestrator-agent` can write tests and control browsers
+       - Example: `@test_orchestrator_agent` can write tests and control browsers
     5. **Documentation Agents**: Write documentation files and specs
        - Tools: File operations for ai_docs, web research tools
-       - Example: `documentation-agent` can create/update documentation files
+       - Example: `@documentation_agent` can create/update documentation files
     6. **Architecture Agents**: Write specs and design ai_docs, UI component access
        - Tools: File operations for specs, shadcn/ui components
        - Example: `system-architect-agent` can create architectural documents

@@ -93,7 +93,7 @@ string, name?: string, description?: string, ...options): void
 
 
 mcp__dhafnck_mcp_http__manage_git_branch(action: string, project_id?:
-string, git_branch_id?: string, git_branch_name?: string, ...options):
+string, git_branch_id?: string, git_branch_name?: string [DEPRECATED - Use git_branch_id], ...options):
 void
 // Git branch operations and task tree organization
 

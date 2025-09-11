@@ -45,8 +45,8 @@ DATABASE_TYPE=supabase       # Uses Supabase managed PostgreSQL
 # Local Development: PostgreSQL Docker
 DATABASE_TYPE=postgresql     # Uses local PostgreSQL container
 
-# Legacy Support (deprecated)
-DATABASE_TYPE=sqlite         # SQLite (limited concurrent access, deprecated)
+# Legacy Support: SQLite has been removed
+# DATABASE_TYPE=sqlite       # No longer supported - use postgresql instead
 ```
 
 #### Production Configuration: Supabase Cloud PostgreSQL
@@ -77,20 +77,14 @@ DATABASE_URL=postgresql://dhafnck_user:password@postgres:5432/dhafnck_mcp
 DB_SSL_MODE=disable          # Typically disabled for local development
 ```
 
-#### SQLite Configuration (Legacy Support)
+#### SQLite Configuration (Deprecated - Removed)
 ```bash
-# SQLite - legacy support only, limited scalability
-DATABASE_TYPE=sqlite
+# SQLite support has been discontinued
+# Use PostgreSQL for all environments:
+DATABASE_TYPE=postgresql
+DATABASE_URL=postgresql://user:password@host:port/database
 
-# Database paths vary by mode:
-# - Docker Container/Local Mode: /data/dhafnck_mcp.db
-# - MCP STDIN Mode: ./dhafnck_mcp.db  
-# - Test Mode: ./dhafnck_mcp_test.db
-
-# Connection settings for SQLite (limited concurrent access)
-DB_ECHO=false
-DB_POOL_SIZE=5              # Limited for SQLite
-DB_TIMEOUT=30               # Connection timeout
+# For migration from SQLite, see migration guides in ai_docs/migration-guides/
 ```
 
 #### Advanced PostgreSQL Configuration
@@ -593,11 +587,8 @@ class Settings(BaseSettings):
     
     @validator('database_url')
     def validate_database_url(cls, v):
-        if not v.startswith(('postgresql:', 'sqlite:')):
-            raise ValueError('Invalid database URL scheme. Use postgresql:// (recommended) or sqlite:// (legacy support).')
-        if v.startswith('sqlite:'):
-            import warnings
-            warnings.warn('SQLite usage detected. PostgreSQL is recommended for production deployments.', DeprecationWarning)
+        if not v.startswith('postgresql:'):
+            raise ValueError('Invalid database URL scheme. Only postgresql:// is supported.')
         return v
     
     @validator('jwt_secret_key')

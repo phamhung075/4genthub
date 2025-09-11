@@ -359,12 +359,12 @@ class SQLiteTaskRepository(BaseORMRepository, TaskRepository):
     """
     
     def __init__(self):
-        # SQLite uses local file database
-        self.db_path = os.getenv('SQLITE_DB_PATH', './test.db')
+        # PostgreSQL uses connection URL
+        self.database_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/dhafnck_dev')
         super().__init__(TaskModel)
     
     def create_task(self, task: Task) -> Task:
-        """Create task in SQLite database"""
+        """Create task in PostgreSQL database"""
         with self.get_db_session() as session:
             db_model = TaskModel(**task.to_dict())
             session.add(db_model)
@@ -541,8 +541,8 @@ REDIS_PORT=6379
 REDIS_PASSWORD=dev_redis_password_123
 REDIS_DB=0
 
-# SQLITE CONFIGURATION (test mode only)
-SQLITE_DB_PATH=./test.db
+# PostgreSQL CONFIGURATION (local development)
+DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/dhafnck_mcp_dev
 ```
 
 ## 🎯 Decision Tree for Agents
@@ -553,20 +553,20 @@ def determine_repository_configuration():
     Decision logic for repository and cache configuration
     """
     
-    # 1. Check environment mode
-    if ENVIRONMENT == 'test':
-        # Testing mode
-        repository = SQLiteRepository()
-        cache = None  # No caching in tests
-        return repository
-    
-    # 2. Production mode - check database type
+    # 1. Check database type
     if DATABASE_TYPE == 'supabase':
+        # Production: Supabase managed PostgreSQL
         repository = SupabaseRepository()
     elif DATABASE_TYPE == 'postgresql':
+        # Local development: PostgreSQL Docker
         repository = PostgreSQLRepository()
     else:
-        raise ConfigurationError(f"Invalid DATABASE_TYPE: {DATABASE_TYPE}")
+        raise ConfigurationError(f"Invalid DATABASE_TYPE: {DATABASE_TYPE}. Use 'postgresql' or 'supabase'.")
+    
+    # 2. Check environment for cache configuration
+    if ENVIRONMENT == 'test':
+        cache = None  # No caching in tests
+    else:
     
     # 3. Check if caching should be enabled
     if REDIS_ENABLED == 'true':

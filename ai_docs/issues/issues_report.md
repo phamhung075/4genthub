@@ -14,7 +14,7 @@
 1. **Repository Factory Pattern - FULLY OPERATIONAL** ✅
    - Central `RepositoryFactory` properly checks ALL environment variables
    - ✅ Checks `ENVIRONMENT` variable (test/production)
-   - ✅ Checks `DATABASE_TYPE` variable (sqlite/supabase/postgresql)
+   - ✅ Checks `DATABASE_TYPE` variable (supabase/postgresql)
    - ✅ Checks `REDIS_ENABLED` variable for caching
    - ✅ Supports multiple database backends with proper fallback
    - ✅ Wraps repositories with cache when Redis is enabled

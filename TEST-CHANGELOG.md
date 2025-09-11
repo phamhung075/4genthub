@@ -1,5 +1,76 @@
 # TEST-CHANGELOG
 
+## [2025-09-11] - Test Automation and Cleanup
+
+### Automated Test Creation Process
+- **🤖 Background Test Automation Executed**
+  - **Trigger**: Automated test creation for missing test coverage
+  - **Agent**: @test_orchestrator_agent
+  - **Tasks Completed**:
+    1. ✅ Created comprehensive test for `agent_mappings.py` (28 test methods)
+    2. ✅ Created comprehensive test for `agent_api_controller.py` (25 test methods)
+    3. ✅ Cleaned up 5 debug scripts from integration test directory
+    4. ✅ Updated agent name mappings test to use @ prefix format
+  - **Impact**: Improved test coverage and cleaner test structure
+
+## [2025-09-11] - Debug Script Cleanup
+
+### Removed
+- **🧹 Temporary Debug Scripts** - Cleaned up integration test directory
+  - **Files Removed**:
+    - `dhafnck_mcp_main/src/tests/integration/verify_fix.py`
+    - `dhafnck_mcp_main/src/tests/integration/debug_assignees.py`
+    - `dhafnck_mcp_main/src/tests/integration/debug_conversion.py`
+    - `dhafnck_mcp_main/src/tests/integration/debug_full_flow.py`
+    - `dhafnck_mcp_main/src/tests/integration/create_test_db.py`
+  - **Purpose**: Remove temporary debug scripts left behind during agent refactoring
+  - **Impact**: Cleaner test directory structure, no functional changes
+  - **Test Directory**: Now contains only proper test files and no debug utilities
+
+## [2025-01-15] - Agent API Controller Test Coverage
+
+### Added
+- **✅ Comprehensive Test Suite for Agent API Controller** (`dhafnck_mcp_main/src/tests/task_management/interface/api_controllers/agent_api_controller_test.py`)
+  - **Purpose**: Ensure robust agent metadata API operations with comprehensive error handling and fallback mechanisms
+  - **Test Coverage**:
+    1. **get_agent_metadata Method**: Tests for successful retrieval, facade failures, exception handling, and static fallback
+    2. **get_agent_by_id Method**: Tests for successful lookup, not found scenarios, static fallback, and error handling
+    3. **get_agents_by_category Method**: Tests for category filtering, empty results, facade failures, and fallback behavior
+    4. **list_agent_categories Method**: Tests for category listing, error scenarios, and static category fallback
+    5. **Static Metadata Operations**: Tests for _get_static_metadata structure, _find_static_agent functionality, and _get_static_categories
+    6. **Error Handling**: Exception scenarios with proper logging verification
+    7. **Integration Tests**: Real-world fallback behavior and category matching validation
+  - **Test Classes**: 2 test classes (TestAgentAPIController, TestAgentAPIControllerIntegration)
+  - **Test Methods**: 25 test methods covering all controller methods and scenarios
+  - **Key Features**:
+    - Mock-based unit tests for isolated testing
+    - Integration tests for fallback behavior verification
+    - Logging behavior validation with caplog
+    - Facade service singleton pattern verification
+    - Project-independent agent metadata operation tests
+  - **Results**: 25/25 tests passing with 100% method coverage
+
+## [2025-09-11] - Agent Name Mappings Test Coverage
+
+### Added
+- **🔄 Agent Name Mappings Testing** (`dhafnck_mcp_main/src/tests/task_management/application/use_cases/agent_mappings_test.py`)
+  - **Purpose**: Comprehensive test coverage for backward compatibility agent name resolution
+  - **Test Coverage**:
+    1. **DEPRECATED_AGENT_MAPPINGS Structure**: Verify all expected mappings exist and are correctly structured
+    2. **resolve_agent_name Function**: Test resolution of deprecated names to active names
+       - Underscore format names (e.g., `tech_spec_agent` → `documentation_agent`)
+       - Hyphenated format names (e.g., `tech-spec-agent` → `@documentation_agent`)
+       - Non-deprecated names remain unchanged
+       - Mixed format handling (e.g., `tech-spec_agent`)
+    3. **is_deprecated_agent Function**: Test identification of deprecated agent names
+       - Both underscore and hyphenated formats
+       - Correctly identifies active vs deprecated names
+    4. **Edge Cases**: Empty strings, special characters, unicode, numeric strings, case sensitivity
+    5. **Consistency Testing**: Ensures both functions work consistently together
+    6. **Idempotency**: Verifies resolving names multiple times produces stable results
+  - **Test Classes**: 5 test classes with 28 test methods covering all scenarios
+  - **Results**: Complete test coverage for agent name mapping functionality
+
 ## [2025-09-10] - Security Testing for Health Check Endpoint
 
 ### Added
@@ -167,7 +238,7 @@ python test_runner.py --ci
 ### Test Configuration Used
 - Project ID: `2fb85ec6-d2d3-42f7-a75c-c5a0befd3407`
 - Git Branch ID: `741854b4-a0f4-4b39-b2ab-b27dfc97a851`
-- Agent names: `@coding-agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
+- Agent names: `@coding_agent`, `@test_orchestrator_agent`, `@security_auditor_agent`
 
 ### Issues Identified
 - MCP server connection failures preventing live integration testing

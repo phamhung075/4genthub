@@ -111,7 +111,7 @@ Known issues, troubleshooting steps, and resolution status for MCP tool integrat
       branch_result = manage_git_branch(
           action="create",
           project_id=project_id,
-          git_branch_name="test-branch"
+          git_branch_name="test-branch"  # Note: git_branch_id (UUID) preferred for API calls
       )
       # Wait for context creation
       time.sleep(0.5)
@@ -267,7 +267,7 @@ def test_mcp_tool_integration_workflow(self):
     branch_result = manage_git_branch(
         action="create", 
         project_id=project_result["project_id"],
-        git_branch_name="test-branch"
+        git_branch_name="test-branch"  # Note: git_branch_id (UUID) preferred for API calls
     )
     assert branch_result["success"] is True
     

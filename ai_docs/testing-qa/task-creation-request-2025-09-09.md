@@ -20,7 +20,7 @@
 {
   "title": "Implement JWT Authentication Service",
   "description": "Create JWT authentication service with token generation, validation, and refresh functionality. Include secure storage mechanisms and proper error handling for authentication flows.",
-  "assignees": "@coding-agent,@security-auditor-agent",
+  "assignees": "@coding_agent,@security_auditor_agent",
   "priority": "high",
   "estimated_effort": "3 days",
   "labels": "authentication,jwt,security,backend"
@@ -32,7 +32,7 @@
 {
   "title": "Build User Registration API Endpoint",
   "description": "Implement user registration endpoint with email validation, password strength requirements, and duplicate user checking. Include proper error handling and validation responses.",
-  "assignees": "@coding-agent,@security-auditor-agent",
+  "assignees": "@coding_agent,@security_auditor_agent",
   "priority": "high", 
   "estimated_effort": "2 days",
   "labels": "authentication,api,registration,backend",
@@ -45,7 +45,7 @@
 {
   "title": "Implement Login/Logout Authentication Flow",
   "description": "Create login endpoint with credential validation, session management, and logout functionality. Include rate limiting and brute force protection mechanisms.",
-  "assignees": "@coding-agent,@security-auditor-agent",
+  "assignees": "@coding_agent,@security_auditor_agent",
   "priority": "high",
   "estimated_effort": "2 days", 
   "labels": "authentication,login,session,security",
@@ -58,7 +58,7 @@
 {
   "title": "Build Password Reset System",
   "description": "Implement secure password reset flow with email verification, temporary tokens, and secure password update process. Include proper token expiration and validation.",
-  "assignees": "@coding-agent,@security-auditor-agent",
+  "assignees": "@coding_agent,@security_auditor_agent",
   "priority": "medium",
   "estimated_effort": "2 days",
   "labels": "authentication,password-reset,email,security",
@@ -71,7 +71,7 @@
 {
   "title": "Create Comprehensive Authentication Test Suite",
   "description": "Develop complete test suite covering all authentication flows including unit tests, integration tests, and security penetration tests. Include edge cases and error scenarios.",
-  "assignees": "@test-orchestrator-agent,@security-auditor-agent",
+  "assignees": "@test_orchestrator_agent,@security_auditor_agent",
   "priority": "high",
   "estimated_effort": "3 days",
   "labels": "testing,authentication,security,quality-assurance",
@@ -86,7 +86,7 @@
 {
   "title": "Integrate Stripe Payment Processing System",
   "description": "Implement Stripe payment gateway integration with secure payment processing, webhook handling for payment status updates, and proper error handling for failed transactions.",
-  "assignees": "@coding-agent,@security-auditor-agent",
+  "assignees": "@coding_agent,@security_auditor_agent",
   "priority": "high",
   "estimated_effort": "4 days",
   "labels": "payment,stripe,integration,backend,security",

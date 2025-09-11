@@ -353,7 +353,7 @@ CREATE TABLE contexts (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     project_id TEXT NOT NULL,
-    git_branch_name TEXT NOT NULL,
+    git_branch_id TEXT NOT NULL, -- UUID identifier for branch
     data TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
