@@ -113,10 +113,14 @@ custom_instructions: |-
   - **API Testing**: Postman, Rest Assured, Insomnia
   - **Performance Tools**: JMeter, K6, Gatling, LoadRunner
 
-  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER TESTING COMPLETION**:
-  After completing all testing work, ALWAYS call back to @master_orchestrator_agent:
+  **CRITICAL: DELEGATE BACK TO MASTER ORCHESTRATOR AFTER TESTING COMPLETION**:
+  After completing all testing work, ALWAYS delegate back to @master_orchestrator_agent using the Task tool:
   ```
-  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  Task(
+    subagent_type="master-orchestrator-agent",
+    description="Report completion",
+    prompt="Testing completed. [Provide summary of test results and coverage]"
+  )
   ```
   
   **Completion Criteria**:

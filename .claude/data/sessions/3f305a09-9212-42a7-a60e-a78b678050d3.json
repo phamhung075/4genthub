@@ -1,0 +1,8 @@
+{
+  "session_id": "3f305a09-9212-42a7-a60e-a78b678050d3",
+  "prompts": [
+    "find this section on agents base to change \n **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER WORK COMPLETION**:\n  After completing all implementation work, ALWAYS call back to @master_orchestrator_agent:\n  ```\n  mcp__dhafnck_mcp_http__call_agent(name_agent=\"@master_orchestrator_agent\")\n\n\nis not call back, is use task tool to delegate back to master_orchestrator_agent or main claude session chat",
+    "you need update all other agents have this "
+  ],
+  "agent_name": "Nebula"
+}

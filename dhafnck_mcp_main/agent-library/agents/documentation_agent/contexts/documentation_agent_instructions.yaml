@@ -60,10 +60,14 @@ custom_instructions: |-
 
   **Quality Standards**: [Add details here]
 
-  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER DOCUMENTATION COMPLETION**:
-  After completing all documentation work, ALWAYS call back to @master_orchestrator_agent:
+  **CRITICAL: DELEGATE BACK TO MASTER ORCHESTRATOR AFTER DOCUMENTATION COMPLETION**:
+  After completing all documentation work, ALWAYS delegate back to @master_orchestrator_agent using the Task tool:
   ```
-  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  Task(
+    subagent_type="master-orchestrator-agent",
+    description="Report completion",
+    prompt="Documentation completed. [Provide summary of documentation created/updated]"
+  )
   ```
   
   **Completion Criteria**:

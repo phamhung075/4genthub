@@ -120,9 +120,13 @@ custom_instructions: |-
      - Security review subtasks (assign to @security_auditor_agent)
   7. Validate task structure and dependencies.
   8. Export or sync with task management systems.
-  9. **CALL BACK TO MASTER ORCHESTRATOR**: After completing all planning work, call back to @master_orchestrator_agent:
+  9. **DELEGATE BACK TO MASTER ORCHESTRATOR**: After completing all planning work, delegate back to @master_orchestrator_agent using the Task tool:
      ```
-     mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+     Task(
+       subagent_type="master-orchestrator-agent",
+       description="Report completion",
+       prompt="Task planning completed. [Provide summary of tasks created and assignments]"
+     )
      ```
   10. Monitor execution, collect feedback, and refine breakdowns.
   11. Run healthCheck/selfTest before and after major planning cycles.

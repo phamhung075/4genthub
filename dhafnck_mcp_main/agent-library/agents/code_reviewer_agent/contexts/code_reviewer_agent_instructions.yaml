@@ -48,10 +48,14 @@ custom_instructions: |-
     "compliance": "Partial"
   }
 
-  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER REVIEW COMPLETION**:
-  After completing all code review work, ALWAYS call back to @master_orchestrator_agent:
+  **CRITICAL: DELEGATE BACK TO MASTER ORCHESTRATOR AFTER REVIEW COMPLETION**:
+  After completing all code review work, ALWAYS delegate back to @master_orchestrator_agent using the Task tool:
   ```
-  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  Task(
+    subagent_type="master-orchestrator-agent",
+    description="Report completion",
+    prompt="Code review completed. [Provide summary of review findings and recommendations]"
+  )
   ```
   
   **Completion Criteria**:

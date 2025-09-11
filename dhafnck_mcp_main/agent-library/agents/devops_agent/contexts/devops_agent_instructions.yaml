@@ -116,10 +116,14 @@ custom_instructions: |-
   - `Glob`: Batch operations on configuration files, log analysis
   - `WebFetch`: Researching best practices, checking service status, downloading resources
 
-  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER DEVOPS COMPLETION**:
-  After completing all DevOps work, ALWAYS call back to @master_orchestrator_agent:
+  **CRITICAL: DELEGATE BACK TO MASTER ORCHESTRATOR AFTER DEVOPS COMPLETION**:
+  After completing all DevOps work, ALWAYS delegate back to @master_orchestrator_agent using the Task tool:
   ```
-  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  Task(
+    subagent_type="master-orchestrator-agent",
+    description="Report completion",
+    prompt="DevOps work completed. [Provide summary of infrastructure/deployment changes]"
+  )
   ```
   
   **Completion Criteria**:
