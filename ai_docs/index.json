@@ -155,8 +155,15 @@
       "path": "api-integration"
     },
     "api-integration/controllers": {
-      "count": 8,
+      "count": 10,
       "files": [
+        {
+          "hash": "6815fe5b18619ab27dcb6896f163ad7f",
+          "modified": "2025-09-11T02:01:01.351358",
+          "name": "index.md",
+          "path": "api-integration/controllers/index.md",
+          "size": 12572
+        },
         {
           "hash": "6bdb0e0db30a765cd01a486dcf66118e",
           "modified": "2025-09-03T12:08:14.522342",
@@ -212,9 +219,29 @@
           "name": "manage-project-api.md",
           "path": "api-integration/controllers/manage-project-api.md",
           "size": 13686
+        },
+        {
+          "hash": "310b94bd3a87f69b8b2a2637d7d01830",
+          "modified": "2025-09-11T02:02:16.999747",
+          "name": "call-agent-api.md",
+          "path": "api-integration/controllers/call-agent-api.md",
+          "size": 11562
         }
       ],
       "path": "api-integration/controllers"
+    },
+    "architecture-design": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "637300eec8f7e8e3a01c8386d57828e2",
+          "modified": "2025-09-11T01:47:08.717171",
+          "name": "agent-correspondence-map.md",
+          "path": "architecture-design/agent-correspondence-map.md",
+          "size": 5361
+        }
+      ],
+      "path": "architecture-design"
     },
     "authentication": {
       "count": 11,
@@ -1909,7 +1936,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T00:44:23.959345",
+  "generated_at": "2025-09-11T02:02:17.071844",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -1934,6 +1961,8 @@
     "api-integration": {
       "controllers": {
         "files": [
+          "call-agent-api.md",
+          "index.md",
           "manage-agent-api.md",
           "manage-connection-api.md",
           "manage-context-api.md",
@@ -1953,6 +1982,11 @@
         "configuration.md",
         "mcp-controller-implementation-changes.md",
         "mcp-parameter-type-resolution-guide.md"
+      ]
+    },
+    "architecture-design": {
+      "files": [
+        "agent-correspondence-map.md"
       ]
     },
     "assets": {
@@ -2250,6 +2284,6 @@
       ]
     }
   },
-  "total_directories": 24,
-  "total_files": 251
+  "total_directories": 25,
+  "total_files": 254
 }
