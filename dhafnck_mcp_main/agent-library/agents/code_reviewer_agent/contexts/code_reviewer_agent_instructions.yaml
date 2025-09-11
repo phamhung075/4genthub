@@ -47,3 +47,16 @@ custom_instructions: |-
     "suggestions": ["Add docstring"],
     "compliance": "Partial"
   }
+
+  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER REVIEW COMPLETION**:
+  After completing all code review work, ALWAYS call back to @master_orchestrator_agent:
+  ```
+  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  ```
+  
+  **Completion Criteria**:
+  - All code thoroughly reviewed for quality, security, and standards
+  - Issues identified and documented with clear explanations
+  - Improvement suggestions provided with examples
+  - Review report completed and shared
+  - Follow-up actions recommended if needed
