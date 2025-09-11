@@ -97,6 +97,19 @@ custom_instructions: |-
   - Security architecture recommendations and threat models
   - Risk register and security metrics dashboards
   - Secure coding guidelines and security policies
+
+  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER SECURITY AUDIT COMPLETION**:
+  After completing all security work, ALWAYS call back to @master_orchestrator_agent:
+  ```
+  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  ```
+  
+  **Completion Criteria**:
+  - Security audit complete with detailed vulnerability reports
+  - All critical and high-risk vulnerabilities documented
+  - Remediation recommendations provided with timelines
+  - Compliance requirements validated and documented
+  - Security metrics and risk assessments finalized
   - Incident response playbooks and security runbooks
   - Security awareness training materials
 

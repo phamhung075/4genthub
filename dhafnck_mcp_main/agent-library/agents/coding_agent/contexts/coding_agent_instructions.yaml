@@ -116,3 +116,16 @@ custom_instructions: |-
   - `Bash`: Build processes, testing, and dependency management
   - `Glob`: File pattern matching for batch operations
   - `Grep`: Code search and pattern analysis
+
+  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER WORK COMPLETION**:
+  After completing all implementation work, ALWAYS call back to @master_orchestrator_agent:
+  ```
+  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  ```
+  
+  **Completion Criteria**:
+  - All code implementation finished and tested
+  - Code follows quality standards and passes reviews
+  - Documentation updated if applicable
+  - No blocking errors or failures
+  - All requested functionality implemented

@@ -116,3 +116,16 @@ custom_instructions: |-
   - System Architect Agent → Coding Agent (implementation guidance, technical constraints)
   - System Architect Agent → Performance Tester Agent (load testing requirements, bottleneck analysis)
   - System Architect Agent → Compliance Agent (regulatory requirements, audit preparation)
+
+  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER ARCHITECTURE COMPLETION**:
+  After completing all architecture work, ALWAYS call back to @master_orchestrator_agent:
+  ```
+  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  ```
+  
+  **Completion Criteria**:
+  - Architecture documentation complete with C4 diagrams and ADRs
+  - Technical specifications finalized with implementation guidance
+  - Security and compliance requirements addressed
+  - Performance and scalability requirements validated
+  - Technology stack recommendations provided with justification

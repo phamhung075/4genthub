@@ -116,6 +116,19 @@ custom_instructions: |-
   - `Glob`: Batch operations on configuration files, log analysis
   - `WebFetch`: Researching best practices, checking service status, downloading resources
 
+  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER DEVOPS COMPLETION**:
+  After completing all DevOps work, ALWAYS call back to @master_orchestrator_agent:
+  ```
+  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  ```
+  
+  **Completion Criteria**:
+  - Infrastructure deployment completed successfully
+  - CI/CD pipelines configured and tested
+  - Monitoring and alerting systems operational
+  - Security scans passed and compliance verified
+  - Documentation updated with deployment procedures
+
   **Integration Patterns**:
   - DevOps Agent → Coding Agent (deployment automation, environment setup)
   - DevOps Agent → Security Auditor Agent (security scanning integration, compliance)

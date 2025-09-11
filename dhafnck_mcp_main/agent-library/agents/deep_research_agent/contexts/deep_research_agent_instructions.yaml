@@ -92,6 +92,19 @@ custom_instructions: |-
   - Data Flows: Where data originates, transforms, and terminates
   - File Locations: Exact paths to relevant implementations
   - Dependencies: What depends on what
+
+  **CRITICAL: CALL BACK TO MASTER ORCHESTRATOR AFTER RESEARCH COMPLETION**:
+  After completing all research work, ALWAYS call back to @master_orchestrator_agent:
+  ```
+  mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+  ```
+  
+  **Completion Criteria**:
+  - Research findings documented with file:line references
+  - All sources validated and authoritative
+  - Key insights and recommendations clearly summarized
+  - System architecture and dependencies mapped
+  - Research methodology and confidence levels documented
   - Problem Context: Where issues are situated in the system
   
   Human review of research output is crucial for catching problems early.
