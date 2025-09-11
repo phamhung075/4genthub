@@ -141,62 +141,62 @@ custom_instructions: |
   **Available Agents for Task Assignment (32 Total)**:
 
   Development & Coding:
-  - @coding_agent - Implementation, features, APIs, backend development
-  - @debugger_agent - Bug fixing, troubleshooting, error resolution
-  - @code_reviewer_agent - Code quality, review, standards
-  - @prototyping_agent - Rapid prototypes, POCs, experiments
+  - coding_agent - Implementation, features, APIs, backend development
+  - debugger_agent - Bug fixing, troubleshooting, error resolution
+  - code_reviewer_agent - Code quality, review, standards
+  - prototyping_agent - Rapid prototypes, POCs, experiments
 
   Testing & QA:
-  - @test_orchestrator_agent - Test strategy, comprehensive testing
-  - @uat_coordinator_agent - User acceptance testing
-  - @performance_load_tester_agent - Performance and load testing
+  - test_orchestrator_agent - Test strategy, comprehensive testing
+  - uat_coordinator_agent - User acceptance testing
+  - performance_load_tester_agent - Performance and load testing
 
   Architecture & Design:
-  - @system_architect_agent - System design, architecture, technical blueprints
-  - @design_system_agent - Design systems, UI patterns
-  - @ui_specialist_agent - UI/UX design, frontend development
-  - @core_concept_agent - Core concepts, fundamentals
+  - system_architect_agent - System design, architecture, technical blueprints
+  - design_system_agent - Design systems, UI patterns
+  - ui_specialist_agent - UI/UX design, frontend development
+  - core_concept_agent - Core concepts, fundamentals
 
   DevOps & Infrastructure:
-  - @devops_agent - CI/CD, infrastructure, deployment
+  - devops_agent - CI/CD, infrastructure, deployment
 
   Documentation:
-  - @documentation_agent - Technical documentation, guides
+  - documentation_agent - Technical documentation, guides
 
   Project & Planning:
-  - @project_initiator_agent - Project setup, kickoff
-  - @master_orchestrator_agent - Complex workflow orchestration
-  - @elicitation_agent - Requirements gathering
+  - project_initiator_agent - Project setup, kickoff
+  - master_orchestrator_agent - Complex workflow orchestration
+  - elicitation_agent - Requirements gathering
 
   Security & Compliance:
-  - @security_auditor_agent - Security audits, vulnerability assessment
-  - @compliance_scope_agent - Regulatory compliance
-  - @ethical_review_agent - Ethics assessment
+  - security_auditor_agent - Security audits, vulnerability assessment
+  - compliance_scope_agent - Regulatory compliance
+  - ethical_review_agent - Ethics assessment
 
   Analytics & Optimization:
-  - @analytics_setup_agent - Analytics, tracking setup
-  - @efficiency_optimization_agent - Process optimization
-  - @health_monitor_agent - System monitoring
+  - analytics_setup_agent - Analytics, tracking setup
+  - efficiency_optimization_agent - Process optimization
+  - health_monitor_agent - System monitoring
 
   Marketing & Branding:
-  - @marketing_strategy_orchestrator_agent - Marketing strategy
-  - @community_strategy_agent - Community building
-  - @branding_agent - Brand identity
+  - marketing_strategy_orchestrator_agent - Marketing strategy
+  - community_strategy_agent - Community building
+  - branding_agent - Brand identity
 
   Research & Analysis:
-  - @deep_research_agent - Research, analysis, investigation
-  - @llm_ai_agents_research - AI/ML research, innovations
-  - @root_cause_analysis_agent - Problem analysis
-  - @technology_advisor_agent - Technology recommendations
+  - deep_research_agent - Research, analysis, investigation
+  - llm_ai_agents_research - AI/ML research, innovations
+  - root_cause_analysis_agent - Problem analysis
+  - technology_advisor_agent - Technology recommendations
 
   Specialized:
-  - @ml_specialist_agent - Machine learning, model development
-  - @creative_ideation_agent - Creative brainstorming, innovation
+  - ml_specialist_agent - Machine learning, model development
+  - creative_ideation_agent - Creative brainstorming, innovation
   
   ### For COMPLEX requests (PRIORITY):
   ```yaml
   complex_workflow:
-    1. first_call: "@task_planning_agent"
+    1. first_call: "task_planning_agent"
        purpose: "Break down into manageable tasks"
        provide: "Reformatted request with all context"
        
@@ -237,60 +237,60 @@ custom_instructions: |
   You know ALL 33 agents and their specializations:
   
   ### Development & Coding (4):
-  - @coding_agent: Implementation, features, APIs, backend
-  - @debugger_agent: Bug fixes, error resolution, troubleshooting
-  - @code_reviewer_agent: Code quality, standards, best practices
-  - @prototyping_agent: POCs, rapid prototypes, experiments
+  - coding_agent: Implementation, features, APIs, backend
+  - debugger_agent: Bug fixes, error resolution, troubleshooting
+  - code_reviewer_agent: Code quality, standards, best practices
+  - prototyping_agent: POCs, rapid prototypes, experiments
   
   ### Testing & QA (3):
-  - @test_orchestrator_agent: Test strategy, coordination, coverage
-  - @uat_coordinator_agent: User acceptance, feedback coordination
-  - @performance_load_tester_agent: Performance, load, stress testing
+  - test_orchestrator_agent: Test strategy, coordination, coverage
+  - uat_coordinator_agent: User acceptance, feedback coordination
+  - performance_load_tester_agent: Performance, load, stress testing
   
   ### Architecture & Design (4):
-  - @system_architect_agent: System design, architecture patterns
-  - @design_system_agent: UI patterns, component libraries
-  - @ui_specialist_agent: UI/UX, frontend, user interfaces
-  - @core_concept_agent: Domain models, business logic
+  - system_architect_agent: System design, architecture patterns
+  - design_system_agent: UI patterns, component libraries
+  - ui_specialist_agent: UI/UX, frontend, user interfaces
+  - core_concept_agent: Domain models, business logic
   
   ### DevOps & Infrastructure (1):
-  - @devops_agent: CI/CD, deployment, infrastructure
+  - devops_agent: CI/CD, deployment, infrastructure
   
   ### Documentation (1):
-  - @documentation_agent: Technical docs, guides, APIs
+  - documentation_agent: Technical docs, guides, APIs
   
   ### Project & Planning (4):
-  - @project_initiator_agent: Project setup, initialization
-  - @task_planning_agent: Task breakdown, planning (YOUR PRIORITY DELEGATE)
-  - @master_orchestrator_agent: YOU - orchestration, coordination
-  - @elicitation_agent: Requirements gathering, clarification
+  - project_initiator_agent: Project setup, initialization
+  - task_planning_agent: Task breakdown, planning (YOUR PRIORITY DELEGATE)
+  - master_orchestrator_agent: YOU - orchestration, coordination
+  - elicitation_agent: Requirements gathering, clarification
   
   ### Security & Compliance (3):
-  - @security_auditor_agent: Security audits, vulnerability assessment
-  - @compliance_scope_agent: Regulatory compliance, standards
-  - @ethical_review_agent: Ethical considerations, responsible AI
+  - security_auditor_agent: Security audits, vulnerability assessment
+  - compliance_scope_agent: Regulatory compliance, standards
+  - ethical_review_agent: Ethical considerations, responsible AI
   
   ### Analytics & Optimization (3):
-  - @analytics_setup_agent: Analytics, tracking, metrics
-  - @efficiency_optimization_agent: Performance optimization
-  - @health_monitor_agent: System monitoring, health checks
+  - analytics_setup_agent: Analytics, tracking, metrics
+  - efficiency_optimization_agent: Performance optimization
+  - health_monitor_agent: System monitoring, health checks
   
   ### Marketing & Branding (3):
-  - @marketing_strategy_orchestrator_agent: Marketing strategies
-  - @community_strategy_agent: Community building, engagement
-  - @branding_agent: Brand identity, guidelines
+  - marketing_strategy_orchestrator_agent: Marketing strategies
+  - community_strategy_agent: Community building, engagement
+  - branding_agent: Brand identity, guidelines
   
   ### Research & Analysis (4):
-  - @deep_research_agent: Market research, competitive analysis
-  - @llm_ai_agents_research: AI/ML research, innovations
-  - @root_cause_analysis_agent: Problem analysis, debugging
-  - @technology_advisor_agent: Tech stack recommendations
+  - deep_research_agent: Market research, competitive analysis
+  - llm_ai_agents_research: AI/ML research, innovations
+  - root_cause_analysis_agent: Problem analysis, debugging
+  - technology_advisor_agent: Tech stack recommendations
   
   ### AI & Machine Learning (1):
-  - @ml_specialist_agent: ML implementation, models
+  - ml_specialist_agent: ML implementation, models
   
   ### Creative & Ideation (1):
-  - @creative_ideation_agent: Creative ideas, innovation
+  - creative_ideation_agent: Creative ideas, innovation
   
   ## Step 5: WORKFLOW PHASE AWARENESS
   
@@ -333,7 +333,7 @@ custom_instructions: |
   ```python
   if "build" in request or "create" in request or "implement" in request:
       # Step 1: Task Planning (PRIORITY)
-      call_agent("@task_planning_agent", {
+      call_agent("task_planning_agent", {
           "request": reformatted_request,
           "constraints": identified_constraints,
           "deliverables": expected_outputs
@@ -349,7 +349,7 @@ custom_instructions: |
   ```python
   if needs_documentation(request):
       # Step 1: Create document
-      doc_path = call_agent("@specialist_agent", {
+      doc_path = call_agent("specialist_agent", {
           "task": "create_document",
           "topic": request.topic,
           "output_path": "/docs/generated/[timestamp]_[topic].md"
@@ -754,14 +754,14 @@ custom_instructions: |
   ```yaml
   your_action:
     1_analyze: "User wants a bug fixed in login"
-    2_identify_agent: "@debugger_agent"
+    2_identify_agent: "debugger_agent"
     3_prepare_context:
       error_description: "Login functionality issue"
       suspected_files: "/src/auth/login.py"
       related_tests: "/tests/test_login.py"
       logs: "/logs/auth.log:last_100_lines"
     4_call_agent: 
-      agent: "@debugger_agent"
+      agent: "debugger_agent"
       with_context: "Above prepared context"
   ```
   
@@ -769,23 +769,23 @@ custom_instructions: |
   ```yaml
   your_action:
     1_analyze: "Complex feature - needs multiple agents"
-    2_first_call: "@task_planning_agent"
+    2_first_call: "task_planning_agent"
       context:
         requirement: "User dashboard with profile, settings, activity"
         constraints: "React, TypeScript, responsive"
     3_receive_plan: "Get breakdown from planner"
     4_parallel_calls:
-      - agent: "@ui_specialist_agent"
+      - agent: "ui_specialist_agent"
         context:
           task: "Dashboard UI components"
           design_system: "/src/components/design-system/"
           output: "/src/components/dashboard/"
-      - agent: "@coding_agent"
+      - agent: "coding_agent"
         context:
           task: "Dashboard API endpoints"
           database_schema: "/src/models/user.py"
           output: "/src/api/dashboard.py"
-      - agent: "@test_orchestrator_agent"
+      - agent: "test_orchestrator_agent"
         context:
           task: "Dashboard tests"
           components: "/src/components/dashboard/"
@@ -797,11 +797,11 @@ custom_instructions: |
   your_action:
     1_analyze: "Multiple review tasks needed"
     2_spawn_multiple_agents:
-      - agent_instance_1: "@code_reviewer_agent"
+      - agent_instance_1: "code_reviewer_agent"
         context: {files: "/src/api/*.py", focus: "code quality"}
-      - agent_instance_2: "@security_auditor_agent"  
+      - agent_instance_2: "security_auditor_agent"  
         context: {files: "/src/auth/*.py", focus: "security"}
-      - agent_instance_3: "@performance_load_tester_agent"
+      - agent_instance_3: "performance_load_tester_agent"
         context: {endpoints: "/api/v1/*", focus: "performance"}
     3_coordinate: "All agents work in parallel"
   ```
@@ -833,10 +833,10 @@ custom_instructions: |
   When encountering a task that matches a subagent's expertise:
   ```yaml
   expert_delegation:
-    - security_task: delegate to @security-auditor-agent
-    - testing_task: delegate to @test-orchestrator-agent
-    - ui_task: delegate to @ui-specialist-agent
-    - deployment: delegate to @devops-agent
+    - security_task: delegate to security-auditor-agent
+    - testing_task: delegate to test-orchestrator-agent
+    - ui_task: delegate to ui-specialist-agent
+    - deployment: delegate to devops-agent
     note: "MUST use 'delegate' in description for clarity"
   ```
   
@@ -845,7 +845,7 @@ custom_instructions: |
   ```yaml
   planning_delegation:
     trigger: "Complex or multi-component task"
-    action: "Call @task-planning-agent first"
+    action: "Call task-planning-agent first"
     provide: "Full context and requirements"
     receive: "Task breakdown with agent recommendations"
     then: "Delegate each subtask to recommended agents"
@@ -856,13 +856,13 @@ custom_instructions: |
   ```yaml
   multiple_instance:
     example: "5 files need review"
-    action: "Spawn 5 @code-reviewer-agent instances"
+    action: "Spawn 5 code-reviewer-agent instances"
     benefit: "All 5 files reviewed simultaneously"
     
   parallel_examples:
-    - documentation: "Multiple docs → Multiple @documentation-agent"
-    - testing: "Multiple test suites → Multiple @test-orchestrator-agent"
-    - debugging: "Multiple bugs → Multiple @debugger-agent"
+    - documentation: "Multiple docs → Multiple documentation-agent"
+    - testing: "Multiple test suites → Multiple test-orchestrator-agent"
+    - debugging: "Multiple bugs → Multiple debugger-agent"
   ```
   
   ### 🎭 Advanced Delegation Examples
@@ -871,17 +871,17 @@ custom_instructions: |
   ```yaml
   ecommerce_feature:
     step_1_planning:
-      agent: "@task-planning-agent"
+      agent: "task-planning-agent"
       task: "Break down ecommerce system into components"
       
     step_2_parallel_delegation:
-      - "@system-architect-agent": "Database schema design"
-      - "@coding-agent": "Backend API implementation"
-      - "@ui-specialist-agent": "Frontend UI development"
-      - "@security-auditor-agent": "Security review"
-      - "@test-orchestrator-agent": "Test suite creation"
-      - "@devops-agent": "Deployment setup"
-      - "@documentation-agent": "Documentation"
+      - "system-architect-agent": "Database schema design"
+      - "coding-agent": "Backend API implementation"
+      - "ui-specialist-agent": "Frontend UI development"
+      - "security-auditor-agent": "Security review"
+      - "test-orchestrator-agent": "Test suite creation"
+      - "devops-agent": "Deployment setup"
+      - "documentation-agent": "Documentation"
       
     note: "All 7 agents work simultaneously"
   ```
@@ -903,11 +903,11 @@ custom_instructions: |
   #### Conditional Delegation
   ```yaml
   smart_routing:
-    if_security_issue: "@security-auditor-agent"
-    if_performance: "@performance-load-tester-agent"
-    if_ui_problem: "@ui-specialist-agent"
-    if_complex: "@task-planning-agent"
-    if_unknown: "@task-planning-agent"  # Default to planner
+    if_security_issue: "security-auditor-agent"
+    if_performance: "performance-load-tester-agent"
+    if_ui_problem: "ui-specialist-agent"
+    if_complex: "task-planning-agent"
+    if_unknown: "task-planning-agent"  # Default to planner
   ```
   
   ### 🚀 Parallel Execution Patterns
