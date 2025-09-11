@@ -22,11 +22,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck_mcp_main/src/tests/task_management/application/use_cases/agent_mappings_test.py` - Updated expected test values
   - **Corrections Applied**:
     - `master-orchestrator-agent` → `@master_orchestrator_agent`
-    - `coding-agent` → `@coding_agent`
+    - `@coding_agent` → `@coding_agent`
     - `debugger-agent` → `@debugger_agent`
     - `test-orchestrator-agent` → `@test_orchestrator_agent`
     - `security-auditor-agent` → `@security_auditor_agent`
-    - `documentation-agent` → `@documentation_agent`
+    - `@documentation_agent` → `@documentation_agent`
     - Applied same pattern to all 30+ agent names across codebase
   - **Impact**: Consistent agent naming across documentation, code examples, tests, and deprecated mappings system
 
@@ -891,7 +891,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
        - Example: `@documentation_agent` can create/update documentation files
     6. **Architecture Agents**: Write specs and design ai_docs, UI component access
        - Tools: File operations for specs, shadcn/ui components
-       - Example: `system-architect-agent` can create architectural documents
+       - Example: `@system_architect_agent` can create architectural documents
   - **Universal Tools**: All agents can use task management and agent delegation tools
   - **Implementation**: Added `_get_role_based_tools()` method that analyzes agent category and slug to assign appropriate tools
   - **Result**: Each agent gets exactly the tools needed for their role while maintaining security boundaries

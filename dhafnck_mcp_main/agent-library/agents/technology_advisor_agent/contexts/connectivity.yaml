@@ -1,6 +1,6 @@
 connectivity:
   interactsWith:
-  - system-architect-agent
+  - @system_architect_agent
   - security-auditor-agent
   - devops-agent
   - compliance-scope-agent

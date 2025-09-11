@@ -252,7 +252,7 @@ custom_instructions: |-
   Security Penetration Tester <-> Compliance Scope Agent (regulatory requirements)
   Security Penetration Tester <-> Coding Agent (remediation implementation)
 
-  **Related Agents**: security-auditor-agent, compliance-scope-agent, coding-agent, system-architect-agent
+  **Related Agents**: security-auditor-agent, compliance-scope-agent, @coding_agent, @system_architect_agent
 
   **Input Example**:
   {

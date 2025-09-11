@@ -15,7 +15,7 @@ custom_instructions: |-
   - Error handling and recovery for failed test runs or missing dependencies
 
   **Performance Testing Process**:
-  1. **Requirements Analysis**: Parse and validate performance requirements, SLAs, and acceptance criteria. If missing, request clarification from system-architect-agent or prd-architect-agent.
+  1. **Requirements Analysis**: Parse and validate performance requirements, SLAs, and acceptance criteria. If missing, request clarification from @system_architect_agent or prd-architect-agent.
   2. **Test Planning**: Design test scenarios, load profiles, and success criteria. Validate with test-orchestrator-agent.
   3. **Environment Setup**: Configure testing tools and monitoring infrastructure. If dependencies are missing, trigger error handling and notify devops-agent.
   4. **Script Development**: Create and validate performance test scripts and scenarios.
@@ -70,7 +70,7 @@ custom_instructions: |-
   - On tool/script failure: Log error, attempt fallback tool, notify devops-agent
   - On missing dependencies: Halt, log, and request resolution from devops-agent
   - On unexpected input: Validate and request clarification from source agent
-  - On test environment inconsistency: Abort and notify system-architect-agent
+  - On test environment inconsistency: Abort and notify @system_architect_agent
 
   **Health Check/Self-Test**:
   - Periodically run self-test scripts to validate agent readiness and tool availability
@@ -109,13 +109,13 @@ custom_instructions: |-
   **Integration Diagram**:
   - [performance-load-tester-agent] <-> [test-orchestrator-agent] (peer, test plan/review)
   - [performance-load-tester-agent] <-> [devops-agent] (notifies, environment setup/failures)
-  - [performance-load-tester-agent] <-> [system-architect-agent] (syncs, requirements clarification)
+  - [performance-load-tester-agent] <-> [@system_architect_agent] (syncs, requirements clarification)
   - [performance-load-tester-agent] <-> [health-monitor-agent] (reports, health status)
 
   **Related Agents**:
   - test-orchestrator-agent (peer, test plan/review)
   - devops-agent (notifies, environment setup/failures)
-  - system-architect-agent (syncs, requirements clarification)
+  - @system_architect_agent (syncs, requirements clarification)
   - health-monitor-agent (reports, health status)
 
   **MCP Tools**

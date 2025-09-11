@@ -569,7 +569,7 @@ Vision System automatically integrates with the 4-tier context hierarchy:
   "git_branch_id": "550e8400-e29b-41d4-a716-446655440002",
   "title": "Implement user authentication with JWT",
   "description": "Add comprehensive JWT authentication with refresh tokens, password reset, and 2FA support",
-  "assignees": "@coding-agent,@security-auditor-agent",
+  "assignees": "@@coding_agent,@security-auditor-agent",
   "priority": "high",
   "estimated_effort": "5 days",
   "labels": "authentication,security,backend",
@@ -633,7 +633,7 @@ Vision System automatically integrates with the 4-tier context hierarchy:
 #### With Subtask Integration
 ```json
 // First create parent task
-{"action": "create", "title": "Implement Authentication System", "assignees": "@coding-agent,@security-auditor-agent"}
+{"action": "create", "title": "Implement Authentication System", "assignees": "@@coding_agent,@security-auditor-agent"}
 // Vision System suggests subtask breakdown
 // Use manage_subtask to create specific implementation tasks
 // Parent task automatically tracks subtask progress

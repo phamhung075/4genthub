@@ -124,9 +124,9 @@ class TestResolveAgentName:
         """Test that non-deprecated names are returned unchanged"""
         test_cases = [
             "documentation_agent",
-            "documentation-agent",
+            "@documentation_agent",
             "deep_research_agent",
-            "deep-research-agent",
+            "@deep_research_agent",
             "creative_ideation_agent",
             "creative-ideation-agent",
             "marketing_strategy_orchestrator_agent",
@@ -228,9 +228,9 @@ class TestIsDeprecatedAgent:
         """Test checking deprecated status of non-deprecated names"""
         active_names = [
             "documentation_agent",
-            "documentation-agent",
+            "@documentation_agent",
             "deep_research_agent",
-            "deep-research-agent",
+            "@deep_research_agent",
             "creative_ideation_agent",
             "creative-ideation-agent",
             "marketing_strategy_orchestrator_agent",
@@ -388,7 +388,7 @@ class TestConsistency:
             "documentation_agent",
             "unknown_agent",
             "mcp-researcher-agent",
-            "deep-research-agent",
+            "@deep_research_agent",
         ]
         
         for name in test_names:

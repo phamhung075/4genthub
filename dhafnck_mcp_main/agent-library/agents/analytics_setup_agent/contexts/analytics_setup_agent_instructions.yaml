@@ -80,7 +80,7 @@ custom_instructions: |-
       },
       "dashboards": ["User Retention Dashboard", "Revenue Attribution Dashboard"]
     },
-    "documentation": "See analytics-setup-agent.md for full setup details."
+    "documentation": "See @analytics_setup_agent.md for full setup details."
   }
   **MCP Tools**
   ...

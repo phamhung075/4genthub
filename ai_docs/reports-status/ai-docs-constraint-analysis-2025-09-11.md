@@ -121,7 +121,7 @@ Analysis of ai_docs directory identified multiple constraint violations and obso
    
    # INCORRECT (remove/fix)
    master-orchestrator-agent
-   coding-agent
+   @coding_agent
    ```
 
 3. **Remove SQLite Documentation**:

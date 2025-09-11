@@ -9,7 +9,7 @@ agent_info:
     agents to ensure seamless delivery.
   migration_date: '2025-06-30T11:55:00.153277'
   name: "\U0001F4BB Coding Agent (Feature Implementation)"
-  slug: coding-agent
+  slug: @coding_agent
   usage_scenarios: Activate when specifications are complete and ready for implementation.
     Essential for translating designs into working code, implementing new features,
     refactoring existing code, and creating comprehensive test suites.

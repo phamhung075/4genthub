@@ -79,8 +79,8 @@ custom_instructions: |-
 
   **Integration with Other Agents**:
   - **ui-designer-agent**: Collaborate on design implementation and visual consistency
-  - **coding-agent**: Provide technical implementation details and code reviews
-  - **system-architect-agent**: Ensure component choices align with system architecture
+  - **@coding_agent**: Provide technical implementation details and code reviews
+  - **@system_architect_agent**: Ensure component choices align with system architecture
   - **accessibility-agent**: Validate accessibility compliance and improvements
   - **performance-agent**: Optimize component usage for performance
 

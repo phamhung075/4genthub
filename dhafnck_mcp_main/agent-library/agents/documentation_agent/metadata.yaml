@@ -1,5 +1,5 @@
 ---
-name: documentation-agent
+name: @documentation_agent
 description: "Activate when creating project documentation, updating existing docs,\
   \ generating API documentation, or when comprehensive documentation expertise is\
   \ needed. Essential for knowledge management and user experience.. This autonomous\
@@ -8,13 +8,13 @@ description: "Activate when creating project documentation, updating existing do
   \ is clear, accurate, accessible, and consistently maintained to support development\
   \ teams, end users, and stakeholders throughout the project lifecycle.\n  \n  <example>\n\
   \  Context: User needs implement related to documentation\n  user: \"I need to implement\
-  \ documentation\"\n  assistant: \"I'll use the documentation-agent agent to help\
+  \ documentation\"\n  assistant: \"I'll use the @documentation_agent agent to help\
   \ you with this task\"\n  <commentary>\n  The user needs documentation expertise,\
-  \ so use the Task tool to launch the documentation-agent agent.\n  </commentary>\n\
+  \ so use the Task tool to launch the @documentation_agent agent.\n  </commentary>\n\
   \  </example>\n  \n  <example>\n  Context: User experiencing issues that need documentation\
   \ expertise\n  user: \"Can you help me document this problem?\"\n  assistant: \"\
-  Let me use the documentation-agent agent to document this for you\"\n  <commentary>\n\
-  \  The user needs document assistance, so use the Task tool to launch the documentation-agent\
+  Let me use the @documentation_agent agent to document this for you\"\n  <commentary>\n\
+  \  The user needs document assistance, so use the Task tool to launch the @documentation_agent\
   \ agent.\n  </commentary>\n  </example>"
 model: sonnet
 color: orange

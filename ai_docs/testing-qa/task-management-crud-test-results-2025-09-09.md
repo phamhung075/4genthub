@@ -91,7 +91,7 @@ All task CRUD operations currently fail due to a **critical module import error*
 - `git_branch_id`: "741854b4-a0f4-4b39-b2ab-b27dfc97a851"
 - `title`: "Test Authentication System"  
 - `description`: "Implement JWT-based authentication with login, logout, and session management for testing CRUD operations"
-- `assignees`: "@coding-agent"
+- `assignees`: "@@coding_agent"
 - `priority`: "high"
 - `estimated_effort`: "2 days"
 

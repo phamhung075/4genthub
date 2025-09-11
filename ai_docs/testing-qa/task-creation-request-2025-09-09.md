@@ -127,7 +127,7 @@ Task 5 (Auth Testing) depends on [Task 1, Task 2, Task 3]
 
 ## Agent Assignment Distribution
 
-- **@coding-agent**: 5 tasks (Tasks 1, 2, 3, 4, 6)
+- **@@coding_agent**: 5 tasks (Tasks 1, 2, 3, 4, 6)
 - **@security-auditor-agent**: 6 tasks (Tasks 1, 2, 3, 4, 6, 7)  
 - **@test-orchestrator-agent**: 2 tasks (Tasks 5, 7)
 

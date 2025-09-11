@@ -10,7 +10,7 @@ agent_info:
     brand execution.
   migration_date: '2025-06-30T11:55:00.175594'
   name: "\U0001F3AD Branding Agent"
-  slug: branding-agent
+  slug: @branding_agent
   usage_scenarios: Activate when creating new brand identities, rebranding existing
     products, developing brand guidelines, or when comprehensive branding expertise
     is needed. Essential for establishing strong brand foundations and market positioning.

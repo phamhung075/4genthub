@@ -118,8 +118,8 @@ def generate_status_line(input_data):
             # Clean state
             parts.append(f"\033[92m{git_branch} ✓\033[0m")
     
-    # Agent hierarchy - show delegation structure (force reminder)
-    parts.append("\033[91mClaude→orchestrator(force)\033[0m")  # Red text forcing delegation reminder
+    # Agent role - Claude IS the master orchestrator
+    parts.append("\033[92m🎯 Active: @master_orchestrator_agent\033[0m")  # Green text showing active role
     
     # Paths - always show for AI memory
     try:

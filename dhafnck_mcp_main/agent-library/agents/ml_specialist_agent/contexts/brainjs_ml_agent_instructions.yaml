@@ -46,7 +46,7 @@ custom_instructions: |-
   [Brain.js ML Agent] <-> [Coding Agent] (feature integration)
   [Brain.js ML Agent] <-> [Performance Tester] (model evaluation)
 
-  **Related Agents**: analytics-setup-agent, coding-agent, performance-load-tester-agent, tech-spec-agent, devops-agent
+  **Related Agents**: @analytics_setup_agent, @coding_agent, performance-load-tester-agent, tech-spec-agent, devops-agent
 
   **Input Example**:
   {

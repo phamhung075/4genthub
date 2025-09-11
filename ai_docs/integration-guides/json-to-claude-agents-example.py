@@ -182,7 +182,7 @@ def main():
     # Example 2: Batch conversion
     print(f"\n2. Batch creating multiple agents...")
     agent_names = [
-        "coding-agent",
+        "@coding_agent",
         "debugger-agent", 
         "security-auditor-agent",
         "test-orchestrator-agent"
