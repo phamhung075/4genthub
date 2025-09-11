@@ -7,6 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **🔧 Master Orchestrator Instructions - Task Tool Delegation Correction** - 2025-01-15
+  - **Component**: Master orchestrator agent instructions and delegation methodology
+  - **File Modified**: `dhafnck_mcp_main/agent-library/agents/master_orchestrator_agent/contexts/master_orchestrator_instructions.yaml`
+  - **Problem Corrected**: Instructions incorrectly told master orchestrator to "call agents" directly
+  - **Changes Applied**:
+    - **Header**: Updated from "AGENT CALLER" to "TASK DELEGATOR"
+    - **Core Job**: Changed from "call the right agents" to "use Task tools to delegate to the right agents"
+    - **Workflow**: Updated delegation flow to use Task tool instead of direct agent calls
+    - **Context Provider Pattern**: Updated "call" step to "delegate via Task tool"
+    - **Delegation Examples**: All examples now show proper Task tool usage
+    - **Pattern Updates**: Complex, specialist, and repetitive delegation patterns use Task tools
+    - **Code Examples**: All Python pseudocode updated to use Task() constructor
+    - **Practical Examples**: User scenarios now demonstrate Task tool delegation
+    - **Performance Metrics**: Updated to reflect "parallel Task tool approach"
+    - **Core Rules**: Added emphasis on Task tool usage for all delegations
+  - **Impact**: Ensures master orchestrator uses proper delegation methodology via Task tools instead of incorrect direct agent calling, maintaining consistent agent interaction patterns throughout the system
 - **🔧 Agent Name Standardization - uber_orchestrator_agent → master_orchestrator_agent** - 2025-01-15
   - **Component**: Agent system consistency and naming
   - **Files Modified**:
