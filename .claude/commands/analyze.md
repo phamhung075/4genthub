@@ -1,4 +1,4 @@
-call agent to review document of context, analyze these document and actual modal of context on all level                                                                                                                          │
+Delegate to Agent via Task Tool to review document of context, analyze these document and actual modal of context on all level                                                                                                                          │
 │   deep thinking and virtualize usable of these properties, detect properties no useful, properties missing for make context better for can use                                                                                       │
 │   must know my server mcp is not on local, is on cloud , ai need update context each time, it not automatic update, ai may be forgot to update                                                                                       │
 │   thingking to metter modal for ai when complete subtask --> update context & detail on task, checklist on task, complete task --> update context & detail on branch, checklist on branch,  complete branch --> update context &     │

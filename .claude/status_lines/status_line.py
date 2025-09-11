@@ -118,6 +118,9 @@ def generate_status_line(input_data):
             # Clean state
             parts.append(f"\033[92m{git_branch} ✓\033[0m")
     
+    # Agent hierarchy - show delegation structure (force reminder)
+    parts.append("\033[91mClaude→orchestrator(force)\033[0m")  # Red text forcing delegation reminder
+    
     # Paths - always show for AI memory
     try:
         ai_data = get_ai_data_path()
