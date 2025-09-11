@@ -124,7 +124,6 @@ function Dashboard() {
                 projectId={selection.projectId} 
                 taskTreeId={selection.branchId} 
                 onTasksChanged={() => {
-                console.log('App: onTasksChanged called, incrementing refreshKey');
                 setProjectListRefreshKey(prev => prev + 1);
               }}
             />

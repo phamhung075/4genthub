@@ -2,8 +2,8 @@ import { ChevronDown, ChevronRight, Eye, FileText, Pencil, Plus, RefreshCw, Tras
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { getFullTask } from "../api-lazy";
-import TaskSearch from "./TaskSearch";
 import ClickableAssignees from "./ClickableAssignees";
+import TaskSearch from "./TaskSearch";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
@@ -84,18 +84,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   // Fallback to current implementation if lightweight endpoint isn't available
   const loadFullTasksFallback = useCallback(async () => {
     try {
-      console.log('Loading tasks for branch:', taskTreeId);
       const taskList = await listTasks({ git_branch_id: taskTreeId });
-      
-      // Log the response to debug dependencies
-      console.log('Task list response:', taskList);
-      if (taskList && taskList.length > 0) {
-        console.log('First task dependencies:', {
-          dependencies: taskList[0].dependencies,
-          dependency_relationships: taskList[0].dependency_relationships,
-          full_task: taskList[0]
-        });
-      }
       
       // Ensure taskList is a valid array
       const validTaskList = Array.isArray(taskList) ? taskList : [];
@@ -110,15 +99,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         // Use the maximum of all possible sources
         const dependencyCount = Math.max(depFromArray, depFromRelationships, depFromSummary);
         
-        // Debug log for first task with dependencies
-        if (dependencyCount > 0) {
-          console.log(`Task "${task.title}" dependencies:`, {
-            dependencies_array: task.dependencies,
-            dependency_relationships: task.dependency_relationships,
-            dependency_summary: task.dependency_summary,
-            computed_count: dependencyCount
-          });
-        }
+        // Dependencies computed above
         
         return {
           id: task.id,
@@ -133,8 +114,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           has_context: Boolean(task.context_id || task.context_data)
         };
       });
-      
-      console.log('Converted summaries:', summaries);
       
       setTaskSummaries(summaries);
       setTotalTasks(summaries.length);
@@ -302,7 +281,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       await deleteTask(taskId);
       
       // Success! Notify parent (UI already updated optimistically)
-      console.log('Task deleted successfully, notifying parent...');
       if (onTasksChanged) {
         onTasksChanged();
       }
@@ -354,7 +332,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         // Add direct dependencies (tasks this task depends on)
         const taskDeps = (task as any).dependencies || [];
         taskDeps.forEach((dep: string) => {
-          console.log(`Task "${(task as any).title}" depends on: ${dep}`);
           dependencies.add(dep);
         });
         
@@ -362,19 +339,11 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         const depRels = (task as any).dependency_relationships;
         if (depRels?.depends_on) {
           depRels.depends_on.forEach((dep: string) => {
-            console.log(`Task "${(task as any).title}" has relationship dependency on: ${dep}`);
             dependencies.add(dep);
           });
         }
-        
-        // Also check dependency_summary if available
-        const depSummary = (task as any).dependency_summary;
-        if (depSummary) {
-          console.log(`Task has ${depSummary.total_dependencies} total dependencies, ${depSummary.completed_dependencies} completed`);
-        }
       }
       
-      console.log(`Highlighting ${dependencies.size} prerequisite task(s) for "${(hoveredTask || hoveredSummary)?.title}"`);
       setHighlightedDependencies(dependencies);
     } else {
       setHighlightedDependencies(new Set());
@@ -393,8 +362,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       <div 
         key={summary.id} 
         className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border mb-3 transition-all duration-200 cursor-pointer ${
-          isHighlighted ? 'border-blue-400 bg-blue-50 dark:bg-blue-950 shadow-md scale-102' :
-          isHovered ? 'border-violet-400 shadow-lg scale-102 bg-violet-50 dark:bg-violet-950' :
+          isHighlighted ? 'border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md scale-102' :
+          isHovered ? 'border-violet-400 shadow-lg scale-102 bg-violet-200 dark:bg-violet-950' :
           'border-surface-border dark:border-gray-700'
         }`}
         onMouseEnter={() => handleTaskHover(summary.id)}
@@ -427,7 +396,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                     assignees={summary.assignees}
                     task={fullTasks.get(summary.id) || summary as any}
                     onAgentClick={(agentName, task) => {
-                      console.log('Agent clicked:', agentName, 'for task:', task.title, 'with id:', task.id);
                       openDialog('agent-info', undefined, { agentName, taskTitle: task.title });
                     }}
                     variant="secondary"
@@ -510,7 +478,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         {/* Expanded Content */}
         {isExpanded && fullTask && (
           <div className="border-t border-surface-border dark:border-gray-700">
-            <div className="border-l-4 border-blue-400 dark:border-blue-600">
+            <div className="border-blue-400 dark:border-blue-600">
               <Suspense fallback={<div className="p-4 text-center text-sm text-muted-foreground">Loading subtasks...</div>}>
                 <LazySubtaskList 
                   projectId={projectId} 
@@ -537,8 +505,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       <React.Fragment key={summary.id}>
         <TableRow 
           className={`transition-all duration-200 cursor-pointer ${
-            isHighlighted ? 'bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-400' :
-            isHovered ? 'bg-violet-50 dark:bg-violet-950 border-l-4 border-l-violet-400' : ''
+            isHighlighted ? 'bg-orange-100 dark:bg-blue-950 border-l-blue-400' :
+            isHovered ? 'bg-violet-200 dark:bg-violet-950 border-l-violet-400' : ''
           }`}
           onMouseEnter={() => handleTaskHover(summary.id)}
           onMouseLeave={() => handleTaskHover(null)}
@@ -599,7 +567,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                 assignees={summary.assignees}
                 task={fullTasks.get(summary.id) || summary as any}
                 onAgentClick={(agentName, task) => {
-                  console.log('Agent clicked:', agentName, 'for task:', task.title, 'with id:', task.id);
                   openDialog('agent-info', undefined, { agentName, taskTitle: task.title });
                 }}
                 variant="secondary"
@@ -671,7 +638,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         {isExpanded && fullTask && (
           <TableRow className="theme-context-section">
             <TableCell colSpan={7} className="p-0">
-              <div className="border-l-4 border-blue-400 dark:border-blue-600 ml-8">
+              <div className="border-blue-400 dark:border-blue-600 ml-8">
                 <Suspense fallback={<div className="p-4 text-center text-sm text-muted-foreground">Loading subtasks...</div>}>
                   <LazySubtaskList 
                     projectId={projectId} 
@@ -718,7 +685,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           <div className="flex gap-2">
             <ShimmerButton
               onClick={async () => {
-                console.log('Refresh button clicked');
                 await loadTaskSummaries(1);
               }}
               size="sm"
@@ -780,7 +746,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             task={fullTasks.get(activeDialog.taskId) || null}
             onClose={closeDialog}
             onAgentClick={(agentName, task) => {
-              console.log('Agent clicked in details dialog:', agentName, 'for task:', task.title);
               closeDialog();
               openDialog('assign', task.id);
             }}

@@ -6,22 +6,15 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import './theme/global.scss';
 
-// Initialize logging system safely
+// Initialize logging system safely - only for errors
 try {
   import('./utils/loggerExport').then(({ logger }) => {
-    if (typeof (logger as any).info === 'function') {
-      (logger as any).info('Frontend application starting', { 
-        version: process.env.REACT_APP_VERSION || '1.0.0',
-        nodeEnv: process.env.NODE_ENV
-      });
-    } else {
-      console.log('Frontend application starting (console fallback)');
-    }
+    // Logger initialized successfully - no need to log startup
   }).catch(error => {
-    console.log('Frontend application starting (logger unavailable)');
+    // Silent fallback - logging system unavailable
   });
 } catch (error) {
-  console.log('Frontend application starting (basic mode)');
+  // Silent fallback - basic mode
 }
 
 const root = ReactDOM.createRoot(

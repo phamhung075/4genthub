@@ -131,7 +131,6 @@ export const getBranchSummaries = async (project_id: string): Promise<{
   // Use the optimized endpoint for branch summaries with task counts
   const token = Cookies.get('access_token');
   if (!token) {
-    console.log('No auth token for branch summaries');
     return { branches: [], total: 0 };
   }
 
@@ -150,9 +149,6 @@ export const getBranchSummaries = async (project_id: string): Promise<{
 
   const data = await response.json();
   const branches = data.branches || [];
-  
-  // Debug: Log the raw branch data
-  console.log('Raw branch data from API:', branches);
   
   // Map the optimized response to BranchSummary format
   const summaries: BranchSummary[] = branches.map((branch: any) => ({

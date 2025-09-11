@@ -629,6 +629,10 @@ export const agentApiV2 = {
 
   // Call an agent
   callAgent: async (agentName: string, params?: any) => {
+    // Normalize agent name: remove @ prefix and ensure kebab-case
+    let normalizedName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
+    normalizedName = normalizedName.replace(/_/g, '-').toLowerCase();
+    
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/call`, {
       method: 'POST',
       headers: {
@@ -636,7 +640,7 @@ export const agentApiV2 = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        agent_name: agentName,
+        agent_name: normalizedName,
         params: params || {}
       }),
     });

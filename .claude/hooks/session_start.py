@@ -34,11 +34,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def log_session_start(input_data):
-    """Log session start event to AI_DATA directory."""
+def log_session_start(input_data, injection_result=None):
+    """Log session start event with injection results to AI_DATA directory."""
     # Get AI_DATA path from environment
     log_dir = get_ai_data_path()
     log_file = log_dir / 'session_start.json'
+    
+    # Add injection monitoring data
+    log_entry = {
+        **input_data,
+        "injection_timestamp": datetime.now().isoformat(),
+        "injection_result": injection_result or {}
+    }
     
     # Read existing log data or initialize empty list
     if log_file.exists():
@@ -50,8 +57,12 @@ def log_session_start(input_data):
     else:
         log_data = []
     
-    # Append the entire input data
-    log_data.append(input_data)
+    # Append the enhanced log entry
+    log_data.append(log_entry)
+    
+    # Keep only last 100 entries to prevent file from growing too large
+    if len(log_data) > 100:
+        log_data = log_data[-100:]
     
     # Write back to file with formatting
     with open(log_file, 'w') as f:
@@ -284,13 +295,74 @@ def format_mcp_context(tasks: Optional[List[Dict]], next_task: Optional[Dict], g
     return "\n".join(context_parts)
 
 
+def detect_session_type():
+    """Detect if this is a main session or sub-agent session."""
+    import os
+    
+    # Method 1: Check for explicit environment variable
+    session_type = os.getenv("CLAUDE_SESSION_TYPE", "").lower()
+    if session_type in ["subagent", "sub-agent", "agent"]:
+        return "subagent"
+    elif session_type == "main":
+        return "main"
+    
+    # Method 2: Check for agent role environment variable
+    agent_role = os.getenv("CLAUDE_AGENT_ROLE", "").lower()
+    if agent_role and agent_role != "master-orchestrator":
+        return "subagent"
+    
+    # Method 3: Check current working directory for clues
+    cwd = os.getcwd()
+    
+    # If we're clearly in the main project root, assume main session
+    if cwd.endswith("agentic-project") and not any(sub in cwd for sub in ["/agent", "/sub"]):
+        return "main"
+    
+    # Method 4: Simple heuristic - check for obvious sub-agent indicators
+    subagent_indicators = ["agent", "subagent", "sub-agent", "coding", "debug", "test", "security"]
+    if any(indicator in cwd.lower() for indicator in subagent_indicators):
+        return "subagent"
+    
+    # Method 5: Check .claude.env for session configuration
+    try:
+        claude_env_file = Path(".claude.env")
+        if claude_env_file.exists():
+            with open(claude_env_file, 'r') as f:
+                content = f.read()
+                if "CLAUDE_SESSION_TYPE=subagent" in content:
+                    return "subagent"
+    except:
+        pass
+    
+    # Conservative default - assume main session
+    return "main"
+
+
 def load_development_context(source):
     """Load relevant development context with MCP integration based on session source."""
     context_parts = []
     
-    # CRITICAL: Instruct Claude to load master orchestrator capabilities
-    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
-    context_parts.append("")
+    # Detect session type
+    session_type = detect_session_type()
+    
+    if session_type == "main":
+        # MAIN SESSION: Load master orchestrator capabilities
+        context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
+        context_parts.append("")
+        context_parts.append("🎯 **You are the MASTER ORCHESTRATOR** - coordinate and delegate work to specialized agents.")
+        context_parts.append("")
+    else:
+        # SUB-AGENT SESSION: Load sub-agent instructions  
+        context_parts.append("🤖 **SUB-AGENT SESSION DETECTED**")
+        context_parts.append("")
+        context_parts.append("**IMPORTANT**: You are a specialized agent, NOT the master orchestrator.")
+        context_parts.append("- Focus on your specialized work")
+        context_parts.append("- Do NOT call master-orchestrator-agent")
+        context_parts.append("- Do NOT delegate to other agents") 
+        context_parts.append("- Complete the task assigned to you")
+        context_parts.append("")
+        context_parts.append("📖 **See**: ai_docs/core-architecture/sub-agent-instructions.md for full sub-agent guidelines")
+        context_parts.append("")
     
     # Add timestamp and session info
     context_parts.append(f"Session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -439,13 +511,24 @@ def main():
         
         logger.info(f"Session start: {session_id}, source: {source}")
         
-        # Log the session start event
-        log_session_start(input_data)
-        
-        # ALWAYS load context to ensure Claude loads master orchestrator
         # Enhanced context loading with MCP integration
         logger.info("Loading development context with MCP integration...")
         context = load_development_context(source)
+        
+        # Track injection results for monitoring
+        injection_result = {
+            "session_id": session_id,
+            "source": source,
+            "context_loaded": bool(context),
+            "context_length": len(context) if context else 0,
+            "mcp_tasks_injected": context.count("Task ID:") if context else 0,
+            "git_context_included": "Git Status:" in context if context else False,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Log the session with injection results
+        log_session_start(input_data, injection_result)
+        logger.info(f"Session injection results: {json.dumps(injection_result, indent=2)}")
         
         if context:
             # Enhanced output with metadata
@@ -458,7 +541,8 @@ def main():
                         "source": source,
                         "timestamp": datetime.now().isoformat(),
                         "mcp_enabled": True,
-                        "hook_version": "1.3.0"
+                        "hook_version": "1.4.0",
+                        "injection_stats": injection_result
                     }
                 }
             }

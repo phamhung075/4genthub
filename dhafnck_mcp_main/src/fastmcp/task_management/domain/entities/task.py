@@ -1175,16 +1175,20 @@ class Task:
     
     def to_dict(self) -> dict[str, Any]:
         """Convert task to dictionary representation"""
-        # Handle assignees - convert AgentRole enums to strings
+        from fastmcp.task_management.application.use_cases.agent_mappings import resolve_agent_name
+        
+        # Handle assignees - convert to standardized kebab-case format
         assignees_list = []
         if self.assignees is not None:
             for assignee in self.assignees:
                 if hasattr(assignee, 'value'):
-                    # Handle AgentRole enum - convert to string with @ prefix
-                    assignees_list.append(f"@{assignee.value}")
+                    # Handle AgentRole enum - normalize to kebab-case
+                    normalized_name = resolve_agent_name(assignee.value)
+                    assignees_list.append(normalized_name)
                 else:
-                    # Handle string assignees
-                    assignees_list.append(str(assignee))
+                    # Handle string assignees - normalize to kebab-case
+                    normalized_name = resolve_agent_name(str(assignee))
+                    assignees_list.append(normalized_name)
         
         result = {
             "id": str(self.id),

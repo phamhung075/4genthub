@@ -535,7 +535,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 14,
+      "count": 17,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -543,6 +543,13 @@
           "name": "index.md",
           "path": "core-architecture/index.md",
           "size": 9607
+        },
+        {
+          "hash": "22ea3e5cc60120ad4cac686240935888",
+          "modified": "2025-09-11T22:51:16.270633",
+          "name": "sub-agent-instructions.md",
+          "path": "core-architecture/sub-agent-instructions.md",
+          "size": 3485
         },
         {
           "hash": "82ca22389b5d5f7006786c75cb6c63f0",
@@ -573,6 +580,13 @@
           "size": 12519
         },
         {
+          "hash": "6e3ce5416ef738ffebe43fa23e892fc6",
+          "modified": "2025-09-11T22:53:09.225162",
+          "name": "session-type-detection.md",
+          "path": "core-architecture/session-type-detection.md",
+          "size": 4634
+        },
+        {
           "hash": "ef52584808bee6e17988bceb3e3b841d",
           "modified": "2025-09-11T21:15:53.460052",
           "name": "architecture-thinking.md",
@@ -599,6 +613,13 @@
           "name": "mcp-injection-task-dependencies.md",
           "path": "core-architecture/mcp-injection-task-dependencies.md",
           "size": 7604
+        },
+        {
+          "hash": "3c677adf3a9f1942e0ea98947f074bd9",
+          "modified": "2025-09-11T22:47:30.938869",
+          "name": "agent-delegation-fix.md",
+          "path": "core-architecture/agent-delegation-fix.md",
+          "size": 6371
         },
         {
           "hash": "31c648305590ed953e55812c51c7d2c2",
@@ -1305,7 +1326,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 32,
+      "count": 34,
       "files": [
         {
           "hash": "c88dc1984db5659a20f4e154eac0ef32",
@@ -1504,6 +1525,13 @@
           "size": 7491
         },
         {
+          "hash": "b5179b82c23dd2f55021b980966b1cb7",
+          "modified": "2025-09-11T21:56:04.203969",
+          "name": "mcp-auto-injection-working-2025-09-11.md",
+          "path": "reports-status/mcp-auto-injection-working-2025-09-11.md",
+          "size": 3462
+        },
+        {
           "hash": "16d7a4a5bb0bbfa81185d3a236a28c94",
           "modified": "2025-09-04T21:37:06.235671",
           "name": "ddd-compliance-iteration-4-report.md",
@@ -1530,6 +1558,13 @@
           "name": "role-based-implementation-summary-2025-09-09.md",
           "path": "reports-status/role-based-implementation-summary-2025-09-09.md",
           "size": 5481
+        },
+        {
+          "hash": "ef2172b047d9a9386f61ef9e993a4142",
+          "modified": "2025-09-11T22:18:00.636869",
+          "name": "mcp-enhancements-complete-2025-09-11.md",
+          "path": "reports-status/mcp-enhancements-complete-2025-09-11.md",
+          "size": 5419
         }
       ],
       "path": "reports-status"
@@ -2160,7 +2195,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T21:36:43.588795",
+  "generated_at": "2025-09-11T22:53:09.359859",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2274,6 +2309,7 @@
         "Architecture_Technique.md",
         "PRD.md",
         "README.md",
+        "agent-delegation-fix.md",
         "architecture-thinking.md",
         "architecture.md",
         "database-architecture.md",
@@ -2284,7 +2320,9 @@
         "mcp-auto-injection-architecture.md",
         "mcp-injection-task-dependencies.md",
         "prompt-analyze.md",
-        "real-time-injection-system.md"
+        "real-time-injection-system.md",
+        "session-type-detection.md",
+        "sub-agent-instructions.md"
       ]
     },
     "development-guides": {
@@ -2434,8 +2472,10 @@
         "documentation-consolidation-strategy-2025-09-08.md",
         "final-cleanup-report-2025-09-08.md",
         "mcp-authentication-analysis-2025-01-11.md",
+        "mcp-auto-injection-working-2025-09-11.md",
         "mcp-controllers-import-analysis-2025-09-09.md",
         "mcp-controllers-maintenance-analysis.md",
+        "mcp-enhancements-complete-2025-09-11.md",
         "mcp-test-success-report-2025-09-10.md",
         "mcp-tools-test-report-2025-09-10.md",
         "obsolete-controllers-recommendations-2025-09-08.md",
@@ -2542,5 +2582,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 286
+  "total_files": 291
 }

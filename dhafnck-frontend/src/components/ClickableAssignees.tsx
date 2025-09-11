@@ -35,12 +35,17 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
   
   if (Array.isArray(assignees)) {
     // Filter out any invalid entries like "[", "]", " ", etc.
-    cleanAssignees = assignees.filter(assignee => {
-      if (typeof assignee !== 'string') return false;
-      const trimmed = assignee.trim();
-      // Remove single bracket characters or empty strings
-      return trimmed && trimmed !== '[' && trimmed !== ']' && trimmed !== '[]';
-    });
+    cleanAssignees = assignees
+      .filter(assignee => {
+        if (typeof assignee !== 'string') return false;
+        const trimmed = assignee.trim();
+        // Remove single bracket characters or empty strings
+        return trimmed && trimmed !== '[' && trimmed !== ']' && trimmed !== '[]';
+      })
+      .map(assignee => {
+        // Normalize agent names: remove @ prefix and keep kebab-case
+        return assignee.startsWith('@') ? assignee.slice(1) : assignee;
+      });
   }
 
   if (!cleanAssignees || cleanAssignees.length === 0) {

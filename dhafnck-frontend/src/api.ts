@@ -192,10 +192,8 @@ export const completeSubtask = async (
 
 // --- Project Operations ---
 export const listProjects = async (): Promise<Project[]> => {
-    console.log('listProjects: Fetching projects from API V2...');
     try {
         const response = await projectApiV2.getProjects();
-        console.log('listProjects: Got response:', response);
         return response.projects || [];
     } catch (error) {
         console.error('listProjects: Error fetching projects:', error);
