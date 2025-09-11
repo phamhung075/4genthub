@@ -9,3 +9,12 @@ sqlalchemy==2.0.36
 psycopg2-binary==2.9.10
 pydantic==2.11.7
 pydantic-settings==2.7.1
+
+# ML/AI Dependencies for Intelligence Layer (Phase 3)
+sentence-transformers==3.3.0  # For semantic embeddings
+faiss-cpu==1.8.0.post1        # Vector similarity search
+scikit-learn==1.5.2           # ML utilities and metrics  
+numpy==2.0.2                  # Numerical computing
+redis==5.2.0                  # Real-time caching
+transformers==4.46.3          # Transformer models
+torch==2.5.1                  # PyTorch backend

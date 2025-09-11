@@ -20,6 +20,7 @@ provides clear error messages to guide the AI toward correct behavior.
 import json
 import sys
 import re
+from datetime import datetime
 from pathlib import Path
 
 # Import the AI_DATA path loader for logging
@@ -36,6 +37,14 @@ except ImportError:
     is_folder_in_session = None
     add_modified_file = None
     add_modified_folder = None
+
+# Import the new context injection system
+try:
+    from utils.context_injector import inject_context_sync
+    CONTEXT_INJECTION_ENABLED = True
+except ImportError:
+    inject_context_sync = None
+    CONTEXT_INJECTION_ENABLED = False
 
 def load_allowed_root_files():
     """
@@ -578,6 +587,81 @@ def main():
                 print("BLOCKED: Dangerous rm command detected and prevented", file=sys.stderr)
                 sys.exit(2)
         
+        # CONTEXT INJECTION: Inject relevant context if system supports it
+        if CONTEXT_INJECTION_ENABLED and inject_context_sync:
+            try:
+                # Attempt context injection with timeout protection
+                injected_context = inject_context_sync(tool_name, tool_input)
+                
+                if injected_context:
+                    # Output context to stderr for Claude to see as system reminder
+                    print(f"\n{injected_context}\n", file=sys.stderr)
+                    
+                    # Log successful context injection
+                    log_dir = get_ai_data_path()
+                    context_log_path = log_dir / 'context_injection.json'
+                    
+                    context_log_entry = {
+                        'timestamp': datetime.now().isoformat(),
+                        'tool_name': tool_name,
+                        'injection_successful': True,
+                        'context_size': len(injected_context)
+                    }
+                    
+                    # Append to context injection log
+                    if context_log_path.exists():
+                        with open(context_log_path, 'r') as f:
+                            try:
+                                context_log_data = json.load(f)
+                            except (json.JSONDecodeError, ValueError):
+                                context_log_data = []
+                    else:
+                        context_log_data = []
+                    
+                    context_log_data.append(context_log_entry)
+                    
+                    # Keep only last 100 entries to prevent log bloat
+                    if len(context_log_data) > 100:
+                        context_log_data = context_log_data[-100:]
+                    
+                    with open(context_log_path, 'w') as f:
+                        json.dump(context_log_data, f, indent=2)
+                        
+            except Exception as e:
+                # Context injection failure should not block tool execution
+                # Log the error but continue with tool execution
+                error_msg = f"Context injection failed: {str(e)}"
+                print(f"WARNING: {error_msg}", file=sys.stderr)
+                
+                # Log the error
+                log_dir = get_ai_data_path()
+                error_log_path = log_dir / 'context_injection_errors.json'
+                
+                error_entry = {
+                    'timestamp': datetime.now().isoformat(),
+                    'tool_name': tool_name,
+                    'error': str(e),
+                    'injection_successful': False
+                }
+                
+                if error_log_path.exists():
+                    with open(error_log_path, 'r') as f:
+                        try:
+                            error_log_data = json.load(f)
+                        except (json.JSONDecodeError, ValueError):
+                            error_log_data = []
+                else:
+                    error_log_data = []
+                
+                error_log_data.append(error_entry)
+                
+                # Keep only last 50 error entries
+                if len(error_log_data) > 50:
+                    error_log_data = error_log_data[-50:]
+                
+                with open(error_log_path, 'w') as f:
+                    json.dump(error_log_data, f, indent=2)
+
         # LOGGING: If all validations pass, log the tool use for auditing
         # Get AI_DATA path from environment (configured in .env)
         log_dir = get_ai_data_path()

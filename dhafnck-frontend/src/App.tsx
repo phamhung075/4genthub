@@ -20,6 +20,7 @@ import { TokenManagement } from './pages/TokenManagement';
 
 // Use lazy loading for TaskList component for better performance
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
+const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
 function Dashboard() {
   const [selection, setSelection] = useState<{ projectId: string, branchId: string } | null>(null);
@@ -206,6 +207,18 @@ function App() {
             element={
               <ProtectedRoute>
                 <TokenManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/performance"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Suspense fallback={<div className="flex items-center justify-center p-8">Loading...</div>}>
+                    <PerformanceDashboard />
+                  </Suspense>
+                </AppLayout>
               </ProtectedRoute>
             }
           />

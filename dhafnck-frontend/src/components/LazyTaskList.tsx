@@ -339,35 +339,42 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     setHoveredTaskId(taskId);
     
     if (taskId) {
-      // Find dependencies of the hovered task
-      const task = fullTasks.get(taskId) || taskSummaries.find(t => t.id === taskId);
       const dependencies = new Set<string>();
       
-      if (task) {
-        // Add direct dependencies
-        const taskDeps = (task as any).dependencies || [];
-        taskDeps.forEach((dep: string) => dependencies.add(dep));
+      // Get the hovered task - prefer fullTask data, fallback to summary
+      const hoveredTask = fullTasks.get(taskId);
+      const hoveredSummary = taskSummaries.find(t => t.id === taskId);
+      
+      if (hoveredTask || hoveredSummary) {
+        const task = hoveredTask || hoveredSummary;
         
-        // Add dependencies from dependency relationships
+        // ONLY highlight tasks that THIS task depends on (prerequisites)
+        // These are the tasks that must be completed BEFORE this task can start
+        
+        // Add direct dependencies (tasks this task depends on)
+        const taskDeps = (task as any).dependencies || [];
+        taskDeps.forEach((dep: string) => {
+          console.log(`Task "${(task as any).title}" depends on: ${dep}`);
+          dependencies.add(dep);
+        });
+        
+        // Add dependencies from dependency relationships (if any)
         const depRels = (task as any).dependency_relationships;
         if (depRels?.depends_on) {
-          depRels.depends_on.forEach((dep: string) => dependencies.add(dep));
+          depRels.depends_on.forEach((dep: string) => {
+            console.log(`Task "${(task as any).title}" has relationship dependency on: ${dep}`);
+            dependencies.add(dep);
+          });
         }
         
-        // Also highlight tasks that this task blocks (reverse dependencies)
-        taskSummaries.forEach(otherTask => {
-          const otherTaskFull = fullTasks.get(otherTask.id) || otherTask;
-          const otherDeps = (otherTaskFull as any).dependencies || [];
-          const otherDepRels = (otherTaskFull as any).dependency_relationships;
-          
-          // If this task depends on the hovered task, highlight it
-          if (otherDeps.includes(taskId) || 
-              otherDepRels?.depends_on?.includes(taskId)) {
-            dependencies.add(otherTask.id);
-          }
-        });
+        // Also check dependency_summary if available
+        const depSummary = (task as any).dependency_summary;
+        if (depSummary) {
+          console.log(`Task has ${depSummary.total_dependencies} total dependencies, ${depSummary.completed_dependencies} completed`);
+        }
       }
       
+      console.log(`Highlighting ${dependencies.size} prerequisite task(s) for "${(hoveredTask || hoveredSummary)?.title}"`);
       setHighlightedDependencies(dependencies);
     } else {
       setHighlightedDependencies(new Set());
