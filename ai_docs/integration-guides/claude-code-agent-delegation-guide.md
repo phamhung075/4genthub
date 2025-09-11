@@ -39,13 +39,13 @@ When `call_agent` is invoked, it:
 
 ```python
 # Call the MCP tool to get agent definition
-result = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+result = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 
 if result['success']:
     # The claude_agent_definition can be used by Claude Code's Task tool
     claude_definition = result['claude_agent_definition']
     
-    # This creates an equivalent to .claude/agents/@coding_agent.md
+    # This creates an equivalent to .claude/agents/coding-agent.md
     print(claude_definition)
 ```
 
@@ -53,7 +53,7 @@ if result['success']:
 
 ```markdown
 ---
-name: @coding_agent
+name: coding-agent
 description: This autonomous agent transforms detailed specifications and algorithmic designs into high-quality, production-ready code. It specializes in implementing features across multiple programming languages and frameworks, complete with comprehensive testing, documentation, and adherence to best practices.
 tools: Read, Grep, Glob, Edit, Write, MultiEdit, Bash, *
 ---
@@ -73,13 +73,13 @@ Now Claude Code can delegate to DhafnckMCP agents using this pattern:
 
 ```python
 # 1. Get the agent definition from DhafnckMCP
-agent_result = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+agent_result = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 
 # 2. If successful, Claude Code can now use the Task tool with the agent specification
 if agent_result['success']:
     # The Task tool can now use this agent definition
     Task(
-        subagent_type="@coding_agent",  # from claude_agent_definition
+        subagent_type="coding-agent",  # from claude_agent_definition
         description="Implement user authentication",
         prompt="Create a JWT-based authentication system with login, logout, and session management"
     )
@@ -90,26 +90,26 @@ if agent_result['success']:
 All 42+ agents from `dhafnck_mcp_main/agent-library/agents/` are supported:
 
 ### Development & Coding
-- `coding_agent` - Implementation and feature development
-- `debugger_agent` - Bug fixing and troubleshooting  
-- `code_reviewer_agent` - Code quality and review
-- `prototyping_agent` - Rapid prototyping and POCs
+- `coding-agent` - Implementation and feature development
+- `debugger-agent` - Bug fixing and troubleshooting  
+- `code-reviewer-agent` - Code quality and review
+- `prototyping-agent` - Rapid prototyping and POCs
 
 ### Testing & QA
-- `test_orchestrator_agent` - Comprehensive test management
-- `uat_coordinator_agent` - User acceptance testing
-- `performance_load_tester_agent` - Performance and load testing
+- `test-orchestrator-agent` - Comprehensive test management
+- `uat-coordinator-agent` - User acceptance testing
+- `performance-load-tester-agent` - Performance and load testing
 
 ### Architecture & Design
-- `system_architect_agent` - System design and architecture
-- `design_system_agent` - Design system and UI patterns
+- `system-architect-agent` - System design and architecture
+- `design-system-agent` - Design system and UI patterns
 - `ui_designer_expert_shadcn_agent` - Shadcn/UI components
-- `core_concept_agent` - Core concepts and fundamentals
+- `core-concept-agent` - Core concepts and fundamentals
 
 ### Security & Compliance
-- `security_auditor_agent` - Security audits and reviews
-- `compliance_scope_agent` - Regulatory compliance
-- `ethical_review_agent` - Ethical considerations
+- `security-auditor-agent` - Security audits and reviews
+- `compliance-scope-agent` - Regulatory compliance
+- `ethical-review-agent` - Ethical considerations
 
 And many more...
 
@@ -146,14 +146,14 @@ Task(
 
 # 2. Delegate implementation via Task Tool
 Task(
-    subagent_type="@coding_agent",
+    subagent_type="coding-agent",
     description="Implement the features",
     prompt="Implement the authentication system based on the plan"
 )
 
 # 3. Delegate code review via Task Tool
 Task(
-    subagent_type="@code_reviewer_agent",
+    subagent_type="code-reviewer-agent",
     description="Review the implementation",
     prompt="Review the authentication implementation for quality and security"
 )
@@ -176,11 +176,11 @@ def delegate_to_best_agent(task_type, task_description, task_prompt):
         'security': 'security-auditor-agent',
         'testing': 'test-orchestrator-agent', 
         'ui': 'ui-designer-expert-shadcn-agent',
-        'api': '@coding_agent',
-        'architecture': '@system_architect_agent'
+        'api': 'coding-agent',
+        'architecture': 'system-architect-agent'
     }
     
-    agent_name = agent_mapping.get(task_type, '@coding_agent')
+    agent_name = agent_mapping.get(task_type, 'coding-agent')
     
     # Delegate via Task Tool
     Task(
@@ -201,12 +201,12 @@ def delegate_to_best_agent(task_type, task_description, task_prompt):
 {
     "success": True,
     "agent_info": {
-        "name": "coding_agent",
+        "name": "coding-agent",
         "role": "...",
         "context": "...",
         "capabilities_summary": {...}
     },
-    "claude_agent_definition": "---\nname: @coding_agent\n...",  # ← Claude Code format
+    "claude_agent_definition": "---\nname: coding-agent\n...",  # ← Claude Code format
     "yaml_content": {
         "config": {...},
         "contexts": [...],
@@ -241,7 +241,7 @@ The `claude_agent_definition` field contains a complete `.claude/agents/*.md` co
 {
     "success": False,
     "error": "Agent 'unknown_agent' not found in agent-library",
-    "available_agents": ["coding_agent", "debugger_agent", ...]
+    "available_agents": ["coding-agent", "debugger-agent", ...]
 }
 ```
 

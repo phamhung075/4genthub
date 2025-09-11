@@ -1,0 +1,41 @@
+agent_info:
+  author: DhafnckMCP
+  category: analytics
+  description: This autonomous agent conducts comprehensive research across multiple
+    domains including MCP servers, technology platforms, and integration solutions.
+    It utilizes advanced search capabilities, data analysis, and synthesis techniques
+    to provide deep insights and actionable intelligence. Specializes in gathering,
+    analyzing, and synthesizing complex information from diverse sources including
+    vendor assessments, framework evaluations, and tool comparisons to support
+    strategic decision-making and technology stack selection.
+  migration_date: '2025-09-09T13:00:00.000000'
+  name: "\U0001F50D Deep Research Agent"
+  slug: @deep-research-agent
+  usage_scenarios: Activate when conducting in-depth research, evaluating MCP servers,
+    assessing technology platforms, analyzing market trends, investigating technical
+    solutions, gathering competitive intelligence, performing vendor assessments,
+    or when comprehensive research expertise is needed. Essential for technology
+    stack evaluation and informed decision-making.
+  version: 2.0.0
+  research_domains:
+    - general_research
+    - mcp_servers
+    - technology_platforms
+    - integration_solutions
+    - competitive_analysis
+    - market_research
+    - vendor_assessment
+    - framework_evaluation
+    - tool_comparison
+capabilities:
+  execution_modes:
+  - interactive
+  - batch
+  groups:
+  - read
+  - edit
+  - mcp
+  - command
+compatibility:
+  backward_compatible: true
+  mcp_version: 1.0.0

@@ -221,7 +221,7 @@ class TestProjectApplicationFacade:
         """Test rebalance agents operation"""
         expected_response = {
             "success": True,
-            "rebalanced_agents": ["@coding_agent", "@test_agent"]
+            "rebalanced_agents": ["coding-agent", "@test_agent"]
         }
         mock_project_service.rebalance_agents.return_value = expected_response
         

@@ -1,0 +1,81 @@
+implementation_methodology:
+  objective: |
+    To implement comprehensive test suites based on test plans.
+    Maintain context under 40% for focused test development.
+    Enable parallel test implementation across different levels.
+    
+  importance: |
+    Test implementation requires minimal context per test type.
+    Context under 40% ensures accurate test creation.
+    Parallel test development accelerates coverage.
+    
+  context_management:
+    max_utilization: 40%
+    test_context:
+      essential:
+        - code_under_test: Target functions/classes
+        - test_requirements: What to verify
+        - test_data: Fixtures and mocks
+        - assertions: Expected outcomes
+      exclude:
+        - implementation_details: Internal code logic
+        - other_tests: Unrelated test suites
+        - deployment: Infrastructure tests
+        - documentation: Verbose guides
+        
+  parallel_test_implementation:
+    strategy: |
+      Implement different test levels simultaneously.
+      Each agent handles specific test type.
+      
+    test_delegation:
+      unit_tests:
+        agent: "@test-orchestrator-agent"
+        context: "Function-level tests"
+        size: "8,000 tokens"
+        
+      integration_tests:
+        agent: "@test-orchestrator-agent"
+        context: "Component interaction"
+        size: "10,000 tokens"
+        
+      e2e_tests:
+        agent: "@test-orchestrator-agent"
+        context: "User workflows"
+        size: "9,000 tokens"
+        
+      performance_tests:
+        agent: "@performance-load-tester-agent"
+        context: "Load and stress tests"
+        size: "7,000 tokens"
+        
+  implementation_process:
+    phases:
+      - test_setup:
+          context_budget: "10,000 tokens"
+          actions:
+            - create_structure: Test organization
+            - setup_fixtures: Test data
+            - configure_mocks: Dependencies
+            
+      - test_implementation:
+          context_budget: "20,000 tokens"
+          actions:
+            - write_tests: Test cases
+            - add_assertions: Verifications
+            - handle_async: Async tests
+            - add_cleanup: Teardown logic
+            
+      - test_execution:
+          context_budget: "8,000 tokens"
+          actions:
+            - run_tests: Execute suite
+            - check_coverage: Coverage report
+            - fix_failures: Debug issues
+            
+  output_specification:
+    primary_output:
+      - test_files: Test implementations
+      - test_fixtures: Data and mocks
+      - coverage_report: Test coverage
+      - test_results: Pass/fail status

@@ -25,7 +25,7 @@ Comprehensive documentation cleanup process completed across the agentic-project
 **Resolution**: Standardized all references to use `@agent_name` format with underscores
 
 **Files Modified**:
-- `.claude/agents/master_orchestrator_agent.md` - Updated agent references
+- `.claude/agents/master-orchestrator-agent.md` - Updated agent references
 - `ai_docs/api-integration/api-reference.md` - Standardized agent naming
 - `ai_docs/troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md` - Fixed agent references
 - `ai_docs/development-guides/agent-*.md` - Multiple agent documentation files updated
@@ -34,15 +34,15 @@ Comprehensive documentation cleanup process completed across the agentic-project
 **Before**: 
 ```markdown
 master-orchestrator-agent
-@coding_agent  
+coding-agent  
 debugger-agent
 ```
 
 **After**:
 ```markdown
-@master_orchestrator_agent
-@coding_agent
-@debugger_agent
+master-orchestrator-agent
+coding-agent
+debugger-agent
 ```
 
 #### 2. System Constraints Clarification  
@@ -137,15 +137,15 @@ manage_context:
 **Before**:
 ```markdown
 Use the master-orchestrator-agent to handle complex tasks.
-The @coding_agent can implement features.
+The coding-agent can implement features.
 Contact debugger-agent for issues.
 ```
 
 **After**:
 ```markdown  
-Use the @master_orchestrator_agent to handle complex tasks.
-The @coding_agent can implement features.
-Contact @debugger_agent for issues.
+Use the master-orchestrator-agent to handle complex tasks.
+The coding-agent can implement features.
+Contact debugger-agent for issues.
 ```
 
 ### API Documentation (Sample)

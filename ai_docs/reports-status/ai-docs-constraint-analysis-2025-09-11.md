@@ -34,10 +34,10 @@ Analysis of ai_docs directory identified multiple constraint violations and obso
 
 ### 3. Agent Naming Inconsistencies
 
-#### @master_orchestrator_agent vs master-orchestrator-agent
+#### master-orchestrator-agent vs master-orchestrator-agent
 **Issue**: Inconsistent agent naming conventions across documentation  
 **Files Affected**: 20+ occurrences found
-**Correct Format**: `@master_orchestrator_agent` (with @ prefix and underscores)
+**Correct Format**: `master-orchestrator-agent` (with @ prefix and underscores)
 **Incorrect Variants**: 
 - `master-orchestrator-agent` (hyphens instead of underscores)
 - Missing @ prefix in some examples
@@ -115,13 +115,13 @@ Analysis of ai_docs directory identified multiple constraint violations and obso
 2. **Standardize Agent Naming**:
    ```markdown
    # CORRECT FORMAT
-   @master_orchestrator_agent
-   @coding_agent
-   @debugger_agent
+   master-orchestrator-agent
+   coding-agent
+   debugger-agent
    
    # INCORRECT (remove/fix)
    master-orchestrator-agent
-   @coding_agent
+   coding-agent
    ```
 
 3. **Remove SQLite Documentation**:

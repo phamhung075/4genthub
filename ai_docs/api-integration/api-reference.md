@@ -110,7 +110,7 @@ mcp__dhafnck_mcp_http__manage_task(
     "created_at": "2024-01-01T00:00:00Z"
   },
   "workflow_guidance": {
-    "recommended_agent": "@coding_agent",
+    "recommended_agent": "coding-agent",
     "next_actions": ["Start implementation", "Write tests"],
     "hints": ["Use existing auth utilities"]
   }
@@ -262,7 +262,7 @@ mcp__dhafnck_mcp_http__manage_git_branch(
     action="assign_agent",
     project_id="project-uuid-123",
     git_branch_id="branch-uuid-456",
-    agent_id="@coding_agent"
+    agent_id="coding-agent"
 )
 
 # Format 2: agent_name (without @)
@@ -270,7 +270,7 @@ mcp__dhafnck_mcp_http__manage_git_branch(
     action="assign_agent",
     project_id="project-uuid-123", 
     git_branch_id="branch-uuid-456",
-    agent_id="coding_agent"
+    agent_id="coding-agent"
 )
 
 # Format 3: UUID (existing format)
@@ -495,24 +495,24 @@ Dynamic agent loading and execution.
 
 #### Available Agents
 
-- `@master_orchestrator_agent` - Complex multi-step workflows
-- `@coding_agent` - Implementation and development
-- `@debugger_agent` - Bug fixing and troubleshooting
-- `@test_orchestrator_agent` - Testing and validation
-- `@task_planning_agent` - Task breakdown and planning
+- `master-orchestrator-agent` - Complex multi-step workflows
+- `coding-agent` - Implementation and development
+- `debugger-agent` - Bug fixing and troubleshooting
+- `test-orchestrator-agent` - Testing and validation
+- `task-planning-agent` - Task breakdown and planning
 - `@ui_designer_agent` - UI/UX design and frontend
-- `@security_auditor_agent` - Security analysis and auditing
-- `@documentation_agent` - Documentation creation
-- `@deep_research_agent` - Research and investigation
+- `security-auditor-agent` - Security analysis and auditing
+- `documentation-agent` - Documentation creation
+- `deep-research-agent` - Research and investigation
 
 #### Examples
 
 ```bash
 # Switch to coding agent
-mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 
 # Switch to security auditor for security review
-mcp__dhafnck_mcp_http__call_agent(name_agent="@security_auditor_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="security-auditor-agent")
 ```
 
 ---
@@ -682,7 +682,7 @@ Authorization: Bearer your-token-here
 
 ### 4. Agent Usage
 - Switch to appropriate agent before work
-- Use `@master_orchestrator_agent` as fallback
+- Use `master-orchestrator-agent` as fallback
 - Monitor agent assignments for optimal distribution
 
 ## Versioning

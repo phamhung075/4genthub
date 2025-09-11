@@ -39,7 +39,7 @@ class TestIntelligentContextSelector:
                 'description': 'Add JWT-based authentication system with login and logout functionality',
                 'status': 'in_progress',
                 'priority': 'high',
-                'assignees': ['@coding_agent'],
+                'assignees': ['coding-agent'],
                 'git_branch_id': 'branch_1',
                 'project_id': 'project_1'
             },
@@ -51,7 +51,7 @@ class TestIntelligentContextSelector:
                 'description': 'Create user profile editing interface with validation',
                 'status': 'todo',
                 'priority': 'medium',
-                'assignees': ['@ui_specialist_agent'],
+                'assignees': ['ui-specialist-agent'],
                 'git_branch_id': 'branch_1', 
                 'project_id': 'project_1'
             },
@@ -187,7 +187,7 @@ class TestIntelligentContextSelector:
                 max_context_size=1000,
                 priority_boost_keywords=['authentication', 'security'],
                 penalty_keywords=['deprecated'],
-                agent_preferences={'@coding_agent': 0.8}
+                agent_preferences={'coding-agent': 0.8}
             )
             
             result = selector.select_context(

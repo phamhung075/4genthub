@@ -14,60 +14,60 @@ MANAGE_AGENT_DESCRIPTION = """
 🔍 AVAILABLE AGENTS (33 Specialized Agents from agent-library):
 
 Development & Coding (4):
-  • @coding_agent - Implementation and feature development  
-  • @debugger_agent - Bug fixing and troubleshooting
-  • @code_reviewer_agent - Code quality and review
-  • @prototyping_agent - Rapid prototyping and POCs
+  • coding-agent - Implementation and feature development  
+  • debugger-agent - Bug fixing and troubleshooting
+  • code-reviewer-agent - Code quality and review
+  • prototyping-agent - Rapid prototyping and POCs
 
 Testing & QA (3):
-  • @test_orchestrator_agent - Comprehensive test management
-  • @uat_coordinator_agent - User acceptance testing  
-  • @performance_load_tester_agent - Performance and load testing
+  • test-orchestrator-agent - Comprehensive test management
+  • uat-coordinator-agent - User acceptance testing  
+  • performance-load-tester-agent - Performance and load testing
 
 Architecture & Design (4):
-  • @system_architect_agent - System design and architecture
-  • @design_system_agent - Design system and UI patterns
-  • @ui_specialist_agent - UI/UX design and frontend development
-  • @core_concept_agent - Core concepts and fundamentals
+  • system-architect-agent - System design and architecture
+  • design-system-agent - Design system and UI patterns
+  • ui-specialist-agent - UI/UX design and frontend development
+  • core-concept-agent - Core concepts and fundamentals
 
 DevOps & Infrastructure (1):
-  • @devops_agent - CI/CD and infrastructure
+  • devops-agent - CI/CD and infrastructure
 
 Documentation (1):
-  • @documentation_agent - Technical documentation
+  • documentation-agent - Technical documentation
 
 Project & Planning (4):
-  • @project_initiator_agent - Project setup and kickoff
-  • @task_planning_agent - Task breakdown and planning
-  • @master_orchestrator_agent - Complex workflow orchestration
-  • @elicitation_agent - Requirements gathering
+  • project-initiator-agent - Project setup and kickoff
+  • task-planning-agent - Task breakdown and planning
+  • master-orchestrator-agent - Complex workflow orchestration
+  • elicitation-agent - Requirements gathering
 
 Security & Compliance (3):
-  • @security_auditor_agent - Security audits and reviews
-  • @compliance_scope_agent - Regulatory compliance
-  • @ethical_review_agent - Ethical considerations
+  • security-auditor-agent - Security audits and reviews
+  • compliance-scope-agent - Regulatory compliance
+  • ethical-review-agent - Ethical considerations
 
 Analytics & Optimization (3):
-  • @analytics_setup_agent - Analytics and tracking setup
-  • @efficiency_optimization_agent - Process optimization
-  • @health_monitor_agent - System health monitoring
+  • analytics-setup-agent - Analytics and tracking setup
+  • efficiency-optimization-agent - Process optimization
+  • health-monitor-agent - System health monitoring
 
 Marketing & Branding (3):
-  • @marketing_strategy_orchestrator_agent - Marketing strategy
-  • @community_strategy_agent - Community building
-  • @branding_agent - Brand identity
+  • marketing-strategy-orchestrator-agent - Marketing strategy
+  • community-strategy-agent - Community building
+  • branding-agent - Brand identity
 
 Research & Analysis (4):
-  • @deep_research_agent - In-depth research
-  • @llm_ai_agents_research - AI/ML research and innovations
-  • @root_cause_analysis_agent - Problem analysis
-  • @technology_advisor_agent - Technology recommendations
+  • deep-research-agent - In-depth research
+  • llm-ai-agents-research - AI/ML research and innovations
+  • root-cause-analysis-agent - Problem analysis
+  • technology-advisor-agent - Technology recommendations
 
 AI & Machine Learning (1):
-  • @ml_specialist_agent - Machine learning implementation
+  • ml-specialist-agent - Machine learning implementation
 
 Creative & Ideation (1):
-  • @creative_ideation_agent - Creative idea generation
+  • creative-ideation-agent - Creative idea generation
 
 | Action      | Required Parameters                  | Optional Parameters                | Description                                      |
 |-------------|-------------------------------------|------------------------------------|--------------------------------------------------|

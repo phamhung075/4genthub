@@ -10,10 +10,10 @@
 
 #### Database Persistence
 Successfully created 4 test tasks with various agent combinations:
-1. **Single agent**: `@coding_agent`
-2. **Three agents**: `@coding_agent`, `@debugger_agent`, `@test_orchestrator_agent`
-3. **Two agents**: `@devops_agent`, `@system_architect_agent`
-4. **Five agents**: `@master_orchestrator_agent`, `@task_planning_agent`, `@documentation_agent`, `@security_auditor_agent`, `@performance_load_tester_agent`
+1. **Single agent**: `coding-agent`
+2. **Three agents**: `coding-agent`, `debugger-agent`, `test-orchestrator-agent`
+3. **Two agents**: `devops-agent`, `system-architect-agent`
+4. **Five agents**: `master-orchestrator-agent`, `task-planning-agent`, `documentation-agent`, `security-auditor-agent`, `performance-load-tester-agent`
 
 #### Database Verification
 ```sql
@@ -21,7 +21,7 @@ SELECT task_id, assignee_id, role FROM task_assignees;
 ```
 **Result**: All assignees correctly saved with:
 - Proper task_id references
-- Correct assignee_id values (e.g., `@coding_agent`)
+- Correct assignee_id values (e.g., `coding-agent`)
 - Role field set to "agent"
 - User isolation maintained
 
@@ -29,11 +29,11 @@ SELECT task_id, assignee_id, role FROM task_assignees;
 Task retrieval returns complete assignee arrays:
 ```json
 "assignees": [
-  "@master_orchestrator_agent",
-  "@task_planning_agent",
-  "@documentation_agent",
-  "@security_auditor_agent",
-  "@performance_load_tester_agent"
+  "master-orchestrator-agent",
+  "task-planning-agent",
+  "documentation-agent",
+  "security-auditor-agent",
+  "performance-load-tester-agent"
 ]
 ```
 
@@ -67,11 +67,11 @@ Task retrieval returns complete assignee arrays:
 ```
 Backend (✅ Working)
   ↓
-  Task with assignees: ["@coding_agent", "@test_orchestrator_agent"]
+  Task with assignees: ["coding-agent", "test-orchestrator-agent"]
   ↓
 API Response (✅ Working)
   ↓
-  JSON: { "assignees": ["@coding_agent", "@test_orchestrator_agent"] }
+  JSON: { "assignees": ["coding-agent", "test-orchestrator-agent"] }
   ↓
 Frontend Receipt (✅ Working)
   ↓
@@ -81,20 +81,20 @@ Task List Display (⚠️ Limited)
   ↓
 Task Details Dialog (✅ Working)
   ↓
-  Shows: [@coding_agent] [@test_orchestrator_agent] (full badges)
+  Shows: [coding-agent] [test-orchestrator-agent] (full badges)
 ```
 
 ## Agent Name Format
 
 ### Correct Format (Using Underscores)
-✅ `@coding_agent`
-✅ `@debugger_agent`
-✅ `@devops_agent`
-✅ `@system_architect_agent`
-✅ `@test_orchestrator_agent`
+✅ `coding-agent`
+✅ `debugger-agent`
+✅ `devops-agent`
+✅ `system-architect-agent`
+✅ `test-orchestrator-agent`
 
 ### Incorrect Format (Rejected)
-❌ `@@coding_agent` (hyphen not underscore)
+❌ `@coding-agent` (hyphen not underscore)
 ❌ `@ui_designer_expert_shadcn_agent` (doesn't exist, should be `@ui_designer_agent`)
 
 ## Recommendations

@@ -17,42 +17,42 @@ Successfully consolidated the DhafnckMCP agent library from 42 agents to 31 agen
 
 ## Phase 1: Documentation & Creative Consolidation
 ### Documentation Agents (3→1)
-- `tech_spec_agent` → **documentation_agent v2.0**
-- `prd_architect_agent` → **documentation_agent v2.0**
+- `tech_spec_agent` → **documentation-agent v2.0**
+- `prd_architect_agent` → **documentation-agent v2.0**
 - Enhanced with: tech specs, PRDs, API ai_docs, user guides
 
 ### Research Agents (2→1)
-- `mcp_researcher_agent` → **deep_research_agent v2.0**
+- `mcp_researcher_agent` → **deep-research-agent v2.0**
 - Enhanced with: MCP research, tool evaluation, platform analysis
 
 ### Creative Agents (2→1)
-- `idea_generation_agent` → **creative_ideation_agent v1.0**
-- `idea_refinement_agent` → **creative_ideation_agent v1.0**
+- `idea_generation_agent` → **creative-ideation-agent v1.0**
+- `idea_refinement_agent` → **creative-ideation-agent v1.0**
 - Enhanced with: generation, refinement, brainstorming
 
 ### Marketing Agents (6→3)
-- `seo_sem_agent` → **marketing_strategy_orchestrator_agent v2.0**
-- `growth_hacking_idea_agent` → **marketing_strategy_orchestrator_agent v2.0**
-- `content_strategy_agent` → **marketing_strategy_orchestrator_agent v2.0**
+- `seo_sem_agent` → **marketing-strategy-orchestrator-agent v2.0**
+- `growth_hacking_idea_agent` → **marketing-strategy-orchestrator-agent v2.0**
+- `content_strategy_agent` → **marketing-strategy-orchestrator-agent v2.0**
 - Enhanced with: SEO, SEM, growth hacking, content strategy
-- Note: `branding_agent` and `community_strategy_agent` remain separate
+- Note: `branding-agent` and `community-strategy-agent` remain separate
 
 ## Phase 2: Debug & DevOps Consolidation
 ### Debug Agents (2→1)
-- `remediation_agent` → **debugger_agent v2.0**
+- `remediation_agent` → **debugger-agent v2.0**
 - Enhanced with: debugging, remediation, recovery procedures
 
 ### DevOps Agents (4→1)
-- `swarm_scaler_agent` → **devops_agent v2.0**
-- `adaptive_deployment_strategist_agent` → **devops_agent v2.0**
-- `mcp_configuration_agent` → **devops_agent v2.0**
+- `swarm_scaler_agent` → **devops-agent v2.0**
+- `adaptive_deployment_strategist_agent` → **devops-agent v2.0**
+- `mcp_configuration_agent` → **devops-agent v2.0**
 - Enhanced with: swarm scaling, deployment strategies, MCP config
 
 ## Phase 3: Agent Renamings
 ### Clarity Improvements
-- `master_orchestrator_agent` → **master_orchestrator_agent**
-- `brainjs_ml_agent` → **ml_specialist_agent**
-- `ui_designer_expert_shadcn_agent` → **ui_specialist_agent**
+- `master-orchestrator-agent` → **master-orchestrator-agent**
+- `brainjs_ml_agent` → **ml-specialist-agent**
+- `ui_designer_expert_shadcn_agent` → **ui-specialist-agent**
 
 ## Phase 4: Implementation & Testing
 ### Technical Changes
@@ -69,12 +69,12 @@ TESTING CONSOLIDATED AGENTS
 
 1. Testing Consolidated Agents (Enhanced Versions):
 ----------------------------------------
-  documentation_agent                      ✅ PASS
-  deep_research_agent                      ✅ PASS
-  creative_ideation_agent                  ✅ PASS
-  marketing_strategy_orchestrator_agent    ✅ PASS
-  debugger_agent                           ✅ PASS
-  devops_agent                             ✅ PASS
+  documentation-agent                      ✅ PASS
+  deep-research-agent                      ✅ PASS
+  creative-ideation-agent                  ✅ PASS
+  marketing-strategy-orchestrator-agent    ✅ PASS
+  debugger-agent                           ✅ PASS
+  devops-agent                             ✅ PASS
 
 2. Testing Backward Compatibility (Deprecated Names):
 ----------------------------------------
@@ -93,59 +93,59 @@ SUMMARY:
 
 ## Final Agent List (31 Agents)
 ### Management & Orchestration (4)
-1. master_orchestrator_agent (renamed from uber_orchestrator)
-2. task_planning_agent
-3. project_initiator_agent
-4. elicitation_agent
+1. master-orchestrator-agent (renamed from uber_orchestrator)
+2. task-planning-agent
+3. project-initiator-agent
+4. elicitation-agent
 
 ### Development & Coding (4)
-5. coding_agent
-6. debugger_agent (enhanced with remediation)
-7. code_reviewer_agent
-8. prototyping_agent
+5. coding-agent
+6. debugger-agent (enhanced with remediation)
+7. code-reviewer-agent
+8. prototyping-agent
 
 ### Testing & QA (3)
-9. test_orchestrator_agent
-10. uat_coordinator_agent
-11. performance_load_tester_agent
+9. test-orchestrator-agent
+10. uat-coordinator-agent
+11. performance-load-tester-agent
 
 ### Architecture & Design (4)
-12. system_architect_agent
-13. design_system_agent
-14. ui_specialist_agent (renamed from ui_designer_expert_shadcn)
-15. core_concept_agent
+12. system-architect-agent
+13. design-system-agent
+14. ui-specialist-agent (renamed from ui_designer_expert_shadcn)
+15. core-concept-agent
 
 ### DevOps & Deployment (1)
-16. devops_agent (consolidated from 4 agents)
+16. devops-agent (consolidated from 4 agents)
 
 ### Documentation & Specs (1)
-17. documentation_agent (consolidated from 3 agents)
+17. documentation-agent (consolidated from 3 agents)
 
 ### Security & Compliance (3)
-18. security_auditor_agent
-19. compliance_scope_agent
-20. ethical_review_agent
+18. security-auditor-agent
+19. compliance-scope-agent
+20. ethical-review-agent
 
 ### Analytics & Optimization (3)
-21. analytics_setup_agent
-22. efficiency_optimization_agent
-23. health_monitor_agent
+21. analytics-setup-agent
+22. efficiency-optimization-agent
+23. health-monitor-agent
 
 ### Marketing & Growth (3)
-24. marketing_strategy_orchestrator_agent (consolidated from 3)
-25. branding_agent
-26. community_strategy_agent
+24. marketing-strategy-orchestrator-agent (consolidated from 3)
+25. branding-agent
+26. community-strategy-agent
 
 ### Research & Analysis (3)
-27. deep_research_agent (enhanced with MCP research)
-28. root_cause_analysis_agent
-29. technology_advisor_agent
+27. deep-research-agent (enhanced with MCP research)
+28. root-cause-analysis-agent
+29. technology-advisor-agent
 
 ### AI & Machine Learning (1)
-30. ml_specialist_agent (renamed from brainjs_ml)
+30. ml-specialist-agent (renamed from brainjs_ml)
 
 ### Creative & Ideation (1)
-31. creative_ideation_agent (consolidated from 2)
+31. creative-ideation-agent (consolidated from 2)
 
 ## Benefits Achieved
 1. **Cleaner Architecture**: 26% reduction in agent count
@@ -165,7 +165,7 @@ SUMMARY:
 - 12 agents archived to deprecated folder
 
 ## Next Steps
-- Consider merging `community_strategy_agent` into `marketing_strategy_orchestrator_agent` to reach exactly 30 agents
+- Consider merging `community-strategy-agent` into `marketing-strategy-orchestrator-agent` to reach exactly 30 agents
 - Update agent interaction documentation
 - Monitor performance improvements
 - Gather user feedback on consolidated agents

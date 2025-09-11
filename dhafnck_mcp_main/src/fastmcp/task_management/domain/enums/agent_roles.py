@@ -17,62 +17,62 @@ class AgentRole(Enum):
     """Enumeration of all available agent roles - matches dhafnck_mcp_main/agent-library/agents"""
     
     # Development & Coding (4)
-    ANALYTICS_SETUP = "analytics_setup_agent"
-    CODING = "coding_agent"
-    CODE_REVIEWER = "code_reviewer_agent"
-    DEBUGGER = "debugger_agent"
+    ANALYTICS_SETUP = "analytics-setup-agent"
+    CODING = "coding-agent"
+    CODE_REVIEWER = "code-reviewer-agent"
+    DEBUGGER = "debugger-agent"
     
     # Architecture & Design (4)
-    CORE_CONCEPT = "core_concept_agent"
-    DESIGN_SYSTEM = "design_system_agent"
-    SYSTEM_ARCHITECT = "system_architect_agent"
-    UI_SPECIALIST = "ui_specialist_agent"
+    CORE_CONCEPT = "core-concept-agent"
+    DESIGN_SYSTEM = "design-system-agent"
+    SYSTEM_ARCHITECT = "system-architect-agent"
+    UI_SPECIALIST = "ui-specialist-agent"
     
     # Testing & QA (3)
-    PERFORMANCE_LOAD_TESTER = "performance_load_tester_agent"
-    TEST_ORCHESTRATOR = "test_orchestrator_agent"
-    UAT_COORDINATOR = "uat_coordinator_agent"
+    PERFORMANCE_LOAD_TESTER = "performance-load-tester-agent"
+    TEST_ORCHESTRATOR = "test-orchestrator-agent"
+    UAT_COORDINATOR = "uat-coordinator-agent"
     
     # DevOps & Infrastructure (1)
-    DEVOPS = "devops_agent"
+    DEVOPS = "devops-agent"
     
     # Documentation (1)
-    DOCUMENTATION = "documentation_agent"
+    DOCUMENTATION = "documentation-agent"
     
     # Project & Planning (4)
-    ELICITATION = "elicitation_agent"
-    MASTER_ORCHESTRATOR = "master_orchestrator_agent"
-    PROJECT_INITIATOR = "project_initiator_agent"
-    TASK_PLANNING = "task_planning_agent"
+    ELICITATION = "elicitation-agent"
+    MASTER_ORCHESTRATOR = "master-orchestrator-agent"
+    PROJECT_INITIATOR = "project-initiator-agent"
+    TASK_PLANNING = "task-planning-agent"
     
     # Security & Compliance (3)
-    COMPLIANCE_SCOPE = "compliance_scope_agent"
-    ETHICAL_REVIEW = "ethical_review_agent"
-    SECURITY_AUDITOR = "security_auditor_agent"
+    COMPLIANCE_SCOPE = "compliance-scope-agent"
+    ETHICAL_REVIEW = "ethical-review-agent"
+    SECURITY_AUDITOR = "security-auditor-agent"
     
     # Analytics & Optimization (2)
-    EFFICIENCY_OPTIMIZATION = "efficiency_optimization_agent"
-    HEALTH_MONITOR = "health_monitor_agent"
+    EFFICIENCY_OPTIMIZATION = "efficiency-optimization-agent"
+    HEALTH_MONITOR = "health-monitor-agent"
     
     # Marketing & Branding (3)
-    BRANDING = "branding_agent"
-    COMMUNITY_STRATEGY = "community_strategy_agent"
-    MARKETING_STRATEGY_ORCHESTRATOR = "marketing_strategy_orchestrator_agent"
+    BRANDING = "branding-agent"
+    COMMUNITY_STRATEGY = "community-strategy-agent"
+    MARKETING_STRATEGY_ORCHESTRATOR = "marketing-strategy-orchestrator-agent"
     
     # Research & Analysis (4)
-    DEEP_RESEARCH = "deep_research_agent"
-    LLM_AI_AGENTS_RESEARCH = "llm_ai_agents_research"
-    ROOT_CAUSE_ANALYSIS = "root_cause_analysis_agent"
-    TECHNOLOGY_ADVISOR = "technology_advisor_agent"
+    DEEP_RESEARCH = "deep-research-agent"
+    LLM_AI_AGENTS_RESEARCH = "llm-ai-agents-research"
+    ROOT_CAUSE_ANALYSIS = "root-cause-analysis-agent"
+    TECHNOLOGY_ADVISOR = "technology-advisor-agent"
     
     # AI & Machine Learning (1)
-    ML_SPECIALIST = "ml_specialist_agent"
+    ML_SPECIALIST = "ml-specialist-agent"
     
     # Creative & Ideation (1)
-    CREATIVE_IDEATION = "creative_ideation_agent"
+    CREATIVE_IDEATION = "creative-ideation-agent"
     
     # Prototyping (1)
-    PROTOTYPING = "prototyping_agent"
+    PROTOTYPING = "prototyping-agent"
 
 
     @classmethod
@@ -152,7 +152,7 @@ def get_yaml_lib_path(role_input) -> Optional[str]:
         role_input: Either a role slug (string) or AgentRole enum
         
     Returns:
-        Relative path to agent-library directory (e.g., "agent-library/coding_agent")
+        Relative path to agent-library directory (e.g., "agent-library/coding-agent")
         or None if role is invalid
     """
     if isinstance(role_input, str):
@@ -211,18 +211,18 @@ def get_role_metadata_from_yaml(role_input) -> Optional[Dict[str, any]]:
 
 # Legacy role mappings for backward compatibility
 LEGACY_ROLE_MAPPINGS = {
-    "senior_developer": "coding_agent",
-    "platform_engineer": "devops_agent", 
+    "senior_developer": "coding-agent",
+    "platform_engineer": "devops-agent", 
     "qa_engineer": "functional_tester_agent",
-    "code_reviewer": "code_reviewer_agent",
-    "devops_engineer": "devops_agent",
-    "security_engineer": "security_auditor_agent",
-    "technical_writer": "documentation_agent",
-    "task_planner": "task_planning_agent",
-    "context_engineer": "core_concept_agent",
-    "cache_engineer": "efficiency_optimization_agent",
-    "metrics_engineer": "analytics_setup_agent",
-    "cli_engineer": "coding_agent"
+    "code_reviewer": "code-reviewer-agent",
+    "devops_engineer": "devops-agent",
+    "security_engineer": "security-auditor-agent",
+    "technical_writer": "documentation-agent",
+    "task_planner": "task-planning-agent",
+    "context_engineer": "core-concept-agent",
+    "cache_engineer": "efficiency-optimization-agent",
+    "metrics_engineer": "analytics-setup-agent",
+    "cli_engineer": "coding-agent"
 }
 
 

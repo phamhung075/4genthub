@@ -3,7 +3,7 @@
 **Date:** 2025-09-05  
 **Component:** MCP Testing Infrastructure  
 **Status:** REQUIREMENTS SPECIFICATION  
-**Author:** @test_orchestrator_agent
+**Author:** test-orchestrator-agent
 
 ## Executive Summary
 
@@ -379,7 +379,7 @@ All MCP operations must pass comprehensive testing with zero authentication-rela
 
 ---
 
-**Created by:** @test_orchestrator_agent  
+**Created by:** test-orchestrator-agent  
 **Requirements Version:** 1.0  
 **Target Implementation:** 2025-09-06 to 2025-09-12  
 **Review Required:** Development Team, DevOps, QA

@@ -28,19 +28,19 @@ Successfully implemented a comprehensive role-based tool assignment system for t
 #### COORDINATORS (6 agents)
 - **Permissions**: Read-only (`write: false, create: false`)
 - **Tools**: Read, Grep, Glob, Bash (restricted), Task Management
-- **Examples**: security_auditor_agent, deep_research_agent, task_planning_agent
+- **Examples**: security-auditor-agent, deep-research-agent, task-planning-agent
 - **Function**: Analyze, plan, and delegate tasks to file creators
 
 #### FILE CREATORS (6 agents)  
 - **Permissions**: Full file operations (`write: true, create: true`)
 - **Tools**: Read, Write, Edit, MultiEdit, Bash, Domain tools
-- **Examples**: coding_agent, test_orchestrator_agent, documentation_agent
+- **Examples**: coding-agent, test-orchestrator-agent, documentation-agent
 - **Function**: Implement solutions within their domain
 
 #### SPECIALISTS (6+ agents)
 - **Permissions**: Domain-specific capabilities
 - **Tools**: Specialized MCP tools for their domain
-- **Examples**: ui_designer_expert_shadcn_agent, devops_agent
+- **Examples**: ui_designer_expert_shadcn_agent, devops-agent
 - **Function**: Domain-specific implementations
 
 ### 3. Files Modified
@@ -68,25 +68,25 @@ Failed: 0
 ```
 
 ### Sample Verification
-- **security_auditor_agent**: ✅ Read-only with delegation tools
-- **coding_agent**: ✅ Full development capabilities
+- **security-auditor-agent**: ✅ Read-only with delegation tools
+- **coding-agent**: ✅ Full development capabilities
 - **ui_designer_expert_shadcn_agent**: ✅ UI-specific tools
 
 ## Delegation Workflow Examples
 
 ### Security Fix Workflow
-1. `security_auditor_agent` analyzes code, finds SQL injection
+1. `security-auditor-agent` analyzes code, finds SQL injection
 2. Creates task: "Fix SQL injection in user.js:42"
-3. Assigns task to `coding_agent`
-4. `coding_agent` implements fix
-5. `security_auditor_agent` validates (read-only)
+3. Assigns task to `coding-agent`
+4. `coding-agent` implements fix
+5. `security-auditor-agent` validates (read-only)
 
 ### Feature Implementation
-1. `task_planning_agent` breaks down feature
+1. `task-planning-agent` breaks down feature
 2. Creates parallel subtasks:
-   - API development → `coding_agent`
+   - API development → `coding-agent`
    - UI components → `ui_designer_expert_shadcn_agent`
-   - Test suite → `test_orchestrator_agent`
+   - Test suite → `test-orchestrator-agent`
 3. All work simultaneously
 
 ## Benefits Achieved

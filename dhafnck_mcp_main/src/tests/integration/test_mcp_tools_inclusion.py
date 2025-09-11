@@ -15,7 +15,7 @@ def test_mcp_tools_inclusion():
     """Test that MCP tools like mcp__browsermcp__browser_navigate are included in tools"""
     
     # Test with test-orchestrator-agent which should have MCP tools
-    result = call_agent("test_orchestrator_agent")
+    result = call_agent("test-orchestrator-agent")
     
     print("=== MCP TOOLS INCLUSION TEST ===")
     print(f"Success: {result['success']}")

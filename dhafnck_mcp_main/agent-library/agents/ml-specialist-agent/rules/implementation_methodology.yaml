@@ -1,0 +1,81 @@
+implementation_methodology:
+  objective: |
+    To implement machine learning models and AI features based on specifications.
+    Maintain context under 40% for efficient model development.
+    Enable parallel training and evaluation workflows.
+    
+  importance: |
+    ML implementation requires focused context on data and models.
+    Context under 40% prevents confusion between experiments.
+    Parallel training accelerates model development.
+    
+  context_management:
+    max_utilization: 40%
+    ml_context:
+      essential:
+        - data_schema: Input/output formats
+        - model_architecture: Network structure
+        - training_params: Hyperparameters
+        - evaluation_metrics: Success criteria
+      exclude:
+        - ui_code: Frontend implementations
+        - infrastructure: Deployment details
+        - unrelated_data: Other datasets
+        - business_rules: Non-ML logic
+        
+  parallel_ml_development:
+    strategy: |
+      Train multiple models simultaneously.
+      Parallel data preprocessing and evaluation.
+      
+    ml_delegation:
+      data_preprocessing:
+        agent: "@ml-specialist-agent"
+        context: "Data cleaning, normalization"
+        size: "8,000 tokens"
+        
+      model_training:
+        agent: "@ml-specialist-agent"
+        context: "Network, training loop"
+        size: "10,000 tokens"
+        
+      hyperparameter_tuning:
+        agent: "@ml-specialist-agent"
+        context: "Grid search, optimization"
+        size: "7,000 tokens"
+        
+      evaluation:
+        agent: "@ml-specialist-agent"
+        context: "Metrics, validation"
+        size: "6,000 tokens"
+        
+  implementation_process:
+    phases:
+      - data_preparation:
+          context_budget: "12,000 tokens"
+          actions:
+            - load_data: Dataset ingestion
+            - preprocess: Cleaning, normalization
+            - split_data: Train/val/test splits
+            
+      - model_implementation:
+          context_budget: "15,000 tokens"
+          actions:
+            - define_architecture: Neural network
+            - implement_training: Training loop
+            - add_callbacks: Monitoring hooks
+            - save_checkpoints: Model persistence
+            
+      - evaluation:
+          context_budget: "10,000 tokens"
+          actions:
+            - run_evaluation: Test metrics
+            - visualize_results: Performance plots
+            - export_model: Production format
+            
+  output_specification:
+    primary_output:
+      - model_code: Training implementation
+      - trained_models: Saved checkpoints
+      - evaluation_reports: Performance metrics
+      - inference_api: Prediction interface

@@ -62,7 +62,7 @@ class CRUDHandler:
                 operation="create_task",
                 field="assignees",
                 expected="At least one agent must be assigned to the task",
-                hint="Include 'assignees' with at least one valid agent (e.g., ['@@coding_agent'] or ['@test-orchestrator-agent'])"
+                hint="Include 'assignees' with at least one valid agent (e.g., ['@coding-agent'] or ['@test-orchestrator-agent'])"
             )
         
         # Validate assignees if provided
@@ -107,7 +107,7 @@ class CRUDHandler:
                         operation="create_task",
                         field="assignees",
                         expected="Valid agent roles from AgentRole enum",
-                        hint=f"Invalid assignees: {invalid_assignees}. Use valid agent roles like '@coding_agent', '@test_orchestrator_agent'"
+                        hint=f"Invalid assignees: {invalid_assignees}. Use valid agent roles like 'coding-agent', 'test-orchestrator-agent'"
                     )
                 
                 if not validated_assignees:
@@ -115,7 +115,7 @@ class CRUDHandler:
                         operation="create_task",
                         field="assignees",
                         expected="At least one valid agent must be assigned",
-                        hint="Provide at least one valid agent role like '@coding_agent' or '@test_orchestrator_agent'"
+                        hint="Provide at least one valid agent role like 'coding-agent' or 'test-orchestrator-agent'"
                     )
                 
                 assignees = validated_assignees
@@ -127,7 +127,7 @@ class CRUDHandler:
                     operation="create_task",
                     field="assignees",
                     expected="Valid agent roles from AgentRole enum",
-                    hint=f"Error validating assignees: {str(e)}. Use valid agent roles like '@coding_agent', '@test_orchestrator_agent'"
+                    hint=f"Error validating assignees: {str(e)}. Use valid agent roles like 'coding-agent', 'test-orchestrator-agent'"
                 )
         
         request = CreateTaskRequest(

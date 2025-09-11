@@ -118,11 +118,11 @@ def secure_agent_authentication(user_id: str, agent_name: str, operation: str) -
 #### Step 2: Agent Authorization Matrix
 ```python
 AGENT_AUTHORIZATION_MATRIX = {
-    "@security_auditor_agent": {
+    "security-auditor-agent": {
         "required_permissions": ["security:read", "security:audit"],
         "restricted_operations": ["security:modify", "security:delete"]
     },
-    "@coding_agent": {
+    "coding-agent": {
         "required_permissions": ["code:read", "code:write"],
         "restricted_operations": ["admin:all"]
     },
@@ -259,7 +259,7 @@ If legitimate authentication is needed for development/testing:
 
 ---
 
-**Document Authority:** Security Auditor Agent (@security_auditor_agent)  
+**Document Authority:** Security Auditor Agent (security-auditor-agent)  
 **Review Status:** ✅ **COMPLETED** - Security Team Lead Approved  
 **Implementation Date:** 2025-08-25 - All vulnerabilities resolved  
 **Next Review Date:** Quarterly security audit (2025-11-25)

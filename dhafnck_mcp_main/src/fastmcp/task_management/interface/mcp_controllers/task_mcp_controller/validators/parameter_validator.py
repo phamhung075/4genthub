@@ -72,7 +72,7 @@ class ParameterValidator:
         if assignees and not self._is_valid_assignees_list(assignees):
             return False, self._create_validation_error(
                 "assignees", "A list of valid agent identifiers or user IDs",
-                "Assignees should be agent identifiers (e.g., '@@coding_agent') or user IDs (e.g., 'user123')"
+                "Assignees should be agent identifiers (e.g., '@coding-agent') or user IDs (e.g., 'user123')"
             )
         
         if labels and not self._is_valid_labels_list(labels):
@@ -202,8 +202,8 @@ class ParameterValidator:
         """Check if assignees list is valid.
         
         Accepts various assignee formats:
-        - Agent identifiers with @ prefix (e.g., "@@coding_agent")
-        - Agent identifiers without @ prefix (e.g., "@coding_agent") 
+        - Agent identifiers with @ prefix (e.g., "@coding-agent")
+        - Agent identifiers without @ prefix (e.g., "coding-agent") 
         - User IDs (e.g., "user123")
         """
         if not isinstance(assignees, list):

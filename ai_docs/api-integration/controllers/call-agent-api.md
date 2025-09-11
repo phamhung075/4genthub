@@ -34,7 +34,7 @@ Loads and invokes a specific agent by name for task execution.
 ```json
 {
   "action": "call_agent",
-  "name_agent": "@master_orchestrator_agent"
+  "name_agent": "master-orchestrator-agent"
 }
 ```
 
@@ -43,65 +43,65 @@ Loads and invokes a specific agent by name for task execution.
 All agent names must follow the `@agent-name` format:
 - **Prefix**: Must start with `@`
 - **Format**: Use kebab-case (lowercase with hyphens)
-- **Examples**: `@@coding_agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
+- **Examples**: `@coding-agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
 
 ## Available Agents (42 Total)
 
 ### Development & Coding (4)
-- `@coding_agent` - Implementation and feature development
-- `@debugger_agent` - Bug fixing and troubleshooting
-- `@code_reviewer_agent` - Code quality and review
-- `@prototyping_agent` - Rapid prototyping and POCs
+- `coding-agent` - Implementation and feature development
+- `debugger-agent` - Bug fixing and troubleshooting
+- `code-reviewer-agent` - Code quality and review
+- `prototyping-agent` - Rapid prototyping and POCs
 
 ### Testing & QA (3)
-- `@test_orchestrator_agent` - Comprehensive test management
-- `@uat_coordinator_agent` - User acceptance testing
-- `@performance_load_tester_agent` - Performance and load testing
+- `test-orchestrator-agent` - Comprehensive test management
+- `uat-coordinator-agent` - User acceptance testing
+- `performance-load-tester-agent` - Performance and load testing
 
 ### Architecture & Design (4)
-- `@system_architect_agent` - System design and architecture
-- `@design_system_agent` - Design system and UI patterns
-- `@ui_specialist_agent` - UI/UX design and frontend development
-- `@core_concept_agent` - Core concepts and fundamentals
+- `system-architect-agent` - System design and architecture
+- `design-system-agent` - Design system and UI patterns
+- `ui-specialist-agent` - UI/UX design and frontend development
+- `core-concept-agent` - Core concepts and fundamentals
 
 ### DevOps & Infrastructure (1)
-- `@devops_agent` - CI/CD and infrastructure
+- `devops-agent` - CI/CD and infrastructure
 
 ### Documentation (1)
-- `@documentation_agent` - Technical documentation
+- `documentation-agent` - Technical documentation
 
 ### Project & Planning (4)
-- `@project_initiator_agent` - Project setup and kickoff
-- `@task_planning_agent` - Task breakdown and planning
-- `@master_orchestrator_agent` - Complex workflow orchestration
-- `@elicitation_agent` - Requirements gathering
+- `project-initiator-agent` - Project setup and kickoff
+- `task-planning-agent` - Task breakdown and planning
+- `master-orchestrator-agent` - Complex workflow orchestration
+- `elicitation-agent` - Requirements gathering
 
 ### Security & Compliance (3)
-- `@security_auditor_agent` - Security audits and reviews
-- `@compliance_scope_agent` - Regulatory compliance
-- `@ethical_review_agent` - Ethical considerations
+- `security-auditor-agent` - Security audits and reviews
+- `compliance-scope-agent` - Regulatory compliance
+- `ethical-review-agent` - Ethical considerations
 
 ### Analytics & Optimization (3)
-- `@analytics_setup_agent` - Analytics and tracking setup
-- `@efficiency_optimization_agent` - Process optimization
-- `@health_monitor_agent` - System health monitoring
+- `analytics-setup-agent` - Analytics and tracking setup
+- `efficiency-optimization-agent` - Process optimization
+- `health-monitor-agent` - System health monitoring
 
 ### Marketing & Branding (3)
-- `@marketing_strategy_orchestrator_agent` - Marketing strategy
-- `@community_strategy_agent` - Community building
-- `@branding_agent` - Brand identity
+- `marketing-strategy-orchestrator-agent` - Marketing strategy
+- `community-strategy-agent` - Community building
+- `branding-agent` - Brand identity
 
 ### Research & Analysis (4)
-- `@deep_research_agent` - In-depth research
-- `@llm_ai_agents_research` - AI/ML research and innovations
-- `@root_cause_analysis_agent` - Problem analysis
-- `@technology_advisor_agent` - Technology recommendations
+- `deep-research-agent` - In-depth research
+- `llm-ai-agents-research` - AI/ML research and innovations
+- `root-cause-analysis-agent` - Problem analysis
+- `technology-advisor-agent` - Technology recommendations
 
 ### AI & Machine Learning (1)
-- `@ml_specialist_agent` - Machine learning implementation
+- `ml-specialist-agent` - Machine learning implementation
 
 ### Creative & Ideation (1)
-- `@creative_ideation_agent` - Creative idea generation
+- `creative-ideation-agent` - Creative idea generation
 
 ## Agent Selection Decision Tree
 
@@ -109,25 +109,25 @@ The system uses intelligent routing based on work type keywords:
 
 ```yaml
 IF work_type matches "debug|fix|error|bug|troubleshoot":
-    USE @debugger_agent
+    USE debugger-agent
 ELIF work_type matches "implement|code|build|develop|create":
-    USE @coding_agent
+    USE coding-agent
 ELIF work_type matches "test|verify|validate|qa":
-    USE @test_orchestrator_agent
+    USE test-orchestrator-agent
 ELIF work_type matches "plan|analyze|breakdown|organize":
-    USE @task_planning_agent
+    USE task-planning-agent
 ELIF work_type matches "design|ui|interface|ux|frontend":
-    USE @ui_specialist_agent
+    USE ui-specialist-agent
 ELIF work_type matches "security|audit|vulnerability":
-    USE @security_auditor_agent
+    USE security-auditor-agent
 ELIF work_type matches "deploy|infrastructure|devops|ci/cd":
-    USE @devops_agent
+    USE devops-agent
 ELIF work_type matches "document|guide|manual|readme":
-    USE @documentation_agent
+    USE documentation-agent
 ELIF work_type matches "orchestrate|coordinate|multi-step|complex":
-    USE @master_orchestrator_agent
+    USE master-orchestrator-agent
 ELSE:
-    USE @master_orchestrator_agent  # Default fallback
+    USE master-orchestrator-agent  # Default fallback
 ```
 
 ## Architecture Components
@@ -162,7 +162,7 @@ ELSE:
 ```json
 {
   "success": true,
-  "agent_name": "@coding_agent",
+  "agent_name": "coding-agent",
   "status": "invoked",
   "message": "Agent successfully loaded and ready for operation",
   "agent_info": {
@@ -181,9 +181,9 @@ ELSE:
   "error": "Agent '@invalid_agent' not found",
   "error_code": "AGENT_NOT_FOUND",
   "available_agents": [
-    "@coding_agent",
-    "@test_orchestrator_agent",
-    "@master_orchestrator_agent"
+    "coding-agent",
+    "test-orchestrator-agent",
+    "master-orchestrator-agent"
   ],
   "suggestions": [
     "Check agent name spelling",
@@ -198,25 +198,25 @@ ELSE:
 
 ### Simple Agent Invocation
 ```python
-response = await call_agent(name_agent="@coding_agent")
+response = await call_agent(name_agent="coding-agent")
 ```
 
 ### Multi-Agent Workflow
 ```python
 # Step 1: Plan with task planning agent
-plan_response = await call_agent(name_agent="@task_planning_agent")
+plan_response = await call_agent(name_agent="task-planning-agent")
 
 # Step 2: Implement with coding agent
-code_response = await call_agent(name_agent="@coding_agent")
+code_response = await call_agent(name_agent="coding-agent")
 
 # Step 3: Test with test orchestrator
-test_response = await call_agent(name_agent="@test_orchestrator_agent")
+test_response = await call_agent(name_agent="test-orchestrator-agent")
 ```
 
 ### Orchestrated Workflow
 ```python
 # Use master orchestrator for complex workflows
-orchestrator_response = await call_agent(name_agent="@master_orchestrator_agent")
+orchestrator_response = await call_agent(name_agent="master-orchestrator-agent")
 ```
 
 ## Error Handling
@@ -228,7 +228,7 @@ orchestrator_response = await call_agent(name_agent="@master_orchestrator_agent"
 4. **Invalid Format**: Agent name doesn't follow @agent-name format
 
 ### Error Recovery
-- **Fallback Agent**: System falls back to `@master_orchestrator_agent` on errors
+- **Fallback Agent**: System falls back to `master-orchestrator-agent` on errors
 - **Available Agents**: Error responses include list of available agents
 - **Suggestions**: Helpful suggestions for resolving common errors
 
@@ -248,9 +248,9 @@ orchestrator_response = await call_agent(name_agent="@master_orchestrator_agent"
 
 ### Agent Selection
 1. **Use Specific Agents**: Choose the most appropriate agent for the task
-2. **Fallback Strategy**: Always have a fallback to `@master_orchestrator_agent`
+2. **Fallback Strategy**: Always have a fallback to `master-orchestrator-agent`
 3. **Context Awareness**: Consider agent specialization and capabilities
-4. **Workflow Planning**: Use `@task_planning_agent` for complex workflows
+4. **Workflow Planning**: Use `task-planning-agent` for complex workflows
 
 ### Error Handling
 1. **Validate Agent Names**: Ensure proper format before invocation
@@ -275,7 +275,7 @@ client = mcp_client.MCPClient()
 response = await client.call_tool(
     "call_agent",
     {
-        "name_agent": "@coding_agent"
+        "name_agent": "coding-agent"
     }
 )
 ```
@@ -284,7 +284,7 @@ response = await client.call_tool(
 ```python
 # Direct controller usage
 controller = CallAgentMCPController(call_agent_use_case)
-response = controller.call_agent(name_agent="@coding_agent")
+response = controller.call_agent(name_agent="coding-agent")
 ```
 
 ## Testing

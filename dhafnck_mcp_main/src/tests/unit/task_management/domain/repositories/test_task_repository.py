@@ -292,7 +292,7 @@ class TestTaskRepositoryFindOperations:
                 description="Fix critical bug in payment system",
                 status=TaskStatus.in_progress(),
                 priority=Priority.high(),
-                assignees=["@devops_agent", "@coding_agent"],
+                assignees=["devops-agent", "coding-agent"],
                 labels=["bug", "critical"]
             ),
             Task.create(
@@ -310,7 +310,7 @@ class TestTaskRepositoryFindOperations:
                 description="Update API documentation",
                 status=TaskStatus.done(),
                 priority=Priority.low(),
-                assignees=["@documentation_agent"],
+                assignees=["documentation-agent"],
                 labels=["ai_docs"]
             ),
             Task.create(
@@ -319,7 +319,7 @@ class TestTaskRepositoryFindOperations:
                 description="Optimize database queries",
                 status=TaskStatus.in_progress(),
                 priority=Priority.high(),
-                assignees=["@coding_agent"],
+                assignees=["coding-agent"],
                 labels=["performance", "backend"]
             ),
             Task.create(
@@ -328,7 +328,7 @@ class TestTaskRepositoryFindOperations:
                 description="Conduct security review",
                 status=TaskStatus.review(),
                 priority=Priority.urgent(),
-                assignees=["@security_auditor_agent"],
+                assignees=["security-auditor-agent"],
                 labels=["security", "audit"]
             )
         ]
@@ -395,8 +395,8 @@ class TestTaskRepositoryFindOperations:
     
     def test_find_by_assignee(self, populated_repo):
         """Test finding tasks by assignee."""
-        # Find tasks assigned to coding_agent
-        coding_tasks = populated_repo.find_by_assignee("@coding_agent")
+        # Find tasks assigned to coding-agent
+        coding_tasks = populated_repo.find_by_assignee("coding-agent")
         assert len(coding_tasks) == 2
         
         # Find tasks assigned to ui_designer_agent
@@ -779,7 +779,7 @@ class TestTaskRepositoryIntegration:
         # Update task
         saved_task.update_status(TaskStatus.in_progress())
         saved_task.update_priority(Priority.high())
-        saved_task.assignees = ["@coding_agent"]
+        saved_task.assignees = ["coding-agent"]
         saved_task.labels = ["feature", "backend"]
         repo.save(saved_task)
         
@@ -787,7 +787,7 @@ class TestTaskRepositoryIntegration:
         updated_task = repo.find_by_id(task_id)
         assert updated_task.status.value == "in_progress"
         assert updated_task.priority.value == "high"
-        assert "@coding_agent" in updated_task.assignees
+        assert "coding-agent" in updated_task.assignees
         
         # Search for task
         search_results = repo.search("feature")
@@ -797,7 +797,7 @@ class TestTaskRepositoryIntegration:
         # Find by various criteria
         assert len(repo.find_by_status(TaskStatus.in_progress())) == 1
         assert len(repo.find_by_priority(Priority.high())) == 1
-        assert len(repo.find_by_assignee("@coding_agent")) == 1
+        assert len(repo.find_by_assignee("coding-agent")) == 1
         assert len(repo.find_by_labels(["backend"])) == 1
         
         # Get statistics

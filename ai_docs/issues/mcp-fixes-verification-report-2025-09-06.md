@@ -25,7 +25,7 @@ manage_git_branch(
     action="assign_agent",
     project_id=project_id,
     git_branch_id=branch_id,
-    agent_id="@test_orchestrator_agent"
+    agent_id="test-orchestrator-agent"
 )
 ```
 **Result**: ✅ **SUCCESS** - Agent assigned without authentication error  

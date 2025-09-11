@@ -468,7 +468,7 @@ class TestTaskAssignees:
         task = Task(title="Test", description="Test")
         
         # Legacy role should be resolved via update_assignees
-        task.update_assignees(["coding_agent"])
+        task.update_assignees(["coding-agent"])
         # Check if it was resolved or kept as is
         assert any("@" in assignee for assignee in task.assignees)
 

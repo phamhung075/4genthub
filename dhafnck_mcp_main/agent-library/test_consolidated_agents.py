@@ -40,12 +40,12 @@ def test_agent(agent_name: str, test_type: str = "new") -> Tuple[bool, str]:
         # For consolidated agents, check they have enhanced capabilities
         if test_type == "consolidated":
             enhanced_agents = {
-                'documentation_agent': ['tech_spec', 'prd', 'api'],
-                'deep_research_agent': ['mcp', 'technology', 'research'],
-                'creative_ideation_agent': ['generation', 'refinement', 'brainstorm'],
-                'marketing_strategy_orchestrator_agent': ['seo', 'growth', 'content'],
-                'debugger_agent': ['debug', 'remediation', 'fix'],
-                'devops_agent': ['swarm', 'deployment', 'mcp', 'docker']
+                'documentation-agent': ['tech_spec', 'prd', 'api'],
+                'deep-research-agent': ['mcp', 'technology', 'research'],
+                'creative-ideation-agent': ['generation', 'refinement', 'brainstorm'],
+                'marketing-strategy-orchestrator-agent': ['seo', 'growth', 'content'],
+                'debugger-agent': ['debug', 'remediation', 'fix'],
+                'devops-agent': ['swarm', 'deployment', 'mcp', 'docker']
             }
             
             if agent_name in enhanced_agents:
@@ -67,12 +67,12 @@ def main():
     
     # Test new consolidated agents
     consolidated_agents = [
-        'documentation_agent',
-        'deep_research_agent', 
-        'creative_ideation_agent',
-        'marketing_strategy_orchestrator_agent',
-        'debugger_agent',
-        'devops_agent'
+        'documentation-agent',
+        'deep-research-agent', 
+        'creative-ideation-agent',
+        'marketing-strategy-orchestrator-agent',
+        'debugger-agent',
+        'devops-agent'
     ]
     
     print("\n1. Testing Consolidated Agents (Enhanced Versions):")
@@ -89,18 +89,18 @@ def main():
     
     # Test backward compatibility with deprecated names
     deprecated_mappings = {
-        'tech_spec_agent': 'documentation_agent',
-        'prd_architect_agent': 'documentation_agent',
-        'mcp_researcher_agent': 'deep_research_agent',
-        'idea_generation_agent': 'creative_ideation_agent',
-        'idea_refinement_agent': 'creative_ideation_agent',
-        'seo_sem_agent': 'marketing_strategy_orchestrator_agent',
-        'growth_hacking_idea_agent': 'marketing_strategy_orchestrator_agent',
-        'content_strategy_agent': 'marketing_strategy_orchestrator_agent',
-        'remediation_agent': 'debugger_agent',
-        'swarm_scaler_agent': 'devops_agent',
-        'adaptive_deployment_strategist_agent': 'devops_agent',
-        'mcp_configuration_agent': 'devops_agent'
+        'tech_spec_agent': 'documentation-agent',
+        'prd_architect_agent': 'documentation-agent',
+        'mcp_researcher_agent': 'deep-research-agent',
+        'idea_generation_agent': 'creative-ideation-agent',
+        'idea_refinement_agent': 'creative-ideation-agent',
+        'seo_sem_agent': 'marketing-strategy-orchestrator-agent',
+        'growth_hacking_idea_agent': 'marketing-strategy-orchestrator-agent',
+        'content_strategy_agent': 'marketing-strategy-orchestrator-agent',
+        'remediation_agent': 'debugger-agent',
+        'swarm_scaler_agent': 'devops-agent',
+        'adaptive_deployment_strategist_agent': 'devops-agent',
+        'mcp_configuration_agent': 'devops-agent'
     }
     
     print("\n2. Testing Backward Compatibility (Deprecated Names):")
@@ -132,9 +132,9 @@ def main():
     
     # Test renamed agents
     renamed_agents = {
-        'master_orchestrator_agent': 'master_orchestrator_agent',
-        'brainjs_ml_agent': 'ml_specialist_agent',
-        'ui_designer_expert_shadcn_agent': 'ui_specialist_agent'
+        'master-orchestrator-agent': 'master-orchestrator-agent',
+        'brainjs_ml_agent': 'ml-specialist-agent',
+        'ui_designer_expert_shadcn_agent': 'ui-specialist-agent'
     }
     
     print("\n3. Testing Renamed Agents:")

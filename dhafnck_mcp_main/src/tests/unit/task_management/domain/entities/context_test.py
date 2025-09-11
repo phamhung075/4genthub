@@ -256,14 +256,14 @@ class TestContextProgress:
         action = ContextProgressAction(
             timestamp="2024-01-01T12:00:00Z",
             action="Implemented user login",
-            agent="@coding_agent",
+            agent="coding-agent",
             details="Added JWT authentication",
             status="completed"
         )
         
         assert action.timestamp == "2024-01-01T12:00:00Z"
         assert action.action == "Implemented user login"
-        assert action.agent == "@coding_agent"
+        assert action.agent == "coding-agent"
         assert action.details == "Added JWT authentication"
         assert action.status == "completed"
     
@@ -286,12 +286,12 @@ class TestContextProgress:
         action1 = ContextProgressAction(
             timestamp="2024-01-01T12:00:00Z",
             action="Started implementation",
-            agent="@coding_agent"
+            agent="coding-agent"
         )
         action2 = ContextProgressAction(
             timestamp="2024-01-01T14:00:00Z",
             action="Completed implementation",
-            agent="@coding_agent"
+            agent="coding-agent"
         )
         
         progress = ContextProgress(
@@ -322,14 +322,14 @@ class TestContextNotes:
         """Test context insight creation."""
         insight = ContextInsight(
             timestamp="2024-01-01T12:00:00Z",
-            agent="@coding_agent",
+            agent="coding-agent",
             category="insight",
             content="Using JWT tokens provides better security",
             importance="high"
         )
         
         assert insight.timestamp == "2024-01-01T12:00:00Z"
-        assert insight.agent == "@coding_agent"
+        assert insight.agent == "coding-agent"
         assert insight.category == "insight"
         assert insight.content == "Using JWT tokens provides better security"
         assert insight.importance == "high"
@@ -641,7 +641,7 @@ class TestUnifiedContextEntities:
             progress=50,
             insights=[{"type": "performance", "note": "Optimized query"}],
             next_steps=["Add tests", "Update ai_docs"],
-            metadata={"agent": "@coding_agent"}
+            metadata={"agent": "coding-agent"}
         )
         
         assert task_context.id == "task-789"

@@ -24,35 +24,35 @@ class AgentConsolidator:
         # Define consolidation mappings
         self.consolidation_map = {
             # Documentation consolidation
-            "tech_spec_agent": "documentation_agent",
-            "prd_architect_agent": "documentation_agent",
+            "tech_spec_agent": "documentation-agent",
+            "prd_architect_agent": "documentation-agent",
             
             # Research consolidation
-            "mcp_researcher_agent": "deep_research_agent",
+            "mcp_researcher_agent": "deep-research-agent",
             
             # Creative consolidation (creates new agent)
-            "idea_generation_agent": "creative_ideation_agent",
-            "idea_refinement_agent": "creative_ideation_agent",
+            "idea_generation_agent": "creative-ideation-agent",
+            "idea_refinement_agent": "creative-ideation-agent",
             
             # Marketing consolidation
-            "seo_sem_agent": "marketing_strategy_orchestrator_agent",
-            "growth_hacking_idea_agent": "marketing_strategy_orchestrator_agent",
-            "content_strategy_agent": "marketing_strategy_orchestrator_agent",
+            "seo_sem_agent": "marketing-strategy-orchestrator-agent",
+            "growth_hacking_idea_agent": "marketing-strategy-orchestrator-agent",
+            "content_strategy_agent": "marketing-strategy-orchestrator-agent",
             
             # DevOps consolidation
-            "swarm_scaler_agent": "devops_agent",
-            "adaptive_deployment_strategist_agent": "devops_agent",
-            "mcp_configuration_agent": "devops_agent",
+            "swarm_scaler_agent": "devops-agent",
+            "adaptive_deployment_strategist_agent": "devops-agent",
+            "mcp_configuration_agent": "devops-agent",
             
             # Debug consolidation
-            "remediation_agent": "debugger_agent",
+            "remediation_agent": "debugger-agent",
         }
         
         # Define renaming map
         self.rename_map = {
-            "master_orchestrator_agent": "master_orchestrator_agent",
-            "brainjs_ml_agent": "ml_specialist_agent",
-            "ui_designer_expert_shadcn_agent": "ui_specialist_agent",
+            "master-orchestrator-agent": "master-orchestrator-agent",
+            "brainjs_ml_agent": "ml-specialist-agent",
+            "ui_designer_expert_shadcn_agent": "ui-specialist-agent",
         }
         
         self.migration_log = []
@@ -98,11 +98,11 @@ class AgentConsolidator:
         self.migration_log.append(f"Merged capabilities: {source_agent} → {target_agent}")
     
     def create_creative_ideation_agent(self):
-        """Create new creative_ideation_agent from idea agents"""
-        creative_path = self.agents_path / "creative_ideation_agent"
+        """Create new creative-ideation-agent from idea agents"""
+        creative_path = self.agents_path / "creative-ideation-agent"
         
         if creative_path.exists():
-            print("creative_ideation_agent already exists")
+            print("creative-ideation-agent already exists")
             return
         
         # Copy from idea_generation_agent as base
@@ -130,9 +130,9 @@ class AgentConsolidator:
                 yaml.dump(config, f, default_flow_style=False)
             
             # Merge capabilities from idea_refinement_agent
-            self.merge_capabilities("idea_refinement_agent", "creative_ideation_agent")
+            self.merge_capabilities("idea_refinement_agent", "creative-ideation-agent")
             
-            self.migration_log.append("Created creative_ideation_agent")
+            self.migration_log.append("Created creative-ideation-agent")
     
     def rename_agent(self, old_name: str, new_name: str):
         """Rename an agent directory and update its configuration"""
@@ -159,11 +159,11 @@ class AgentConsolidator:
         config['agent_info']['slug'] = new_name.replace('_', '-')
         
         # Update name for specific agents
-        if new_name == "master_orchestrator_agent":
+        if new_name == "master-orchestrator-agent":
             config['agent_info']['name'] = "🎯 Master Orchestrator Agent"
-        elif new_name == "ml_specialist_agent":
+        elif new_name == "ml-specialist-agent":
             config['agent_info']['name'] = "🤖 ML Specialist Agent"
-        elif new_name == "ui_specialist_agent":
+        elif new_name == "ui-specialist-agent":
             config['agent_info']['name'] = "🎨 UI Specialist Agent"
         
         with open(config_path, 'w') as f:
@@ -273,7 +273,7 @@ DEPRECATED_AGENT_MAPPINGS = {
         print("\nSummary:")
         print(f"- Agents consolidated: {len(self.consolidation_map)}")
         print(f"- Agents renamed: {len(self.rename_map)}")
-        print(f"- New agents created: 1 (creative_ideation_agent)")
+        print(f"- New agents created: 1 (creative-ideation-agent)")
         print(f"- Final agent count: ~30 (from 42)")
     
     def rollback(self, backup_path: str):

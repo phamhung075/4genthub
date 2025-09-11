@@ -327,7 +327,7 @@ class TestCompleteSessionLifecycle:
                     
                     # Verify required context elements
                     assert "🚀 INITIALIZATION REQUIRED" in context
-                    assert "call_agent('@master_orchestrator_agent')" in context
+                    assert "call_agent('master-orchestrator-agent')" in context
                     assert "Session source: startup" in context
                     
                     # Verify MCP integration

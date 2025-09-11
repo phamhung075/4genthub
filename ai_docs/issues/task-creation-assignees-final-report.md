@@ -51,9 +51,9 @@ This indicates a many-to-many relationship between tasks and assignees.
 ### All Attempted Formats (ALL FAILED)
 1. Without assignees parameter - Error: "Missing required field: assignees"
 2. `assignees="developer"` - Same error
-3. `assignees="coding_agent"` - Same error
+3. `assignees="coding-agent"` - Same error
 4. `assignees="senior_developer"` - Same error (legacy mapping exists)
-5. `assignees="@@coding_agent"` - Same error
+5. `assignees="@coding-agent"` - Same error
 6. `assignees="CODING"` - Same error
 
 ### Error Message Consistency
@@ -79,7 +79,7 @@ This indicates a many-to-many relationship between tasks and assignees.
 
 3. **Legacy Mapping Present**
    - File: `/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/application/dtos/task/create_task_request.py`
-   - Mapping exists: `"senior_developer": "coding_agent"`
+   - Mapping exists: `"senior_developer": "coding-agent"`
    - But the parameter never reaches this mapping function
 
 ## Code Investigation Summary
@@ -88,7 +88,7 @@ This indicates a many-to-many relationship between tasks and assignees.
 1. **task_mcp_controller.py** - Assignees should be passed at line 263
 2. **operation_factory.py** - Assignees IS in allowed_params (line 95)
 3. **crud_handler.py** - Expects assignees parameter (line 33)
-4. **agent_roles.py** - Enum values confirmed (e.g., CODING = "coding_agent")
+4. **agent_roles.py** - Enum values confirmed (e.g., CODING = "coding-agent")
 
 ### The Pipeline
 ```
@@ -105,7 +105,7 @@ crud_handler.py (never receives assignees)
 - **Tasks**: 0 tasks exist in the database
 - **Projects**: 2 test projects created successfully
 - **Git Branches**: 2 branches created successfully
-- **Agents**: 1 agent registered (@@coding_agent)
+- **Agents**: 1 agent registered (@coding-agent)
 
 ## Recommendations for Fix
 

@@ -85,9 +85,21 @@ class TokenManager:
         return False
     
     def _request_new_token(self) -> bool:
-        """Request new token from Keycloak."""
+        """Request new token from Keycloak or use .mcp.json token as fallback."""
+        
+        # First try to use token from .mcp.json file
+        mcp_token = self._get_mcp_json_token()
+        if mcp_token:
+            logger.info("Using token from .mcp.json file")
+            self.token = mcp_token
+            # Set a long expiry for .mcp.json tokens (30 days)
+            self.token_expiry = datetime.now() + timedelta(days=30)
+            self._cache_token()
+            return True
+        
+        # Fallback to Keycloak authentication
         if not self.keycloak_config["client_secret"]:
-            logger.warning("No Keycloak client secret configured")
+            logger.warning("No Keycloak client secret configured and no .mcp.json token found")
             return False
         
         try:
@@ -115,6 +127,36 @@ class TokenManager:
         except Exception as e:
             logger.error(f"Failed to get token: {e}")
         return False
+    
+    def _get_mcp_json_token(self) -> Optional[str]:
+        """Extract Bearer token from .mcp.json file if available."""
+        try:
+            # Look for .mcp.json in project root
+            project_root = Path.cwd()
+            mcp_json_path = project_root / ".mcp.json"
+            
+            if not mcp_json_path.exists():
+                # Try parent directories up to 3 levels
+                for _ in range(3):
+                    project_root = project_root.parent
+                    mcp_json_path = project_root / ".mcp.json"
+                    if mcp_json_path.exists():
+                        break
+            
+            if mcp_json_path.exists():
+                with open(mcp_json_path, 'r') as f:
+                    mcp_config = json.load(f)
+                    
+                # Extract token from dhafnck_mcp_http configuration
+                dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
+                auth_header = dhafnck_config.get("headers", {}).get("Authorization", "")
+                
+                if auth_header.startswith("Bearer "):
+                    return auth_header.replace("Bearer ", "")
+        except Exception as e:
+            logger.debug(f"Could not read .mcp.json token: {e}")
+        
+        return None
     
     def _cache_token(self):
         """Cache token to file for reuse."""
@@ -164,9 +206,10 @@ class MCPHTTPClient:
         self.session = requests.Session()
         self.timeout = int(os.getenv("MCP_SERVER_TIMEOUT", "10"))
         
-        # Configure session
+        # Configure session with required headers
         self.session.headers.update({
             "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
             "User-Agent": "Claude-Hooks-MCP-Client/1.0"
         })
     
@@ -182,31 +225,72 @@ class MCPHTTPClient:
     
     def query_pending_tasks(self, limit: int = 5, user_id: Optional[str] = None) -> Optional[List[Dict]]:
         """Query MCP server for pending tasks via HTTP."""
-        if not self.authenticate():
-            logger.warning("Authentication failed, cannot query tasks")
-            return None
-        
+        # Try without authentication first (for local dev with AUTH_ENABLED=false)
         try:
+            # First try the JSON-RPC endpoint (how MCP tools work)
             payload = {
-                "action": "list",
-                "status": "todo",
-                "limit": limit
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "params": {
+                    "name": "manage_task",
+                    "arguments": {
+                        "action": "list",
+                        "status": "todo",
+                        "limit": limit
+                    }
+                },
+                "id": 1
             }
-            if user_id:
-                payload["user_id"] = user_id
             
             response = self.session.post(
-                f"{self.base_url}/mcp/manage_task",
+                f"{self.base_url}/",  # FastMCP server root handles JSON-RPC
                 json=payload,
                 timeout=self.timeout
             )
             
             if response.status_code == 200:
                 result = response.json()
-                if result.get("success"):
-                    return result.get("data", {}).get("tasks", [])
+                # Handle JSON-RPC response
+                if "result" in result:
+                    task_result = result["result"]
+                    if isinstance(task_result, dict):
+                        if "data" in task_result and "tasks" in task_result["data"]:
+                            return task_result["data"]["tasks"]
+                        elif "tasks" in task_result:
+                            return task_result["tasks"]
+                    elif isinstance(task_result, list):
+                        return task_result
+            
+            # If JSON-RPC fails, try authenticated REST endpoint
+            if self.authenticate():
+                payload = {
+                    "action": "list",
+                    "status": "todo",
+                    "limit": limit
+                }
+                if user_id:
+                    payload["user_id"] = user_id
+                
+                response = self.session.post(
+                    f"{self.base_url}/mcp/manage_task",
+                    json=payload,
+                    timeout=self.timeout
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if isinstance(result, dict):
+                        if "success" in result and result["success"]:
+                            data = result.get("data", {})
+                            if isinstance(data, dict) and "tasks" in data:
+                                return data["tasks"]
+                            elif isinstance(data, list):
+                                return data
+                        elif "tasks" in result:
+                            return result["tasks"]
             else:
-                logger.warning(f"Task query failed: {response.status_code}")
+                logger.debug("Authentication not available, using unauthenticated mode")
+                
         except Exception as e:
             logger.warning(f"Failed to query tasks: {e}")
         

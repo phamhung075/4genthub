@@ -53,7 +53,7 @@ Comprehensive testing of all major dhafnck_mcp_http MCP tool actions was conduct
 
 **Results:**
 - Successfully created `feature/authentication` and `feature/dashboard` branches
-- Agent assignment working (`@coding_agent` assigned to authentication branch)
+- Agent assignment working (`coding-agent` assigned to authentication branch)
 - Branch statistics accurately reporting task counts and progress
 - Context creation successful with project_id requirement
 

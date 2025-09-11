@@ -31,9 +31,9 @@ The DhafnckMCP agent library implements a role-based tool assignment system that
 - MCP tools: Task management tools for delegation
 
 **Examples**:
-- `security_auditor_agent`: Analyzes security, creates remediation tasks
-- `deep_research_agent`: Researches information, delegates implementation
-- `task_planning_agent`: Plans work, assigns to implementation agents
+- `security-auditor-agent`: Analyzes security, creates remediation tasks
+- `deep-research-agent`: Researches information, delegates implementation
+- `task-planning-agent`: Plans work, assigns to implementation agents
 
 #### 2. FILE CREATORS
 **Characteristics**: Full file implementation capabilities within their domain
@@ -43,22 +43,22 @@ The DhafnckMCP agent library implements a role-based tool assignment system that
 - MCP tools: Specialized tools for their domain + task management
 
 **Examples**:
-- `coding_agent`: Full development tools + IDE integration
-- `test_orchestrator_agent`: Test creation + browser automation tools
-- `documentation_agent`: Documentation creation + web research tools
+- `coding-agent`: Full development tools + IDE integration
+- `test-orchestrator-agent`: Test creation + browser automation tools
+- `documentation-agent`: Documentation creation + web research tools
 
 #### 3. SPECIALISTS
 **Characteristics**: Domain-specific tools and workflows
 **Tool Profile**: Customized based on specialization
 **Examples**:
 - `ui_designer_expert_shadcn_agent`: UI components + design tools
-- `devops_agent`: Infrastructure + deployment tools
+- `devops-agent`: Infrastructure + deployment tools
 
 ### Implementation Architecture
 
 #### YAML Configuration Structure
 ```yaml
-# COORDINATOR Example (security_auditor_agent)
+# COORDINATOR Example (security-auditor-agent)
 file_operations:
   enabled: true
   permissions:
@@ -81,7 +81,7 @@ mcp_tools:
     - mcp__dhafnck_mcp_http__manage_agent     # Agent assignment
     - mcp__sequential-thinking__sequentialthinking
 
-# FILE CREATOR Example (test_orchestrator_agent)
+# FILE CREATOR Example (test-orchestrator-agent)
 file_operations:
   enabled: true
   permissions:
@@ -145,30 +145,30 @@ def _get_role_based_tools(self, agent_info: Dict[str, Any], capabilities_config:
 
 ### Pattern 1: Security Analysis → Implementation
 ```
-1. security_auditor_agent (COORDINATOR)
+1. security-auditor-agent (COORDINATOR)
    ├─ Analyzes code for vulnerabilities
    ├─ Creates task: "Fix SQL injection in user.js:42"
-   └─ Assigns: @@coding_agent
+   └─ Assigns: @coding-agent
 
-2. coding_agent (FILE CREATOR)
+2. coding-agent (FILE CREATOR)
    ├─ Receives task assignment
    ├─ Implements security fix
    └─ Marks task complete
 
-3. security_auditor_agent (COORDINATOR)
+3. security-auditor-agent (COORDINATOR)
    └─ Validates fix (read-only verification)
 ```
 
 ### Pattern 2: Task Planning → Parallel Implementation
 ```
-1. task_planning_agent (COORDINATOR)
+1. task-planning-agent (COORDINATOR)
    ├─ Breaks down feature into subtasks
    ├─ Creates subtask: "Implement API endpoints"
    ├─ Creates subtask: "Create UI components"  
    ├─ Creates subtask: "Write test suite"
-   ├─ Assigns: @@coding_agent → API subtask
+   ├─ Assigns: @coding-agent → API subtask
    ├─ Assigns: @ui_designer_expert_shadcn_agent → UI subtask
-   └─ Assigns: @test_orchestrator_agent → testing subtask
+   └─ Assigns: test-orchestrator-agent → testing subtask
 
 2. Multiple FILE CREATORS work in parallel
    └─ Each implements their assigned portion
@@ -176,12 +176,12 @@ def _get_role_based_tools(self, agent_info: Dict[str, Any], capabilities_config:
 
 ### Pattern 3: Research → Documentation
 ```
-1. deep_research_agent (COORDINATOR)
+1. deep-research-agent (COORDINATOR)
    ├─ Researches technology options
    ├─ Creates task: "Document API integration guide"
-   └─ Assigns: @documentation_agent
+   └─ Assigns: documentation-agent
 
-2. documentation_agent (FILE CREATOR)
+2. documentation-agent (FILE CREATOR)
    ├─ Creates comprehensive documentation
    └─ Updates project ai_docs structure
 ```
@@ -206,21 +206,21 @@ def _get_role_based_tools(self, agent_info: Dict[str, Any], capabilities_config:
 ## Agent Role Assignments
 
 ### COORDINATORS (Read-Only + Delegation)
-- `security_auditor_agent` - Security analysis and remediation planning
-- `deep_research_agent` - Research and information gathering
-- `task_planning_agent` - Work breakdown and assignment coordination
-- `compliance_scope_agent` - Regulatory analysis and compliance planning
+- `security-auditor-agent` - Security analysis and remediation planning
+- `deep-research-agent` - Research and information gathering
+- `task-planning-agent` - Work breakdown and assignment coordination
+- `compliance-scope-agent` - Regulatory analysis and compliance planning
 
 ### FILE CREATORS (Domain Implementation)
-- `coding_agent` - Code implementation and development
-- `test_orchestrator_agent` - Test creation and execution
-- `documentation_agent` - Documentation creation and maintenance
-- `system_architect_agent` - Architecture design and specification
+- `coding-agent` - Code implementation and development
+- `test-orchestrator-agent` - Test creation and execution
+- `documentation-agent` - Documentation creation and maintenance
+- `system-architect-agent` - Architecture design and specification
 
 ### SPECIALISTS (Domain-Specific Tools)
 - `ui_designer_expert_shadcn_agent` - UI/UX design and implementation
-- `devops_agent` - Infrastructure and deployment
-- `performance_load_tester_agent` - Performance testing and optimization
+- `devops-agent` - Infrastructure and deployment
+- `performance-load-tester-agent` - Performance testing and optimization
 
 ## Verification and Testing
 

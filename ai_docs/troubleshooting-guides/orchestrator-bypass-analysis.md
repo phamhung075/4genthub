@@ -8,7 +8,7 @@ Claude is bypassing the master orchestrator role due to conflicting instructions
 ### 1. Dual Source of Truth Conflict
 **Problem**: Instructions exist in two places with potential conflicts:
 - Static instructions in `CLAUDE.md` 
-- Dynamic instructions loaded from `call_agent('@master_orchestrator_agent')`
+- Dynamic instructions loaded from `call_agent('master-orchestrator-agent')`
 
 **Impact**: Claude doesn't know which instructions take precedence, leading to selective compliance.
 
@@ -61,7 +61,7 @@ Claude is bypassing the master orchestrator role due to conflicting instructions
 **Result**: Claude uses TodoWrite inconsistently or not at all.
 
 ### 5. Role Loading vs Role Transformation
-**Problem**: Calling `call_agent('@master_orchestrator_agent')` loads instructions but doesn't transform Claude's core behavior.
+**Problem**: Calling `call_agent('master-orchestrator-agent')` loads instructions but doesn't transform Claude's core behavior.
 
 **Expected**: Claude becomes the orchestrator
 **Reality**: Claude receives additional context but maintains base programming

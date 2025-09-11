@@ -1,0 +1,37 @@
+collaboration:
+  agent_communication: true
+  enabled: true
+command_execution:
+  enabled: true
+  restrictions:
+  - sandbox_mode
+  - ui_design_only
+  allowed_commands:
+  - npm
+  - yarn
+  - pnpm
+  - git
+file_operations:
+  enabled: true
+  permissions:
+    read: true
+    write: true
+    create: true
+    delete: false
+mcp_tools:
+  enabled: true
+  tools:
+  - mcp__shadcn-ui-server__list-components
+  - mcp__shadcn-ui-server__get-component-docs
+  - mcp__shadcn-ui-server__install-component
+  - mcp__shadcn-ui-server__list-blocks
+  - mcp__shadcn-ui-server__get-block-docs
+  - mcp__shadcn-ui-server__install-blocks
+  - mcp__browsermcp__browser_navigate
+  - mcp__browsermcp__browser_snapshot
+  - mcp__browsermcp__browser_screenshot
+  - mcp__browsermcp__browser_click
+  - mcp__dhafnck_mcp_http__manage_task
+  - mcp__dhafnck_mcp_http__manage_subtask
+  - mcp--dhafnck-mcp-http--manage-agent
+  - mcp__sequential-thinking__sequentialthinking

@@ -17,7 +17,7 @@ DEFAULT_CLAUDE_DIR = ".claude/agents"
 # Complete agent definitions - 60+ specialized agents
 AGENT_DEFINITIONS = {
     # Orchestrators and Coordinators
-    "@master_orchestrator_agent": {
+    "master-orchestrator-agent": {
         "name": "Uber Orchestrator Agent",
         "role": "Master Coordinator and Decision Maker",
         "description": "The highest-level orchestrator that coordinates all other agents and makes strategic decisions",
@@ -39,7 +39,7 @@ AGENT_DEFINITIONS = {
         "tools": ["All development tools"],
         "specializations": ["Agile development", "CI/CD coordination", "Development best practices"]
     },
-    "@test_orchestrator_agent": {
+    "test-orchestrator-agent": {
         "name": "Test Orchestrator Agent",
         "role": "Testing Strategy and Execution Coordinator",
         "description": "Manages comprehensive testing strategies and coordinates test execution",
@@ -50,7 +50,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Bash", "Write", "Read", "Edit", "TodoWrite"],
         "specializations": ["Pytest", "Jest", "E2E testing", "Performance testing"]
     },
-    "@marketing_strategy_orchestrator_agent": {
+    "marketing-strategy-orchestrator-agent": {
         "name": "Marketing Strategy Orchestrator Agent",
         "role": "Marketing Campaign Coordinator",
         "description": "Orchestrates marketing strategies and campaign execution",
@@ -63,7 +63,7 @@ AGENT_DEFINITIONS = {
     },
     
     # Core Development Agents
-    "@coding_agent": {
+    "coding-agent": {
         "name": "Coding Agent",
         "role": "Software Development Specialist",
         "description": "Specialized in writing, refactoring, and implementing code across various languages",
@@ -74,7 +74,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Edit", "Write", "Read", "MultiEdit", "Bash", "Grep", "Glob"],
         "specializations": ["Python", "TypeScript", "React", "FastAPI", "DDD architecture"]
     },
-    "@debugger_agent": {
+    "debugger-agent": {
         "name": "Debugger Agent",
         "role": "Bug Detection and Resolution Specialist",
         "description": "Expert in identifying, analyzing, and fixing bugs and errors",
@@ -85,7 +85,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Read", "Grep", "Bash", "Edit", "mcp__ide__getDiagnostics"],
         "specializations": ["Runtime errors", "Logic bugs", "Performance optimization"]
     },
-    "@code_reviewer_agent": {
+    "code-reviewer-agent": {
         "name": "Code Reviewer Agent",
         "role": "Code Quality Specialist",
         "description": "Reviews code for quality, standards compliance, and best practices",
@@ -120,7 +120,7 @@ AGENT_DEFINITIONS = {
     },
     
     # Architecture and Design Agents
-    "@system_architect_agent": {
+    "system-architect-agent": {
         "name": "System Architect Agent",
         "role": "System Architecture Specialist",
         "description": "Designs system architecture and high-level technical solutions",
@@ -267,7 +267,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Bash", "Read", "API testing tools"],
         "specializations": ["REST APIs", "GraphQL", "Microservices testing"]
     },
-    "@performance_load_tester_agent": {
+    "performance-load-tester-agent": {
         "name": "Performance Load Tester Agent",
         "role": "Performance Testing Specialist",
         "description": "Conducts performance and load testing to ensure scalability",
@@ -289,7 +289,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Security tools", "Bash"],
         "specializations": ["OWASP testing", "Network security", "Application security"]
     },
-    "@uat_coordinator_agent": {
+    "uat-coordinator-agent": {
         "name": "UAT Coordinator Agent",
         "role": "User Acceptance Testing Coordinator",
         "description": "Coordinates user acceptance testing with stakeholders",
@@ -302,7 +302,7 @@ AGENT_DEFINITIONS = {
     },
     
     # Security and Compliance Agents
-    "@security_auditor_agent": {
+    "security-auditor-agent": {
         "name": "Security Auditor Agent",
         "role": "Security Analysis and Compliance Specialist",
         "description": "Performs security audits and ensures compliance",
@@ -326,7 +326,7 @@ AGENT_DEFINITIONS = {
     },
     
     # DevOps and Infrastructure Agents
-    "@devops_agent": {
+    "devops-agent": {
         "name": "DevOps Agent",
         "role": "DevOps and Infrastructure Specialist",
         "description": "Manages infrastructure, deployment, and CI/CD pipelines",
@@ -348,7 +348,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Bash", "Write", "Read", "Edit"],
         "specializations": ["Jenkins", "GitLab CI", "AWS", "Azure"]
     },
-    "@health_monitor_agent": {
+    "health-monitor-agent": {
         "name": "Health Monitor Agent",
         "role": "System Health Monitoring Specialist",
         "description": "Monitors system health and performance metrics",
@@ -372,7 +372,7 @@ AGENT_DEFINITIONS = {
     },
     
     # Planning and Management Agents
-    "@task_planning_agent": {
+    "task-planning-agent": {
         "name": "Task Planning Agent",
         "role": "Task Breakdown and Planning Specialist",
         "description": "Breaks down complex tasks into manageable subtasks",
@@ -407,7 +407,7 @@ AGENT_DEFINITIONS = {
     },
     
     # Documentation and Research Agents
-    "@documentation_agent": {
+    "documentation-agent": {
         "name": "Documentation Agent",
         "role": "Technical Documentation Specialist",
         "description": "Creates and maintains comprehensive documentation",
@@ -418,7 +418,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Write", "Read", "Edit", "Glob"],
         "specializations": ["Markdown", "API docs", "Architecture docs"]
     },
-    "@deep_research_agent": {
+    "deep-research-agent": {
         "name": "Deep Research Agent",
         "role": "Technology Research Specialist",
         "description": "Conducts deep research on technologies and solutions",
@@ -440,7 +440,7 @@ AGENT_DEFINITIONS = {
         "tools": ["Read", "WebFetch", "Documentation tools"],
         "specializations": ["MCP tools", "Agent systems", "Integration patterns"]
     },
-    "@technology_advisor_agent": {
+    "technology-advisor-agent": {
         "name": "Technology Advisor Agent",
         "role": "Technology Advisory Specialist",
         "description": "Provides technology recommendations and guidance",
@@ -547,7 +547,7 @@ It has access to the specified tools and follows the project's established patte
 
 ## Collaboration
 This agent can work with other specialized agents for complex tasks. Common collaborations:
-- Works with @master_orchestrator_agent for coordination
+- Works with master-orchestrator-agent for coordination
 - Can delegate to more specialized agents when needed
 - Participates in multi-agent workflows
 
@@ -698,7 +698,7 @@ def main():
     )
     parser.add_argument(
         "--agent-id",
-        help="Generate specific agent by ID (e.g., @coding_agent)"
+        help="Generate specific agent by ID (e.g., coding-agent)"
     )
     parser.add_argument(
         "--clean",

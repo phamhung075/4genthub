@@ -99,7 +99,7 @@ When a bridge agent is activated, it will:
 
 1. **Connect to your DhafnckMCP agent**:
    ```
-   mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+   mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
    ```
 
 2. **Check existing project context**:
@@ -143,10 +143,10 @@ When a bridge agent is activated, it will:
 
 | Claude Code Agent | DhafnckMCP Agents | Use Cases |
 |------------------|-------------------|-----------|
-| `uber-orchestrator` | @master_orchestrator_agent, @task_planning_agent | Complex projects, coordination |
-| `coding-specialist` | @coding_agent, @system_architect_agent, @algorithmic_problem_solver_agent | Implementation work |
-| `debugging-expert` | @debugger_agent, @root_cause_analysis_agent | Bug fixes, troubleshooting |
-| `testing-orchestrator` | @test_orchestrator_agent, @functional_tester_agent | Quality assurance |
+| `uber-orchestrator` | master-orchestrator-agent, task-planning-agent | Complex projects, coordination |
+| `coding-specialist` | coding-agent, system-architect-agent, @algorithmic_problem_solver_agent | Implementation work |
+| `debugging-expert` | debugger-agent, root-cause-analysis-agent | Bug fixes, troubleshooting |
+| `testing-orchestrator` | test-orchestrator-agent, @functional_tester_agent | Quality assurance |
 
 ### Specialized Agent Categories
 
@@ -157,20 +157,20 @@ When a bridge agent is activated, it will:
 - @graphic_design_agent
 
 **Security & Compliance:**
-- @security_auditor_agent
+- security-auditor-agent
 - @security_penetration_tester_agent
-- @compliance_scope_agent
+- compliance-scope-agent
 - @compliance_testing_agent
 
 **DevOps & Operations:**
-- @devops_agent
+- devops-agent
 - @adaptive_deployment_strategist_agent
-- @health_monitor_agent
+- health-monitor-agent
 
 **Research & Analysis:**
-- @deep_research_agent
+- deep-research-agent
 - @market_research_agent
-- @analytics_setup_agent
+- analytics-setup-agent
 
 ## Advanced Configuration
 
@@ -250,10 +250,10 @@ When multiple agents are needed:
 
 ```python
 # Start with orchestrator
-mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Then delegate to specialists
-mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 ```
 
 ## Troubleshooting

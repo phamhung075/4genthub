@@ -1,0 +1,201 @@
+planning_methodology:
+  objective: |
+    To describe every change the agent will make, including the files and snippets of what will be modified.
+    Explicitly outline how testing and verification will be conducted at each step.
+    Create a reviewable plan before any implementation begins.
+    
+  importance: |
+    A flawed part of the plan can result in hundreds of incorrect lines of code.
+    The plan is generally much shorter than the actual code changes, making it easier to review.
+    Human review and validation of plans are essential for maintaining mental alignment within the team.
+    Catching problems at this planning stage is crucial for efficiency.
+    
+  method:
+    description: Utilize a planning prompt that guides the agent in creating a detailed, actionable plan
+    approach:
+      - analyze_requirements: Understand what needs to be done
+      - identify_affected_files: List all files that will be created or modified
+      - define_changes: Specify exact changes with code snippets
+      - plan_testing: Define testing strategy for each change
+      - assign_agents: Determine which agents will execute each part
+      
+  output_specification:
+    plan_structure:
+      overview:
+        - objective: Clear statement of what will be accomplished
+        - scope: Boundaries of the changes
+        - success_criteria: How we'll know the plan succeeded
+        - risk_assessment: Potential issues and mitigations
+        
+      file_changes:
+        description: Detailed list of all file modifications
+        format:
+          - file_path: Absolute path to the file
+          - action: create|modify|delete
+          - current_state: Brief description or snippet of current code
+          - proposed_change: Exact snippet of what will be changed
+          - line_numbers: Specific lines affected (if modifying)
+          - justification: Why this change is necessary
+          
+      implementation_steps:
+        description: Ordered list of implementation tasks
+        format:
+          - step_number: Sequential identifier
+          - description: What will be done
+          - assigned_agent: Which agent will execute this
+          - dependencies: Steps that must complete first
+          - files_affected: List of files this step touches
+          - code_snippets: Key code that will be added/modified
+          - estimated_effort: Time/complexity estimate
+          
+      testing_verification:
+        description: How each change will be tested and verified
+        format:
+          - test_type: unit|integration|e2e|manual
+          - target: What is being tested
+          - test_approach: How it will be tested
+          - success_criteria: Expected outcomes
+          - verification_steps: Specific commands or checks
+          - assigned_tester: Agent responsible for testing
+          
+      agent_assignments:
+        description: Which agents will handle which parts
+        format:
+          - agent_name: "name of the agent-agent"
+          - responsibilities: What they will do
+          - deliverables: What they will produce
+          - dependencies: What they need from other agents
+          
+      rollback_plan:
+        description: How to undo changes if needed
+        format:
+          - trigger_conditions: When to rollback
+          - rollback_steps: How to undo changes
+          - verification: How to verify rollback succeeded
+          
+  quality_standards:
+    - completeness: All affected files must be identified
+    - specificity: Code snippets must be exact, not vague descriptions
+    - testability: Every change must have a verification method
+    - traceability: Each change must link to a requirement
+    - reviewability: Plan must be understandable by humans
+    - executability: Plan must be actionable by agents
+    
+  validation_checklist:
+    before_execution:
+      - all_files_exist: Verify referenced files exist (or will be created)
+      - dependencies_clear: All task dependencies are explicit
+      - agents_available: All assigned agents are available
+      - tests_defined: Every change has test coverage
+      - snippets_valid: Code snippets are syntactically correct
+      
+    during_execution:
+      - track_progress: Monitor completion of each step
+      - validate_changes: Verify changes match plan
+      - run_tests: Execute defined tests
+      - document_deviations: Note any changes from plan
+      
+    after_execution:
+      - verify_completeness: All planned changes completed
+      - test_results: All tests passing
+      - documentation_updated: Relevant docs updated
+      - review_conducted: Human or agent review completed
+      
+  example_plan:
+    overview:
+      objective: "Implement user authentication with JWT tokens"
+      scope: "Backend API endpoints and middleware"
+      success_criteria: "Users can login and access protected routes"
+      
+    file_changes:
+      - file_path: "/src/auth/jwt.service.ts"
+        action: "create"
+        proposed_change: |
+          import jwt from 'jsonwebtoken';
+          
+          export class JWTService {
+            generateToken(userId: string): string {
+              return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+            }
+            
+            verifyToken(token: string): { userId: string } {
+              return jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
+            }
+          }
+        justification: "Core JWT functionality needed for authentication"
+        
+      - file_path: "/src/middleware/auth.middleware.ts"
+        action: "create"
+        proposed_change: |
+          export async function authMiddleware(req, res, next) {
+            const token = req.headers.authorization?.split(' ')[1];
+            if (!token) return res.status(401).json({ error: 'No token provided' });
+            
+            try {
+              const payload = jwtService.verifyToken(token);
+              req.user = { id: payload.userId };
+              next();
+            } catch (error) {
+              return res.status(401).json({ error: 'Invalid token' });
+            }
+          }
+        justification: "Middleware to protect routes requiring authentication"
+        
+    implementation_steps:
+      - step_number: 1
+        description: "Create JWT service with token generation and verification"
+        assigned_agent: "@coding-agent"
+        files_affected: ["/src/auth/jwt.service.ts"]
+        estimated_effort: "1 hour"
+        
+      - step_number: 2
+        description: "Implement authentication middleware"
+        assigned_agent: "@coding-agent"
+        dependencies: [1]
+        files_affected: ["/src/middleware/auth.middleware.ts"]
+        estimated_effort: "30 minutes"
+        
+      - step_number: 3
+        description: "Write unit tests for JWT service"
+        assigned_agent: "@test-orchestrator-agent"
+        dependencies: [1]
+        files_affected: ["/src/auth/jwt.service.test.ts"]
+        estimated_effort: "1 hour"
+        
+    testing_verification:
+      - test_type: "unit"
+        target: "JWT token generation and verification"
+        test_approach: "Test with valid and invalid tokens"
+        success_criteria: "All edge cases handled correctly"
+        verification_steps: ["npm test jwt.service.test.ts"]
+        assigned_tester: "@test-orchestrator-agent"
+        
+      - test_type: "integration"
+        target: "Authentication middleware"
+        test_approach: "Test protected routes with/without tokens"
+        success_criteria: "Authorized requests pass, unauthorized fail"
+        verification_steps: ["npm test auth.integration.test.ts"]
+        assigned_tester: "@test-orchestrator-agent"
+        
+    agent_assignments:
+      - agent_name: "coding-agent"
+        responsibilities: "Implement JWT service and middleware"
+        deliverables: ["jwt.service.ts", "auth.middleware.ts"]
+        
+      - agent_name: "test-orchestrator-agent"
+        responsibilities: "Create and run all tests"
+        deliverables: ["jwt.service.test.ts", "auth.integration.test.ts"]
+        dependencies: "Completed implementation from @coding-agent"
+        
+      - agent_name: "security-auditor-agent"
+        responsibilities: "Review security implications"
+        deliverables: ["Security audit report"]
+        dependencies: "Completed implementation and tests"
+        
+    rollback_plan:
+      trigger_conditions: "Tests failing or security issues found"
+      rollback_steps:
+        - "Git revert commits related to auth implementation"
+        - "Remove JWT dependencies from package.json"
+        - "Clear any auth-related environment variables"
+      verification: "Run test suite to ensure system still functional"

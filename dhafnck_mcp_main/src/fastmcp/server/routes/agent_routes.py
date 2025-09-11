@@ -80,7 +80,7 @@ async def get_single_agent_metadata(
     Get metadata for a specific agent by name.
     
     Args:
-        agent_name: Name of the agent (e.g., 'coding_agent', 'debugger_agent')
+        agent_name: Name of the agent (e.g., 'coding-agent', 'debugger-agent')
     
     Returns detailed information about the specified agent.
     """
@@ -135,7 +135,7 @@ async def assign_agent_to_branch(
     
     Args:
         branch_id: UUID of the branch
-        agent_id: Agent identifier (e.g., '@coding_agent')
+        agent_id: Agent identifier (e.g., 'coding-agent')
     
     The agent will work on tasks within the specified branch.
     """

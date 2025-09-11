@@ -1,6 +1,6 @@
 # MCP Tool Testing Protocol - Iteration 10 Results
 **Date**: September 5, 2025  
-**Agent**: @test_orchestrator_agent  
+**Agent**: test-orchestrator-agent  
 **Protocol Version**: MCP_TESTING_PROTOCOL_v1.0  
 
 ## 🎯 Executive Summary

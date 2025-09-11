@@ -21,15 +21,15 @@
 ## Completed Agents (Production Ready) ✅
 
 ### Excellent Quality (Score: 100) - 13 Agents
-1. **master_orchestrator_agent** - Central coordination and orchestration
+1. **master-orchestrator-agent** - Central coordination and orchestration
 2. **ui_designer_expert_shadcn_agent** - Expert UI design with Shadcn/UI components
-3. **coding_agent** - Core development functionality ⭐ **HIGH PRIORITY**
-4. **test_orchestrator_agent** - Testing and QA orchestration ⭐ **HIGH PRIORITY**
-5. **debugger_agent** - Problem diagnosis and resolution ⭐ **HIGH PRIORITY**
-6. **security_auditor_agent** - Security analysis and auditing ⭐ **HIGH PRIORITY**
-7. **devops_agent** - DevOps and infrastructure management ⭐ **HIGH PRIORITY**
-8. **deep_research_agent** - Research and analysis capabilities ⭐ **HIGH PRIORITY**
-9. **code_reviewer_agent** - Code review and quality assurance
+3. **coding-agent** - Core development functionality ⭐ **HIGH PRIORITY**
+4. **test-orchestrator-agent** - Testing and QA orchestration ⭐ **HIGH PRIORITY**
+5. **debugger-agent** - Problem diagnosis and resolution ⭐ **HIGH PRIORITY**
+6. **security-auditor-agent** - Security analysis and auditing ⭐ **HIGH PRIORITY**
+7. **devops-agent** - DevOps and infrastructure management ⭐ **HIGH PRIORITY**
+8. **deep-research-agent** - Research and analysis capabilities ⭐ **HIGH PRIORITY**
+9. **code-reviewer-agent** - Code review and quality assurance
 10. **functional_tester_agent** - Functional testing execution
 11. **security_penetration_tester_agent** - Security penetration testing
 12. **test_case_generator_agent** - Test case creation and management
@@ -41,13 +41,13 @@
 
 | Agent | Current Score | Status | Priority | Progress |
 |-------|---------------|--------|----------|-----------|
-| coding_agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
-| test_orchestrator_agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
-| debugger_agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
-| system_architect_agent | 50% | ❌ Needs Work | 🔥 CRITICAL | **IN PROGRESS** |
-| security_auditor_agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
-| devops_agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
-| deep_research_agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
+| coding-agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
+| test-orchestrator-agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
+| debugger-agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
+| system-architect-agent | 50% | ❌ Needs Work | 🔥 CRITICAL | **IN PROGRESS** |
+| security-auditor-agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
+| devops-agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
+| deep-research-agent | 100% | ✅ **COMPLETE** | 🔥 CRITICAL | **DONE** |
 
 **Completion Rate**: 85.7% (6/7 agents complete)
 
@@ -72,17 +72,17 @@
 
 ### Phase 1: Complete High-Priority Agents (In Progress)
 Focus on the 7 critical agents that form the core of the system:
-1. coding_agent - Core development functionality
-2. test_orchestrator_agent - Testing and QA orchestration
-3. debugger_agent - Problem diagnosis and resolution
-4. system_architect_agent - System design and architecture
-5. security_auditor_agent - Security analysis and auditing
-6. devops_agent - DevOps and infrastructure management
-7. deep_research_agent - Research and analysis capabilities
+1. coding-agent - Core development functionality
+2. test-orchestrator-agent - Testing and QA orchestration
+3. debugger-agent - Problem diagnosis and resolution
+4. system-architect-agent - System design and architecture
+5. security-auditor-agent - Security analysis and auditing
+6. devops-agent - DevOps and infrastructure management
+7. deep-research-agent - Research and analysis capabilities
 
 ### Phase 2: Agent Library Cleanup
 Remove 26 redundant agents identified in cleanup recommendations:
-- Merge duplicate testing agents into test_orchestrator_agent
+- Merge duplicate testing agents into test-orchestrator-agent
 - Consolidate UI design agents into ui_designer_expert_shadcn_agent
 - Remove broken or minimal-value agents
 

@@ -12,7 +12,7 @@ covering:
 Test IDs:
 - Project ID: 2fb85ec6-d2d3-42f7-a75c-c5a0befd3407
 - Git Branch ID: 741854b4-a0f4-4b39-b2ab-b27dfc97a851
-- Agent names: @@coding_agent, @test-orchestrator-agent, @security-auditor-agent
+- Agent names: @coding-agent, @test-orchestrator-agent, @security-auditor-agent
 """
 
 import pytest
@@ -39,7 +39,7 @@ class TestComprehensiveAgentManagement:
     # Test IDs as specified in requirements
     PROJECT_ID = "2fb85ec6-d2d3-42f7-a75c-c5a0befd3407"
     GIT_BRANCH_ID = "741854b4-a0f4-4b39-b2ab-b27dfc97a851"
-    AGENT_NAMES = ["@@coding_agent", "@test-orchestrator-agent", "@security-auditor-agent"]
+    AGENT_NAMES = ["@coding-agent", "@test-orchestrator-agent", "@security-auditor-agent"]
     
     @pytest.fixture
     def mock_agent_repository(self):
@@ -78,9 +78,9 @@ class TestComprehensiveAgentManagement:
         """Test that AgentRole enum contains expected agent types."""
         # Verify expected agent roles exist
         expected_roles = [
-            "coding_agent",
-            "test_orchestrator_agent", 
-            "security_auditor_agent"
+            "coding-agent",
+            "test-orchestrator-agent", 
+            "security-auditor-agent"
         ]
         
         available_roles = AgentRole.get_all_roles()
@@ -89,9 +89,9 @@ class TestComprehensiveAgentManagement:
             assert expected_role in available_roles, f"Expected role '{expected_role}' not found in AgentRole enum"
         
         # Test role validation methods
-        assert AgentRole.is_valid_role("coding_agent")
-        assert AgentRole.is_valid_role("test_orchestrator_agent")
-        assert AgentRole.is_valid_role("security_auditor_agent")
+        assert AgentRole.is_valid_role("coding-agent")
+        assert AgentRole.is_valid_role("test-orchestrator-agent")
+        assert AgentRole.is_valid_role("security-auditor-agent")
         
         # Test invalid roles
         assert not AgentRole.is_valid_role("invalid_agent")
@@ -101,12 +101,12 @@ class TestComprehensiveAgentManagement:
 
     def test_agent_role_metadata_access(self):
         """Test accessing agent role metadata."""
-        coding_role = AgentRole.get_role_by_slug("coding_agent")
+        coding_role = AgentRole.get_role_by_slug("coding-agent")
         assert coding_role is not None
         assert coding_role == AgentRole.CODING
         
         # Test role properties
-        assert coding_role.folder_name == "coding_agent"
+        assert coding_role.folder_name == "coding-agent"
         assert isinstance(coding_role.display_name, str)
         assert isinstance(coding_role.description, str)
 
@@ -136,9 +136,9 @@ class TestComprehensiveAgentManagement:
         """Test agent registration with role validation."""
         # Test valid agent roles
         valid_agents = [
-            ("coding_agent", "@@coding_agent"),
-            ("test_orchestrator_agent", "@test-orchestrator-agent"), 
-            ("security_auditor_agent", "@security-auditor-agent")
+            ("coding-agent", "@coding-agent"),
+            ("test-orchestrator-agent", "@test-orchestrator-agent"), 
+            ("security-auditor-agent", "@security-auditor-agent")
         ]
         
         for role_name, call_agent in valid_agents:
@@ -225,7 +225,7 @@ class TestComprehensiveAgentManagement:
         
         # Verify all expected agents are present
         agent_names = [agent["name"] for agent in result["agents"]]
-        for expected_name in ["@coding_agent", "test-orchestrator-agent", "security-auditor-agent"]:
+        for expected_name in ["coding-agent", "test-orchestrator-agent", "security-auditor-agent"]:
             assert expected_name in agent_names
 
     def test_get_agent_details(self, agent_facade, sample_agents):
@@ -253,7 +253,7 @@ class TestComprehensiveAgentManagement:
     def test_agent_inheritance_in_subtasks(self, parameter_validator):
         """Test that subtasks inherit agents from parent tasks."""
         # Test parent task with multiple agents
-        parent_assignees = ["@@coding_agent", "@security-auditor-agent"]
+        parent_assignees = ["@coding-agent", "@security-auditor-agent"]
         
         # Validate parent task assignees
         is_valid, error = parameter_validator.validate_create_task_params(
@@ -276,7 +276,7 @@ class TestComprehensiveAgentManagement:
     def test_agent_inheritance_override(self, parameter_validator):
         """Test that subtasks can override inherited agents."""
         # Parent has coding and security agents
-        parent_assignees = ["@@coding_agent", "@security-auditor-agent"]
+        parent_assignees = ["@coding-agent", "@security-auditor-agent"]
         
         # Subtask overrides with just test agent
         subtask_assignees = ["@test-orchestrator-agent"]
@@ -301,12 +301,12 @@ class TestComprehensiveAgentManagement:
         """Test various assignees format validation through task creation validation."""
         test_cases = [
             # Valid cases
-            (["@@coding_agent"], True, "Single agent with @"),
-            (["@coding_agent"], True, "Single agent without @"), 
-            (["@@coding_agent", "@security-auditor-agent"], True, "Multiple agents with @"),
-            (["@coding_agent", "security-auditor-agent"], True, "Multiple agents without @"),
+            (["@coding-agent"], True, "Single agent with @"),
+            (["coding-agent"], True, "Single agent without @"), 
+            (["@coding-agent", "@security-auditor-agent"], True, "Multiple agents with @"),
+            (["coding-agent", "security-auditor-agent"], True, "Multiple agents without @"),
             (["user123"], True, "User ID"),
-            (["@@coding_agent", "user123"], True, "Mixed agent and user"),
+            (["@coding-agent", "user123"], True, "Mixed agent and user"),
             ([], True, "Empty list for inheritance"),  # Empty list is valid for inheritance
             
             # Invalid cases would need to be tested through actual MCP calls
@@ -334,14 +334,14 @@ class TestComprehensiveAgentManagement:
             return assignees
         
         test_cases = [
-            ("@@coding_agent", ["@@coding_agent"]),
-            ("@@coding_agent,@test-orchestrator-agent", ["@@coding_agent", "@test-orchestrator-agent"]),
-            ("@@coding_agent, @test-orchestrator-agent", ["@@coding_agent", "@test-orchestrator-agent"]),
+            ("@coding-agent", ["@coding-agent"]),
+            ("@coding-agent,@test-orchestrator-agent", ["@coding-agent", "@test-orchestrator-agent"]),
+            ("@coding-agent, @test-orchestrator-agent", ["@coding-agent", "@test-orchestrator-agent"]),
             ("", []),
             (" ", []),
-            ("@@coding_agent,", ["@@coding_agent"]),
-            (",@@coding_agent", ["@@coding_agent"]),
-            (["@@coding_agent"], ["@@coding_agent"]),  # Already a list
+            ("@coding-agent,", ["@coding-agent"]),
+            (",@coding-agent", ["@coding-agent"]),
+            (["@coding-agent"], ["@coding-agent"]),  # Already a list
             (None, None),
         ]
         
@@ -418,7 +418,7 @@ class TestComprehensiveAgentManagement:
                 "agents_reassigned": 3,
                 "branches_affected": 5,
                 "workload_distribution": {
-                    "@coding_agent": 2,
+                    "coding-agent": 2,
                     "test-orchestrator-agent": 2,
                     "security-auditor-agent": 1
                 }
@@ -527,9 +527,9 @@ class TestAgentManagementIntegration:
         """Test agent system health and availability."""
         # Verify critical agent types are available
         required_agent_types = [
-            "coding_agent",
-            "test_orchestrator_agent",
-            "security_auditor_agent"
+            "coding-agent",
+            "test-orchestrator-agent",
+            "security-auditor-agent"
         ]
         
         available_agents = AgentRole.get_all_roles()

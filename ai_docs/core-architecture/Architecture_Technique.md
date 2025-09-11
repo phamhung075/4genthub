@@ -211,13 +211,13 @@ Sophisticated enterprise-grade architecture implementing Domain-Driven Design pr
 **Total Agents**: 60+ specialized AI agents with dynamic loading
 
 #### Agent_Categories
-- **Development Agents**: coding_agent, debugger_agent, system_architect_agent, tech_spec_agent
-- **Design Agents**: ui_designer_agent, design_system_agent, ux_researcher_agent
-- **DevOps Agents**: devops_agent, security_auditor_agent, performance_load_tester_agent
-- **Analytics Agents**: analytics_setup_agent, market_research_agent, user_feedback_collector_agent
-- **Management Agents**: project_initiator_agent, task_planning_agent, master_orchestrator_agent
+- **Development Agents**: coding-agent, debugger-agent, system-architect-agent, tech_spec_agent
+- **Design Agents**: ui_designer_agent, design-system-agent, ux_researcher_agent
+- **DevOps Agents**: devops-agent, security-auditor-agent, performance-load-tester-agent
+- **Analytics Agents**: analytics-setup-agent, market_research_agent, user_feedback_collector_agent
+- **Management Agents**: project-initiator-agent, task-planning-agent, master-orchestrator-agent
 - **Marketing Agents**: campaign_manager_agent, content_strategy_agent, seo_sem_agent
-- **Specialized Agents**: compliance_scope_agent, ethical_review_agent, documentation_agent
+- **Specialized Agents**: compliance-scope-agent, ethical-review-agent, documentation-agent
 
 #### Agent_Features
 - **YAML Configuration**: Metadata-driven agent definitions

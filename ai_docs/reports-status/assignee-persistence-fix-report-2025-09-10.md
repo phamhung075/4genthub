@@ -35,7 +35,7 @@ if hasattr(task, 'assignees') and task.assignees:
         new_assignee = TaskAssignee(
             id=str(uuid.uuid4()),
             task_id=str(task.id),
-            assignee_id=assignee,  # This is the agent role like '@coding_agent'
+            assignee_id=assignee,  # This is the agent role like 'coding-agent'
             role="agent",  # Role indicating this is an AI agent assignment
             user_id=self.user_id  # CRITICAL: User ID required for data isolation
         )
@@ -53,7 +53,7 @@ if hasattr(task, 'assignees') and task.assignees:
         new_assignee = TaskAssignee(
             id=str(uuid.uuid4()),
             task_id=str(task.id),
-            assignee_id=assignee,  # This is the agent role like '@coding_agent'
+            assignee_id=assignee,  # This is the agent role like 'coding-agent'
             role="agent",  # Role indicating this is an AI agent assignment
             user_id=task_user_id  # CRITICAL: User ID required for data isolation
         )
@@ -79,7 +79,7 @@ The fix respects all DDD boundaries:
 ### Task Creation Test
 Created task with ID: `d507212f-5e07-46a1-930d-43626c636fa0`
 - Title: "Test task with agent assignment fix"
-- Assignees: `@coding_agent`, `@test_orchestrator_agent`
+- Assignees: `coding-agent`, `test-orchestrator-agent`
 - Priority: high
 - Status: todo
 
@@ -92,8 +92,8 @@ SELECT * FROM task_assignees WHERE task_id = 'd507212f-5e07-46a1-930d-43626c636f
 ```
 id                                    | task_id                              | assignee_id              | role        | user_id
 --------------------------------------|--------------------------------------|--------------------------|-------------|----------
-2e4fb8ea-afda-425c-9172-190e70e85cee | d507212f-5e07-46a1-930d-43626c636fa0 | @coding_agent            | contributor | f0de4c5d...
-c17409bb-dd3d-439f-82c0-e54e6cb50cfa | d507212f-5e07-46a1-930d-43626c636fa0 | @test_orchestrator_agent | contributor | f0de4c5d...
+2e4fb8ea-afda-425c-9172-190e70e85cee | d507212f-5e07-46a1-930d-43626c636fa0 | coding-agent            | contributor | f0de4c5d...
+c17409bb-dd3d-439f-82c0-e54e6cb50cfa | d507212f-5e07-46a1-930d-43626c636fa0 | test-orchestrator-agent | contributor | f0de4c5d...
 ```
 
 **Note**: Role shows "contributor" because server wasn't fully restarted. After restart, new tasks will show "agent" as the role.
@@ -166,7 +166,7 @@ The implementation follows the same pattern as existing persistence logic:
 ✅ Task creation with multiple assignees
 ✅ Database persistence verification
 ✅ User isolation verification
-✅ Assignee format validation (@coding_agent format)
+✅ Assignee format validation (coding-agent format)
 
 ### What Needs Testing
 - Task update with assignee changes

@@ -25,14 +25,14 @@ The Deprecated Agent Mappings system provides backward compatibility for agent n
 ## Agent Consolidation Categories
 
 ### 1. Documentation Consolidation
-Multiple specialized documentation agents have been consolidated into a single `documentation_agent`:
+Multiple specialized documentation agents have been consolidated into a single `documentation-agent`:
 
 ```python
 # Deprecated → Active
-"tech_spec_agent" → "documentation_agent"
-"tech-spec-agent" → "@documentation_agent" 
-"prd_architect_agent" → "documentation_agent"
-"prd-architect-agent" → "@documentation_agent"
+"tech_spec_agent" → "documentation-agent"
+"tech-spec-agent" → "documentation-agent" 
+"prd_architect_agent" → "documentation-agent"
+"prd-architect-agent" → "documentation-agent"
 ```
 
 **Rationale**: Technical specifications and PRD (Product Requirements Document) creation are both documentation tasks that benefit from unified handling.
@@ -42,8 +42,8 @@ Research-related agents have been consolidated:
 
 ```python
 # Deprecated → Active
-"mcp_researcher_agent" → "deep_research_agent"
-"mcp-researcher-agent" → "@deep_research_agent"
+"mcp_researcher_agent" → "deep-research-agent"
+"mcp-researcher-agent" → "deep-research-agent"
 ```
 
 **Rationale**: MCP-specific research is now handled by the more comprehensive deep research agent.
@@ -53,9 +53,9 @@ Multiple creative agents have been unified:
 
 ```python
 # Deprecated → Active
-"idea_generation_agent" → "creative_ideation_agent"
+"idea_generation_agent" → "creative-ideation-agent"
 "idea-generation-agent" → "creative-ideation-agent"
-"idea_refinement_agent" → "creative_ideation_agent"
+"idea_refinement_agent" → "creative-ideation-agent"
 "idea-refinement-agent" → "creative-ideation-agent"
 ```
 
@@ -66,11 +66,11 @@ Marketing-related agents have been consolidated into a single orchestrator:
 
 ```python
 # Deprecated → Active
-"seo_sem_agent" → "marketing_strategy_orchestrator_agent"
+"seo_sem_agent" → "marketing-strategy-orchestrator-agent"
 "seo-sem-agent" → "marketing-strategy-orchestrator-agent"
-"growth_hacking_idea_agent" → "marketing_strategy_orchestrator_agent"
+"growth_hacking_idea_agent" → "marketing-strategy-orchestrator-agent"
 "growth-hacking-idea-agent" → "marketing-strategy-orchestrator-agent"
-"content_strategy_agent" → "marketing_strategy_orchestrator_agent"
+"content_strategy_agent" → "marketing-strategy-orchestrator-agent"
 "content-strategy-agent" → "marketing-strategy-orchestrator-agent"
 ```
 
@@ -81,11 +81,11 @@ DevOps-related agents have been unified:
 
 ```python
 # Deprecated → Active
-"swarm_scaler_agent" → "devops_agent"
+"swarm_scaler_agent" → "devops-agent"
 "swarm-scaler-agent" → "devops-agent"
-"adaptive_deployment_strategist_agent" → "devops_agent"
+"adaptive_deployment_strategist_agent" → "devops-agent"
 "adaptive-deployment-strategist-agent" → "devops-agent"
-"mcp_configuration_agent" → "devops_agent"
+"mcp_configuration_agent" → "devops-agent"
 "mcp-configuration-agent" → "devops-agent"
 ```
 
@@ -96,8 +96,8 @@ Debugging and remediation agents have been consolidated:
 
 ```python
 # Deprecated → Active
-"remediation_agent" → "debugger_agent"
-"remediation-agent" → "@debugger_agent"
+"remediation_agent" → "debugger-agent"
+"remediation-agent" → "debugger-agent"
 ```
 
 **Rationale**: Bug remediation is a core debugging function that fits naturally within the debugger agent's responsibilities.
@@ -107,9 +107,9 @@ Some agents have been renamed for clarity:
 
 ```python
 # Deprecated → Active
-"brainjs_ml_agent" → "ml_specialist_agent"
+"brainjs_ml_agent" → "ml-specialist-agent"
 "brainjs-ml-agent" → "ml-specialist-agent"
-"ui_designer_expert_shadcn_agent" → "ui_specialist_agent"
+"ui_designer_expert_shadcn_agent" → "ui-specialist-agent"
 "ui-designer-expert-shadcn-agent" → "ui-specialist-agent"
 ```
 
@@ -198,7 +198,7 @@ Both formats are handled consistently:
    task = Task(subagent_type="tech_spec_agent", ...)
    
    # New (Recommended)
-   task = Task(subagent_type="documentation_agent", ...)
+   task = Task(subagent_type="documentation-agent", ...)
    ```
 
 2. **Update Configuration Files**:
@@ -210,8 +210,8 @@ Both formats are handled consistently:
    
    # New
    default_agents:
-     - documentation_agent
-     - deep_research_agent
+     - documentation-agent
+     - deep-research-agent
    ```
 
 3. **Update Documentation**:
@@ -227,7 +227,7 @@ Both formats are handled consistently:
    claude-code --agent tech_spec_agent
    
    # New (recommended)
-   claude-code --agent documentation_agent
+   claude-code --agent documentation-agent
    ```
 
 2. **API Calls**:
@@ -236,7 +236,7 @@ Both formats are handled consistently:
    response = call_agent("prd_architect_agent", task)
    
    # New (recommended)
-   response = call_agent("documentation_agent", task)
+   response = call_agent("documentation-agent", task)
    ```
 
 ## Backward Compatibility Guarantees

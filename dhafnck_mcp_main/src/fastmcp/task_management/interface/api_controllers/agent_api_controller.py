@@ -254,9 +254,9 @@ class AgentAPIController:
         """Get static agent metadata for fallback"""
         return [
             {
-                "id": "@master_orchestrator_agent",
+                "id": "master-orchestrator-agent",
                 "name": "Uber Orchestrator Agent",
-                "call_name": "@master_orchestrator_agent",
+                "call_name": "master-orchestrator-agent",
                 "role": "Master Coordinator and Decision Maker",
                 "description": "The highest-level orchestrator that coordinates all other agents",
                 "category": "orchestration",
@@ -272,9 +272,9 @@ class AgentAPIController:
                 "guidelines": "Use for high-level coordination and when multiple agents need to work together"
             },
             {
-                "id": "@coding_agent",
+                "id": "coding-agent",
                 "name": "Coding Agent",
-                "call_name": "@coding_agent",
+                "call_name": "coding-agent",
                 "role": "Software Development Specialist",
                 "description": "Specialized in writing, refactoring, and implementing code",
                 "category": "development",
@@ -290,9 +290,9 @@ class AgentAPIController:
                 "guidelines": "Use for all coding and implementation tasks"
             },
             {
-                "id": "@debugger_agent",
+                "id": "debugger-agent",
                 "name": "Debugger Agent",
-                "call_name": "@debugger_agent",
+                "call_name": "debugger-agent",
                 "role": "Bug Detection and Resolution Specialist",
                 "description": "Expert in identifying, analyzing, and fixing bugs and errors",
                 "category": "development",
@@ -307,9 +307,9 @@ class AgentAPIController:
                 "guidelines": "Use when encountering errors, test failures, or unexpected behavior"
             },
             {
-                "id": "@test_orchestrator_agent",
+                "id": "test-orchestrator-agent",
                 "name": "Test Orchestrator Agent",
-                "call_name": "@test_orchestrator_agent",
+                "call_name": "test-orchestrator-agent",
                 "role": "Testing Strategy and Execution Coordinator",
                 "description": "Manages comprehensive testing strategies and coordinates test execution",
                 "category": "quality",

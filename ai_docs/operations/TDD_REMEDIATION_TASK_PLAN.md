@@ -70,7 +70,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
       "MCP authentication endpoints"
     ]
   },
-  "agent_assignment": "@master_orchestrator_agent"
+  "agent_assignment": "master-orchestrator-agent"
 }
 ```
 
@@ -112,7 +112,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
     "risk_assessment": "Low - removing redundant layer",
     "rollback_plan": "Keep backup files until validation complete"
   },
-  "agent_assignment": "@coding_agent",
+  "agent_assignment": "coding-agent",
   "dependencies": ["Task 2"]
 }
 ```
@@ -169,7 +169,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
       "Remove old service implementations"
     ]
   },
-  "agent_assignment": "@coding_agent",
+  "agent_assignment": "coding-agent",
   "dependencies": ["Task 3"]
 }
 ```
@@ -210,7 +210,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
       "Performance benchmarks maintained"
     ]
   },
-  "agent_assignment": "@test_orchestrator_agent",
+  "agent_assignment": "test-orchestrator-agent",
   "dependencies": ["Task 4"]
 }
 ```
@@ -249,7 +249,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
       "Comprehensive error scenario coverage"
     ]
   },
-  "agent_assignment": "@test_orchestrator_agent", 
+  "agent_assignment": "test-orchestrator-agent", 
   "dependencies": ["Task 5"]
 }
 ```
@@ -268,16 +268,16 @@ graph TD
 
 ## **Agent Specialization Assignments**
 
-### **@master_orchestrator_agent**
+### **master-orchestrator-agent**
 - Task 2: End-to-End Authentication Validation
 - Overall coordination and progress monitoring
 
-### **@coding_agent**  
+### **coding-agent**  
 - Task 3: Remove Starlette-FastAPI Bridge Layer
 - Task 4: Consolidate JWT Services
 - Core architecture implementation
 
-### **@test_orchestrator_agent**
+### **test-orchestrator-agent**
 - Task 5: Update Token-Related Tests  
 - Task 6: Integration Test Updates
 - Test strategy and execution

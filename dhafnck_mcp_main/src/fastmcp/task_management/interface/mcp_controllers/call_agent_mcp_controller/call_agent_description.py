@@ -2,7 +2,7 @@
 Agent Documentation Standards (from 00_RULES/core/P00-S00-T03-Agents Information.md)
 
 - Each agent has specific expertise and can be invoked using @agent-name syntax.
-- MUST switch to a role agent if no role is specified; otherwise, the default agent @master_orchestrator_agent will be used.
+- MUST switch to a role agent if no role is specified; otherwise, the default agent master-orchestrator-agent will be used.
 - Use @agent-name to invoke a specific agent.
 - Agents can collaborate as specified in their connectivity.
 - Each agent has specialized knowledge and capabilities.
@@ -40,102 +40,102 @@ CALL_AGENT_DESCRIPTION = """
 | call_agent | name_agent | | Load and invoke specific agent by name |
 
 🎯 USE CASES:
-• Invoke @master_orchestrator_agent for complex multi-step workflows
+• Invoke master-orchestrator-agent for complex multi-step workflows
 • Call specialized agents like @code_architect_agent for code design
-• Call @task_planning_agent to plan a task, split it into subtasks, and assign them to the appropriate agents.
+• Call task-planning-agent to plan a task, split it into subtasks, and assign them to the appropriate agents.
 • Switch between role-specific agents for different task phases
 • Discover available agents before task delegation
 • Multi-agent collaboration and handoff scenarios
 
 💡 USAGE GUIDELINES:
 • Provide valid agent name for invocation
-• Switch to a role agent if no role is specified; otherwise, the default agent @master_orchestrator_agent will be used.
+• Switch to a role agent if no role is specified; otherwise, the default agent master-orchestrator-agent will be used.
 
 🔍 DECISION TREES:
 IF work_type matches "debug|fix|error|bug|troubleshoot":
-    USE @debugger_agent
+    USE debugger-agent
 ELIF work_type matches "implement|code|build|develop|create":
-    USE @coding_agent
+    USE coding-agent
 ELIF work_type matches "test|verify|validate|qa":
-    USE @test_orchestrator_agent
+    USE test-orchestrator-agent
 ELIF work_type matches "plan|analyze|breakdown|organize":
-    USE @task_planning_agent
+    USE task-planning-agent
 ELIF work_type matches "design|ui|interface|ux|frontend":
-    USE @ui_specialist_agent
+    USE ui-specialist-agent
 ELIF work_type matches "security|audit|vulnerability|penetration":
-    USE @security_auditor_agent
+    USE security-auditor-agent
 ELIF work_type matches "deploy|infrastructure|devops|ci/cd":
-    USE @devops_agent
+    USE devops-agent
 ELIF work_type matches "document|guide|manual|readme":
-    USE @documentation_agent
+    USE documentation-agent
 ELIF work_type matches "research|investigate|explore|study":
-    USE @deep_research_agent
+    USE deep-research-agent
 ELIF work_type matches "orchestrate|coordinate|multi-step|complex":
-    USE @master_orchestrator_agent
+    USE master-orchestrator-agent
 ELIF work_type matches "ml|machine learning|ai|neural":
-    USE @ml_specialist_agent or @llm_ai_agents_research
+    USE ml-specialist-agent or llm-ai-agents-research
 ELIF work_type matches "performance|load|stress|benchmark":
-    USE @performance_load_tester_agent
+    USE performance-load-tester-agent
 ELIF work_type matches "marketing|campaign|growth|seo":
-    USE @marketing_strategy_orchestrator_agent
+    USE marketing-strategy-orchestrator-agent
 ELIF work_type matches "compliance|regulatory|legal":
-    USE @compliance_scope_agent
+    USE compliance-scope-agent
 ELIF work_type matches "architecture|system|design patterns":
-    USE @system_architect_agent
+    USE system-architect-agent
 ELIF work_type matches "efficiency|optimize|process":
-    USE @efficiency_optimization_agent
+    USE efficiency-optimization-agent
 ELIF work_type matches "incident|postmortem|root cause":
-    USE @root_cause_analysis_agent
+    USE root-cause-analysis-agent
 ELIF work_type matches "project|initiative|kickoff":
-    USE @project_initiator_agent
+    USE project-initiator-agent
 ELIF work_type matches "prototype|poc|proof of concept":
-    USE @prototyping_agent
+    USE prototyping-agent
 ELIF work_type matches "brand|branding|identity":
-    USE @branding_agent
+    USE branding-agent
 ELIF work_type matches "community|social|engagement":
-    USE @community_strategy_agent
+    USE community-strategy-agent
 ELIF work_type matches "creative|idea|ideation|brainstorm":
-    USE @creative_ideation_agent
+    USE creative-ideation-agent
 ELIF work_type matches "ethics|ethical|responsible":
-    USE @ethical_review_agent
+    USE ethical-review-agent
 ELIF work_type matches "health|monitor|monitoring|status":
-    USE @health_monitor_agent
+    USE health-monitor-agent
 ELIF work_type matches "technology|tech stack|framework":
-    USE @technology_advisor_agent
+    USE technology-advisor-agent
 ELIF work_type matches "elicit|requirements|gathering":
-    USE @elicitation_agent
+    USE elicitation-agent
 ELIF work_type matches "uat|acceptance testing|user testing":
-    USE @uat_coordinator_agent
+    USE uat-coordinator-agent
 ELIF work_type matches "analytics|tracking|metrics":
-    USE @analytics_setup_agent
+    USE analytics-setup-agent
 ELIF work_type matches "design system|component library|ui patterns":
-    USE @design_system_agent
+    USE design-system-agent
 ELIF work_type matches "core concept|fundamental|foundation":
-    USE @core_concept_agent
+    USE core-concept-agent
 ELSE:
-    USE @master_orchestrator_agent  # Default fallback
+    USE master-orchestrator-agent  # Default fallback
 
 📊 WORKFLOW PATTERNS:
 1. Complex Task Orchestration:
-   - Start with @master_orchestrator_agent
-   - Delegate to @task_planning_agent for breakdown
+   - Start with master-orchestrator-agent
+   - Delegate to task-planning-agent for breakdown
    - Switch to specialized agents for execution
-   - Return to @master_orchestrator_agent for integration
+   - Return to master-orchestrator-agent for integration
 
 2. Feature Development:
-   - @task_planning_agent → @system_architect_agent → @coding_agent → @test_orchestrator_agent → @documentation_agent
+   - task-planning-agent → system-architect-agent → coding-agent → test-orchestrator-agent → documentation-agent
 
 3. Bug Resolution:
-   - @debugger_agent → @root_cause_analysis_agent → @coding_agent → @test_orchestrator_agent
+   - debugger-agent → root-cause-analysis-agent → coding-agent → test-orchestrator-agent
 
 4. Security Audit:
-   - @security_auditor_agent → @compliance_scope_agent → @ethical_review_agent
+   - security-auditor-agent → compliance-scope-agent → ethical-review-agent
 
 💡 BEST PRACTICES FOR AI:
 • Call agent BEFORE starting any work to ensure proper specialization
 • Use descriptive work type keywords to match decision tree
 • Switch agents when task nature changes significantly
-• Default to @master_orchestrator_agent when unsure
+• Default to master-orchestrator-agent when unsure
 • Chain multiple agents for complex workflows
 • Maintain context between agent switches
 
@@ -143,7 +143,7 @@ ELSE:
 • If agent name is invalid, error response includes available agents list
 • Missing name_agent parameter returns clear error with field requirements
 • Internal errors are logged and returned with generic error message
-• Agent loading failures provide fallback to @master_orchestrator_agent
+• Agent loading failures provide fallback to master-orchestrator-agent
 
 ✅ VALIDATION CHECKPOINTS:
 • Check: Is the agent name prefixed with @?
@@ -162,64 +162,64 @@ ELSE:
 
 🚀 AVAILABLE AGENTS (33 Total - Based on agent-library):
   Development & Coding (4):
-    @coding_agent - Implementation and feature development
-    @debugger_agent - Bug fixing and troubleshooting
-    @code_reviewer_agent - Code quality and review
-    @prototyping_agent - Rapid prototyping and POCs
+    coding-agent - Implementation and feature development
+    debugger-agent - Bug fixing and troubleshooting
+    code-reviewer-agent - Code quality and review
+    prototyping-agent - Rapid prototyping and POCs
     
   Testing & QA (3):
-    @test_orchestrator_agent - Comprehensive test management
-    @uat_coordinator_agent - User acceptance testing
-    @performance_load_tester_agent - Performance and load testing
+    test-orchestrator-agent - Comprehensive test management
+    uat-coordinator-agent - User acceptance testing
+    performance-load-tester-agent - Performance and load testing
     
   Architecture & Design (4):
-    @system_architect_agent - System design and architecture
-    @design_system_agent - Design system and UI patterns
-    @ui_specialist_agent - UI/UX design and frontend development
-    @core_concept_agent - Core concepts and fundamentals
+    system-architect-agent - System design and architecture
+    design-system-agent - Design system and UI patterns
+    ui-specialist-agent - UI/UX design and frontend development
+    core-concept-agent - Core concepts and fundamentals
     
   DevOps & Infrastructure (1):
-    @devops_agent - CI/CD and infrastructure
+    devops-agent - CI/CD and infrastructure
     
   Documentation (1):
-    @documentation_agent - Technical documentation
+    documentation-agent - Technical documentation
     
   Project & Planning (4):
-    @project_initiator_agent - Project setup and kickoff
-    @task_planning_agent - Task breakdown and planning
-    @master_orchestrator_agent - Complex workflow orchestration
-    @elicitation_agent - Requirements gathering
+    project-initiator-agent - Project setup and kickoff
+    task-planning-agent - Task breakdown and planning
+    master-orchestrator-agent - Complex workflow orchestration
+    elicitation-agent - Requirements gathering
     
   Security & Compliance (3):
-    @security_auditor_agent - Security audits and reviews
-    @compliance_scope_agent - Regulatory compliance
-    @ethical_review_agent - Ethical considerations
+    security-auditor-agent - Security audits and reviews
+    compliance-scope-agent - Regulatory compliance
+    ethical-review-agent - Ethical considerations
     
   Analytics & Optimization (3):
-    @analytics_setup_agent - Analytics and tracking setup
-    @efficiency_optimization_agent - Process optimization
-    @health_monitor_agent - System health monitoring
+    analytics-setup-agent - Analytics and tracking setup
+    efficiency-optimization-agent - Process optimization
+    health-monitor-agent - System health monitoring
     
   Marketing & Branding (3):
-    @marketing_strategy_orchestrator_agent - Marketing strategy
-    @community_strategy_agent - Community building
-    @branding_agent - Brand identity
+    marketing-strategy-orchestrator-agent - Marketing strategy
+    community-strategy-agent - Community building
+    branding-agent - Brand identity
     
   Research & Analysis (4):
-    @deep_research_agent - In-depth research
-    @llm_ai_agents_research - AI/ML research and innovations
-    @root_cause_analysis_agent - Problem analysis
-    @technology_advisor_agent - Technology recommendations
+    deep-research-agent - In-depth research
+    llm-ai-agents-research - AI/ML research and innovations
+    root-cause-analysis-agent - Problem analysis
+    technology-advisor-agent - Technology recommendations
     
   AI & Machine Learning (1):
-    @ml_specialist_agent - Machine learning implementation
+    ml-specialist-agent - Machine learning implementation
     
   Creative & Ideation (1):
-    @creative_ideation_agent - Creative idea generation
+    creative-ideation-agent - Creative idea generation
 """
 
 CALL_AGENT_PARAMETERS_DESCRIPTION = {
-    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., '@master_orchestrator_agent')"
+    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., 'master-orchestrator-agent')"
 }
 
 CALL_AGENT_PARAMS = {
@@ -245,5 +245,5 @@ def get_call_agent_description():
 
 # Legacy parameter descriptions for backward compatibility
 CALL_AGENT_PARAMETERS = {
-    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., '@master_orchestrator_agent')"
+    "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., 'master-orchestrator-agent')"
 } 

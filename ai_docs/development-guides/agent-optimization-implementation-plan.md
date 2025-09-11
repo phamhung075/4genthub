@@ -13,18 +13,18 @@ Consolidate redundant agents, clarify responsibilities, and establish clear hier
 ### 1.1 Merge Documentation Agents (3→1)
 
 #### Current State
-- `documentation_agent` - General documentation
+- `documentation-agent` - General documentation
 - `tech_spec_agent` - Technical specifications  
 - `prd_architect_agent` - Product requirements
 
 #### Action Items
 ```yaml
-# Update documentation_agent/capabilities.yaml
+# Update documentation-agent/capabilities.yaml
 - Add document_types: [technical, product, api, user, specs, prd]
 - Inherit best capabilities from all three
 - Expand MCP tools if needed
 
-# Update documentation_agent/contexts/instructions.yaml  
+# Update documentation-agent/contexts/instructions.yaml  
 - Add sections for technical specs
 - Add sections for PRD creation
 - Maintain general documentation capabilities
@@ -32,19 +32,19 @@ Consolidate redundant agents, clarify responsibilities, and establish clear hier
 
 #### Migration Steps
 1. Copy unique capabilities from tech_spec and prd_architect
-2. Update documentation_agent configuration
+2. Update documentation-agent configuration
 3. Test combined functionality
 4. Mark old agents as deprecated
 
 ### 1.2 Merge Research Agents (2→1)
 
 #### Current State
-- `deep_research_agent` - General research
+- `deep-research-agent` - General research
 - `mcp_researcher_agent` - MCP-specific research
 
 #### Action Items
 ```yaml
-# Update deep_research_agent/capabilities.yaml
+# Update deep-research-agent/capabilities.yaml
 - Add research_domains: [general, mcp, tools, libraries, frameworks]
 - Include MCP-specific search patterns
 
@@ -61,9 +61,9 @@ Consolidate redundant agents, clarify responsibilities, and establish clear hier
 
 #### New Agent Structure
 ```yaml
-# creative_ideation_agent/config.yaml
+# creative-ideation-agent/config.yaml
 agent_info:
-  name: creative_ideation_agent
+  name: creative-ideation-agent
   description: Complete creative ideation lifecycle
   modes:
     - generate: Create new ideas
@@ -76,14 +76,14 @@ agent_info:
 ### 2.1 Merge DevOps Agents (4→1)
 
 #### Current State
-- `devops_agent` - Base DevOps
+- `devops-agent` - Base DevOps
 - `swarm_scaler_agent` - Swarm scaling
 - `adaptive_deployment_strategist_agent` - Deployment
 - `mcp_configuration_agent` - MCP config
 
 #### Consolidated Structure
 ```yaml
-# devops_agent/capabilities.yaml
+# devops-agent/capabilities.yaml
 domains:
   - infrastructure: Base infrastructure management
   - scaling: Container and swarm scaling
@@ -95,11 +95,11 @@ domains:
 ### 2.2 Merge Debugging Agents (2→1)
 
 #### Current State
-- `debugger_agent` - Bug fixing
+- `debugger-agent` - Bug fixing
 - `remediation_agent` - Issue remediation
 
 #### Action Items
-- Add remediation capabilities to debugger_agent
+- Add remediation capabilities to debugger-agent
 - Include fix verification workflows
 - Expand error handling patterns
 
@@ -108,17 +108,17 @@ domains:
 ### 3.1 Merge Marketing Agents (6→3)
 
 #### Current State
-- `marketing_strategy_orchestrator_agent` - Keep as orchestrator
+- `marketing-strategy-orchestrator-agent` - Keep as orchestrator
 - `seo_sem_agent` - Merge into orchestrator
 - `growth_hacking_idea_agent` - Merge into orchestrator
 - `content_strategy_agent` - Merge into orchestrator
-- `branding_agent` - Keep as specialist
-- `community_strategy_agent` - Keep as specialist
+- `branding-agent` - Keep as specialist
+- `community-strategy-agent` - Keep as specialist
 
 #### Final Structure
 1. `marketing_orchestrator_agent` - All marketing coordination
-2. `branding_agent` - Brand identity specialist
-3. `community_strategy_agent` - Community specialist
+2. `branding-agent` - Brand identity specialist
+3. `community-strategy-agent` - Community specialist
 
 ## Phase 4: Renaming & Cleanup (Week 4)
 
@@ -126,9 +126,9 @@ domains:
 
 | Old Name | New Name | Update Locations |
 |----------|----------|------------------|
-| `master_orchestrator_agent` | `master_orchestrator_agent` | All references |
-| `brainjs_ml_agent` | `ml_specialist_agent` | Generalize ML |
-| `ui_designer_expert_shadcn_agent` | `ui_specialist_agent` | Simplify name |
+| `master-orchestrator-agent` | `master-orchestrator-agent` | All references |
+| `brainjs_ml_agent` | `ml-specialist-agent` | Generalize ML |
+| `ui_designer_expert_shadcn_agent` | `ui-specialist-agent` | Simplify name |
 
 ### 4.2 Code Reference Updates
 
@@ -136,10 +136,10 @@ domains:
 # Update call_agent.py mappings
 AGENT_NAME_MAPPING = {
     # Deprecated names → New names
-    "master_orchestrator_agent": "master_orchestrator_agent",
-    "tech_spec_agent": "documentation_agent",
-    "prd_architect_agent": "documentation_agent",
-    "mcp_researcher_agent": "deep_research_agent",
+    "master-orchestrator-agent": "master-orchestrator-agent",
+    "tech_spec_agent": "documentation-agent",
+    "prd_architect_agent": "documentation-agent",
+    "mcp_researcher_agent": "deep-research-agent",
     # ... etc
 }
 ```
@@ -149,8 +149,8 @@ AGENT_NAME_MAPPING = {
 ```
 agent-library/
 ├── agents/           # Active agents (30)
-│   ├── master_orchestrator_agent/
-│   ├── coding_agent/
+│   ├── master-orchestrator-agent/
+│   ├── coding-agent/
 │   └── ...
 ├── deprecated/       # Archived agents (12)
 │   ├── tech_spec_agent/
@@ -239,49 +239,49 @@ agent-library/
 ## Appendix: Complete Agent List After Optimization
 
 ### Orchestrators (3)
-1. master_orchestrator_agent
-2. task_planning_agent  
-3. project_initiator_agent
+1. master-orchestrator-agent
+2. task-planning-agent  
+3. project-initiator-agent
 
 ### Domain Coordinators (3)
-4. test_orchestrator_agent
+4. test-orchestrator-agent
 5. marketing_orchestrator_agent
-6. system_architect_agent
+6. system-architect-agent
 
 ### Development Team (4)
-7. coding_agent
-8. debugger_agent
-9. code_reviewer_agent
-10. prototyping_agent
+7. coding-agent
+8. debugger-agent
+9. code-reviewer-agent
+10. prototyping-agent
 
 ### Creative Team (3)
-11. documentation_agent
-12. ui_specialist_agent
-13. design_system_agent
-14. creative_ideation_agent
+11. documentation-agent
+12. ui-specialist-agent
+13. design-system-agent
+14. creative-ideation-agent
 
 ### Infrastructure (2)
-15. devops_agent
-16. ml_specialist_agent
+15. devops-agent
+16. ml-specialist-agent
 
 ### Analysis Team (7)
-17. security_auditor_agent
-18. compliance_scope_agent
-19. ethical_review_agent
-20. deep_research_agent
-21. technology_advisor_agent
-22. root_cause_analysis_agent
-23. performance_load_tester_agent
+17. security-auditor-agent
+18. compliance-scope-agent
+19. ethical-review-agent
+20. deep-research-agent
+21. technology-advisor-agent
+22. root-cause-analysis-agent
+23. performance-load-tester-agent
 
 ### Monitoring Team (4)
-24. health_monitor_agent
-25. efficiency_optimization_agent
-26. analytics_setup_agent
-27. uat_coordinator_agent
+24. health-monitor-agent
+25. efficiency-optimization-agent
+26. analytics-setup-agent
+27. uat-coordinator-agent
 
 ### Specialists (3)
-28. elicitation_agent
-29. branding_agent
-30. community_strategy_agent
+28. elicitation-agent
+29. branding-agent
+30. community-strategy-agent
 
 **Total: 30 agents (optimal)**

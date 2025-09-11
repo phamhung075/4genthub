@@ -296,7 +296,7 @@ class TestTaskMCPControllerWorkflowEnrichment:
         ]
         mock_enrichment.actionable_suggestions = [
             "Break down remaining work into subtasks",
-            "Schedule security review with @security_auditor_agent"
+            "Schedule security review with security-auditor-agent"
         ]
         mock_enrichment.template_examples = [
             "Example: JWT implementation with refresh tokens",

@@ -17,7 +17,7 @@ def test_agent_conversion():
     """Test converting multiple agents to Claude Code format"""
     logging.basicConfig(level=logging.INFO)
     
-    agents_to_test = ["coding_agent", "debugger_agent", "security_auditor_agent"]
+    agents_to_test = ["coding-agent", "debugger-agent", "security-auditor-agent"]
     
     for agent_name in agents_to_test:
         print(f"\n{'='*50}")

@@ -120,7 +120,7 @@ result = manage_context(
     content="Redis caching improved response time by 40%",
     category="performance",  # technical, business, performance, discovery
     importance="high",       # low, medium, high, critical
-    agent="@coding_agent"
+    agent="coding-agent"
 )
 ```
 
@@ -133,7 +133,7 @@ result = manage_context(
     level="task",
     context_id="task-123",
     content="Completed JWT token generation logic",
-    agent="@coding_agent"
+    agent="coding-agent"
 )
 ```
 

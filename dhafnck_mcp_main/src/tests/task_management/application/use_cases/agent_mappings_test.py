@@ -23,48 +23,48 @@ class TestAgentMappings:
         # Verify expected mappings exist
         expected_mappings = {
             # Documentation consolidation
-            "tech_spec_agent": "@documentation_agent",
-            "tech-spec-agent": "@documentation_agent",
-            "prd_architect_agent": "@documentation_agent",
-            "prd-architect-agent": "@documentation_agent",
+            "tech_spec_agent": "documentation-agent",
+            "tech-spec-agent": "documentation-agent",
+            "prd_architect_agent": "documentation-agent",
+            "prd-architect-agent": "documentation-agent",
             
             # Research consolidation
-            "mcp_researcher_agent": "@deep_research_agent",
-            "mcp-researcher-agent": "@deep_research_agent",
+            "mcp_researcher_agent": "deep-research-agent",
+            "mcp-researcher-agent": "deep-research-agent",
             
             # Creative consolidation
-            "idea_generation_agent": "@creative_ideation_agent",
-            "idea-generation-agent": "@creative_ideation_agent",
-            "idea_refinement_agent": "@creative_ideation_agent",
-            "idea-refinement-agent": "@creative_ideation_agent",
+            "idea_generation_agent": "creative-ideation-agent",
+            "idea-generation-agent": "creative-ideation-agent",
+            "idea_refinement_agent": "creative-ideation-agent",
+            "idea-refinement-agent": "creative-ideation-agent",
             
             # Marketing consolidation
-            "seo_sem_agent": "@marketing_strategy_orchestrator_agent",
-            "seo-sem-agent": "@marketing_strategy_orchestrator_agent",
-            "growth_hacking_idea_agent": "@marketing_strategy_orchestrator_agent",
-            "growth-hacking-idea-agent": "@marketing_strategy_orchestrator_agent",
-            "content_strategy_agent": "@marketing_strategy_orchestrator_agent",
-            "content-strategy-agent": "@marketing_strategy_orchestrator_agent",
+            "seo_sem_agent": "marketing-strategy-orchestrator-agent",
+            "seo-sem-agent": "marketing-strategy-orchestrator-agent",
+            "growth_hacking_idea_agent": "marketing-strategy-orchestrator-agent",
+            "growth-hacking-idea-agent": "marketing-strategy-orchestrator-agent",
+            "content_strategy_agent": "marketing-strategy-orchestrator-agent",
+            "content-strategy-agent": "marketing-strategy-orchestrator-agent",
             
             # DevOps consolidation
-            "swarm_scaler_agent": "@devops_agent",
-            "swarm-scaler-agent": "@devops_agent",
-            "adaptive_deployment_strategist_agent": "@devops_agent",
-            "adaptive-deployment-strategist-agent": "@devops_agent",
-            "mcp_configuration_agent": "@devops_agent",
-            "mcp-configuration-agent": "@devops_agent",
+            "swarm_scaler_agent": "devops-agent",
+            "swarm-scaler-agent": "devops-agent",
+            "adaptive_deployment_strategist_agent": "devops-agent",
+            "adaptive-deployment-strategist-agent": "devops-agent",
+            "mcp_configuration_agent": "devops-agent",
+            "mcp-configuration-agent": "devops-agent",
             
             # Debug consolidation
-            "remediation_agent": "@debugger_agent",
-            "remediation-agent": "@debugger_agent",
+            "remediation_agent": "debugger-agent",
+            "remediation-agent": "debugger-agent",
             
             # Renamings
-            "master_orchestrator_agent": "@master_orchestrator_agent",
-            "master-orchestrator-agent": "@master_orchestrator_agent",
-            "brainjs_ml_agent": "@ml_specialist_agent",
-            "brainjs-ml-agent": "@ml_specialist_agent",
-            "ui_designer_expert_shadcn_agent": "@ui_specialist_agent",
-            "ui-designer-expert-shadcn-agent": "@ui_specialist_agent",
+            "master-orchestrator-agent": "master-orchestrator-agent",
+            "master-orchestrator-agent": "master-orchestrator-agent",
+            "brainjs_ml_agent": "ml-specialist-agent",
+            "brainjs-ml-agent": "ml-specialist-agent",
+            "ui_designer_expert_shadcn_agent": "ui-specialist-agent",
+            "ui-designer-expert-shadcn-agent": "ui-specialist-agent",
         }
         
         for old_name, new_name in expected_mappings.items():
@@ -77,21 +77,21 @@ class TestResolveAgentName:
     def test_resolve_deprecated_underscore_names(self):
         """Test resolving deprecated agent names with underscores"""
         test_cases = [
-            ("tech_spec_agent", "@documentation_agent"),
-            ("prd_architect_agent", "@documentation_agent"),
-            ("mcp_researcher_agent", "@deep_research_agent"),
-            ("idea_generation_agent", "@creative_ideation_agent"),
-            ("idea_refinement_agent", "@creative_ideation_agent"),
-            ("seo_sem_agent", "marketing_strategy_orchestrator_agent"),
-            ("growth_hacking_idea_agent", "marketing_strategy_orchestrator_agent"),
-            ("content_strategy_agent", "marketing_strategy_orchestrator_agent"),
-            ("swarm_scaler_agent", "devops_agent"),
-            ("adaptive_deployment_strategist_agent", "devops_agent"),
-            ("mcp_configuration_agent", "devops_agent"),
-            ("remediation_agent", "debugger_agent"),
-            ("master_orchestrator_agent", "master_orchestrator_agent"),
-            ("brainjs_ml_agent", "ml_specialist_agent"),
-            ("ui_designer_expert_shadcn_agent", "ui_specialist_agent"),
+            ("tech_spec_agent", "documentation-agent"),
+            ("prd_architect_agent", "documentation-agent"),
+            ("mcp_researcher_agent", "deep-research-agent"),
+            ("idea_generation_agent", "creative-ideation-agent"),
+            ("idea_refinement_agent", "creative-ideation-agent"),
+            ("seo_sem_agent", "marketing-strategy-orchestrator-agent"),
+            ("growth_hacking_idea_agent", "marketing-strategy-orchestrator-agent"),
+            ("content_strategy_agent", "marketing-strategy-orchestrator-agent"),
+            ("swarm_scaler_agent", "devops-agent"),
+            ("adaptive_deployment_strategist_agent", "devops-agent"),
+            ("mcp_configuration_agent", "devops-agent"),
+            ("remediation_agent", "debugger-agent"),
+            ("master-orchestrator-agent", "master-orchestrator-agent"),
+            ("brainjs_ml_agent", "ml-specialist-agent"),
+            ("ui_designer_expert_shadcn_agent", "ui-specialist-agent"),
         ]
         
         for old_name, expected in test_cases:
@@ -100,11 +100,11 @@ class TestResolveAgentName:
     def test_resolve_deprecated_hyphenated_names(self):
         """Test resolving deprecated agent names with hyphens"""
         test_cases = [
-            ("tech-spec-agent", "@documentation_agent"),
-            ("prd-architect-agent", "@documentation_agent"),
-            ("mcp-researcher-agent", "@deep_research_agent"),
-            ("idea-generation-agent", "@creative_ideation_agent"),
-            ("idea-refinement-agent", "@creative_ideation_agent"),
+            ("tech-spec-agent", "documentation-agent"),
+            ("prd-architect-agent", "documentation-agent"),
+            ("mcp-researcher-agent", "deep-research-agent"),
+            ("idea-generation-agent", "creative-ideation-agent"),
+            ("idea-refinement-agent", "creative-ideation-agent"),
             ("seo-sem-agent", "marketing-strategy-orchestrator-agent"),
             ("growth-hacking-idea-agent", "marketing-strategy-orchestrator-agent"),
             ("content-strategy-agent", "marketing-strategy-orchestrator-agent"),
@@ -123,21 +123,21 @@ class TestResolveAgentName:
     def test_resolve_non_deprecated_names(self):
         """Test that non-deprecated names are returned unchanged"""
         test_cases = [
-            "documentation_agent",
-            "@documentation_agent",
-            "deep_research_agent",
-            "@deep_research_agent",
-            "creative_ideation_agent",
+            "documentation-agent",
+            "documentation-agent",
+            "deep-research-agent",
+            "deep-research-agent",
             "creative-ideation-agent",
-            "marketing_strategy_orchestrator_agent",
+            "creative-ideation-agent",
             "marketing-strategy-orchestrator-agent",
-            "devops_agent",
+            "marketing-strategy-orchestrator-agent",
             "devops-agent",
-            "debugger_agent",
+            "devops-agent",
             "debugger-agent",
-            "ml_specialist_agent",
+            "debugger-agent",
             "ml-specialist-agent",
-            "ui_specialist_agent",
+            "ml-specialist-agent",
+            "ui-specialist-agent",
             "ui-specialist-agent",
             "some_new_agent",
             "some-new-agent",
@@ -151,10 +151,10 @@ class TestResolveAgentName:
     def test_resolve_mixed_format_names(self):
         """Test resolving names that have mixed underscore/hyphen formats"""
         # Test that a name with underscores can resolve hyphenated deprecated names
-        assert resolve_agent_name("tech-spec_agent") == "documentation_agent"
+        assert resolve_agent_name("tech-spec_agent") == "documentation-agent"
         
         # Test edge cases with inconsistent formatting
-        assert resolve_agent_name("tech_spec-agent") == "documentation_agent"
+        assert resolve_agent_name("tech_spec-agent") == "documentation-agent"
     
     def test_resolve_empty_string(self):
         """Test resolving an empty string"""
@@ -193,7 +193,7 @@ class TestIsDeprecatedAgent:
             "adaptive_deployment_strategist_agent",
             "mcp_configuration_agent",
             "remediation_agent",
-            "master_orchestrator_agent",
+            "master-orchestrator-agent",
             "brainjs_ml_agent",
             "ui_designer_expert_shadcn_agent",
         ]
@@ -227,25 +227,25 @@ class TestIsDeprecatedAgent:
     def test_is_not_deprecated_names(self):
         """Test checking deprecated status of non-deprecated names"""
         active_names = [
-            "documentation_agent",
-            "@documentation_agent",
-            "deep_research_agent",
-            "@deep_research_agent",
-            "creative_ideation_agent",
+            "documentation-agent",
+            "documentation-agent",
+            "deep-research-agent",
+            "deep-research-agent",
             "creative-ideation-agent",
-            "marketing_strategy_orchestrator_agent",
+            "creative-ideation-agent",
             "marketing-strategy-orchestrator-agent",
-            "devops_agent",
+            "marketing-strategy-orchestrator-agent",
             "devops-agent",
-            "debugger_agent",
+            "devops-agent",
             "debugger-agent",
-            "ml_specialist_agent",
+            "debugger-agent",
             "ml-specialist-agent",
-            "ui_specialist_agent",
+            "ml-specialist-agent",
             "ui-specialist-agent",
-            "coding_agent",
-            "test_orchestrator_agent",
-            "security_auditor_agent",
+            "ui-specialist-agent",
+            "coding-agent",
+            "test-orchestrator-agent",
+            "security-auditor-agent",
             "unknown_agent",
             "new-agent-name",
         ]
@@ -385,10 +385,10 @@ class TestConsistency:
         """Test that resolving a name twice gives the same result"""
         test_names = [
             "tech_spec_agent",
-            "documentation_agent",
+            "documentation-agent",
             "unknown_agent",
             "mcp-researcher-agent",
-            "@deep_research_agent",
+            "deep-research-agent",
         ]
         
         for name in test_names:

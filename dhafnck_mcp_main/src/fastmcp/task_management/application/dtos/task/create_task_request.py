@@ -11,9 +11,9 @@ def resolve_legacy_role(assignee: str) -> Optional[str]:
     """Resolve legacy role names to current ones"""
     # FIXED: Map legacy role names TO current AgentRole enum values
     legacy_mapping = {
-        "senior_developer": "coding_agent",
-        "qa_engineer": "test_orchestrator_agent", 
-        "architect": "system_architect_agent"
+        "senior_developer": "coding-agent",
+        "qa_engineer": "test-orchestrator-agent", 
+        "architect": "system-architect-agent"
     }
     return legacy_mapping.get(assignee, assignee)
 

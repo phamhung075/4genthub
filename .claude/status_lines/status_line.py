@@ -119,7 +119,7 @@ def generate_status_line(input_data):
             parts.append(f"\033[92m{git_branch} ✓\033[0m")
     
     # Agent role - Claude IS the master orchestrator
-    parts.append("\033[92m🎯 Active: @master_orchestrator_agent\033[0m")  # Green text showing active role
+    parts.append("\033[92m🎯 Active: master-orchestrator-agent\033[0m")  # Green text showing active role
     
     # Paths - always show for AI memory
     try:

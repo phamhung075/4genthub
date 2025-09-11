@@ -19,12 +19,12 @@ AGENT_ROLES = {
     # COORDINATORS - Read-only with delegation
     "COORDINATORS": {
         "agents": [
-            "security_auditor_agent",
-            "deep_research_agent", 
-            "task_planning_agent",
-            "compliance_scope_agent",
-            "ethical_review_agent",
-            "root_cause_analysis_agent"
+            "security-auditor-agent",
+            "deep-research-agent", 
+            "task-planning-agent",
+            "compliance-scope-agent",
+            "ethical-review-agent",
+            "root-cause-analysis-agent"
         ],
         "expectations": {
             "can_write": False,
@@ -37,10 +37,10 @@ AGENT_ROLES = {
     # FILE CREATORS - Full implementation capabilities
     "FILE_CREATORS": {
         "agents": [
-            "coding_agent",
-            "test_orchestrator_agent",
-            "documentation_agent",
-            "system_architect_agent",
+            "coding-agent",
+            "test-orchestrator-agent",
+            "documentation-agent",
+            "system-architect-agent",
             "tech_spec_agent",
             "prd_architect_agent"
         ],
@@ -56,11 +56,11 @@ AGENT_ROLES = {
     "SPECIALISTS": {
         "agents": [
             "ui_designer_expert_shadcn_agent",
-            "devops_agent",
-            "performance_load_tester_agent",
-            "analytics_setup_agent",
+            "devops-agent",
+            "performance-load-tester-agent",
+            "analytics-setup-agent",
             "seo_sem_agent",
-            "branding_agent"
+            "branding-agent"
         ],
         "expectations": {
             "can_write": True,  # Most specialists can write in their domain

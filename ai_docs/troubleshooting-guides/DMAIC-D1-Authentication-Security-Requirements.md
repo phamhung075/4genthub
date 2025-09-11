@@ -3,7 +3,7 @@
 **Date:** August 25, 2025  
 **Methodology:** DMAIC (Define-Measure-Analyze-Improve-Control)  
 **Phase:** ✅ **CONTROL - PROJECT COMPLETED**  
-**Agent:** @security_auditor_agent  
+**Agent:** security-auditor-agent  
 **Status:** ✅ **ALL OBJECTIVES ACHIEVED**  
 **Completion Date:** August 25, 2025
 

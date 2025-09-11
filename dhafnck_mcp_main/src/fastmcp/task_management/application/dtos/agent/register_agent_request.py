@@ -55,7 +55,7 @@ class RegisterAgentRequest:
                 f"  • Example: 4d5935de-d191-4c8f-ba89-802671fba5f6\n"
                 f"  • Length: 36 characters (32 hex digits + 4 hyphens)\n\n"
                 f"INVALID EXAMPLES:\n"
-                f"  ✗ '@coding_agent-001' (string with hyphens, not UUID)\n"
+                f"  ✗ 'coding-agent-001' (string with hyphens, not UUID)\n"
                 f"  ✗ 'agent123' (simple string)\n"
                 f"  ✗ '12345' (number as string)\n\n"
                 f"SOLUTIONS:\n"

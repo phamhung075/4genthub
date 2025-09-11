@@ -332,7 +332,7 @@ python -m pytest tests/integration/test_mcp_comprehensive.py -v
 
 ---
 
-**Created by:** @test_orchestrator_agent  
+**Created by:** test-orchestrator-agent  
 **Issue Reference:** mcp-authentication-testing-blocker-2025-09-05.md  
 **Implementation Target:** Development Team  
 **Expected Resolution:** 24-48 hours

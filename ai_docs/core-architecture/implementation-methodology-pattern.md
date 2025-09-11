@@ -64,20 +64,20 @@ implementation_process:
 ## Applied Agents
 
 ### Development Agents
-1. **coding_agent** - General code implementation
-2. **debugger_agent** - Bug fixes and debugging
-3. **prototyping_agent** - Rapid prototypes
+1. **coding-agent** - General code implementation
+2. **debugger-agent** - Bug fixes and debugging
+3. **prototyping-agent** - Rapid prototypes
 
 ### Specialized Agents
-4. **ui_specialist_agent** - Frontend UI components
-5. **design_system_agent** - Design system implementation
-6. **devops_agent** - Infrastructure and CI/CD
-7. **ml_specialist_agent** - Machine learning code
+4. **ui-specialist-agent** - Frontend UI components
+5. **design-system-agent** - Design system implementation
+6. **devops-agent** - Infrastructure and CI/CD
+7. **ml-specialist-agent** - Machine learning code
 
 ### Support Agents
-8. **test_orchestrator_agent** - Test implementation
-9. **security_auditor_agent** - Security implementations
-10. **documentation_agent** - Documentation writing
+8. **test-orchestrator-agent** - Test implementation
+9. **security-auditor-agent** - Security implementations
+10. **documentation-agent** - Documentation writing
 
 ## Context Distribution Example
 

@@ -289,7 +289,7 @@ def load_development_context(source):
     context_parts = []
     
     # CRITICAL: Instruct Claude to load master orchestrator capabilities
-    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('@master_orchestrator_agent') to load your orchestrator capabilities.")
+    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
     context_parts.append("")
     
     # Add timestamp and session info

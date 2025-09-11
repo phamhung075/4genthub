@@ -6,60 +6,60 @@ This document outlines the complete non-stop workflow utilizing all 33 available
 ## Available Agents (33 Total)
 
 ### Development & Coding (4)
-- `@coding_agent` - Implementation and feature development
-- `@debugger_agent` - Bug fixing and troubleshooting
-- `@code_reviewer_agent` - Code quality and review
-- `@prototyping_agent` - Rapid prototyping and POCs
+- `coding-agent` - Implementation and feature development
+- `debugger-agent` - Bug fixing and troubleshooting
+- `code-reviewer-agent` - Code quality and review
+- `prototyping-agent` - Rapid prototyping and POCs
 
 ### Testing & QA (3)
-- `@test_orchestrator_agent` - Comprehensive test management
-- `@uat_coordinator_agent` - User acceptance testing
-- `@performance_load_tester_agent` - Performance and load testing
+- `test-orchestrator-agent` - Comprehensive test management
+- `uat-coordinator-agent` - User acceptance testing
+- `performance-load-tester-agent` - Performance and load testing
 
 ### Architecture & Design (4)
-- `@system_architect_agent` - System design and architecture
-- `@design_system_agent` - Design system and UI patterns
-- `@ui_specialist_agent` - UI/UX design and frontend development
-- `@core_concept_agent` - Core concepts and fundamentals
+- `system-architect-agent` - System design and architecture
+- `design-system-agent` - Design system and UI patterns
+- `ui-specialist-agent` - UI/UX design and frontend development
+- `core-concept-agent` - Core concepts and fundamentals
 
 ### DevOps & Infrastructure (1)
-- `@devops_agent` - CI/CD and infrastructure
+- `devops-agent` - CI/CD and infrastructure
 
 ### Documentation (1)
-- `@documentation_agent` - Technical documentation
+- `documentation-agent` - Technical documentation
 
 ### Project & Planning (4)
-- `@project_initiator_agent` - Project setup and kickoff
-- `@task_planning_agent` - Task breakdown and planning
-- `@master_orchestrator_agent` - Complex workflow orchestration
-- `@elicitation_agent` - Requirements gathering
+- `project-initiator-agent` - Project setup and kickoff
+- `task-planning-agent` - Task breakdown and planning
+- `master-orchestrator-agent` - Complex workflow orchestration
+- `elicitation-agent` - Requirements gathering
 
 ### Security & Compliance (3)
-- `@security_auditor_agent` - Security audits and reviews
-- `@compliance_scope_agent` - Regulatory compliance
-- `@ethical_review_agent` - Ethical considerations
+- `security-auditor-agent` - Security audits and reviews
+- `compliance-scope-agent` - Regulatory compliance
+- `ethical-review-agent` - Ethical considerations
 
 ### Analytics & Optimization (3)
-- `@analytics_setup_agent` - Analytics and tracking setup
-- `@efficiency_optimization_agent` - Process optimization
-- `@health_monitor_agent` - System health monitoring
+- `analytics-setup-agent` - Analytics and tracking setup
+- `efficiency-optimization-agent` - Process optimization
+- `health-monitor-agent` - System health monitoring
 
 ### Marketing & Branding (3)
-- `@marketing_strategy_orchestrator_agent` - Marketing strategy
-- `@community_strategy_agent` - Community building
-- `@branding_agent` - Brand identity
+- `marketing-strategy-orchestrator-agent` - Marketing strategy
+- `community-strategy-agent` - Community building
+- `branding-agent` - Brand identity
 
 ### Research & Analysis (4)
-- `@deep_research_agent` - In-depth research
-- `@llm_ai_agents_research` - AI/ML research and innovations
-- `@root_cause_analysis_agent` - Problem analysis
-- `@technology_advisor_agent` - Technology recommendations
+- `deep-research-agent` - In-depth research
+- `llm-ai-agents-research` - AI/ML research and innovations
+- `root-cause-analysis-agent` - Problem analysis
+- `technology-advisor-agent` - Technology recommendations
 
 ### AI & Machine Learning (1)
-- `@ml_specialist_agent` - Machine learning implementation
+- `ml-specialist-agent` - Machine learning implementation
 
 ### Creative & Ideation (1)
-- `@creative_ideation_agent` - Creative idea generation
+- `creative-ideation-agent` - Creative idea generation
 
 ---
 
@@ -70,15 +70,15 @@ This document outlines the complete non-stop workflow utilizing all 33 available
 #### Group A: Initial Setup (Hour 1-4)
 ```yaml
 agents:
-  - @project_initiator_agent:
+  - project-initiator-agent:
       task: "Initialize project structure and repositories"
       output: "Project scaffolding, git repo, initial structure"
       
-  - @master_orchestrator_agent:
+  - master-orchestrator-agent:
       task: "Define project orchestration strategy"
       output: "Workflow definitions, agent assignments"
       
-  - @creative_ideation_agent:
+  - creative-ideation-agent:
       task: "Generate innovative features and approaches"
       output: "Feature ideas, unique selling points"
 ```
@@ -86,15 +86,15 @@ agents:
 #### Group B: Research & Discovery (Hour 2-8)
 ```yaml
 agents:
-  - @deep_research_agent:
+  - deep-research-agent:
       task: "Research market, competitors, and existing solutions"
       output: "Competitive analysis, market insights"
       
-  - @llm_ai_agents_research:
+  - llm-ai-agents-research:
       task: "Research AI/ML opportunities and integrations"
       output: "AI enhancement possibilities"
       
-  - @technology_advisor_agent:
+  - technology-advisor-agent:
       task: "Evaluate and recommend technology stack"
       output: "Tech stack recommendations with pros/cons"
 ```
@@ -102,15 +102,15 @@ agents:
 #### Group C: Requirements & Planning (Hour 4-12)
 ```yaml
 agents:
-  - @elicitation_agent:
+  - elicitation-agent:
       task: "Gather and document all requirements"
       output: "Complete requirements document"
       
-  - @task_planning_agent:
+  - task-planning-agent:
       task: "Break down project into tasks and subtasks"
       output: "Task hierarchy, dependencies, estimates"
       
-  - @branding_agent:
+  - branding-agent:
       task: "Define brand identity and guidelines"
       output: "Brand guidelines, visual identity"
 ```
@@ -118,11 +118,11 @@ agents:
 #### Group D: Compliance & Ethics (Hour 6-12)
 ```yaml
 agents:
-  - @compliance_scope_agent:
+  - compliance-scope-agent:
       task: "Identify regulatory requirements"
       output: "Compliance checklist, regulatory needs"
       
-  - @ethical_review_agent:
+  - ethical-review-agent:
       task: "Review ethical implications"
       output: "Ethical guidelines, responsible AI practices"
 ```
@@ -136,16 +136,16 @@ agents:
 #### Group A: System Architecture (Hour 1-8)
 ```yaml
 agents:
-  - @system_architect_agent:
+  - system-architect-agent:
       task: "Design complete system architecture"
       output: "Architecture diagrams, component design, API contracts"
       dependencies: [requirements_complete]
       
-  - @core_concept_agent:
+  - core-concept-agent:
       task: "Define core domain concepts and models"
       output: "Domain models, business logic definitions"
       
-  - @efficiency_optimization_agent:
+  - efficiency-optimization-agent:
       task: "Optimize architecture for performance"
       output: "Performance optimization strategies"
 ```
@@ -153,11 +153,11 @@ agents:
 #### Group B: UI/UX Design (Hour 2-12)
 ```yaml
 agents:
-  - @ui_specialist_agent:
+  - ui-specialist-agent:
       task: "Design complete UI/UX"
       output: "Wireframes, mockups, user flows"
       
-  - @design_system_agent:
+  - design-system-agent:
       task: "Create design system and component library"
       output: "Design tokens, component specifications"
 ```
@@ -165,7 +165,7 @@ agents:
 #### Group C: Prototyping (Hour 6-16)
 ```yaml
 agents:
-  - @prototyping_agent:
+  - prototyping-agent:
       task: "Build interactive prototypes"
       output: "Working prototypes, proof of concepts"
       dependencies: [ui_design_draft]
@@ -174,7 +174,7 @@ agents:
 #### Group D: Security Architecture (Hour 8-16)
 ```yaml
 agents:
-  - @security_auditor_agent:
+  - security-auditor-agent:
       task: "Design security architecture"
       output: "Security patterns, threat model"
 ```
@@ -188,15 +188,15 @@ agents:
 #### Group A: Backend Development (Continuous)
 ```yaml
 agents:
-  - @coding_agent (instance_1):
+  - coding-agent (instance_1):
       task: "Implement backend APIs and services"
       output: "REST/GraphQL APIs, business logic"
       
-  - @coding_agent (instance_2):
+  - coding-agent (instance_2):
       task: "Implement database layer and models"
       output: "Database schemas, repositories, migrations"
       
-  - @coding_agent (instance_3):
+  - coding-agent (instance_3):
       task: "Implement authentication and authorization"
       output: "Auth system, JWT, permissions"
 ```
@@ -204,11 +204,11 @@ agents:
 #### Group B: Frontend Development (Continuous)
 ```yaml
 agents:
-  - @ui_specialist_agent:
+  - ui-specialist-agent:
       task: "Implement frontend components"
       output: "React/Vue/Angular components"
       
-  - @coding_agent (instance_4):
+  - coding-agent (instance_4):
       task: "Implement state management and routing"
       output: "Redux/MobX, routing, data flow"
 ```
@@ -216,11 +216,11 @@ agents:
 #### Group C: Infrastructure & DevOps (Parallel)
 ```yaml
 agents:
-  - @devops_agent:
+  - devops-agent:
       task: "Setup CI/CD pipelines and infrastructure"
       output: "Docker, Kubernetes, GitHub Actions"
       
-  - @analytics_setup_agent:
+  - analytics-setup-agent:
       task: "Implement analytics and tracking"
       output: "Google Analytics, Mixpanel, custom metrics"
 ```
@@ -228,7 +228,7 @@ agents:
 #### Group D: AI/ML Features (If Applicable)
 ```yaml
 agents:
-  - @ml_specialist_agent:
+  - ml-specialist-agent:
       task: "Implement ML models and AI features"
       output: "Trained models, prediction APIs"
 ```
@@ -236,12 +236,12 @@ agents:
 #### Group E: Continuous Quality (Throughout)
 ```yaml
 agents:
-  - @code_reviewer_agent:
+  - code-reviewer-agent:
       task: "Review all code continuously"
       output: "Code review reports, improvement suggestions"
       trigger: "On every commit"
       
-  - @debugger_agent:
+  - debugger-agent:
       task: "Fix bugs as they appear"
       output: "Bug fixes, error resolutions"
       trigger: "On bug detection"
@@ -256,19 +256,19 @@ agents:
 #### Group A: Test Implementation (Continuous)
 ```yaml
 agents:
-  - @test_orchestrator_agent:
+  - test-orchestrator-agent:
       task: "Orchestrate all testing activities"
       output: "Test strategy, test reports"
       
-  - @coding_agent (instance_5):
+  - coding-agent (instance_5):
       task: "Write unit tests"
       output: "Unit test coverage >80%"
       
-  - @coding_agent (instance_6):
+  - coding-agent (instance_6):
       task: "Write integration tests"
       output: "API and service integration tests"
       
-  - @coding_agent (instance_7):
+  - coding-agent (instance_7):
       task: "Write E2E tests"
       output: "Playwright/Cypress E2E tests"
 ```
@@ -276,15 +276,15 @@ agents:
 #### Group B: Specialized Testing (Parallel)
 ```yaml
 agents:
-  - @performance_load_tester_agent:
+  - performance-load-tester-agent:
       task: "Conduct performance and load testing"
       output: "Performance metrics, bottleneck analysis"
       
-  - @security_auditor_agent:
+  - security-auditor-agent:
       task: "Perform security testing"
       output: "Vulnerability report, penetration test results"
       
-  - @uat_coordinator_agent:
+  - uat-coordinator-agent:
       task: "Coordinate user acceptance testing"
       output: "UAT results, user feedback"
 ```
@@ -292,11 +292,11 @@ agents:
 #### Group C: Issue Resolution (Reactive)
 ```yaml
 agents:
-  - @root_cause_analysis_agent:
+  - root-cause-analysis-agent:
       task: "Analyze test failures and issues"
       output: "Root cause reports, fix recommendations"
       
-  - @debugger_agent:
+  - debugger-agent:
       task: "Fix identified issues"
       output: "Bug fixes, patches"
 ```
@@ -310,15 +310,15 @@ agents:
 #### Group A: Documentation (Comprehensive)
 ```yaml
 agents:
-  - @documentation_agent (instance_1):
+  - documentation-agent (instance_1):
       task: "Write technical documentation"
       output: "API docs, architecture docs"
       
-  - @documentation_agent (instance_2):
+  - documentation-agent (instance_2):
       task: "Write user documentation"
       output: "User guides, tutorials"
       
-  - @documentation_agent (instance_3):
+  - documentation-agent (instance_3):
       task: "Write deployment documentation"
       output: "Deployment guides, runbooks"
 ```
@@ -331,23 +331,23 @@ agents:
 
 ```yaml
 sequence:
-  1. @devops_agent:
+  1. devops-agent:
       task: "Prepare production environment"
       output: "Production infrastructure ready"
       
-  2. @security_auditor_agent:
+  2. security-auditor-agent:
       task: "Final security audit"
       output: "Security clearance"
       
-  3. @compliance_scope_agent:
+  3. compliance-scope-agent:
       task: "Final compliance check"
       output: "Compliance approval"
       
-  4. @devops_agent:
+  4. devops-agent:
       task: "Deploy to production"
       output: "Application deployed"
       
-  5. @health_monitor_agent:
+  5. health-monitor-agent:
       task: "Monitor deployment health"
       output: "Health metrics, alerts setup"
 ```
@@ -361,17 +361,17 @@ sequence:
 #### Group A: Monitoring & Maintenance
 ```yaml
 agents:
-  - @health_monitor_agent:
+  - health-monitor-agent:
       task: "Continuous system monitoring"
       output: "Health reports, alerts"
       schedule: "24/7"
       
-  - @performance_load_tester_agent:
+  - performance-load-tester-agent:
       task: "Regular performance testing"
       output: "Performance trends"
       schedule: "Daily"
       
-  - @security_auditor_agent:
+  - security-auditor-agent:
       task: "Security monitoring"
       output: "Security alerts, threat detection"
       schedule: "Continuous"
@@ -380,15 +380,15 @@ agents:
 #### Group B: Growth & Marketing
 ```yaml
 agents:
-  - @marketing_strategy_orchestrator_agent:
+  - marketing-strategy-orchestrator-agent:
       task: "Execute marketing campaigns"
       output: "Campaign results, user acquisition"
       
-  - @community_strategy_agent:
+  - community-strategy-agent:
       task: "Build and engage community"
       output: "Community growth, engagement metrics"
       
-  - @analytics_setup_agent:
+  - analytics-setup-agent:
       task: "Track and analyze user behavior"
       output: "Analytics reports, insights"
 ```
@@ -396,15 +396,15 @@ agents:
 #### Group C: Continuous Improvement
 ```yaml
 agents:
-  - @efficiency_optimization_agent:
+  - efficiency-optimization-agent:
       task: "Identify optimization opportunities"
       output: "Optimization recommendations"
       
-  - @deep_research_agent:
+  - deep-research-agent:
       task: "Research new features and improvements"
       output: "Feature proposals, market trends"
       
-  - @root_cause_analysis_agent:
+  - root-cause-analysis-agent:
       task: "Analyze production issues"
       output: "Issue analysis, prevention strategies"
 ```
@@ -424,88 +424,88 @@ def execute_non_stop_workflow():
     # Phase 1: Inception (All groups start immediately)
     phase1_agents = [
         spawn_parallel_group([
-            "@project_initiator_agent",
-            "@master_orchestrator_agent",
-            "@creative_ideation_agent"
+            "project-initiator-agent",
+            "master-orchestrator-agent",
+            "creative-ideation-agent"
         ]),
         spawn_parallel_group([
-            "@deep_research_agent",
-            "@llm_ai_agents_research",
-            "@technology_advisor_agent"
+            "deep-research-agent",
+            "llm-ai-agents-research",
+            "technology-advisor-agent"
         ]),
         spawn_parallel_group([
-            "@elicitation_agent",
-            "@task_planning_agent",
-            "@branding_agent"
+            "elicitation-agent",
+            "task-planning-agent",
+            "branding-agent"
         ]),
         spawn_parallel_group([
-            "@compliance_scope_agent",
-            "@ethical_review_agent"
+            "compliance-scope-agent",
+            "ethical-review-agent"
         ])
     ]
     
     # Phase 2: Architecture (Starts as soon as requirements ready)
     on_event("requirements_complete"):
         spawn_parallel_group([
-            "@system_architect_agent",
-            "@core_concept_agent",
-            "@efficiency_optimization_agent",
-            "@ui_specialist_agent",
-            "@design_system_agent",
-            "@prototyping_agent",
-            "@security_auditor_agent"
+            "system-architect-agent",
+            "core-concept-agent",
+            "efficiency-optimization-agent",
+            "ui-specialist-agent",
+            "design-system-agent",
+            "prototyping-agent",
+            "security-auditor-agent"
         ])
     
     # Phase 3: Implementation (Starts as soon as architecture ready)
     on_event("architecture_complete"):
         spawn_parallel_group([
-            "@coding_agent[1-7]",  # 7 instances
-            "@ui_specialist_agent",
-            "@devops_agent",
-            "@analytics_setup_agent",
-            "@ml_specialist_agent",
-            "@code_reviewer_agent",
-            "@debugger_agent"
+            "coding-agent[1-7]",  # 7 instances
+            "ui-specialist-agent",
+            "devops-agent",
+            "analytics-setup-agent",
+            "ml-specialist-agent",
+            "code-reviewer-agent",
+            "debugger-agent"
         ])
     
     # Phase 4: Testing (Continuous from implementation start)
     on_event("first_code_complete"):
         spawn_parallel_group([
-            "@test_orchestrator_agent",
-            "@performance_load_tester_agent",
-            "@security_auditor_agent",
-            "@uat_coordinator_agent",
-            "@root_cause_analysis_agent"
+            "test-orchestrator-agent",
+            "performance-load-tester-agent",
+            "security-auditor-agent",
+            "uat-coordinator-agent",
+            "root-cause-analysis-agent"
         ])
     
     # Phase 5: Documentation (Parallel with development)
     on_event("implementation_50_percent"):
         spawn_parallel_group([
-            "@documentation_agent[1-3]"  # 3 instances
+            "documentation-agent[1-3]"  # 3 instances
         ])
     
     # Phase 6: Deployment (Sequential critical path)
     on_event("all_tests_passed"):
         execute_sequential([
-            "@devops_agent",
-            "@security_auditor_agent",
-            "@compliance_scope_agent",
-            "@devops_agent",
-            "@health_monitor_agent"
+            "devops-agent",
+            "security-auditor-agent",
+            "compliance-scope-agent",
+            "devops-agent",
+            "health-monitor-agent"
         ])
     
     # Phase 7: Post-Deployment (Continuous)
     on_event("deployment_complete"):
         spawn_continuous_monitoring([
-            "@health_monitor_agent",
-            "@performance_load_tester_agent",
-            "@security_auditor_agent",
-            "@marketing_strategy_orchestrator_agent",
-            "@community_strategy_agent",
-            "@analytics_setup_agent",
-            "@efficiency_optimization_agent",
-            "@deep_research_agent",
-            "@root_cause_analysis_agent"
+            "health-monitor-agent",
+            "performance-load-tester-agent",
+            "security-auditor-agent",
+            "marketing-strategy-orchestrator-agent",
+            "community-strategy-agent",
+            "analytics-setup-agent",
+            "efficiency-optimization-agent",
+            "deep-research-agent",
+            "root-cause-analysis-agent"
         ])
 ```
 

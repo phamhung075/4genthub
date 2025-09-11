@@ -529,7 +529,7 @@ def test_sensitive_data_filtering():
 
 ---
 
-**Document Authority:** Security Auditor Agent (@security_auditor_agent)  
+**Document Authority:** Security Auditor Agent (security-auditor-agent)  
 **Implementation Priority:** HIGH (CVSS 8.5)  
 **Review Required:** System Administrator, Security Team Lead, Privacy Officer  
 **Next Phase:** Dual Authentication Architecture Integration

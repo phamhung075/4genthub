@@ -923,7 +923,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                             new_assignee = TaskAssignee(
                                 id=str(uuid.uuid4()),
                                 task_id=str(task.id),
-                                assignee_id=assignee,  # This is the agent role like '@coding_agent'
+                                assignee_id=assignee,  # This is the agent role like 'coding-agent'
                                 role="agent",  # Role indicating this is an AI agent assignment
                                 user_id=self.user_id  # CRITICAL: User ID required for data isolation
                             )
@@ -1013,7 +1013,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                             new_assignee = TaskAssignee(
                                 id=str(uuid.uuid4()),
                                 task_id=str(task.id),
-                                assignee_id=assignee,  # This is the agent role like '@coding_agent'
+                                assignee_id=assignee,  # This is the agent role like 'coding-agent'
                                 role="agent",  # Role indicating this is an AI agent assignment
                                 user_id=task_user_id  # CRITICAL: User ID required for data isolation
                             )

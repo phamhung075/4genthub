@@ -179,19 +179,19 @@ Based on documentation vs. actual directory scan, approximately 20 documented ag
 
 **Available Agents (Actual):**
 ```
-adaptive_deployment_strategist_agent, analytics_setup_agent, brainjs_ml_agent, 
-branding_agent, code_reviewer_agent, coding_agent, community_strategy_agent,
-compliance_scope_agent, content_strategy_agent, core_concept_agent, 
-debugger_agent, deep_research_agent, design_system_agent, devops_agent,
-documentation_agent, efficiency_optimization_agent, elicitation_agent,
-ethical_review_agent, growth_hacking_idea_agent, health_monitor_agent,
-idea_generation_agent, idea_refinement_agent, marketing_strategy_orchestrator_agent,
-mcp_configuration_agent, mcp_researcher_agent, performance_load_tester_agent,
-prd_architect_agent, project_initiator_agent, prototyping_agent,
-remediation_agent, root_cause_analysis_agent, security_auditor_agent,
-seo_sem_agent, swarm_scaler_agent, system_architect_agent,
-task_planning_agent, tech_spec_agent, technology_advisor_agent,
-test_orchestrator_agent, uat_coordinator_agent, master_orchestrator_agent,
+adaptive_deployment_strategist_agent, analytics-setup-agent, brainjs_ml_agent, 
+branding-agent, code-reviewer-agent, coding-agent, community-strategy-agent,
+compliance-scope-agent, content_strategy_agent, core-concept-agent, 
+debugger-agent, deep-research-agent, design-system-agent, devops-agent,
+documentation-agent, efficiency-optimization-agent, elicitation-agent,
+ethical-review-agent, growth_hacking_idea_agent, health-monitor-agent,
+idea_generation_agent, idea_refinement_agent, marketing-strategy-orchestrator-agent,
+mcp_configuration_agent, mcp_researcher_agent, performance-load-tester-agent,
+prd_architect_agent, project-initiator-agent, prototyping-agent,
+remediation_agent, root-cause-analysis-agent, security-auditor-agent,
+seo_sem_agent, swarm_scaler_agent, system-architect-agent,
+task-planning-agent, tech_spec_agent, technology-advisor-agent,
+test-orchestrator-agent, uat-coordinator-agent, master-orchestrator-agent,
 ui_designer_expert_shadcn_agent
 ```
 
@@ -230,12 +230,12 @@ if not executable_agent:
 **Decision Logic Pattern:**
 ```
 IF work_type matches "debug|fix|error|bug|troubleshoot":
-    USE @debugger_agent
+    USE debugger-agent
 ELIF work_type matches "implement|code|build|develop|create":
-    USE @coding_agent
+    USE coding-agent
 ...
 ELSE:
-    USE @master_orchestrator_agent  # Default fallback
+    USE master-orchestrator-agent  # Default fallback
 ```
 
 **Coverage:** 14 different work type patterns mapped to specialized agents
@@ -294,7 +294,7 @@ ELSE:
 
 1. **Valid Agent Invocation:** ✅ PASS
    ```bash
-   mcp__dhafnck_mcp_http__call_agent(name_agent="@code_reviewer_agent")
+   mcp__dhafnck_mcp_http__call_agent(name_agent="code-reviewer-agent")
    # Returns complete agent configuration successfully
    ```
 
@@ -306,8 +306,8 @@ ELSE:
 
 3. **Name Normalization:** ✅ PASS
    ```bash
-   mcp__dhafnck_mcp_http__call_agent(name_agent="code_reviewer_agent")  # Without @
-   mcp__dhafnck_mcp_http__call_agent(name_agent="@code_reviewer_agent") # With @
+   mcp__dhafnck_mcp_http__call_agent(name_agent="code-reviewer-agent")  # Without @
+   mcp__dhafnck_mcp_http__call_agent(name_agent="code-reviewer-agent") # With @
    # Both work correctly
    ```
 

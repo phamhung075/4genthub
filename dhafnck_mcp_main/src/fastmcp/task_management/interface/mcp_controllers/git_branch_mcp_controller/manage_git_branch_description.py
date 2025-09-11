@@ -16,7 +16,7 @@ MANAGE_GIT_BRANCH_DESCRIPTION = """
 🤖 AI USAGE GUIDELINES:
 • ALWAYS create a branch before creating tasks (tasks belong to branches)
 • USE 'list' action to discover existing branches before creating duplicates
-• ASSIGN agents to branches for specialized work (e.g., @coding_agent for feature branches)
+• ASSIGN agents to branches for specialized work (e.g., coding-agent for feature branches)
 • CHECK statistics to monitor branch progress and task completion
 • ARCHIVE completed branches to maintain a clean workspace
 
@@ -38,7 +38,7 @@ MANAGE_GIT_BRANCH_DESCRIPTION = """
    - action: "create", project_id: "proj-uuid", git_branch_name: "feature/user-auth", git_branch_description: "Implement JWT authentication"
 
 2. Assigning specialist agent:
-   - action: "assign_agent", project_id: "proj-uuid", git_branch_name: "feature/user-auth", agent_id: "@security_auditor_agent"
+   - action: "assign_agent", project_id: "proj-uuid", git_branch_name: "feature/user-auth", agent_id: "security-auditor-agent"
    - Note: Can use either git_branch_name OR git_branch_id for identification
 
 3. Monitoring progress:
@@ -61,13 +61,13 @@ IF new_feature_requested:
 
 AGENT ASSIGNMENT DECISION:
 IF branch_type == "feature":
-    ASSIGN @coding_agent OR @ui_designer_agent
+    ASSIGN coding-agent OR @ui_designer_agent
 ELIF branch_type == "security":
-    ASSIGN @security_auditor_agent
+    ASSIGN security-auditor-agent
 ELIF branch_type == "test":
-    ASSIGN @test_orchestrator_agent
+    ASSIGN test-orchestrator-agent
 ELIF branch_type == "ai_docs":
-    ASSIGN @documentation_agent
+    ASSIGN documentation-agent
 
 🛑 ERROR HANDLING:
 • Missing required parameters return clear error messages

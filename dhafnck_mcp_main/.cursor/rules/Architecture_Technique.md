@@ -80,7 +80,7 @@ dhafnck_mcp_main/src/fastmcp/task_management/
 |-------|----------|--------|-------------|----------------|
 | **DDD** | **COMPLETE** | ✅ **ENFORCED** | **Domain-Driven Design 4-Layer Architecture** | @system_architect_agent, @coding_agent |
 | **Context** | **4-Tier** | ✅ **ACTIVE** | **Hierarchical Context System (Global→Project→Branch→Task)** | @system_architect_agent |
-| **Vision** | **Phase 6** | ✅ **COMPLETE** | **Vision System Implementation (6 phases complete)** | @master_orchestrator_agent |
+| **Vision** | **Phase 6** | ✅ **COMPLETE** | **Vision System Implementation (6 phases complete)** | master-orchestrator-agent |
 | 00 | [phase_00.mdc](mdc:phase_00.mdc) | 📋 Planned | **MVP Docker + PostgreSQL Authentication** | @system_architect_agent, @coding_agent, @ui_designer_agent |
 | 01 | [phase_01.mdc](mdc:phase_01.mdc) | ✅ Complete | Current Architecture Analysis | @system_architect_agent, @coding_agent, @performance_load_tester_agent |
 | 02 | [phase_02.mdc](mdc:phase_02.mdc) | ✅ Complete | Scaling Requirements & Performance Analysis | @performance_load_tester_agent, @system_architect_agent, @devops_agent |

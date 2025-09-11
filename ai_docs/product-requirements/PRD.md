@@ -104,13 +104,13 @@ Comprehensive AI agent orchestration platform providing:
 - Priority: CRITICAL
 - Description: Sophisticated multi-agent coordination with 60+ specialized agents using dynamic loading and capability-based assignment
 - Agent_Categories:
-  - **Development Agents**: coding_agent, debugger_agent, system_architect_agent, tech_spec_agent, development_orchestrator_agent
-  - **Design Agents**: ui_designer_agent, design_system_agent, ux_researcher_agent, graphic_design_agent, design_qa_analyst_agent
-  - **DevOps Agents**: devops_agent, security_auditor_agent, performance_load_tester_agent, security_penetration_tester_agent
-  - **Analytics Agents**: analytics_setup_agent, market_research_agent, user_feedback_collector_agent, efficiency_optimization_agent
-  - **Management Agents**: project_initiator_agent, task_planning_agent, master_orchestrator_agent, workflow_architect_agent, swarm_scaler_agent
-  - **Marketing Agents**: campaign_manager_agent, content_strategy_agent, seo_sem_agent, marketing_strategy_orchestrator_agent, social_media_setup_agent
-  - **Specialized Agents**: compliance_scope_agent, ethical_review_agent, incident_learning_agent, documentation_agent, deep_research_agent, mcp_configuration_agent
+  - **Development Agents**: coding-agent, debugger-agent, system-architect-agent, tech_spec_agent, development_orchestrator_agent
+  - **Design Agents**: ui_designer_agent, design-system-agent, ux_researcher_agent, graphic_design_agent, design_qa_analyst_agent
+  - **DevOps Agents**: devops-agent, security-auditor-agent, performance-load-tester-agent, security_penetration_tester_agent
+  - **Analytics Agents**: analytics-setup-agent, market_research_agent, user_feedback_collector_agent, efficiency-optimization-agent
+  - **Management Agents**: project-initiator-agent, task-planning-agent, master-orchestrator-agent, workflow_architect_agent, swarm_scaler_agent
+  - **Marketing Agents**: campaign_manager_agent, content_strategy_agent, seo_sem_agent, marketing-strategy-orchestrator-agent, social_media_setup_agent
+  - **Specialized Agents**: compliance-scope-agent, ethical-review-agent, incident_learning_agent, documentation-agent, deep-research-agent, mcp_configuration_agent
 - Agent_Features:
   - Dynamic loading and execution through call_agent MCP tool
   - YAML-based configuration with metadata and capabilities

@@ -238,7 +238,7 @@ def generate_docs_for_assignees(assignees, clear_all=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate agent documentation.")
-    parser.add_argument('--agent', type=str, help='Name of the agent directory (e.g., coding_agent)')
+    parser.add_argument('--agent', type=str, help='Name of the agent directory (e.g., coding-agent)')
     parser.add_argument('--clear-all', action='store_true', help='Clear all agent ai_docs before generating')
     args = parser.parse_args()
     generate_agent_docs(agent_name=args.agent, clear_all=args.clear_all) 

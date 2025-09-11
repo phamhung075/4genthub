@@ -13,11 +13,11 @@ These agents coordinate work but don't directly modify files. They analyze, plan
 
 ```mermaid
 graph TD
-    MO[master_orchestrator_agent] --> TP[task_planning_agent]
-    MO --> PI[project_initiator_agent]
-    TP --> CA[coding_agent]
-    TP --> TO[test_orchestrator_agent]
-    TP --> DA[documentation_agent]
+    MO[master-orchestrator-agent] --> TP[task-planning-agent]
+    MO --> PI[project-initiator-agent]
+    TP --> CA[coding-agent]
+    TP --> TO[test-orchestrator-agent]
+    TP --> DA[documentation-agent]
 ```
 
 **Master Orchestrator Agent**
@@ -35,10 +35,10 @@ These agents have full file manipulation capabilities and implement solutions.
 
 ```mermaid
 graph LR
-    CA[coding_agent] <--> DA[debugger_agent]
-    CA --> TO[test_orchestrator_agent]
+    CA[coding-agent] <--> DA[debugger-agent]
+    CA --> TO[test-orchestrator-agent]
     TO --> CA
-    CA --> DOC[documentation_agent]
+    CA --> DOC[documentation-agent]
 ```
 
 **Core Implementation Triad**
@@ -64,8 +64,8 @@ graph LR
 
 **Interaction Pattern**:
 ```
-master_orchestrator → devops_agent → {
-    - coding_agent (for deployment scripts)
+master_orchestrator → devops-agent → {
+    - coding-agent (for deployment scripts)
     - test_orchestrator (for deployment tests)
     - security_auditor (for security review)
 }
@@ -81,7 +81,7 @@ master_orchestrator → devops_agent → {
 
 **Interaction Pattern**:
 ```
-Any Implementation Agent → documentation_agent → {
+Any Implementation Agent → documentation-agent → {
     - Creates comprehensive ai_docs
     - Updates existing documentation
     - Maintains consistency
@@ -96,9 +96,9 @@ Any Implementation Agent → documentation_agent → {
 - Campaign orchestration
 
 **Delegates to**:
-- `branding_agent` (for brand consistency)
-- `community_strategy_agent` (for community engagement)
-- `creative_ideation_agent` (for creative content)
+- `branding-agent` (for brand consistency)
+- `community-strategy-agent` (for community engagement)
+- `creative-ideation-agent` (for creative content)
 
 ## Key Delegation Workflows
 
@@ -106,65 +106,65 @@ Any Implementation Agent → documentation_agent → {
 ```
 User Request
     ↓
-master_orchestrator_agent
+master-orchestrator-agent
     ↓
-task_planning_agent (breaks down into subtasks)
+task-planning-agent (breaks down into subtasks)
     ↓
 Parallel Execution:
-├── system_architect_agent (design)
-├── coding_agent (implementation)
-├── ui_specialist_agent (frontend)
-├── test_orchestrator_agent (testing)
-└── documentation_agent (ai_docs)
+├── system-architect-agent (design)
+├── coding-agent (implementation)
+├── ui-specialist-agent (frontend)
+├── test-orchestrator-agent (testing)
+└── documentation-agent (ai_docs)
     ↓
-debugger_agent (if issues found)
+debugger-agent (if issues found)
     ↓
-devops_agent (deployment)
+devops-agent (deployment)
 ```
 
 ### 2. Bug Fix Workflow
 ```
 Bug Report
     ↓
-debugger_agent (enhanced with remediation)
+debugger-agent (enhanced with remediation)
     ├── Analyzes issue
     ├── Implements fix
     └── Executes recovery procedures
     ↓
-test_orchestrator_agent (validates fix)
+test-orchestrator-agent (validates fix)
     ↓
-documentation_agent (updates ai_docs)
+documentation-agent (updates ai_docs)
 ```
 
 ### 3. Research & Analysis Workflow
 ```
 Research Request
     ↓
-deep_research_agent (enhanced with MCP research)
+deep-research-agent (enhanced with MCP research)
     ├── Technology evaluation
     ├── Platform research
     └── MCP tool discovery
     ↓
-technology_advisor_agent (recommendations)
+technology-advisor-agent (recommendations)
     ↓
-master_orchestrator_agent (implementation planning)
+master-orchestrator-agent (implementation planning)
 ```
 
 ### 4. Creative Project Workflow
 ```
 Creative Request
     ↓
-creative_ideation_agent (consolidated)
+creative-ideation-agent (consolidated)
     ├── Idea generation
     ├── Concept refinement
     └── Iteration cycles
     ↓
-marketing_strategy_orchestrator_agent
+marketing-strategy-orchestrator-agent
     ├── SEO optimization
     ├── Growth strategies
     └── Content planning
     ↓
-branding_agent (brand alignment)
+branding-agent (brand alignment)
 ```
 
 ## Parallel Execution Patterns
@@ -175,13 +175,13 @@ When a complex task requires multiple specialists, the orchestrator spawns paral
 ```python
 # Example: E-commerce system build
 master_orchestrator.delegate([
-    ('system_architect_agent', 'Design database schema'),
-    ('coding_agent', 'Build backend API'),
-    ('ui_specialist_agent', 'Create frontend'),
-    ('test_orchestrator_agent', 'Write test suite'),
-    ('documentation_agent', 'Create documentation'),
-    ('devops_agent', 'Setup deployment'),
-    ('security_auditor_agent', 'Security review')
+    ('system-architect-agent', 'Design database schema'),
+    ('coding-agent', 'Build backend API'),
+    ('ui-specialist-agent', 'Create frontend'),
+    ('test-orchestrator-agent', 'Write test suite'),
+    ('documentation-agent', 'Create documentation'),
+    ('devops-agent', 'Setup deployment'),
+    ('security-auditor-agent', 'Security review')
 ])
 # All 7 agents work simultaneously
 ```
@@ -192,11 +192,11 @@ Some workflows require sequential execution:
 ```python
 # Example: Deployment pipeline
 sequence = [
-    ('test_orchestrator_agent', 'Run all tests'),
-    ('security_auditor_agent', 'Security scan'),
-    ('devops_agent', 'Deploy to staging'),
-    ('performance_load_tester_agent', 'Load test'),
-    ('devops_agent', 'Deploy to production')
+    ('test-orchestrator-agent', 'Run all tests'),
+    ('security-auditor-agent', 'Security scan'),
+    ('devops-agent', 'Deploy to staging'),
+    ('performance-load-tester-agent', 'Load test'),
+    ('devops-agent', 'Deploy to production')
 ]
 ```
 
@@ -291,14 +291,14 @@ All deprecated agent names automatically map to new consolidated agents:
 
 ```python
 # Old workflow (still works)
-call_agent('tech_spec_agent')  # → documentation_agent
-call_agent('remediation_agent')  # → debugger_agent
-call_agent('mcp_configuration_agent')  # → devops_agent
+call_agent('tech_spec_agent')  # → documentation-agent
+call_agent('remediation_agent')  # → debugger-agent
+call_agent('mcp_configuration_agent')  # → devops-agent
 
 # New workflow (recommended)
-call_agent('documentation_agent')
-call_agent('debugger_agent')
-call_agent('devops_agent')
+call_agent('documentation-agent')
+call_agent('debugger-agent')
+call_agent('devops-agent')
 ```
 
 ### Updated Delegation Patterns
@@ -311,7 +311,7 @@ delegates = [
 ]
 
 # After: Single consolidated agent
-delegate = 'documentation_agent'  # Handles all documentation types
+delegate = 'documentation-agent'  # Handles all documentation types
 ```
 
 ## Performance Improvements
@@ -331,7 +331,7 @@ delegate = 'documentation_agent'  # Handles all documentation types
 ## Future Considerations
 
 ### Potential Further Consolidations
-- `community_strategy_agent` → `marketing_strategy_orchestrator_agent`
+- `community-strategy-agent` → `marketing-strategy-orchestrator-agent`
 - Would achieve exact 30 agent target
 
 ### Enhancement Opportunities

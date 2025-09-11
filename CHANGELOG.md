@@ -253,7 +253,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Issue**: Agent names were inconsistently formatted using hyphens instead of @ prefix with underscores
   - **Pattern Enforced**: `@agent_name` (with @ prefix and underscores)
   - **Files Modified**:
-    - `CLAUDE.md` - Fixed subagent_type parameters to use @master_orchestrator_agent
+    - `CLAUDE.md` - Fixed subagent_type parameters to use master-orchestrator-agent
     - `CHANGELOG.md` - Updated agent name examples to use correct @agent_name format
     - `TEST-CHANGELOG.md` - Standardized agent names in test documentation
     - `ai_docs/migration-guides/agent-name-migration.md` - Updated all migration targets to @agent_name format
@@ -262,7 +262,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck_mcp_main/src/fastmcp/task_management/application/use_cases/agent_mappings.py` - Updated DEPRECATED_AGENT_MAPPINGS targets
     - `dhafnck_mcp_main/src/tests/task_management/application/use_cases/agent_mappings_test.py` - Updated expected test values
   - **Corrections Applied**:
-    - `master-orchestrator-agent` → `@master_orchestrator_agent`
+    - `master-orchestrator-agent` → `master-orchestrator-agent`
     - `@coding_agent` → `@coding_agent`
     - `debugger-agent` → `@debugger_agent`
     - `test-orchestrator-agent` → `@test_orchestrator_agent`
@@ -392,7 +392,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck-frontend/src/components/AgentInfoDialog.tsx`
   - **Changes Applied**:
     - **Enum Update**: AgentRole enum completely rewritten to match actual 32 agents in agent-library
-    - **Frontend Alignment**: Updated frontend references from master-orchestrator-agent to @master_orchestrator_agent
+    - **Frontend Alignment**: Updated frontend references from master-orchestrator-agent to master-orchestrator-agent
     - **API Consistency**: Unified agent descriptions and fallback references
     - **Agent Count Correction**: Reduced from 68 outdated entries to 32 actual agents
   - **Agent Categories Organized**:
@@ -419,8 +419,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck_mcp_main/agent-library/agents/devops_agent/contexts/devops_agent_instructions.yaml`
     - `dhafnck_mcp_main/agent-library/agents/deep_research_agent/contexts/deep_research_agent_instructions.yaml`
   - **Callback Implementation**:
-    - **Universal Callback Pattern**: All agents now call back to @master_orchestrator_agent after work completion
-    - **Standardized API Call**: `mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")`
+    - **Universal Callback Pattern**: All agents now call back to master-orchestrator-agent after work completion
+    - **Standardized API Call**: `mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")`
     - **Completion Criteria**: Each agent defines specific criteria for when work is considered complete
     - **Agent Categories Covered**: Implementation (coding, debugging), Quality (code review, testing), Architecture (system design), Security (auditing), Infrastructure (DevOps), Documentation, and Research
   - **Workflow Benefits**:
@@ -448,7 +448,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - ✅ **project_initiator_agent**: Updated with Call Agent API knowledge and callback mechanisms
     - ✅ **elicitation_agent**: Updated with Call Agent API knowledge and delegation patterns
   - **Delegation Hierarchy Established**:
-    - `Claude (router) → @master_orchestrator_agent → specialized agents`
+    - `Claude (router) → master-orchestrator-agent → specialized agents`
     - Orchestration agents now properly coordinate and delegate to specialized agents
     - All agents follow consistent callback patterns to master_orchestrator
   - **Impact**: Complete agent ecosystem configuration, seamless agent coordination, standardized delegation patterns
@@ -477,7 +477,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - **🎯 Master Orchestrator as Primary Entry Point** - 2025-09-11
   - **Component**: Agent orchestration system
   - **Files Created/Modified**:
-    - `CLAUDE.md` - Updated to make @master_orchestrator_agent the primary entry point
+    - `CLAUDE.md` - Updated to make master-orchestrator-agent the primary entry point
     - `dhafnck_mcp_main/agent-library/agents/master_orchestrator_agent/contexts/master_orchestrator_instructions.yaml` - Comprehensive orchestration instructions
     - `ai_docs/development-guides/complete-agent-workflow-phases.md` - Complete workflow documentation
     - `ai_docs/development-guides/automated-agent-workflow-patterns.md` - Automated workflow patterns
@@ -508,7 +508,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service.py`
   - **Changes**:
     - Updated agent list from 42 to 33 agents based on actual agent-library contents
-    - Corrected agent names (e.g., @master_orchestrator_agent → @master_orchestrator_agent, @ui_designer_agent → @ui_specialist_agent)
+    - Corrected agent names (e.g., master-orchestrator-agent → master-orchestrator-agent, @ui_designer_agent → @ui_specialist_agent)
     - Removed non-existent agents (adaptive_deployment_strategist_agent, remediation_agent, etc.)
     - Added missing agents (llm_ai_agents_research, creative_ideation_agent)
     - Updated decision trees to use correct agent names

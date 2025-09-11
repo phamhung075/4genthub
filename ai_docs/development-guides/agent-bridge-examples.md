@@ -11,7 +11,7 @@ I'll activate the uber-orchestrator bridge agent to coordinate this multi-phase 
 
 ```python
 # Connect to the orchestration system
-mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Check existing project context
 mcp__dhafnck_mcp_http__manage_context(
@@ -61,7 +61,7 @@ I'll use the coding-specialist bridge agent for this implementation work.
 
 ```python
 # Connect to coding specialist
-mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 
 # Check branch context for requirements
 mcp__dhafnck_mcp_http__manage_context(
@@ -91,7 +91,7 @@ I'll activate the debugging-expert bridge agent to systematically investigate th
 
 ```python
 # Connect to debugging specialist
-mcp__dhafnck_mcp_http__call_agent(name_agent="@debugger_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
 
 # Check context for system information
 mcp__dhafnck_mcp_http__manage_context(
@@ -134,7 +134,7 @@ I'll use the testing-orchestrator bridge agent to create a multi-layered testing
 
 ```python
 # Connect to testing orchestrator
-mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")
 
 # Assess current testing context
 mcp__dhafnck_mcp_http__manage_context(
@@ -183,7 +183,7 @@ I'll coordinate multiple bridge agents for this complex requirement.
 
 ```python
 # Start with orchestrator for coordination
-mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Create master coordination task
 mcp__dhafnck_mcp_http__manage_task(
@@ -194,13 +194,13 @@ mcp__dhafnck_mcp_http__manage_task(
 )
 
 # Phase 1: Performance debugging
-mcp__dhafnck_mcp_http__call_agent(name_agent="@performance_load_tester_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="performance-load-tester-agent")
 
 # Phase 2: Implementation fixes
-mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 
 # Phase 3: Monitoring setup
-mcp__dhafnck_mcp_http__call_agent(name_agent="@health_monitor_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="health-monitor-agent")
 
 # Update context with coordination plan
 mcp__dhafnck_mcp_http__manage_context(
@@ -209,7 +209,7 @@ mcp__dhafnck_mcp_http__manage_context(
     context_id=branch_id,
     data={
         "coordination_plan": "3-phase approach: analyze, fix, monitor",
-        "agents_involved": ["performance_load_tester", "coding_agent", "health_monitor"],
+        "agents_involved": ["performance_load_tester", "coding-agent", "health_monitor"],
         "expected_timeline": "Performance analysis -> Implementation -> Monitoring setup"
     }
 )
