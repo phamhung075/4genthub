@@ -1,0 +1,7 @@
+{
+  "session_id": "b9982806-5fc2-4300-b510-18f05914b89a",
+  "prompts": [
+    "update task planner agent to add output and file relate to task or subtask on create\nexample: task for research agent save output file on ai_docs/_workplace/<task_id>/<file_output_name>.md\ntask for technical agent depend this document need registre on creation task data "
+  ],
+  "agent_name": "Catalyst"
+}
