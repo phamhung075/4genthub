@@ -4,7 +4,8 @@
     "add ai_docs is source of knownlege of ai, and worplace for search information beetween ai\nto CLAUDE.md and to master_orchestrator_agent",
     "review CLAUDE.md and correct misunderstand be cause actually claude not follow Claude\u2192orchestrator(force)",
     "update master_orchestrator_agent and task_planning_agent too because he working task, not continue delegate",
-    "can make it clean for ai easy follow ?"
+    "can make it clean for ai easy follow ?",
+    "update CLAUDE.md\nCLAUDE use TodoWrite for prepare to call multiple agent for paralelle working  only, sub agent can use TodoWrite for working"
   ],
   "agent_name": "Atlas"
 }
