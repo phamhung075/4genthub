@@ -296,45 +296,14 @@ def format_mcp_context(tasks: Optional[List[Dict]], next_task: Optional[Dict], g
 
 
 def detect_session_type():
-    """Detect if this is a main session or sub-agent session."""
-    import os
+    """Detect if this is a main session or sub-agent session.
     
-    # Method 1: Check for explicit environment variable
-    session_type = os.getenv("CLAUDE_SESSION_TYPE", "").lower()
-    if session_type in ["subagent", "sub-agent", "agent"]:
-        return "subagent"
-    elif session_type == "main":
-        return "main"
-    
-    # Method 2: Check for agent role environment variable
-    agent_role = os.getenv("CLAUDE_AGENT_ROLE", "").lower()
-    if agent_role and agent_role != "master-orchestrator":
-        return "subagent"
-    
-    # Method 3: Check current working directory for clues
-    cwd = os.getcwd()
-    
-    # If we're clearly in the main project root, assume main session
-    if cwd.endswith("agentic-project") and not any(sub in cwd for sub in ["/agent", "/sub"]):
-        return "main"
-    
-    # Method 4: Simple heuristic - check for obvious sub-agent indicators
-    subagent_indicators = ["agent", "subagent", "sub-agent", "coding", "debug", "test", "security"]
-    if any(indicator in cwd.lower() for indicator in subagent_indicators):
-        return "subagent"
-    
-    # Method 5: Check .claude.env for session configuration
-    try:
-        claude_env_file = Path(".claude.env")
-        if claude_env_file.exists():
-            with open(claude_env_file, 'r') as f:
-                content = f.read()
-                if "CLAUDE_SESSION_TYPE=subagent" in content:
-                    return "subagent"
-    except:
-        pass
-    
-    # Conservative default - assume main session
+    Note: Session type detection is now simplified. Runtime agent switching
+    handles context changes automatically when agents are called, eliminating
+    the need for complex session detection.
+    """
+    # Always return main session - agent context switching happens at runtime
+    # when agents are called via mcp__dhafnck_mcp_http__call_agent
     return "main"
 
 
@@ -342,27 +311,12 @@ def load_development_context(source):
     """Load relevant development context with MCP integration based on session source."""
     context_parts = []
     
-    # Detect session type
-    session_type = detect_session_type()
-    
-    if session_type == "main":
-        # MAIN SESSION: Load master orchestrator capabilities
-        context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
-        context_parts.append("")
-        context_parts.append("🎯 **You are the MASTER ORCHESTRATOR** - coordinate and delegate work to specialized agents.")
-        context_parts.append("")
-    else:
-        # SUB-AGENT SESSION: Load sub-agent instructions  
-        context_parts.append("🤖 **SUB-AGENT SESSION DETECTED**")
-        context_parts.append("")
-        context_parts.append("**IMPORTANT**: You are a specialized agent, NOT the master orchestrator.")
-        context_parts.append("- Focus on your specialized work")
-        context_parts.append("- Do NOT call master-orchestrator-agent")
-        context_parts.append("- Do NOT delegate to other agents") 
-        context_parts.append("- Complete the task assigned to you")
-        context_parts.append("")
-        context_parts.append("📖 **See**: ai_docs/core-architecture/sub-agent-instructions.md for full sub-agent guidelines")
-        context_parts.append("")
+    # MAIN SESSION: Load master orchestrator capabilities
+    # Note: Runtime agent switching will provide specialized context when agents are called
+    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
+    context_parts.append("")
+    context_parts.append("🎯 **You are the MASTER ORCHESTRATOR** - coordinate and delegate work to specialized agents.")
+    context_parts.append("")
     
     # Add timestamp and session info
     context_parts.append(f"Session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

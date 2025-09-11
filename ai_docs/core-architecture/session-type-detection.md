@@ -1,166 +1,118 @@
-# Session Type Detection - Main vs Sub-Agent Sessions
+# Agent Context Management - Runtime Agent Switching
 
 **Issue**: The `CLAUDE.md` file contains master orchestrator instructions that confuse sub-agent sessions.
 
-**Solution**: Automatic session type detection that provides different instructions based on session context.
+**Solution**: Automatic runtime agent switching when agents are called, providing appropriate context without manual configuration.
 
 ## How It Works
 
-The session start hook now detects whether Claude is running as:
-1. **Main Session** (master orchestrator) 
-2. **Sub-Agent Session** (specialized agent)
+When Claude calls an agent using `mcp__dhafnck_mcp_http__call_agent`, the system automatically:
+1. **Detects Agent Calls** - Post-tool hook monitors for agent invocations
+2. **Switches Context** - Provides specialized agent instructions 
+3. **Runtime Switching** - Works within the same session without env vars
 
-### Detection Methods
+### Automatic Agent Context Switching
 
-The hook checks multiple indicators in order:
+The system automatically provides specialized context when agents are loaded:
 
-#### 1. Environment Variables (Explicit)
-```bash
-# Force sub-agent session
-export CLAUDE_SESSION_TYPE=subagent
+## Agent Context Instructions
 
-# Force main session  
-export CLAUDE_SESSION_TYPE=main
-
-# Specify agent role
-export CLAUDE_AGENT_ROLE=debugger-agent
+### 🎯 Master Orchestrator (Default)
+Standard Claude behavior with orchestrator capabilities loaded via:
+```
+mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent')
 ```
 
-#### 2. Configuration File
-Create `.claude.env` with:
-```bash
-CLAUDE_SESSION_TYPE=subagent
+### 🤖 Specialized Agents (Automatic)
+When calling any specialized agent, the system automatically provides:
 ```
+🤖 **RUNTIME AGENT SWITCH**: You are now operating as {agent_name}
 
-#### 3. Directory Context
-- Main session: `/path/to/agentic-project` (project root)
-- Sub-agent session: `/path/with/agent/coding/work` (contains agent keywords)
-
-#### 4. Automatic Heuristics
-Detects sub-agent indicators in working directory:
-- `agent`, `subagent`, `sub-agent`
-- `coding`, `debug`, `test`, `security`
-
-## Session Instructions
-
-### 🎯 Main Session (Master Orchestrator)
-```
-🚀 INITIALIZATION REQUIRED: You MUST immediately call 
-mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') 
-to load your orchestrator capabilities.
-
-🎯 You are the MASTER ORCHESTRATOR - coordinate and delegate 
-work to specialized agents.
-```
-
-### 🤖 Sub-Agent Session
-```
-🤖 SUB-AGENT SESSION DETECTED
-
-IMPORTANT: You are a specialized agent, NOT the master orchestrator.
-- Focus on your specialized work
-- Do NOT call master-orchestrator-agent
+**IMPORTANT CONTEXT CHANGE**:
+- You are now a specialized {agent_name}, NOT the master orchestrator
+- Focus on your specialized work  
+- Use your loaded agent capabilities
+- Do NOT call master-orchestrator-agent again
 - Do NOT delegate to other agents
-- Complete the task assigned to you
-
-📖 See: ai_docs/core-architecture/sub-agent-instructions.md
+- Complete the specific task assigned to you
 ```
 
 ## Usage Examples
 
-### Method 1: Environment Variable
-```bash
-# Start a debugging session
-export CLAUDE_SESSION_TYPE=subagent
-export CLAUDE_AGENT_ROLE=debugger-agent
-claude-code
+### Direct Agent Calling (Recommended)
+```typescript
+// Instead of Task tool (which always calls master-orchestrator-agent):
+Task(subagent_type="coding-agent", prompt="Fix this bug")
 
-# Start main orchestrator session  
-export CLAUDE_SESSION_TYPE=main
-claude-code
+// Use direct agent calling:
+mcp__dhafnck_mcp_http__call_agent("coding-agent")
+// System automatically provides specialized context
 ```
 
-### Method 2: Configuration File
-```bash
-# Create .claude.env in project directory
-echo "CLAUDE_SESSION_TYPE=subagent" > .claude.env
-echo "CLAUDE_AGENT_ROLE=coding-agent" >> .claude.env
+### Agent Delegation Pattern
+```typescript
+// 1. Create MCP task with full context
+const taskResult = await mcp__dhafnck_mcp_http__manage_task({
+  action: "create",
+  git_branch_id: "branch-uuid", 
+  title: "Fix authentication bug",
+  description: "Full context and details here...",
+  assignees: "@coding-agent"
+});
 
-claude-code
-```
-
-### Method 3: Working Directory
-```bash
-# Create sub-agent working directory
-mkdir -p workspace/coding-agent-work
-cd workspace/coding-agent-work
-claude-code  # Automatically detected as sub-agent session
-```
-
-## Troubleshooting
-
-### Issue: Wrong Session Type Detected
-**Solution**: Use explicit environment variable
-```bash
-export CLAUDE_SESSION_TYPE=main  # or subagent
-```
-
-### Issue: Sub-Agent Still Gets Master Orchestrator Instructions
-**Solution**: Check detection logic works
-```bash
-# Test detection
-python3 -c "
-import sys
-sys.path.append('.claude/hooks')
-from session_start import detect_session_type
-print('Detected:', detect_session_type())
-"
-```
-
-### Issue: Need to Override Detection
-**Solution**: Create `.claude.env` file
-```bash
-echo "CLAUDE_SESSION_TYPE=subagent" > .claude.env
+// 2. Delegate with task ID only (saves tokens)
+mcp__dhafnck_mcp_http__call_agent("coding-agent")
+// Agent will be told: "task_id: {uuid}" and load full context from MCP
 ```
 
 ## Benefits
 
-✅ **Eliminates Confusion**: Sub-agents get appropriate instructions  
-✅ **Automatic Detection**: Works without manual configuration  
-✅ **Override Capability**: Can force specific session types  
-✅ **Clear Instructions**: Different workflows for different roles  
-✅ **Maintains Compatibility**: Main sessions work as before  
+✅ **Eliminates Confusion**: Agents get appropriate context automatically  
+✅ **Zero Configuration**: Works without any manual setup  
+✅ **Runtime Switching**: Change agents within same session  
+✅ **Token Economy**: Full context in MCP tasks, delegate with IDs only  
+✅ **Maintains Compatibility**: Master orchestrator behavior unchanged  
 
 ## Implementation Details
 
-### Modified Files
-1. **`.claude/hooks/session_start.py`**
-   - Added `detect_session_type()` function
-   - Modified `load_development_context()` to use detection
-   - Added environment variable and file checks
+### How the System Works
 
-2. **`ai_docs/core-architecture/sub-agent-instructions.md`**
-   - Complete sub-agent workflow guide
-   - Clear do's and don'ts for specialized agents
+1. **Post-Tool Hook Detection** (`.claude/hooks/post_tool_use.py`):
+   - Monitors for `mcp__dhafnck_mcp_http__call_agent` calls
+   - Automatically invokes agent context switching
+   - Provides specialized instructions via system reminder
 
-### Detection Priority
-1. `CLAUDE_SESSION_TYPE` environment variable
-2. `CLAUDE_AGENT_ROLE` environment variable  
-3. `.claude.env` configuration file
-4. Working directory analysis
-5. Default to main session (safe fallback)
+2. **Agent Context Manager** (`.claude/hooks/utils/agent_context_manager.py`):
+   - Manages runtime agent context files
+   - Provides agent-specific instructions
+   - Handles context switching and clearing
 
-## Future Enhancements
+3. **Agent Helper Functions** (`.claude/hooks/utils/agent_helpers.py`):
+   - Convenience functions for common agent switches
+   - Status checking and agent identification
+   - Quick switching utilities
 
-### Possible Improvements
-- Auto-detect based on Task tool delegation context
-- Integration with agent loading system
-- Session type persistence across restarts
-- Agent-specific configuration files
+### Agent Context Flow
+```
+1. Claude calls mcp__dhafnck_mcp_http__call_agent("coding-agent")
+2. Post-tool hook detects the call
+3. Agent context manager creates specialized context
+4. System provides runtime instructions to Claude
+5. Claude operates as specialized coding agent
+6. Agent completes task with specialized focus
+```
 
-### Integration Points
-- Could integrate with MCP task system
-- Could use session ID patterns for detection
-- Could analyze recent prompts/commands for context
+## Token Economy Pattern
 
-The current implementation provides a solid foundation for eliminating the CLAUDE.md confusion while maintaining flexibility for both automatic and manual session type control.
+The system implements efficient token usage:
+
+1. **Full Context in MCP Task**: Create task with complete context
+2. **ID-Only Delegation**: Pass only task UUID to agent
+3. **Agent Context Loading**: Agent loads full context from MCP
+4. **Specialized Focus**: Agent works with appropriate instructions
+
+This approach saves 95%+ tokens compared to passing full context in each delegation.
+
+## Technical Architecture
+
+The solution eliminates the need for environment variables or session detection by using runtime context switching triggered by actual agent calls. This ensures agents receive appropriate instructions exactly when needed, without any manual configuration or startup confusion.

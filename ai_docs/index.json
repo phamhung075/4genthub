@@ -580,11 +580,11 @@
           "size": 12519
         },
         {
-          "hash": "6e3ce5416ef738ffebe43fa23e892fc6",
-          "modified": "2025-09-11T22:53:09.225162",
+          "hash": "64c3596ed11ab6f8befabfd6a348a45d",
+          "modified": "2025-09-11T23:06:04.033707",
           "name": "session-type-detection.md",
           "path": "core-architecture/session-type-detection.md",
-          "size": 4634
+          "size": 4386
         },
         {
           "hash": "ef52584808bee6e17988bceb3e3b841d",
@@ -2195,7 +2195,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T22:53:09.359859",
+  "generated_at": "2025-09-11T23:06:04.189234",
   "structure": {
     "_absolute_docs": {
       "files": [
