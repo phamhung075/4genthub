@@ -18,3 +18,4 @@ mcp_tools:
   - mcp__sequential-thinking__sequentialthinking
   - mcp__dhafnck_mcp_http__manage_context
   - mcp__dhafnck_mcp_http__manage_task
+  - mcp__dhafnck_mcp_http__call_agent
