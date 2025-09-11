@@ -131,38 +131,66 @@ And many more...
 
 ## Advanced Usage
 
-### Chaining Multiple Agents
+### Delegating to Multiple Agents via Task Tool
 
 ```python
-# 1. Plan the work
-task_plan = mcp__dhafnck_mcp_http__call_agent(name_agent="@task_planning_agent")
+# IMPORTANT: You must delegate via Task Tool, not call directly
+# Each agent will internally call call_agent to load their core capabilities
 
-# 2. Implement the features  
-coding_work = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+# 1. Delegate planning work via Task Tool
+Task(
+    subagent_type="task-planning-agent",
+    description="Plan the implementation",
+    prompt="Create a detailed plan for implementing the user authentication system"
+)
 
-# 3. Review the code
-code_review = mcp__dhafnck_mcp_http__call_agent(name_agent="@code_reviewer_agent")
+# 2. Delegate implementation via Task Tool
+Task(
+    subagent_type="coding-agent",
+    description="Implement the features",
+    prompt="Implement the authentication system based on the plan"
+)
 
-# 4. Test everything
-testing = mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+# 3. Delegate code review via Task Tool
+Task(
+    subagent_type="code-reviewer-agent",
+    description="Review the implementation",
+    prompt="Review the authentication implementation for quality and security"
+)
+
+# 4. Delegate testing via Task Tool
+Task(
+    subagent_type="test-orchestrator-agent",
+    description="Test the implementation",
+    prompt="Create and run comprehensive tests for the authentication system"
+)
 ```
 
-### Dynamic Agent Selection
+### Dynamic Agent Selection for Delegation
 
-The `call_agent` tool can be used to dynamically select the best agent for a task:
+When delegating tasks, select the appropriate agent based on task type:
 
 ```python
-def get_best_agent_for_task(task_type):
+def delegate_to_best_agent(task_type, task_description, task_prompt):
     agent_mapping = {
-        'security': 'security_auditor_agent',
-        'testing': 'test_orchestrator_agent', 
-        'ui': 'ui_designer_expert_shadcn_agent',
-        'api': 'coding_agent',
-        'architecture': 'system_architect_agent'
+        'security': 'security-auditor-agent',
+        'testing': 'test-orchestrator-agent', 
+        'ui': 'ui-designer-expert-shadcn-agent',
+        'api': 'coding-agent',
+        'architecture': 'system-architect-agent'
     }
     
-    agent_name = agent_mapping.get(task_type, 'coding_agent')
-    return mcp__dhafnck_mcp_http__call_agent(name_agent=f"@{agent_name}")
+    agent_name = agent_mapping.get(task_type, 'coding-agent')
+    
+    # Delegate via Task Tool
+    Task(
+        subagent_type=agent_name,
+        description=task_description,
+        prompt=task_prompt
+    )
+    
+    # Note: The delegated agent will internally call call_agent 
+    # to load their personal capabilities and rules
 ```
 
 ## Technical Implementation
@@ -198,7 +226,7 @@ The `claude_agent_definition` field contains a complete `.claude/agents/*.md` co
 
 ## Best Practices
 
-1. **Agent Name Normalization** - Use the `@agent_name` format when calling agents
+1. **Agent Name Normalization** - Use the `@agent_name` format when delegating to agents via Task Tool
 2. **Error Handling** - Always check the `success` field before using `claude_agent_definition`
 3. **Tool Permissions** - Review the `capabilities.permissions` to understand what each agent can do
 4. **Context Awareness** - Agents maintain their full context from the agent-library structure

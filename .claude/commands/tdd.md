@@ -1,9 +1,9 @@
 tdd:
-  call agent to find then fix origin cause of this probleme
+  Delegate to Agent via Task Tool to find then fix origin cause of this probleme
   description: "Complete test-driven development workflow for verifiable changes"
   prompt: |
     I want to implement a feature using Test-Driven Development (TDD). 
-    Call task_planning_agent to make task and subtask follow this exact workflow:
+    Delegate to task_planning_agent via Task Tool to make task and subtask follow this exact workflow:
 
     **Phase 1: Write Tests First**
     - Write comprehensive tests based on the expected input/output pairs I'll provide
@@ -38,10 +38,10 @@ tdd:
     - The commit should only contain the implementation, not test changes
 
     **Phase 7: Create of update existe documentation**
-    - Call agent to find existe document for update content, create if not exist
+    - Delegate to Agent via Task Tool to find existe document for update content, create if not exist
 
     **Phase 8: Update existe CHANGELOG.md**
-    - Call agent to find existe CHANGELOG.md for update content, create on root project directory if not exist
+    - Delegate to Agent via Task Tool to find existe CHANGELOG.md for update content, create on root project directory if not exist
 
     **Phase 9: Complete task on MCP**
     - Mark task complete then update context and status 

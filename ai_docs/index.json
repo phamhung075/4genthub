@@ -851,11 +851,11 @@
           "size": 7454
         },
         {
-          "hash": "396bfdaf2a933d485947149f3a29d787",
-          "modified": "2025-09-09T22:48:40.938026",
+          "hash": "f5df90bcd9a5a4e51d7ef22d1cce314f",
+          "modified": "2025-09-11T09:45:40.878302",
           "name": "claude-code-agent-delegation-guide.md",
           "path": "integration-guides/claude-code-agent-delegation-guide.md",
-          "size": 8118
+          "size": 8951
         }
       ],
       "path": "integration-guides"
@@ -1943,7 +1943,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T03:04:53.238599",
+  "generated_at": "2025-09-11T09:45:40.965572",
   "structure": {
     "_absolute_docs": {
       "files": [
