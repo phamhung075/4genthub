@@ -89,6 +89,35 @@ def handle_request(user_input):
 - ✅ **COORDINATE**: Work with agents when specialized expertise is needed
 - ✅ **PRESENT**: Deliver results to user with full context and explanation
 
+## 📝 TODOWRITE USAGE RULES:
+
+**CLAUDE's TodoWrite Usage (Planning Only):**
+- ✅ Use TodoWrite to **PLAN** parallel agent delegations
+- ✅ Use TodoWrite to **ORGANIZE** multiple Task tool calls
+- ✅ Use TodoWrite to **PREPARE** delegation strategy
+- ❌ NOT for tracking implementation work (that's for subagents)
+
+**SUBAGENTS' TodoWrite Usage (Implementation Work):**
+- ✅ Subagents use TodoWrite to **TRACK** their actual work
+- ✅ Subagents use TodoWrite to **MANAGE** implementation tasks
+- ✅ Subagents use TodoWrite to **ORGANIZE** their workflow
+- ✅ Subagents use TodoWrite to **REPORT** progress
+
+**Example - Claude Planning Parallel Delegations:**
+```python
+# Claude uses TodoWrite for planning parallel agent calls
+TodoWrite(todos=[
+    {"content": "Delegate frontend to ui-specialist-agent", "status": "pending"},
+    {"content": "Delegate backend to coding-agent", "status": "pending"},
+    {"content": "Delegate tests to test-orchestrator-agent", "status": "pending"}
+])
+
+# Then execute parallel Task calls
+Task(subagent_type="ui-specialist-agent", ...)
+Task(subagent_type="coding-agent", ...)
+Task(subagent_type="test-orchestrator-agent", ...)
+```
+
 ## 📊 WORKFLOW DIAGRAM:
 
 ```
