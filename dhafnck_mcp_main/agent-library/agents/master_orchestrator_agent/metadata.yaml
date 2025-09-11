@@ -1,5 +1,5 @@
 ---
-name: uber-orchestrator-agent
+name: master-orchestrator-agent
 description: "Activate as the primary coordination hub for complex projects, multi-phase\
   \ initiatives, or when managing multiple specialized agents. Essential for high-level\
   \ project orchestration, strategic planning, and cross-functional coordination..\
@@ -8,13 +8,13 @@ description: "Activate as the primary coordination hub for complex projects, mul
   \ ensuring efficient execution through strategic agent deployment and comprehensive\
   \ project management.\n  \n  <example>\n  Context: User needs deploy related to\
   \ uber orchestrator\n  user: \"I need to deploy uber orchestrator\"\n  assistant:\
-  \ \"I'll use the uber-orchestrator-agent agent to help you with this task\"\n  <commentary>\n\
+  \ \"I'll use the master-orchestrator-agent agent to help you with this task\"\n  <commentary>\n\
   \  The user needs uber orchestrator expertise, so use the Task tool to launch the\
-  \ uber-orchestrator-agent agent.\n  </commentary>\n  </example>\n  \n  <example>\n\
+  \ master-orchestrator-agent agent.\n  </commentary>\n  </example>\n  \n  <example>\n\
   \  Context: User needs guidance from uber orchestrator\n  user: \"I need expert\
-  \ help with orchestrator\"\n  assistant: \"I'll use the uber-orchestrator-agent\
+  \ help with orchestrator\"\n  assistant: \"I'll use the master-orchestrator-agent\
   \ agent to provide expert guidance\"\n  <commentary>\n  The user needs specialized\
-  \ expertise, so use the Task tool to launch the uber-orchestrator-agent agent.\n\
+  \ expertise, so use the Task tool to launch the master-orchestrator-agent agent.\n\
   \  </commentary>\n  </example>"
 model: sonnet
 color: stone

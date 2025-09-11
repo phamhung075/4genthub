@@ -1,0 +1,7 @@
+{
+  "session_id": "66bb0800-1c6b-4ba4-8862-79b26c7b76ad",
+  "prompts": [
+    "correct \nmaster-orchestrator-agent(Analyze ai_docs for constraints and obsolete info)\n  \u23bf  Initializing\u2026\n  \u23bf  Error: Agent type 'master-orchestrator-agent' not found. Available agents: general-purpose, \n     statusline-setup, output-style-setup, efficiency-optimization-agent, compliance-scope-agent, \n     creative-ideation-agent, root-cause-analysis-agent, test-orchestrator-agent, \n     uat-coordinator-agent, devops-agent, security-auditor-agent, performance-load-tester-agent, \n     deep-research-agent, system-architect-agent, community-strategy-agent, llm-ai-agents-research, \n     master-orchestrator-agent, ml-specialist-agent, core-concept-agent, documentation-agent, \n     ethical-review-agent, health-monitor-agent, project-initiator-agent, coding-agent, \n     shadcn-ui-expert-agent, debugger-agent, prototyping-agent, branding-agent, design-system-agent, \n     elicitation-agent, task-planning-agent, analytics-setup-agent, marketing-strategy-orchestrator, \n     code-reviewer-agent, technology-advisor-agent\nmaster-orchestrator-agent is correct master-orchestrator-agent is delete, why claude continue working on master-orchestrator-agent ??? error on master-orchestrator-agent"
+  ],
+  "agent_name": "Sage"
+}
