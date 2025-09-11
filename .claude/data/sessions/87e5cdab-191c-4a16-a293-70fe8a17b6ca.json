@@ -1,0 +1,9 @@
+{
+  "session_id": "87e5cdab-191c-4a16-a293-70fe8a17b6ca",
+  "prompts": [
+    "review and update document obsolete",
+    "review and update other document obsolete",
+    "remove all report"
+  ],
+  "agent_name": "Aurora"
+}
