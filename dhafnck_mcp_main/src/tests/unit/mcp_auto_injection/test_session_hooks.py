@@ -523,7 +523,7 @@ class TestLoadDevelopmentContext:
             result = load_development_context("startup")
         
         assert "🚀 INITIALIZATION REQUIRED" in result
-        assert "call_agent('@master_orchestrator_agent')" in result
+        assert "call_agent('master-orchestrator-agent')" in result
         assert "Session source: startup" in result
         assert "=== MCP LIVE CONTEXT ===" in result
         assert "📋 **Current Pending Tasks:**" in result

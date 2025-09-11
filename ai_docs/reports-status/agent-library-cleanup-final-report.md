@@ -46,13 +46,13 @@ The DhafnckMCP agent library cleanup initiative has been **successfully complete
 
 ### Phase 1: High-Priority Agent Completion ✅
 **Duration**: Completed by development-orchestrator-agent
-- ✅ `coding_agent` - Core development functionality
-- ✅ `test_orchestrator_agent` - Testing and QA orchestration
-- ✅ `debugger_agent` - Problem diagnosis and resolution
-- ✅ `system_architect_agent` - System design and architecture
-- ✅ `security_auditor_agent` - Security analysis and auditing
-- ✅ `devops_agent` - DevOps and infrastructure management
-- ✅ `deep_research_agent` - Research and analysis capabilities
+- ✅ `coding-agent` - Core development functionality
+- ✅ `test-orchestrator-agent` - Testing and QA orchestration
+- ✅ `debugger-agent` - Problem diagnosis and resolution
+- ✅ `system-architect-agent` - System design and architecture
+- ✅ `security-auditor-agent` - Security analysis and auditing
+- ✅ `devops-agent` - DevOps and infrastructure management
+- ✅ `deep-research-agent` - Research and analysis capabilities
 
 **Result**: 7/7 critical agents now production-ready
 
@@ -61,14 +61,14 @@ The DhafnckMCP agent library cleanup initiative has been **successfully complete
 
 #### Testing Domain Consolidation (6 → 2 agents)
 **Removed Agents**:
-- ❌ `lead_testing_agent` → Merged into `test_orchestrator_agent`
-- ❌ `functional_tester_agent` → Merged into `test_orchestrator_agent`
-- ❌ `exploratory_tester_agent` → Merged into `test_orchestrator_agent`
-- ❌ `test_case_generator_agent` → Merged into `test_orchestrator_agent`
+- ❌ `lead_testing_agent` → Merged into `test-orchestrator-agent`
+- ❌ `functional_tester_agent` → Merged into `test-orchestrator-agent`
+- ❌ `exploratory_tester_agent` → Merged into `test-orchestrator-agent`
+- ❌ `test_case_generator_agent` → Merged into `test-orchestrator-agent`
 
 **Kept**:
-- ✅ `test_orchestrator_agent` (comprehensive testing coordination)
-- ✅ `performance_load_tester_agent` (specialized performance testing)
+- ✅ `test-orchestrator-agent` (comprehensive testing coordination)
+- ✅ `performance-load-tester-agent` (specialized performance testing)
 
 #### UI/Design Domain Consolidation (4 → 2 agents)
 **Removed Agents**:
@@ -77,42 +77,42 @@ The DhafnckMCP agent library cleanup initiative has been **successfully complete
 
 **Kept**:
 - ✅ `ui_designer_expert_shadcn_agent` (specialized UI expertise)
-- ✅ `design_system_agent` (component libraries and systems)
+- ✅ `design-system-agent` (component libraries and systems)
 
 #### Research Domain Consolidation (4 → 2 agents)
 **Removed Agents**:
-- ❌ `market_research_agent` → Merged into `deep_research_agent`
-- ❌ `ux_researcher_agent` → Merged into `deep_research_agent`
+- ❌ `market_research_agent` → Merged into `deep-research-agent`
+- ❌ `ux_researcher_agent` → Merged into `deep-research-agent`
 
 **Kept**:
-- ✅ `deep_research_agent` (comprehensive research capabilities)
+- ✅ `deep-research-agent` (comprehensive research capabilities)
 
 #### Strategy/Orchestration Consolidation (4 → 1 agent)
 **Removed Agents**:
-- ❌ `development_orchestrator_agent` → Merged into `master_orchestrator_agent`
-- ❌ `task_deep_manager_agent` → Merged into `master_orchestrator_agent`
-- ❌ `workflow_architect_agent` → Merged into `master_orchestrator_agent`
+- ❌ `development_orchestrator_agent` → Merged into `master-orchestrator-agent`
+- ❌ `task_deep_manager_agent` → Merged into `master-orchestrator-agent`
+- ❌ `workflow_architect_agent` → Merged into `master-orchestrator-agent`
 
 **Kept**:
-- ✅ `master_orchestrator_agent` (supreme orchestration)
+- ✅ `master-orchestrator-agent` (supreme orchestration)
 
 #### Security Domain Consolidation (3 → 2 agents)
 **Removed Agents**:
-- ❌ `security_penetration_tester_agent` → Merged into `security_auditor_agent`
-- ❌ `compliance_testing_agent` → Merged into `compliance_scope_agent`
+- ❌ `security_penetration_tester_agent` → Merged into `security-auditor-agent`
+- ❌ `compliance_testing_agent` → Merged into `compliance-scope-agent`
 
 **Kept**:
-- ✅ `security_auditor_agent` (comprehensive security)
-- ✅ `compliance_scope_agent` (regulatory compliance)
+- ✅ `security-auditor-agent` (comprehensive security)
+- ✅ `compliance-scope-agent` (regulatory compliance)
 
 #### Documentation Domain Consolidation (4 → 1 agent)
 **Removed Agents**:
-- ❌ `scribe_agent` → Merged into `documentation_agent`
-- ❌ `knowledge_evolution_agent` → Merged into `documentation_agent`
-- ❌ `incident_learning_agent` → Merged into `documentation_agent`
+- ❌ `scribe_agent` → Merged into `documentation-agent`
+- ❌ `knowledge_evolution_agent` → Merged into `documentation-agent`
+- ❌ `incident_learning_agent` → Merged into `documentation-agent`
 
 **Kept**:
-- ✅ `documentation_agent` (comprehensive documentation)
+- ✅ `documentation-agent` (comprehensive documentation)
 
 #### Specialized Agent Cleanup
 **Removed Agents**:
@@ -121,26 +121,26 @@ The DhafnckMCP agent library cleanup initiative has been **successfully complete
 - ❌ `graphic_design_agent` → Minimal value agent
 - ❌ `video_production_agent` → Minimal value agent
 - ❌ `design_qa_analyst_agent` → Minimal value agent
-- ❌ `algorithmic_problem_solver_agent` → Absorbed by coding_agent
+- ❌ `algorithmic_problem_solver_agent` → Absorbed by coding-agent
 - ❌ `user_feedback_collector_agent` → Absorbed by ux_researcher
 - ❌ `visual_regression_testing_agent` → Absorbed by test_orchestrator
-- ❌ `nlu_processor_agent` → Absorbed by elicitation_agent
+- ❌ `nlu_processor_agent` → Absorbed by elicitation-agent
 - ❌ `task_sync_agent` → Very specialized sync functionality
 
 ## 🏆 Final Agent Library (43 Agents)
 
 ### Production-Ready Agents (13 agents - 30.2%)
-1. `master_orchestrator_agent` - Central coordination and orchestration
+1. `master-orchestrator-agent` - Central coordination and orchestration
 2. `ui_designer_expert_shadcn_agent` - Expert UI design with Shadcn/UI
-3. `coding_agent` - Core development functionality
-4. `test_orchestrator_agent` - Testing and QA orchestration
-5. `debugger_agent` - Problem diagnosis and resolution
-6. `security_auditor_agent` - Security analysis and auditing
-7. `devops_agent` - DevOps and infrastructure management
-8. `deep_research_agent` - Research and analysis capabilities
-9. `system_architect_agent` - System design and architecture
-10. `code_reviewer_agent` - Code review and quality assurance
-11. `documentation_agent` - Documentation and knowledge management
+3. `coding-agent` - Core development functionality
+4. `test-orchestrator-agent` - Testing and QA orchestration
+5. `debugger-agent` - Problem diagnosis and resolution
+6. `security-auditor-agent` - Security analysis and auditing
+7. `devops-agent` - DevOps and infrastructure management
+8. `deep-research-agent` - Research and analysis capabilities
+9. `system-architect-agent` - System design and architecture
+10. `code-reviewer-agent` - Code review and quality assurance
+11. `documentation-agent` - Documentation and knowledge management
 12. `brainjs_ml_agent` - Machine learning and AI implementation
 13. `growth_hacking_idea_agent` - Growth strategy and marketing
 

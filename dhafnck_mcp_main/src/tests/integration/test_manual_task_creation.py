@@ -14,7 +14,7 @@ async def test_manual_task_creation():
     print("=== Testing Manual Task Creation ===")
     
     # Step 1: Test string to list conversion (same as task controller)
-    assignees = "coding_agent"
+    assignees = "coding-agent"
     print(f"Input assignees: {assignees}")
     
     if assignees is not None and isinstance(assignees, str):

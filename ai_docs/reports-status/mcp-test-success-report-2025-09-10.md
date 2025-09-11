@@ -58,9 +58,9 @@ Task_Assignees Table:
 ```
 
 ## Supported Assignee Formats
-- ✅ `@coding_agent` - Works
-- ✅ `@devops_agent` - Works
-- ✅ `@test_orchestrator_agent` - Works
+- ✅ `coding-agent` - Works
+- ✅ `devops-agent` - Works
+- ✅ `test-orchestrator-agent` - Works
 - ✅ Legacy formats auto-resolved
 
 ## Files Modified

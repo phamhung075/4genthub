@@ -52,7 +52,7 @@ class TestBranchContextRepository:
         self.test_branch_settings = {
             'branch_workflow': {'step1': 'review', 'step2': 'test'},
             'branch_standards': {'coding_style': 'pep8', 'test_coverage': 90},
-            'agent_assignments': {'@coding_agent': 'active'},
+            'agent_assignments': {'coding-agent': 'active'},
             'custom_field': 'custom_value'  # Test custom field preservation
         }
         

@@ -64,7 +64,7 @@ class TestCreateTaskRequest:
         request = CreateTaskRequest(
             title="Test Task",
             git_branch_id="550e8400-e29b-41d4-a716-446655440000",
-            assignees=["coding_agent", "test_orchestrator_agent", "system_architect_agent"]
+            assignees=["coding-agent", "test-orchestrator-agent", "system-architect-agent"]
         )
         
         assert "@senior_developer" in request.assignees

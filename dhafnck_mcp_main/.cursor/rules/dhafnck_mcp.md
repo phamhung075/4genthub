@@ -28,7 +28,7 @@ Organization (Global Context)
 ### Step 1: ALWAYS Switch to Orchestrator First
 ```python
 # NEVER work without an agent role active
-call_agent(name_agent="@master_orchestrator_agent")
+call_agent(name_agent="master-orchestrator-agent")
 ```
 
 ### Step 2: System Health Check
@@ -73,7 +73,7 @@ WORK_TYPE_TO_AGENT = {
     "documentation": "@documentation_agent",
     "infrastructure": "@devops_agent",
     "research": "@deep_research_agent",
-    "complex_orchestration": "@master_orchestrator_agent"
+    "complex_orchestration": "master-orchestrator-agent"
 }
 ```
 
@@ -392,7 +392,7 @@ Before taking any action, ask yourself:
 ### ✅ Agent Role Validation:
 - [ ] Am I in the correct specialist agent role for this work type?
 - [ ] Do I need to switch agents for this subtask?
-- [ ] Have I switched to @master_orchestrator_agent for complex coordination?
+- [ ] Have I switched to master-orchestrator-agent for complex coordination?
 
 ### ✅ Context Management Validation:
 - [ ] Have I resolved the full hierarchical context for this task?
@@ -483,7 +483,7 @@ manage_context(action="delegate", level="project",
 ### Pattern 2: Intelligent Agent Orchestration
 ```python
 # For complex multi-step workflows:
-call_agent(name_agent="@master_orchestrator_agent")
+call_agent(name_agent="master-orchestrator-agent")
 workflow = plan_multi_agent_workflow(requirements)
 for step in workflow.steps:
     call_agent(name_agent=step.required_agent)

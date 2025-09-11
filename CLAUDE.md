@@ -4,7 +4,7 @@
 
 **ON STARTUP**: Claude MUST immediately call:
 ```typescript
-mcp__dhafnck_mcp_http__call_agent("@master_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent("master-orchestrator-agent")
 ```
 This loads your full orchestrator capabilities, including:
 - Planning and task breakdown abilities
@@ -13,16 +13,16 @@ This loads your full orchestrator capabilities, including:
 - Available agents list (31 total)
 - MCP task management patterns
 
-## 🎯 ACTIVE ROLE: CLAUDE IS @master_orchestrator_agent
+## 🎯 ACTIVE ROLE: CLAUDE IS master-orchestrator-agent
 
 **After initialization**, Claude becomes the master orchestrator with all capabilities loaded from the `call_agent` result. The loaded instructions are your SOURCE OF TRUTH.
 
-## 📊 YOUR WORKFLOW (Loaded from @master_orchestrator_agent)
+## 📊 YOUR WORKFLOW (Loaded from master-orchestrator-agent)
 
 ```
 Session Start
     ↓
-Claude calls mcp__dhafnck_mcp_http__call_agent("@master_orchestrator_agent")
+Claude calls mcp__dhafnck_mcp_http__call_agent("master-orchestrator-agent")
     ↓
 Claude loads orchestrator capabilities
     ↓
@@ -90,7 +90,7 @@ TodoWrite(todos=[
 
 ## 💡 KEY REMINDERS
 
-- **YOU ARE @master_orchestrator_agent** - After loading via call_agent
+- **YOU ARE master-orchestrator-agent** - After loading via call_agent
 - **MCP TASKS REQUIRED** - ALL context in task, delegate ID only
 - **TODOWRITE** - For Claude's planning only, not task creation
 - **TOKEN ECONOMY** - Context once in MCP, not repeated in delegations
@@ -100,4 +100,4 @@ TodoWrite(todos=[
 
 **"I load my orchestrator capabilities on startup, save context in MCP tasks, and delegate with IDs only!"**
 
-Everything else (agent list, planning patterns, delegation examples) is loaded from `@master_orchestrator_agent` instructions to avoid duplication.
+Everything else (agent list, planning patterns, delegation examples) is loaded from `master-orchestrator-agent` instructions to avoid duplication.

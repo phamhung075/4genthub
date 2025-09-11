@@ -15,7 +15,8 @@
     "yes",
     "how you can authentification ? you use same token on .mcp.json ?",
     "verify all task if you not miss, conplete it if done",
-    "next"
+    "next",
+    "give me a prompt for test new system on new session claude"
   ],
   "agent_name": "Vertex"
 }

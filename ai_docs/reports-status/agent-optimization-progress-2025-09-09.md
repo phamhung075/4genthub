@@ -11,7 +11,7 @@ The agent optimization initiative to reduce 42 agents to 30 is underway. Initial
 ## Completed Tasks ✅
 
 ### 1. Documentation Agent Consolidation
-- **Merged**: `tech_spec_agent` + `prd_architect_agent` → `documentation_agent`
+- **Merged**: `tech_spec_agent` + `prd_architect_agent` → `documentation-agent`
 - **Result**: Single agent now handles all documentation types
 - **Version**: Updated to 2.0.0 with expanded capabilities
 - **Document Types Added**:
@@ -23,7 +23,7 @@ The agent optimization initiative to reduce 42 agents to 30 is underway. Initial
   - Integration plans
 
 ### 2. Research Agent Consolidation  
-- **Merged**: `mcp_researcher_agent` → `deep_research_agent`
+- **Merged**: `mcp_researcher_agent` → `deep-research-agent`
 - **Result**: Deep research agent now covers all research domains
 - **Version**: Updated to 2.0.0 with MCP research capabilities
 - **Research Domains Added**:
@@ -51,19 +51,19 @@ The agent optimization initiative to reduce 42 agents to 30 is underway. Initial
 ## In Progress 🔄
 
 ### Phase 1 Remaining (2 tasks)
-- Create `creative_ideation_agent` from idea agents
+- Create `creative-ideation-agent` from idea agents
 - Consolidate marketing agents (6→3)
 
 ## Pending Tasks 📋
 
 ### Phase 2: Infrastructure Consolidation
-- Merge `remediation_agent` into `debugger_agent`
+- Merge `remediation_agent` into `debugger-agent`
 - Consolidate DevOps agents (4→1)
 
 ### Phase 3: Agent Renaming
-- Rename `uber_orchestrator` → `master_orchestrator_agent`
-- Rename `brainjs_ml_agent` → `ml_specialist_agent`
-- Rename `ui_designer_expert_shadcn_agent` → `ui_specialist_agent`
+- Rename `uber_orchestrator` → `master-orchestrator-agent`
+- Rename `brainjs_ml_agent` → `ml-specialist-agent`
+- Rename `ui_designer_expert_shadcn_agent` → `ui-specialist-agent`
 
 ### Phase 4: Finalization
 - Test all consolidated agents

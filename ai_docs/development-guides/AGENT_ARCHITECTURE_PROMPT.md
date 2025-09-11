@@ -33,9 +33,9 @@ master_task = mcp__dhafnck_mcp_http__manage_task(
 )
 
 # 3. Load appropriate agent for each violation type
-debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="@debugger_agent")  # For controllers
-coding = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")      # For factory
-tester = mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")  # For tests
+debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")  # For controllers
+coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")      # For factory
+tester = mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")  # For tests
 ```
 
 ## 🔄 Complete Multi-Agent Workflow Pattern
@@ -87,7 +87,7 @@ compliance_result = analyze_architecture_compliance(compliance_check)
 ### Phase 2: Task Creation and Planning
 ```python
 # Load Task Planning Agent
-planning_agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@task_planning_agent")
+planning_agent = mcp__dhafnck_mcp_http__call_agent(name_agent="task-planning-agent")
 
 # Create master task for the feature
 master_task = mcp__dhafnck_mcp_http__manage_task(
@@ -115,11 +115,11 @@ mcp__dhafnck_mcp_http__manage_context(
 
 # Break down into subtasks
 subtasks = [
-    {"title": "Fix 11 Controller Files", "agent": "@debugger_agent"},
-    {"title": "Fix 7 Repository Factories", "agent": "@coding_agent"},
-    {"title": "Fix 25 Facades", "agent": "@coding_agent"},
-    {"title": "Add Cache to 25 Methods", "agent": "@coding_agent"},
-    {"title": "Write Compliance Tests", "agent": "@test_orchestrator_agent"}
+    {"title": "Fix 11 Controller Files", "agent": "debugger-agent"},
+    {"title": "Fix 7 Repository Factories", "agent": "coding-agent"},
+    {"title": "Fix 25 Facades", "agent": "coding-agent"},
+    {"title": "Add Cache to 25 Methods", "agent": "coding-agent"},
+    {"title": "Write Compliance Tests", "agent": "test-orchestrator-agent"}
 ]
 
 for subtask in subtasks:
@@ -953,11 +953,11 @@ compliance = mcp__dhafnck_mcp_http__call_agent(name_agent="@architecture_complia
 # Check compliance_reports/compliance_report_20250828_154945.md
 
 # Step 2: Fix controllers (14 HIGH violations)
-debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="@debugger_agent")
+debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
 # Fix all 11 controller files using Phase 1 code above
 
 # Step 3: Implement factory (7 broken factories)
-coding = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 # Create central RepositoryFactory with environment checking
 # Update all 7 existing factories to use it
 
@@ -968,7 +968,7 @@ coding = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
 # Add invalidation to all mutation methods
 
 # Step 6: Test compliance
-tester = mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+tester = mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")
 # Run architecture compliance tests
 
 # Step 7: Verify score improved
@@ -1047,11 +1047,11 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Implementation Phase (Code Fixes)
 ```python
 # Phase 1: Fix Controllers (14 HIGH violations)
-debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="@debugger_agent")
+debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
 # Apply controller fixes from Phase 1 section above
 
 # Phase 2: Fix Factories (7 broken factories)  
-coding = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 # Implement RepositoryFactory with environment checking
 
 # Phase 3: Fix Facades (25 violations)
@@ -1061,7 +1061,7 @@ coding = mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
 # Add invalidation to all mutation methods
 
 # Phase 5: Test Compliance
-tester = mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+tester = mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")
 # Run compliance tests
 ```
 
@@ -1196,10 +1196,10 @@ if __name__ == "__main__":
 
 | Phase | Task | Current Status | Target | Agent |
 |-------|------|----------------|---------|-------|
-| 1 | Fix Controllers | 14 violations | 0 | @debugger_agent |
-| 2 | Fix Factories | 7 broken | 7 working | @coding_agent |
-| 3 | Fix Facades | 25 violations | 0 | @coding_agent |
-| 4 | Add Cache | 25 missing | 25 added | @coding_agent |
-| 5 | Test Compliance | 0/100 score | 100/100 | @test_orchestrator_agent |
+| 1 | Fix Controllers | 14 violations | 0 | debugger-agent |
+| 2 | Fix Factories | 7 broken | 7 working | coding-agent |
+| 3 | Fix Facades | 25 violations | 0 | coding-agent |
+| 4 | Add Cache | 25 missing | 25 added | coding-agent |
+| 5 | Test Compliance | 0/100 score | 100/100 | test-orchestrator-agent |
 
 This architecture ensures clean separation, testability, flexibility, and performance optimization while maintaining simplicity and reliability.

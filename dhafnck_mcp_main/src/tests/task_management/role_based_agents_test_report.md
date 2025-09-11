@@ -4,42 +4,42 @@
 
 ## COORDINATORS
 
-### ✅ security_auditor_agent
+### ✅ security-auditor-agent
 - **Can Write Files**: False
 - **Can Edit Files**: False
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 8
 
-### ✅ deep_research_agent
+### ✅ deep-research-agent
 - **Can Write Files**: False
 - **Can Edit Files**: False
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 10
 
-### ✅ task_planning_agent
+### ✅ task-planning-agent
 - **Can Write Files**: False
 - **Can Edit Files**: False
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 12
 
-### ✅ compliance_scope_agent
+### ✅ compliance-scope-agent
 - **Can Write Files**: False
 - **Can Edit Files**: False
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 9
 
-### ✅ ethical_review_agent
+### ✅ ethical-review-agent
 - **Can Write Files**: False
 - **Can Edit Files**: False
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 9
 
-### ✅ root_cause_analysis_agent
+### ✅ root-cause-analysis-agent
 - **Can Write Files**: False
 - **Can Edit Files**: False
 - **Has Task Management**: True
@@ -48,28 +48,28 @@
 
 ## FILE_CREATORS
 
-### ✅ coding_agent
+### ✅ coding-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 13
 
-### ✅ test_orchestrator_agent
+### ✅ test-orchestrator-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 20
 
-### ✅ documentation_agent
+### ✅ documentation-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 13
 
-### ✅ system_architect_agent
+### ✅ system-architect-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
@@ -99,21 +99,21 @@
 - **Has MCP Tools**: True
 - **Total Tools**: 21
 
-### ✅ devops_agent
+### ✅ devops-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 16
 
-### ✅ performance_load_tester_agent
+### ✅ performance-load-tester-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
 - **Has MCP Tools**: True
 - **Total Tools**: 18
 
-### ✅ analytics_setup_agent
+### ✅ analytics-setup-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True
@@ -127,7 +127,7 @@
 - **Has MCP Tools**: True
 - **Total Tools**: 12
 
-### ✅ branding_agent
+### ✅ branding-agent
 - **Can Write Files**: True
 - **Can Edit Files**: True
 - **Has Task Management**: True

@@ -1,7 +1,7 @@
 # MCP Phase 5 Testing - CRITICAL FAILURE - Final Report
 
 **Date**: September 5, 2025  
-**Agent**: @test_orchestrator_agent  
+**Agent**: test-orchestrator-agent  
 **Phase**: Phase 5 - Subtask Management  
 **Status**: 🚨 **TESTING COMPLETELY BLOCKED** 🚨
 
@@ -148,7 +148,7 @@ This issue has been encountered and "fixed" 5 previous times:
 
 ## Test Orchestrator Agent Status
 
-**Agent**: @test_orchestrator_agent  
+**Agent**: test-orchestrator-agent  
 **Status**: Testing suspended due to critical system failure  
 **Recommendation**: Do not proceed with MCP testing until subtask persistence is resolved
 

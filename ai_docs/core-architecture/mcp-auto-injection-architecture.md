@@ -238,7 +238,7 @@ def load_development_context(source):
     context_parts = []
     
     # CRITICAL: Master orchestrator loading (existing)
-    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('@master_orchestrator_agent')")
+    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent')")
     
     # NEW: Auto-inject pending tasks via HTTP
     try:

@@ -1,7 +1,7 @@
 # Task List Git Branch Filtering Fix
 
 **Date**: 2025-08-24  
-**Agent**: @debugger_agent  
+**Agent**: debugger-agent  
 **Status**: ✅ FIXED  
 **Priority**: Critical  
 

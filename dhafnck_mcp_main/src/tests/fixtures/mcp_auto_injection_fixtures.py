@@ -708,7 +708,7 @@ def validation_helpers():
             """Validate session context structure."""
             validations = {
                 "has_initialization": "🚀 INITIALIZATION REQUIRED" in context,
-                "has_call_agent": "call_agent('@master_orchestrator_agent')" in context,
+                "has_call_agent": "call_agent('master-orchestrator-agent')" in context,
                 "has_session_source": "Session source:" in context,
                 "has_mcp_context": "=== MCP LIVE CONTEXT ===" in context or "⚠️ **MCP Status:**" in context,
                 "has_git_context": "🌿 **Git Status:**" in context,

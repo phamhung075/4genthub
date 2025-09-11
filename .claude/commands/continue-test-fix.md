@@ -24,7 +24,7 @@ KEY REQUIREMENTS
 
 ENTRY POINT
 -----------
-START → Call @test_orchestrator_agent
+START → Call test-orchestrator-agent
 
 TESTING DECISION TREE
 ---------------------

@@ -209,11 +209,11 @@ When generating issue fix prompts:
 
 ### 1. AGENT SELECTION
 Use appropriate agent based on issue type:
-- `@debugger_agent`: For bug fixes and troubleshooting
-- `@coding_agent`: For feature implementation
-- `@test_orchestrator_agent`: For testing-related issues
-- `@security_auditor_agent`: For security fixes
-- `@documentation_agent`: For documentation issues
+- `debugger-agent`: For bug fixes and troubleshooting
+- `coding-agent`: For feature implementation
+- `test-orchestrator-agent`: For testing-related issues
+- `security-auditor-agent`: For security fixes
+- `documentation-agent`: For documentation issues
 
 ### 2. CONTEXT RESOLUTION
 Always include:

@@ -86,8 +86,8 @@ class TestContextInheritanceService4Layer:
                 "branch_protection": True
             },
             "agent_assignments": {
-                "primary_agent": "@coding_agent",
-                "reviewer_agent": "@code_reviewer_agent"
+                "primary_agent": "coding-agent",
+                "reviewer_agent": "code-reviewer-agent"
             },
             "local_overrides": {
                 "security_policies.mfa_required": False  # Development branch
@@ -164,7 +164,7 @@ class TestContextInheritanceService4Layer:
         # Check that branch-specific configs are added
         assert result["branch_workflow"]["feature_flags"] is True
         assert result["branch_standards"]["commit_message_format"] == "conventional"
-        assert result["agent_assignments"]["primary_agent"] == "@coding_agent"
+        assert result["agent_assignments"]["primary_agent"] == "coding-agent"
         
         # Check that branch overrides are applied
         assert result["security_policies"]["mfa_required"] is False  # Branch override
@@ -237,7 +237,7 @@ class TestContextInheritanceService4Layer:
         
         # Branch data
         assert final_result["branch_workflow"]["feature_flags"] is True
-        assert final_result["agent_assignments"]["primary_agent"] == "@coding_agent"
+        assert final_result["agent_assignments"]["primary_agent"] == "coding-agent"
         
         # Task data
         assert final_result["task_data"]["implementation_approach"] == "TDD"

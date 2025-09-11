@@ -195,6 +195,6 @@ python debug_task_persistence_local.py
 
 ---
 
-**Investigation by**: @debugger_agent  
+**Investigation by**: debugger-agent  
 **Date**: 2025-08-24  
 **Version**: v2.1.1  

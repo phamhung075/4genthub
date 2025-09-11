@@ -38,7 +38,7 @@ class MockTask:
     
     def __post_init__(self):
         if not self.assignees:
-            self.assignees = ["@coding_agent"]
+            self.assignees = ["coding-agent"]
         if not self.created_at:
             self.created_at = datetime.utcnow().isoformat()
         if not self.updated_at:

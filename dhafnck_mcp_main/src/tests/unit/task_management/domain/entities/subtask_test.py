@@ -91,7 +91,7 @@ class TestSubtaskCreation:
             parent_task_id=parent_task_id,
             status=TaskStatus.review(),
             priority=Priority.urgent(),
-            assignees=["@coding_agent", "@reviewer"],
+            assignees=["coding-agent", "@reviewer"],
             progress_percentage=80,
             created_at=created_at,
             updated_at=updated_at
@@ -103,7 +103,7 @@ class TestSubtaskCreation:
         assert subtask.parent_task_id == parent_task_id
         assert subtask.status.value == TaskStatusEnum.REVIEW.value
         assert subtask.priority.value == "urgent"
-        assert subtask.assignees == ["@coding_agent", "@reviewer"]
+        assert subtask.assignees == ["coding-agent", "@reviewer"]
         assert subtask.progress_percentage == 80
         assert subtask.created_at == created_at
         assert subtask.updated_at == updated_at
@@ -410,11 +410,11 @@ class TestSubtaskAssigneeManagement:
         )
         
         with patch('fastmcp.task_management.domain.enums.agent_roles.AgentRole.is_valid_role', return_value=True):
-            subtask.update_assignees(["@user1", "coding_agent", "@user2"])
+            subtask.update_assignees(["@user1", "coding-agent", "@user2"])
         
         # Should normalize agent roles
         assert "@user1" in subtask.assignees
-        assert "@coding_agent" in subtask.assignees  # Should add @ prefix
+        assert "coding-agent" in subtask.assignees  # Should add @ prefix
         assert "@user2" in subtask.assignees
         
         # Check domain event
@@ -454,11 +454,11 @@ class TestSubtaskAssigneeManagement:
         
         # Mock AgentRole enum
         mock_role = Mock(spec=AgentRole)
-        mock_role.value = "coding_agent"
+        mock_role.value = "coding-agent"
         
         subtask.add_assignee(mock_role)
         
-        assert "@coding_agent" in subtask.assignees
+        assert "coding-agent" in subtask.assignees
     
     def test_remove_assignee(self):
         """Test removing assignee."""
@@ -490,16 +490,16 @@ class TestSubtaskAssigneeManagement:
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
-            assignees=["@coding_agent", "@user1"]
+            assignees=["coding-agent", "@user1"]
         )
         
         # Mock AgentRole enum
         mock_role = Mock(spec=AgentRole)
-        mock_role.value = "coding_agent"
+        mock_role.value = "coding-agent"
         
         subtask.remove_assignee(mock_role)
         
-        assert "@coding_agent" not in subtask.assignees
+        assert "coding-agent" not in subtask.assignees
         assert "@user1" in subtask.assignees
 
 
@@ -684,7 +684,7 @@ class TestSubtaskSerialization:
             parent_task_id=parent_task_id,
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
-            assignees=["@user1", "@coding_agent"],
+            assignees=["@user1", "coding-agent"],
             progress_percentage=75,
             created_at=created_at,
             updated_at=updated_at
@@ -698,7 +698,7 @@ class TestSubtaskSerialization:
         assert data["parent_task_id"] == "parent-456"
         assert data["status"] == "in_progress"
         assert data["priority"] == "high"
-        assert data["assignees"] == ["@user1", "@coding_agent"]
+        assert data["assignees"] == ["@user1", "coding-agent"]
         assert data["progress_percentage"] == 75
         assert data["created_at"] == created_at.isoformat()
         assert data["updated_at"] == updated_at.isoformat()
@@ -780,7 +780,7 @@ class TestSubtaskSerialization:
             parent_task_id=parent_task_id,
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
-            assignees=["@user1", "@coding_agent"],
+            assignees=["@user1", "coding-agent"],
             progress_percentage=60
         )
         

@@ -311,12 +311,12 @@ const context = await client.callTool('manage_context', {
 ```javascript
 // Switch to coding agent
 await client.callTool('call_agent', {
-  name_agent: '@coding_agent'
+  name_agent: 'coding-agent'
 });
 
 // Call documentation agent
 await client.callTool('call_agent', {
-  name_agent: '@documentation_agent'
+  name_agent: 'documentation-agent'
 });
 ```
 

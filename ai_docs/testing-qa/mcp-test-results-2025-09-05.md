@@ -2,7 +2,7 @@
 
 ## Test Summary
 
-**Test Orchestrator Agent**: @test_orchestrator_agent
+**Test Orchestrator Agent**: test-orchestrator-agent
 **Test Date**: 2025-09-05
 **Test Environment**: Development (Keycloak auth, local PostgreSQL docker)
 **Authentication Mode**: MCP_AUTH_MODE=testing (bypasses authentication)
@@ -230,7 +230,7 @@ async def create_task(self, git_branch_id: str, **kwargs) -> TaskResult:
 - Architecture: Domain-Driven Design with 4-tier context hierarchy
 
 **Testing Agent Configuration:**
-- Agent: @test_orchestrator_agent
+- Agent: test-orchestrator-agent
 - Protocol: 8-phase systematic testing
 - Error Handling: Stop-on-error with documentation
 - DDD Compliance: Required for all operations

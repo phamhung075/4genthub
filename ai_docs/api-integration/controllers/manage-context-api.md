@@ -330,7 +330,7 @@ Adds structured insights to context for knowledge capture.
   "content": "JWT refresh tokens should be stored as httpOnly cookies to prevent XSS attacks. This requires CORS configuration updates for cross-domain requests.",
   "category": "technical", 
   "importance": "high",
-  "agent": "@security_auditor_agent"
+  "agent": "security-auditor-agent"
 }
 ```
 
@@ -443,7 +443,7 @@ Any other fields are automatically stored in **`local_standards._custom`**:
 {"action": "add_insight", "content": "Database schema needs indexes", "agent": "@database_agent"}
 
 // Agent 2 builds upon those insights  
-{"action": "add_progress", "content": "Added indexes based on database analysis", "agent": "@coding_agent"}
+{"action": "add_progress", "content": "Added indexes based on database analysis", "agent": "coding-agent"}
 ```
 
 ### Knowledge Delegation Workflow

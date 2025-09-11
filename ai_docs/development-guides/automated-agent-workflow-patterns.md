@@ -15,40 +15,40 @@ def automated_research_cycle():
     """
     while project_active:
         # Cycle 1: Discovery
-        @deep_research_agent.execute({
+        deep-research-agent.execute({
             "trigger": "every_4_hours",
             "task": "Scan for new technologies, competitors, trends",
             "on_discovery": lambda findings: {
                 "if": "relevant_finding",
-                "then": trigger("@llm_ai_agents_research", findings)
+                "then": trigger("llm-ai-agents-research", findings)
             }
         })
         
         # Cycle 2: AI Enhancement Research
-        @llm_ai_agents_research.execute({
+        llm-ai-agents-research.execute({
             "trigger": "on_research_finding",
             "task": "Analyze AI/ML integration opportunities",
             "on_complete": lambda opportunities: {
                 "if": "viable_opportunity",
-                "then": trigger("@technology_advisor_agent", opportunities)
+                "then": trigger("technology-advisor-agent", opportunities)
             }
         })
         
         # Cycle 3: Technology Evaluation
-        @technology_advisor_agent.execute({
+        technology-advisor-agent.execute({
             "trigger": "on_opportunity_found",
             "task": "Evaluate technology feasibility and ROI",
             "on_complete": lambda evaluation: {
                 "if": "positive_roi",
                 "then": [
-                    trigger("@creative_ideation_agent", evaluation),
-                    trigger("@task_planning_agent", "create_implementation_tasks")
+                    trigger("creative-ideation-agent", evaluation),
+                    trigger("task-planning-agent", "create_implementation_tasks")
                 ]
             }
         })
         
         # Cycle 4: Creative Enhancement
-        @creative_ideation_agent.execute({
+        creative-ideation-agent.execute({
             "trigger": "on_new_technology",
             "task": "Generate innovative applications",
             "on_complete": lambda ideas: {
@@ -69,7 +69,7 @@ def automated_development_cycle():
     task_queue = TaskQueue()
     
     # Master Orchestrator - Continuous Monitoring
-    @master_orchestrator_agent.run_continuous({
+    master-orchestrator-agent.run_continuous({
         "monitor": ["task_queue", "agent_availability", "project_progress"],
         "actions": {
             "on_new_task": "assign_to_available_agent",
@@ -79,7 +79,7 @@ def automated_development_cycle():
     })
     
     # Task Planning - Automatic Breakdown
-    @task_planning_agent.run_continuous({
+    task-planning-agent.run_continuous({
         "trigger": "on_new_requirement",
         "actions": [
             "break_into_subtasks",
@@ -93,7 +93,7 @@ def automated_development_cycle():
     
     # Coding Agents - Pool of Workers
     for i in range(5):  # 5 parallel coding agents
-        @coding_agent[i].run_continuous({
+        coding-agent[i].run_continuous({
             "get_task": task_queue.pull_task,
             "execute": {
                 "implement_feature": True,
@@ -113,7 +113,7 @@ def automated_development_cycle():
         })
     
     # Code Review - Automatic Quality Gate
-    @code_reviewer_agent.run_continuous({
+    code-reviewer-agent.run_continuous({
         "trigger": "on_code_complete",
         "actions": [
             "review_code_quality",
@@ -128,7 +128,7 @@ def automated_development_cycle():
     })
     
     # Debugger - Automatic Issue Resolution
-    @debugger_agent.run_continuous({
+    debugger-agent.run_continuous({
         "trigger": ["on_bug_found", "on_test_failure", "on_review_escalation"],
         "actions": [
             "analyze_issue",
@@ -149,7 +149,7 @@ def automated_testing_cycle():
     """
     
     # Test Orchestrator - Central Coordinator
-    @test_orchestrator_agent.run_continuous({
+    test-orchestrator-agent.run_continuous({
         "monitor": ["code_changes", "test_coverage", "test_results"],
         "orchestrate": {
             "on_new_code": [
@@ -166,7 +166,7 @@ def automated_testing_cycle():
     })
     
     # Parallel Test Generation
-    @coding_agent.test_writer.run_continuous({
+    coding-agent.test_writer.run_continuous({
         "trigger": "on_test_gap_identified",
         "generate": {
             "unit_tests": {
@@ -187,7 +187,7 @@ def automated_testing_cycle():
     })
     
     # Performance Testing - Continuous Benchmarking
-    @performance_load_tester_agent.run_continuous({
+    performance-load-tester-agent.run_continuous({
         "schedule": "every_2_hours",
         "tests": [
             {
@@ -208,7 +208,7 @@ def automated_testing_cycle():
     })
     
     # Security Testing - Continuous Scanning
-    @security_auditor_agent.run_continuous({
+    security-auditor-agent.run_continuous({
         "schedule": "on_every_commit",
         "scans": [
             "dependency_vulnerabilities",
@@ -224,7 +224,7 @@ def automated_testing_cycle():
     })
     
     # UAT Coordination - User Feedback Loop
-    @uat_coordinator_agent.run_continuous({
+    uat-coordinator-agent.run_continuous({
         "trigger": "on_feature_complete",
         "actions": [
             "deploy_to_staging",
@@ -248,7 +248,7 @@ def automated_architecture_evolution():
     """
     
     # System Architect - Continuous Evolution
-    @system_architect_agent.run_continuous({
+    system-architect-agent.run_continuous({
         "monitor": [
             "performance_metrics",
             "scalability_limits",
@@ -268,7 +268,7 @@ def automated_architecture_evolution():
     })
     
     # Core Concepts - Domain Model Evolution
-    @core_concept_agent.run_continuous({
+    core-concept-agent.run_continuous({
         "trigger": "on_business_logic_change",
         "actions": [
             "update_domain_models",
@@ -283,7 +283,7 @@ def automated_architecture_evolution():
     })
     
     # Efficiency Optimizer - Continuous Improvement
-    @efficiency_optimization_agent.run_continuous({
+    efficiency-optimization-agent.run_continuous({
         "analyze": {
             "performance_profiles": "every_hour",
             "resource_usage": "real_time",
@@ -317,7 +317,7 @@ def automated_deployment_cycle():
     """
     
     # DevOps Agent - Continuous Deployment
-    @devops_agent.run_continuous({
+    devops-agent.run_continuous({
         "pipeline": {
             "trigger": "on_tests_passed",
             "stages": [
@@ -359,7 +359,7 @@ def automated_deployment_cycle():
     })
     
     # Health Monitor - Continuous Vigilance
-    @health_monitor_agent.run_continuous({
+    health-monitor-agent.run_continuous({
         "monitor": {
             "application_health": "real_time",
             "infrastructure_health": "every_minute",
@@ -393,7 +393,7 @@ def automated_documentation_cycle():
     Self-updating documentation system
     """
     
-    @documentation_agent.run_continuous({
+    documentation-agent.run_continuous({
         "monitors": [
             "code_changes",
             "api_changes",
@@ -434,7 +434,7 @@ def automated_growth_cycle():
     """
     
     # Marketing Strategy Orchestrator
-    @marketing_strategy_orchestrator_agent.run_continuous({
+    marketing-strategy-orchestrator-agent.run_continuous({
         "analyze": {
             "user_behavior": "real_time",
             "conversion_funnels": "hourly",
@@ -460,7 +460,7 @@ def automated_growth_cycle():
     })
     
     # Community Strategy Agent
-    @community_strategy_agent.run_continuous({
+    community-strategy-agent.run_continuous({
         "monitor": {
             "community_platforms": ["Discord", "Slack", "Forums"],
             "sentiment_analysis": True,
@@ -479,7 +479,7 @@ def automated_growth_cycle():
     })
     
     # Analytics Setup Agent
-    @analytics_setup_agent.run_continuous({
+    analytics-setup-agent.run_continuous({
         "track": {
             "user_events": "comprehensive",
             "performance_metrics": "detailed",
@@ -681,22 +681,22 @@ def fully_automated_project():
     
     # Phase 1: Automatic Discovery & Planning (0-4 hours)
     with parallel_execution():
-        research_findings = deep_research_agent.research_market()
-        requirements = elicitation_agent.generate_requirements(research_findings)
-        tech_stack = technology_advisor_agent.recommend_stack(requirements)
-        tasks = task_planning_agent.create_task_breakdown(requirements)
-        brand = branding_agent.create_brand_identity(project.name)
+        research_findings = deep-research-agent.research_market()
+        requirements = elicitation-agent.generate_requirements(research_findings)
+        tech_stack = technology-advisor-agent.recommend_stack(requirements)
+        tasks = task-planning-agent.create_task_breakdown(requirements)
+        brand = branding-agent.create_brand_identity(project.name)
     
     # Phase 2: Automatic Architecture & Design (4-12 hours)
     with parallel_execution():
-        architecture = system_architect_agent.design_system(requirements, tech_stack)
-        ui_design = ui_specialist_agent.create_designs(brand, requirements)
-        prototypes = prototyping_agent.build_prototypes(ui_design)
-        security_design = security_auditor_agent.design_security(architecture)
+        architecture = system-architect-agent.design_system(requirements, tech_stack)
+        ui_design = ui-specialist-agent.create_designs(brand, requirements)
+        prototypes = prototyping-agent.build_prototypes(ui_design)
+        security_design = security-auditor-agent.design_security(architecture)
     
     # Phase 3: Automatic Implementation (12-72 hours)
     implementation_pool = AgentPool([
-        coding_agent(instance=i) for i in range(10)  # 10 parallel coders
+        coding-agent(instance=i) for i in range(10)  # 10 parallel coders
     ])
     
     task_queue = TaskQueue(tasks)
@@ -705,29 +705,29 @@ def fully_automated_project():
             for agent in implementation_pool.available_agents():
                 task = task_queue.get_next()
                 agent.implement(task)
-                code_reviewer_agent.review(agent.output)
-                test_orchestrator_agent.test(agent.output)
+                code-reviewer-agent.review(agent.output)
+                test-orchestrator-agent.test(agent.output)
     
     # Phase 4: Automatic Testing & Optimization (72-96 hours)
     with parallel_execution():
-        test_orchestrator_agent.run_full_test_suite()
-        performance_load_tester_agent.run_performance_tests()
-        security_auditor_agent.run_security_audit()
-        uat_coordinator_agent.coordinate_user_testing()
-        efficiency_optimization_agent.optimize_performance()
+        test-orchestrator-agent.run_full_test_suite()
+        performance-load-tester-agent.run_performance_tests()
+        security-auditor-agent.run_security_audit()
+        uat-coordinator-agent.coordinate_user_testing()
+        efficiency-optimization-agent.optimize_performance()
     
     # Phase 5: Automatic Deployment (96-100 hours)
     if all_quality_gates_passed():
-        devops_agent.deploy_to_production()
-        health_monitor_agent.monitor_deployment()
+        devops-agent.deploy_to_production()
+        health-monitor-agent.monitor_deployment()
         
     # Phase 6: Automatic Growth & Maintenance (Continuous)
     with continuous_execution():
-        marketing_strategy_orchestrator_agent.execute_growth_strategy()
-        community_strategy_agent.build_community()
-        analytics_setup_agent.track_metrics()
-        health_monitor_agent.ensure_uptime()
-        root_cause_analysis_agent.analyze_issues()
+        marketing-strategy-orchestrator-agent.execute_growth_strategy()
+        community-strategy-agent.build_community()
+        analytics-setup-agent.track_metrics()
+        health-monitor-agent.ensure_uptime()
+        root-cause-analysis-agent.analyze_issues()
     
     return project.get_results()
 ```

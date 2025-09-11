@@ -69,7 +69,7 @@
   "git_branch_id": "741854b4-a0f4-4b39-b2ab-b27dfc97a851",
   "title": "Test Task Creation After Fix",
   "description": "Verifying task creation works after import fix", 
-  "assignees": "@@coding_agent,@test-orchestrator-agent",
+  "assignees": "@coding-agent,@test-orchestrator-agent",
   "priority": "high",
   "estimated_effort": "1 hour"
 }

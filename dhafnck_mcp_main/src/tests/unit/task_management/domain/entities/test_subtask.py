@@ -523,10 +523,10 @@ class TestSubtaskAssigneeManagement:
         )
         
         # Update with valid agent roles
-        subtask.update_assignees(["coding_agent", "@devops_agent"])
+        subtask.update_assignees(["coding-agent", "devops-agent"])
         assert len(subtask.assignees) == 2
-        assert "@coding_agent" in subtask.assignees
-        assert "@devops_agent" in subtask.assignees
+        assert "coding-agent" in subtask.assignees
+        assert "devops-agent" in subtask.assignees
         assert len(subtask._events) == 1
     
     def test_update_assignees_with_legacy_roles(self):
@@ -542,7 +542,7 @@ class TestSubtaskAssigneeManagement:
         
         # Legacy roles should be resolved
         subtask.update_assignees(["senior_developer", "qa_engineer"])
-        assert "@coding_agent" in subtask.assignees  # senior_developer -> coding_agent
+        assert "coding-agent" in subtask.assignees  # senior_developer -> coding-agent
         assert "@functional_tester_agent" in subtask.assignees  # qa_engineer -> functional_tester_agent
     
     def test_update_assignees_empty_strings_filtered(self):
@@ -556,9 +556,9 @@ class TestSubtaskAssigneeManagement:
             parent_task_id=parent_task_id
         )
         
-        subtask.update_assignees(["", "  ", "coding_agent", ""])
+        subtask.update_assignees(["", "  ", "coding-agent", ""])
         assert len(subtask.assignees) == 1
-        assert "@coding_agent" in subtask.assignees
+        assert "coding-agent" in subtask.assignees
     
     def test_add_assignee_string(self):
         """Test adding a single assignee."""
@@ -571,8 +571,8 @@ class TestSubtaskAssigneeManagement:
             parent_task_id=parent_task_id
         )
         
-        subtask.add_assignee("coding_agent")
-        assert "@coding_agent" in subtask.assignees
+        subtask.add_assignee("coding-agent")
+        assert "coding-agent" in subtask.assignees
         assert len(subtask._events) == 1
     
     def test_add_assignee_enum(self):
@@ -587,7 +587,7 @@ class TestSubtaskAssigneeManagement:
         )
         
         subtask.add_assignee(AgentRole.DEVOPS)
-        assert "@devops_agent" in subtask.assignees
+        assert "devops-agent" in subtask.assignees
     
     def test_add_assignee_duplicate(self):
         """Test adding duplicate assignee doesn't create duplicates."""
@@ -600,9 +600,9 @@ class TestSubtaskAssigneeManagement:
             parent_task_id=parent_task_id
         )
         
-        subtask.add_assignee("coding_agent")
-        subtask.add_assignee("coding_agent")
-        assert subtask.assignees.count("@coding_agent") == 1
+        subtask.add_assignee("coding-agent")
+        subtask.add_assignee("coding-agent")
+        assert subtask.assignees.count("coding-agent") == 1
     
     def test_remove_assignee_string(self):
         """Test removing an assignee."""
@@ -613,12 +613,12 @@ class TestSubtaskAssigneeManagement:
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
-            assignees=["@coding_agent", "@devops_agent"]
+            assignees=["coding-agent", "devops-agent"]
         )
         
-        subtask.remove_assignee("@coding_agent")
-        assert "@coding_agent" not in subtask.assignees
-        assert "@devops_agent" in subtask.assignees
+        subtask.remove_assignee("coding-agent")
+        assert "coding-agent" not in subtask.assignees
+        assert "devops-agent" in subtask.assignees
         assert len(subtask._events) == 1
     
     def test_remove_assignee_enum(self):
@@ -630,12 +630,12 @@ class TestSubtaskAssigneeManagement:
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
-            assignees=["@coding_agent", "@devops_agent"]
+            assignees=["coding-agent", "devops-agent"]
         )
         
         subtask.remove_assignee(AgentRole.DEVOPS)
-        assert "@devops_agent" not in subtask.assignees
-        assert "@coding_agent" in subtask.assignees
+        assert "devops-agent" not in subtask.assignees
+        assert "coding-agent" in subtask.assignees
     
     def test_remove_assignee_not_present(self):
         """Test removing assignee that's not present."""
@@ -646,12 +646,12 @@ class TestSubtaskAssigneeManagement:
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
-            assignees=["@coding_agent"]
+            assignees=["coding-agent"]
         )
         
-        subtask.remove_assignee("@devops_agent")
+        subtask.remove_assignee("devops-agent")
         # Should not raise error
-        assert "@coding_agent" in subtask.assignees
+        assert "coding-agent" in subtask.assignees
         assert len(subtask._events) == 0  # No event since nothing was removed
 
 
@@ -729,7 +729,7 @@ class TestSubtaskSerialization:
             parent_task_id=parent_task_id,
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
-            assignees=["@coding_agent", "@devops_agent"]
+            assignees=["coding-agent", "devops-agent"]
         )
         
         data = subtask.to_dict()
@@ -740,7 +740,7 @@ class TestSubtaskSerialization:
         assert data["parent_task_id"] == str(parent_task_id)
         assert data["status"] == "in_progress"
         assert data["priority"] == "high"
-        assert data["assignees"] == ["@coding_agent", "@devops_agent"]
+        assert data["assignees"] == ["coding-agent", "devops-agent"]
         assert data["created_at"] is not None
         assert data["updated_at"] is not None
     
@@ -754,7 +754,7 @@ class TestSubtaskSerialization:
             "description": "Test description",
             "status": "in_progress",
             "priority": "high",
-            "assignees": ["@coding_agent", "@devops_agent"],
+            "assignees": ["coding-agent", "devops-agent"],
             "created_at": "2024-01-01T12:00:00+00:00",
             "updated_at": "2024-01-01T13:00:00+00:00"
         }
@@ -767,7 +767,7 @@ class TestSubtaskSerialization:
         assert subtask.parent_task_id == parent_task_id
         assert subtask.status.value == "in_progress"
         assert subtask.priority.value == "high"
-        assert subtask.assignees == ["@coding_agent", "@devops_agent"]
+        assert subtask.assignees == ["coding-agent", "devops-agent"]
         assert subtask.created_at == datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         assert subtask.updated_at == datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
     
@@ -823,7 +823,7 @@ class TestSubtaskIntegration:
         
         # Assign team
         subtask.add_assignee(AgentRole.CODING)
-        subtask.add_assignee("@code_reviewer_agent")
+        subtask.add_assignee("code-reviewer-agent")
         
         # Start work
         subtask.update_status(TaskStatus.in_progress())
@@ -836,8 +836,8 @@ class TestSubtaskIntegration:
         
         # Verify final state
         assert subtask.is_completed
-        assert "@coding_agent" in subtask.assignees
-        assert "@code_reviewer_agent" in subtask.assignees
+        assert "coding-agent" in subtask.assignees
+        assert "code-reviewer-agent" in subtask.assignees
         assert subtask.description == "Add new feature to the system - IN PROGRESS"
         
         # Check events

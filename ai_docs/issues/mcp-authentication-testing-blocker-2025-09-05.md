@@ -4,7 +4,7 @@
 **Severity:** CRITICAL  
 **Status:** OPEN  
 **Component:** Authentication System / MCP Tools Integration  
-**Reporter:** @test_orchestrator_agent
+**Reporter:** test-orchestrator-agent
 
 ## Executive Summary
 
@@ -221,6 +221,6 @@ This is a **critical blocker** that prevents any MCP tool testing. The authentic
 
 ---
 
-**Reported by:** @test_orchestrator_agent  
+**Reported by:** test-orchestrator-agent  
 **Testing Framework:** Comprehensive MCP Tool Testing Suite  
 **Environment:** Development (Keycloak + PostgreSQL + Docker)

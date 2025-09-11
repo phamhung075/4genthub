@@ -9,58 +9,58 @@
 ### Documentation Agents
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `tech_spec_agent` | `documentation_agent` | ✅ Use `documentation_agent` |
-| `tech-spec-agent` | `@documentation_agent` | ✅ Use `@documentation_agent` |
-| `prd_architect_agent` | `documentation_agent` | ✅ Use `documentation_agent` |
-| `prd-architect-agent` | `@documentation_agent` | ✅ Use `@documentation_agent` |
+| `tech_spec_agent` | `documentation-agent` | ✅ Use `documentation-agent` |
+| `tech-spec-agent` | `documentation-agent` | ✅ Use `documentation-agent` |
+| `prd_architect_agent` | `documentation-agent` | ✅ Use `documentation-agent` |
+| `prd-architect-agent` | `documentation-agent` | ✅ Use `documentation-agent` |
 
 ### Research Agents
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `mcp_researcher_agent` | `deep_research_agent` | ✅ Use `deep_research_agent` |
-| `mcp-researcher-agent` | `@deep_research_agent` | ✅ Use `@deep_research_agent` |
+| `mcp_researcher_agent` | `deep-research-agent` | ✅ Use `deep-research-agent` |
+| `mcp-researcher-agent` | `deep-research-agent` | ✅ Use `deep-research-agent` |
 
 ### Creative Agents  
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `idea_generation_agent` | `creative_ideation_agent` | ✅ Use `creative_ideation_agent` |
-| `idea-generation-agent` | `@creative_ideation_agent` | ✅ Use `@creative_ideation_agent` |
-| `idea_refinement_agent` | `creative_ideation_agent` | ✅ Use `creative_ideation_agent` |
-| `idea-refinement-agent` | `@creative_ideation_agent` | ✅ Use `@creative_ideation_agent` |
+| `idea_generation_agent` | `creative-ideation-agent` | ✅ Use `creative-ideation-agent` |
+| `idea-generation-agent` | `creative-ideation-agent` | ✅ Use `creative-ideation-agent` |
+| `idea_refinement_agent` | `creative-ideation-agent` | ✅ Use `creative-ideation-agent` |
+| `idea-refinement-agent` | `creative-ideation-agent` | ✅ Use `creative-ideation-agent` |
 
 ### Marketing Agents
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `seo_sem_agent` | `marketing_strategy_orchestrator_agent` | ✅ Use `marketing_strategy_orchestrator_agent` |
-| `seo-sem-agent` | `@marketing_strategy_orchestrator_agent` | ✅ Use `@marketing_strategy_orchestrator_agent` |
-| `growth_hacking_idea_agent` | `marketing_strategy_orchestrator_agent` | ✅ Use `marketing_strategy_orchestrator_agent` |
-| `growth-hacking-idea-agent` | `@marketing_strategy_orchestrator_agent` | ✅ Use `@marketing_strategy_orchestrator_agent` |
-| `content_strategy_agent` | `marketing_strategy_orchestrator_agent` | ✅ Use `marketing_strategy_orchestrator_agent` |
-| `content-strategy-agent` | `@marketing_strategy_orchestrator_agent` | ✅ Use `@marketing_strategy_orchestrator_agent` |
+| `seo_sem_agent` | `marketing-strategy-orchestrator-agent` | ✅ Use `marketing-strategy-orchestrator-agent` |
+| `seo-sem-agent` | `marketing-strategy-orchestrator-agent` | ✅ Use `marketing-strategy-orchestrator-agent` |
+| `growth_hacking_idea_agent` | `marketing-strategy-orchestrator-agent` | ✅ Use `marketing-strategy-orchestrator-agent` |
+| `growth-hacking-idea-agent` | `marketing-strategy-orchestrator-agent` | ✅ Use `marketing-strategy-orchestrator-agent` |
+| `content_strategy_agent` | `marketing-strategy-orchestrator-agent` | ✅ Use `marketing-strategy-orchestrator-agent` |
+| `content-strategy-agent` | `marketing-strategy-orchestrator-agent` | ✅ Use `marketing-strategy-orchestrator-agent` |
 
 ### DevOps Agents
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `swarm_scaler_agent` | `devops_agent` | ✅ Use `devops_agent` |
-| `swarm-scaler-agent` | `@devops_agent` | ✅ Use `@devops_agent` |
-| `adaptive_deployment_strategist_agent` | `devops_agent` | ✅ Use `devops_agent` |
-| `adaptive-deployment-strategist-agent` | `@devops_agent` | ✅ Use `@devops_agent` |
-| `mcp_configuration_agent` | `devops_agent` | ✅ Use `devops_agent` |
-| `mcp-configuration-agent` | `@devops_agent` | ✅ Use `@devops_agent` |
+| `swarm_scaler_agent` | `devops-agent` | ✅ Use `devops-agent` |
+| `swarm-scaler-agent` | `devops-agent` | ✅ Use `devops-agent` |
+| `adaptive_deployment_strategist_agent` | `devops-agent` | ✅ Use `devops-agent` |
+| `adaptive-deployment-strategist-agent` | `devops-agent` | ✅ Use `devops-agent` |
+| `mcp_configuration_agent` | `devops-agent` | ✅ Use `devops-agent` |
+| `mcp-configuration-agent` | `devops-agent` | ✅ Use `devops-agent` |
 
 ### Debug Agents
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `remediation_agent` | `debugger_agent` | ✅ Use `debugger_agent` |
-| `remediation-agent` | `@debugger_agent` | ✅ Use `@debugger_agent` |
+| `remediation_agent` | `debugger-agent` | ✅ Use `debugger-agent` |
+| `remediation-agent` | `debugger-agent` | ✅ Use `debugger-agent` |
 
 ### Renamed Agents
 | Deprecated Name | Active Name | Migration Status |
 |-----------------|-------------|------------------|
-| `brainjs_ml_agent` | `ml_specialist_agent` | ✅ Use `ml_specialist_agent` |
-| `brainjs-ml-agent` | `@ml_specialist_agent` | ✅ Use `@ml_specialist_agent` |
-| `ui_designer_expert_shadcn_agent` | `ui_specialist_agent` | ✅ Use `ui_specialist_agent` |
-| `ui-designer-expert-shadcn-agent` | `@ui_specialist_agent` | ✅ Use `@ui_specialist_agent` |
+| `brainjs_ml_agent` | `ml-specialist-agent` | ✅ Use `ml-specialist-agent` |
+| `brainjs-ml-agent` | `ml-specialist-agent` | ✅ Use `ml-specialist-agent` |
+| `ui_designer_expert_shadcn_agent` | `ui-specialist-agent` | ✅ Use `ui-specialist-agent` |
+| `ui-designer-expert-shadcn-agent` | `ui-specialist-agent` | ✅ Use `ui-specialist-agent` |
 
 ## Migration Steps
 
@@ -73,8 +73,8 @@ grep -r "mcp_researcher_agent" .
 # ... etc for other deprecated names
 
 # Replace with active names
-sed -i 's/tech_spec_agent/@documentation_agent/g' **/*.py
-sed -i 's/prd_architect_agent/@documentation_agent/g' **/*.py
+sed -i 's/tech_spec_agent/documentation-agent/g' **/*.py
+sed -i 's/prd_architect_agent/documentation-agent/g' **/*.py
 # ... etc for other replacements
 ```
 
@@ -88,9 +88,9 @@ agents:
 
 # After  
 agents:
-  documentation: @documentation_agent
-  research: @deep_research_agent
-  creative: @creative_ideation_agent
+  documentation: documentation-agent
+  research: deep-research-agent
+  creative: creative-ideation-agent
 ```
 
 ### 3. Update API Calls
@@ -100,8 +100,8 @@ task = Task(subagent_type="tech_spec_agent", ...)
 response = call_agent("prd_architect_agent", task)
 
 # After
-task = Task(subagent_type="@documentation_agent", ...)
-response = call_agent("@documentation_agent", task)
+task = Task(subagent_type="documentation-agent", ...)
+response = call_agent("documentation-agent", task)
 ```
 
 ### 4. Update Documentation
@@ -111,8 +111,8 @@ Use the `tech_spec_agent` for technical specifications.
 The `mcp_researcher_agent` handles research tasks.
 
 <!-- After -->
-Use the `@documentation_agent` for technical specifications.
-The `@deep_research_agent` handles research tasks.
+Use the `documentation-agent` for technical specifications.
+The `deep-research-agent` handles research tasks.
 ```
 
 ## Automated Migration Tools
@@ -122,7 +122,7 @@ The `@deep_research_agent` handles research tasks.
 from fastmcp.task_management.application.use_cases.agent_mappings import is_deprecated_agent
 
 # Check if agent names in your code are deprecated
-agent_names = ["tech_spec_agent", "@documentation_agent", "unknown_agent"]
+agent_names = ["tech_spec_agent", "documentation-agent", "unknown_agent"]
 for name in agent_names:
     if is_deprecated_agent(name):
         print(f"⚠️  {name} is deprecated")
@@ -241,7 +241,7 @@ def verify_agent_names(agent_list):
     return True
 
 # Example usage
-my_agents = ["@documentation_agent", "@deep_research_agent", "@creative_ideation_agent"]
+my_agents = ["documentation-agent", "deep-research-agent", "creative-ideation-agent"]
 if verify_agent_names(my_agents):
     print("🎉 All agent names are current!")
 ```
@@ -257,7 +257,7 @@ A: No, deprecated names still work. However, migrating ensures better long-term 
 A: No, all deprecated names are automatically resolved to active names.
 
 **Q: Can I use both underscore and hyphen formats?**
-A: Yes, both formats are supported: `@documentation_agent` (recommended) and `@documentation_agent` (legacy).
+A: Yes, both formats are supported: `documentation-agent` (recommended) and `documentation-agent` (legacy).
 
 **Q: How do I know if an agent name is deprecated?**
 A: Use the `is_deprecated_agent()` function or check this migration guide.

@@ -25,15 +25,15 @@ This guide provides step-by-step instructions to implement the agent library cle
   - Average quality score: 42.1 → 50.1 (+8 points)
 
 **Completed Agents**:
-1. ✅ master_orchestrator_agent (already excellent)
+1. ✅ master-orchestrator-agent (already excellent)
 2. ✅ ui_designer_expert_shadcn_agent (already excellent) 
-3. ✅ coding_agent ⭐ HIGH PRIORITY
-4. ✅ test_orchestrator_agent ⭐ HIGH PRIORITY
-5. ✅ debugger_agent ⭐ HIGH PRIORITY
-6. ✅ security_auditor_agent ⭐ HIGH PRIORITY
-7. ✅ devops_agent ⭐ HIGH PRIORITY
-8. ✅ deep_research_agent ⭐ HIGH PRIORITY
-9. ✅ code_reviewer_agent
+3. ✅ coding-agent ⭐ HIGH PRIORITY
+4. ✅ test-orchestrator-agent ⭐ HIGH PRIORITY
+5. ✅ debugger-agent ⭐ HIGH PRIORITY
+6. ✅ security-auditor-agent ⭐ HIGH PRIORITY
+7. ✅ devops-agent ⭐ HIGH PRIORITY
+8. ✅ deep-research-agent ⭐ HIGH PRIORITY
+9. ✅ code-reviewer-agent
 10. ✅ functional_tester_agent
 11. ✅ security_penetration_tester_agent
 12. ✅ test_case_generator_agent
@@ -79,13 +79,13 @@ rm -rf dhafnck_mcp_main/agent-library/agents/generic_purpose_agent
 
 #### Step 1.2: Remove Lead Testing Agent
 ```bash
-# Functionality completely overlaps with test_orchestrator_agent
+# Functionality completely overlaps with test-orchestrator-agent
 rm -rf dhafnck_mcp_main/agent-library/agents/lead_testing_agent
 ```
 
 #### Step 1.3: Remove Campaign Manager Agent  
 ```bash
-# Functionality absorbed into marketing_strategy_orchestrator_agent
+# Functionality absorbed into marketing-strategy-orchestrator-agent
 rm -rf dhafnck_mcp_main/agent-library/agents/campaign_manager_agent
 ```
 
@@ -126,9 +126,9 @@ def handle_deprecated_agent(agent_name):
 
 **Target**: Consolidate 6 testing agents → 2 agents
 
-##### Step 2.1.1: Enhance test_orchestrator_agent
+##### Step 2.1.1: Enhance test-orchestrator-agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/test_orchestrator_agent/contexts/test_orchestrator_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/test-orchestrator-agent/contexts/test_orchestrator_agent_instructions.yaml
 
 additional_capabilities:
   functional_testing:
@@ -189,9 +189,9 @@ enhanced_capabilities:
       - "User experience improvement recommendations"
 ```
 
-##### Step 2.2.2: Enhance design_system_agent
+##### Step 2.2.2: Enhance design-system-agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/design_system_agent/contexts/design_system_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/design-system-agent/contexts/design_system_agent_instructions.yaml
 
 expanded_capabilities:
   usability_integration:
@@ -213,9 +213,9 @@ rm -rf dhafnck_mcp_main/agent-library/agents/usability_heuristic_agent
 
 **Target**: Consolidate 4 research agents → 2 agents
 
-##### Step 2.3.1: Enhance deep_research_agent
+##### Step 2.3.1: Enhance deep-research-agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/deep_research_agent/contexts/deep_research_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/deep-research-agent/contexts/deep_research_agent_instructions.yaml
 
 expanded_research_capabilities:
   market_research:
@@ -257,9 +257,9 @@ rm -rf dhafnck_mcp_main/agent-library/agents/ux_researcher_agent
 
 #### Step 3.1: Strategy/Orchestration Consolidation
 
-##### Step 3.1.1: Enhance master_orchestrator_agent
+##### Step 3.1.1: Enhance master-orchestrator-agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/master_orchestrator_agent/contexts/uber_orchestrator_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/master-orchestrator-agent/contexts/uber_orchestrator_agent_instructions.yaml
 
 supreme_orchestration_capabilities:
   development_orchestration:
@@ -296,9 +296,9 @@ rm -rf dhafnck_mcp_main/agent-library/agents/workflow_architect_agent
 
 #### Step 3.2: Security Domain Consolidation
 
-##### Step 3.2.1: Enhance security_auditor_agent
+##### Step 3.2.1: Enhance security-auditor-agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/security_auditor_agent/contexts/security_auditor_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/security-auditor-agent/contexts/security_auditor_agent_instructions.yaml
 
 comprehensive_security_capabilities:
   penetration_testing:
@@ -310,9 +310,9 @@ comprehensive_security_capabilities:
       - "Security findings documentation"
 ```
 
-##### Step 3.2.2: Enhance compliance_scope_agent  
+##### Step 3.2.2: Enhance compliance-scope-agent  
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/compliance_scope_agent/contexts/compliance_scope_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/compliance-scope-agent/contexts/compliance_scope_agent_instructions.yaml
 
 comprehensive_compliance_capabilities:
   compliance_testing:
@@ -332,9 +332,9 @@ rm -rf dhafnck_mcp_main/agent-library/agents/compliance_testing_agent
 
 #### Step 3.3: Documentation/Knowledge Consolidation
 
-##### Step 3.3.1: Enhance documentation_agent
+##### Step 3.3.1: Enhance documentation-agent
 ```yaml
-# Update dhafnck_mcp_main/agent-library/agents/documentation_agent/contexts/documentation_agent_instructions.yaml
+# Update dhafnck_mcp_main/agent-library/agents/documentation-agent/contexts/documentation_agent_instructions.yaml
 
 comprehensive_knowledge_management:
   scribe_capabilities:
@@ -465,8 +465,8 @@ cp -r dhafnck_mcp_main/agent-library.backup/agents/[agent_name] dhafnck_mcp_main
 # Add to agent resolution system
 AGENT_MAPPINGS = {
     'ui_designer_agent': 'ui_designer_expert_shadcn_agent',
-    'lead_testing_agent': 'test_orchestrator_agent',
-    'functional_tester_agent': 'test_orchestrator_agent',
+    'lead_testing_agent': 'test-orchestrator-agent',
+    'functional_tester_agent': 'test-orchestrator-agent',
     # ... additional mappings
 }
 ```

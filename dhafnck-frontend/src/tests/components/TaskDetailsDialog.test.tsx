@@ -90,7 +90,7 @@ describe('TaskDetailsDialog', () => {
         metadata: {
           created_at: '2025-08-27T09:00:00Z',
           updated_at: '2025-08-27T12:00:00Z',
-          agent_id: '@coding_agent'
+          agent_id: 'coding-agent'
         },
         _inheritance: {
           chain: ['global', 'project', 'branch', 'task'],

@@ -30,7 +30,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
 
   // Agent descriptions mapping
   const agentDescriptions: Record<string, { description: string; category: string; skills: string[] }> = {
-    '@@coding_agent': {
+    '@coding-agent': {
       description: 'Implementation and feature development specialist. Transforms specifications into production-ready code.',
       category: 'Development & Coding',
       skills: ['Feature implementation', 'Code refactoring', 'Multiple languages/frameworks', 'Test creation']
@@ -55,7 +55,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
       category: 'DevOps & Deployment',
       skills: ['CI/CD pipelines', 'Container orchestration', 'Cloud deployment', 'Infrastructure as code']
     },
-    '@@system_architect_agent': {
+    '@system-architect-agent': {
       description: 'System design and architecture specialist.',
       category: 'Architecture & Design',
       skills: ['System architecture', 'Design patterns', 'Database design', 'Scalability planning']
@@ -65,7 +65,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
       category: 'Architecture & Design',
       skills: ['React components', 'Tailwind CSS', 'Responsive design', 'Design systems']
     },
-    '@@documentation_agent': {
+    '@documentation-agent': {
       description: 'Technical documentation specialist. Creates comprehensive documentation.',
       category: 'Documentation & Specs',
       skills: ['API documentation', 'User guides', 'Technical writing', 'Knowledge management']

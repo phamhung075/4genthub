@@ -36,7 +36,7 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Agent System Check
 ```bash
 # Verify agent is active
-mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Check agent assignments
 mcp__dhafnck_mcp_http__manage_agent(action="list", project_id="your-project-id")
@@ -271,14 +271,14 @@ docker-compose up
 **Solution**:
 ```bash
 # ALWAYS switch to appropriate agent before work
-mcp__dhafnck_mcp_http__call_agent(name_agent="@coding_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 
 # For different work types:
-# Debug work: @debugger_agent
-# Implementation: @coding_agent  
-# Testing: @test_orchestrator_agent
-# Planning: @task_planning_agent
-# Security: @security_auditor_agent
+# Debug work: debugger-agent
+# Implementation: coding-agent  
+# Testing: test-orchestrator-agent
+# Planning: task-planning-agent
+# Security: security-auditor-agent
 ```
 
 ### 5. Context Resolution Performance Issues
@@ -364,7 +364,7 @@ health = mcp__dhafnck_mcp_http__manage_connection(action="health_check")
 projects = mcp__dhafnck_mcp_http__manage_project(action="list")
 
 # 3. Check agent system
-agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@master_orchestrator_agent")
+agent = mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
 ```
 
 ### Step 2: Context Validation
@@ -483,21 +483,21 @@ elif "cache_inconsistency" in validation.errors:
 ```bash
 # Solution: Use available agents
 available_agents = [
-    "@master_orchestrator_agent",
-    "@coding_agent", 
-    "@debugger_agent",
-    "@test_orchestrator_agent",
-    "@task_planning_agent",
+    "master-orchestrator-agent",
+    "coding-agent", 
+    "debugger-agent",
+    "test-orchestrator-agent",
+    "task-planning-agent",
     "@ui_designer_agent",
-    "@security_auditor_agent",
-    "@documentation_agent"
+    "security-auditor-agent",
+    "documentation-agent"
 ]
 ```
 
 #### "Agent operation timeout" Error
 ```bash
 # Solution: Switch to debugger agent
-mcp__dhafnck_mcp_http__call_agent(name_agent="@debugger_agent")
+mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
 
 # Investigate timeout cause
 # Check system resources
@@ -710,7 +710,7 @@ When reporting issues, include:
 1. Verify agent name has @ prefix
 2. Check available agents list
 3. Ensure no permission errors
-4. Try @master_orchestrator_agent as fallback
+4. Try master-orchestrator-agent as fallback
 
 #### "Context data isn't inheriting"
 1. Validate inheritance chain

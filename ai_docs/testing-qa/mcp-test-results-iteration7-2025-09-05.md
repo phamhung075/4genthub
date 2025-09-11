@@ -1,7 +1,7 @@
 # MCP Tool Testing Protocol Results - Iteration 7
 **Date:** 2025-09-05  
 **Environment:** Development with Keycloak Auth + PostgreSQL  
-**Testing Agent:** @test_orchestrator_agent  
+**Testing Agent:** test-orchestrator-agent  
 **Protocol Version:** Complete 8-Phase Testing Protocol  
 
 ## Executive Summary

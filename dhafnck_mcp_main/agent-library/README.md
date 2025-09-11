@@ -17,72 +17,72 @@ The DhafnckMCP Agent Library provides a comprehensive suite of 31 specialized AI
 ## 📊 Agent Categories
 
 ### 🎯 Orchestration & Management (4 agents)
-- **master_orchestrator_agent** - Supreme project coordinator (renamed from uber_orchestrator)
-- **task_planning_agent** - Task breakdown and assignment specialist
-- **project_initiator_agent** - Project setup and initialization
-- **elicitation_agent** - Requirements gathering and clarification
+- **master-orchestrator-agent** - Supreme project coordinator (renamed from uber_orchestrator)
+- **task-planning-agent** - Task breakdown and assignment specialist
+- **project-initiator-agent** - Project setup and initialization
+- **elicitation-agent** - Requirements gathering and clarification
 
 ### 💻 Development & Implementation (5 agents)
-- **coding_agent** - Core implementation and feature development
-- **debugger_agent** v2.0 - Bug fixing + remediation (consolidated)
-- **code_reviewer_agent** - Code quality and review
-- **prototyping_agent** - Rapid prototyping and POCs
-- **system_architect_agent** - System design and architecture
+- **coding-agent** - Core implementation and feature development
+- **debugger-agent** v2.0 - Bug fixing + remediation (consolidated)
+- **code-reviewer-agent** - Code quality and review
+- **prototyping-agent** - Rapid prototyping and POCs
+- **system-architect-agent** - System design and architecture
 
 ### 🧪 Testing & Quality (3 agents)
-- **test_orchestrator_agent** - Comprehensive test management
-- **uat_coordinator_agent** - User acceptance testing
-- **performance_load_tester_agent** - Performance and load testing
+- **test-orchestrator-agent** - Comprehensive test management
+- **uat-coordinator-agent** - User acceptance testing
+- **performance-load-tester-agent** - Performance and load testing
 
 ### 🎨 Design & UI (3 agents)
-- **ui_specialist_agent** - Shadcn/UI components (renamed from ui_designer_expert_shadcn)
-- **design_system_agent** - Design system and UI patterns
-- **core_concept_agent** - Core concepts and fundamentals
+- **ui-specialist-agent** - Shadcn/UI components (renamed from ui_designer_expert_shadcn)
+- **design-system-agent** - Design system and UI patterns
+- **core-concept-agent** - Core concepts and fundamentals
 
 ### ⚙️ DevOps & Infrastructure (1 agent)
-- **devops_agent** v2.0 - Consolidated DevOps operations
+- **devops-agent** v2.0 - Consolidated DevOps operations
   - Docker Swarm scaling (from swarm_scaler_agent)
   - Deployment strategies (from adaptive_deployment_strategist_agent)
   - MCP configuration (from mcp_configuration_agent)
   - CI/CD pipelines and infrastructure
 
 ### 📄 Documentation (1 agent)
-- **documentation_agent** v2.0 - All documentation types
+- **documentation-agent** v2.0 - All documentation types
   - Technical specifications (from tech_spec_agent)
   - Product requirements (from prd_architect_agent)
   - API documentation, user guides, README files
 
 ### 🔒 Security & Compliance (3 agents)
-- **security_auditor_agent** - Security audits and reviews
-- **compliance_scope_agent** - Regulatory compliance
-- **ethical_review_agent** - Ethical considerations
+- **security-auditor-agent** - Security audits and reviews
+- **compliance-scope-agent** - Regulatory compliance
+- **ethical-review-agent** - Ethical considerations
 
 ### 📈 Analytics & Optimization (3 agents)
-- **analytics_setup_agent** - Analytics and tracking setup
-- **efficiency_optimization_agent** - Process optimization
-- **health_monitor_agent** - System health monitoring
+- **analytics-setup-agent** - Analytics and tracking setup
+- **efficiency-optimization-agent** - Process optimization
+- **health-monitor-agent** - System health monitoring
 
 ### 📣 Marketing & Growth (3 agents)
-- **marketing_strategy_orchestrator_agent** v2.0 - Unified marketing operations
+- **marketing-strategy-orchestrator-agent** v2.0 - Unified marketing operations
   - SEO/SEM strategies (from seo_sem_agent)
   - Growth hacking (from growth_hacking_idea_agent)
   - Content strategy (from content_strategy_agent)
-- **branding_agent** - Brand identity and strategy
-- **community_strategy_agent** - Community building
+- **branding-agent** - Brand identity and strategy
+- **community-strategy-agent** - Community building
 
 ### 🔍 Research & Analysis (3 agents)
-- **deep_research_agent** v2.0 - Comprehensive research
+- **deep-research-agent** v2.0 - Comprehensive research
   - General research capabilities
   - MCP platform research (from mcp_researcher_agent)
   - Technology evaluation
-- **root_cause_analysis_agent** - Problem analysis
-- **technology_advisor_agent** - Technology recommendations
+- **root-cause-analysis-agent** - Problem analysis
+- **technology-advisor-agent** - Technology recommendations
 
 ### 🤖 AI & Machine Learning (1 agent)
-- **ml_specialist_agent** - Machine learning with Brain.js (renamed from brainjs_ml_agent)
+- **ml-specialist-agent** - Machine learning with Brain.js (renamed from brainjs_ml_agent)
 
 ### 💡 Creative & Ideation (1 agent)
-- **creative_ideation_agent** v2.0 - Complete creative workflow
+- **creative-ideation-agent** v2.0 - Complete creative workflow
   - Idea generation (from idea_generation_agent)
   - Concept refinement (from idea_refinement_agent)
   - Brainstorming and iteration
@@ -94,33 +94,33 @@ All deprecated agent names automatically resolve to their consolidated replaceme
 
 ```python
 # Documentation consolidation
-'tech_spec_agent' → 'documentation_agent'
-'prd_architect_agent' → 'documentation_agent'
+'tech_spec_agent' → 'documentation-agent'
+'prd_architect_agent' → 'documentation-agent'
 
 # Research consolidation
-'mcp_researcher_agent' → 'deep_research_agent'
+'mcp_researcher_agent' → 'deep-research-agent'
 
 # Creative consolidation
-'idea_generation_agent' → 'creative_ideation_agent'
-'idea_refinement_agent' → 'creative_ideation_agent'
+'idea_generation_agent' → 'creative-ideation-agent'
+'idea_refinement_agent' → 'creative-ideation-agent'
 
 # Marketing consolidation
-'seo_sem_agent' → 'marketing_strategy_orchestrator_agent'
-'growth_hacking_idea_agent' → 'marketing_strategy_orchestrator_agent'
-'content_strategy_agent' → 'marketing_strategy_orchestrator_agent'
+'seo_sem_agent' → 'marketing-strategy-orchestrator-agent'
+'growth_hacking_idea_agent' → 'marketing-strategy-orchestrator-agent'
+'content_strategy_agent' → 'marketing-strategy-orchestrator-agent'
 
 # Debug consolidation
-'remediation_agent' → 'debugger_agent'
+'remediation_agent' → 'debugger-agent'
 
 # DevOps consolidation
-'swarm_scaler_agent' → 'devops_agent'
-'adaptive_deployment_strategist_agent' → 'devops_agent'
-'mcp_configuration_agent' → 'devops_agent'
+'swarm_scaler_agent' → 'devops-agent'
+'adaptive_deployment_strategist_agent' → 'devops-agent'
+'mcp_configuration_agent' → 'devops-agent'
 
 # Renamings
-'master_orchestrator_agent' → 'master_orchestrator_agent'
-'brainjs_ml_agent' → 'ml_specialist_agent'
-'ui_designer_expert_shadcn_agent' → 'ui_specialist_agent'
+'master-orchestrator-agent' → 'master-orchestrator-agent'
+'brainjs_ml_agent' → 'ml-specialist-agent'
+'ui_designer_expert_shadcn_agent' → 'ui-specialist-agent'
 ```
 
 ## 🚀 Usage
@@ -131,34 +131,34 @@ from fastmcp.task_management.application.use_cases.call_agent import CallAgentUs
 
 # Call any agent by name
 use_case = CallAgentUseCase()
-result = use_case.execute('documentation_agent')
+result = use_case.execute('documentation-agent')
 
 # Returns agent configuration with tools, system prompt, etc.
-print(result['agent']['name'])  # "@documentation_agent"
+print(result['agent']['name'])  # "documentation-agent"
 print(result['agent']['tools'])  # ['Read', 'Grep', 'Glob', 'Edit', 'Write', ...]
 ```
 
 ### Format Options
 ```python
 # Default format (returns agent object)
-result = use_case.execute('coding_agent')
+result = use_case.execute('coding-agent')
 
 # JSON format (for programmatic use)
-result = use_case.execute('coding_agent', format='json')
+result = use_case.execute('coding-agent', format='json')
 
 # Markdown format (for Claude Code)
-result = use_case.execute('coding_agent', format='markdown')
+result = use_case.execute('coding-agent', format='markdown')
 ```
 
 ### Parallel Execution Pattern
 ```python
 # Spawn multiple agents for parallel work
 agents = [
-    ('coding_agent', 'Implement backend API'),
-    ('ui_specialist_agent', 'Build frontend UI'),
-    ('test_orchestrator_agent', 'Create test suite'),
-    ('documentation_agent', 'Write documentation'),
-    ('devops_agent', 'Setup deployment')
+    ('coding-agent', 'Implement backend API'),
+    ('ui-specialist-agent', 'Build frontend UI'),
+    ('test-orchestrator-agent', 'Create test suite'),
+    ('documentation-agent', 'Write documentation'),
+    ('devops-agent', 'Setup deployment')
 ]
 
 # All agents work simultaneously
@@ -170,10 +170,10 @@ for agent_type, task in agents:
 ```
 agent-library/
 ├── agents/                    # 31 active agents
-│   ├── master_orchestrator_agent/
-│   ├── coding_agent/
-│   ├── documentation_agent/   # v2.0 consolidated
-│   ├── devops_agent/          # v2.0 consolidated
+│   ├── master-orchestrator-agent/
+│   ├── coding-agent/
+│   ├── documentation-agent/   # v2.0 consolidated
+│   ├── devops-agent/          # v2.0 consolidated
 │   └── ...
 ├── deprecated/                # 12 archived agents
 │   ├── tech_spec_agent/

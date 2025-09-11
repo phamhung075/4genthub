@@ -19,11 +19,11 @@ Through systematic analysis using multi-iteration thinking, I've identified crit
 
 #### 🌟 **Excellent Quality (2 agents)**
 - `brainjs_ml_agent` - Comprehensive, detailed, professional
-- `documentation_agent` - Complete with methodologies and edge cases
+- `documentation-agent` - Complete with methodologies and edge cases
 
 #### ✅ **Good Quality (3-5 agents)**  
 - `security_penetration_tester_agent` - Functional but could be enhanced
-- `deep_research_agent` - Decent config description, needs instruction completion
+- `deep-research-agent` - Decent config description, needs instruction completion
 
 #### ⚠️ **Poor Quality (60+ agents)**
 - Most agents have template-based instructions with placeholders
@@ -121,18 +121,18 @@ custom_instructions: |-
 #### 2.2 Priority Agent Improvements
 
 **High Priority (Complete First - 1 week)**:
-1. `coding_agent` - Core development functionality
-2. `test_orchestrator_agent` - Critical for QA
-3. `debugger_agent` - Essential for troubleshooting
-4. `system_architect_agent` - Key for system design
-5. `master_orchestrator_agent` - Central coordination
+1. `coding-agent` - Core development functionality
+2. `test-orchestrator-agent` - Critical for QA
+3. `debugger-agent` - Essential for troubleshooting
+4. `system-architect-agent` - Key for system design
+5. `master-orchestrator-agent` - Central coordination
 
 **Medium Priority (Complete Second - 1 week)**:
-6. `security_auditor_agent` - Security critical
-7. `devops_agent` - Infrastructure critical  
-8. `deep_research_agent` - Research functionality
+6. `security-auditor-agent` - Security critical
+7. `devops-agent` - Infrastructure critical  
+8. `deep-research-agent` - Research functionality
 9. `ui_designer_expert_shadcn_agent` - UI development
-10. `documentation_agent` - Already good, needs enhancement
+10. `documentation-agent` - Already good, needs enhancement
 
 **Lower Priority (Complete Third - 1 week)**:
 - Remaining core agents from the 43-agent list
@@ -252,7 +252,7 @@ custom_instructions: |-
   Security Penetration Tester <-> Compliance Scope Agent (regulatory requirements)
   Security Penetration Tester <-> Coding Agent (remediation implementation)
 
-  **Related Agents**: security-auditor-agent, compliance-scope-agent, @coding_agent, @system_architect_agent
+  **Related Agents**: security-auditor-agent, compliance-scope-agent, coding-agent, system-architect-agent
 
   **Input Example**:
   {
@@ -370,7 +370,7 @@ custom_instructions: |-
 
 ### Gold Standard Agents (Study These)
 1. `brainjs_ml_agent` - Exemplary comprehensive structure
-2. `documentation_agent` - Excellent methodology documentation
+2. `documentation-agent` - Excellent methodology documentation
 3. `security_penetration_tester_agent` - Good functional approach
 
 ### Templates and Tools

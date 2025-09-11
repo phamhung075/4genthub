@@ -108,13 +108,13 @@ def get_agent_for_task(task_type):
     
     agent_map = {
         'testing': 'test-orchestrator-agent',
-        'coding': '@coding_agent',
+        'coding': 'coding-agent',
         'debugging': 'debugger-agent',
         'security': 'security-auditor-agent',
         'ui': 'ui-designer-expert-shadcn-agent'
     }
     
-    agent_name = agent_map.get(task_type, '@coding_agent')
+    agent_name = agent_map.get(task_type, 'coding-agent')
     result = mcp__dhafnck_mcp_http__call_agent(name_agent=f"@{agent_name}")
     
     if result['success']:
@@ -148,7 +148,7 @@ def process_multiple_agents(agent_names):
     return agents
 
 # Usage
-agent_names = ['@coding_agent', 'test-orchestrator-agent', 'debugger-agent']
+agent_names = ['coding-agent', 'test-orchestrator-agent', 'debugger-agent']
 agents = process_multiple_agents(agent_names)
 
 # Create agent library
@@ -166,7 +166,7 @@ for name, agent in agents.items():
 {
   "success": true,
   "agent_info": {
-    "name": "test_orchestrator_agent",
+    "name": "test-orchestrator-agent",
     "role": "",
     "context": "",
     "rules": [],

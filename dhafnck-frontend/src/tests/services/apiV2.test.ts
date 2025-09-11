@@ -510,7 +510,7 @@ describe('apiV2.ts', () => {
       it('should fetch agents with authentication', async () => {
         const mockAgents = [
           { id: '1', name: '@test_agent' },
-          { id: '2', name: '@coding_agent' }
+          { id: '2', name: 'coding-agent' }
         ];
         (global.fetch as any).mockResolvedValue({
           ok: true,

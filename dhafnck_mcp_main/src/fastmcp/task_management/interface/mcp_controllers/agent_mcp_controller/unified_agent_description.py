@@ -15,61 +15,61 @@ UNIFIED_AGENT_DESCRIPTION = """
 📝 NOTE: For agent invocation/calling, use the separate 'call_agent' tool.
 🚀 AVAILABLE AGENTS (42 Total):
   Development & Coding:
-    @coding_agent - Implementation and feature development
-    @debugger_agent - Bug fixing and troubleshooting
-    @code_reviewer_agent - Code quality and review
-    @prototyping_agent - Rapid prototyping and POCs
+    coding-agent - Implementation and feature development
+    debugger-agent - Bug fixing and troubleshooting
+    code-reviewer-agent - Code quality and review
+    prototyping-agent - Rapid prototyping and POCs
     
   Testing & QA:
-    @test_orchestrator_agent - Comprehensive test management
-    @uat_coordinator_agent - User acceptance testing
-    @performance_load_tester_agent - Performance and load testing
+    test-orchestrator-agent - Comprehensive test management
+    uat-coordinator-agent - User acceptance testing
+    performance-load-tester-agent - Performance and load testing
     
   Architecture & Design:
-    @system_architect_agent - System design and architecture
-    @design_system_agent - Design system and UI patterns
+    system-architect-agent - System design and architecture
+    design-system-agent - Design system and UI patterns
     @ui_designer_expert_shadcn_agent - Shadcn/UI components and frontend
-    @core_concept_agent - Core concepts and fundamentals
+    core-concept-agent - Core concepts and fundamentals
     
   DevOps & Deployment:
-    @devops_agent - CI/CD and infrastructure
+    devops-agent - CI/CD and infrastructure
     @adaptive_deployment_strategist_agent - Deployment strategies
     @swarm_scaler_agent - Distributed systems scaling
     
   Documentation & Specs:
-    @documentation_agent - Technical documentation
+    documentation-agent - Technical documentation
     @tech_spec_agent - Technical specifications
     @prd_architect_agent - Product requirements documents
     
   Project & Planning:
-    @project_initiator_agent - Project setup and kickoff
-    @task_planning_agent - Task breakdown and planning
-    @master_orchestrator_agent - Complex workflow orchestration
-    @elicitation_agent - Requirements gathering
+    project-initiator-agent - Project setup and kickoff
+    task-planning-agent - Task breakdown and planning
+    master-orchestrator-agent - Complex workflow orchestration
+    elicitation-agent - Requirements gathering
     
   Security & Compliance:
-    @security_auditor_agent - Security audits and reviews
-    @compliance_scope_agent - Regulatory compliance
-    @ethical_review_agent - Ethical considerations
+    security-auditor-agent - Security audits and reviews
+    compliance-scope-agent - Regulatory compliance
+    ethical-review-agent - Ethical considerations
     
   Analytics & Optimization:
-    @analytics_setup_agent - Analytics and tracking setup
-    @efficiency_optimization_agent - Process optimization
-    @health_monitor_agent - System health monitoring
+    analytics-setup-agent - Analytics and tracking setup
+    efficiency-optimization-agent - Process optimization
+    health-monitor-agent - System health monitoring
     
   Marketing & Growth:
-    @marketing_strategy_orchestrator_agent - Marketing strategy
+    marketing-strategy-orchestrator-agent - Marketing strategy
     @seo_sem_agent - SEO and SEM optimization
     @growth_hacking_idea_agent - Growth strategies
     @content_strategy_agent - Content planning
-    @community_strategy_agent - Community building
-    @branding_agent - Brand identity
+    community-strategy-agent - Community building
+    branding-agent - Brand identity
     
   Research & Analysis:
-    @deep_research_agent - In-depth research
+    deep-research-agent - In-depth research
     @mcp_researcher_agent - MCP and tool research
-    @root_cause_analysis_agent - Problem analysis
-    @technology_advisor_agent - Technology recommendations
+    root-cause-analysis-agent - Problem analysis
+    technology-advisor-agent - Technology recommendations
     
   AI & Machine Learning:
     @brainjs_ml_agent - Machine learning with Brain.js
@@ -130,7 +130,7 @@ UNIFIED_AGENT_DESCRIPTION = """
 • Unknown actions return an error listing valid actions.
 • Invalid agent names will result in an error with available agents list.
 • Internal errors are logged and returned with a generic error message.
-• Agent loading failures provide fallback to @master_orchestrator_agent.
+• Agent loading failures provide fallback to master-orchestrator-agent.
 
 ✅ VALIDATION CHECKPOINTS:
 • Check: Are all required parameters provided for the action?
@@ -143,7 +143,7 @@ UNIFIED_AGENT_DESCRIPTION = """
 ⚠️ IMPORTANT NOTES:
 • Agent names must include the @ prefix for call action
 • project_id is required for all management actions (register, assign, get, list, update, unassign, unregister, rebalance)
-• Switch to a role agent if no role is specified; otherwise, the default agent @master_orchestrator_agent will be used
+• Switch to a role agent if no role is specified; otherwise, the default agent master-orchestrator-agent will be used
 • Each agent has specialized knowledge and capabilities
 • Agents can collaborate as specified in their connectivity
 • Invalid agent names will result in an error with available agents list
@@ -158,7 +158,7 @@ UNIFIED_AGENT_PARAMETERS_DESCRIPTION = {
     "call_agent": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
     "git_branch_id": "[OPTIONAL] Task tree identifier. Required for assign/unassign actions",
     "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
-    "name_agent": "[REQUIRED for call action] Name of the agent to load and invoke. Must be a valid, registered agent name with @ prefix (e.g., '@master_orchestrator_agent')"
+    "name_agent": "[REQUIRED for call action] Name of the agent to load and invoke. Must be a valid, registered agent name with @ prefix (e.g., 'master-orchestrator-agent')"
 }
 
 UNIFIED_AGENT_PARAMS = {

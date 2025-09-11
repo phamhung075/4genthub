@@ -16,7 +16,7 @@ DEFAULT_CLAUDE_DIR = ".claude/agents"
 
 # Predefined agent configurations
 AGENT_DEFINITIONS = {
-    "@master_orchestrator_agent": {
+    "master-orchestrator-agent": {
         "name": "Uber Orchestrator Agent",
         "role": "Master Coordinator and Decision Maker",
         "description": "The highest-level orchestrator that coordinates all other agents and makes strategic decisions about task delegation, resource allocation, and workflow optimization.",
@@ -40,7 +40,7 @@ AGENT_DEFINITIONS = {
         ],
         "guidelines": "Use as the primary entry point for complex tasks requiring multiple specialists. This agent will analyze requirements and delegate to appropriate specialist agents."
     },
-    "@coding_agent": {
+    "coding-agent": {
         "name": "Coding Agent",
         "role": "Software Development Specialist",
         "description": "Specialized in writing, refactoring, and implementing code across various languages and frameworks. Expert in DDD architecture, clean code principles, and modern development practices.",
@@ -64,7 +64,7 @@ AGENT_DEFINITIONS = {
         ],
         "guidelines": "Use for all coding tasks including new feature implementation, refactoring, and code optimization. Follows project conventions and patterns."
     },
-    "@debugger_agent": {
+    "debugger-agent": {
         "name": "Debugger Agent",
         "role": "Bug Detection and Resolution Specialist",
         "description": "Expert in identifying, analyzing, and fixing bugs and errors in code. Specializes in root cause analysis, performance debugging, and test failure resolution.",
@@ -88,7 +88,7 @@ AGENT_DEFINITIONS = {
         ],
         "guidelines": "Deploy when encountering errors, test failures, performance issues, or unexpected behavior. Provides detailed root cause analysis."
     },
-    "@test_orchestrator_agent": {
+    "test-orchestrator-agent": {
         "name": "Test Orchestrator Agent",
         "role": "Testing Strategy and Execution Coordinator",
         "description": "Manages comprehensive testing strategies, coordinates test execution, and ensures code quality through automated testing.",
@@ -136,7 +136,7 @@ AGENT_DEFINITIONS = {
         ],
         "guidelines": "Deploy for all frontend tasks including component creation, UI improvements, and user experience enhancements."
     },
-    "@documentation_agent": {
+    "documentation-agent": {
         "name": "Documentation Agent",
         "role": "Technical Documentation Specialist",
         "description": "Creates and maintains comprehensive documentation including API specs, user guides, and technical documentation.",
@@ -160,7 +160,7 @@ AGENT_DEFINITIONS = {
         ],
         "guidelines": "Use for creating or updating any form of documentation. Ensures consistency with existing documentation structure."
     },
-    "@task_planning_agent": {
+    "task-planning-agent": {
         "name": "Task Planning Agent",
         "role": "Task Breakdown and Planning Specialist",
         "description": "Breaks down complex tasks into manageable subtasks, creates execution plans, and manages task dependencies.",
@@ -184,7 +184,7 @@ AGENT_DEFINITIONS = {
         ],
         "guidelines": "Deploy at the beginning of complex projects or when tasks need to be broken down into manageable pieces."
     },
-    "@security_auditor_agent": {
+    "security-auditor-agent": {
         "name": "Security Auditor Agent",
         "role": "Security Analysis and Compliance Specialist",
         "description": "Performs security audits, vulnerability assessments, and ensures compliance with security best practices.",
@@ -409,7 +409,7 @@ def main():
     )
     parser.add_argument(
         "--agent-id",
-        help="Generate specific agent by ID (e.g., @coding_agent)"
+        help="Generate specific agent by ID (e.g., coding-agent)"
     )
     parser.add_argument(
         "--clean",
@@ -442,7 +442,7 @@ def main():
     if args.clean:
         print(f"Cleaning {args.claude_dir}...")
         for file in Path(args.claude_dir).glob("*.md"):
-            if file.name not in ["claude-code-troubleshooter.md", "coding_agent.md"]:  # Preserve existing special agents
+            if file.name not in ["claude-code-troubleshooter.md", "coding-agent.md"]:  # Preserve existing special agents
                 file.unlink()
                 print(f"  Removed: {file.name}")
     

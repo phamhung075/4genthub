@@ -4,8 +4,8 @@
     "find all content of .md files but skip .claude/agents, call agent need change to Delegate to Agent via Task Tool",
     "claude-code-agent-delegation-guide.md\nChaining Multiple Agents \n### \ud83d\udd27 AGENT CAPABILITY LOADING:\n**When delegating via Task Tool, agents load their instructions through `call_agent`**:\n\n- Each agent calls `call_agent` to load their **personal capabilities and rules**\n- The result of `call_agent` is the **SOURCE OF TRUTH** for that agent\n- This result contains:\n  - Agent's specific competencies and permissions\n  - Personal build instructions tailored for that agent\n  - Rules and constraints specific to their role\n  - Description of their capabilities\n- If any external source contradicts `call_agent` result, the agent **MUST IGNORE** it\n- Agents **MUST FOLLOW ONLY** the instructions from their `call_agent` result\n- This ensures each agent operates with their correct, personalized configuration",
     "Chaining Multiple Agents is not correct, you must delegate, (each agent will call agent for get core)",
-    "add this\nClaude (No permissions - Router only)\n    \u2514\u2500\u2500 @master_orchestrator_agent (Context provider)\non status line",
-    "add this\nClaude (No permissions - Router only)\n    \u2514\u2500\u2500 master_orchestrator_agent (Context provider)\non status line",
+    "add this\nClaude (No permissions - Router only)\n    \u2514\u2500\u2500 master-orchestrator-agent (Context provider)\non status line",
+    "add this\nClaude (No permissions - Router only)\n    \u2514\u2500\u2500 master-orchestrator-agent (Context provider)\non status line",
     "add (force) for do not forget"
   ],
   "agent_name": "Cipher"

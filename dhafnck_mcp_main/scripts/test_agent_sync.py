@@ -50,9 +50,9 @@ def test_server_endpoints():
         print(f"✗ Error: {e}")
     
     # Test 3: Get specific agent
-    print("\n3. Testing GET /api/agents/metadata/@coding_agent")
+    print("\n3. Testing GET /api/agents/metadata/coding-agent")
     try:
-        response = requests.get(f"{base_url}/api/agents/metadata/@coding_agent")
+        response = requests.get(f"{base_url}/api/agents/metadata/coding-agent")
         if response.status_code == 200:
             data = response.json()
             if data.get('success'):

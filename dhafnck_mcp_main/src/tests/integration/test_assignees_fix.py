@@ -17,11 +17,11 @@ def test_agent_role_validation():
         
         # Test cases
         test_cases = [
-            "@coding_agent",
-            "coding_agent", 
-            "@test_orchestrator_agent",
-            "test_orchestrator_agent",
-            "@@coding_agent",  # Invalid format
+            "coding-agent",
+            "coding-agent", 
+            "test-orchestrator-agent",
+            "test-orchestrator-agent",
+            "@coding-agent",  # Invalid format
             "@test-orchestrator-agent",  # Invalid format
             "@invalid_agent"
         ]
@@ -53,7 +53,7 @@ def test_agent_role_validation():
                 
         # Test the validation logic from CRUD handler
         print("\n=== Testing CRUD Handler Logic ===")
-        assignees = ["@coding_agent", "@test_orchestrator_agent"]
+        assignees = ["coding-agent", "test-orchestrator-agent"]
         
         validated_assignees = []
         invalid_assignees = []
@@ -110,7 +110,7 @@ def test_available_roles():
             print(f"  ... and {len(all_roles) - 20} more")
             
         # Check specific roles we're testing
-        test_roles = ["coding_agent", "test_orchestrator_agent"]
+        test_roles = ["coding-agent", "test-orchestrator-agent"]
         print(f"\nChecking test roles:")
         for role in test_roles:
             exists = role in all_roles

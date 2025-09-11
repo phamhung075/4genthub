@@ -132,7 +132,7 @@ This comprehensive cleanup operation successfully optimized the DhafnckMCP syste
 ### 2. Agent System Verification
 ✅ **Agent Count**: 43 active agents confirmed
 ✅ **Configuration Integrity**: All 422 YAML configurations valid
-✅ **Agent Invocation**: `@documentation_agent` successfully invoked for this report
+✅ **Agent Invocation**: `documentation-agent` successfully invoked for this report
 ✅ **MCP Controllers**: All agent-related controllers functional
 
 ### 3. Documentation System Tests
@@ -217,7 +217,7 @@ This comprehensive cleanup operation successfully optimized the DhafnckMCP syste
 5. **Documentation**: Comprehensive reorganization completed successfully
 
 ### ✅ Functionality Verification
-1. **Agent Invocation**: `@documentation_agent` successfully called for this report
+1. **Agent Invocation**: `documentation-agent` successfully called for this report
 2. **MCP Tools**: All 15+ MCP tool categories operational
 3. **Context System**: 4-tier hierarchy (Global→Project→Branch→Task) intact
 4. **Task Management**: Full CRUD operations verified

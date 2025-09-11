@@ -19,7 +19,7 @@ async def test_direct_task_creation():
         title="Test task direct creation",
         description="Testing direct task creation", 
         git_branch_id="052e2006-2252-419b-95f8-5b5d72707bf5",
-        assignees=["coding_agent"],  # Pass as list directly
+        assignees=["coding-agent"],  # Pass as list directly
         priority="high",
         estimated_effort="2 hours"
     )

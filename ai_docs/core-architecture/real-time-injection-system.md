@@ -4,7 +4,7 @@
 
 **Task ID**: de7621a4-df75-4d03-a967-8fb743b455f1  
 **Status**: In Progress  
-**Assignees**: @coding_agent, @system_architect_agent  
+**Assignees**: coding-agent, system-architect-agent  
 
 ## Executive Summary
 

@@ -75,10 +75,10 @@ Organization-wide or user-specific standards that apply across all projects and 
   "delegation_rules": {
     "auto_delegate_threshold": 0.8,
     "preferred_agents": {
-      "coding": "@coding_agent",
-      "testing": "@test_orchestrator_agent", 
-      "documentation": "@documentation_agent",
-      "security": "@security_auditor_agent"
+      "coding": "coding-agent",
+      "testing": "test-orchestrator-agent", 
+      "documentation": "documentation-agent",
+      "security": "security-auditor-agent"
     },
     "escalation_chain": ["peer_review", "senior_developer", "tech_lead"]
   }
@@ -448,7 +448,7 @@ Individual task execution context, discoveries, decisions, and implementation de
     "description": "Create JWT token service with signing, validation, and refresh functionality",
     "status": "in_progress",
     "priority": "high",
-    "assignee": "@coding_agent",
+    "assignee": "coding-agent",
     "estimated_effort": "6 hours",
     "actual_effort": "4 hours 30 minutes",
     "completion_percentage": 75,
@@ -554,8 +554,8 @@ Individual task execution context, discoveries, decisions, and implementation de
   "collaboration_notes": {
     "agent_handoffs": [
       {
-        "from_agent": "@coding_agent",
-        "to_agent": "@security_auditor_agent",
+        "from_agent": "coding-agent",
+        "to_agent": "security-auditor-agent",
         "handoff_reason": "Security review of JWT implementation",
         "handoff_date": "2025-01-15T16:00:00Z",
         "status": "completed",
@@ -601,7 +601,7 @@ manage_context(
             "title": "Implement JWT token generation and validation",
             "status": "todo", 
             "priority": "high",
-            "assignee": "@coding_agent",
+            "assignee": "coding-agent",
             "estimated_effort": "6 hours"
         },
         "execution_context": {
@@ -761,7 +761,7 @@ manage_context(
         "collaboration_notes": {
             "peer_reviews": [
                 {
-                    "reviewer": "@security_auditor_agent",
+                    "reviewer": "security-auditor-agent",
                     "status": "approved",
                     "feedback": "Security implementation meets standards"
                 }
@@ -844,8 +844,8 @@ manage_context(
     data={
         "collaboration_notes": {
             "agent_handoffs": [{
-                "from_agent": "@coding_agent",
-                "to_agent": "@security_auditor_agent", 
+                "from_agent": "coding-agent",
+                "to_agent": "security-auditor-agent", 
                 "handoff_reason": "Security review required",
                 "work_completed": "JWT implementation finished",
                 "next_steps": "Review cryptographic choices and token handling"
@@ -862,7 +862,7 @@ manage_context(
     data={
         "collaboration_notes": {
             "peer_reviews": [{
-                "reviewer": "@security_auditor_agent",
+                "reviewer": "security-auditor-agent",
                 "review_date": current_timestamp,
                 "status": "approved_with_suggestions",
                 "feedback": "Security implementation solid, recommend adding token blacklisting"

@@ -258,14 +258,14 @@ class TestAddInsightRequest:
         """Test creating an AddInsightRequest instance"""
         request = AddInsightRequest(
             task_id="task-123",
-            agent="@debugger_agent",
+            agent="debugger-agent",
             category="performance",
             content="Found memory leak in authentication module",
             importance="high"
         )
         
         assert request.task_id == "task-123"
-        assert request.agent == "@debugger_agent"
+        assert request.agent == "debugger-agent"
         assert request.category == "performance"
         assert request.content == "Found memory leak in authentication module"
         assert request.importance == "high"
@@ -274,7 +274,7 @@ class TestAddInsightRequest:
         """Test AddInsightRequest with default importance"""
         request = AddInsightRequest(
             task_id="task-123",
-            agent="@coding_agent",
+            agent="coding-agent",
             category="technical",
             content="Refactored database queries"
         )
@@ -290,14 +290,14 @@ class TestAddProgressRequest:
         request = AddProgressRequest(
             task_id="task-123",
             action="update_code",
-            agent="@coding_agent",
+            agent="coding-agent",
             details="Implemented JWT authentication",
             status="completed"
         )
         
         assert request.task_id == "task-123"
         assert request.action == "update_code"
-        assert request.agent == "@coding_agent"
+        assert request.agent == "coding-agent"
         assert request.details == "Implemented JWT authentication"
         assert request.status == "completed"
     
@@ -306,7 +306,7 @@ class TestAddProgressRequest:
         request = AddProgressRequest(
             task_id="task-123",
             action="analyze",
-            agent="@debugger_agent"
+            agent="debugger-agent"
         )
         
         assert request.details == ""

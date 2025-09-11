@@ -53,32 +53,32 @@ class AgentConverter:
         
         # Map common agent types to capabilities and specializations
         agent_mappings = {
-            'system_architect_agent': {
+            'system-architect-agent': {
                 'capabilities': [AgentCapability.ARCHITECTURE, AgentCapability.BACKEND_DEVELOPMENT],
                 'specializations': ['system_design', 'architecture_patterns', 'scalability'],
                 'languages': ['python', 'java', 'typescript']
             },
-            'coding_agent': {
+            'coding-agent': {
                 'capabilities': [AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.BACKEND_DEVELOPMENT],
                 'specializations': ['full_stack_development', 'api_development', 'web_development'],
                 'languages': ['python', 'javascript', 'typescript', 'html', 'css']
             },
-            'documentation_agent': {
+            'documentation-agent': {
                 'capabilities': [AgentCapability.DOCUMENTATION],
                 'specializations': ['technical_writing', 'api_documentation', 'user_guides'],
                 'languages': ['markdown', 'html']
             },
-            'test_orchestrator_agent': {
+            'test-orchestrator-agent': {
                 'capabilities': [AgentCapability.TESTING],
                 'specializations': ['test_automation', 'quality_assurance', 'integration_testing'],
                 'languages': ['python', 'javascript', 'typescript']
             },
-            'devops_agent': {
+            'devops-agent': {
                 'capabilities': [AgentCapability.DEVOPS],
                 'specializations': ['ci_cd', 'deployment', 'infrastructure', 'containerization'],
                 'languages': ['bash', 'yaml', 'python']
             },
-            'security_auditor_agent': {
+            'security-auditor-agent': {
                 'capabilities': [AgentCapability.SECURITY],
                 'specializations': ['security_audit', 'vulnerability_assessment', 'secure_coding'],
                 'languages': ['python', 'bash']

@@ -493,8 +493,8 @@ class TestTaskAssigneeManagement:
         
         # @ prefix is added to valid roles
         with patch('fastmcp.task_management.domain.enums.agent_roles.AgentRole.is_valid_role', return_value=True):
-            task.update_assignees(["coding_agent"])
-            assert "@coding_agent" in task.assignees
+            task.update_assignees(["coding-agent"])
+            assert "coding-agent" in task.assignees
     
     def test_add_assignee(self):
         """Test adding individual assignee."""
@@ -517,10 +517,10 @@ class TestTaskAssigneeManagement:
         
         # Mock the AgentRole enum
         mock_role = Mock(spec=AgentRole)
-        mock_role.value = "coding_agent"
+        mock_role.value = "coding-agent"
         
         task.add_assignee(mock_role)
-        assert "@coding_agent" in task.assignees
+        assert "coding-agent" in task.assignees
     
     def test_remove_assignee(self):
         """Test removing assignee."""

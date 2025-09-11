@@ -239,7 +239,7 @@ mcp__dhafnck_mcp_http__manage_context(
         "task_data": {
             "title": "Implement JWT authentication",
             "status": "in_progress",
-            "assignee": "@coding_agent",
+            "assignee": "coding-agent",
             "priority": "high"
         },
         "execution_context": {

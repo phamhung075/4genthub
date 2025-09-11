@@ -38,9 +38,9 @@ The assignees parameter is lost somewhere in the pipeline between:
 ```python
 # From agent_roles.py
 class AgentRole(Enum):
-    CODING = "coding_agent"
-    DEBUGGER = "debugger_agent"
-    TEST_ORCHESTRATOR = "test_orchestrator_agent"
+    CODING = "coding-agent"
+    DEBUGGER = "debugger-agent"
+    TEST_ORCHESTRATOR = "test-orchestrator-agent"
     # ... etc
 ```
 
@@ -69,12 +69,12 @@ if not assignees or len(assignees) == 0:
 
 All of these formats failed with the same error:
 
-1. `assignees="@@coding_agent"`
-2. `assignees="@coding_agent"`
-3. `assignees="coding_agent"`
+1. `assignees="@coding-agent"`
+2. `assignees="coding-agent"`
+3. `assignees="coding-agent"`
 4. `assignees="CODING"`
 5. `assignees="CODING_AGENT"`
-6. `assignees="coding_agent"` (without quotes in actual parameter)
+6. `assignees="coding-agent"` (without quotes in actual parameter)
 7. `assignees="DEVELOPER"` (using base AgentRole enum)
 
 ## Impact Assessment
@@ -157,7 +157,7 @@ logger.debug(f"All parameters: {locals()}")
 
 ## Related Issues
 - Legacy role mapping was fixed but didn't resolve the issue
-- Error hints are misleading (suggest @@coding_agent format which doesn't work)
+- Error hints are misleading (suggest @coding-agent format which doesn't work)
 - Documentation needs update once correct format is determined
 
 ## Priority Justification
@@ -199,7 +199,7 @@ Verify the fix by successfully creating a task with assignees.
 
 ### Prompt 3: Update Error Messages
 ```
-Update the error hint in crud_handler.py line 82 to show the correct format once determined. Current hint is misleading as it suggests '@@coding_agent' format which doesn't work.
+Update the error hint in crud_handler.py line 82 to show the correct format once determined. Current hint is misleading as it suggests '@coding-agent' format which doesn't work.
 ```
 
 ## Contact

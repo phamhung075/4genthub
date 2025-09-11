@@ -1,7 +1,7 @@
 # V2 API Git Branch Filtering Fix - Complete Solution
 
 **Date**: 2025-08-24  
-**Agent**: @debugger_agent  
+**Agent**: debugger-agent  
 **Status**: ✅ FULLY RESOLVED  
 **Priority**: CRITICAL  
 

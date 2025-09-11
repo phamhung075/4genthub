@@ -24,14 +24,14 @@ class TestTaskEntityAgentInheritance:
             id=self.task_id,
             title="Test Task",
             description="Test Description",
-            assignees=["@@coding_agent", "@test-orchestrator-agent"]
+            assignees=["@coding-agent", "@test-orchestrator-agent"]
         )
 
     def test_get_inherited_assignees_for_subtasks_with_assignees(self):
         """Test getting assignees for subtask inheritance when task has assignees"""
         inherited = self.task.get_inherited_assignees_for_subtasks()
         
-        assert inherited == ["@@coding_agent", "@test-orchestrator-agent"]
+        assert inherited == ["@coding-agent", "@test-orchestrator-agent"]
         assert inherited is not self.task.assignees  # Should be a copy
 
     def test_get_inherited_assignees_for_subtasks_empty(self):
@@ -43,15 +43,15 @@ class TestTaskEntityAgentInheritance:
 
     def test_validate_assignee_list_valid(self):
         """Test validating a list of valid assignees"""
-        assignees = ["@coding_agent", "@test-orchestrator-agent", "@documentation_agent"]
+        assignees = ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
         validated = self.task.validate_assignee_list(assignees)
         
-        expected = ["@@coding_agent", "@test-orchestrator-agent", "@@documentation_agent"]
+        expected = ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
         assert validated == expected
 
     def test_validate_assignee_list_invalid(self):
         """Test validating a list with invalid assignees raises ValueError"""
-        assignees = ["@coding_agent", "invalid-agent", "test-orchestrator-agent"]
+        assignees = ["coding-agent", "invalid-agent", "test-orchestrator-agent"]
         
         with pytest.raises(ValueError) as excinfo:
             self.task.validate_assignee_list(assignees)
@@ -114,7 +114,7 @@ class TestSubtaskEntityAgentInheritance:
 
     def test_inherit_assignees_from_parent_success(self):
         """Test successful inheritance of assignees from parent"""
-        parent_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
+        parent_assignees = ["@coding-agent", "@test-orchestrator-agent"]
         
         original_updated_at = self.subtask_no_assignees.updated_at
         self.subtask_no_assignees.inherit_assignees_from_parent(parent_assignees)
@@ -129,7 +129,7 @@ class TestSubtaskEntityAgentInheritance:
 
     def test_inherit_assignees_from_parent_already_has_assignees(self):
         """Test inheritance when subtask already has assignees (should not inherit)"""
-        parent_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
+        parent_assignees = ["@coding-agent", "@test-orchestrator-agent"]
         original_assignees = self.subtask_with_assignees.assignees.copy()
         
         self.subtask_with_assignees.inherit_assignees_from_parent(parent_assignees)
@@ -162,7 +162,7 @@ class TestAgentInheritanceService:
             id=self.parent_task_id,
             title="Parent Task",
             description="Parent Description",
-            assignees=["@@coding_agent", "@test-orchestrator-agent"]
+            assignees=["@coding-agent", "@test-orchestrator-agent"]
         )
         
         self.subtask_id = SubtaskId("subtask-456")
@@ -189,7 +189,7 @@ class TestAgentInheritanceService:
             self.parent_task
         )
         
-        assert result.assignees == ["@@coding_agent", "@test-orchestrator-agent"]
+        assert result.assignees == ["@coding-agent", "@test-orchestrator-agent"]
         
         # Check domain event was raised
         events = result.get_events()
@@ -214,7 +214,7 @@ class TestAgentInheritanceService:
         result = self.service.apply_agent_inheritance(self.subtask_no_assignees)
         
         self.mock_task_repo.find_by_id.assert_called_once_with(self.parent_task_id)
-        assert result.assignees == ["@@coding_agent", "@test-orchestrator-agent"]
+        assert result.assignees == ["@coding-agent", "@test-orchestrator-agent"]
 
     def test_apply_agent_inheritance_parent_not_found(self):
         """Test inheritance when parent task is not found"""
@@ -240,10 +240,10 @@ class TestAgentInheritanceService:
 
     def test_validate_agent_assignments_valid(self):
         """Test validating valid agent assignments"""
-        assignees = ["@coding_agent", "@test-orchestrator-agent"]
+        assignees = ["coding-agent", "@test-orchestrator-agent"]
         validated = self.service.validate_agent_assignments(assignees)
         
-        expected = ["@@coding_agent", "@test-orchestrator-agent"]
+        expected = ["@coding-agent", "@test-orchestrator-agent"]
         assert validated == expected
 
     def test_validate_agent_assignments_invalid(self):
@@ -289,7 +289,7 @@ class TestAgentInheritanceIntegration:
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["@@coding_agent", "@test-orchestrator-agent", "@@documentation_agent"]
+            assignees=["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
         )
 
     @pytest.fixture
@@ -328,7 +328,7 @@ class TestAgentInheritanceIntegration:
         result = service.apply_agent_inheritance(sample_subtask_no_assignees)
         
         # Verify inheritance was applied
-        assert result.assignees == ["@@coding_agent", "@test-orchestrator-agent", "@@documentation_agent"]
+        assert result.assignees == ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
         assert result.has_assignees() is True
         assert result.should_inherit_assignees() is False  # Now has assignees
 
@@ -341,7 +341,7 @@ class TestAgentInheritanceIntegration:
             description="Has invalid assignees",
         )
         # Manually set invalid assignees to test error handling
-        invalid_parent.assignees = ["@@coding_agent", "invalid-agent"]  # One valid, one invalid
+        invalid_parent.assignees = ["@coding-agent", "invalid-agent"]  # One valid, one invalid
         
         subtask = Subtask(
             id=SubtaskId("test-subtask"),
@@ -355,7 +355,7 @@ class TestAgentInheritanceIntegration:
         # Validation happens at input time, not inheritance time
         subtask.inherit_assignees_from_parent(invalid_parent.assignees)
         
-        assert subtask.assignees == ["@@coding_agent", "invalid-agent"]
+        assert subtask.assignees == ["@coding-agent", "invalid-agent"]
 
 
 if __name__ == "__main__":

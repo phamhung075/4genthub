@@ -187,13 +187,13 @@ def optimize_token_usage():
     Critical insight: Every token in injection costs working memory
     """
     # WRONG: Full context in delegation
-    Task(subagent="@coding_agent", 
+    Task(subagent="coding-agent", 
          prompt="Implement auth with JWT, bcrypt, files: /src/auth/*...")
     # Uses 500+ tokens
     
     # RIGHT: Context in MCP, ID in delegation
     task = manage_task(action="create", details="Full context...")
-    Task(subagent="@coding_agent", prompt=f"task_id: {task.id}")
+    Task(subagent="coding-agent", prompt=f"task_id: {task.id}")
     # Uses only 10 tokens!
     
     # Result: 95% token savings

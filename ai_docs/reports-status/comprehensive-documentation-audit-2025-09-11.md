@@ -21,7 +21,7 @@ Completed comprehensive documentation audit per Task 5.1 requirements. Identifie
 - **Status**: CORRECT
 - **Found**: 461 occurrences across 46 files
 - **Analysis**: All agent names use proper @agent_name format with underscores
-- **Format**: `@master_orchestrator_agent`, `@coding_agent`, etc.
+- **Format**: `master-orchestrator-agent`, `coding-agent`, etc.
 
 #### Database Documentation (Primary)
 - **Status**: GOOD

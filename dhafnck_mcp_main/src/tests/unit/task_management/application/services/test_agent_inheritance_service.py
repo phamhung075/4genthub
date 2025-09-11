@@ -28,7 +28,7 @@ class TestAgentInheritanceService:
             id=TaskId("parent-001"),
             title="Parent Task",
             description="Task with multiple assignees",
-            assignees=["@@coding_agent", "@test-orchestrator-agent", "@security-auditor-agent"]
+            assignees=["@coding-agent", "@test-orchestrator-agent", "@security-auditor-agent"]
         )
         
         self.subtask_no_assignees = Subtask(
@@ -44,7 +44,7 @@ class TestAgentInheritanceService:
             title="Subtask with assignees",
             description="Should not inherit from parent",
             parent_task_id=self.parent_task.id,
-            assignees=["@@code_reviewer_agent"]
+            assignees=["@code-reviewer-agent"]
         )
     
     def test_apply_agent_inheritance_with_empty_subtask(self):
@@ -55,7 +55,7 @@ class TestAgentInheritanceService:
         # Verify inheritance was applied
         assert result is self.subtask_no_assignees  # Same instance returned
         assert len(result.assignees) == 3
-        assert "@@coding_agent" in result.assignees
+        assert "@coding-agent" in result.assignees
         assert "@test-orchestrator-agent" in result.assignees
         assert "@security-auditor-agent" in result.assignees
     
@@ -70,7 +70,7 @@ class TestAgentInheritanceService:
         assert result is self.subtask_with_assignees
         assert result.assignees == original_assignees
         assert len(result.assignees) == 1
-        assert "@@code_reviewer_agent" in result.assignees
+        assert "@code-reviewer-agent" in result.assignees
     
     def test_apply_agent_inheritance_without_parent_task_provided(self):
         """Test inheritance when parent task is not provided (should fetch from repository)"""
@@ -187,7 +187,7 @@ class TestAgentInheritanceService:
     def test_validate_agent_assignments(self):
         """Test agent assignment validation"""
         # Test valid assignees
-        valid_assignees = ["@@coding_agent", "@test-orchestrator-agent"]
+        valid_assignees = ["@coding-agent", "@test-orchestrator-agent"]
         validated = self.service.validate_agent_assignments(valid_assignees)
         
         assert len(validated) >= 2  # Should pass validation
@@ -201,7 +201,7 @@ class TestAgentInheritanceService:
         # This test depends on the validation logic in Task.validate_assignee_list
         # The exact behavior may vary based on implementation
         
-        mixed_assignees = ["@@coding_agent", "invalid-agent", "@test-orchestrator-agent", ""]
+        mixed_assignees = ["@coding-agent", "invalid-agent", "@test-orchestrator-agent", ""]
         
         # The method should either:
         # 1. Filter out invalid assignees, or

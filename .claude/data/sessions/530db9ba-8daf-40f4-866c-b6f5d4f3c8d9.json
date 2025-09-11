@@ -6,7 +6,7 @@
     "create task for test is fix, check on db too",
     "front end need display list agents assignes on column",
     "front end need display list agents assignes on column on table list task",
-    "i need you present list assigned agent on column, actual is on row\nTitle    Status    Priority    Dependencies    Assignees    Actions\n\nTest 4: Five agent collaboration\nTo Do\n\ufffd\ufffd\nCritical\nNone    \n@master_orchestrator_agent\n@task_planning_agent\n@documentation_agent\n@security_auditor_agent\n@performance_load_tester_agent\n\n\n\n\n\nTest 3: DevOps and Architecture agents\nTo Do\n\u25b3\nHigh\nNone    \n@devops_agent\n@system_architect_agent\n\n\n\n\n\nTest 2: Multiple agent assignment\nTo Do\n\u25c7\nMedium\nNone    \n@coding_agent\n@debugger_agent\n@test_orchestrator_agent\n\n\n\n\n\nTest 1: Single agent assignment\nTo Do\n\u25b3\nHigh\nNone    \n@coding_agent",
+    "i need you present list assigned agent on column, actual is on row\nTitle    Status    Priority    Dependencies    Assignees    Actions\n\nTest 4: Five agent collaboration\nTo Do\n\ufffd\ufffd\nCritical\nNone    \nmaster-orchestrator-agent\ntask-planning-agent\ndocumentation-agent\nsecurity-auditor-agent\nperformance-load-tester-agent\n\n\n\n\n\nTest 3: DevOps and Architecture agents\nTo Do\n\u25b3\nHigh\nNone    \ndevops-agent\nsystem-architect-agent\n\n\n\n\n\nTest 2: Multiple agent assignment\nTo Do\n\u25c7\nMedium\nNone    \ncoding-agent\ndebugger-agent\ntest-orchestrator-agent\n\n\n\n\n\nTest 1: Single agent assignment\nTo Do\n\u25b3\nHigh\nNone    \ncoding-agent",
     "create some subtask for test"
   ],
   "agent_name": "Vertex"

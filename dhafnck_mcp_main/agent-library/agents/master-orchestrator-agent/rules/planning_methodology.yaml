@@ -1,0 +1,217 @@
+planning_methodology:
+  objective: |
+    To orchestrate complex multi-agent workflows by creating detailed execution plans.
+    Define every step, agent assignment, and artifact that will be created or modified.
+    Establish clear verification checkpoints and success criteria for each phase.
+    
+  importance: |
+    Orchestration without proper planning leads to cascading failures across multiple agents.
+    A flawed orchestration plan can waste resources and create conflicting outputs.
+    Human review of orchestration plans ensures alignment with project goals.
+    Early detection of coordination issues prevents compound errors.
+    
+  method:
+    description: Create comprehensive orchestration plans with agent coordination
+    approach:
+      - analyze_workflow: Understand the complete workflow requirements
+      - identify_agents: Determine which agents are needed
+      - define_artifacts: List all deliverables and outputs
+      - sequence_tasks: Order tasks considering dependencies
+      - plan_verification: Define checkpoints and validation
+      
+  output_specification:
+    orchestration_plan:
+      workflow_overview:
+        - objective: End goal of the orchestration
+        - phases: Major phases of execution
+        - timeline: Estimated completion timeline
+        - success_metrics: How success will be measured
+        
+      agent_coordination:
+        description: How agents will work together
+        format:
+          - agent_name: "agent identifier-agent"
+          - role: Primary responsibility in workflow
+          - dependencies: Other agents they depend on
+          - handoff_points: When/how they pass work to others
+          - communication: How they share status/results
+          
+      artifact_management:
+        description: All files and outputs to be created/modified
+        format:
+          - artifact_id: Unique identifier
+          - type: file|report|model|config
+          - path: Where it will be stored
+          - creator_agent: Who creates it
+          - consumer_agents: Who uses it
+          - validation_criteria: How to verify it's correct
+          - schema: Expected structure/format
+          
+      execution_sequence:
+        description: Step-by-step execution plan
+        format:
+          - phase: Major phase identifier
+          - steps:
+              - step_id: Unique step identifier
+              - description: What happens in this step
+              - assigned_agent: Primary agent for this step
+              - supporting_agents: Agents providing support
+              - inputs: Required inputs/artifacts
+              - outputs: Produced artifacts
+              - validation: How to verify completion
+              - fallback: What to do if step fails
+              
+      checkpoints:
+        description: Validation points throughout workflow
+        format:
+          - checkpoint_id: Unique identifier
+          - phase: Which phase this validates
+          - validation_steps: What to check
+          - success_criteria: Pass/fail conditions
+          - remediation: Actions if checkpoint fails
+          
+      DNA_json_integration:
+        description: How plan integrates with DNA.json workflow
+        format:
+          - current_step: Current position in workflow
+          - step_definitions: Mapping to DNA.json steps
+          - workflow_state: State synchronization plan
+          - artifact_tracking: How artifacts map to DNA.json
+          
+  quality_standards:
+    - completeness: All agents and artifacts accounted for
+    - coordination: Clear handoff points between agents
+    - validation: Every output has verification criteria
+    - traceability: Each step linked to requirements
+    - recoverability: Fallback plans for failures
+    - synchronization: DNA.json alignment maintained
+    
+  orchestration_patterns:
+    sequential:
+      description: Tasks executed one after another
+      use_when: Dependencies require ordered execution
+      example: "Research → Design → Implementation → Testing"
+      
+    parallel:
+      description: Multiple agents work simultaneously
+      use_when: Tasks are independent
+      example: "Frontend and Backend development in parallel"
+      
+    pipeline:
+      description: Continuous flow with staged processing
+      use_when: Stream processing or iterative refinement
+      example: "Data ingestion → Processing → Analysis → Report"
+      
+    hierarchical:
+      description: Master delegates to sub-orchestrators
+      use_when: Complex multi-level coordination needed
+      example: "Master → Feature orchestrators → Implementation agents"
+      
+  validation_framework:
+    pre_execution:
+      - agent_availability: Verify all agents are operational
+      - resource_check: Ensure required resources available
+      - dependency_resolution: Confirm all dependencies met
+      - conflict_detection: Check for resource conflicts
+      
+    during_execution:
+      - progress_tracking: Monitor step completion
+      - artifact_validation: Verify outputs meet criteria
+      - checkpoint_verification: Validate at each checkpoint
+      - state_synchronization: Keep DNA.json updated
+      
+    post_execution:
+      - completeness_check: All steps completed
+      - artifact_inventory: All outputs present
+      - quality_validation: Outputs meet standards
+      - documentation: Execution documented
+      
+  example_orchestration:
+    workflow_overview:
+      objective: "Build complete authentication system"
+      phases: ["Requirements", "Design", "Implementation", "Testing", "Deployment"]
+      timeline: "5 days"
+      success_metrics: "All auth endpoints working with 100% test coverage"
+      
+    agent_coordination:
+      - agent_name: "elicitation-agent"
+        role: "Gather detailed requirements"
+        handoff_points: "Passes requirements to @system-architect-agent"
+        
+      - agent_name: "system-architect-agent"
+        role: "Design system architecture"
+        dependencies: "@elicitation-agent"
+        handoff_points: "Passes design to @task-planning-agent"
+        
+      - agent_name: "task-planning-agent"
+        role: "Break down into tasks"
+        dependencies: "@system-architect-agent"
+        handoff_points: "Assigns tasks to implementation agents"
+        
+      - agent_name: "coding-agent"
+        role: "Implement authentication logic"
+        dependencies: "@task-planning-agent"
+        handoff_points: "Code to @test-orchestrator-agent"
+        
+      - agent_name: "test-orchestrator-agent"
+        role: "Create and run tests"
+        dependencies: "@coding-agent"
+        handoff_points: "Results to @security-auditor-agent"
+        
+    execution_sequence:
+      - phase: "Requirements"
+        steps:
+          - step_id: "REQ-001"
+            description: "Gather authentication requirements"
+            assigned_agent: "@elicitation-agent"
+            outputs: ["requirements.md", "user-stories.json"]
+            validation: "All auth scenarios documented"
+            
+      - phase: "Design"
+        steps:
+          - step_id: "DES-001"
+            description: "Design authentication architecture"
+            assigned_agent: "@system-architect-agent"
+            inputs: ["requirements.md"]
+            outputs: ["architecture.md", "api-design.yaml"]
+            validation: "Design reviewed and approved"
+            
+      - phase: "Implementation"
+        steps:
+          - step_id: "IMP-001"
+            description: "Implement JWT service"
+            assigned_agent: "@coding-agent"
+            inputs: ["api-design.yaml"]
+            outputs: ["jwt.service.ts", "auth.middleware.ts"]
+            validation: "Code compiles and passes linting"
+            
+          - step_id: "IMP-002"
+            description: "Create test suite"
+            assigned_agent: "@test-orchestrator-agent"
+            inputs: ["jwt.service.ts"]
+            outputs: ["jwt.service.test.ts", "auth.integration.test.ts"]
+            validation: "All tests passing"
+            
+    checkpoints:
+      - checkpoint_id: "CP-001"
+        phase: "Requirements"
+        validation_steps: ["Verify all user stories complete", "Check acceptance criteria"]
+        success_criteria: "100% requirement coverage"
+        
+      - checkpoint_id: "CP-002"
+        phase: "Implementation"
+        validation_steps: ["Run test suite", "Check code coverage"]
+        success_criteria: ">90% code coverage, all tests pass"
+        
+    DNA_json_integration:
+      current_step: "step_001_requirements"
+      step_definitions:
+        - step_id: "step_001_requirements"
+          file_path: "steps/requirements.yaml"
+          assigned_agent: "@elicitation-agent"
+          next_task: "step_002_design"
+          
+        - step_id: "step_002_design"
+          file_path: "steps/design.yaml"
+          assigned_agent: "@system-architect-agent"
+          next_task: "step_003_implementation"

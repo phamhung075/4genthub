@@ -85,7 +85,7 @@ Creates a new git branch within a project as a task tree container.
   "project_id": "proj-123e4567-e89b-12d3-a456-426614174000",
   "git_branch_name": "feature/user-authentication",
   "git_branch_description": "Implement JWT-based user authentication system with refresh tokens, password reset, and multi-factor authentication support",
-  "agent_id": "@security_auditor_agent"
+  "agent_id": "security-auditor-agent"
 }
 ```
 
@@ -100,7 +100,7 @@ Creates a new git branch within a project as a task tree container.
     "name": "feature/user-authentication",
     "description": "Implement JWT-based user authentication system with refresh tokens, password reset, and multi-factor authentication support",
     "status": "active",
-    "assigned_agent": "@security_auditor_agent",
+    "assigned_agent": "security-auditor-agent",
     "created_by": "user-550e8400-e29b-41d4-a716-446655440000",
     "created_at": "2025-01-27T11:30:00Z",
     "task_count": 0,
@@ -117,7 +117,7 @@ Creates a new git branch within a project as a task tree container.
       "Design JWT token structure", 
       "Plan database schema for users"
     ],
-    "recommended_agents": ["@coding_agent", "@database_agent", "@ui_designer_agent"],
+    "recommended_agents": ["coding-agent", "@database_agent", "@ui_designer_agent"],
     "estimated_duration": "2-3 weeks"
   }
 }
@@ -150,7 +150,7 @@ Gets complete branch information including statistics and agent assignments.
     "name": "feature/user-authentication", 
     "description": "Implement JWT-based user authentication system with refresh tokens, password reset, and multi-factor authentication support",
     "status": "active",
-    "assigned_agent": "@security_auditor_agent",
+    "assigned_agent": "security-auditor-agent",
     "created_by": "user-550e8400-e29b-41d4-a716-446655440000",
     "created_at": "2025-01-27T11:30:00Z",
     "updated_at": "2025-01-27T14:45:00Z"
@@ -165,7 +165,7 @@ Gets complete branch information including statistics and agent assignments.
     "active_contributors": 3
   },
   "agent_activity": {
-    "current_agent": "@coding_agent",
+    "current_agent": "coding-agent",
     "last_activity": "2025-01-27T14:45:00Z", 
     "tasks_completed": 3,
     "insights_contributed": 8
@@ -196,7 +196,7 @@ Updates branch properties and configuration.
   "action": "update",
   "git_branch_id": "branch-456e7890-f12b-34c5-d678-901234567efg",
   "git_branch_description": "Implement comprehensive JWT-based user authentication system with refresh tokens, password reset, multi-factor authentication, and OAuth2 integration for social login",
-  "agent_id": "@coding_agent"
+  "agent_id": "coding-agent"
 }
 ```
 
@@ -247,7 +247,7 @@ Lists branches within a project with filtering and statistics.
       "name": "feature/user-authentication",
       "description": "Implement JWT-based user authentication system...",
       "status": "active",
-      "assigned_agent": "@coding_agent",
+      "assigned_agent": "coding-agent",
       "created_at": "2025-01-27T11:30:00Z",
       "statistics": {
         "total_tasks": 12,
@@ -340,7 +340,7 @@ Provides detailed analytics and metrics for a specific branch.
       "events": [
         {"time": "14:45", "type": "task_completed", "description": "JWT service implementation completed"},
         {"time": "12:30", "type": "task_started", "description": "Password reset flow implementation started"},
-        {"time": "10:15", "type": "agent_switch", "description": "Agent changed from @security_auditor_agent to @coding_agent"}
+        {"time": "10:15", "type": "agent_switch", "description": "Agent changed from security-auditor-agent to coding-agent"}
       ]
     }
   ],
@@ -361,23 +361,23 @@ Assigns a specialized agent to work on branch tasks.
 **Required Parameters:**
 - `action`: "assign_agent"
 - `git_branch_id`: Branch UUID
-- `agent_id`: Agent identifier (e.g., "@coding_agent")
+- `agent_id`: Agent identifier (e.g., "coding-agent")
 
 **Available Agent Types:**
-- `@coding_agent` - Implementation and development work
+- `coding-agent` - Implementation and development work
 - `@ui_designer_agent` - Frontend and user interface work  
 - `@database_agent` - Database design and optimization
-- `@security_auditor_agent` - Security reviews and compliance
-- `@test_orchestrator_agent` - Testing and quality assurance
-- `@devops_agent` - Deployment and infrastructure
-- `@documentation_agent` - Documentation and guides
+- `security-auditor-agent` - Security reviews and compliance
+- `test-orchestrator-agent` - Testing and quality assurance
+- `devops-agent` - Deployment and infrastructure
+- `documentation-agent` - Documentation and guides
 
 **Example Request:**
 ```json
 {
   "action": "assign_agent",
   "git_branch_id": "branch-456e7890-f12b-34c5-d678-901234567efg",
-  "agent_id": "@security_auditor_agent"
+  "agent_id": "security-auditor-agent"
 }
 ```
 
@@ -387,8 +387,8 @@ Assigns a specialized agent to work on branch tasks.
   "success": true,
   "operation": "assign_agent",
   "branch_id": "branch-456e7890-f12b-34c5-d678-901234567efg",
-  "previous_agent": "@coding_agent", 
-  "new_agent": "@security_auditor_agent",
+  "previous_agent": "coding-agent", 
+  "new_agent": "security-auditor-agent",
   "assignment_reason": "Security review phase for authentication system",
   "agent_context": {
     "specialized_for": ["security_audit", "vulnerability_assessment", "compliance_check"],
@@ -481,12 +481,12 @@ Project
 ### With Agent Assignment
 ```json
 // 1. Assign specialist agent to branch
-{"action": "assign_agent", "git_branch_id": "branch-uuid", "agent_id": "@coding_agent"}
+{"action": "assign_agent", "git_branch_id": "branch-uuid", "agent_id": "coding-agent"}
 
 // 2. Agent receives full branch context and task list
 // 3. Agent works on tasks within their specialization
 // 4. Switch agents as work phases change
-{"action": "assign_agent", "agent_id": "@security_auditor_agent"}
+{"action": "assign_agent", "agent_id": "security-auditor-agent"}
 ```
 
 ## Workflow Guidance Features

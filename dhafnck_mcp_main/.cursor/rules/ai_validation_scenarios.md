@@ -21,7 +21,7 @@ User requests: "Add a user profile editing feature to our e-commerce app"
 #### Phase 1: Initial Setup ✓
 ```python
 # 1. MANDATORY: Switch to orchestrator first
-call_agent(name_agent="@master_orchestrator_agent")
+call_agent(name_agent="master-orchestrator-agent")
 
 # 2. System health check
 health = manage_connection(action="health_check")
@@ -107,7 +107,7 @@ manage_context(action="delegate", level="task", context_id=task_id,
 ```
 
 ### ❌ Common Violations to Avoid:
-- Starting work without switching to @master_orchestrator_agent first
+- Starting work without switching to master-orchestrator-agent first
 - Not resolving hierarchical context before planning
 - Skipping agent role switches for different work types
 - Weak completion summaries ("Fixed profile editing")
@@ -128,7 +128,7 @@ AI agent has tasks in 3 projects:
 #### Phase 1: Assessment ✓
 ```python
 # 1. Start with orchestrator
-call_agent(name_agent="@master_orchestrator_agent")
+call_agent(name_agent="master-orchestrator-agent")
 
 # 2. Get overview of all projects
 projects = manage_project(action="list")
@@ -297,7 +297,7 @@ manage_context(action="delegate", level="task", context_id=auth_bug_task_id,
 
 ### Before Starting Any Work:
 ```
-□ Did I switch to @master_orchestrator_agent first?
+□ Did I switch to master-orchestrator-agent first?
 □ Did I check system health?
 □ Did I resolve hierarchical context?
 □ Am I in the right specialist agent role for this work type?

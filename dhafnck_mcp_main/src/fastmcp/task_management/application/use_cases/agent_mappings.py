@@ -4,77 +4,155 @@ Generated: 2025-09-09
 Purpose: Support deprecated agent names during migration period
 """
 
-# Agent consolidation mappings (deprecated → active)
+# Agent consolidation mappings (deprecated → active kebab-case)
 DEPRECATED_AGENT_MAPPINGS = {
     # Documentation consolidation
-    "tech_spec_agent": "@documentation_agent",
-    "tech-spec-agent": "@documentation_agent",
-    "prd_architect_agent": "@documentation_agent",
-    "prd-architect-agent": "@documentation_agent",
+    "tech_spec_agent": "documentation-agent",
+    "tech-spec-agent": "documentation-agent",
+    "prd_architect_agent": "documentation-agent",
+    "prd-architect-agent": "documentation-agent",
+    "documentation-agent": "documentation-agent",
+    "documentation-agent": "documentation-agent",
     
     # Research consolidation  
-    "mcp_researcher_agent": "@deep_research_agent",
-    "mcp-researcher-agent": "@deep_research_agent",
+    "mcp_researcher_agent": "deep-research-agent",
+    "mcp-researcher-agent": "deep-research-agent",
+    "deep-research-agent": "deep-research-agent",
+    "deep-research-agent": "deep-research-agent",
     
     # Creative consolidation
-    "idea_generation_agent": "@creative_ideation_agent",
-    "idea-generation-agent": "@creative_ideation_agent",
-    "idea_refinement_agent": "@creative_ideation_agent",
-    "idea-refinement-agent": "@creative_ideation_agent",
+    "idea_generation_agent": "creative-ideation-agent",
+    "idea-generation-agent": "creative-ideation-agent",
+    "idea_refinement_agent": "creative-ideation-agent",
+    "idea-refinement-agent": "creative-ideation-agent",
+    "creative-ideation-agent": "creative-ideation-agent",
+    "creative-ideation-agent": "creative-ideation-agent",
     
     # Marketing consolidation
-    "seo_sem_agent": "@marketing_strategy_orchestrator_agent",
-    "seo-sem-agent": "@marketing_strategy_orchestrator_agent",
-    "growth_hacking_idea_agent": "@marketing_strategy_orchestrator_agent",
-    "growth-hacking-idea-agent": "@marketing_strategy_orchestrator_agent",
-    "content_strategy_agent": "@marketing_strategy_orchestrator_agent",
-    "content-strategy-agent": "@marketing_strategy_orchestrator_agent",
+    "seo_sem_agent": "marketing-strategy-orchestrator-agent",
+    "seo-sem-agent": "marketing-strategy-orchestrator-agent",
+    "growth_hacking_idea_agent": "marketing-strategy-orchestrator-agent",
+    "growth-hacking-idea-agent": "marketing-strategy-orchestrator-agent",
+    "content_strategy_agent": "marketing-strategy-orchestrator-agent",
+    "content-strategy-agent": "marketing-strategy-orchestrator-agent",
+    "marketing-strategy-orchestrator-agent": "marketing-strategy-orchestrator-agent",
+    "marketing-strategy-orchestrator-agent": "marketing-strategy-orchestrator-agent",
     
     # DevOps consolidation
-    "swarm_scaler_agent": "@devops_agent",
-    "swarm-scaler-agent": "@devops_agent",
-    "adaptive_deployment_strategist_agent": "@devops_agent",
-    "adaptive-deployment-strategist-agent": "@devops_agent",
-    "mcp_configuration_agent": "@devops_agent",
-    "mcp-configuration-agent": "@devops_agent",
+    "swarm_scaler_agent": "devops-agent",
+    "swarm-scaler-agent": "devops-agent",
+    "adaptive_deployment_strategist_agent": "devops-agent",
+    "adaptive-deployment-strategist-agent": "devops-agent",
+    "mcp_configuration_agent": "devops-agent",
+    "mcp-configuration-agent": "devops-agent",
+    "devops-agent": "devops-agent",
+    "devops-agent": "devops-agent",
     
     # Debug consolidation
-    "remediation_agent": "@debugger_agent",
-    "remediation-agent": "@debugger_agent",
+    "remediation_agent": "debugger-agent",
+    "remediation-agent": "debugger-agent",
+    "debugger-agent": "debugger-agent",
+    "debugger-agent": "debugger-agent",
     
-    # Renamings
-    "master_orchestrator_agent": "@master_orchestrator_agent",
-    "master-orchestrator-agent": "@master_orchestrator_agent",
-    "brainjs_ml_agent": "@ml_specialist_agent",
-    "brainjs-ml-agent": "@ml_specialist_agent",
-    "ui_designer_expert_shadcn_agent": "@ui_specialist_agent",
-    "ui-designer-expert-shadcn-agent": "@ui_specialist_agent",
+    # Specialized agent mappings
+    "brainjs_ml_agent": "ml-specialist-agent",
+    "brainjs-ml-agent": "ml-specialist-agent",
+    "ml-specialist-agent": "ml-specialist-agent",
+    "ml-specialist-agent": "ml-specialist-agent",
+    "ui_designer_expert_shadcn_agent": "ui-specialist-agent",
+    "ui-designer-expert-shadcn-agent": "ui-specialist-agent",
+    "ui-specialist-agent": "ui-specialist-agent",
+    "ui-specialist-agent": "ui-specialist-agent",
+    
+    # Map all other agents from underscore/@ to kebab-case
+    "master-orchestrator-agent": "master-orchestrator-agent",
+    "coding-agent": "coding-agent",
+    "coding-agent": "coding-agent",
+    "code-reviewer-agent": "code-reviewer-agent",
+    "code-reviewer-agent": "code-reviewer-agent",
+    "branding-agent": "branding-agent",
+    "branding-agent": "branding-agent",
+    "system-architect-agent": "system-architect-agent",
+    "system-architect-agent": "system-architect-agent",
+    "task-planning-agent": "task-planning-agent",
+    "task-planning-agent": "task-planning-agent",
+    "elicitation-agent": "elicitation-agent",
+    "elicitation-agent": "elicitation-agent",
+    "technology-advisor-agent": "technology-advisor-agent",
+    "technology-advisor-agent": "technology-advisor-agent",
+    "security-auditor-agent": "security-auditor-agent",
+    "security-auditor-agent": "security-auditor-agent",
+    "test-orchestrator-agent": "test-orchestrator-agent",
+    "test-orchestrator-agent": "test-orchestrator-agent",
+    "performance-load-tester-agent": "performance-load-tester-agent",
+    "performance-load-tester-agent": "performance-load-tester-agent",
+    "uat-coordinator-agent": "uat-coordinator-agent",
+    "uat-coordinator-agent": "uat-coordinator-agent",
+    "health-monitor-agent": "health-monitor-agent",
+    "health-monitor-agent": "health-monitor-agent",
+    "project-initiator-agent": "project-initiator-agent",
+    "project-initiator-agent": "project-initiator-agent",
+    "ethical-review-agent": "ethical-review-agent",
+    "ethical-review-agent": "ethical-review-agent",
+    "compliance-scope-agent": "compliance-scope-agent",
+    "compliance-scope-agent": "compliance-scope-agent",
+    "core-concept-agent": "core-concept-agent",
+    "core-concept-agent": "core-concept-agent",
+    "community-strategy-agent": "community-strategy-agent",
+    "community-strategy-agent": "community-strategy-agent",
+    "design-system-agent": "design-system-agent",
+    "design-system-agent": "design-system-agent",
+    "prototyping-agent": "prototyping-agent",
+    "prototyping-agent": "prototyping-agent",
+    "root-cause-analysis-agent": "root-cause-analysis-agent",
+    "root-cause-analysis-agent": "root-cause-analysis-agent",
+    "efficiency-optimization-agent": "efficiency-optimization-agent",
+    "efficiency-optimization-agent": "efficiency-optimization-agent",
+    "analytics-setup-agent": "analytics-setup-agent",
+    "analytics-setup-agent": "analytics-setup-agent",
+    "llm-ai-agents-research": "llm-ai-agents-research",
+    "llm-ai-agents-research": "llm-ai-agents-research",
 }
 
 def resolve_agent_name(agent_name: str) -> str:
     """
-    Resolve agent name, handling deprecated names.
+    Resolve agent name to standard kebab-case format.
     
     Args:
-        agent_name: The agent name to resolve
+        agent_name: The agent name to resolve (can be @prefixed, underscore, or kebab-case)
         
     Returns:
-        The active agent name (mapped if deprecated)
+        The standard kebab-case agent name
     """
-    # Normalize to underscore format
-    normalized = agent_name.replace('-', '_')
+    # Direct lookup first (handles @, underscore, and kebab variations)
+    if agent_name in DEPRECATED_AGENT_MAPPINGS:
+        return DEPRECATED_AGENT_MAPPINGS[agent_name]
     
-    # Check if deprecated
+    # Strip @ prefix and try again
+    stripped = agent_name.lstrip('@')
+    if stripped in DEPRECATED_AGENT_MAPPINGS:
+        return DEPRECATED_AGENT_MAPPINGS[stripped]
+    
+    # Convert to underscore format and try
+    normalized = agent_name.replace('-', '_').lstrip('@')
     if normalized in DEPRECATED_AGENT_MAPPINGS:
         return DEPRECATED_AGENT_MAPPINGS[normalized]
     
-    # Check hyphenated version
-    hyphenated = agent_name.replace('_', '-')
+    # Convert to hyphenated and try
+    hyphenated = agent_name.replace('_', '-').lstrip('@')
     if hyphenated in DEPRECATED_AGENT_MAPPINGS:
         return DEPRECATED_AGENT_MAPPINGS[hyphenated]
     
-    # Return original if not deprecated
-    return agent_name
+    # If not in mappings, standardize to kebab-case
+    # Remove @ prefix, replace underscores with hyphens
+    standardized = agent_name.lstrip('@').replace('_', '-').lower()
+    
+    # Ensure it ends with -agent if not already
+    if not standardized.endswith('-agent') and not standardized.endswith('-research'):
+        if 'agent' not in standardized:
+            standardized = f"{standardized}-agent"
+    
+    return standardized
 
 def is_deprecated_agent(agent_name: str) -> bool:
     """

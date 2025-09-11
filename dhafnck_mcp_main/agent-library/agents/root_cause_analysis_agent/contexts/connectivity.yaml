@@ -1,4 +1,0 @@
-connectivity:
-  interactsWith:
-  - @coding_agent
-  feedbackLoop: Collects feedback on analysis accuracy, recommendation effectiveness, and incident recurrence from @remediation_agent, @incident_learning_agent, and @health_monitor_agent. Feedback is logged, analyzed for trends, and used to update investigation methodologies and the knowledge base.

@@ -19,25 +19,25 @@
 
 ### ✅ High-Risk Agents (Administrative/System Control) - SECURED
 ```yaml
-@master_orchestrator_agent:
+master-orchestrator-agent:
   risk_level: CRITICAL ✅ SECURED
   capabilities: [system_orchestration, multi_agent_coordination, workflow_control]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
   required_permissions: [admin:orchestrate, system:control, agent:manage]
 
-@system_architect_agent:
+system-architect-agent:
   risk_level: CRITICAL ✅ SECURED  
   capabilities: [system_design, architecture_modification, infrastructure_control]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
   required_permissions: [system:architect, infrastructure:modify, security:design]
 
-@devops_agent:
+devops-agent:
   risk_level: CRITICAL ✅ SECURED
   capabilities: [deployment, infrastructure, ci_cd_control]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement  
   required_permissions: [devops:deploy, infrastructure:manage, system:admin]
 
-@security_auditor_agent:
+security-auditor-agent:
   risk_level: CRITICAL ✅ SECURED
   capabilities: [security_audit, vulnerability_assessment, compliance_validation]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
@@ -46,19 +46,19 @@
 
 ### ✅ Medium-Risk Agents (Development/Content) - SECURED
 ```yaml
-@coding_agent:
+coding-agent:
   risk_level: HIGH ✅ SECURED
   capabilities: [code_generation, file_modification, system_integration]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
   required_permissions: [code:write, file:modify, integration:create]
 
-@debugger_agent:
+debugger-agent:
   risk_level: HIGH ✅ SECURED
   capabilities: [system_debugging, log_access, diagnostic_operations]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
   required_permissions: [debug:access, logs:read, diagnostics:run]
 
-@test_orchestrator_agent:
+test-orchestrator-agent:
   risk_level: MEDIUM ✅ SECURED
   capabilities: [test_execution, system_validation, qa_operations]  
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
@@ -73,7 +73,7 @@
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
   required_permissions: [ui:design, frontend:modify, interface:control]
 
-@documentation_agent:
+documentation-agent:
   risk_level: LOW ✅ SECURED
   capabilities: [document_generation, content_creation, knowledge_management]
   current_security: ✅ FULL AUTHENTICATION - Strict authentication enforcement
@@ -129,7 +129,7 @@ PERMISSION_CATEGORIES = {
 ```python
 AGENT_AUTHORIZATION_MATRIX = {
     # === CRITICAL RISK AGENTS ===
-    "@master_orchestrator_agent": {
+    "master-orchestrator-agent": {
         "risk_level": "CRITICAL",
         "required_permissions": [
             "system:control", "agent:manage", "workflow:orchestrate"
@@ -143,7 +143,7 @@ AGENT_AUTHORIZATION_MATRIX = {
         "requires_mfa": True
     },
     
-    "@system_architect_agent": {
+    "system-architect-agent": {
         "risk_level": "CRITICAL", 
         "required_permissions": [
             "system:architect", "infrastructure:design", "security:design"
@@ -157,7 +157,7 @@ AGENT_AUTHORIZATION_MATRIX = {
         "requires_mfa": True
     },
     
-    "@security_auditor_agent": {
+    "security-auditor-agent": {
         "risk_level": "CRITICAL",
         "required_permissions": [
             "security:audit", "security:read", "compliance:validate", "system:read"
@@ -171,7 +171,7 @@ AGENT_AUTHORIZATION_MATRIX = {
         "requires_mfa": True
     },
     
-    "@devops_agent": {
+    "devops-agent": {
         "risk_level": "CRITICAL",
         "required_permissions": [
             "devops:deploy", "infrastructure:manage", "system:admin"
@@ -186,7 +186,7 @@ AGENT_AUTHORIZATION_MATRIX = {
     },
     
     # === HIGH RISK AGENTS ===
-    "@coding_agent": {
+    "coding-agent": {
         "risk_level": "HIGH",
         "required_permissions": [
             "code:write", "file:modify", "integration:create"
@@ -200,7 +200,7 @@ AGENT_AUTHORIZATION_MATRIX = {
         "requires_mfa": False
     },
     
-    "@debugger_agent": {
+    "debugger-agent": {
         "risk_level": "HIGH",
         "required_permissions": [
             "debug:access", "logs:read", "diagnostics:run", "system:read"
@@ -215,7 +215,7 @@ AGENT_AUTHORIZATION_MATRIX = {
     },
     
     # === MEDIUM RISK AGENTS ===
-    "@test_orchestrator_agent": {
+    "test-orchestrator-agent": {
         "risk_level": "MEDIUM",
         "required_permissions": [
             "test:execute", "validation:run", "qa:access"
@@ -244,7 +244,7 @@ AGENT_AUTHORIZATION_MATRIX = {
     },
     
     # === LOW RISK AGENTS ===
-    "@documentation_agent": {
+    "documentation-agent": {
         "risk_level": "LOW",
         "required_permissions": [
             "ai_docs:write", "content:create", "knowledge:manage"
@@ -504,7 +504,7 @@ class AgentAuditLogger:
 
 ---
 
-**Document Authority:** Security Auditor Agent (@security_auditor_agent)  
+**Document Authority:** Security Auditor Agent (security-auditor-agent)  
 **Implementation Priority:** CRITICAL (CVSS 8.9)  
 **Review Required:** System Administrator, Security Team Lead  
 **Next Phase:** Context Isolation Implementation (CVSS 8.5)

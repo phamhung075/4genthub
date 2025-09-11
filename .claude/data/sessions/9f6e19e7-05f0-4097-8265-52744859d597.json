@@ -1,0 +1,7 @@
+{
+  "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+  "prompts": [
+    "i want name agent must use standard name-like-this-agent\nnot name_like_this_agent or @name_like_this_agent\nmodify .claude/agents files name and content respect this\nmodify dhafnck_mcp_main/agent-library/agents too\nmodify call_agent and manage_agent too"
+  ],
+  "agent_name": "Axiom"
+}

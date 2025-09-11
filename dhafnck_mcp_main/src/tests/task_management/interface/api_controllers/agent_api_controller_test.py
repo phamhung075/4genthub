@@ -58,7 +58,7 @@ class TestAgentAPIController:
         # Mock successful facade response
         mock_agents = [
             {
-                "id": "@coding_agent",
+                "id": "coding-agent",
                 "name": "Coding Agent",
                 "category": "development",
                 "description": "Handles code implementation"
@@ -135,7 +135,7 @@ class TestAgentAPIController:
     
     def test_get_agent_by_id_success(self):
         """Test successful retrieval of a specific agent."""
-        agent_id = "@coding_agent"
+        agent_id = "coding-agent"
         mock_agent = {
             "id": agent_id,
             "name": "Coding Agent",
@@ -165,7 +165,7 @@ class TestAgentAPIController:
     
     def test_get_agent_by_id_not_found_tries_static(self):
         """Test fallback to static metadata when agent not found in facade."""
-        agent_id = "@master_orchestrator_agent"
+        agent_id = "master-orchestrator-agent"
         
         # Mock facade not found response
         self.mock_facade.get_agent.return_value = {
@@ -201,7 +201,7 @@ class TestAgentAPIController:
     
     def test_get_agent_by_id_exception_tries_static_fallback(self):
         """Test fallback to static metadata when exception occurs."""
-        agent_id = "@debugger_agent"
+        agent_id = "debugger-agent"
         
         # Mock exception
         self.mock_facade.get_agent.side_effect = Exception("Database error")
@@ -221,13 +221,13 @@ class TestAgentAPIController:
         category = "development"
         mock_agents = [
             {
-                "id": "@coding_agent",
+                "id": "coding-agent",
                 "name": "Coding Agent",
                 "category": category,
                 "description": "Handles code implementation"
             },
             {
-                "id": "@debugger_agent",
+                "id": "debugger-agent",
                 "name": "Debugger Agent",
                 "category": category,
                 "description": "Handles debugging"
@@ -400,7 +400,7 @@ class TestAgentAPIController:
     
     def test_find_static_agent_found(self):
         """Test finding an agent in static metadata."""
-        agent_id = "@master_orchestrator_agent"
+        agent_id = "master-orchestrator-agent"
         agent = self.controller._find_static_agent(agent_id)
         
         assert agent is not None
@@ -517,10 +517,10 @@ class TestAgentAPIControllerIntegration:
         
         # Verify key agents are present
         agent_ids = [agent["id"] for agent in result["agents"]]
-        assert "@master_orchestrator_agent" in agent_ids
-        assert "@coding_agent" in agent_ids
-        assert "@debugger_agent" in agent_ids
-        assert "@test_orchestrator_agent" in agent_ids
+        assert "master-orchestrator-agent" in agent_ids
+        assert "coding-agent" in agent_ids
+        assert "debugger-agent" in agent_ids
+        assert "test-orchestrator-agent" in agent_ids
     
     def test_static_categories_match_agents(self):
         """Test that static categories match the agents defined."""

@@ -23,16 +23,16 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 ### Group 1: Testing Coordination (6 → 2 agents)
 
 **Current Agents:**
-- `test_orchestrator_agent` - Orchestrates comprehensive testing strategies
+- `test-orchestrator-agent` - Orchestrates comprehensive testing strategies
 - `lead_testing_agent` - Testing coordinator and QA leader  
 - `functional_tester_agent` - Executes functional tests
 - `exploratory_tester_agent` - Unscripted exploratory testing
-- `performance_load_tester_agent` - Performance and load testing
+- `performance-load-tester-agent` - Performance and load testing
 - `test_case_generator_agent` - Generates comprehensive test cases
 
 **🎯 RECOMMENDATION: Keep 2**
-- **KEEP**: `test_orchestrator_agent` (comprehensive testing coordination)
-- **KEEP**: `performance_load_tester_agent` (specialized performance testing)
+- **KEEP**: `test-orchestrator-agent` (comprehensive testing coordination)
+- **KEEP**: `performance-load-tester-agent` (specialized performance testing)
 - **REMOVE**: `lead_testing_agent` (redundant with test_orchestrator)
 - **REMOVE**: `functional_tester_agent` (functionality absorbed by test_orchestrator)
 - **REMOVE**: `exploratory_tester_agent` (can be handled by test_orchestrator)
@@ -43,26 +43,26 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 **Current Agents:**
 - `ui_designer_agent` - General UI design and prototypes
 - `ui_designer_expert_shadcn_agent` - Specialized shadcn/ui expert
-- `design_system_agent` - Design systems and component libraries
+- `design-system-agent` - Design systems and component libraries
 - `usability_heuristic_agent` - Usability evaluations
 
 **🎯 RECOMMENDATION: Keep 2**
 - **KEEP**: `ui_designer_expert_shadcn_agent` (specialized shadcn/ui expertise)
-- **KEEP**: `design_system_agent` (comprehensive design system management)
+- **KEEP**: `design-system-agent` (comprehensive design system management)
 - **REMOVE**: `ui_designer_agent` (functionality overlaps with shadcn expert)
-- **REMOVE**: `usability_heuristic_agent` (can be absorbed into design_system_agent)
+- **REMOVE**: `usability_heuristic_agent` (can be absorbed into design-system-agent)
 
 ### Group 3: Strategy and Orchestration (5 → 2 agents)
 
 **Current Agents:**
-- `master_orchestrator_agent` - Supreme project conductor
+- `master-orchestrator-agent` - Supreme project conductor
 - `development_orchestrator_agent` - Development lifecycle coordinator
 - `task_deep_manager_agent` - Complex project orchestrator
 - `workflow_architect_agent` - Workflow design and architecture
 - `adaptive_deployment_strategist_agent` - Deployment strategies
 
 **🎯 RECOMMENDATION: Keep 2**
-- **KEEP**: `master_orchestrator_agent` (supreme multi-agent coordinator)
+- **KEEP**: `master-orchestrator-agent` (supreme multi-agent coordinator)
 - **KEEP**: `adaptive_deployment_strategist_agent` (specialized deployment expertise)
 - **REMOVE**: `development_orchestrator_agent` (redundant with uber_orchestrator)
 - **REMOVE**: `task_deep_manager_agent` (overlaps with uber_orchestrator)
@@ -71,41 +71,41 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 ### Group 4: Research and Analysis (4 → 2 agents)
 
 **Current Agents:**
-- `deep_research_agent` - Comprehensive research across domains
+- `deep-research-agent` - Comprehensive research across domains
 - `market_research_agent` - Market analysis and competitive research
 - `ux_researcher_agent` - User experience research
 - `mcp_researcher_agent` - MCP servers and technology research
 
 **🎯 RECOMMENDATION: Keep 2**
-- **KEEP**: `deep_research_agent` (comprehensive multi-domain research)
+- **KEEP**: `deep-research-agent` (comprehensive multi-domain research)
 - **KEEP**: `mcp_researcher_agent` (specialized MCP technology research)
-- **REMOVE**: `market_research_agent` (can be handled by deep_research_agent)
-- **REMOVE**: `ux_researcher_agent` (can be absorbed into design_system_agent)
+- **REMOVE**: `market_research_agent` (can be handled by deep-research-agent)
+- **REMOVE**: `ux_researcher_agent` (can be absorbed into design-system-agent)
 
 ### Group 5: Security and Compliance (4 → 2 agents)
 
 **Current Agents:**
-- `security_auditor_agent` - Security audits and vulnerability assessment
+- `security-auditor-agent` - Security audits and vulnerability assessment
 - `security_penetration_tester_agent` - Penetration testing
-- `compliance_scope_agent` - Compliance requirements definition
+- `compliance-scope-agent` - Compliance requirements definition
 - `compliance_testing_agent` - Compliance verification testing
 
 **🎯 RECOMMENDATION: Keep 2**
-- **KEEP**: `security_auditor_agent` (comprehensive security assessment)
-- **KEEP**: `compliance_scope_agent` (specialized compliance requirements)
+- **KEEP**: `security-auditor-agent` (comprehensive security assessment)
+- **KEEP**: `compliance-scope-agent` (specialized compliance requirements)
 - **REMOVE**: `security_penetration_tester_agent` (absorbed into security_auditor)
-- **REMOVE**: `compliance_testing_agent` (absorbed into compliance_scope_agent)
+- **REMOVE**: `compliance_testing_agent` (absorbed into compliance-scope-agent)
 
 ### Group 6: Marketing Strategy (4 → 2 agents)
 
 **Current Agents:**
-- `marketing_strategy_orchestrator_agent` - Marketing strategy orchestration
+- `marketing-strategy-orchestrator-agent` - Marketing strategy orchestration
 - `campaign_manager_agent` - Marketing campaign management
 - `content_strategy_agent` - Content strategy development
 - `social_media_setup_agent` - Social media presence setup
 
 **🎯 RECOMMENDATION: Keep 2**
-- **KEEP**: `marketing_strategy_orchestrator_agent` (comprehensive marketing coordination)
+- **KEEP**: `marketing-strategy-orchestrator-agent` (comprehensive marketing coordination)
 - **KEEP**: `content_strategy_agent` (specialized content strategy)
 - **REMOVE**: `campaign_manager_agent` (absorbed into marketing_strategy_orchestrator)
 - **REMOVE**: `social_media_setup_agent` (absorbed into marketing_strategy_orchestrator)
@@ -113,16 +113,16 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 ### Group 7: Documentation and Knowledge (4 → 1 agent)
 
 **Current Agents:**
-- `documentation_agent` - Comprehensive documentation management
+- `documentation-agent` - Comprehensive documentation management
 - `scribe_agent` - Meeting notes and knowledge capture
 - `knowledge_evolution_agent` - System learning and evolution
 - `incident_learning_agent` - Incident analysis and learning
 
 **🎯 RECOMMENDATION: Keep 1**
-- **KEEP**: `documentation_agent` (comprehensive documentation and knowledge management)
-- **REMOVE**: `scribe_agent` (functionality absorbed by documentation_agent)
+- **KEEP**: `documentation-agent` (comprehensive documentation and knowledge management)
+- **REMOVE**: `scribe_agent` (functionality absorbed by documentation-agent)
 - **REMOVE**: `knowledge_evolution_agent` (meta-functionality can be integrated)
-- **REMOVE**: `incident_learning_agent` (absorbed into documentation_agent)
+- **REMOVE**: `incident_learning_agent` (absorbed into documentation-agent)
 
 ### Group 8: Specialized vs Generic (3 → 1 agent)
 
@@ -134,7 +134,7 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 **🎯 RECOMMENDATION: Keep 1**
 - **KEEP**: `brainjs_ml_agent` (specialized ML functionality)
 - **REMOVE**: `generic_purpose_agent` (unclear purpose, likely redundant)
-- **REMOVE**: `algorithmic_problem_solver_agent` (can be absorbed into coding_agent)
+- **REMOVE**: `algorithmic_problem_solver_agent` (can be absorbed into coding-agent)
 
 ## 📋 Complete Removal Recommendations
 
@@ -178,74 +178,74 @@ Analysis of the 69 agents in the DhafnckMCP agent library reveals significant fu
 
 **Additional Single Agents (6 removed):**
 - `video_production_agent` (specialized, rarely used)
-- `graphic_design_agent` (can be absorbed into branding_agent)
+- `graphic_design_agent` (can be absorbed into branding-agent)
 - `growth_hacking_idea_agent` (absorbed into marketing_strategy_orchestrator)
 - `user_feedback_collector_agent` (absorbed into ux functionality in design_system)
 - `visual_regression_testing_agent` (absorbed into test_orchestrator)
-- `design_qa_analyst_agent` (absorbed into design_system_agent)
+- `design_qa_analyst_agent` (absorbed into design-system-agent)
 
 ## 🎯 Final Recommended Agent Library (43 agents)
 
 ### Core Development Agents (8 agents)
-- `coding_agent` - Feature implementation and development
-- `code_reviewer_agent` - Code quality and standards
-- `debugger_agent` - Bug diagnosis and remediation  
-- `devops_agent` - CI/CD and infrastructure
-- `system_architect_agent` - System design and architecture
+- `coding-agent` - Feature implementation and development
+- `code-reviewer-agent` - Code quality and standards
+- `debugger-agent` - Bug diagnosis and remediation  
+- `devops-agent` - CI/CD and infrastructure
+- `system-architect-agent` - System design and architecture
 - `tech_spec_agent` - Technical specifications
-- `technology_advisor_agent` - Technology stack recommendations
-- `prototyping_agent` - Interactive prototypes
+- `technology-advisor-agent` - Technology stack recommendations
+- `prototyping-agent` - Interactive prototypes
 
 ### Core Testing Agents (2 agents)
-- `test_orchestrator_agent` - Comprehensive testing coordination
-- `performance_load_tester_agent` - Performance testing
+- `test-orchestrator-agent` - Comprehensive testing coordination
+- `performance-load-tester-agent` - Performance testing
 
 ### Core Design Agents (2 agents)
 - `ui_designer_expert_shadcn_agent` - UI design and shadcn expertise
-- `design_system_agent` - Design systems and consistency
+- `design-system-agent` - Design systems and consistency
 
 ### Core Strategy Agents (2 agents) 
-- `master_orchestrator_agent` - Multi-agent project coordination
+- `master-orchestrator-agent` - Multi-agent project coordination
 - `adaptive_deployment_strategist_agent` - Deployment strategies
 
 ### Core Research Agents (2 agents)
-- `deep_research_agent` - Multi-domain research
+- `deep-research-agent` - Multi-domain research
 - `mcp_researcher_agent` - MCP technology research
 
 ### Core Security Agents (2 agents)
-- `security_auditor_agent` - Security assessment
-- `compliance_scope_agent` - Compliance requirements
+- `security-auditor-agent` - Security assessment
+- `compliance-scope-agent` - Compliance requirements
 
 ### Core Marketing Agents (2 agents)
-- `marketing_strategy_orchestrator_agent` - Marketing coordination
+- `marketing-strategy-orchestrator-agent` - Marketing coordination
 - `content_strategy_agent` - Content strategy
 
 ### Core Management Agents (7 agents)
-- `documentation_agent` - Documentation and knowledge management
-- `task_planning_agent` - Task decomposition and planning
-- `project_initiator_agent` - Project setup and initiation
-- `elicitation_agent` - Requirements gathering
+- `documentation-agent` - Documentation and knowledge management
+- `task-planning-agent` - Task decomposition and planning
+- `project-initiator-agent` - Project setup and initiation
+- `elicitation-agent` - Requirements gathering
 - `prd_architect_agent` - Product requirements documents
 - `task_sync_agent` - Task synchronization
-- `efficiency_optimization_agent` - Performance optimization
+- `efficiency-optimization-agent` - Performance optimization
 
 ### Core Specialized Agents (16 agents)
 - `brainjs_ml_agent` - Machine learning implementation
-- `analytics_setup_agent` - Analytics and tracking
-- `branding_agent` - Brand identity and guidelines
-- `community_strategy_agent` - Community building
-- `ethical_review_agent` - Ethics assessment
-- `health_monitor_agent` - System health monitoring
+- `analytics-setup-agent` - Analytics and tracking
+- `branding-agent` - Brand identity and guidelines
+- `community-strategy-agent` - Community building
+- `ethical-review-agent` - Ethics assessment
+- `health-monitor-agent` - System health monitoring
 - `remediation_agent` - Automated problem resolution
-- `root_cause_analysis_agent` - Incident investigation
+- `root-cause-analysis-agent` - Incident investigation
 - `swarm_scaler_agent` - Dynamic agent scaling
-- `uat_coordinator_agent` - User acceptance testing
+- `uat-coordinator-agent` - User acceptance testing
 - `mcp_configuration_agent` - MCP server management
 - `nlu_processor_agent` - Natural language processing
 - `seo_sem_agent` - Search engine optimization
 - `idea_generation_agent` - Creative ideation
 - `idea_refinement_agent` - Concept refinement
-- `core_concept_agent` - Product concept definition
+- `core-concept-agent` - Product concept definition
 
 ## 🔄 Migration Strategy
 
@@ -257,14 +257,14 @@ Remove clearly redundant agents with full functionality overlap:
 
 ### Phase 2: Functionality Integration (Medium Risk)
 Merge specialized functionality into broader agents:
-- Integrate `functional_tester_agent` capabilities into `test_orchestrator_agent`
+- Integrate `functional_tester_agent` capabilities into `test-orchestrator-agent`
 - Merge `ui_designer_agent` functionality into `ui_designer_expert_shadcn_agent`
-- Absorb `market_research_agent` into `deep_research_agent`
+- Absorb `market_research_agent` into `deep-research-agent`
 
 ### Phase 3: Final Consolidation (Higher Risk)
 Complete the consolidation of complex overlapping agents:
-- Merge orchestration agents into `master_orchestrator_agent`
-- Consolidate documentation agents into `documentation_agent`
+- Merge orchestration agents into `master-orchestrator-agent`
+- Consolidate documentation agents into `documentation-agent`
 - Finalize security agent consolidation
 
 ## 💡 Implementation Benefits

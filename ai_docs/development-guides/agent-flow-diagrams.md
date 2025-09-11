@@ -126,7 +126,7 @@ graph LR
     end
     
     subgraph "After - 1 Agent"
-        DOC[📄 documentation_agent<br/>• Tech Specs<br/>• PRDs<br/>• API Docs<br/>• User Guides<br/>• Architecture]
+        DOC[📄 documentation-agent<br/>• Tech Specs<br/>• PRDs<br/>• API Docs<br/>• User Guides<br/>• Architecture]
     end
     
     TSA -.->|Consolidated| DOC
@@ -145,7 +145,7 @@ graph LR
     end
     
     subgraph "After - 1 Agent"
-        DVO[⚙️ devops_agent<br/>• Swarm Scaling<br/>• Deployment Strategies<br/>• MCP Configuration<br/>• Infrastructure<br/>• CI/CD]
+        DVO[⚙️ devops-agent<br/>• Swarm Scaling<br/>• Deployment Strategies<br/>• MCP Configuration<br/>• Infrastructure<br/>• CI/CD]
     end
     
     SSA -.->|Merged| DVO
@@ -202,7 +202,7 @@ graph TB
 stateDiagram-v2
     [*] --> Ideation
     
-    state creative_ideation_agent {
+    state creative-ideation-agent {
         Ideation --> Generation
         Generation --> Refinement
         Refinement --> Validation
