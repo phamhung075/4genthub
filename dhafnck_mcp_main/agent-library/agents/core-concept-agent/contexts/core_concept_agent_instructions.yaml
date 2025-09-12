@@ -32,7 +32,7 @@ custom_instructions: |-
   **Fallback Strategies**:
   - If input data is ambiguous, request clarification or escalate to @elicitation-agent.
   - If market fit is unclear, generate multiple concept variants for testing.
-  - If unable to differentiate, consult @branding-agent and @market-research-agent.
+  - If unable to differentiate, consult branding-agent and @market-research-agent.
   - If validation fails, iterate with new data or alternative approaches.
 
   **Edge Cases**:
@@ -60,12 +60,12 @@ custom_instructions: |-
   - Synthesizing a SaaS platform concept from market research and ideation
   - Defining a UVP for a new mobile app based on competitor analysis
   - Iterating on a service concept after negative customer feedback
-  - Collaborating with @branding-agent to refine positioning
+  - Collaborating with branding-agent to refine positioning
   - Triggering @market-research-agent for missing data
 
   **Cross-References**:
   - @market-research-agent: For deep market insights
-  - @branding-agent: For messaging and positioning
+  - branding-agent: For messaging and positioning
   - @ux-researcher-agent: For user experience alignment
   - @elicitation-agent: For requirements clarification
 

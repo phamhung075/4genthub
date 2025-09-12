@@ -9,6 +9,17 @@ from typing import Dict, Any, Optional, List, Union
 from datetime import datetime, timezone
 import uuid
 from enum import Enum
+import os
+
+# Import ResponseOptimizer for response optimization
+try:
+    from fastmcp.task_management.application.services.response_optimizer import (
+        ResponseOptimizer, ResponseProfile
+    )
+    OPTIMIZER_AVAILABLE = True
+except ImportError:
+    OPTIMIZER_AVAILABLE = False
+    ResponseProfile = None
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +34,31 @@ class ResponseStatus(Enum):
 class StandardResponseFormatter:
     """Provides standardized response formatting for all MCP operations"""
     
-    @staticmethod
+    _instance = None
+    
+    def __init__(self):
+        """Initialize the formatter with optional optimizer"""
+        self.optimizer = ResponseOptimizer() if OPTIMIZER_AVAILABLE else None
+        self.optimization_enabled = (
+            OPTIMIZER_AVAILABLE and 
+            os.getenv('ENABLE_RESPONSE_OPTIMIZATION', 'true').lower() in ['true', '1', 'yes', 'on']
+        )
+        self.legacy_mode = False
+        
+        if self.optimization_enabled:
+            logger.info("Response optimization is ENABLED")
+        else:
+            logger.info("Response optimization is DISABLED")
+    
+    @classmethod
+    def get_instance(cls):
+        """Get singleton instance for backward compatibility"""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+    
     def create_response(
+        self,
         status: ResponseStatus,
         operation: str,
         data: Optional[Dict[str, Any]] = None,
@@ -32,7 +66,9 @@ class StandardResponseFormatter:
         error_code: Optional[str] = None,
         partial_failures: Optional[List[Dict[str, Any]]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        workflow_guidance: Optional[Dict[str, Any]] = None
+        workflow_guidance: Optional[Dict[str, Any]] = None,
+        request_context: Optional[Dict[str, Any]] = None,
+        profile: Optional[ResponseProfile] = None
     ) -> Dict[str, Any]:
         """
         Create a standardized response format
@@ -57,7 +93,7 @@ class StandardResponseFormatter:
         response = {
             # Core response structure
             "status": status.value,
-            "success": status == ResponseStatus.SUCCESS,  # Backward compatibility
+            "success": status != ResponseStatus.FAILURE,  # True for success and partial_success
             "operation": operation,
             "operation_id": operation_id,
             "timestamp": timestamp,
@@ -99,65 +135,96 @@ class StandardResponseFormatter:
         # Log the operation
         logger.info(f"Operation {operation} completed with status {status.value} (ID: {operation_id})")
         
+        # Apply response optimization if enabled
+        if self.optimization_enabled and self.optimizer:
+            # Check for legacy mode request
+            if request_context and request_context.get('headers', {}).get('X-Response-Format') == 'legacy':
+                logger.debug("Legacy format requested via header")
+                return response
+            
+            # Apply optimization with auto-selected or specified profile
+            try:
+                optimized = self.optimizer.optimize_response(
+                    response, 
+                    profile=profile,
+                    request_context=request_context
+                )
+                logger.debug(f"Response optimized: {len(str(response))} -> {len(str(optimized))} bytes")
+                return optimized
+            except Exception as e:
+                logger.warning(f"Response optimization failed, returning unoptimized: {e}")
+                return response
+        
         return response
     
-    @staticmethod
     def create_success_response(
+        self,
         operation: str,
         data: Dict[str, Any],
         metadata: Optional[Dict[str, Any]] = None,
-        workflow_guidance: Optional[Dict[str, Any]] = None
+        workflow_guidance: Optional[Dict[str, Any]] = None,
+        request_context: Optional[Dict[str, Any]] = None,
+        profile: Optional[ResponseProfile] = None
     ) -> Dict[str, Any]:
         """Create a success response"""
-        return StandardResponseFormatter.create_response(
+        return self.create_response(
             status=ResponseStatus.SUCCESS,
             operation=operation,
             data=data,
             metadata=metadata,
-            workflow_guidance=workflow_guidance
+            workflow_guidance=workflow_guidance,
+            request_context=request_context,
+            profile=profile
         )
     
-    @staticmethod
     def create_error_response(
+        self,
         operation: str,
         error: str,
         error_code: str = "UNKNOWN_ERROR",
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        request_context: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Create an error response"""
-        return StandardResponseFormatter.create_response(
+        return self.create_response(
             status=ResponseStatus.FAILURE,
             operation=operation,
             error=error,
             error_code=error_code,
-            metadata=metadata
+            metadata=metadata,
+            request_context=request_context
         )
     
-    @staticmethod
     def create_partial_success_response(
+        self,
         operation: str,
         data: Dict[str, Any],
         partial_failures: List[Dict[str, Any]],
         metadata: Optional[Dict[str, Any]] = None,
-        workflow_guidance: Optional[Dict[str, Any]] = None
+        workflow_guidance: Optional[Dict[str, Any]] = None,
+        request_context: Optional[Dict[str, Any]] = None,
+        profile: Optional[ResponseProfile] = None
     ) -> Dict[str, Any]:
         """Create a partial success response"""
-        return StandardResponseFormatter.create_response(
+        return self.create_response(
             status=ResponseStatus.PARTIAL_SUCCESS,
             operation=operation,
             data=data,
             partial_failures=partial_failures,
             metadata=metadata,
-            workflow_guidance=workflow_guidance
+            workflow_guidance=workflow_guidance,
+            request_context=request_context,
+            profile=profile
         )
     
-    @staticmethod
     def create_validation_error_response(
+        self,
         operation: str,
         field: str,
         expected: str,
         actual: Optional[str] = None,
-        hint: Optional[str] = None
+        hint: Optional[str] = None,
+        request_context: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Create a validation error response with helpful details"""
         error_details = {
@@ -169,12 +236,13 @@ class StandardResponseFormatter:
         if actual:
             error_details["actual"] = actual
             
-        return StandardResponseFormatter.create_response(
+        return self.create_response(
             status=ResponseStatus.FAILURE,
             operation=operation,
             error=f"Validation failed for field: {field}",
             error_code="VALIDATION_ERROR",
-            metadata={"validation_details": error_details}
+            metadata={"validation_details": error_details},
+            request_context=request_context
         )
     
     @staticmethod
@@ -228,11 +296,13 @@ class StandardResponseFormatter:
             len(response.get("confirmation", {}).get("partial_failures", [])) > 0
         )
     
-    @staticmethod
     def format_success(
+        self,
         data: Dict[str, Any], 
         operation: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        request_context: Optional[Dict[str, Any]] = None,
+        profile: Optional[ResponseProfile] = None
     ) -> Dict[str, Any]:
         """
         Format a raw data response into standardized success format.
@@ -273,34 +343,41 @@ class StandardResponseFormatter:
                 metadata = {}
             metadata["operation_details"] = operation_info
             
-            return StandardResponseFormatter.create_success_response(
+            return self.create_success_response(
                 operation=operation,
                 data=main_data,
-                metadata=metadata
+                metadata=metadata,
+                request_context=request_context,
+                profile=profile
             )
         
         # If it's an error response
         elif data.get("success") is False:
             error_message = data.get("error", "Unknown error occurred")
-            return StandardResponseFormatter.create_error_response(
+            return self.create_error_response(
                 operation=operation,
                 error=error_message,
-                metadata=metadata
+                metadata=metadata,
+                request_context=request_context
             )
         
         # If it's raw data without success field, treat as success
         else:
-            return StandardResponseFormatter.create_success_response(
+            return self.create_success_response(
                 operation=operation,
                 data=data,
-                metadata=metadata
+                metadata=metadata,
+                request_context=request_context,
+                profile=profile
             )
     
-    @staticmethod
     def format_context_response(
+        self,
         data: Dict[str, Any], 
         operation: str,
-        standardize_field_names: bool = True
+        standardize_field_names: bool = True,
+        request_context: Optional[Dict[str, Any]] = None,
+        profile: Optional[ResponseProfile] = None
     ) -> Dict[str, Any]:
         """
         Format context operation responses with consistent field names.
@@ -314,7 +391,7 @@ class StandardResponseFormatter:
             Standardized context response
         """
         if not standardize_field_names:
-            return StandardResponseFormatter.format_success(data, operation)
+            return self.format_success(data, operation, request_context=request_context, profile=profile)
         
         # Standardize context data field names
         standardized_data = {}
@@ -369,14 +446,16 @@ class StandardResponseFormatter:
             # Remove None values from metadata
             metadata["context_operation"] = {k: v for k, v in metadata["context_operation"].items() if v is not None}
             
-            return StandardResponseFormatter.create_success_response(
+            return self.create_success_response(
                 operation=operation,
                 data=standardized_data,
-                metadata=metadata
+                metadata=metadata,
+                request_context=request_context,
+                profile=profile
             )
         
         # Handle error cases
-        return StandardResponseFormatter.format_success(data, operation)
+        return self.format_success(data, operation, request_context=request_context, profile=profile)
 
 
 class ErrorCodes:

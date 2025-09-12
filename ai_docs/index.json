@@ -2,7 +2,7 @@
   "absolute_docs": {
     "obsolete_docs": [
       {
-        "moved_date": "2025-09-11T21:15:53.798512",
+        "moved_date": "2025-09-12T10:59:00.318084",
         "path": "_obsolete_docs/mcp-tools-test-report-2025-09-10.md"
       },
       {
@@ -14,7 +14,7 @@
         "path": "_obsolete_docs/legacy-database-columns.md"
       },
       {
-        "moved_date": "2025-09-11T21:15:54.270073",
+        "moved_date": "2025-09-12T10:59:00.318084",
         "path": "_obsolete_docs/task-creation-assignees-final-report.md"
       },
       {
@@ -146,7 +146,7 @@
         "path": "_obsolete_docs/phase1-foundation-security-audit-report.md"
       },
       {
-        "moved_date": "2025-09-11T21:15:53.688227",
+        "moved_date": "2025-09-12T10:59:00.318084",
         "path": "_obsolete_docs/agent_management_test_report.md"
       },
       {
@@ -154,7 +154,7 @@
         "path": "_obsolete_docs/ai-docs-constraint-analysis-2025-09-11.md"
       },
       {
-        "moved_date": "2025-09-11T21:15:53.874570",
+        "moved_date": "2025-09-12T10:59:00.318084",
         "path": "_obsolete_docs/task-assignees-test-report-2025-09-10.md"
       },
       {
@@ -266,11 +266,11 @@
       "count": 49,
       "files": [
         {
-          "hash": "c88dc1984db5659a20f4e154eac0ef32",
-          "modified": "2025-09-11T21:15:53.798512",
+          "hash": "35c2855245ccf621ef44d4a213708833",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "mcp-tools-test-report-2025-09-10.md",
           "path": "_obsolete_docs/mcp-tools-test-report-2025-09-10.md",
-          "size": 4565
+          "size": 4563
         },
         {
           "hash": "04caac94b5720b2dc70c89ef6b7d0c5d",
@@ -287,11 +287,11 @@
           "size": 10256
         },
         {
-          "hash": "9a5ccaacf4092d3fe1b93638df97cd75",
-          "modified": "2025-09-11T21:15:54.270073",
+          "hash": "21bfb62a7d5635ed5a90bd843f41f4ab",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "task-creation-assignees-final-report.md",
           "path": "_obsolete_docs/task-creation-assignees-final-report.md",
-          "size": 5939
+          "size": 5937
         },
         {
           "hash": "6c984d97f7bec01f15909b571936a941",
@@ -518,11 +518,11 @@
           "size": 11589
         },
         {
-          "hash": "82983e6ac7b5d69f16ca650a6af11e3d",
-          "modified": "2025-09-11T21:15:53.688227",
+          "hash": "e4a9031090b6b3b5c2b2d930bd0418e6",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "agent_management_test_report.md",
           "path": "_obsolete_docs/agent_management_test_report.md",
-          "size": 10860
+          "size": 10840
         },
         {
           "hash": "a927b5da37a75e5ee9a1469b9c2567f6",
@@ -532,11 +532,11 @@
           "size": 7312
         },
         {
-          "hash": "45c832f1a0d26f9f50e4765a15fa52ce",
-          "modified": "2025-09-11T21:15:53.874570",
+          "hash": "f8f9f54a7427b1bcc63c6f8c5aba29b9",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "task-assignees-test-report-2025-09-10.md",
           "path": "_obsolete_docs/task-assignees-test-report-2025-09-10.md",
-          "size": 5231
+          "size": 5230
         },
         {
           "hash": "38d6f086947afdd9b3bbecbdc61928c1",
@@ -705,11 +705,11 @@
           "size": 38707
         },
         {
-          "hash": "cdc09ffe6c80cfd3bb7c8ce123bc0909",
-          "modified": "2025-09-11T20:04:34.627100",
+          "hash": "84f57a32849b78b4ec73ff983c458b76",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "mcp-client-usage-examples.md",
           "path": "api-integration/mcp-client-usage-examples.md",
-          "size": 32343
+          "size": 32342
         },
         {
           "hash": "c3a616a3fb8c7741dce8084105afa5b6",
@@ -726,11 +726,11 @@
           "size": 7877
         },
         {
-          "hash": "be181eafb2fe8a475d393ac7fa73c6a8",
-          "modified": "2025-09-11T21:15:53.787103",
+          "hash": "7d5a1c7e0a9e982143ea7ae37885fc71",
+          "modified": "2025-09-12T11:00:17.881511",
           "name": "agent-assignment-enhancement.md",
           "path": "api-integration/agent-assignment-enhancement.md",
-          "size": 9662
+          "size": 9652
         }
       ],
       "path": "api-integration"
@@ -781,11 +781,11 @@
           "size": 4883
         },
         {
-          "hash": "0a5f71f257a4af1b7dbd02f5dc204267",
-          "modified": "2025-09-11T21:15:54.471628",
+          "hash": "335bc04064e46958a44d5287f2ccf74d",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "manage-task-api.md",
           "path": "api-integration/controllers/manage-task-api.md",
-          "size": 21712
+          "size": 21710
         },
         {
           "hash": "c3a469d9d71832890a39b9bcfa3fd100",
@@ -802,11 +802,11 @@
           "size": 13686
         },
         {
-          "hash": "7f455c56f54beddfac38c544a139db0a",
-          "modified": "2025-09-11T21:15:54.486839",
+          "hash": "1a66718cca8a07b55de8fd0e95ac9fed",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "call-agent-api.md",
           "path": "api-integration/controllers/call-agent-api.md",
-          "size": 11226
+          "size": 11225
         }
       ],
       "path": "api-integration/controllers"
@@ -1133,11 +1133,11 @@
           "size": 12547
         },
         {
-          "hash": "64c3596ed11ab6f8befabfd6a348a45d",
-          "modified": "2025-09-11T23:06:04.033707",
+          "hash": "bd9d7419d5ae628099abed907178ac4a",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "session-type-detection.md",
           "path": "core-architecture/session-type-detection.md",
-          "size": 4386
+          "size": 4385
         },
         {
           "hash": "ef52584808bee6e17988bceb3e3b841d",
@@ -1168,11 +1168,11 @@
           "size": 7604
         },
         {
-          "hash": "3c677adf3a9f1942e0ea98947f074bd9",
-          "modified": "2025-09-11T22:47:30.938869",
+          "hash": "21792707cd89b4c4edc42ced79c593f1",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
-          "size": 6371
+          "size": 6369
         },
         {
           "hash": "31c648305590ed953e55812c51c7d2c2",
@@ -1321,11 +1321,11 @@
           "size": 47069
         },
         {
-          "hash": "6dcf853e173400a096712d41d533c997",
-          "modified": "2025-09-11T21:15:54.133168",
+          "hash": "147386251765604b02588cdfc8689459",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "role-based-tool-assignment-system.md",
           "path": "development-guides/role-based-tool-assignment-system.md",
-          "size": 9490
+          "size": 9488
         },
         {
           "hash": "37954849edc2d1a3532b9290c9b27e9a",
@@ -1543,11 +1543,11 @@
           "size": 10214
         },
         {
-          "hash": "a492e0293bb0ac8b2cd170fabe64b64e",
-          "modified": "2025-09-11T21:15:54.266270",
+          "hash": "ac6ed7bb90cb7ea93f68d0faef7b1368",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "task-creation-assignees-bug.md",
           "path": "issues/task-creation-assignees-bug.md",
-          "size": 7261
+          "size": 7258
         },
         {
           "hash": "d239f7de6a3cec7103abf79b84a24475",
@@ -1585,11 +1585,11 @@
           "size": 8118
         },
         {
-          "hash": "0eec47a565e9382041b58919dd3b13fd",
-          "modified": "2025-09-11T21:15:54.289088",
+          "hash": "8032f772c495d49959f281224ce4bc7b",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "mcp-task-creation-import-error-2025-09-09.md",
           "path": "issues/mcp-task-creation-import-error-2025-09-09.md",
-          "size": 5233
+          "size": 5232
         },
         {
           "hash": "0fe08e389a1034114a444df87c9abaeb",
@@ -1706,7 +1706,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 18,
+      "count": 19,
       "files": [
         {
           "hash": "8a089beed43dd67720e00a56eabc2edd",
@@ -1812,6 +1812,13 @@
           "name": "mcp-registration-system.md",
           "path": "operations/mcp-registration-system.md",
           "size": 7145
+        },
+        {
+          "hash": "de42e5f296b63d6af839909478b86866",
+          "modified": "2025-09-12T11:16:17.471573",
+          "name": "cache-optimization-strategy-phase2.md",
+          "path": "operations/cache-optimization-strategy-phase2.md",
+          "size": 11362
         },
         {
           "hash": "0b94ac1b3aead9d88d5ca53e207db9e8",
@@ -2019,11 +2026,11 @@
       "count": 32,
       "files": [
         {
-          "hash": "6568bb04f97bf65cabaed8752423b62d",
-          "modified": "2025-09-11T21:15:53.562731",
+          "hash": "f5a4c5c6666ac6598cc9394c579deacb",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "task-creation-request-2025-09-09.md",
           "path": "testing-qa/task-creation-request-2025-09-09.md",
-          "size": 6478
+          "size": 6477
         },
         {
           "hash": "fbbac553c6ef029240eeb8432aceab1f",
@@ -2117,11 +2124,11 @@
           "size": 11753
         },
         {
-          "hash": "8e1dff94095cac2bcbbd56732fd2bacd",
-          "modified": "2025-09-11T21:15:53.627381",
+          "hash": "16a6af6fea6ce89a766a34216f2618af",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "task-creation-import-fix-test-results.md",
           "path": "testing-qa/task-creation-import-fix-test-results.md",
-          "size": 6277
+          "size": 6276
         },
         {
           "hash": "535e7a34e5b5db31ce9a2f265084907e",
@@ -2208,11 +2215,11 @@
           "size": 5559
         },
         {
-          "hash": "7bb8401836345566eb452c09c14c0cd8",
-          "modified": "2025-09-11T21:15:53.695833",
+          "hash": "e831ba8767727623b85fcac9d2e4c8cd",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "test-summary-2025-09-09.md",
           "path": "testing-qa/test-summary-2025-09-09.md",
-          "size": 10452
+          "size": 10450
         },
         {
           "hash": "11bec7afc0f65dd0e9d00e803f8af6e1",
@@ -2236,11 +2243,11 @@
           "size": 5660
         },
         {
-          "hash": "ce49476d887086ccce2714805308816c",
-          "modified": "2025-09-11T21:15:53.707242",
+          "hash": "7dbe5608ebbcca033bfca1c41e3c5546",
+          "modified": "2025-09-12T10:59:00.318084",
           "name": "task-management-crud-test-results-2025-09-09.md",
           "path": "testing-qa/task-management-crud-test-results-2025-09-09.md",
-          "size": 8527
+          "size": 8526
         }
       ],
       "path": "testing-qa"
@@ -2419,7 +2426,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T02:42:16.231403",
+  "generated_at": "2025-09-12T11:16:17.593356",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2704,6 +2711,7 @@
         "CAPROVER_ENV_VARIABLES.md",
         "KEYCLOAK_POSTGRESQL_SETUP.md",
         "TDD_REMEDIATION_TASK_PLAN.md",
+        "cache-optimization-strategy-phase2.md",
         "cloud-storage-solutions.md",
         "complete-database-reset-guide.md",
         "database-configuration-guide.md",
@@ -2812,5 +2820,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 294
+  "total_files": 295
 }

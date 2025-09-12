@@ -148,7 +148,7 @@ def _get_role_based_tools(self, agent_info: Dict[str, Any], capabilities_config:
 1. security-auditor-agent (COORDINATOR)
    ├─ Analyzes code for vulnerabilities
    ├─ Creates task: "Fix SQL injection in user.js:42"
-   └─ Assigns: @coding-agent
+   └─ Assigns: coding-agent
 
 2. coding-agent (FILE CREATOR)
    ├─ Receives task assignment
@@ -166,7 +166,7 @@ def _get_role_based_tools(self, agent_info: Dict[str, Any], capabilities_config:
    ├─ Creates subtask: "Implement API endpoints"
    ├─ Creates subtask: "Create UI components"  
    ├─ Creates subtask: "Write test suite"
-   ├─ Assigns: @coding-agent → API subtask
+   ├─ Assigns: coding-agent → API subtask
    ├─ Assigns: @ui_designer_expert_shadcn_agent → UI subtask
    └─ Assigns: test-orchestrator-agent → testing subtask
 

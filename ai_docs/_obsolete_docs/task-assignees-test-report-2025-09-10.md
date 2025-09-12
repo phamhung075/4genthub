@@ -94,7 +94,7 @@ Task Details Dialog (✅ Working)
 ✅ `test-orchestrator-agent`
 
 ### Incorrect Format (Rejected)
-❌ `@coding-agent` (hyphen not underscore)
+❌ `coding-agent` (hyphen not underscore)
 ❌ `@ui_designer_expert_shadcn_agent` (doesn't exist, should be `@ui_designer_agent`)
 
 ## Recommendations

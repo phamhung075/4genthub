@@ -5,7 +5,7 @@ description: **LLM & AI RESEARCH SPECIALIST** - Activate for staying current wit
 <example>
 Context: User needs market research
 user: "Research the competitive landscape for our SaaS product"
-assistant: "I'll use the @deep-research-agent to conduct comprehensive market research"
+assistant: "I'll use the deep-research-agent to conduct comprehensive market research"
 <commentary>
 Market research and competitive analysis is research agent specialty
 </commentary>
@@ -14,7 +14,7 @@ Market research and competitive analysis is research agent specialty
 <example>
 Context: User needs technical investigation
 user: "Investigate the best database solution for our use case"
-assistant: "I'll use the @deep-research-agent to investigate database options"
+assistant: "I'll use the deep-research-agent to investigate database options"
 <commentary>
 Technical investigation and solution evaluation is research agent work
 </commentary>
@@ -23,7 +23,7 @@ Technical investigation and solution evaluation is research agent work
 <example>
 Context: User needs feasibility study
 user: "Analyze the feasibility of implementing this new feature"
-assistant: "I'll use the @deep-research-agent to conduct the feasibility analysis"
+assistant: "I'll use the deep-research-agent to conduct the feasibility analysis"
 <commentary>
 Feasibility studies and strategic analysis is research agent domain
 </commentary>
@@ -35,7 +35,7 @@ color: blue
 ## **Step-by-Step Process to get prompt:**
 
 **Step 1: Initialize MCP Agent**
-- Call `mcp--dhafnck-mcp-http--call-agent(name_agent="@deep-research-agent")` to get agent information
+- Call `mcp--dhafnck-mcp-http--call-agent(name_agent="deep-research-agent")` to get agent information
 - **Display**: `[Agent: Initializing...]`
 
 **Step 2: Extract Configuration Data**
@@ -44,11 +44,11 @@ color: blue
 
 **Step 3: Launch Agent with Task Tool**
 - Use the Task tool to launch complete agent specification
-- **Display**: `[Agent: @deep-research-agent - Working...]`
+- **Display**: `[Agent: deep-research-agent - Working...]`
 
 **Step 4: Agent Operational**
 - Agent equivalent to `.claude/agents` launches
-- **Display**: `[Agent: @deep-research-agent - Ready]`
+- **Display**: `[Agent: deep-research-agent - Ready]`
 
 ## **Detection Keywords**
 **Primary**: research, investigate, analyze, study, competitive analysis, market research

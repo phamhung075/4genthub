@@ -50,7 +50,7 @@ This document describes the enhanced agent assignment and inheritance features i
     "coding-agent",
     "@test-orchestrator-agent", 
     "security-auditor-agent",
-    "@documentation-agent"
+    "documentation-agent"
   ]
 }
 ```
@@ -62,7 +62,7 @@ This document describes the enhanced agent assignment and inheritance features i
 {
   "task_id": "task-123",
   "title": "Create login form",
-  "assignees": ["@ui-designer-agent", "@coding-agent"]
+  "assignees": ["@ui-designer-agent", "coding-agent"]
 }
 ```
 
@@ -84,10 +84,10 @@ This document describes the enhanced agent assignment and inheritance features i
   "subtask": {
     "id": "subtask-456",
     "title": "Create login form", 
-    "assignees": ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
+    "assignees": ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
   },
   "agent_inheritance_applied": true,
-  "inherited_assignees": ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"],
+  "inherited_assignees": ["coding-agent", "@test-orchestrator-agent", "documentation-agent"],
   "inheritance_info": {
     "applied": true,
     "inherited_from": "parent_task",
@@ -241,13 +241,13 @@ POST /api/subtasks
 ```python
 # Valid agent roles (sample)
 VALID_AGENTS = [
-    "@coding-agent",
+    "coding-agent",
     "@test-orchestrator-agent", 
     "@security-auditor-agent",
-    "@documentation-agent",
+    "documentation-agent",
     "@ui-designer-agent",
-    "@system-architect-agent",
-    "@devops-agent",
+    "system-architect-agent",
+    "devops-agent",
     "@performance-load-tester-agent"
     # ... and 60+ more
 ]

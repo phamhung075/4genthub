@@ -136,7 +136,7 @@ planning_methodology:
     agent_coordination:
       - agent_name: "elicitation-agent"
         role: "Gather detailed requirements"
-        handoff_points: "Passes requirements to @system-architect-agent"
+        handoff_points: "Passes requirements to system-architect-agent"
         
       - agent_name: "system-architect-agent"
         role: "Design system architecture"
@@ -145,7 +145,7 @@ planning_methodology:
         
       - agent_name: "task-planning-agent"
         role: "Break down into tasks"
-        dependencies: "@system-architect-agent"
+        dependencies: "system-architect-agent"
         handoff_points: "Assigns tasks to implementation agents"
         
       - agent_name: "coding-agent"
@@ -155,7 +155,7 @@ planning_methodology:
         
       - agent_name: "test-orchestrator-agent"
         role: "Create and run tests"
-        dependencies: "@coding-agent"
+        dependencies: "coding-agent"
         handoff_points: "Results to @security-auditor-agent"
         
     execution_sequence:
@@ -171,7 +171,7 @@ planning_methodology:
         steps:
           - step_id: "DES-001"
             description: "Design authentication architecture"
-            assigned_agent: "@system-architect-agent"
+            assigned_agent: "system-architect-agent"
             inputs: ["requirements.md"]
             outputs: ["architecture.md", "api-design.yaml"]
             validation: "Design reviewed and approved"
@@ -180,7 +180,7 @@ planning_methodology:
         steps:
           - step_id: "IMP-001"
             description: "Implement JWT service"
-            assigned_agent: "@coding-agent"
+            assigned_agent: "coding-agent"
             inputs: ["api-design.yaml"]
             outputs: ["jwt.service.ts", "auth.middleware.ts"]
             validation: "Code compiles and passes linting"
@@ -213,5 +213,5 @@ planning_methodology:
           
         - step_id: "step_002_design"
           file_path: "steps/design.yaml"
-          assigned_agent: "@system-architect-agent"
+          assigned_agent: "system-architect-agent"
           next_task: "step_003_implementation"

@@ -71,7 +71,7 @@ This design provides:
 
 📝 PRACTICAL EXAMPLES FOR AI:
 1. Starting a new feature:
-   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440001", title: "Implement user authentication", description: "Add JWT-based authentication with login, logout, and session management", assignees: "@coding-agent,@security-auditor-agent", priority: "high", estimated_effort: "3 days"
+   - action: "create", git_branch_id: "550e8400-e29b-41d4-a716-446655440001", title: "Implement user authentication", description: "Add JWT-based authentication with login, logout, and session management", assignees: "coding-agent,@security-auditor-agent", priority: "high", estimated_effort: "3 days"
 
 2. Getting recommended work:
    - action: "next", git_branch_id: "550e8400-e29b-41d4-a716-446655440000", include_context: true
@@ -125,7 +125,7 @@ ELIF testing/verification task:
 • priority: 'low', 'medium', 'high', 'urgent', 'critical' - affects task ordering in 'next' action
 • status: 'todo', 'in_progress', 'blocked', 'review', 'testing', 'done', 'cancelled'
 • estimated_effort: Use realistic estimates (e.g., "2 hours", "3 days", "1 week")
-• assignees: **REQUIRED for task creation** - Must have at least one agent. Use format: "@agent-name" (e.g., "@coding-agent", "@test-orchestrator-agent"). Can be comma-separated for multiple agents: "@coding-agent,@debugger-agent"
+• assignees: **REQUIRED for task creation** - Must have at least one agent. Use format: "@agent-name" (e.g., "coding-agent", "@test-orchestrator-agent"). Can be comma-separated for multiple agents: "coding-agent,@debugger-agent"
 • labels: Can be a single string "frontend" or list ["frontend", "auth"] or comma-separated "frontend,auth,security"
 • dependencies: Task IDs that must be completed first (for create action) - can be list ["task-id-1", "task-id-2"], single string "task-id", or comma-separated "task-id-1,task-id-2"
 • completion_summary: Detailed summary of what was accomplished (for complete action)
@@ -256,7 +256,7 @@ MANAGE_TASK_PARAMS = {
         # Multi-value parameters (accept comma-separated strings)
         "assignees": {
             "type": "string",
-            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., '@coding-agent'). For multiple agents use comma-separated: '@coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 37+ more specialized agents (42 total available)."
+            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., 'coding-agent'). For multiple agents use comma-separated: 'coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 37+ more specialized agents (42 total available)."
         },
         "labels": {
             "type": "string",

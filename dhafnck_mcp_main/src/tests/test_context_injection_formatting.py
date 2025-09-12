@@ -32,7 +32,7 @@ async def test_formatting():
             'title': 'Implement user authentication',
             'status': 'in_progress',
             'priority': 'high',
-            'assignees': ['@coding-agent', '@security-auditor-agent'],
+            'assignees': ['coding-agent', '@security-auditor-agent'],
             'details': 'Implement JWT-based authentication with refresh tokens. Requirements: 1) Login endpoint 2) Logout endpoint 3) Token refresh mechanism 4) Secure cookie storage 5) Rate limiting on auth endpoints'
         },
         'git_branch': {

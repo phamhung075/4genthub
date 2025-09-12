@@ -1,0 +1,10 @@
+{
+  "session_id": "ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05",
+  "prompts": [
+    "## \ud83d\udcca YOUR WORKFLOW (Loaded from master-orchestrator-agent)\n\n```\nSession principale Start\n    \u2193\nClaude calls mcp__dhafnck_mcp_http__call_agent(\"master-orchestrator-agent\")\n    \u2193\nClaude loads orchestrator capabilities\n    \u2193\nUser Request\n    \u2193\nEvaluate Complexity (Simple vs Complex)\n    \u2193\nSimple: Handle directly | Complex: Create MCP mcp__dhafnck_mcp_http__manage_task tasks or mcp__dhafnck_mcp_http__manage_subtask subtasks \u2192 Delegate with IDs to subagents\n```\n\non CLAUDE.md need add worflow of CLAUDE IS master-orchestrator-agent reveice result from sub agent\nthen rewrite more clear for AI, need thinking what is not clear then rewrite it",
+    "update dhafnck_mcp_main/agent-library/agents/master-orchestrator-agent for addition detail must more clear after load",
+    "information CLAUDE.md attention on detail of call_agent is very important",
+    "you must write on CLAUDE.md mcp__dhafnck_mcp_http__manage_task is very important for CLAUDE can fix his hallucination probleme permanent and continue update task or subtask on dhafnck_mcp_http MCP server is important for help user understand  what happen when AI doing. THE but of AI is finish task but help humain understand the work, not only finish task it less important("
+  ],
+  "agent_name": "Nova"
+}

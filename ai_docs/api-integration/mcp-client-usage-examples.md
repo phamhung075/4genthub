@@ -317,7 +317,7 @@ def create_custom_task(title, description, assignees, priority="medium"):
 new_task = create_custom_task(
     title="Implement user authentication",
     description="Add JWT-based authentication with login and logout",
-    assignees="@coding-agent,@security-auditor-agent",
+    assignees="coding-agent,@security-auditor-agent",
     priority="high"
 )
 ```

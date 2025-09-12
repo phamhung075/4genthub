@@ -13,7 +13,7 @@ This report documents the comprehensive testing of agent assignment and validati
 ### Test Identifiers Used
 - **Project ID**: `2fb85ec6-d2d3-42f7-a75c-c5a0befd3407`
 - **Git Branch ID**: `741854b4-a0f4-4b39-b2ab-b27dfc97a851`  
-- **Test Agent Names**: `@coding-agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
+- **Test Agent Names**: `coding-agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
 
 ### Test Files Created
 1. **Main Test Suite**: `dhafnck_mcp_main/src/tests/task_management/comprehensive_agent_management_test.py`
@@ -114,23 +114,23 @@ This report documents the comprehensive testing of agent assignment and validati
 
 ```python
 # Inheritance patterns verified
-✅ Parent: ["@coding-agent", "@security-auditor-agent"]
+✅ Parent: ["coding-agent", "@security-auditor-agent"]
    Child: [] (inherits both)
-✅ Parent: ["@coding-agent", "@security-auditor-agent"]
+✅ Parent: ["coding-agent", "@security-auditor-agent"]
    Child: ["@test-orchestrator-agent"] (overrides)
-✅ Mixed assignments: ["@coding-agent", "user123"]
+✅ Mixed assignments: ["coding-agent", "user123"]
 ```
 
 ### Format Validation Results
 
 | Input Format | Expected | Actual | Status |
 |--------------|----------|---------|--------|
-| `"@coding-agent"` | `["@coding-agent"]` | `["@coding-agent"]` | ✅ Pass |
-| `"@coding-agent,@test-agent"` | `["@coding-agent", "@test-agent"]` | `["@coding-agent", "@test-agent"]` | ✅ Pass |
-| `"@coding-agent, @test-agent"` | `["@coding-agent", "@test-agent"]` | `["@coding-agent", "@test-agent"]` | ✅ Pass |
+| `"coding-agent"` | `["coding-agent"]` | `["coding-agent"]` | ✅ Pass |
+| `"coding-agent,@test-agent"` | `["coding-agent", "@test-agent"]` | `["coding-agent", "@test-agent"]` | ✅ Pass |
+| `"coding-agent, @test-agent"` | `["coding-agent", "@test-agent"]` | `["coding-agent", "@test-agent"]` | ✅ Pass |
 | `""` | `[]` | `[]` | ✅ Pass |
-| `"@coding-agent,"` | `["@coding-agent"]` | `["@coding-agent"]` | ✅ Pass |
-| `",@coding-agent"` | `["@coding-agent"]` | `["@coding-agent"]` | ✅ Pass |
+| `"coding-agent,"` | `["coding-agent"]` | `["coding-agent"]` | ✅ Pass |
+| `",coding-agent"` | `["coding-agent"]` | `["coding-agent"]` | ✅ Pass |
 
 ### Error Handling Coverage
 
@@ -171,7 +171,7 @@ This report documents the comprehensive testing of agent assignment and validati
 
 ```
 ┌─────────────────┐
-│  Parent Task    │ assignees: ["@coding-agent", "@security-auditor-agent"]
+│  Parent Task    │ assignees: ["coding-agent", "@security-auditor-agent"]
 │                 │
 └──────┬──────────┘
        │ inherits (if empty)

@@ -1,0 +1,10 @@
+{
+  "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+  "prompts": [
+    "call agent to thinking about system injection prompt continue pre_tool_use\n--> display hint for help ai working correct when use mcp__dhafnck_mcp\nexample: remember update context before complete task\nif update task on process remember to complete task\nwhen create task : you can break down task to subtask for better manage workflow \n<you must thinking more hint case useful>",
+    "yes how impliment this on hook system actual ?",
+    "you need detect by action tool of tool_name and tool_input for make correct hint\nneed make matrice data for that",
+    "i thing this hint need on post_tool_use (after use tool for remember) not before use tool "
+  ],
+  "agent_name": "Echo"
+}

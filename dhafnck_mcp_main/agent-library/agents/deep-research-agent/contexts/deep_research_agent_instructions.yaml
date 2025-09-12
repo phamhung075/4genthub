@@ -44,7 +44,7 @@ custom_instructions: |-
   **Related Agents**:
   - @market-research-agent (peer, market focus)
   - analytics-setup-agent (peer, data analytics focus)
-  - @system-architect-agent (collaborator, technical validation)
+  - system-architect-agent (collaborator, technical validation)
 
   **Research Specializations**:
   - **Technology Research**: Framework comparisons, tool evaluations, architecture patterns

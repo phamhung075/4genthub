@@ -44,11 +44,11 @@ implementation_methodology:
       
     sub_agent_allocation:
       example:
-        - backend_api: "@coding-agent with API context only"
+        - backend_api: "coding-agent with API context only"
         - frontend_ui: "@ui-specialist-agent with UI context only"
-        - database_layer: "@coding-agent with DB schema only"
+        - database_layer: "coding-agent with DB schema only"
         - tests: "@test-orchestrator-agent with interfaces only"
-        - deployment: "@devops-agent with config context only"
+        - deployment: "devops-agent with config context only"
         
   implementation_process:
     phases:
@@ -130,7 +130,7 @@ implementation_methodology:
         - buffer: "2,000 tokens"
         
     parallel_delegation:
-      - agent: "@coding-agent"
+      - agent: "coding-agent"
         task: "JWT service implementation"
         context_provided:
           - "jwt.service.ts plan section"
@@ -138,7 +138,7 @@ implementation_methodology:
           - "Interface definitions"
         context_size: "8,000 tokens"
         
-      - agent: "@coding-agent" 
+      - agent: "coding-agent" 
         task: "Auth middleware"
         context_provided:
           - "middleware.ts plan section"
@@ -154,7 +154,7 @@ implementation_methodology:
           - "Test framework setup"
         context_size: "6,000 tokens"
         
-      - agent: "@devops-agent"
+      - agent: "devops-agent"
         task: "Deployment config"
         context_provided:
           - "Deployment plan"

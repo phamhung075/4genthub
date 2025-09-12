@@ -57,7 +57,7 @@ const taskResult = await mcp__dhafnck_mcp_http__manage_task({
   git_branch_id: "branch-uuid", 
   title: "Fix authentication bug",
   description: "Full context and details here...",
-  assignees: "@coding-agent"
+  assignees: "coding-agent"
 });
 
 // 2. Delegate with task ID only (saves tokens)

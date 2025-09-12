@@ -1,0 +1,145 @@
+# Context Templates Configuration
+# Version: 1.0.0
+# This file defines context templates for MCP operations to optimize context injection
+
+version: "1.0.0"
+
+# Custom templates can override or extend default templates
+templates:
+  # Example custom template for high-performance list operations
+  task.list:
+    filters:
+      - status
+      - priority
+    pagination:
+      - limit
+      - offset
+    # Minimal user context for performance
+    user:
+      - id
+  
+  # Custom template for AI agent operations
+  agent.call:
+    agent:
+      - name
+      - capabilities
+      - configuration
+    context:
+      - current_task
+      - current_branch
+      - recent_actions
+    parameters:
+      - agent_params
+      - timeout
+      - delegation_mode
+    vision_system:
+      - insights
+      - workflow_hints
+  
+  # Optimized template for task completion
+  task.complete:
+    task:
+      - id
+      - title
+      - dependencies
+    subtasks:
+      - id
+      - status
+    project:
+      - completion_rules
+    # Skip notification data for performance
+    notifications: []
+
+# Template groups for bulk operations
+template_groups:
+  minimal:
+    description: "Minimal context for high-frequency operations"
+    operations:
+      - task.list
+      - task.count
+      - project.list
+      - git_branch.list
+    
+  detailed:
+    description: "Detailed context for complex operations"
+    operations:
+      - task.create
+      - task.update
+      - project.health_check
+      - agent.assign
+  
+  ai_agent:
+    description: "Optimized for AI agent operations"
+    operations:
+      - agent.call
+      - task.next
+      - context.resolve
+
+# Field mappings for common patterns
+field_mappings:
+  # User context variations
+  user_minimal:
+    - id
+  
+  user_standard:
+    - id
+    - preferences
+    - permissions
+  
+  user_detailed:
+    - id
+    - preferences
+    - permissions
+    - search_history
+    - saved_filters
+    - default_settings
+  
+  # Task context variations
+  task_minimal:
+    - id
+    - title
+    - status
+  
+  task_standard:
+    - id
+    - title
+    - status
+    - priority
+    - assignees
+  
+  task_detailed:
+    - id
+    - title
+    - description
+    - status
+    - priority
+    - assignees
+    - labels
+    - dependencies
+    - progress_percentage
+
+# Performance optimization settings
+optimization:
+  # Enable aggressive caching for templates
+  cache_enabled: true
+  cache_ttl_seconds: 3600
+  
+  # Automatically select minimal fields for list operations
+  auto_minimize_lists: true
+  
+  # Use field dependencies from ContextFieldSelector
+  use_field_dependencies: true
+  
+  # Maximum fields per context type (safety limit)
+  max_fields_per_context: 20
+
+# Monitoring and metrics
+monitoring:
+  # Track template usage patterns
+  track_usage: true
+  
+  # Log warnings for inefficient templates
+  warn_threshold_fields: 30
+  
+  # Suggest optimizations after N operations
+  optimization_suggestion_interval: 100

@@ -28,7 +28,7 @@ custom_instructions: |-
   10. Run self-tests on documentation structure and search.
 
   **Edge Cases & Fallbacks**:
-  - If documentation source is ambiguous, request clarification from @coding-agent or prd-architect-agent.
+  - If documentation source is ambiguous, request clarification from coding-agent or prd-architect-agent.
   - If automated generation fails, provide manual editing interface.
   - If user feedback is negative, trigger review and improvement workflow.
   - If documentation is out of sync with code, flag for urgent update.
@@ -41,12 +41,12 @@ custom_instructions: |-
   - Localizing user guides for multiple regions.
 
   **Integration Diagram**:
-  - [@documentation-agent] <peer> [@coding-agent] (syncs code comments, requests clarifications)
-  - [@documentation-agent] <peer> [prd-architect-agent] (aligns docs with requirements)
-  - [@documentation-agent] <peer> [ux-researcher-agent] (gathers user feedback)
-  - [@documentation-agent] <peer> [test-orchestrator-agent] (documents test strategies, QA)
+  - [documentation-agent] <peer> [coding-agent] (syncs code comments, requests clarifications)
+  - [documentation-agent] <peer> [prd-architect-agent] (aligns docs with requirements)
+  - [documentation-agent] <peer> [ux-researcher-agent] (gathers user feedback)
+  - [documentation-agent] <peer> [test-orchestrator-agent] (documents test strategies, QA)
 
-  **Related Agents**: @coding-agent, prd-architect-agent, ux-researcher-agent, test-orchestrator-agent
+  **Related Agents**: coding-agent, prd-architect-agent, ux-researcher-agent, test-orchestrator-agent
 
   **Workflow Alignment**: Follows the documentation and QA phases in the workflow, supports all development and release phases, and ensures knowledge transfer across teams.
   **MCP Tools**

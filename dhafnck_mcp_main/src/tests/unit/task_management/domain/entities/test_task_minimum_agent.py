@@ -39,11 +39,11 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task with one agent",
             description="This task has one agent assigned",
-            assignees=["@coding-agent"]
+            assignees=["coding-agent"]
         )
         
         assert len(task.assignees) == 1
-        assert "@coding-agent" in task.assignees
+        assert "coding-agent" in task.assignees
     
     def test_task_creation_succeeds_with_multiple_agents(self):
         """Test that task creation succeeds with multiple agents"""
@@ -51,13 +51,13 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task with multiple agents",
             description="This task has multiple agents assigned",
-            assignees=["@coding-agent", "@test-orchestrator-agent", "@code-reviewer-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent", "code-reviewer-agent"]
         )
         
         assert len(task.assignees) == 3
-        assert "@coding-agent" in task.assignees
+        assert "coding-agent" in task.assignees
         assert "@test-orchestrator-agent" in task.assignees
-        assert "@code-reviewer-agent" in task.assignees
+        assert "code-reviewer-agent" in task.assignees
     
     def test_task_update_can_change_agents_but_not_remove_all(self):
         """Test that task update can change agents but cannot remove all"""
@@ -65,7 +65,7 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task to update",
             description="This task will have its agents updated",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"]
         )
         
         # Update to different agents - should succeed
@@ -76,7 +76,7 @@ class TestTaskMinimumAgentRequirement:
         assert "debugger-agent" in task.assignees
         
         # Update to single agent - should succeed
-        task.update_assignees(["@coding-agent"])
+        task.update_assignees(["coding-agent"])
         assert len(task.assignees) == 1
         assert "coding-agent" in task.assignees  # Normalized name
     
@@ -131,11 +131,11 @@ class TestTaskMinimumAgentRequirement:
             id=TaskId(str(uuid4())),
             title="Task via factory",
             description="Created using factory method",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"]
         )
         
         assert len(task.assignees) == 2
-        assert "@coding-agent" in task.assignees
+        assert "coding-agent" in task.assignees
         assert "@test-orchestrator-agent" in task.assignees
         # Check that TaskCreated event was raised
         events = task.get_events()

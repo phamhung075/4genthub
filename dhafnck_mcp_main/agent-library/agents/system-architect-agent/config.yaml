@@ -8,7 +8,7 @@ agent_info:
     guidance to ensure optimal system design and implementation.
   migration_date: '2025-06-30T11:55:00.073948'
   name: "\U0001F3DB\uFE0F System Architect Agent"
-  slug: @system-architect-agent
+  slug: system-architect-agent
   usage_scenarios: Activate when designing system architecture, defining technical
     solutions, creating architectural blueprints, or when comprehensive system design
     expertise is needed. Essential for establishing technical foundations and architectural

@@ -1,0 +1,8 @@
+{
+  "session_id": "87f763d9-4bc0-405a-858a-28648cbc2bfa",
+  "prompts": [
+    "need review 062048b9-7eab-4d85-950e-734f290a095a branch tasks, ai said complete on passed session but not update status of task, humain can't follow, you must fix it",
+    "next"
+  ],
+  "agent_name": "Flux"
+}
