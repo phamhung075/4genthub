@@ -1,8 +1,0 @@
-{
-  "session_id": "540e2eba-fd17-4691-a1fa-6a12e311db80",
-  "prompts": [
-    "call a agent for test tool call agent",
-    "mcp__browsermcp__browser_navigate ... need include on tools because this is mcp tools"
-  ],
-  "agent_name": "Oracle"
-}

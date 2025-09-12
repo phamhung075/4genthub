@@ -1,7 +1,0 @@
-{
-  "session_id": "9400d82e-d5c5-4184-b64e-e37a4ad6e0c4",
-  "prompts": [
-    "correct this problem   3. The server shows: \"auth_enabled\": false in health check\nbut AUTH_ENABLED=true on .env"
-  ],
-  "agent_name": "Vertex"
-}

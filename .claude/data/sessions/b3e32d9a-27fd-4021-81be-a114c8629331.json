@@ -1,8 +1,0 @@
-{
-  "session_id": "b3e32d9a-27fd-4021-81be-a114c8629331",
-  "prompts": [
-    "why i cannot connect .mcp.json ?",
-    "rm ~/.claude/mcp-servers.json"
-  ],
-  "agent_name": "Phoenix"
-}

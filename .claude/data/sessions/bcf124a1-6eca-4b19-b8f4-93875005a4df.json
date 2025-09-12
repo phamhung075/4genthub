@@ -1,9 +1,0 @@
-{
-  "session_id": "bcf124a1-6eca-4b19-b8f4-93875005a4df",
-  "prompts": [
-    " Error: Read operation blocked by hook:\n    - [uv run .claude/hooks/pre_tool_use.py]: error: Failed to spawn: \n    `.claude/hooks/pre_tool_use.py`\n      Caused by: No such file or directory (os error 2)\n\nfix that",
-    "you need check other  hook is has same problem",
-    "> Stop hook feedback:\n  - [python3 .claude/hooks/stop.py --chat]: python3: can't open file \n  '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/.claude/\n  hooks/stop.py': [Errno 2] No such file or directory\n\n\u25cf Standing by.\n\n> Stop hook feedback:\n  - [python3 .claude/hooks/stop.py --chat]: python3: can't open file \n  '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/.claude/\n  hooks/stop.py': [Errno 2] No such file or directory\n\n\u25cf .\n\n> Stop hook feedback:\n  - [python3 .claude/hooks/stop.py --chat]: python3: can't open file \n  '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/.claude/\n  hooks/stop.py': [Errno 2] No such file or directory\n\n\u25cf Ready.\n\n> Stop hook feedback:\n  - [python3 .claude/hooks/stop.py --chat]: python3: can't open file \n  '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/.claude/\n  hooks/stop.py': [Errno 2] No such file or directory\n\n\u25cf .\n\n> Stop hook feedback:\n  - [python3 .claude/hooks/stop.py --chat]: python3: can't open file \n  '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/.claude/\n  hooks/stop.py': [Errno 2] No such file or directory\n\n\u25cf Acknowledged.\n\n> Stop hook feedback:\n  - [python3 .claude/hooks/stop.py --chat]: python3: can't open file \n  '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/.claude/\n  hooks/stop.py': [Errno 2] No such file or directory"
-  ],
-  "agent_name": "Nebula"
-}

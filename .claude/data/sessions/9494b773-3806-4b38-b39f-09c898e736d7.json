@@ -1,8 +1,0 @@
-{
-  "session_id": "9494b773-3806-4b38-b39f-09c898e736d7",
-  "prompts": [
-    "/test-mcp ",
-    "make todos list first for all prompt, then delegate to subagent for working on each todo"
-  ],
-  "agent_name": "Zenith"
-}

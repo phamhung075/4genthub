@@ -1,7 +1,0 @@
-{
-  "session_id": "6e26c911-490d-4a36-9f4d-ed38312ed9f3",
-  "prompts": [
-    "analyze ai_docs, find contraint information for correct, find obsolete inforamtion for update"
-  ],
-  "agent_name": "Prism"
-}

@@ -1,7 +1,0 @@
-{
-  "session_id": "a53150e7-dda1-4863-9489-9913c9b15e87",
-  "prompts": [
-    "update CLAUDE.md, when Delegate to Agent via Task Tool, agent will load his capacity and competence, rules, permission, description via call_agent.\nresult of call_agent is source of truth where sub agent is delegate, sub agent must follow all instruction of nouvelle instruction, because this is personel build for this agent, if any source ins contraint, ignore, follow only result of call_agent"
-  ],
-  "agent_name": "Catalyst"
-}
