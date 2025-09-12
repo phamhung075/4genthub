@@ -22,6 +22,7 @@ except ImportError:
 # Import the path loader utilities
 sys.path.insert(0, str(Path(__file__).parent.parent / "hooks"))
 from utils.env_loader import get_ai_data_path, get_ai_docs_path
+from utils.agent_state_manager import get_current_agent
 
 
 def log_status_line(input_data, status_line_output):
@@ -118,8 +119,10 @@ def generate_status_line(input_data):
             # Clean state
             parts.append(f"\033[92m{git_branch} ✓\033[0m")
     
-    # Agent role - Claude IS the master orchestrator
-    parts.append("\033[92m🎯 Active: master-orchestrator-agent\033[0m")  # Green text showing active role
+    # Agent role - Dynamic based on session state
+    session_id = input_data.get('session_id', '')
+    current_agent = get_current_agent(session_id) if session_id else 'master-orchestrator-agent'
+    parts.append(f"\033[92m🎯 Active: {current_agent}\033[0m")  # Green text showing active role
     
     # Paths - always show for AI memory
     try:

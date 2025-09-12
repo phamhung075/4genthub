@@ -39,6 +39,14 @@ except ImportError:
     switch_to_agent = None
     AGENT_CONTEXT_ENABLED = False
 
+# Import agent state manager for dynamic status line agent tracking
+try:
+    from utils.agent_state_manager import update_agent_state_from_call_agent
+    AGENT_STATE_TRACKING_ENABLED = True
+except ImportError:
+    update_agent_state_from_call_agent = None
+    AGENT_STATE_TRACKING_ENABLED = False
+
 # Import MCP hint matrix for post-action reminders
 try:
     from utils.mcp_post_action_hints import generate_post_action_hints
@@ -166,9 +174,25 @@ def main():
                     f.write(f"{datetime.now().isoformat()} - Error generating post hints: {e}\n")
         
         # AGENT CONTEXT SWITCHING: Detect call_agent tool and provide runtime context switch
-        if AGENT_CONTEXT_ENABLED and tool_name == 'mcp__dhafnck_mcp_http__call_agent':
+        if tool_name == 'mcp__dhafnck_mcp_http__call_agent':
             agent_name = tool_input.get('name_agent', '')
-            if agent_name and agent_name != 'master-orchestrator-agent':
+            
+            # AGENT STATE TRACKING: Update agent state for status line display
+            if AGENT_STATE_TRACKING_ENABLED and agent_name:
+                try:
+                    # Get session_id from context (this might come from various places)
+                    session_id = input_data.get('session_id', '')
+                    if session_id:
+                        update_agent_state_from_call_agent(session_id, tool_input)
+                except Exception as e:
+                    # Log error but don't block
+                    log_dir = get_ai_data_path()
+                    error_log_path = log_dir / 'agent_state_errors.log'
+                    with open(error_log_path, 'a') as f:
+                        f.write(f"{datetime.now().isoformat()} - Agent state update error: {e}\n")
+            
+            # AGENT CONTEXT SWITCHING: Provide runtime context switch instructions  
+            if AGENT_CONTEXT_ENABLED and agent_name and agent_name != 'master-orchestrator-agent':
                 try:
                     # Provide runtime context switch instructions
                     context_instructions = switch_to_agent(agent_name)
