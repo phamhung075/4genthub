@@ -1,44 +1,72 @@
 [
   {
-    "message": "<system-reminder>\n\u2714\ufe0f SUBTASK COMPLETED - NEXT:\n\ud83d\udca1 GREAT: Insights documented for future reference\n\ud83d\udd04 CHECK: Review if parent task needs updating\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "complete",
-    "created_at": "2025-09-12T12:51:13.835145",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udca1 GET COMPLETE - REMINDERS:\n\ud83d\udccb REVIEW: Check task status and plan next actions\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "complete",
-    "created_at": "2025-09-12T12:51:28.736093",
+    "from_action": "get",
+    "created_at": "2025-09-12T12:58:18.253729",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "update",
+    "created_at": "2025-09-12T12:58:28.118844",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "update",
+    "created_at": "2025-09-12T12:58:45.005833",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83e\udd16 CODING-AGENT LOADED: Follow agent's specialized workflow\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__call_agent",
     "from_action": "default",
-    "created_at": "2025-09-12T12:51:39.828427",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "complete",
-    "created_at": "2025-09-12T12:52:17.960628",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "complete",
-    "created_at": "2025-09-12T12:52:27.151232",
+    "created_at": "2025-09-12T12:59:07.505938",
     "displayed": true
   },
   {
     "message": "<system-reminder>\n\ud83d\udca1 GET COMPLETE - REMINDERS:\n\ud83d\udccb REVIEW: Check task status and plan next actions\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
     "from_action": "get",
-    "created_at": "2025-09-12T12:52:37.392660",
+    "created_at": "2025-09-12T12:59:15.315817",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83e\udd16 DEBUGGER-AGENT LOADED: Follow agent's specialized workflow\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
+    "from_action": "default",
+    "created_at": "2025-09-12T13:02:42.320206",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "complete",
+    "created_at": "2025-09-12T13:03:14.866990",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "complete",
+    "created_at": "2025-09-12T13:03:34.937543",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "complete",
+    "created_at": "2025-09-12T13:03:54.445030",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "complete",
+    "created_at": "2025-09-12T13:04:08.129055",
     "displayed": false
   }
 ]

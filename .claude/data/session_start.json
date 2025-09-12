@@ -49,5 +49,39 @@
       "git_context_included": true,
       "timestamp": "2025-09-12T12:54:52.667675"
     }
+  },
+  {
+    "session_id": "3a803a92-20c7-4b72-9bfb-df39432e5d3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/3a803a92-20c7-4b72-9bfb-df39432e5d3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T12:55:32.650851",
+    "injection_result": {
+      "session_id": "3a803a92-20c7-4b72-9bfb-df39432e5d3c",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 749,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T12:55:32.650804"
+    }
+  },
+  {
+    "session_id": "61a6f822-63aa-4432-8930-59dc82fe6967",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/61a6f822-63aa-4432-8930-59dc82fe6967.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T12:59:03.391843",
+    "injection_result": {
+      "session_id": "61a6f822-63aa-4432-8930-59dc82fe6967",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 751,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T12:59:03.391801"
+    }
   }
 ]

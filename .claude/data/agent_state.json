@@ -1,0 +1,14 @@
+{
+  "61119418-72ef-4c2d-9aac-870b6b551947": {
+    "current_agent": "coding-agent",
+    "last_updated": "2025-09-12T13:01:57.859008"
+  },
+  "3a803a92-20c7-4b72-9bfb-df39432e5d3c": {
+    "current_agent": "coding-agent",
+    "last_updated": "2025-09-12T13:02:20.181287"
+  },
+  "integration-test-session": {
+    "current_agent": "debugger-agent",
+    "last_updated": "2025-09-12T13:02:42.320824"
+  }
+}
