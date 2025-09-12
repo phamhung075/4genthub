@@ -1081,7 +1081,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 20,
+      "count": 22,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -1124,6 +1124,13 @@
           "name": "architecture.md",
           "path": "core-architecture/architecture.md",
           "size": 11273
+        },
+        {
+          "hash": "8ecebf76d9655ee36fca97f1ecd7b993",
+          "modified": "2025-09-12T12:43:24.173857",
+          "name": "context-hierarchy-system.md",
+          "path": "core-architecture/context-hierarchy-system.md",
+          "size": 22276
         },
         {
           "hash": "d3f01b57186bb1adeb6eec88f26528f8",
@@ -1194,6 +1201,13 @@
           "name": "implementation-methodology-pattern.md",
           "path": "core-architecture/implementation-methodology-pattern.md",
           "size": 4263
+        },
+        {
+          "hash": "43a99a81dc077d595ad930d568847d3e",
+          "modified": "2025-09-12T12:47:09.180454",
+          "name": "agent-orchestration-architecture.md",
+          "path": "core-architecture/agent-orchestration-architecture.md",
+          "size": 30642
         },
         {
           "hash": "3e8655875e5419e4816635dccf2f33d4",
@@ -2516,7 +2530,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T12:41:09.447577",
+  "generated_at": "2025-09-12T12:47:09.328116",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2683,8 +2697,10 @@
         "PRD.md",
         "README.md",
         "agent-delegation-fix.md",
+        "agent-orchestration-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
+        "context-hierarchy-system.md",
         "database-architecture.md",
         "deprecated-agent-mappings.md",
         "domain-driven-design-layers.md",
@@ -2926,5 +2942,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 307
+  "total_files": 309
 }

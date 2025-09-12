@@ -6,6 +6,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+- **🏢 CLAUDE.md Enterprise Employee Framework Implementation** - 2025-09-12
+  - **MAJOR PARADIGM SHIFT**: Reframed Claude as professional enterprise employee, not freelancer
+  - Added enterprise employee identity section with professional responsibilities
+  - Transformed MCP tasks into enterprise reporting system (like timesheets/status updates)  
+  - Emphasized "No YOLO Mode" - all work must be planned and documented
+  - Updated language to match corporate environment: "clock in", "manager", "enterprise rules"
+  - Added professional communication duties and performance standards
+  - Reframed MCP as enterprise communication system (like Slack/Teams)
+  - Updated mantra to emphasize professional accountability
+  - Added enterprise performance metrics: punctuality, accountability, communication, reliability
+  - **PRECISION IMPROVEMENT**: Added critical line number specification requirements
+    - Added section "PRECISE CONTEXT WITH LINE NUMBERS" 
+    - Emphasized using specific line ranges (file.js:23-35) instead of vague references
+    - Added line number format standards and documentation best practices
+    - Updated FAQ with line number specificity requirements
+    - Core benefit: Sub-agents can focus faster, no time wasted searching
+  - Core message: Work like a professional employee with reporting requirements
+  - Files modified: `CLAUDE.md`
+
 ### Added
 - **📚 MCP Hint System Documentation Updates** - 2025-09-12
   - Updated `ai_docs/development-guides/mcp-hint-system-implementation.md` with resolved display tag issues

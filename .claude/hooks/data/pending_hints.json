@@ -3,34 +3,6 @@
     "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
     "from_action": "create",
-    "created_at": "2025-09-12T12:37:24.470823",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-12T12:37:36.709085",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-12T12:37:36.984081",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-12T12:37:37.244053",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
     "created_at": "2025-09-12T12:37:37.509982",
     "displayed": true
   },
@@ -67,6 +39,34 @@
     "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
     "from_action": "update",
     "created_at": "2025-09-12T12:41:31.201877",
-    "displayed": false
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2714\ufe0f SUBTASK COMPLETED - NEXT:\n\ud83d\udca1 GREAT: Insights documented for future reference\n\ud83d\udd04 CHECK: Review if parent task needs updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "complete",
+    "created_at": "2025-09-12T12:43:44.981246",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83d\udca1 UPDATE COMPLETE - REMINDERS:\n\ud83d\udcc8 PROGRESS: 25% complete - keep updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "update",
+    "created_at": "2025-09-12T12:43:50.721699",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2714\ufe0f SUBTASK COMPLETED - NEXT:\n\ud83d\udca1 GREAT: Insights documented for future reference\n\ud83d\udd04 CHECK: Review if parent task needs updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "complete",
+    "created_at": "2025-09-12T12:47:24.148426",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83d\udca1 UPDATE COMPLETE - REMINDERS:\n\ud83d\udcc8 PROGRESS: 30% complete - keep updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "update",
+    "created_at": "2025-09-12T12:47:30.555315",
+    "displayed": true
   }
 ]
