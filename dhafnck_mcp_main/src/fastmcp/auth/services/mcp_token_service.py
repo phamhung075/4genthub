@@ -12,6 +12,11 @@ import hashlib
 from datetime import datetime, timedelta, UTC
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
+
+from ..models.api_token import ApiToken
+from ...task_management.infrastructure.database.session_manager import get_session
 
 
 logger = logging.getLogger(__name__)
@@ -40,8 +45,7 @@ class MCPTokenService:
     
     def __init__(self):
         """Initialize the MCP token service."""
-        self._tokens: Dict[str, MCPToken] = {}
-        logger.info("MCP Token Service initialized (in-memory storage)")
+        logger.info("MCP Token Service initialized (database storage)")
     
     async def generate_mcp_token_from_user_id(
         self,
@@ -118,7 +122,43 @@ class MCPTokenService:
             return None
         
         logger.debug(f"MCP token validated for user {mcp_token.user_id}")
+        
+        # Track usage in database
+        await self._update_token_usage(token)
+        
         return mcp_token
+    
+    async def _update_token_usage(self, token: str) -> None:
+        """
+        Update token usage statistics in the database.
+        
+        Args:
+            token: The MCP token that was used
+        """
+        try:
+            # Hash the token to find it in database
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+            
+            with get_session() as db_session:
+                # Update usage count and last used timestamp
+                stmt = (
+                    update(ApiToken)
+                    .where(ApiToken.token_hash == token_hash)
+                    .values(
+                        usage_count=ApiToken.usage_count + 1,
+                        last_used_at=datetime.now(UTC)
+                    )
+                )
+                result = db_session.execute(stmt)
+                db_session.commit()
+                
+                if result.rowcount > 0:
+                    logger.debug(f"Updated usage for MCP token {token[:10]}...")
+                else:
+                    logger.warning(f"Could not find MCP token in database: {token[:10]}...")
+                
+        except Exception as e:
+            logger.error(f"Error updating MCP token usage: {e}")
     
     async def revoke_user_tokens(self, user_id: str) -> bool:
         """

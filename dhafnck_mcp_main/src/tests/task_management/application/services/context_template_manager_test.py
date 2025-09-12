@@ -1,5 +1,5 @@
 """
-Tests for Context Template Manager Service
+Tests for Context Template Manager - Operation-Specific Context Injection
 """
 
 import pytest
@@ -7,13 +7,43 @@ from unittest.mock import Mock, patch, mock_open
 from pathlib import Path
 import yaml
 import json
+from typing import Dict, List, Any, Optional
 
 from fastmcp.task_management.application.services.context_template_manager import (
     ContextTemplateManager,
-    ContextTemplate,
-    TemplateVariable,
+    OperationType,
     TemplateValidationError
 )
+
+
+class TestOperationType:
+    """Test suite for OperationType enum"""
+    
+    def test_operation_type_values(self):
+        """Test that operation types have expected values"""
+        assert OperationType.TASK_CREATE.value == "task.create"
+        assert OperationType.TASK_UPDATE.value == "task.update"
+        assert OperationType.CONTEXT_RESOLVE.value == "context.resolve"
+        assert OperationType.AGENT_CALL.value == "agent.call"
+    
+    def test_all_operation_types_defined(self):
+        """Test that all expected operation types exist"""
+        expected_operations = [
+            "TASK_CREATE", "TASK_UPDATE", "TASK_GET", "TASK_LIST", "TASK_DELETE",
+            "TASK_COMPLETE", "TASK_SEARCH", "TASK_NEXT",
+            "SUBTASK_CREATE", "SUBTASK_UPDATE", "SUBTASK_DELETE", "SUBTASK_LIST",
+            "SUBTASK_COMPLETE",
+            "CONTEXT_CREATE", "CONTEXT_GET", "CONTEXT_UPDATE", "CONTEXT_DELETE",
+            "CONTEXT_RESOLVE", "CONTEXT_DELEGATE",
+            "PROJECT_CREATE", "PROJECT_GET", "PROJECT_UPDATE", "PROJECT_LIST",
+            "PROJECT_HEALTH_CHECK",
+            "GIT_BRANCH_CREATE", "GIT_BRANCH_GET", "GIT_BRANCH_LIST",
+            "GIT_BRANCH_UPDATE", "GIT_BRANCH_DELETE",
+            "AGENT_REGISTER", "AGENT_ASSIGN", "AGENT_LIST", "AGENT_CALL"
+        ]
+        
+        for op_name in expected_operations:
+            assert hasattr(OperationType, op_name)
 
 
 class TestContextTemplateManager:
@@ -25,474 +55,386 @@ class TestContextTemplateManager:
         return ContextTemplateManager()
 
     @pytest.fixture
-    def sample_template(self):
-        """Sample context template"""
-        return ContextTemplate(
-            name="task_creation",
-            description="Template for task creation context",
-            variables=[
-                TemplateVariable(name="project_name", type="string", required=True),
-                TemplateVariable(name="priority", type="string", required=False, default="medium"),
-                TemplateVariable(name="assignees", type="array", required=True)
-            ],
-            structure={
-                "project": {
-                    "name": "{{project_name}}",
-                    "type": "software"
-                },
-                "task": {
-                    "priority": "{{priority}}",
-                    "assignees": "{{assignees}}",
-                    "status": "todo"
-                }
-            }
-        )
-
-    @pytest.fixture
-    def template_yaml_content(self):
+    def sample_yaml_content(self):
         """Sample YAML template content"""
         return """
+version: "2.0.0"
 templates:
-  task_creation:
-    description: Template for creating tasks
-    variables:
-      - name: project_name
-        type: string
-        required: true
-        description: Name of the project
-      - name: priority
-        type: string
-        required: false
-        default: medium
-        allowed_values: [low, medium, high, urgent]
-      - name: assignees
-        type: array
-        required: true
-        min_items: 1
-    structure:
-      project:
-        name: "{{project_name}}"
-        type: software
-      task:
-        priority: "{{priority}}"
-        assignees: "{{assignees}}"
-        status: todo
-        
-  quick_fix:
-    description: Template for quick fixes
-    variables:
-      - name: issue_id
-        type: string
-        required: true
-    structure:
-      fix:
-        issue: "{{issue_id}}"
-        type: hotfix
+  task.create:
+    project: ["id", "name", "settings"]
+    git_branch: ["id", "name"]
+    user: ["id", "preferences"]
+  task.custom:
+    task: ["id", "title", "status"]
+    custom_field: ["data"]
 """
 
-    def test_load_templates_from_yaml(self, manager, template_yaml_content):
-        """Test loading templates from YAML file"""
-        with patch("builtins.open", mock_open(read_data=template_yaml_content)):
-            manager.load_templates_from_file("templates.yaml")
-        
-        assert len(manager.templates) == 2
-        assert "task_creation" in manager.templates
-        assert "quick_fix" in manager.templates
-        
-        task_template = manager.get_template("task_creation")
-        assert task_template.description == "Template for creating tasks"
-        assert len(task_template.variables) == 3
+    def test_manager_initialization(self, manager):
+        """Test manager initialization with default templates"""
+        assert manager.template_version == "1.0.0"
+        assert len(manager.templates) > 0
+        assert OperationType.TASK_CREATE in manager.templates
+        assert OperationType.TASK_UPDATE in manager.templates
+        assert manager._metrics["templates_used"] == 0
 
-    def test_register_template(self, manager, sample_template):
-        """Test registering a template"""
-        manager.register_template(sample_template)
+    def test_get_template_basic(self, manager):
+        """Test getting a basic template"""
+        template = manager.get_template(OperationType.TASK_CREATE)
         
-        assert "task_creation" in manager.templates
-        retrieved = manager.get_template("task_creation")
-        assert retrieved == sample_template
+        assert isinstance(template, dict)
+        assert "project" in template
+        assert "git_branch" in template
+        assert "user" in template
+        assert manager._metrics["templates_used"] == 1
 
-    def test_apply_template_basic(self, manager, sample_template):
-        """Test applying a template with basic values"""
-        manager.register_template(sample_template)
-        
-        values = {
-            "project_name": "MyProject",
-            "assignees": ["coding-agent", "@test-agent"]
+    def test_get_template_with_overrides(self, manager):
+        """Test getting template with field overrides"""
+        override_fields = {
+            "project": ["id", "name"],
+            "custom": ["new_field"]
         }
         
-        result = manager.apply_template("task_creation", values)
+        template = manager.get_template(OperationType.TASK_CREATE, override_fields)
         
-        assert result["project"]["name"] == "MyProject"
-        assert result["task"]["priority"] == "medium"  # Default value
-        assert result["task"]["assignees"] == ["coding-agent", "@test-agent"]
-        assert result["task"]["status"] == "todo"
+        assert template["project"] == ["id", "name"]
+        assert template["custom"] == ["new_field"]
 
-    def test_apply_template_with_all_values(self, manager, sample_template):
-        """Test applying template with all values provided"""
-        manager.register_template(sample_template)
-        
-        values = {
-            "project_name": "MyProject",
-            "priority": "high",
-            "assignees": ["coding-agent"]
+    def test_get_template_with_wildcard(self, manager):
+        """Test getting template with wildcard fields"""
+        override_fields = {
+            "task": ["*"]
         }
         
-        result = manager.apply_template("task_creation", values)
+        template = manager.get_template(OperationType.TASK_GET, override_fields)
         
-        assert result["task"]["priority"] == "high"
+        assert template["task"] == ["*"]
 
-    def test_apply_template_missing_required(self, manager, sample_template):
-        """Test applying template with missing required values"""
-        manager.register_template(sample_template)
+    def test_template_caching(self, manager):
+        """Test that templates are cached"""
+        # First call
+        template1 = manager.get_template(OperationType.TASK_CREATE)
         
-        values = {
-            "project_name": "MyProject"
-            # Missing required 'assignees'
-        }
+        # Second call should use cache
+        template2 = manager.get_template(OperationType.TASK_CREATE)
         
-        with pytest.raises(TemplateValidationError) as exc:
-            manager.apply_template("task_creation", values)
-        
-        assert "assignees" in str(exc.value)
+        assert template1 == template2
+        assert manager._metrics["cache_hits"] == 1
+        assert manager._metrics["templates_used"] == 2
 
-    def test_template_variable_validation(self, manager):
-        """Test variable type validation"""
-        template = ContextTemplate(
-            name="validated",
-            variables=[
-                TemplateVariable(name="count", type="integer", required=True),
-                TemplateVariable(name="active", type="boolean", required=True),
-                TemplateVariable(name="tags", type="array", required=True),
-                TemplateVariable(name="config", type="object", required=True)
-            ],
-            structure={
-                "data": {
-                    "count": "{{count}}",
-                    "active": "{{active}}",
-                    "tags": "{{tags}}",
-                    "config": "{{config}}"
-                }
+    def test_inheritance_map(self, manager):
+        """Test that inheritance map is built correctly"""
+        inheritance_map = manager._inheritance_map
+        
+        assert OperationType.SUBTASK_CREATE in inheritance_map
+        assert OperationType.TASK_CREATE in inheritance_map[OperationType.SUBTASK_CREATE]
+        assert OperationType.TASK_SEARCH in inheritance_map
+        assert OperationType.TASK_LIST in inheritance_map[OperationType.TASK_SEARCH]
+
+    def test_apply_inheritance(self, manager):
+        """Test template inheritance application"""
+        # Test subtask create inherits from task create
+        subtask_template = manager.get_template(OperationType.SUBTASK_CREATE)
+        task_template = manager.get_template(OperationType.TASK_CREATE)
+        
+        # Should have inherited some fields from parent
+        assert "project" in subtask_template
+        assert "parent_task" in subtask_template  # Own fields
+
+    def test_load_custom_templates(self, manager, sample_yaml_content):
+        """Test loading custom templates from YAML"""
+        with patch("builtins.open", mock_open(read_data=sample_yaml_content)):
+            with patch.object(Path, "exists", return_value=True):
+                manager.load_custom_templates("test_templates.yaml")
+        
+        # Should have updated version
+        assert manager.template_version == "2.0.0"
+        
+        # Should have custom template
+        assert OperationType.TASK_CREATE in manager.custom_templates
+        
+        # Should be able to get custom template
+        custom_template = manager.get_template(OperationType.TASK_CREATE)
+        assert "project" in custom_template
+
+    def test_load_custom_templates_file_not_exists(self, manager):
+        """Test loading custom templates when file doesn't exist"""
+        with patch.object(Path, "exists", return_value=False):
+            manager.load_custom_templates("nonexistent.yaml")
+        
+        # Should still have default templates
+        assert len(manager.templates) > 0
+
+    def test_load_custom_templates_invalid_operation(self, manager):
+        """Test loading custom templates with invalid operation type"""
+        invalid_yaml = """
+templates:
+  invalid.operation:
+    field: ["value"]
+"""
+        
+        with patch("builtins.open", mock_open(read_data=invalid_yaml)):
+            with patch.object(Path, "exists", return_value=True):
+                manager.load_custom_templates("test_templates.yaml")
+        
+        # Should not have added invalid operation
+        assert len(manager.custom_templates) == 0
+
+    def test_save_templates(self, manager):
+        """Test saving templates to YAML file"""
+        output_path = "/tmp/test_templates.yaml"
+        
+        with patch("builtins.open", mock_open()) as mock_file:
+            with patch.object(Path, "mkdir"):
+                manager.save_templates(output_path)
+        
+        mock_file.assert_called_once_with(Path(output_path), 'w')
+
+    def test_validate_template_valid(self, manager):
+        """Test template validation with required contexts"""
+        required_contexts = ["project", "git_branch"]
+        
+        is_valid = manager.validate_template(OperationType.TASK_CREATE, required_contexts)
+        
+        assert is_valid
+
+    def test_validate_template_invalid(self, manager):
+        """Test template validation with missing contexts"""
+        required_contexts = ["project", "nonexistent_context"]
+        
+        is_valid = manager.validate_template(OperationType.TASK_CREATE, required_contexts)
+        
+        assert not is_valid
+
+    def test_get_minimal_context_basic(self, manager):
+        """Test extracting minimal context from available data"""
+        available_data = {
+            "project": {
+                "id": "proj-123",
+                "name": "Test Project",
+                "description": "Long description",
+                "settings": {"key": "value"},
+                "extra_field": "not needed"
+            },
+            "git_branch": {
+                "id": "branch-456",
+                "name": "feature/test",
+                "status": "active",
+                "commits": ["commit1", "commit2"]
             }
+        }
+        
+        minimal = manager.get_minimal_context(OperationType.TASK_CREATE, available_data)
+        
+        # Should only have required fields from template
+        assert "project" in minimal
+        assert "id" in minimal["project"]
+        assert "name" in minimal["project"]
+        assert "settings" in minimal["project"]
+        assert "extra_field" not in minimal["project"]
+
+    def test_get_minimal_context_wildcard(self, manager):
+        """Test extracting minimal context with wildcard fields"""
+        available_data = {
+            "task": {
+                "id": "task-123",
+                "title": "Test Task",
+                "description": "Description",
+                "status": "active"
+            }
+        }
+        
+        minimal = manager.get_minimal_context(OperationType.TASK_GET, available_data)
+        
+        # Wildcard should include all fields
+        assert minimal["task"] == available_data["task"]
+
+    def test_get_minimal_context_missing_data(self, manager):
+        """Test extracting minimal context when some data is missing"""
+        available_data = {
+            "project": {
+                "id": "proj-123",
+                "name": "Test Project"
+                # Missing 'settings' field
+            }
+        }
+        
+        minimal = manager.get_minimal_context(OperationType.TASK_CREATE, available_data)
+        
+        assert "project" in minimal
+        assert minimal["project"]["id"] == "proj-123"
+        assert minimal["project"]["name"] == "Test Project"
+
+    def test_suggest_template_improvements(self, manager):
+        """Test suggesting template improvements based on usage"""
+        actual_usage = {
+            "project": ["id", "name"],  # Missing 'default_priority' from template
+            "git_branch": ["id", "name", "status", "extra_field"],  # Has extra field
+            "user": ["id"]  # Missing 'preferences'
+        }
+        
+        suggestions = manager.suggest_template_improvements(
+            OperationType.TASK_CREATE, actual_usage
         )
         
-        manager.register_template(template)
+        assert suggestions["operation"] == "task.create"
+        assert "unused_fields" in suggestions
+        assert "missing_fields" in suggestions
+        assert suggestions["optimization_potential"] >= 0
+
+    def test_get_metrics(self, manager):
+        """Test getting usage metrics"""
+        # Use some templates to generate metrics
+        manager.get_template(OperationType.TASK_CREATE)
+        manager.get_template(OperationType.TASK_UPDATE)
+        manager.get_template(OperationType.TASK_CREATE)  # Should hit cache
         
-        # Valid values
-        values = {
-            "count": 42,
-            "active": True,
-            "tags": ["tag1", "tag2"],
-            "config": {"key": "value"}
-        }
+        metrics = manager.get_metrics()
         
-        result = manager.apply_template("validated", values)
-        assert result["data"]["count"] == 42
-        assert result["data"]["active"] is True
+        assert metrics["templates_used"] == 3
+        assert metrics["cache_hits"] == 1
+        assert metrics["fields_requested"] > 0
+
+    def test_reset_metrics(self, manager):
+        """Test resetting usage metrics"""
+        # Generate some metrics
+        manager.get_template(OperationType.TASK_CREATE)
+        assert manager._metrics["templates_used"] == 1
         
-        # Invalid type
-        invalid_values = {
-            "count": "not a number",
-            "active": True,
-            "tags": ["tag1"],
-            "config": {"key": "value"}
-        }
+        # Reset
+        manager.reset_metrics()
         
+        assert manager._metrics["templates_used"] == 0
+        assert manager._metrics["cache_hits"] == 0
+
+    def test_get_all_operations(self, manager):
+        """Test getting all supported operations"""
+        operations = manager.get_all_operations()
+        
+        assert isinstance(operations, list)
+        assert "task.create" in operations
+        assert "context.resolve" in operations
+        assert "agent.call" in operations
+
+    def test_estimate_savings_no_usage(self, manager):
+        """Test estimating savings with no usage"""
+        savings = manager.estimate_savings()
+        
+        assert savings["field_reduction_percent"] == 0
+        assert savings["estimated_time_savings_ms"] == 0
+        assert savings["estimated_bandwidth_savings_kb"] == 0
+
+    def test_estimate_savings_with_usage(self, manager):
+        """Test estimating savings with usage"""
+        # Simulate some field savings
+        manager._metrics["fields_requested"] = 100
+        manager._metrics["fields_saved"] = 50
+        manager._metrics["templates_used"] = 10
+        manager._metrics["cache_hits"] = 3
+        
+        savings = manager.estimate_savings()
+        
+        assert savings["field_reduction_percent"] > 0
+        assert savings["estimated_time_savings_ms"] == 50  # 1ms per field
+        assert savings["estimated_bandwidth_savings_kb"] > 0
+        assert savings["cache_hit_rate"] == 30.0  # 3/10 * 100
+
+    def test_default_templates_structure(self, manager):
+        """Test that default templates have expected structure"""
+        # Task operations
+        task_create = manager.get_template(OperationType.TASK_CREATE)
+        assert "project" in task_create
+        assert "git_branch" in task_create
+        assert "user" in task_create
+        
+        # Context operations
+        context_resolve = manager.get_template(OperationType.CONTEXT_RESOLVE)
+        assert "context" in context_resolve
+        assert "hierarchy" in context_resolve
+        
+        # Agent operations
+        agent_call = manager.get_template(OperationType.AGENT_CALL)
+        assert "agent" in agent_call
+        assert "context" in agent_call
+
+    def test_template_with_custom_path(self):
+        """Test creating manager with custom templates path"""
+        yaml_content = """
+version: "1.5.0"
+templates:
+  task.create:
+    custom: ["field"]
+"""
+        
+        with patch("builtins.open", mock_open(read_data=yaml_content)):
+            with patch.object(Path, "exists", return_value=True):
+                manager = ContextTemplateManager(templates_path="custom.yaml")
+        
+        assert manager.template_version == "1.5.0"
+        assert len(manager.custom_templates) > 0
+
+
+class TestTemplateValidationError:
+    """Test TemplateValidationError exception"""
+    
+    def test_template_validation_error(self):
+        """Test that TemplateValidationError can be raised and caught"""
         with pytest.raises(TemplateValidationError):
-            manager.apply_template("validated", invalid_values)
+            raise TemplateValidationError("Test validation error")
 
-    def test_template_with_nested_variables(self, manager):
-        """Test template with nested variable substitution"""
-        template = ContextTemplate(
-            name="nested",
-            variables=[
-                TemplateVariable(name="env", type="string", required=True),
-                TemplateVariable(name="region", type="string", required=True),
-                TemplateVariable(name="service", type="string", required=True)
-            ],
-            structure={
-                "deployment": {
-                    "environment": "{{env}}",
-                    "location": {
-                        "region": "{{region}}",
-                        "zone": "{{region}}-zone-1"
-                    },
-                    "service": {
-                        "name": "{{service}}",
-                        "url": "https://{{service}}.{{env}}.{{region}}.example.com"
-                    }
-                }
-            }
-        )
-        
-        manager.register_template(template)
-        
-        values = {
-            "env": "prod",
-            "region": "us-east",
-            "service": "api"
-        }
-        
-        result = manager.apply_template("nested", values)
-        
-        assert result["deployment"]["environment"] == "prod"
-        assert result["deployment"]["location"]["region"] == "us-east"
-        assert result["deployment"]["location"]["zone"] == "us-east-zone-1"
-        assert result["deployment"]["service"]["url"] == "https://api.prod.us-east.example.com"
 
-    def test_template_with_conditionals(self, manager):
-        """Test template with conditional sections"""
-        template = ContextTemplate(
-            name="conditional",
-            variables=[
-                TemplateVariable(name="include_debug", type="boolean", required=True),
-                TemplateVariable(name="log_level", type="string", required=False)
-            ],
-            structure={
-                "config": {
-                    "base": "standard",
-                    "debug": {
-                        "_condition": "{{include_debug}}",
-                        "enabled": True,
-                        "level": "{{log_level}}"
-                    }
-                }
-            }
-        )
+class TestEdgeCases:
+    """Test edge cases and error conditions"""
+    
+    @pytest.fixture
+    def manager(self):
+        return ContextTemplateManager()
+    
+    def test_get_template_unknown_operation(self, manager):
+        """Test getting template for unknown operation type"""
+        # Create a mock operation type that doesn't exist in DEFAULT_TEMPLATES
+        unknown_op = Mock()
+        unknown_op.value = "unknown.operation"
         
-        manager.register_template(template)
+        template = manager.get_template(unknown_op)
         
-        # With debug enabled
-        result = manager.apply_template("conditional", {
-            "include_debug": True,
-            "log_level": "verbose"
-        })
-        assert "debug" in result["config"]
-        assert result["config"]["debug"]["level"] == "verbose"
+        # Should return empty template
+        assert template == {}
+    
+    def test_load_templates_yaml_error(self, manager):
+        """Test loading templates with YAML parsing error"""
+        invalid_yaml = "invalid: yaml: content: ["
         
-        # With debug disabled
-        result = manager.apply_template("conditional", {
-            "include_debug": False
-        })
-        # Debug section should be excluded based on condition
-
-    def test_template_with_loops(self, manager):
-        """Test template with loop constructs"""
-        template = ContextTemplate(
-            name="loops",
-            variables=[
-                TemplateVariable(name="services", type="array", required=True),
-                TemplateVariable(name="port_base", type="integer", required=True)
-            ],
-            structure={
-                "services": {
-                    "_for": "service in {{services}}",
-                    "_template": {
-                        "name": "{{service}}",
-                        "port": "{{port_base + _index}}"
-                    }
-                }
-            }
-        )
+        with patch("builtins.open", mock_open(read_data=invalid_yaml)):
+            with patch.object(Path, "exists", return_value=True):
+                # Should not raise exception, just log error
+                manager.load_custom_templates("invalid.yaml")
         
-        manager.register_template(template)
+        # Should still have default templates
+        assert len(manager.templates) > 0
+    
+    def test_save_templates_permission_error(self, manager):
+        """Test saving templates with permission error"""
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
+            # Should not raise exception, just log error
+            manager.save_templates("/root/test.yaml")
+    
+    def test_get_minimal_context_empty_available(self, manager):
+        """Test getting minimal context with empty available data"""
+        minimal = manager.get_minimal_context(OperationType.TASK_CREATE, {})
         
-        values = {
-            "services": ["web", "api", "worker"],
-            "port_base": 8000
-        }
+        # Should return empty dict
+        assert minimal == {}
+    
+    def test_inheritance_circular_protection(self, manager):
+        """Test that circular inheritance is protected against"""
+        # The inheritance map should not contain circular references
+        inheritance_map = manager._inheritance_map
         
-        result = manager.apply_template("loops", values)
-        # This would generate multiple service configurations
-
-    def test_template_inheritance(self, manager):
-        """Test template inheritance"""
-        # Base template
-        base = ContextTemplate(
-            name="base_task",
-            variables=[
-                TemplateVariable(name="title", type="string", required=True)
-            ],
-            structure={
-                "task": {
-                    "title": "{{title}}",
-                    "created_by": "system",
-                    "version": "1.0"
-                }
-            }
-        )
-        
-        # Extended template
-        extended = ContextTemplate(
-            name="feature_task",
-            extends="base_task",
-            variables=[
-                TemplateVariable(name="feature_name", type="string", required=True)
-            ],
-            structure={
-                "task": {
-                    "type": "feature",
-                    "feature": "{{feature_name}}"
-                }
-            }
-        )
-        
-        manager.register_template(base)
-        manager.register_template(extended)
-        
-        result = manager.apply_template("feature_task", {
-            "title": "Implement login",
-            "feature_name": "authentication"
-        })
-        
-        # Should have fields from both base and extended
-        assert result["task"]["title"] == "Implement login"
-        assert result["task"]["created_by"] == "system"  # From base
-        assert result["task"]["type"] == "feature"  # From extended
-        assert result["task"]["feature"] == "authentication"
-
-    def test_template_allowed_values(self, manager):
-        """Test validation of allowed values"""
-        template = ContextTemplate(
-            name="restricted",
-            variables=[
-                TemplateVariable(
-                    name="status",
-                    type="string",
-                    required=True,
-                    allowed_values=["draft", "published", "archived"]
-                )
-            ],
-            structure={"status": "{{status}}"}
-        )
-        
-        manager.register_template(template)
-        
-        # Valid value
-        result = manager.apply_template("restricted", {"status": "published"})
-        assert result["status"] == "published"
-        
-        # Invalid value
-        with pytest.raises(TemplateValidationError) as exc:
-            manager.apply_template("restricted", {"status": "deleted"})
-        assert "allowed values" in str(exc.value)
-
-    def test_template_with_functions(self, manager):
-        """Test template with built-in functions"""
-        template = ContextTemplate(
-            name="functions",
-            variables=[
-                TemplateVariable(name="name", type="string", required=True),
-                TemplateVariable(name="items", type="array", required=True)
-            ],
-            structure={
-                "formatted": {
-                    "upper_name": "{{upper(name)}}",
-                    "lower_name": "{{lower(name)}}",
-                    "item_count": "{{len(items)}}",
-                    "timestamp": "{{now()}}"
-                }
-            }
-        )
-        
-        manager.register_template(template)
-        
-        with patch('fastmcp.task_management.application.services.context_template_manager.datetime') as mock_datetime:
-            mock_datetime.now.return_value.isoformat.return_value = "2025-09-12T10:00:00"
+        for child, parents in inheritance_map.items():
+            # Parents should not contain the child itself
+            assert child not in parents
             
-            result = manager.apply_template("functions", {
-                "name": "TestName",
-                "items": ["a", "b", "c"]
-            })
-        
-        # Functions should be evaluated
-        assert result["formatted"]["upper_name"] == "TESTNAME"
-        assert result["formatted"]["lower_name"] == "testname"
-        assert result["formatted"]["item_count"] == 3
-
-    def test_template_composition(self, manager):
-        """Test composing multiple templates"""
-        # Register component templates
-        header = ContextTemplate(
-            name="header",
-            variables=[TemplateVariable(name="title", type="string", required=True)],
-            structure={"header": {"title": "{{title}}"}}
-        )
-        
-        body = ContextTemplate(
-            name="body",
-            variables=[TemplateVariable(name="content", type="string", required=True)],
-            structure={"body": {"content": "{{content}}"}}
-        )
-        
-        manager.register_template(header)
-        manager.register_template(body)
-        
-        # Compose templates
-        composed = manager.compose_templates(
-            ["header", "body"],
-            {
-                "title": "My Document",
-                "content": "Document content here"
-            }
-        )
-        
-        assert composed["header"]["title"] == "My Document"
-        assert composed["body"]["content"] == "Document content here"
-
-    def test_template_caching(self, manager, sample_template):
-        """Test template compilation caching"""
-        manager.register_template(sample_template)
-        
-        # First application should compile
-        values = {"project_name": "Test", "assignees": ["agent1"]}
-        result1 = manager.apply_template("task_creation", values)
-        
-        # Second application should use cache
-        result2 = manager.apply_template("task_creation", values)
-        
-        assert result1 == result2
-
-    def test_export_import_templates(self, manager, sample_template):
-        """Test exporting and importing templates"""
-        manager.register_template(sample_template)
-        
-        # Export to JSON
-        exported = manager.export_templates()
-        assert "task_creation" in exported
-        
-        # Clear and re-import
-        manager.templates.clear()
-        manager.import_templates(exported)
-        
-        assert "task_creation" in manager.templates
-        imported = manager.get_template("task_creation")
-        assert imported.name == sample_template.name
-
-    def test_template_versioning(self, manager):
-        """Test template versioning support"""
-        v1 = ContextTemplate(
-            name="versioned",
-            version="1.0",
-            variables=[TemplateVariable(name="field1", type="string", required=True)],
-            structure={"data": {"field1": "{{field1}}"}}
-        )
-        
-        v2 = ContextTemplate(
-            name="versioned",
-            version="2.0",
-            variables=[
-                TemplateVariable(name="field1", type="string", required=True),
-                TemplateVariable(name="field2", type="string", required=True)
-            ],
-            structure={"data": {"field1": "{{field1}}", "field2": "{{field2}}"}}
-        )
-        
-        manager.register_template(v1)
-        manager.register_template(v2)
-        
-        # Should be able to get specific versions
-        result_v1 = manager.apply_template("versioned", {"field1": "value1"}, version="1.0")
-        assert "field2" not in result_v1["data"]
-        
-        result_v2 = manager.apply_template("versioned", {"field1": "value1", "field2": "value2"}, version="2.0")
-        assert result_v2["data"]["field2"] == "value2"
+            # Check one level deeper to avoid simple circular references
+            for parent in parents:
+                if parent in inheritance_map:
+                    assert child not in inheritance_map[parent]

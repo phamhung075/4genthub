@@ -12,7 +12,7 @@ import secrets
 import hashlib
 import jwt
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from fastmcp.auth.domain.services.jwt_service import JWTService
