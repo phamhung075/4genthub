@@ -11,7 +11,7 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import httpx
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 
 # Handle optional imports
@@ -52,8 +52,8 @@ class TestDataModels:
         request = LoginRequest(email="test@example.com", password="password123")
         
         # Assert
-        assert pytest_request.email == "test@example.com"
-        assert pytest_request.password == "password123"
+        assert request.email == "test@example.com"
+        assert request.password == "password123"
     
     def test_register_request_model_valid(self):
         """Test RegisterRequest model with valid data"""
@@ -65,9 +65,9 @@ class TestDataModels:
         )
         
         # Assert
-        assert pytest_request.email == "test@example.com"
-        assert pytest_request.password == "Password123!"
-        assert pytest_request.username == "testuser"
+        assert request.email == "test@example.com"
+        assert request.password == "Password123!"
+        assert request.username == "testuser"
     
     def test_register_request_password_validation(self):
         """Test password validation in RegisterRequest"""
