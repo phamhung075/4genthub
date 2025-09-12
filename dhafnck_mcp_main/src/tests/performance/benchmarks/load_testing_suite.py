@@ -23,7 +23,7 @@ from .. import PERFORMANCE_CONFIG, setup_performance_logger
 from .performance_suite import PerformanceMetric, BenchmarkResult, PerformanceBenchmark, ResourceMonitor
 from .response_size_tests import ResponseSizeBenchmark
 from ...integration.mcp_client_tests import MCPClientTestSuite
-from ....fastmcp.task_management.infrastructure.monitoring.metrics_collector import MetricsCollector, timing_context
+from fastmcp.task_management.infrastructure.monitoring.metrics_collector import MetricsCollector, timing_context
 
 logger = setup_performance_logger()
 

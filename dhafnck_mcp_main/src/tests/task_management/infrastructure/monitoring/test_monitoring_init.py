@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 
 # Test import to ensure the package is properly structured
 try:
-    from fastmcp.task_management.infrastructure.monitoring import *
+    import fastmcp.task_management.infrastructure.monitoring
 except ImportError as e:
     pytest.skip(f"Monitoring package not properly configured: {e}")
 
@@ -162,7 +162,7 @@ class TestMonitoringPackageIntegration:
         """Test that monitoring package integrates properly with infrastructure layer"""
         try:
             from fastmcp.task_management.infrastructure import monitoring
-            from fastmcp.task_management.infrastructure.monitoring import *
+            import fastmcp.task_management.infrastructure.monitoring
             
             # Should be able to access monitoring through infrastructure
             assert monitoring is not None
@@ -210,7 +210,7 @@ class TestMonitoringTestSetup:
         """Test that we can import source modules from test context"""
         try:
             # These imports should work if the path setup is correct
-            from fastmcp.task_management.infrastructure.monitoring import *
+            import fastmcp.task_management.infrastructure.monitoring
             from fastmcp.task_management.infrastructure import monitoring
             
             assert True  # If imports work, test passes

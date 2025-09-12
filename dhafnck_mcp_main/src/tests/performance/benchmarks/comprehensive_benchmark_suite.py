@@ -21,7 +21,7 @@ from .performance_suite import PerformanceSuite, BenchmarkResult, PerformanceMet
 from .response_size_tests import ResponseSizeBenchmark
 from .ai_comprehension_tests import AIComprehensionBenchmark
 from .load_testing_suite import LoadTestingBenchmark
-from ....fastmcp.task_management.infrastructure.monitoring.metrics_collector import MetricsCollector, start_global_collection, stop_global_collection
+from fastmcp.task_management.infrastructure.monitoring.metrics_collector import MetricsCollector, start_global_collection, stop_global_collection
 
 logger = setup_performance_logger()
 

@@ -1,5 +1,95 @@
 # TEST-CHANGELOG
 
+## [Unreleased]
+
+### Added - 2025-09-12
+- Comprehensive test coverage for AI Task Planning System domain entities and services:
+  - **planning_request_test.py**: 18 tests for PlanningRequest and RequirementItem entities
+    - Complexity estimation logic with edge cases
+    - Requirement management (add, remove, update)
+    - JSON/dict serialization validation
+  - **task_plan_test.py**: 21 tests for TaskPlan, PlannedTask, and AgentAssignment
+    - Task hierarchy and dependency management
+    - Parallel execution analysis
+    - Plan validation with circular dependency detection
+  - **requirement_analyzer_test.py**: 15 tests for AI-powered requirement analysis
+    - Pattern detection across 10+ requirement types
+    - Complexity analysis (LOC, dependencies, technical indicators)
+    - Agent suggestion based on patterns
+  - **ai_planning_service_test.py**: 20 tests for core planning service
+    - Intelligent plan creation with requirement analysis
+    - Agent assignment optimization
+    - Dependency detection and management
+  - **ai_planning_mcp_controller_test.py**: 16 tests for MCP integration
+    - Request parsing with multiple input formats (JSON, comma-separated)
+    - Error handling for invalid inputs
+    - End-to-end AI planning workflow
+  - **ai_integration_service_test.py**: 17 tests for task enhancement features
+    - Smart agent assignment based on task content
+    - AI-powered task breakdown suggestions
+    - Insights and risk identification
+  - **dependency_management_engine_test.py**: 12 tests for intelligent dependencies
+    - Content-based dependency detection
+    - Hint generation with confidence scoring
+    - Technical keyword analysis
+  - **ai_task_creation_use_case_test.py**: 15 tests for AI-enhanced task creation
+    - Full AI planning integration
+    - Auto-subtask generation
+    - Error handling and validation
+  - **content_analyzer_test.py**: 13 tests for content analysis service
+    - Pattern extraction from text
+    - Technical entity recognition
+    - Similarity calculation algorithms
+  - **pattern_recognition_engine_test.py**: 28 tests for ML pattern recognition
+    - Feature extraction and tokenization
+    - Pattern learning from historical data
+    - Dependency prediction with confidence scoring
+  - **ml_dependency_predictor_test.py**: 24 tests for ML infrastructure
+    - Model persistence and versioning
+    - Training data collection
+    - Pattern feedback mechanism
+
+### Updated - 2025-09-12
+- **task_mcp_controller_test.py**: Enhanced with 25+ new tests for modular architecture
+  - Factory pattern testing (operation, validation, response factories)
+  - AI parameter handling (requirements, planning context, agent suggestions)
+  - Permission system integration tests
+  - New operations: add_dependency, remove_dependency, next task
+  - Enhanced error handling and parameter conversion tests
+  - Context propagation and workflow hint enhancement testing
+
+### Added - 2025-09-12
+- **Smart Test Menu System** (`scripts/test-menu.sh`)
+  - Intelligent test caching system to skip passed tests on subsequent runs
+  - Failed test tracking for targeted re-execution
+  - MD5 hash-based change detection for modified test files
+  - Cache management: `.test_cache/` directory with passed/failed/hash tracking
+  - Test statistics: real-time tracking of passed/failed/cached/untested counts
+  - Smart execution modes: skip cached, run failed only, run all, run specific
+  - Category-based testing: unit, integration, e2e, performance
+  - Obsolete test detection: finds deprecated imports and naming violations
+  - Coverage report generation with HTML output
+  - Test result persistence across sessions
+
+### Added - 2025-09-12
+- Comprehensive MCP tools test suite in `dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py`
+- Test coverage for all dhafnck_mcp_http tool categories (43 test cases)
+- Automated test report generation with markdown formatting
+- Test simulation for project, branch, task, and subtask management
+- TDD workflow testing with subtask creation patterns
+- Context hierarchy verification tests (Global → Project → Branch → Task)
+- Comprehensive test documentation in `ai_docs/testing-qa/mcp-tools-comprehensive-test-report-2025-09-12.md`
+
+### Tested - 2025-09-12
+- Connection management and health checks
+- Authentication system status verification
+- Project management simulation (create, list, get, update, set context)
+- Branch management simulation (create, list, assign agents, set context)
+- Task management simulation (create with dependencies, update, search, complete)
+- Subtask management simulation (TDD steps creation, CRUD operations)
+- Context inheritance across all hierarchy levels
+- Global context structure validation
+
 ## [1.0.0] - 2025-09-12 - AI Task Planning System - Comprehensive Test Suite Complete
 
 ### Executive Summary

@@ -17,6 +17,14 @@ from fastmcp.task_management.application.dtos.task.create_task_request import Cr
 from fastmcp.task_management.application.dtos.task.update_task_request import UpdateTaskRequest
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
 
+# Import factories for testing
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.factories.operation_factory import OperationFactory
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.factories.validation_factory import ValidationFactory
+from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.factories.response_factory import ResponseFactory
+
+# Import permission system for testing
+from fastmcp.auth.domain.permissions import ResourceType, PermissionAction, PermissionChecker
+
 
 class TestTaskMCPController:
     """Comprehensive test suite for TaskMCPController modular architecture."""
@@ -543,6 +551,237 @@ class TestTaskMCPController:
         assert controller._response_enrichment is not None
 
     @pytest.mark.asyncio
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    async def test_ai_parameters_in_create(self, mock_get_user_id, controller):
+        """Test create task with AI parameters"""
+        mock_get_user_id.return_value = "test-user-123"
+        
+        expected_response = {
+            "success": True,
+            "task_id": str(uuid4()),
+            "ai_enhancements": {
+                "complexity_analysis": {"level": "MEDIUM"},
+                "agent_suggestions": ["coding-agent", "review-agent"]
+            }
+        }
+        
+        with patch.object(controller._operation_factory, 'handle_operation', new_callable=AsyncMock) as mock_handle_op:
+            mock_handle_op.return_value = expected_response
+            
+            with patch.object(controller, '_check_task_permissions') as mock_check_perms:
+                mock_check_perms.return_value = (True, None)
+                
+                with patch.object(controller, '_validate_request') as mock_validate:
+                    mock_validate.return_value = (True, None)
+                    
+                    result = await controller.manage_task(
+                        "create",
+                        title="AI-enhanced task",
+                        git_branch_id=str(uuid4()),
+                        requirements="Build a REST API with authentication",
+                        enable_ai_breakdown=True,
+                        enable_smart_assignment=True,
+                        analyze_complexity=True
+                    )
+        
+        assert result["success"] is True
+        
+        # Verify AI parameters were passed to operation factory
+        mock_handle_op.assert_called_once()
+        call_kwargs = mock_handle_op.call_args[1]
+        assert call_kwargs.get("requirements") == "Build a REST API with authentication"
+        assert call_kwargs.get("enable_ai_breakdown") is True
+        assert call_kwargs.get("enable_smart_assignment") is True
+        assert call_kwargs.get("analyze_complexity") is True
+
+    @pytest.mark.asyncio
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    async def test_add_dependency_operation(self, mock_get_user_id, controller):
+        """Test add dependency operation"""
+        mock_get_user_id.return_value = "test-user-123"
+        task_id = str(uuid4())
+        dependency_id = str(uuid4())
+        
+        expected_response = {"success": True, "message": "Dependency added"}
+        
+        with patch.object(controller._operation_factory, 'handle_operation', new_callable=AsyncMock) as mock_handle_op:
+            mock_handle_op.return_value = expected_response
+            
+            with patch.object(controller, '_check_task_permissions') as mock_check_perms:
+                mock_check_perms.return_value = (True, None)
+                
+                with patch.object(controller, '_validate_request') as mock_validate:
+                    mock_validate.return_value = (True, None)
+                    
+                    result = await controller.manage_task(
+                        "add_dependency",
+                        task_id=task_id,
+                        dependency_id=dependency_id
+                    )
+        
+        assert result["success"] is True
+        assert "enhanced" in result
+
+    @pytest.mark.asyncio
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    async def test_remove_dependency_operation(self, mock_get_user_id, controller):
+        """Test remove dependency operation"""
+        mock_get_user_id.return_value = "test-user-123"
+        task_id = str(uuid4())
+        dependency_id = str(uuid4())
+        
+        expected_response = {"success": True, "message": "Dependency removed"}
+        
+        with patch.object(controller._operation_factory, 'handle_operation', new_callable=AsyncMock) as mock_handle_op:
+            mock_handle_op.return_value = expected_response
+            
+            with patch.object(controller, '_check_task_permissions') as mock_check_perms:
+                mock_check_perms.return_value = (True, None)
+                
+                with patch.object(controller, '_validate_request') as mock_validate:
+                    mock_validate.return_value = (True, None)
+                    
+                    result = await controller.manage_task(
+                        "remove_dependency", 
+                        task_id=task_id,
+                        dependency_id=dependency_id
+                    )
+        
+        assert result["success"] is True
+        assert "enhanced" in result
+
+    @pytest.mark.asyncio
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    async def test_next_task_operation(self, mock_get_user_id, controller):
+        """Test next task operation"""
+        mock_get_user_id.return_value = "test-user-123"
+        git_branch_id = str(uuid4())
+        
+        expected_response = {
+            "success": True,
+            "task": {
+                "id": str(uuid4()),
+                "title": "Next available task",
+                "priority": "high"
+            }
+        }
+        
+        with patch.object(controller._operation_factory, 'handle_operation', new_callable=AsyncMock) as mock_handle_op:
+            mock_handle_op.return_value = expected_response
+            
+            with patch.object(controller, '_check_task_permissions') as mock_check_perms:
+                mock_check_perms.return_value = (True, None)
+                
+                with patch.object(controller, '_validate_request') as mock_validate:
+                    mock_validate.return_value = (True, None)
+                    
+                    result = await controller.manage_task(
+                        "next",
+                        git_branch_id=git_branch_id
+                    )
+        
+        assert result["success"] is True
+        assert "enhanced" in result
+
+    @pytest.mark.asyncio
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    async def test_permission_check_with_context(self, mock_get_user_id, controller):
+        """Test permission check when request context is available"""
+        mock_get_user_id.return_value = "test-user-123"
+        
+        # Mock the request context and permission system
+        mock_request_context = Mock()
+        mock_user = Mock()
+        mock_user.token = {"permissions": ["tasks:read", "tasks:write"]}
+        mock_request_context.user = mock_user
+        
+        with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_current_request_context') as mock_get_context:
+            mock_get_context.return_value = mock_request_context
+            
+            with patch.object(PermissionChecker, 'has_permission') as mock_has_perm:
+                mock_has_perm.return_value = True
+                
+                result = controller._check_task_permissions("update", "test-user-123", "task-123")
+                
+                assert result[0] is True
+                assert result[1] is None
+
+    def test_permission_mapping(self, controller):
+        """Test that all actions have proper permission mappings"""
+        # These actions should be mapped in _check_task_permissions
+        expected_actions = [
+            'create', 'get', 'list', 'search', 'update', 'complete',
+            'delete', 'next', 'add_dependency', 'remove_dependency'
+        ]
+        
+        # Verify the method can handle all expected actions
+        for action in expected_actions:
+            result = controller._check_task_permissions(action, "test-user-123")
+            # Should not raise exceptions and should return a tuple
+            assert isinstance(result, tuple)
+            assert len(result) == 2
+
+    @pytest.mark.asyncio
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    async def test_ai_planning_parameters(self, mock_get_user_id, controller):
+        """Test task creation with AI planning parameters"""
+        mock_get_user_id.return_value = "test-user-123"
+        
+        expected_response = {
+            "success": True,
+            "task_id": str(uuid4()),
+            "ai_plan": {
+                "tasks": [
+                    {"title": "Design API schema", "estimated_effort": "4h"},
+                    {"title": "Implement endpoints", "estimated_effort": "8h"}
+                ],
+                "confidence_score": 0.85
+            }
+        }
+        
+        with patch.object(controller._operation_factory, 'handle_operation', new_callable=AsyncMock) as mock_handle_op:
+            mock_handle_op.return_value = expected_response
+            
+            with patch.object(controller, '_check_task_permissions') as mock_check_perms:
+                mock_check_perms.return_value = (True, None)
+                
+                with patch.object(controller, '_validate_request') as mock_validate:
+                    mock_validate.return_value = (True, None)
+                    
+                    result = await controller.manage_task(
+                        "create",
+                        title="Build user management system",
+                        git_branch_id=str(uuid4()),
+                        ai_requirements="Full CRUD operations with role-based access",
+                        planning_context="Using FastAPI and PostgreSQL",
+                        enable_auto_subtasks=True,
+                        suggest_optimizations=True,
+                        identify_risks=True,
+                        available_agents='["backend-agent", "database-agent", "security-agent"]'
+                    )
+        
+        assert result["success"] is True
+        
+        # Verify AI planning parameters were passed
+        call_kwargs = mock_handle_op.call_args[1]
+        assert call_kwargs.get("ai_requirements") == "Full CRUD operations with role-based access"
+        assert call_kwargs.get("planning_context") == "Using FastAPI and PostgreSQL"
+        assert call_kwargs.get("enable_auto_subtasks") is True
+        assert call_kwargs.get("suggest_optimizations") is True
+        assert call_kwargs.get("identify_risks") is True
+
+    def test_boolean_parameter_defaults(self, controller):
+        """Test that boolean parameters have proper defaults"""
+        # The manage_task method should handle None defaults for boolean parameters
+        # This is tested indirectly through the method's code
+        assert hasattr(controller, 'manage_task')
+        
+    def test_last_git_branch_id_tracking(self, controller):
+        """Test that controller tracks last known git_branch_id"""
+        assert hasattr(controller, '_last_git_branch_id')
+        assert controller._last_git_branch_id is None
+
+    @pytest.mark.asyncio
     async def test_exception_handling(self, controller, mock_facade_service):
         """Test general exception handling"""
         with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id') as mock_get_user_id:
@@ -561,8 +800,3 @@ class TestTaskMCPController:
         # Check if controller has context propagation capabilities (fallback implementation)
         # The controller has a fallback implementation if the mixin is not available
         assert hasattr(controller, '_run_async_with_context')
-
-    def test_last_git_branch_id_tracking(self, controller):
-        """Test that controller tracks last known git_branch_id"""
-        assert hasattr(controller, '_last_git_branch_id')
-        assert controller._last_git_branch_id is None

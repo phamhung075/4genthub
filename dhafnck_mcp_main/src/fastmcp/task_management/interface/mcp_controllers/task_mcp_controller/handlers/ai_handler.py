@@ -5,11 +5,11 @@ and AI-powered insights.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from ....utils.response_formatter import StandardResponseFormatter, ErrorCodes
-from ....application.services.ai_integration_service import AITaskIntegrationService
-from ....application.use_cases.ai_task_creation_use_case import AITaskCreationUseCase, AITaskCreationRequest
+from .....application.services.ai_integration_service import AITaskIntegrationService
+from .....application.use_cases.ai_task_creation_use_case import AITaskCreationUseCase, AITaskCreationRequest
 
 logger = logging.getLogger(__name__)
 

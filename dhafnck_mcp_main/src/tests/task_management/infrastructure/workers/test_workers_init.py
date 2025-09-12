@@ -238,7 +238,7 @@ class TestWorkersPackageIntegration:
         """Test that workers package integrates properly with infrastructure layer"""
         try:
             from fastmcp.task_management.infrastructure import workers
-            from fastmcp.task_management.infrastructure.workers import *
+            import fastmcp.task_management.infrastructure.workers
             
             # Should be able to access workers through infrastructure
             assert workers is not None
@@ -298,7 +298,7 @@ class TestWorkersTestSetup:
         """Test that we can import source modules from test context"""
         try:
             # These imports should work if the path setup is correct
-            from fastmcp.task_management.infrastructure.workers import *
+            import fastmcp.task_management.infrastructure.workers
             from fastmcp.task_management.infrastructure import workers
             
             assert True  # If imports work, test passes
