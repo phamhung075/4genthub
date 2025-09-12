@@ -201,7 +201,20 @@ class TaskMCPController(ContextPropagationMixin):
             force_full_generation: Annotated[bool, Field(description="[OPTIONAL] " + params["force_full_generation"]["description"])] = None,
             assignee: Annotated[str, Field(description="[OPTIONAL] " + params["assignee"]["description"])] = None,
             tag: Annotated[str, Field(description="[OPTIONAL] " + params["tag"]["description"])] = None,
-            user_id: Annotated[str, Field(description="[OPTIONAL] " + params["user_id"]["description"])] = None
+            user_id: Annotated[str, Field(description="[OPTIONAL] " + params["user_id"]["description"])] = None,
+            # AI-specific parameters
+            requirements: Annotated[str, Field(description="[OPTIONAL] " + params["requirements"]["description"])] = None,
+            context: Annotated[str, Field(description="[OPTIONAL] " + params["context"]["description"])] = None,
+            auto_create_tasks: Annotated[bool, Field(description="[OPTIONAL] " + params["auto_create_tasks"]["description"])] = None,
+            enable_ai_breakdown: Annotated[bool, Field(description="[OPTIONAL] " + params["enable_ai_breakdown"]["description"])] = None,
+            enable_smart_assignment: Annotated[bool, Field(description="[OPTIONAL] " + params["enable_smart_assignment"]["description"])] = None,
+            enable_auto_subtasks: Annotated[bool, Field(description="[OPTIONAL] " + params["enable_auto_subtasks"]["description"])] = None,
+            ai_requirements: Annotated[str, Field(description="[OPTIONAL] " + params["ai_requirements"]["description"])] = None,
+            planning_context: Annotated[str, Field(description="[OPTIONAL] " + params["planning_context"]["description"])] = None,
+            analyze_complexity: Annotated[bool, Field(description="[OPTIONAL] " + params["analyze_complexity"]["description"])] = None,
+            suggest_optimizations: Annotated[bool, Field(description="[OPTIONAL] " + params["suggest_optimizations"]["description"])] = None,
+            identify_risks: Annotated[bool, Field(description="[OPTIONAL] " + params["identify_risks"]["description"])] = None,
+            available_agents: Annotated[str, Field(description="[OPTIONAL] " + params["available_agents"]["description"])] = None
         ) -> Dict[str, Any]:
             """Main task management function with all parameters.
             
@@ -266,7 +279,14 @@ class TaskMCPController(ContextPropagationMixin):
                 query=query, limit=limit, offset=offset, sort_by=sort_by,
                 sort_order=sort_order, include_context=include_context,
                 force_full_generation=force_full_generation,
-                assignee=assignee, tag=tag, user_id=user_id
+                assignee=assignee, tag=tag, user_id=user_id,
+                # AI parameters
+                requirements=requirements, context=context, auto_create_tasks=auto_create_tasks,
+                enable_ai_breakdown=enable_ai_breakdown, enable_smart_assignment=enable_smart_assignment,
+                enable_auto_subtasks=enable_auto_subtasks, ai_requirements=ai_requirements,
+                planning_context=planning_context, analyze_complexity=analyze_complexity,
+                suggest_optimizations=suggest_optimizations, identify_risks=identify_risks,
+                available_agents=available_agents
             )
         
         # Register tool with description only (parameters is not supported by MCP tool decorator)

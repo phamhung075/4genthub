@@ -1963,8 +1963,15 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 2,
+      "count": 4,
       "files": [
+        {
+          "hash": "15a1d64655b2f13244465a5bc85aebe2",
+          "modified": "2025-09-12T15:43:19.599224",
+          "name": "uat-comprehensive-report-2025-09-12.md",
+          "path": "reports-status/uat-comprehensive-report-2025-09-12.md",
+          "size": 12685
+        },
         {
           "hash": "e5aeae1769b7a365e2ddc54e638e0059",
           "modified": "2025-09-12T12:07:30.439649",
@@ -1978,6 +1985,13 @@
           "name": "factory-check-status.md",
           "path": "reports-status/factory-check-status.md",
           "size": 20200
+        },
+        {
+          "hash": "c34904acee169fb644a376bed9967d06",
+          "modified": "2025-09-12T16:08:20.850914",
+          "name": "ai-task-planning-system-complete-2025-09-12.md",
+          "path": "reports-status/ai-task-planning-system-complete-2025-09-12.md",
+          "size": 12813
         }
       ],
       "path": "reports-status"
@@ -2565,7 +2579,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T13:48:33.880304",
+  "generated_at": "2025-09-12T16:08:21.001172",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2888,8 +2902,10 @@
     },
     "reports-status": {
       "files": [
+        "ai-task-planning-system-complete-2025-09-12.md",
         "design-patterns-analysis.md",
-        "factory-check-status.md"
+        "factory-check-status.md",
+        "uat-comprehensive-report-2025-09-12.md"
       ]
     },
     "security": {
@@ -2982,5 +2998,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 314
+  "total_files": 316
 }

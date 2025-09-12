@@ -36,6 +36,11 @@ MANAGE_TASK_DESCRIPTION = """
 | next                | git_branch_id                     | include_context                    | Get next recommended task                        |
 | add_dependency      | task_id, dependency_id         |                                | Add dependency to task                           |
 | remove_dependency   | task_id, dependency_id         |                                | Remove dependency from task                      |
+| ai_plan             | requirements, title, git_branch_id | description, context, auto_create_tasks | Create AI-generated task plan from requirements |
+| ai_create           | title, git_branch_id           | enable_ai_breakdown, enable_smart_assignment, ai_requirements | Create AI-enhanced task with smart features     |
+| ai_enhance          | task_id                        | analyze_complexity, suggest_optimizations, identify_risks | Enhance existing task with AI insights          |
+| ai_analyze          | requirements                   | context                        | Analyze requirements without creating tasks      |
+| ai_suggest_agents   | requirements                   | available_agents               | Suggest optimal agents for requirements          |
 
 ⚠️ PARAMETER VALIDATION PATTERN - TWO-STAGE VALIDATION:
 
@@ -163,7 +168,7 @@ ELIF testing/verification task:
 
 # Parameter descriptions for the manage_task tool
 MANAGE_TASK_PARAMETERS_DESCRIPTION = {
-    "action": "Task management action. Valid: 'create', 'update', 'get', 'delete', 'complete', 'list', 'search', 'next', 'add_dependency', 'remove_dependency'. Use 'create' to start new work, 'next' to find work, 'complete' when done.",
+    "action": "Task management action. Valid: 'create', 'update', 'get', 'delete', 'complete', 'list', 'search', 'next', 'add_dependency', 'remove_dependency', 'ai_plan', 'ai_create', 'ai_enhance', 'ai_analyze', 'ai_suggest_agents'. Use 'create' to start new work, 'next' to find work, 'complete' when done. AI actions provide intelligent task planning and enhancement.",
     "git_branch_id": "Git branch UUID identifier - contains all context (project_id, git_branch_name, user_id). Required for 'create' and 'next' actions. Get from git branch creation or list.",
     "task_id": "Task identifier (UUID). Required for: update, get, delete, complete, add/remove_dependency. Get from create response or list/search results.",
     "title": "Task title - be specific and action-oriented. Required for: create. Example: 'Implement JWT authentication with refresh tokens' not just 'Auth'",
@@ -189,7 +194,21 @@ MANAGE_TASK_PARAMETERS_DESCRIPTION = {
     "sort_order": "Sort order for results. Optional. Valid values: 'asc', 'desc'. Default: 'desc'.",
     "assignee": "Filter tasks by specific assignee. Optional for 'list' action. Example: 'user123'.",
     "tag": "Filter tasks by specific tag/label. Optional for 'list' action. Example: 'frontend'.",
-    "user_id": "User ID performing the operation. Optional - automatically populated from authentication context."
+    "user_id": "User ID performing the operation. Optional - automatically populated from authentication context.",
+    
+    # AI-specific parameters
+    "requirements": "Requirements description or JSON for AI planning. Required for: ai_plan, ai_analyze, ai_suggest_agents. Can be comma-separated text or structured JSON format.",
+    "context": "Planning context for AI operations. Optional. Values: 'new_feature', 'bug_fix', 'enhancement', 'refactor'. Default: 'new_feature'.",
+    "auto_create_tasks": "Whether to automatically create MCP tasks from AI plan. Optional for 'ai_plan'. Default: true.",
+    "enable_ai_breakdown": "Enable AI-powered task breakdown into subtasks. Optional for 'ai_create'. Default: false.",
+    "enable_smart_assignment": "Enable AI-powered agent assignment suggestions. Optional for 'ai_create'. Default: false.",
+    "enable_auto_subtasks": "Enable automatic subtask creation from AI analysis. Optional for 'ai_create'. Default: false.",
+    "ai_requirements": "Additional AI requirements for enhanced task creation. Optional for 'ai_create'. Provides context for AI planning.",
+    "planning_context": "Context for AI planning operations. Optional for 'ai_create'. Values: 'new_feature', 'bug_fix', 'enhancement'. Default: 'new_feature'.",
+    "analyze_complexity": "Analyze task complexity using AI. Optional for 'ai_enhance'. Default: true.",
+    "suggest_optimizations": "Generate AI-powered optimization suggestions. Optional for 'ai_enhance'. Default: true.",
+    "identify_risks": "Identify potential risks using AI analysis. Optional for 'ai_enhance'. Default: true.",
+    "available_agents": "Comma-separated list of available agents for assignment suggestions. Optional for 'ai_suggest_agents'."
 }
 
 
@@ -337,6 +356,56 @@ MANAGE_TASK_PARAMS = {
         "user_id": {
             "type": "string",
             "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["user_id"]
+        },
+        
+        # AI-specific parameters
+        "requirements": {
+            "type": "string",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["requirements"]
+        },
+        "context": {
+            "type": "string",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["context"]
+        },
+        "auto_create_tasks": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["auto_create_tasks"]
+        },
+        "enable_ai_breakdown": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_ai_breakdown"]
+        },
+        "enable_smart_assignment": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_smart_assignment"]
+        },
+        "enable_auto_subtasks": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_auto_subtasks"]
+        },
+        "ai_requirements": {
+            "type": "string",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["ai_requirements"]
+        },
+        "planning_context": {
+            "type": "string",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["planning_context"]
+        },
+        "analyze_complexity": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["analyze_complexity"]
+        },
+        "suggest_optimizations": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["suggest_optimizations"]
+        },
+        "identify_risks": {
+            "type": "boolean",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["identify_risks"]
+        },
+        "available_agents": {
+            "type": "string",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["available_agents"]
         }
     },
     "required": ["action"],
