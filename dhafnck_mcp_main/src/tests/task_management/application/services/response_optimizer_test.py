@@ -6,12 +6,11 @@ import pytest
 from unittest.mock import Mock, patch
 from typing import Dict, List, Any
 import json
+from datetime import datetime
 
 from fastmcp.task_management.application.services.response_optimizer import (
     ResponseOptimizer,
-    OptimizationStrategy,
-    ResponseProfile,
-    OptimizationResult
+    ResponseProfile
 )
 
 
@@ -24,406 +23,466 @@ class TestResponseOptimizer:
         return ResponseOptimizer()
 
     @pytest.fixture
-    def large_response(self):
-        """Create a large response for testing"""
+    def sample_response(self):
+        """Create a sample response for testing"""
         return {
-            "tasks": [
-                {
-                    "id": f"task-{i}",
-                    "title": f"Task {i}",
-                    "description": f"This is a detailed description for task {i} " * 10,
-                    "details": f"Implementation details for task {i} " * 20,
-                    "metadata": {
-                        "created_at": "2025-09-12T10:00:00Z",
-                        "updated_at": "2025-09-12T10:00:00Z",
-                        "version": "1.0",
-                        "tags": [f"tag{j}" for j in range(20)]
-                    },
-                    "history": [
-                        {
-                            "timestamp": f"2025-09-{10+j}T10:00:00Z",
-                            "action": "update",
-                            "changes": {"field": "value"} 
-                        } for j in range(50)
-                    ]
-                } for i in range(100)
-            ],
-            "metadata": {
-                "total_count": 100,
-                "page": 1,
-                "per_page": 100,
-                "debug_info": {
-                    "query_time": 0.123,
-                    "db_queries": 15,
-                    "cache_hits": 3
+            "success": True,
+            "operation": "task_create",
+            "operation_id": "op-123",
+            "timestamp": "2025-09-12T10:00:00Z",
+            "data": {
+                "id": "task-456",
+                "title": "Test Task",
+                "description": "A test task for validation",
+                "assignees": ["coding-agent"],
+                "status": "todo"
+            },
+            "confirmation": {
+                "operation_details": {
+                    "operation": "task_create",
+                    "operation_id": "op-123",
+                    "timestamp": "2025-09-12T10:00:00Z"
+                },
+                "data_persisted": True,
+                "partial_failures": [],
+                "operation_completed": True
+            },
+            "workflow_guidance": {
+                "next_steps": {
+                    "recommendations": ["Update task status", "Add assignees"],
+                    "required_actions": ["Review task details"]
+                },
+                "optional_actions": ["Add labels", "Set due date"],
+                "autonomous_guidance": {
+                    "confidence": 0.95
                 }
+            },
+            "meta": {
+                "version": "1.0",
+                "empty_field": None,
+                "empty_list": [],
+                "empty_string": ""
+            }
+        }
+
+    @pytest.fixture
+    def large_list_response(self):
+        """Create a large list response for testing"""
+        return {
+            "success": True,
+            "operation": "list_tasks",
+            "data": {
+                "tasks": [
+                    {
+                        "id": f"task-{i}",
+                        "title": f"Task {i}",
+                        "description": f"Description for task {i}",
+                        "status": "todo"
+                    } for i in range(50)
+                ]
+            },
+            "meta": {
+                "total": 50,
+                "page": 1
             }
         }
 
     def test_optimizer_initialization(self):
-        """Test optimizer initialization with custom settings"""
-        optimizer = ResponseOptimizer(
-            max_response_size_kb=500,
-            enable_compression=True,
-            remove_nulls=True
-        )
-        assert optimizer.max_response_size_kb == 500
-        assert optimizer.enable_compression is True
-        assert optimizer.remove_nulls is True
+        """Test optimizer initialization"""
+        optimizer = ResponseOptimizer()
+        assert optimizer.metrics["total_optimized"] == 0
+        assert optimizer.metrics["total_bytes_saved"] == 0
+        assert optimizer.metrics["average_compression_ratio"] == 0.0
+        assert "minimal" in optimizer.metrics["profile_usage"]
 
-    def test_optimize_minimal_profile(self, optimizer, large_response):
-        """Test optimization with minimal profile"""
-        result = optimizer.optimize(
-            response=large_response,
-            profile=ResponseProfile.MINIMAL
-        )
-        
-        assert isinstance(result, OptimizationResult)
-        assert result.size_reduction_percentage > 50
-        assert result.optimized_size_kb < result.original_size_kb
-        
-        # Check that detailed fields are removed
-        optimized_data = result.optimized_response
-        if "tasks" in optimized_data and len(optimized_data["tasks"]) > 0:
-            task = optimized_data["tasks"][0]
-            assert "description" not in task or len(task.get("description", "")) < 100
-            assert "details" not in task
-            assert "history" not in task
-
-    def test_optimize_standard_profile(self, optimizer, large_response):
-        """Test optimization with standard profile"""
-        result = optimizer.optimize(
-            response=large_response,
+    def test_optimize_response_basic(self, optimizer, sample_response):
+        """Test basic response optimization"""
+        result = optimizer.optimize_response(
+            response=sample_response,
             profile=ResponseProfile.STANDARD
         )
         
-        optimized_data = result.optimized_response
-        assert "tasks" in optimized_data
+        # Should return optimized response
+        assert isinstance(result, dict)
+        assert "success" in result
+        assert "data" in result
         
-        # Standard profile should keep important fields but trim large ones
-        if len(optimized_data["tasks"]) > 0:
-            task = optimized_data["tasks"][0]
-            assert "id" in task
-            assert "title" in task
-            assert "description" in task
-            # History might be truncated
-            if "history" in task:
-                assert len(task["history"]) <= 10
+        # Should have updated metrics
+        assert optimizer.metrics["total_optimized"] == 1
 
-    def test_optimize_detailed_profile(self, optimizer, large_response):
-        """Test optimization with detailed profile"""
-        result = optimizer.optimize(
-            response=large_response,
-            profile=ResponseProfile.DETAILED
-        )
+    def test_auto_select_profile_minimal(self, optimizer, large_list_response):
+        """Test auto-selection of MINIMAL profile for large list responses"""
+        profile = optimizer.auto_select_profile(large_list_response, None)
+        assert profile == ResponseProfile.MINIMAL
+
+    def test_auto_select_profile_detailed_for_ai_agent(self, optimizer, sample_response):
+        """Test auto-selection of DETAILED profile for AI agent requests"""
+        request_context = {
+            "params": {"assignee": "coding-agent"}
+        }
+        profile = optimizer.auto_select_profile(sample_response, request_context)
+        assert profile == ResponseProfile.DETAILED
+
+    def test_auto_select_profile_debug(self, optimizer, sample_response):
+        """Test auto-selection of DEBUG profile"""
+        request_context = {
+            "headers": {"User-Agent": "debug-client"},
+            "debug": True
+        }
+        profile = optimizer.auto_select_profile(sample_response, request_context)
+        assert profile == ResponseProfile.DEBUG
+
+    def test_auto_select_profile_default(self, optimizer, sample_response):
+        """Test default profile selection"""
+        profile = optimizer.auto_select_profile(sample_response, None)
+        assert profile == ResponseProfile.STANDARD
+
+    def test_remove_duplicates(self, optimizer, sample_response):
+        """Test removal of duplicate fields"""
+        result = optimizer.remove_duplicates(sample_response)
         
-        # Detailed profile should keep most data but still optimize
-        assert result.size_reduction_percentage > 0
-        optimized_data = result.optimized_response
-        assert "tasks" in optimized_data
-        assert "metadata" in optimized_data
+        # Should remove duplicates from operation_details
+        confirmation = result.get("confirmation", {})
+        operation_details = confirmation.get("operation_details", {})
+        
+        # These fields should be removed from operation_details since they exist at root
+        assert "operation" not in operation_details
+        assert "operation_id" not in operation_details
+        assert "timestamp" not in operation_details
 
-    def test_field_truncation(self, optimizer):
-        """Test field truncation strategy"""
+    def test_flatten_structure(self, optimizer):
+        """Test structure flattening"""
         response = {
-            "short_field": "Short value",
-            "long_field": "x" * 10000,
-            "nested": {
-                "description": "y" * 5000
-            }
+            "success": True,
+            "confirmation": {
+                "data_persisted": True,
+                "partial_failures": []
+            },
+            "data": {"id": "123"}
         }
         
-        result = optimizer.optimize(
-            response=response,
-            strategy=OptimizationStrategy.TRUNCATE_FIELDS,
-            max_field_length=1000
-        )
+        result = optimizer.flatten_structure(response)
         
-        optimized = result.optimized_response
-        assert len(optimized["long_field"]) <= 1000
-        assert optimized["long_field"].endswith("...")
-        assert len(optimized["nested"]["description"]) <= 1000
+        # Should move data_persisted to meta and remove confirmation
+        assert "confirmation" not in result
+        assert "meta" in result
+        assert result["meta"]["persisted"] is True
 
-    def test_remove_null_empty_fields(self, optimizer):
-        """Test removal of null and empty fields"""
-        response = {
-            "id": "123",
-            "title": "Test",
-            "description": None,
-            "tags": [],
-            "metadata": {},
+    def test_remove_nulls(self, optimizer):
+        """Test removal of null/empty values"""
+        data = {
+            "valid_string": "value",
+            "null_value": None,
             "empty_string": "",
-            "zero": 0,
+            "empty_list": [],
+            "empty_dict": {},
+            "zero_value": 0,
             "false_value": False,
+            "data": {},  # Should be preserved even if empty
             "nested": {
-                "null_field": None,
-                "empty_list": [],
-                "valid": "data"
+                "valid": "data",
+                "null_nested": None,
+                "empty_nested": ""
             }
         }
         
-        optimizer.remove_nulls = True
-        optimizer.remove_empty = True
+        result = optimizer.remove_nulls(data)
         
-        result = optimizer.optimize(response)
-        optimized = result.optimized_response
+        # Should keep valid values and preserve required fields
+        assert "valid_string" in result
+        assert "null_value" not in result
+        assert "empty_string" not in result
+        assert "empty_list" not in result
+        assert "empty_dict" not in result
+        assert "zero_value" in result  # Keep zero
+        assert "false_value" in result  # Keep false
+        assert "data" in result  # Always preserve data field
         
-        assert "description" not in optimized
-        assert "tags" not in optimized
-        assert "metadata" not in optimized
-        assert "empty_string" not in optimized
-        assert "zero" in optimized  # Keep zero values
-        assert "false_value" in optimized  # Keep false values
-        assert "null_field" not in optimized["nested"]
-        assert "valid" in optimized["nested"]
+        # Check nested cleaning
+        assert "valid" in result["nested"]
+        assert "null_nested" not in result["nested"]
+        assert "empty_nested" not in result["nested"]
 
-    def test_pagination_optimization(self, optimizer):
-        """Test optimization of paginated responses"""
-        response = {
-            "data": [{"id": i, "name": f"Item {i}"} for i in range(1000)],
-            "pagination": {
-                "page": 1,
-                "per_page": 1000,
-                "total": 10000
+    def test_apply_profile_minimal(self, optimizer, sample_response):
+        """Test MINIMAL profile application"""
+        result = optimizer.apply_profile(sample_response, ResponseProfile.MINIMAL)
+        
+        # Should only keep essential fields
+        allowed_fields = ["success", "operation", "data", "error"]
+        for key in result.keys():
+            assert key in allowed_fields
+        
+        # Data should always be preserved
+        assert "data" in result
+
+    def test_apply_profile_standard(self, optimizer, sample_response):
+        """Test STANDARD profile application"""
+        result = optimizer.apply_profile(sample_response, ResponseProfile.STANDARD)
+        
+        # Should keep standard fields and move metadata to meta
+        assert "success" in result
+        assert "data" in result
+        
+        # Should move operation_id and timestamp to meta if they exist
+        if "operation_id" in sample_response:
+            assert "meta" in result
+            assert "id" in result["meta"]
+
+    def test_apply_profile_detailed(self, optimizer, sample_response):
+        """Test DETAILED profile application"""
+        result = optimizer.apply_profile(sample_response, ResponseProfile.DETAILED)
+        
+        # Should exclude confirmation but keep most fields
+        assert "confirmation" not in result
+        assert "success" in result
+        assert "data" in result
+        
+        # Should simplify workflow_guidance to hints
+        if "workflow_guidance" in sample_response:
+            assert "hints" in result
+            assert "workflow_guidance" not in result
+
+    def test_apply_profile_debug(self, optimizer, sample_response):
+        """Test DEBUG profile application"""
+        result = optimizer.apply_profile(sample_response, ResponseProfile.DEBUG)
+        
+        # Should keep everything and add debug info
+        assert "debug_info" in result
+        assert "profile_used" in result["debug_info"]
+        assert "optimization_steps" in result["debug_info"]
+
+    def test_merge_metadata(self, optimizer, sample_response):
+        """Test metadata merging"""
+        result = optimizer.merge_metadata(sample_response)
+        
+        # Should consolidate metadata into meta object
+        if "meta" in result:
+            # operation_id should become meta.id
+            if "operation_id" in sample_response:
+                assert "id" in result.get("meta", {})
+            
+            # confirmation data should be merged
+            if "confirmation" in sample_response and "data_persisted" in sample_response["confirmation"]:
+                assert "persisted" in result.get("meta", {})
+
+    def test_simplify_workflow_guidance(self, optimizer):
+        """Test workflow guidance simplification"""
+        guidance = {
+            "next_steps": {
+                "recommendations": ["Action 1", "Action 2"],
+                "required_actions": "Required action"
+            },
+            "optional_actions": ["Optional 1", "Optional 2", "Optional 3"],
+            "autonomous_guidance": {
+                "confidence": 0.85
             }
         }
         
-        result = optimizer.optimize(
-            response=response,
-            strategy=OptimizationStrategy.PAGINATE,
-            page_size=50
+        result = optimizer._simplify_workflow_guidance(guidance)
+        
+        assert "next" in result
+        assert result["next"] == "Action 1"  # First recommendation
+        assert "required" in result
+        assert result["required"] == ["Required action"]  # Converted to array
+        assert "tips" in result
+        assert len(result["tips"]) == 2  # Max 2 tips
+        assert "confidence" in result
+        assert result["confidence"] == 0.85
+
+    def test_full_optimization_workflow(self, optimizer, sample_response):
+        """Test complete optimization workflow"""
+        original_size = len(str(sample_response))
+        
+        result = optimizer.optimize_response(
+            response=sample_response,
+            profile=ResponseProfile.STANDARD
         )
         
-        optimized = result.optimized_response
-        assert len(optimized["data"]) == 50
-        assert optimized["pagination"]["per_page"] == 50
-        assert "next_page" in optimized["pagination"]
+        optimized_size = len(str(result))
+        
+        # Should reduce response size
+        assert optimized_size < original_size
+        
+        # Should maintain essential structure
+        assert "success" in result
+        assert "data" in result
+        
+        # Should have updated metrics
+        assert optimizer.metrics["total_optimized"] == 1
+        assert optimizer.metrics["total_bytes_saved"] > 0
 
-    def test_compression_strategy(self, optimizer):
-        """Test response compression"""
-        large_text = "This is a repeating pattern. " * 1000
+    def test_high_frequency_operation_detection(self, optimizer):
+        """Test detection of high-frequency operations"""
         response = {
-            "content": large_text,
-            "metadata": {"size": "large"}
+            "operation": "list_tasks",
+            "data": {"tasks": []}
         }
         
-        result = optimizer.optimize(
-            response=response,
-            strategy=OptimizationStrategy.COMPRESS
-        )
-        
-        # Compressed response should be significantly smaller
-        assert result.compression_ratio > 5  # At least 5x compression
-        assert result.is_compressed is True
-        
-        # Should be able to decompress
-        decompressed = optimizer.decompress(result.optimized_response)
-        assert decompressed["content"] == large_text
+        profile = optimizer.auto_select_profile(response, None)
+        assert profile == ResponseProfile.MINIMAL
 
-    def test_field_filtering(self, optimizer):
-        """Test selective field filtering"""
-        response = {
-            "id": "123",
-            "public_data": "visible",
-            "private_data": "sensitive",
-            "internal_metadata": {"debug": "info"},
-            "user": {
-                "name": "John",
-                "email": "john@example.com",
-                "password_hash": "xxxxx"
+    def test_request_context_profile_selection(self, optimizer, sample_response):
+        """Test profile selection based on request context"""
+        # Explicit profile in request
+        context = {"profile": "detailed"}
+        profile = optimizer.auto_select_profile(sample_response, context)
+        assert profile == ResponseProfile.DETAILED
+        
+        # AI agent in headers
+        context = {"headers": {"User-Agent": "coding-agent"}}
+        profile = optimizer.auto_select_profile(sample_response, context)
+        assert profile == ResponseProfile.DETAILED
+
+    def test_metrics_tracking(self, optimizer, sample_response):
+        """Test metrics tracking across multiple optimizations"""
+        # Perform multiple optimizations
+        for i in range(5):
+            optimizer.optimize_response(sample_response, ResponseProfile.STANDARD)
+        
+        metrics = optimizer.get_metrics()
+        
+        assert metrics["total_responses_optimized"] == 5
+        assert metrics["total_bytes_saved"] > 0
+        assert "average_compression_ratio" in metrics
+        assert "profile_usage" in metrics
+        assert metrics["profile_usage"]["standard"] == 5
+
+    def test_edge_cases(self, optimizer):
+        """Test edge cases and error handling"""
+        # Empty response
+        result = optimizer.optimize_response({})
+        assert isinstance(result, dict)
+        
+        # Response with only data
+        result = optimizer.optimize_response({"data": {"id": "123"}})
+        assert "data" in result
+        
+        # Response with circular reference handling
+        circular = {"a": {}}
+        circular["a"]["b"] = "safe_value"  # Avoid actual circular reference
+        result = optimizer.optimize_response(circular)
+        assert isinstance(result, dict)
+
+    def test_flatten_single_arrays(self, optimizer):
+        """Test flattening of single-item arrays"""
+        data = {
+            "single_item": ["only_item"],
+            "multiple_items": ["item1", "item2"],
+            "nested": {
+                "single": ["value"],
+                "multiple": ["a", "b"]
             }
         }
         
-        result = optimizer.optimize(
-            response=response,
-            exclude_fields=["private_data", "internal_metadata", "user.password_hash"]
-        )
+        result = optimizer._flatten_single_arrays(data)
         
-        optimized = result.optimized_response
-        assert "public_data" in optimized
-        assert "private_data" not in optimized
-        assert "internal_metadata" not in optimized
-        assert "password_hash" not in optimized["user"]
-        assert "name" in optimized["user"]
+        assert result["single_item"] == "only_item"  # Flattened
+        assert result["multiple_items"] == ["item1", "item2"]  # Unchanged
+        assert result["nested"]["single"] == "value"  # Flattened
+        assert result["nested"]["multiple"] == ["a", "b"]  # Unchanged
 
-    def test_deduplication(self, optimizer):
-        """Test deduplication of repeated data"""
+    def test_calculate_reduction_percentage(self, optimizer):
+        """Test percentage reduction calculation"""
+        assert optimizer._calculate_reduction_percentage(100, 50) == 50.0
+        assert optimizer._calculate_reduction_percentage(200, 100) == 50.0
+        assert optimizer._calculate_reduction_percentage(0, 0) == 0.0
+        assert optimizer._calculate_reduction_percentage(100, 100) == 0.0
+
+    def test_response_profile_enum(self):
+        """Test ResponseProfile enum values"""
+        assert ResponseProfile.MINIMAL.value == "minimal"
+        assert ResponseProfile.STANDARD.value == "standard"
+        assert ResponseProfile.DETAILED.value == "detailed"
+        assert ResponseProfile.DEBUG.value == "debug"
+
+    def test_high_frequency_operation_list(self, optimizer):
+        """Test high-frequency operations list handling"""
+        for op in optimizer.HIGH_FREQUENCY_OPS:
+            response = {"operation": op}
+            profile = optimizer.auto_select_profile(response, None)
+            assert profile == ResponseProfile.MINIMAL
+
+    def test_ai_agent_indicators(self, optimizer, sample_response):
+        """Test AI agent indicator detection"""
+        for indicator in optimizer.AI_AGENT_INDICATORS:
+            # Test in user agent
+            context = {"headers": {"User-Agent": f"client-{indicator}-v1.0"}}
+            profile = optimizer.auto_select_profile(sample_response, context)
+            assert profile == ResponseProfile.DETAILED
+
+    def test_debug_indicators(self, optimizer, sample_response):
+        """Test debug indicator detection"""
+        for indicator in optimizer.DEBUG_INDICATORS:
+            context = {"headers": {"X-Debug": indicator}}
+            profile = optimizer.auto_select_profile(sample_response, context)
+            assert profile == ResponseProfile.DEBUG
+
+    def test_large_response_minimal_selection(self, optimizer):
+        """Test automatic minimal profile for large responses"""
+        # Create response with large list
         response = {
-            "items": [
-                {
-                    "id": i,
-                    "category": {"id": 1, "name": "Category A", "description": "Long description" * 10},
-                    "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
-                } for i in range(100)
-            ]
-        }
-        
-        result = optimizer.optimize(
-            response=response,
-            strategy=OptimizationStrategy.DEDUPLICATE
-        )
-        
-        optimized = result.optimized_response
-        # Should extract common data
-        assert "common_data" in optimized or "references" in optimized
-        assert result.size_reduction_percentage > 50
-
-    def test_adaptive_optimization(self, optimizer, large_response):
-        """Test adaptive optimization based on response size"""
-        # Small response - minimal optimization
-        small_response = {"id": "123", "name": "Test"}
-        result_small = optimizer.optimize_adaptive(small_response)
-        assert result_small.optimization_level == "none"
-        
-        # Large response - aggressive optimization
-        result_large = optimizer.optimize_adaptive(large_response)
-        assert result_large.optimization_level in ["high", "maximum"]
-        assert result_large.size_reduction_percentage > 60
-
-    def test_streaming_optimization(self, optimizer):
-        """Test optimization for streaming responses"""
-        def response_generator():
-            for i in range(100):
-                yield {
-                    "id": i,
-                    "data": "x" * 1000,
-                    "metadata": {"index": i}
-                }
-        
-        optimized_stream = optimizer.optimize_stream(
-            response_generator(),
-            chunk_size=10,
-            profile=ResponseProfile.MINIMAL
-        )
-        
-        chunks = list(optimized_stream)
-        assert len(chunks) == 10  # 100 items / 10 per chunk
-        
-        # Each chunk should be optimized
-        first_chunk = chunks[0]
-        assert len(first_chunk) == 10
-        assert len(first_chunk[0].get("data", "")) < 1000
-
-    def test_caching_optimization(self, optimizer):
-        """Test caching of optimization strategies"""
-        response_template = {
-            "type": "task_list",
-            "data": [{"id": i} for i in range(50)]
-        }
-        
-        # First optimization
-        result1 = optimizer.optimize(response_template)
-        
-        # Second optimization of similar structure should use cached strategy
-        similar_response = {
-            "type": "task_list",
-            "data": [{"id": i} for i in range(100, 150)]
-        }
-        
-        with patch.object(optimizer, '_analyze_response') as mock_analyze:
-            result2 = optimizer.optimize(similar_response)
-            # Analysis should not be called due to caching
-            assert mock_analyze.call_count == 0
-
-    def test_custom_optimization_rules(self, optimizer):
-        """Test custom optimization rules"""
-        # Add custom rule
-        optimizer.add_rule(
-            name="remove_debug_info",
-            condition=lambda resp: "debug" in resp,
-            action=lambda resp: {k: v for k, v in resp.items() if k != "debug"}
-        )
-        
-        response = {
-            "data": "important",
-            "debug": {"queries": 10, "time": 0.5},
-            "metadata": {"version": "1.0"}
-        }
-        
-        result = optimizer.optimize(response)
-        assert "data" in result.optimized_response
-        assert "debug" not in result.optimized_response
-
-    def test_format_specific_optimization(self, optimizer):
-        """Test optimization for specific response formats"""
-        # JSON API format
-        json_api_response = {
-            "data": [
-                {
-                    "type": "tasks",
-                    "id": "1",
-                    "attributes": {"title": "Task 1"},
-                    "relationships": {
-                        "author": {"data": {"type": "users", "id": "10"}}
-                    }
-                }
-            ],
-            "included": [
-                {"type": "users", "id": "10", "attributes": {"name": "John"}}
-            ]
-        }
-        
-        result = optimizer.optimize(
-            json_api_response,
-            format="json_api"
-        )
-        
-        # Should maintain JSON API structure while optimizing
-        assert "data" in result.optimized_response
-        assert "type" in result.optimized_response["data"][0]
-
-    def test_performance_metrics(self, optimizer, large_response):
-        """Test optimization performance metrics"""
-        import time
-        
-        start_time = time.time()
-        result = optimizer.optimize(large_response)
-        optimization_time = time.time() - start_time
-        
-        assert result.optimization_time_ms > 0
-        assert result.optimization_time_ms < 1000  # Should be fast
-        
-        # Check other metrics
-        assert result.fields_removed >= 0
-        assert result.bytes_saved > 0
-        assert hasattr(result, 'optimization_strategies_used')
-
-    def test_error_handling(self, optimizer):
-        """Test error handling during optimization"""
-        # Circular reference
-        circular_response = {"a": {}}
-        circular_response["a"]["b"] = circular_response
-        
-        # Should handle circular references gracefully
-        result = optimizer.optimize(circular_response)
-        assert result.errors == [] or "circular reference" in str(result.errors)
-        
-        # Invalid input
-        with pytest.raises(ValueError):
-            optimizer.optimize(None)
-
-    def test_response_validation(self, optimizer):
-        """Test response validation after optimization"""
-        response = {
-            "required_field": "value",
-            "optional_field": "can be removed",
-            "data": [1, 2, 3]
-        }
-        
-        schema = {
-            "required": ["required_field", "data"],
-            "properties": {
-                "required_field": {"type": "string"},
-                "data": {"type": "array"}
+            "operation": "list_contexts",
+            "data": {
+                "contexts": [{"id": f"ctx-{i}"} for i in range(15)]
             }
         }
         
-        result = optimizer.optimize(
-            response=response,
-            validate_schema=schema
-        )
+        profile = optimizer.auto_select_profile(response, None)
+        assert profile == ResponseProfile.MINIMAL
+
+    def test_empty_confirmation_removal(self, optimizer):
+        """Test removal of empty confirmation objects"""
+        response = {
+            "success": True,
+            "data": {"id": "123"},
+            "confirmation": {
+                "data_persisted": True,
+                "partial_failures": [],
+                "operation_details": {}
+            }
+        }
         
-        # Optimization should maintain schema validity
-        assert "required_field" in result.optimized_response
-        assert "data" in result.optimized_response
-        assert result.is_valid is True
+        result = optimizer.remove_duplicates(response)
+        
+        # Should remove empty operation_details
+        if "confirmation" in result:
+            assert "operation_details" not in result["confirmation"]
+
+    def test_success_status_deduplication(self, optimizer):
+        """Test deduplication of success/status fields"""
+        response = {
+            "success": True,
+            "status": "success",
+            "data": {"id": "123"}
+        }
+        
+        result = optimizer.remove_duplicates(response)
+        
+        # Should keep success, remove redundant status
+        assert "success" in result
+        assert "status" not in result
+
+    def test_operation_completed_deduplication(self, optimizer):
+        """Test deduplication of operation_completed field"""
+        response = {
+            "success": True,
+            "data": {"id": "123"},
+            "confirmation": {
+                "operation_completed": True
+            }
+        }
+        
+        result = optimizer.remove_duplicates(response)
+        
+        # Should remove operation_completed since it matches success
+        if "confirmation" in result:
+            assert "operation_completed" not in result["confirmation"]
+
+    def test_preserve_data_field_always(self, optimizer):
+        """Test that data field is always preserved, even if empty"""
+        response = {"data": {}}
+        
+        result = optimizer.optimize_response(response, ResponseProfile.MINIMAL)
+        
+        assert "data" in result
+        assert result["data"] == {}

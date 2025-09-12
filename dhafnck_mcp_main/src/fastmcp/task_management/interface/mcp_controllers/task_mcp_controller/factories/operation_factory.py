@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 from ..handlers.crud_handler import CRUDHandler
 from ..handlers.search_handler import SearchHandler
 from ..handlers.workflow_handler import WorkflowHandler
+from ..handlers.ai_handler import AIHandler
 from ....utils.response_formatter import StandardResponseFormatter
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,9 @@ class OperationFactory:
         self._crud_handler = CRUDHandler(response_formatter)
         self._search_handler = SearchHandler(response_formatter)
         self._workflow_handler = WorkflowHandler(response_formatter, context_facade_factory)
+        self._ai_handler = AIHandler(response_formatter)
         
-        logger.info("OperationFactory initialized with all handlers")
+        logger.info("OperationFactory initialized with all handlers including AI")
     
     def get_crud_handler(self) -> CRUDHandler:
         """Get CRUD operations handler."""
@@ -41,6 +43,10 @@ class OperationFactory:
     def get_workflow_handler(self) -> WorkflowHandler:
         """Get workflow operations handler."""
         return self._workflow_handler
+    
+    def get_ai_handler(self) -> AIHandler:
+        """Get AI operations handler."""
+        return self._ai_handler
     
     async def handle_operation(self, operation: str, facade, **kwargs) -> Dict[str, Any]:
         """
@@ -64,6 +70,8 @@ class OperationFactory:
                 return self._handle_workflow_operation(operation, facade, **kwargs)
             elif operation in ['add_dependency', 'remove_dependency']:
                 return self._handle_dependency_operation(operation, facade, **kwargs)
+            elif operation in ['ai_plan', 'ai_create', 'ai_enhance', 'ai_analyze', 'ai_suggest_agents']:
+                return await self._handle_ai_operation(operation, facade, **kwargs)
             else:
                 logger.error(f"Unknown operation: {operation}")
                 return self._response_formatter.create_error_response(
@@ -246,5 +254,61 @@ class OperationFactory:
             return self._response_formatter.create_error_response(
                 operation=operation,
                 error=f"Dependency operation failed: {str(e)}",
+                error_code="OPERATION_FAILED"
+            )
+    
+    async def _handle_ai_operation(self, operation: str, facade, **kwargs) -> Dict[str, Any]:
+        """Handle AI operations."""
+        handler = self._ai_handler
+        
+        try:
+            if operation == 'ai_plan':
+                # Filter parameters for AI plan operation
+                allowed_params = {
+                    'requirements', 'title', 'description', 'git_branch_id', 
+                    'context', 'auto_create_tasks', 'user_id'
+                }
+                ai_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+                return await handler.ai_plan(facade, **ai_kwargs)
+                
+            elif operation == 'ai_create':
+                # Filter parameters for AI create operation
+                allowed_params = {
+                    'title', 'description', 'git_branch_id', 'priority', 'assignees',
+                    'estimated_effort', 'labels', 'dependencies', 'user_id',
+                    'enable_ai_breakdown', 'enable_smart_assignment', 'enable_auto_subtasks',
+                    'ai_requirements', 'planning_context'
+                }
+                ai_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+                return await handler.ai_create(facade, **ai_kwargs)
+                
+            elif operation == 'ai_enhance':
+                # Filter parameters for AI enhance operation
+                allowed_params = {
+                    'task_id', 'analyze_complexity', 'suggest_optimizations', 'identify_risks'
+                }
+                ai_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+                return await handler.ai_enhance(facade, **ai_kwargs)
+                
+            elif operation == 'ai_analyze':
+                # Filter parameters for AI analyze operation
+                allowed_params = {'requirements', 'context'}
+                ai_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+                return await handler.ai_analyze(facade, **ai_kwargs)
+                
+            elif operation == 'ai_suggest_agents':
+                # Filter parameters for AI suggest agents operation
+                allowed_params = {'requirements', 'available_agents'}
+                ai_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+                return await handler.ai_suggest_agents(facade, **ai_kwargs)
+                
+            else:
+                raise ValueError(f"Unknown AI operation: {operation}")
+        
+        except Exception as e:
+            logger.error(f"Error in AI operation {operation}: {str(e)}")
+            return self._response_formatter.create_error_response(
+                operation=operation,
+                error=f"AI operation failed: {str(e)}",
                 error_code="OPERATION_FAILED"
             )
