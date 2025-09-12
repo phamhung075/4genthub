@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **📚 MCP Hint System Documentation Updates** - 2025-09-12
+  - Updated `ai_docs/development-guides/mcp-hint-system-implementation.md` with resolved display tag issues
+  - Created comprehensive `ai_docs/troubleshooting-guides/mcp-hint-system-resolved-issues.md` guide
+  - Updated `ai_docs/development-guides/refactored-hook-architecture.md` with current deployment status
+  - Documented all resolved issues: import errors, display tags, data consolidation, architecture complexity
+  - Added Claude interface tag usage clarification (`<system-reminder>` vs custom tags)
+  - Included verification commands and best practices learned
+
 - **⚡ Phase 2: Selective Field Queries System** - 2025-09-12
   - Implemented comprehensive selective field query system for performance optimization
   - Enhanced `ContextFieldSelector` class in `dhafnck_mcp_main/src/fastmcp/task_management/application/services/context_field_selector.py`
@@ -89,18 +97,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Follow-up actions after task completion
     - Context-aware hints based on operation results
     - Task tracking in `.claude/hooks/data/task_tracking.json`
+    - **Success/Failure Detection**: Only provides hints for successful operations
+    - **Hint Bridge System**: Stores hints for display on next tool use
+    - **Enhanced Logging**: Detailed JSON logs with tool inputs and hints
   - Hint Categories:
     - After task creation: Delegation reminders, subtask suggestions
     - After task update: Progress tracking, blocker handling
     - After task completion: Context updates, next task selection
     - After agent loading: Workflow reminders, one-time load warning
     - After context updates: Propagation info, level-specific impacts
+  - Logging Improvements:
+    - `mcp_post_hints_detailed.json`: Full details of tool, action, inputs, and hints
+    - `mcp_post_hints.log`: Simple log with timestamps and hint preview
+    - `pending_hints.json`: Bridge storage for hints between operations
+  - Display Formats:
+    - Hook-style format: `<post-action-hook>content</post-action-hook>`
+    - Hint bridge: Stores hints and displays on next tool use
+    - Claude interface compatibility attempted
   - Benefits:
     - Provides reminders at the RIGHT time (after action, not before)
     - Helps AI remember next steps in workflow
     - Tracks patterns (e.g., completing without updates)
     - Encourages best practices through timely reminders
-  - Files created: `.claude/hooks/utils/mcp_post_action_hints.py`
+    - Complete audit trail of hints generated
+  - Files created: 
+    - `.claude/hooks/utils/mcp_post_action_hints.py`
+    - `.claude/hooks/utils/hint_bridge.py`
+    - `.claude/hooks/utils/post_action_display.py`
   - Files modified: `.claude/hooks/post_tool_use.py`, `.claude/hooks/pre_tool_use.py`
 
 ### Changed

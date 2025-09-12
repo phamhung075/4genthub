@@ -1,0 +1,870 @@
+[
+  {
+    "session_id": "c45ea990-a44e-40e4-8fae-042981be8dac",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/c45ea990-a44e-40e4-8fae-042981be8dac.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/ai_docs/core-architecture",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "5fdc81c6-2d49-4217-8eb0-7ae5d78364c4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/5fdc81c6-2d49-4217-8eb0-7ae5d78364c4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude needs your permission to use Update"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude needs your permission to use Bash"
+  },
+  {
+    "session_id": "5fdc81c6-2d49-4217-8eb0-7ae5d78364c4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/5fdc81c6-2d49-4217-8eb0-7ae5d78364c4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/agent-library/agents",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "9a0f88df-1e2a-4151-ab81-a7e9f051e429",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9a0f88df-1e2a-4151-ab81-a7e9f051e429.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/agent-library/agents",
+    "hook_event_name": "Notification",
+    "message": "Claude needs your permission to use dhafnck_mcp_http - call_agent (MCP)"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/agent-library/agents",
+    "hook_event_name": "Notification",
+    "message": "Claude needs your permission to use dhafnck_mcp_http - call_agent (MCP)"
+  },
+  {
+    "session_id": "f91ae0b2-1751-4c07-981c-61f3b660fb14",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f91ae0b2-1751-4c07-981c-61f3b660fb14.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f91ae0b2-1751-4c07-981c-61f3b660fb14",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f91ae0b2-1751-4c07-981c-61f3b660fb14.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f91ae0b2-1751-4c07-981c-61f3b660fb14",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f91ae0b2-1751-4c07-981c-61f3b660fb14.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "b9982806-5fc2-4300-b510-18f05914b89a",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/b9982806-5fc2-4300-b510-18f05914b89a.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "b9982806-5fc2-4300-b510-18f05914b89a",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/b9982806-5fc2-4300-b510-18f05914b89a.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d14e8269-2fcb-4d8c-8064-26d34bd43be1",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d14e8269-2fcb-4d8c-8064-26d34bd43be1.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "3f305a09-9212-42a7-a60e-a78b678050d3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/3f305a09-9212-42a7-a60e-a78b678050d3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "9ddaa5d0-111c-4476-b6f4-da85f5b0a842",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9ddaa5d0-111c-4476-b6f4-da85f5b0a842.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "66bb0800-1c6b-4ba4-8862-79b26c7b76ad",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/66bb0800-1c6b-4ba4-8862-79b26c7b76ad.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d9ae82e9-6e28-4092-839b-4d537eb48678",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d9ae82e9-6e28-4092-839b-4d537eb48678.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d9ae82e9-6e28-4092-839b-4d537eb48678",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d9ae82e9-6e28-4092-839b-4d537eb48678.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d9ae82e9-6e28-4092-839b-4d537eb48678",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d9ae82e9-6e28-4092-839b-4d537eb48678.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "3609f36a-192a-43d2-a2ee-d6902b4a11c7",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/3609f36a-192a-43d2-a2ee-d6902b4a11c7.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "53030cf4-f3a2-45f8-8387-76cabcff5d7f",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/53030cf4-f3a2-45f8-8387-76cabcff5d7f.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8a4cbb8b-e25c-4f39-9ef1-5a4781967542",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8a4cbb8b-e25c-4f39-9ef1-5a4781967542.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9f6e19e7-05f0-4097-8265-52744859d597.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "9400d82e-d5c5-4184-b64e-e37a4ad6e0c4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9400d82e-d5c5-4184-b64e-e37a4ad6e0c4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9f6e19e7-05f0-4097-8265-52744859d597.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9f6e19e7-05f0-4097-8265-52744859d597.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "c0d4056f-f211-449b-89cd-4601c867ead6",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/c0d4056f-f211-449b-89cd-4601c867ead6.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "53b8b3f0-7955-4d4c-a51c-4163b6ddc741",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/53b8b3f0-7955-4d4c-a51c-4163b6ddc741.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "87e5cdab-191c-4a16-a293-70fe8a17b6ca",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87e5cdab-191c-4a16-a293-70fe8a17b6ca.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "87e5cdab-191c-4a16-a293-70fe8a17b6ca",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87e5cdab-191c-4a16-a293-70fe8a17b6ca.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "87e5cdab-191c-4a16-a293-70fe8a17b6ca",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87e5cdab-191c-4a16-a293-70fe8a17b6ca.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/.claude/hooks",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/.claude/hooks/utils",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "79de03db-66a7-4439-8e9b-886a69f407ed",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/79de03db-66a7-4439-8e9b-886a69f407ed.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "0634597b-dd51-4d8c-a024-6a2fa705c236",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0634597b-dd51-4d8c-a024-6a2fa705c236.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8283f272-110e-4415-b0a7-21e7e99d03f3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8283f272-110e-4415-b0a7-21e7e99d03f3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8283f272-110e-4415-b0a7-21e7e99d03f3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "ade48225-f90f-4d72-a491-f3379236331e",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ade48225-f90f-4d72-a491-f3379236331e.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "ade48225-f90f-4d72-a491-f3379236331e",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ade48225-f90f-4d72-a491-f3379236331e.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "ade48225-f90f-4d72-a491-f3379236331e",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ade48225-f90f-4d72-a491-f3379236331e.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "fc14f7f7-82cc-433f-9f99-9c6e2926a4ee",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/fc14f7f7-82cc-433f-9f99-9c6e2926a4ee.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "87f763d9-4bc0-405a-858a-28648cbc2bfa",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87f763d9-4bc0-405a-858a-28648cbc2bfa.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "87f763d9-4bc0-405a-858a-28648cbc2bfa",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87f763d9-4bc0-405a-858a-28648cbc2bfa.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "87f763d9-4bc0-405a-858a-28648cbc2bfa",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87f763d9-4bc0-405a-858a-28648cbc2bfa.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  },
+  {
+    "session_id": "e559a22e-470a-4cd1-8146-5fd0e83b7ca1",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/e559a22e-470a-4cd1-8146-5fd0e83b7ca1.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "Notification",
+    "message": "Claude is waiting for your input"
+  }
+]

@@ -56,7 +56,7 @@ def setup_performance_logger():
     
     return logger
 
-# Performance test configuration
+# Performance test configuration - Phase 4 Optimization Targets
 PERFORMANCE_CONFIG = {
     "target_improvement": 0.40,  # 40% improvement target
     "max_tokens_per_injection": 100,
@@ -64,11 +64,32 @@ PERFORMANCE_CONFIG = {
         "mcp_query": 0.5,  # 500ms max for MCP queries
         "token_refresh": 1.0,  # 1s max for token refresh
         "cache_hit": 0.01,  # 10ms max for cache hits
-        "full_injection": 2.0  # 2s max for full auto-injection
+        "full_injection": 2.0,  # 2s max for full auto-injection
+        "context_injection": 0.2,  # 200ms max for context injection (from 500ms)
+        "ai_processing": 0.6  # 40% faster than baseline (multiply baseline by 0.6)
+    },
+    "response_size_targets": {
+        "min_reduction_percent": 50.0,  # Minimum 50% response size reduction
+        "target_reduction_percent": 60.0,  # Target 60% response size reduction 
+        "max_reduction_percent": 70.0,  # Maximum expected 70% response size reduction
+        "baseline_vs_optimized": True  # Compare baseline vs optimized responses
+    },
+    "ai_comprehension_targets": {
+        "min_accuracy_retention": 0.95,  # 95% minimum accuracy retention
+        "parsing_success_rate": 0.95,  # 95% parsing success rate
+        "speed_improvement": 0.40,  # 40% faster AI processing
+        "essential_info_preserved": True  # Essential information must be preserved
     },
     "cache_hit_rate_target": 0.80,  # 80% cache hit rate
     "test_iterations": 100,  # Number of iterations for statistical significance
     "concurrent_sessions": 10,  # Concurrent session testing
+    "load_testing": {
+        "max_concurrent_requests": 50,  # Maximum concurrent requests to test
+        "request_rate_per_second": 10,  # Requests per second for load testing
+        "test_duration_seconds": 300,  # 5 minutes load test duration
+        "memory_usage_limit_mb": 512,  # Memory usage limit during load testing
+        "cpu_usage_limit_percent": 85  # CPU usage limit during load testing
+    }
 }
 
 __all__ = [

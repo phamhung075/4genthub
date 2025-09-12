@@ -2,6 +2,8 @@
 
 This module simplifies complex workflow guidance structures into concise, actionable
 hints that AI agents can process 40% faster while maintaining semantic meaning.
+
+Enhanced with Phase 3 HintOptimizer for ultra-flat structure optimization.
 """
 
 import logging
@@ -9,8 +11,18 @@ from typing import Dict, List, Any, Optional, Union, Set
 from enum import Enum
 from dataclasses import dataclass
 import re
+import os
 
 logger = logging.getLogger(__name__)
+
+# Import Phase 3 HintOptimizer
+try:
+    from .hint_optimizer import HintOptimizer
+    HINT_OPTIMIZER_AVAILABLE = True
+except ImportError:
+    logger.warning("HintOptimizer not available, falling back to legacy simplification")
+    HINT_OPTIMIZER_AVAILABLE = False
+    HintOptimizer = None
 
 
 class HintType(Enum):
@@ -57,7 +69,11 @@ class SimplifiedHint:
 
 
 class WorkflowHintsSimplifier:
-    """Simplifies workflow guidance for optimal AI processing"""
+    """Simplifies workflow guidance for optimal AI processing
+    
+    Enhanced with Phase 3 HintOptimizer integration for ultra-flat structure.
+    Uses environment variable ENABLE_ULTRA_HINTS to enable new optimization mode.
+    """
     
     # Action verb mapping for conciseness
     ACTION_VERBS = {
@@ -113,13 +129,26 @@ class WorkflowHintsSimplifier:
     }
     
     def __init__(self):
-        """Initialize the simplifier"""
+        """Initialize the simplifier with optional Phase 3 HintOptimizer"""
         self._metrics = {
             "hints_processed": 0,
             "complexity_reduced": 0,
             "words_saved": 0,
             "processing_time_saved_ms": 0
         }
+        
+        # Phase 3: Ultra-flat hints optimization
+        self.ultra_hints_enabled = (
+            HINT_OPTIMIZER_AVAILABLE and
+            os.getenv('ENABLE_ULTRA_HINTS', 'true').lower() in ['true', '1', 'yes', 'on']
+        )
+        
+        if self.ultra_hints_enabled and HINT_OPTIMIZER_AVAILABLE:
+            self.hint_optimizer = HintOptimizer()
+            logger.info("Phase 3 Ultra-Hints optimization is ENABLED")
+        else:
+            self.hint_optimizer = None
+            logger.info("Using legacy workflow hints simplification")
     
     def simplify_workflow_guidance(
         self,
@@ -128,15 +157,41 @@ class WorkflowHintsSimplifier:
         """
         Simplify complete workflow guidance structure
         
+        Phase 3: Uses HintOptimizer for ultra-flat structure when enabled,
+        otherwise falls back to legacy simplification.
+        
         Args:
             guidance: Original workflow guidance
             
         Returns:
-            Simplified guidance structure
+            Simplified guidance structure (flat hints or legacy format)
         """
         if not guidance:
             return {}
         
+        # Phase 3: Use HintOptimizer for ultra-flat structure
+        if self.ultra_hints_enabled and self.hint_optimizer:
+            try:
+                ultra_result = self.hint_optimizer.optimize_workflow_hints(guidance)
+                
+                # Merge performance metrics
+                hint_metrics = self.hint_optimizer.get_performance_metrics()
+                if hint_metrics["hints_processed"] > 0:
+                    self._metrics["hints_processed"] += hint_metrics["hints_processed"]
+                    self._metrics["complexity_reduced"] += hint_metrics["total_bytes_saved"]
+                    
+                logger.debug(
+                    f"Ultra-hints optimization: {hint_metrics['average_reduction_percent']:.1f}% "
+                    f"reduction, {hint_metrics['estimated_ai_speedup_percent']:.1f}% faster AI processing"
+                )
+                
+                return ultra_result
+                
+            except Exception as e:
+                logger.warning(f"HintOptimizer failed, falling back to legacy: {e}")
+                # Fall through to legacy processing
+        
+        # Legacy simplification process
         simplified = {}
         
         # Process next steps
@@ -503,10 +558,10 @@ class WorkflowHintsSimplifier:
         return hints
     
     def get_metrics(self) -> Dict[str, Any]:
-        """Get simplification metrics"""
+        """Get simplification metrics including Phase 3 HintOptimizer metrics"""
         total_processed = self._metrics["hints_processed"]
         
-        return {
+        base_metrics = {
             "hints_processed": total_processed,
             "complexity_reduced_chars": self._metrics["complexity_reduced"],
             "words_saved": self._metrics["words_saved"],
@@ -519,12 +574,32 @@ class WorkflowHintsSimplifier:
                 50  # Cap at 50% improvement
             )
         }
+        
+        # Add Phase 3 HintOptimizer metrics if available
+        if self.ultra_hints_enabled and self.hint_optimizer:
+            hint_metrics = self.hint_optimizer.get_performance_metrics()
+            base_metrics.update({
+                "phase_3_enabled": True,
+                "ultra_hints_processed": hint_metrics["hints_processed"],
+                "ultra_reduction_percent": hint_metrics["average_reduction_percent"],
+                "ultra_ai_speedup_percent": hint_metrics["estimated_ai_speedup_percent"],
+                "ultra_processing_time_ms": hint_metrics["average_processing_time_ms"],
+                "ultra_compression_ratio": hint_metrics.get("compression_ratio", 0),
+            })
+        else:
+            base_metrics["phase_3_enabled"] = False
+        
+        return base_metrics
     
     def reset_metrics(self) -> None:
-        """Reset metrics"""
+        """Reset metrics including Phase 3 HintOptimizer metrics"""
         self._metrics = {
             "hints_processed": 0,
             "complexity_reduced": 0,
             "words_saved": 0,
             "processing_time_saved_ms": 0
         }
+        
+        # Reset Phase 3 HintOptimizer metrics if available
+        if self.ultra_hints_enabled and self.hint_optimizer:
+            self.hint_optimizer.reset_metrics()

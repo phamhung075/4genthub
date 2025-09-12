@@ -53,7 +53,17 @@ class MCPPostActionHints:
         # Extract action from tool_input
         action = tool_input.get('action', 'default')
         
-        # Generate hints based on tool and action
+        # Check if operation was successful or failed
+        is_success = True
+        error_message = None
+        if result and isinstance(result, dict):
+            is_success = result.get('success', True)
+            if not is_success:
+                error_message = result.get('error', {}).get('message', 'Unknown error')
+                # Don't provide hints for failed operations
+                return None
+        
+        # Only generate hints for successful operations
         if tool_name == "mcp__dhafnck_mcp_http__manage_task":
             hints.extend(self._task_post_hints(action, tool_input, result))
         elif tool_name == "mcp__dhafnck_mcp_http__manage_subtask":
