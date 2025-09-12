@@ -69,7 +69,7 @@ class TestTaskMinimumAgentRequirement:
         )
         
         # Update to different agents - should succeed
-        task.update_assignees(["@security-auditor-agent", "@debugger-agent"])
+        task.update_assignees(["@security-auditor-agent", "debugger-agent"])
         assert len(task.assignees) == 2
         # Note: Agent names are normalized (hyphens to underscores)
         assert "security-auditor-agent" in task.assignees

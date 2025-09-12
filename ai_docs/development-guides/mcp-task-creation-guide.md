@@ -528,7 +528,7 @@ assignees="coding-agent,@security-auditor-agent"
 
 # Specialized agents based on task type
 if "bug" in title:
-    assignees="@debugger-agent"
+    assignees="debugger-agent"
 elif "test" in title:
     assignees="@test-orchestrator-agent"
 elif "UI" in title:

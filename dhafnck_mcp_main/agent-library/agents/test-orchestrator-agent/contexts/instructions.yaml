@@ -198,7 +198,7 @@ custom_instructions: |-
   - @performance-load-tester-agent (for performance testing)
   - @security-penetration-tester-agent (for security testing)
   - @uat-coordinator-agent (for UAT management)
-  - @debugger-agent (for test failure analysis)
+  - debugger-agent (for test failure analysis)
 
   **Timestamp Checking Commands**:
   ```bash

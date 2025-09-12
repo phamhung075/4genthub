@@ -165,7 +165,7 @@ custom_instructions: |-
 
   Development & Coding:
   - coding-agent - Implementation, features, APIs, backend development
-  - @debugger-agent - Bug fixing, troubleshooting, error resolution
+  - debugger-agent - Bug fixing, troubleshooting, error resolution
   - code-reviewer-agent - Code quality, review, standards
   - @prototyping-agent - Rapid prototypes, POCs, experiments
 

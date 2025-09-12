@@ -125,7 +125,7 @@ ELIF testing/verification task:
 • priority: 'low', 'medium', 'high', 'urgent', 'critical' - affects task ordering in 'next' action
 • status: 'todo', 'in_progress', 'blocked', 'review', 'testing', 'done', 'cancelled'
 • estimated_effort: Use realistic estimates (e.g., "2 hours", "3 days", "1 week")
-• assignees: **REQUIRED for task creation** - Must have at least one agent. Use format: "@agent-name" (e.g., "coding-agent", "@test-orchestrator-agent"). Can be comma-separated for multiple agents: "coding-agent,@debugger-agent"
+• assignees: **REQUIRED for task creation** - Must have at least one agent. Use format: "@agent-name" (e.g., "coding-agent", "@test-orchestrator-agent"). Can be comma-separated for multiple agents: "coding-agent,debugger-agent"
 • labels: Can be a single string "frontend" or list ["frontend", "auth"] or comma-separated "frontend,auth,security"
 • dependencies: Task IDs that must be completed first (for create action) - can be list ["task-id-1", "task-id-2"], single string "task-id", or comma-separated "task-id-1,task-id-2"
 • completion_summary: Detailed summary of what was accomplished (for complete action)

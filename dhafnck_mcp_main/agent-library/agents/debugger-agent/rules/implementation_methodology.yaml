@@ -37,7 +37,7 @@ implementation_methodology:
         size: "5,000 tokens"
         
       hypothesis_2:
-        agent: "@debugger-agent"
+        agent: "debugger-agent"
         focus: "Race condition"
         context: "Async code and timing"
         size: "6,000 tokens"
