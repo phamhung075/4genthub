@@ -301,3 +301,35 @@ class AgentCommunication:
             return hours_until_deadline <= 2
         
         return False
+
+
+@dataclass(frozen=True)
+class CoordinationMessage:
+    """Message for agent coordination and communication"""
+    message_id: str
+    message_type: str  # handoff_request, status_update, resource_request, etc.
+    from_agent_id: str
+    to_agent_id: Optional[str]  # None for broadcast
+    timestamp: datetime
+    payload: Dict[str, Any]
+    priority: str = "normal"  # low, normal, high, urgent
+    requires_response: bool = False
+    correlation_id: Optional[str] = None
+    
+    def is_broadcast(self) -> bool:
+        """Check if message is a broadcast"""
+        return self.to_agent_id is None
+    
+    def to_json(self) -> Dict[str, Any]:
+        """Convert to JSON-serializable dict"""
+        return {
+            "message_id": self.message_id,
+            "message_type": self.message_type,
+            "from_agent_id": self.from_agent_id,
+            "to_agent_id": self.to_agent_id,
+            "timestamp": self.timestamp.isoformat(),
+            "payload": self.payload,
+            "priority": self.priority,
+            "requires_response": self.requires_response,
+            "correlation_id": self.correlation_id
+        }

@@ -24,7 +24,7 @@ from ...domain.events.agent_events import (
 from ...domain.exceptions import DomainException
 from ...domain.repositories.task_repository import TaskRepository
 # from ...infrastructure.repositories.agent_repository import AgentRepository  # TODO: AgentRepository not implemented yet
-from ...infrastructure.event_bus import EventBus, get_event_bus
+from ....shared.infrastructure.messaging import EventBus, get_event_bus
 
 logger = logging.getLogger(__name__)
 
