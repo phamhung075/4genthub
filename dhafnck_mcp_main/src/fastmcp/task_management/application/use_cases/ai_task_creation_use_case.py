@@ -5,7 +5,7 @@ Combines traditional task creation with AI planning and insights.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
 from ..services.ai_integration_service import AITaskIntegrationService

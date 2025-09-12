@@ -2155,7 +2155,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 33,
+      "count": 36,
       "files": [
         {
           "hash": "f5a4c5c6666ac6598cc9394c579deacb",
@@ -2319,6 +2319,13 @@
           "size": 20177
         },
         {
+          "hash": "1adab556d3143cec64465d477294b792",
+          "modified": "2025-09-12T17:07:33.458654",
+          "name": "test-cleanup-report-2025-09-12.md",
+          "path": "testing-qa/test-cleanup-report-2025-09-12.md",
+          "size": 8170
+        },
+        {
           "hash": "cc166b5f351e1fa79b7f37211348d724",
           "modified": "2025-09-08T03:48:46.388277",
           "name": "context_resolution_tdd_tests.md",
@@ -2331,6 +2338,13 @@
           "name": "test-results-and-issues.md",
           "path": "testing-qa/test-results-and-issues.md",
           "size": 7910
+        },
+        {
+          "hash": "e0df008dd6fc4a6e60b98536abeb7cd1",
+          "modified": "2025-09-12T16:24:30.473566",
+          "name": "mcp-tools-test-report.md",
+          "path": "testing-qa/mcp-tools-test-report.md",
+          "size": 3257
         },
         {
           "hash": "e6db9499a69e78e51c53986086cf60f7",
@@ -2380,6 +2394,13 @@
           "name": "mcp-iteration-8-test-success-2025-09-05.md",
           "path": "testing-qa/mcp-iteration-8-test-success-2025-09-05.md",
           "size": 5660
+        },
+        {
+          "hash": "6d788fdc2fbd77388f3f6bb98a7d9c9e",
+          "modified": "2025-09-12T16:25:51.949279",
+          "name": "mcp-tools-comprehensive-test-report-2025-09-12.md",
+          "path": "testing-qa/mcp-tools-comprehensive-test-report-2025-09-12.md",
+          "size": 9640
         },
         {
           "hash": "7dbe5608ebbcca033bfca1c41e3c5546",
@@ -2579,7 +2600,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T16:08:21.001172",
+  "generated_at": "2025-09-12T17:12:04.730937",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2953,7 +2974,9 @@
         "mcp-test-results-iteration4-2025-09-05.md",
         "mcp-test-results-iteration7-2025-09-05.md",
         "mcp-testing-results-2025-09-05.md",
+        "mcp-tools-comprehensive-test-report-2025-09-12.md",
         "mcp-tools-test-issues.md",
+        "mcp-tools-test-report.md",
         "mcp-tools-test-results-2025-09-09.md",
         "session-hook-performance-tests.md",
         "subtask-tdd-findings-2025-09-09.md",
@@ -2962,6 +2985,7 @@
         "task-creation-import-fix-test-results.md",
         "task-creation-request-2025-09-09.md",
         "task-management-crud-test-results-2025-09-09.md",
+        "test-cleanup-report-2025-09-12.md",
         "test-modernization-guide.md",
         "test-results-and-issues.md",
         "test-summary-2025-09-09.md",
@@ -2998,5 +3022,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 316
+  "total_files": 319
 }

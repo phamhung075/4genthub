@@ -37,6 +37,7 @@ Pipfile.lock
 
 # Build and deployment
 docker-menu.sh
+test-menu.sh
 
 # Python configuration
 setup.py
