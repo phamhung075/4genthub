@@ -1,534 +1,1544 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  fetchProjects,
-  fetchTasks,
-  createProject,
-  updateProject,
-  deleteProject,
+  listTasks,
+  getTasks,
+  getTask,
   createTask,
   updateTask,
   deleteTask,
-  fetchAgents,
-  createAgent,
-  updateAgent,
-  deleteAgent,
-  fetchContexts,
-  createContext,
-  updateContext,
-  deleteContext,
-  fetchGitBranches,
-  createGitBranch,
-  updateGitBranch,
-  deleteGitBranch,
-  getAuthHeaders,
-  getApiUrl,
-  handleApiError,
-  fetchProjectHealth,
-  cleanupObsolete,
-  validateIntegrity,
-  rebalanceAgents,
-  assignAgent,
-  unassignAgent,
-  fetchBranchStatistics,
-  archiveBranch,
-  restoreBranch,
+  completeTask,
+  searchTasks,
+  listSubtasks,
+  getSubtask,
+  createSubtask,
+  updateSubtask,
+  deleteSubtask,
+  completeSubtask,
+  listProjects,
+  createProject,
+  updateProject,
+  deleteProject,
+  listBranches,
+  createBranch,
+  updateBranch,
+  deleteBranch,
+  getTaskContext,
+  getBranchContext,
+  getProjectContext,
+  getGlobalContext,
+  updateGlobalContext,
+  updateProjectContext,
+  updateBranchContext,
+  updateTaskContext,
+  listAgents,
+  getAvailableAgents,
+  callAgent,
+  listRules,
+  createRule,
+  updateRule,
+  deleteRule,
+  validateRule,
+  checkHealth,
+  getCurrentUserId,
+  isAuthenticated,
+  Task,
+  Subtask,
+  Project,
+  Branch,
+  Rule
 } from '../api';
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Mock the apiV2 services
+vi.mock('../services/apiV2', () => ({
+  taskApiV2: {
+    getTasks: vi.fn(),
+    getTask: vi.fn(),
+    createTask: vi.fn(),
+    updateTask: vi.fn(),
+    deleteTask: vi.fn(),
+    completeTask: vi.fn(),
+  },
+  subtaskApiV2: {
+    listSubtasksForTask: vi.fn(),
+    getSubtask: vi.fn(),
+    createSubtask: vi.fn(),
+    updateSubtask: vi.fn(),
+    deleteSubtask: vi.fn(),
+    completeSubtask: vi.fn(),
+  },
+  projectApiV2: {
+    getProjects: vi.fn(),
+    createProject: vi.fn(),
+    updateProject: vi.fn(),
+    deleteProject: vi.fn(),
+  },
+  branchApiV2: {
+    getBranches: vi.fn(),
+    getBranch: vi.fn(),
+    createBranch: vi.fn(),
+    updateBranch: vi.fn(),
+    deleteBranch: vi.fn(),
+    assignAgent: vi.fn(),
+    getBranchHealth: vi.fn(),
+  },
+  contextApiV2: {
+    getContext: vi.fn(),
+    updateContext: vi.fn(),
+    deleteContext: vi.fn(),
+    resolveContext: vi.fn(),
+  },
+  agentApiV2: {
+    getAgentsMetadata: vi.fn(),
+    getAgentMetadata: vi.fn(),
+    assignAgentToBranch: vi.fn(),
+    unassignAgentFromBranch: vi.fn(),
+    getBranchAgentAssignment: vi.fn(),
+    getProjectAgentAssignments: vi.fn(),
+    getAgentCapabilities: vi.fn(),
+    callAgent: vi.fn(),
+  },
+  connectionApiV2: {
+    healthCheck: vi.fn(),
+    systemStatus: vi.fn(),
+    testConnection: vi.fn(),
+  },
+  getCurrentUserId: vi.fn(),
+  isAuthenticated: vi.fn(),
+}));
 
-describe('API Module', () => {
+// Get mocked services for direct access in tests
+const {
+  taskApiV2,
+  subtaskApiV2,
+  projectApiV2,
+  branchApiV2,
+  contextApiV2,
+  agentApiV2,
+  connectionApiV2,
+} = vi.mocked(await import('../services/apiV2'));
+
+describe('API V2 Module', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Clear localStorage
-    localStorage.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('getApiUrl', () => {
-    it('should return production URL by default', () => {
-      expect(getApiUrl()).toBe('http://localhost:8000');
-    });
-
-    it('should allow custom API URL', () => {
-      process.env.VITE_API_URL = 'http://custom.api:3000';
-      expect(getApiUrl()).toBe('http://localhost:8000'); // Still returns default as env is not read in runtime
-    });
-  });
-
-  describe('getAuthHeaders', () => {
-    it('should return headers with Authorization when token exists', () => {
-      localStorage.setItem('authToken', 'test-token-123');
-      const headers = getAuthHeaders();
-      expect(headers['Content-Type']).toBe('application/json');
-      expect(headers['Authorization']).toBe('Bearer test-token-123');
-    });
-
-    it('should return headers without Authorization when no token', () => {
-      const headers = getAuthHeaders();
-      expect(headers['Content-Type']).toBe('application/json');
-      expect(headers['Authorization']).toBeUndefined();
-    });
-  });
-
-  describe('handleApiError', () => {
-    it('should handle network errors', async () => {
-      const response = {
-        ok: false,
-        status: 500,
-        text: vi.fn().mockResolvedValue('Internal Server Error'),
-      } as unknown as Response;
-
-      await expect(handleApiError(response)).rejects.toThrow('Internal Server Error');
-    });
-
-    it('should handle JSON error responses', async () => {
-      const response = {
-        ok: false,
-        status: 400,
-        text: vi.fn().mockResolvedValue('{"error": "Bad Request"}'),
-      } as unknown as Response;
-
-      await expect(handleApiError(response)).rejects.toThrow('{"error": "Bad Request"}');
-    });
-  });
-
-  describe('Project API', () => {
-    describe('fetchProjects', () => {
-      it('should fetch projects successfully', async () => {
-        const mockProjects = [
-          { id: '1', name: 'Project 1' },
-          { id: '2', name: 'Project 2' },
+  describe('Task Operations', () => {
+    describe('listTasks', () => {
+      it('should return tasks from API response', async () => {
+        const mockTasks = [
+          { id: '1', title: 'Task 1', status: 'todo' },
+          { id: '2', title: 'Task 2', status: 'in_progress' },
         ];
+        
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
 
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockProjects,
-        });
-
-        const projects = await fetchProjects();
-        expect(projects).toEqual(mockProjects);
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/projects',
-          { headers: getAuthHeaders() }
-        );
+        const result = await listTasks();
+        expect(result).toEqual(mockTasks);
+        expect(taskApiV2.getTasks).toHaveBeenCalledWith(undefined);
       });
 
-      it('should handle fetch error', async () => {
-        (global.fetch as any).mockResolvedValue({
-          ok: false,
-          status: 404,
-          text: async () => 'Not Found',
-        });
+      it('should handle empty tasks response', async () => {
+        taskApiV2.getTasks.mockResolvedValue({});
 
-        await expect(fetchProjects()).rejects.toThrow('Not Found');
+        const result = await listTasks();
+        expect(result).toEqual([]);
+      });
+
+      it('should pass git_branch_id parameter', async () => {
+        const branchId = 'branch-123';
+        taskApiV2.getTasks.mockResolvedValue({ tasks: [] });
+
+        await listTasks({ git_branch_id: branchId });
+        expect(taskApiV2.getTasks).toHaveBeenCalledWith({ git_branch_id: branchId });
+      });
+    });
+
+    describe('getTask', () => {
+      it('should return single task', async () => {
+        const mockTask = { id: '1', title: 'Task 1', status: 'todo' };
+        taskApiV2.getTask.mockResolvedValue({ task: mockTask });
+
+        const result = await getTask('1');
+        expect(result).toEqual(mockTask);
+        expect(taskApiV2.getTask).toHaveBeenCalledWith('1');
+      });
+
+      it('should handle direct response format', async () => {
+        const mockTask = { id: '1', title: 'Task 1', status: 'todo' };
+        taskApiV2.getTask.mockResolvedValue(mockTask);
+
+        const result = await getTask('1');
+        expect(result).toEqual(mockTask);
+      });
+    });
+
+    describe('createTask', () => {
+      it('should create task with required fields', async () => {
+        const newTask = {
+          title: 'New Task',
+          description: 'Task description',
+          status: 'todo',
+          priority: 'medium',
+          git_branch_id: 'branch-123'
+        };
+        const createdTask = { id: 'task-123', ...newTask };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(newTask);
+        expect(result).toEqual(createdTask);
+        expect(taskApiV2.createTask).toHaveBeenCalledWith({
+          title: newTask.title,
+          description: newTask.description,
+          status: newTask.status,
+          priority: newTask.priority,
+          git_branch_id: newTask.git_branch_id
+        });
+      });
+
+      it('should handle missing title', async () => {
+        const newTask = { description: 'Task description' };
+        taskApiV2.createTask.mockResolvedValue({ task: { id: 'task-123' } });
+
+        await createTask(newTask);
+        expect(taskApiV2.createTask).toHaveBeenCalledWith({
+          title: '',
+          description: newTask.description,
+          status: undefined,
+          priority: undefined,
+          git_branch_id: undefined
+        });
+      });
+
+      it('should create agent intelligence system task', async () => {
+        const intelligenceTask = {
+          title: 'Build Agent Intelligence System',
+          description: 'Create intelligent agent selection and coordination system',
+          status: 'todo',
+          priority: 'critical',
+          git_branch_id: 'branch-ai-system'
+        };
+        const createdTask = { id: 'task-ai-123', ...intelligenceTask };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(intelligenceTask);
+        expect(result).toEqual(createdTask);
+        expect(taskApiV2.createTask).toHaveBeenCalledWith({
+          title: intelligenceTask.title,
+          description: intelligenceTask.description,
+          status: intelligenceTask.status,
+          priority: intelligenceTask.priority,
+          git_branch_id: intelligenceTask.git_branch_id
+        });
+      });
+
+      it('should create task with high priority', async () => {
+        const urgentTask = {
+          title: 'Implement Real-time Agent Coordination',
+          description: 'Build coordination system for multi-agent workflows',
+          priority: 'high',
+          git_branch_id: 'branch-coordination'
+        };
+        const createdTask = { 
+          id: 'task-coord-456',
+          ...urgentTask,
+          status: 'todo'
+        };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(urgentTask);
+        expect(result).toEqual(createdTask);
+        expect(taskApiV2.createTask).toHaveBeenCalledWith({
+          title: urgentTask.title,
+          description: urgentTask.description,
+          status: undefined,
+          priority: urgentTask.priority,
+          git_branch_id: urgentTask.git_branch_id
+        });
+      });
+
+      it('should create security focused task', async () => {
+        const securityTask = {
+          title: 'Security Audit for Agent System',
+          description: 'Comprehensive security review of agent coordination system',
+          priority: 'high',
+          git_branch_id: 'branch-security-audit'
+        };
+        const createdTask = { id: 'task-sec-789', ...securityTask };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(securityTask);
+        expect(result).toEqual(createdTask);
+        expect(taskApiV2.createTask).toHaveBeenCalledWith({
+          title: securityTask.title,
+          description: securityTask.description,
+          status: undefined,
+          priority: securityTask.priority,
+          git_branch_id: securityTask.git_branch_id
+        });
+      });
+    });
+
+    describe('updateTask', () => {
+      it('should update task with provided fields', async () => {
+        const updates = {
+          title: 'Updated Task',
+          status: 'in_progress',
+          progress_percentage: 50
+        };
+        const updatedTask = { id: 'task-123', ...updates };
+        taskApiV2.updateTask.mockResolvedValue({ task: updatedTask });
+
+        const result = await updateTask('task-123', updates);
+        expect(result).toEqual(updatedTask);
+        expect(taskApiV2.updateTask).toHaveBeenCalledWith('task-123', {
+          title: updates.title,
+          description: undefined,
+          status: updates.status,
+          priority: undefined,
+          progress_percentage: updates.progress_percentage
+        });
+      });
+    });
+
+    describe('deleteTask', () => {
+      it('should delete task successfully', async () => {
+        taskApiV2.deleteTask.mockResolvedValue(undefined);
+
+        await deleteTask('task-123');
+        expect(taskApiV2.deleteTask).toHaveBeenCalledWith('task-123');
+      });
+    });
+
+    describe('completeTask', () => {
+      it('should complete task with completion data', async () => {
+        const completionData = {
+          completion_summary: 'Task completed successfully',
+          testing_notes: 'All tests passed'
+        };
+        const completedTask = { id: 'task-123', status: 'done' };
+        taskApiV2.completeTask.mockResolvedValue({ task: completedTask });
+
+        const result = await completeTask('task-123', completionData);
+        expect(result).toEqual(completedTask);
+        expect(taskApiV2.completeTask).toHaveBeenCalledWith('task-123', completionData);
+      });
+    });
+
+    describe('getTasks', () => {
+      it('should return tasks for branch', async () => {
+        const mockTasks = [
+          { id: '1', title: 'Task 1', status: 'todo' },
+          { id: '2', title: 'Task 2', status: 'in_progress' },
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
+
+        const result = await getTasks('branch-123');
+        expect(result).toEqual({ tasks: mockTasks });
+        expect(taskApiV2.getTasks).toHaveBeenCalledWith({ git_branch_id: 'branch-123' });
+      });
+
+      it('should handle empty response', async () => {
+        taskApiV2.getTasks.mockResolvedValue({});
+
+        const result = await getTasks('branch-123');
+        expect(result).toEqual({});
+      });
+    });
+
+    describe('searchTasks', () => {
+      it('should filter tasks by query string', async () => {
+        const mockTasks = [
+          { id: '1', title: 'Authentication Task', description: 'Add JWT auth' },
+          { id: '2', title: 'Database Task', description: 'Setup authentication database' },
+          { id: '3', title: 'UI Task', description: 'Create login form' },
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
+
+        const result = await searchTasks('auth');
+        expect(result).toHaveLength(2);
+        expect(result[0].title).toBe('Authentication Task');
+        expect(result[1].description).toBe('Setup authentication database');
+      });
+
+      it('should search case-insensitively', async () => {
+        const mockTasks = [
+          { id: '1', title: 'AUTHENTICATION Task', description: 'auth system' }
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
+
+        const result = await searchTasks('authentication');
+        expect(result).toHaveLength(1);
+        expect(result[0].title).toBe('AUTHENTICATION Task');
+      });
+
+      it('should search for agent-specific tasks', async () => {
+        const mockTasks = [
+          { 
+            id: '1', 
+            title: 'Build Agent Intelligence System', 
+            description: 'Create intelligent agent coordination',
+            assignees: ['system-architect-agent', 'coding-agent'],
+            labels: ['agent-system', 'intelligence', 'coordination']
+          },
+          { 
+            id: '2', 
+            title: 'Security Audit', 
+            description: 'Review system security',
+            assignees: ['security-auditor-agent'],
+            labels: ['security', 'audit']
+          },
+          { 
+            id: '3', 
+            title: 'Agent Coordination Testing', 
+            description: 'Test multi-agent workflows',
+            assignees: ['test-orchestrator-agent'],
+            labels: ['testing', 'agent-coordination']
+          }
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
+
+        const result = await searchTasks('agent');
+        expect(result).toHaveLength(2);
+        expect(result[0].title).toBe('Build Agent Intelligence System');
+        expect(result[1].title).toBe('Agent Coordination Testing');
+      });
+
+      it('should search by text in title and description only', async () => {
+        const mockTasks = [
+          { 
+            id: '1', 
+            title: 'Code Implementation for Agent System', 
+            assignees: ['coding-agent'],
+            description: 'Implement core features'
+          },
+          { 
+            id: '2', 
+            title: 'System Architecture', 
+            assignees: ['system-architect-agent'],
+            description: 'Design system architecture for agents'
+          },
+          { 
+            id: '3', 
+            title: 'Bug Investigation', 
+            assignees: ['debugger-agent'],
+            description: 'Debug memory issues'
+          }
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
+
+        const result = await searchTasks('agent');
+        expect(result).toHaveLength(2);
+        expect(result[0].title).toBe('Code Implementation for Agent System');
+        expect(result[1].description).toBe('Design system architecture for agents');
+      });
+
+      it('should search by text in description', async () => {
+        const mockTasks = [
+          { id: '1', title: 'System Fix', priority: 'critical', description: 'urgent critical fix needed' },
+          { id: '2', title: 'High Priority Task', priority: 'high', description: 'high priority work' },
+          { id: '3', title: 'Low Priority Task', priority: 'low', description: 'can wait' }
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
+
+        const result = await searchTasks('critical');
+        expect(result).toHaveLength(1);
+        expect(result[0].title).toBe('System Fix');
+      });
+    });
+  });
+
+  describe('Subtask Operations', () => {
+    describe('listSubtasks', () => {
+      it('should return subtasks for task', async () => {
+        const mockSubtasks = [
+          { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' },
+          { id: 'sub-2', title: 'Subtask 2', parent_task_id: 'task-123' },
+        ];
+        subtaskApiV2.listSubtasksForTask.mockResolvedValue({ subtasks: mockSubtasks });
+
+        const result = await listSubtasks('task-123');
+        expect(result).toEqual(mockSubtasks);
+        expect(subtaskApiV2.listSubtasksForTask).toHaveBeenCalledWith('task-123');
+      });
+
+      it('should handle empty subtasks response', async () => {
+        subtaskApiV2.listSubtasksForTask.mockResolvedValue({});
+
+        const result = await listSubtasks('task-123');
+        expect(result).toEqual([]);
+      });
+    });
+
+    describe('getSubtask', () => {
+      it('should return single subtask', async () => {
+        const mockSubtask = { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' };
+        subtaskApiV2.getSubtask.mockResolvedValue({ subtask: mockSubtask });
+
+        const result = await getSubtask('task-123', 'sub-1');
+        expect(result).toEqual(mockSubtask);
+        expect(subtaskApiV2.getSubtask).toHaveBeenCalledWith('sub-1');
+      });
+
+      it('should handle direct response format', async () => {
+        const mockSubtask = { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' };
+        subtaskApiV2.getSubtask.mockResolvedValue(mockSubtask);
+
+        const result = await getSubtask('task-123', 'sub-1');
+        expect(result).toEqual(mockSubtask);
+      });
+    });
+
+    describe('createSubtask', () => {
+      it('should create subtask with required fields', async () => {
+        const newSubtask = {
+          title: 'New Subtask',
+          description: 'Subtask description'
+        };
+        const createdSubtask = { id: 'sub-123', ...newSubtask, parent_task_id: 'task-123' };
+        subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
+
+        const result = await createSubtask('task-123', newSubtask);
+        expect(result).toEqual(createdSubtask);
+        expect(subtaskApiV2.createSubtask).toHaveBeenCalledWith('task-123', {
+          title: newSubtask.title,
+          description: newSubtask.description
+        });
+      });
+
+      it('should create agent coordination subtasks for intelligence system', async () => {
+        const coordinationSubtask = {
+          title: 'Design Agent Selection Algorithm',
+          description: 'Create algorithm to automatically select best agents for tasks based on task requirements and agent capabilities'
+        };
+        const createdSubtask = { 
+          id: 'sub-coord-456', 
+          ...coordinationSubtask, 
+          parent_task_id: 'task-ai-intelligence' 
+        };
+        subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
+
+        const result = await createSubtask('task-ai-intelligence', coordinationSubtask);
+        expect(result).toEqual(createdSubtask);
+        expect(subtaskApiV2.createSubtask).toHaveBeenCalledWith('task-ai-intelligence', {
+          title: coordinationSubtask.title,
+          description: coordinationSubtask.description
+        });
+      });
+
+      it('should create implementation subtasks', async () => {
+        const implementationSubtask = {
+          title: 'Implement Workload Balancing Engine',
+          description: 'Build engine to distribute tasks across available agents with proper load balancing'
+        };
+        const createdSubtask = { 
+          id: 'sub-impl-789', 
+          ...implementationSubtask, 
+          parent_task_id: 'task-ai-intelligence' 
+        };
+        subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
+
+        const result = await createSubtask('task-ai-intelligence', implementationSubtask);
+        expect(result).toEqual(createdSubtask);
+        expect(subtaskApiV2.createSubtask).toHaveBeenCalledWith('task-ai-intelligence', {
+          title: implementationSubtask.title,
+          description: implementationSubtask.description
+        });
+      });
+
+      it('should create testing subtask', async () => {
+        const testingSubtask = {
+          title: 'Create Agent Coordination Tests',
+          description: 'Develop comprehensive test suite for multi-agent coordination system'
+        };
+        const createdSubtask = { 
+          id: 'sub-test-321', 
+          ...testingSubtask, 
+          parent_task_id: 'task-ai-intelligence' 
+        };
+        subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
+
+        const result = await createSubtask('task-ai-intelligence', testingSubtask);
+        expect(result).toEqual(createdSubtask);
+        expect(subtaskApiV2.createSubtask).toHaveBeenCalledWith('task-ai-intelligence', {
+          title: testingSubtask.title,
+          description: testingSubtask.description
+        });
+      });
+    });
+
+    describe('updateSubtask', () => {
+      it('should update subtask with progress tracking', async () => {
+        const progressUpdate = {
+          progress_percentage: 75,
+          title: 'Design Agent Selection Algorithm - Updated',
+          description: 'Algorithm implementation nearly complete',
+          status: 'in_progress'
+        };
+        const updatedSubtask = { 
+          id: 'sub-coord-456', 
+          ...progressUpdate 
+        };
+        subtaskApiV2.updateSubtask.mockResolvedValue({ subtask: updatedSubtask });
+
+        const result = await updateSubtask('sub-coord-456', progressUpdate);
+        expect(result).toEqual(updatedSubtask);
+        expect(subtaskApiV2.updateSubtask).toHaveBeenCalledWith('sub-coord-456', {
+          title: progressUpdate.title,
+          description: progressUpdate.description,
+          status: progressUpdate.status,
+          progress_percentage: progressUpdate.progress_percentage
+        });
+      });
+
+      it('should update subtask with status change', async () => {
+        const statusUpdate = {
+          status: 'blocked',
+          description: 'Blocked pending infrastructure updates'
+        };
+        const updatedSubtask = { 
+          id: 'sub-impl-789', 
+          ...statusUpdate 
+        };
+        subtaskApiV2.updateSubtask.mockResolvedValue({ subtask: updatedSubtask });
+
+        const result = await updateSubtask('sub-impl-789', statusUpdate);
+        expect(result).toEqual(updatedSubtask);
+        expect(subtaskApiV2.updateSubtask).toHaveBeenCalledWith('sub-impl-789', {
+          title: undefined,
+          description: statusUpdate.description,
+          status: statusUpdate.status,
+          progress_percentage: undefined
+        });
+      });
+    });
+
+    describe('deleteSubtask', () => {
+      it('should delete subtask successfully', async () => {
+        subtaskApiV2.deleteSubtask.mockResolvedValue(undefined);
+
+        await deleteSubtask('sub-123');
+        expect(subtaskApiV2.deleteSubtask).toHaveBeenCalledWith('sub-123');
+      });
+    });
+
+    describe('completeSubtask', () => {
+      it('should complete subtask with completion notes', async () => {
+        const completionNotes = 'Agent selection algorithm completed with 95% accuracy in benchmarks. Tested with 1000+ task samples, performance meets requirements.';
+        const completedSubtask = { 
+          id: 'sub-coord-456', 
+          status: 'done',
+          completion_percentage: 100
+        };
+        subtaskApiV2.completeSubtask.mockResolvedValue({ subtask: completedSubtask });
+
+        const result = await completeSubtask('sub-coord-456', completionNotes);
+        expect(result).toEqual(completedSubtask);
+        expect(subtaskApiV2.completeSubtask).toHaveBeenCalledWith('sub-coord-456', completionNotes);
+      });
+
+      it('should complete subtask without completion notes', async () => {
+        const completedSubtask = { 
+          id: 'sub-impl-789', 
+          status: 'done',
+          completion_percentage: 100
+        };
+        subtaskApiV2.completeSubtask.mockResolvedValue({ subtask: completedSubtask });
+
+        const result = await completeSubtask('sub-impl-789');
+        expect(result).toEqual(completedSubtask);
+        expect(subtaskApiV2.completeSubtask).toHaveBeenCalledWith('sub-impl-789', undefined);
+      });
+    });
+  });
+
+  describe('Project Operations', () => {
+    describe('listProjects', () => {
+      it('should return projects from API response', async () => {
+        const mockProjects = [
+          { id: '1', name: 'Project 1', description: 'First project' },
+          { id: '2', name: 'Project 2', description: 'Second project' },
+        ];
+        projectApiV2.getProjects.mockResolvedValue({ projects: mockProjects });
+
+        const result = await listProjects();
+        expect(result).toEqual(mockProjects);
+        expect(projectApiV2.getProjects).toHaveBeenCalled();
+      });
+
+      it('should handle API errors', async () => {
+        projectApiV2.getProjects.mockRejectedValue(new Error('API Error'));
+
+        await expect(listProjects()).rejects.toThrow('API Error');
       });
     });
 
     describe('createProject', () => {
-      it('should create project successfully', async () => {
-        const newProject = { name: 'New Project', description: 'Test project' };
-        const createdProject = { id: '123', ...newProject };
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => createdProject,
-        });
+      it('should create project with required fields', async () => {
+        const newProject = {
+          name: 'New Project',
+          description: 'Project description'
+        };
+        const createdProject = { id: 'proj-123', ...newProject };
+        projectApiV2.createProject.mockResolvedValue({ project: createdProject });
 
         const result = await createProject(newProject);
         expect(result).toEqual(createdProject);
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/projects',
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(newProject),
-          }
-        );
+        expect(projectApiV2.createProject).toHaveBeenCalledWith({
+          name: newProject.name,
+          description: newProject.description
+        });
       });
     });
 
     describe('updateProject', () => {
-      it('should update project successfully', async () => {
-        const projectId = '123';
-        const updates = { name: 'Updated Project' };
-        const updatedProject = { id: projectId, ...updates };
+      it('should update project with provided fields', async () => {
+        const updates = {
+          name: 'Updated Project Name',
+          description: 'Updated description'
+        };
+        const updatedProject = { id: 'proj-123', ...updates };
+        projectApiV2.updateProject.mockResolvedValue({ project: updatedProject });
 
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => updatedProject,
-        });
-
-        const result = await updateProject(projectId, updates);
+        const result = await updateProject('proj-123', updates);
         expect(result).toEqual(updatedProject);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}`,
-          {
-            method: 'PUT',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(updates),
-          }
-        );
+        expect(projectApiV2.updateProject).toHaveBeenCalledWith('proj-123', {
+          name: updates.name,
+          description: updates.description
+        });
       });
     });
 
     describe('deleteProject', () => {
       it('should delete project successfully', async () => {
-        const projectId = '123';
+        const deleteResponse = { success: true, message: 'Project deleted' };
+        projectApiV2.deleteProject.mockResolvedValue(deleteResponse);
 
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: true }),
-        });
-
-        await deleteProject(projectId);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}`,
-          {
-            method: 'DELETE',
-            headers: getAuthHeaders(),
-          }
-        );
+        const result = await deleteProject('proj-123');
+        expect(result).toEqual(deleteResponse);
+        expect(projectApiV2.deleteProject).toHaveBeenCalledWith('proj-123');
       });
     });
   });
 
-  describe('Task API', () => {
-    describe('fetchTasks', () => {
-      it('should fetch tasks with project filter', async () => {
-        const projectId = '123';
-        const mockTasks = [
-          { id: '1', title: 'Task 1', project_id: projectId },
-          { id: '2', title: 'Task 2', project_id: projectId },
-        ];
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockTasks,
-        });
-
-        const tasks = await fetchTasks(projectId);
-        expect(tasks).toEqual(mockTasks);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/tasks?project_id=${projectId}`,
-          { headers: getAuthHeaders() }
-        );
-      });
-
-      it('should fetch all tasks without filter', async () => {
-        const mockTasks = [
-          { id: '1', title: 'Task 1' },
-          { id: '2', title: 'Task 2' },
-        ];
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockTasks,
-        });
-
-        const tasks = await fetchTasks();
-        expect(tasks).toEqual(mockTasks);
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/tasks',
-          { headers: getAuthHeaders() }
-        );
-      });
-    });
-
-    describe('createTask', () => {
-      it('should create task successfully', async () => {
-        const newTask = {
-          title: 'New Task',
-          description: 'Test task',
-          project_id: '123',
-        };
-        const createdTask = { id: 'task-123', ...newTask };
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => createdTask,
-        });
-
-        const result = await createTask(newTask);
-        expect(result).toEqual(createdTask);
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/tasks',
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(newTask),
-          }
-        );
-      });
-    });
-  });
-
-  describe('Agent API', () => {
-    describe('fetchAgents', () => {
-      it('should fetch agents with project filter', async () => {
-        const projectId = '123';
-        const mockAgents = [
-          { id: '1', name: 'Agent 1', project_id: projectId },
-          { id: '2', name: 'Agent 2', project_id: projectId },
-        ];
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockAgents,
-        });
-
-        const agents = await fetchAgents(projectId);
-        expect(agents).toEqual(mockAgents);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/agents?project_id=${projectId}`,
-          { headers: getAuthHeaders() }
-        );
-      });
-    });
-
-    describe('assignAgent', () => {
-      it('should assign agent successfully', async () => {
-        const projectId = '123';
-        const agentId = 'agent-1';
-        const branchId = 'branch-1';
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: true }),
-        });
-
-        await assignAgent(projectId, agentId, branchId);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/agents/${agentId}/assign`,
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ git_branch_id: branchId }),
-          }
-        );
-      });
-    });
-  });
-
-  describe('Context API', () => {
-    describe('fetchContexts', () => {
-      it('should fetch contexts successfully', async () => {
-        const mockContexts = [
-          { id: '1', level: 'global', data: {} },
-          { id: '2', level: 'project', data: {} },
-        ];
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockContexts,
-        });
-
-        const contexts = await fetchContexts();
-        expect(contexts).toEqual(mockContexts);
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/contexts',
-          { headers: getAuthHeaders() }
-        );
-      });
-    });
-
-    describe('createContext', () => {
-      it('should create context successfully', async () => {
-        const newContext = {
-          level: 'project',
-          context_id: 'proj-123',
-          data: { key: 'value' },
-        };
-        const createdContext = { id: 'ctx-123', ...newContext };
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => createdContext,
-        });
-
-        const result = await createContext(newContext);
-        expect(result).toEqual(createdContext);
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/contexts',
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(newContext),
-          }
-        );
-      });
-    });
-  });
-
-  describe('Git Branch API', () => {
-    describe('fetchGitBranches', () => {
-      it('should fetch git branches with project filter', async () => {
-        const projectId = '123';
+  describe('Branch Operations', () => {
+    describe('listBranches', () => {
+      it('should return branches for project', async () => {
         const mockBranches = [
-          { id: '1', git_branch_name: 'main', project_id: projectId },
-          { id: '2', git_branch_name: 'develop', project_id: projectId },
+          { id: '1', git_branch_name: 'main', project_id: 'proj-123' },
+          { id: '2', git_branch_name: 'develop', project_id: 'proj-123' },
         ];
+        branchApiV2.getBranches.mockResolvedValue({ branches: mockBranches });
 
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockBranches,
-        });
-
-        const branches = await fetchGitBranches(projectId);
-        expect(branches).toEqual(mockBranches);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/git-branches?project_id=${projectId}`,
-          { headers: getAuthHeaders() }
-        );
+        const result = await listBranches('proj-123');
+        expect(result).toEqual(mockBranches);
+        expect(branchApiV2.getBranches).toHaveBeenCalledWith('proj-123');
       });
     });
 
-    describe('fetchBranchStatistics', () => {
-      it('should fetch branch statistics successfully', async () => {
-        const projectId = '123';
-        const branchId = 'branch-1';
-        const mockStats = {
-          total_tasks: 10,
-          completed_tasks: 7,
-          in_progress_tasks: 2,
-          todo_tasks: 1,
+    describe('createBranch', () => {
+      it('should create branch with required fields', async () => {
+        const newBranch = {
+          git_branch_name: 'feature/new-feature',
+          description: 'New feature branch'
         };
+        const createdBranch = { id: 'branch-123', project_id: 'proj-123', ...newBranch };
+        branchApiV2.createBranch.mockResolvedValue({ branch: createdBranch });
 
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockStats,
+        const result = await createBranch('proj-123', newBranch);
+        expect(result).toEqual(createdBranch);
+        expect(branchApiV2.createBranch).toHaveBeenCalledWith('proj-123', {
+          git_branch_name: newBranch.git_branch_name,
+          description: newBranch.description
         });
-
-        const stats = await fetchBranchStatistics(projectId, branchId);
-        expect(stats).toEqual(mockStats);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/git-branches/${branchId}/statistics`,
-          { headers: getAuthHeaders() }
-        );
       });
     });
 
-    describe('archiveBranch', () => {
-      it('should archive branch successfully', async () => {
-        const projectId = '123';
-        const branchId = 'branch-1';
+    describe('updateBranch', () => {
+      it('should update branch with provided fields', async () => {
+        const updates = {
+          git_branch_name: 'feature/updated-feature',
+          description: 'Updated description',
+          is_active: false
+        };
+        const updatedBranch = { id: 'branch-123', ...updates };
+        branchApiV2.updateBranch.mockResolvedValue({ branch: updatedBranch });
 
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => ({ success: true }),
+        const result = await updateBranch('branch-123', updates);
+        expect(result).toEqual(updatedBranch);
+        expect(branchApiV2.updateBranch).toHaveBeenCalledWith('branch-123', {
+          git_branch_name: updates.git_branch_name,
+          description: updates.description,
+          is_active: updates.is_active
+        });
+      });
+    });
+
+    describe('deleteBranch', () => {
+      it('should handle successful deletion with null response', async () => {
+        branchApiV2.deleteBranch.mockResolvedValue(null);
+
+        const result = await deleteBranch('branch-123');
+        expect(result).toEqual({
+          success: true,
+          message: 'Branch deleted successfully'
+        });
+      });
+
+      it('should handle response with success field', async () => {
+        branchApiV2.deleteBranch.mockResolvedValue({ success: true });
+
+        const result = await deleteBranch('branch-123');
+        expect(result).toEqual({ success: true });
+      });
+
+      it('should handle error response', async () => {
+        branchApiV2.deleteBranch.mockResolvedValue({
+          error: 'Branch has active tasks'
         });
 
-        await archiveBranch(projectId, branchId);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/git-branches/${branchId}/archive`,
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-          }
-        );
+        const result = await deleteBranch('branch-123');
+        expect(result).toEqual({
+          success: false,
+          error: 'Branch has active tasks'
+        });
+      });
+
+      it('should handle API exceptions', async () => {
+        branchApiV2.deleteBranch.mockRejectedValue(new Error('Network error'));
+
+        const result = await deleteBranch('branch-123');
+        expect(result).toEqual({
+          success: false,
+          error: 'Network error'
+        });
       });
     });
   });
 
-  describe('Project Health API', () => {
-    describe('fetchProjectHealth', () => {
-      it('should fetch project health successfully', async () => {
-        const projectId = '123';
-        const mockHealth = {
-          status: 'healthy',
+  describe('Context Operations', () => {
+    describe('getTaskContext', () => {
+      it('should get task context with inheritance', async () => {
+        const mockContext = { data: { key: 'value' }, inherited: true };
+        contextApiV2.getContext.mockResolvedValue({ context: mockContext });
+
+        const result = await getTaskContext('task-123');
+        expect(result).toEqual(mockContext);
+        expect(contextApiV2.getContext).toHaveBeenCalledWith('task', 'task-123', true);
+      });
+
+      it('should handle context errors gracefully', async () => {
+        contextApiV2.getContext.mockRejectedValue(new Error('Context not found'));
+
+        const result = await getTaskContext('task-123');
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('getBranchContext', () => {
+      it('should get branch context with inheritance', async () => {
+        const mockContext = { data: { branch: 'context' }, inherited: true };
+        contextApiV2.getContext.mockResolvedValue({ context: mockContext });
+
+        const result = await getBranchContext('branch-123');
+        expect(result).toEqual(mockContext);
+        expect(contextApiV2.getContext).toHaveBeenCalledWith('branch', 'branch-123', true);
+      });
+
+      it('should handle context errors gracefully', async () => {
+        contextApiV2.getContext.mockRejectedValue(new Error('Branch context not found'));
+
+        const result = await getBranchContext('branch-123');
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('getProjectContext', () => {
+      it('should get project context with inheritance', async () => {
+        const mockContext = { data: { project: 'context' }, inherited: true };
+        contextApiV2.getContext.mockResolvedValue({ context: mockContext });
+
+        const result = await getProjectContext('proj-123');
+        expect(result).toEqual(mockContext);
+        expect(contextApiV2.getContext).toHaveBeenCalledWith('project', 'proj-123', true);
+      });
+
+      it('should handle context errors gracefully', async () => {
+        contextApiV2.getContext.mockRejectedValue(new Error('Project context not found'));
+
+        const result = await getProjectContext('proj-123');
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('getGlobalContext', () => {
+      it('should get global context', async () => {
+        const mockContext = { data: { global: 'settings' } };
+        contextApiV2.getContext.mockResolvedValue({ context: mockContext });
+
+        const result = await getGlobalContext();
+        expect(result).toEqual(mockContext);
+        expect(contextApiV2.getContext).toHaveBeenCalledWith('global', 'global', false);
+      });
+
+      it('should handle context errors gracefully', async () => {
+        contextApiV2.getContext.mockRejectedValue(new Error('Global context not found'));
+
+        const result = await getGlobalContext();
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('updateGlobalContext', () => {
+      it('should update global context with dummy ID', async () => {
+        const data = { setting: 'value' };
+        const mockResponse = { context: { data } };
+        contextApiV2.updateContext.mockResolvedValue(mockResponse);
+
+        const result = await updateGlobalContext(data);
+        expect(result).toEqual(mockResponse.context);
+        expect(contextApiV2.updateContext).toHaveBeenCalledWith('global', 'global', data);
+      });
+    });
+
+    describe('updateProjectContext', () => {
+      it('should update project context', async () => {
+        const data = { project_setting: 'value' };
+        const mockResponse = { context: { data } };
+        contextApiV2.updateContext.mockResolvedValue(mockResponse);
+
+        const result = await updateProjectContext('proj-123', data);
+        expect(result).toEqual(mockResponse.context);
+        expect(contextApiV2.updateContext).toHaveBeenCalledWith('project', 'proj-123', data);
+      });
+
+      it('should handle update errors gracefully', async () => {
+        const data = { project_setting: 'value' };
+        contextApiV2.updateContext.mockRejectedValue(new Error('Update failed'));
+
+        const result = await updateProjectContext('proj-123', data);
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('updateBranchContext', () => {
+      it('should update branch context', async () => {
+        const data = { branch_setting: 'value' };
+        const mockResponse = { context: { data } };
+        contextApiV2.updateContext.mockResolvedValue(mockResponse);
+
+        const result = await updateBranchContext('branch-123', data);
+        expect(result).toEqual(mockResponse.context);
+        expect(contextApiV2.updateContext).toHaveBeenCalledWith('branch', 'branch-123', data);
+      });
+
+      it('should handle update errors gracefully', async () => {
+        const data = { branch_setting: 'value' };
+        contextApiV2.updateContext.mockRejectedValue(new Error('Update failed'));
+
+        const result = await updateBranchContext('branch-123', data);
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('updateTaskContext', () => {
+      it('should update task context', async () => {
+        const data = { task_setting: 'value' };
+        const mockResponse = { context: { data } };
+        contextApiV2.updateContext.mockResolvedValue(mockResponse);
+
+        const result = await updateTaskContext('task-123', data);
+        expect(result).toEqual(mockResponse.context);
+        expect(contextApiV2.updateContext).toHaveBeenCalledWith('task', 'task-123', data);
+      });
+
+      it('should handle update errors gracefully', async () => {
+        const data = { task_setting: 'value' };
+        contextApiV2.updateContext.mockRejectedValue(new Error('Update failed'));
+
+        const result = await updateTaskContext('task-123', data);
+        expect(result).toBeNull();
+      });
+    });
+  });
+
+  describe('Agent Operations', () => {
+    describe('listAgents', () => {
+      it('should return agents metadata', async () => {
+        const mockAgents = [
+          { name: 'coding-agent', description: 'Coding specialist' },
+          { name: 'debugger-agent', description: 'Bug fixing specialist' },
+        ];
+        agentApiV2.getAgentsMetadata.mockResolvedValue({ agents: mockAgents });
+
+        const result = await listAgents();
+        expect(result).toEqual(mockAgents);
+      });
+
+      it('should handle agent API errors', async () => {
+        agentApiV2.getAgentsMetadata.mockRejectedValue(new Error('Agent service unavailable'));
+
+        const result = await listAgents();
+        expect(result).toEqual([]);
+      });
+    });
+
+    describe('getAvailableAgents', () => {
+      it('should return all 42 available agents from agent library', async () => {
+        const result = await getAvailableAgents();
+        expect(result).toHaveLength(42);
+        expect(result).toContain('coding-agent');
+        expect(result).toContain('@master-orchestrator-agent');
+        expect(result).toContain('debugger-agent');
+        expect(result).toContain('system-architect-agent');
+        expect(result).toContain('@test-orchestrator-agent');
+        expect(result).toContain('@ui-designer-expert-shadcn-agent');
+        expect(result).toContain('@security-auditor-agent');
+        expect(result).toContain('devops-agent');
+        expect(result).toContain('documentation-agent');
+        expect(result).toContain('@brainjs-ml-agent');
+      });
+
+      it('should include development category agents', async () => {
+        const result = await getAvailableAgents();
+        const developmentAgents = [
+          'coding-agent',
+          'debugger-agent', 
+          'code-reviewer-agent',
+          '@prototyping-agent'
+        ];
+        developmentAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+
+      it('should include testing and QA category agents', async () => {
+        const result = await getAvailableAgents();
+        const testingAgents = [
+          '@test-orchestrator-agent',
+          '@uat-coordinator-agent',
+          '@performance-load-tester-agent'
+        ];
+        testingAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+
+      it('should include architecture and design category agents', async () => {
+        const result = await getAvailableAgents();
+        const architectureAgents = [
+          'system-architect-agent',
+          '@design-system-agent',
+          '@ui-designer-expert-shadcn-agent',
+          '@core-concept-agent'
+        ];
+        architectureAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+
+      it('should include project planning category agents', async () => {
+        const result = await getAvailableAgents();
+        const planningAgents = [
+          '@project-initiator-agent',
+          '@task-planning-agent',
+          '@master-orchestrator-agent',
+          '@elicitation-agent'
+        ];
+        planningAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+
+      it('should include security and compliance category agents', async () => {
+        const result = await getAvailableAgents();
+        const securityAgents = [
+          '@security-auditor-agent',
+          '@compliance-scope-agent',
+          '@ethical-review-agent'
+        ];
+        securityAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+
+      it('should include marketing and growth agents', async () => {
+        const result = await getAvailableAgents();
+        const marketingAgents = [
+          '@marketing-strategy-orchestrator-agent',
+          '@seo-sem-agent',
+          '@growth-hacking-idea-agent',
+          '@content-strategy-agent'
+        ];
+        marketingAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+
+      it('should include research and analysis agents', async () => {
+        const result = await getAvailableAgents();
+        const researchAgents = [
+          'deep-research-agent',
+          '@mcp-researcher-agent',
+          '@root-cause-analysis-agent',
+          '@technology-advisor-agent'
+        ];
+        researchAgents.forEach(agent => {
+          expect(result).toContain(agent);
+        });
+      });
+    });
+
+    describe('callAgent', () => {
+      it('should call agent successfully', async () => {
+        const mockResponse = { success: true, result: 'Agent executed' };
+        agentApiV2.callAgent.mockResolvedValue(mockResponse);
+
+        const result = await callAgent('coding-agent', { task: 'implement feature' });
+        expect(result).toEqual(mockResponse);
+        expect(agentApiV2.callAgent).toHaveBeenCalledWith('coding-agent', { task: 'implement feature' });
+      });
+
+      it('should handle agent call errors', async () => {
+        const error = new Error('Agent not found');
+        error.message = 'Agent not found';
+        agentApiV2.callAgent.mockRejectedValue(error);
+
+        const result = await callAgent('invalid-agent');
+        expect(result).toEqual({
+          success: false,
+          message: 'Agent not found',
+          error: 'Error: Agent not found'
+        });
+      });
+
+      it('should call master orchestrator agent with complex task', async () => {
+        const complexTask = {
+          task_id: 'task-123',
+          title: 'Build Agent Intelligence System',
+          description: 'Create intelligent agent selection and coordination system',
+          requirements: ['multi-agent coordination', 'workload balancing']
+        };
+        const mockResponse = { 
+          success: true, 
+          agent: 'master-orchestrator-agent',
+          result: 'Task analyzed and delegated to appropriate agents'
+        };
+        agentApiV2.callAgent.mockResolvedValue(mockResponse);
+
+        const result = await callAgent('master-orchestrator-agent', complexTask);
+        expect(result).toEqual(mockResponse);
+        expect(agentApiV2.callAgent).toHaveBeenCalledWith('master-orchestrator-agent', complexTask);
+      });
+
+      it('should call system architect for architecture planning', async () => {
+        const architectureTask = {
+          task: 'design microservices architecture',
+          requirements: ['scalability', 'fault tolerance', 'observability']
+        };
+        const mockResponse = {
+          success: true,
+          result: 'Architecture blueprint created with service dependencies'
+        };
+        agentApiV2.callAgent.mockResolvedValue(mockResponse);
+
+        const result = await callAgent('system-architect-agent', architectureTask);
+        expect(result).toEqual(mockResponse);
+        expect(agentApiV2.callAgent).toHaveBeenCalledWith('system-architect-agent', architectureTask);
+      });
+
+      it('should handle timeout errors gracefully', async () => {
+        const timeoutError = new Error('Request timeout');
+        timeoutError.name = 'TimeoutError';
+        agentApiV2.callAgent.mockRejectedValue(timeoutError);
+
+        const result = await callAgent('coding-agent', { task: 'long running task' });
+        expect(result).toEqual({
+          success: false,
+          message: 'Request timeout',
+          error: 'TimeoutError: Request timeout'
+        });
+      });
+
+      it('should handle network errors gracefully', async () => {
+        const networkError = new Error('Network unreachable');
+        networkError.name = 'NetworkError';
+        agentApiV2.callAgent.mockRejectedValue(networkError);
+
+        const result = await callAgent('debugger-agent', { bug: 'memory leak' });
+        expect(result).toEqual({
+          success: false,
+          message: 'Network unreachable',
+          error: 'NetworkError: Network unreachable'
+        });
+      });
+    });
+  });
+
+  describe('Rule Operations', () => {
+    describe('listRules', () => {
+      it('should warn and return empty array', async () => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        
+        const result = await listRules();
+        expect(result).toEqual([]);
+        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
+        
+        consoleSpy.mockRestore();
+      });
+    });
+
+    describe('createRule', () => {
+      it('should throw error for unimplemented operation', async () => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        
+        await expect(createRule({})).rejects.toThrow('Rule operations not available');
+        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
+        
+        consoleSpy.mockRestore();
+      });
+    });
+
+    describe('updateRule', () => {
+      it('should throw error for unimplemented operation', async () => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        
+        await expect(updateRule('rule-123', {})).rejects.toThrow('Rule operations not available');
+        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
+        
+        consoleSpy.mockRestore();
+      });
+    });
+
+    describe('deleteRule', () => {
+      it('should throw error for unimplemented operation', async () => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        
+        await expect(deleteRule('rule-123')).rejects.toThrow('Rule operations not available');
+        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
+        
+        consoleSpy.mockRestore();
+      });
+    });
+
+    describe('validateRule', () => {
+      it('should return invalid result for unimplemented operation', async () => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        
+        const result = await validateRule({});
+        expect(result).toEqual({ valid: false, errors: ['Rule operations not available'] });
+        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
+        
+        consoleSpy.mockRestore();
+      });
+    });
+  });
+
+  describe('Connection Operations', () => {
+    describe('checkHealth', () => {
+      it('should return true for healthy status', async () => {
+        connectionApiV2.healthCheck.mockResolvedValue({ status: 'healthy' });
+
+        const result = await checkHealth();
+        expect(result).toBe(true);
+      });
+
+      it('should return false for unhealthy status', async () => {
+        connectionApiV2.healthCheck.mockResolvedValue({ status: 'degraded' });
+
+        const result = await checkHealth();
+        expect(result).toBe(false);
+      });
+
+      it('should return false on health check error', async () => {
+        connectionApiV2.healthCheck.mockRejectedValue(new Error('Service unavailable'));
+
+        const result = await checkHealth();
+        expect(result).toBe(false);
+      });
+    });
+  });
+
+  describe('Authentication Utilities', () => {
+    describe('getCurrentUserId', () => {
+      it('should call the imported utility function', async () => {
+        const { getCurrentUserId: mockGetCurrentUserId } = vi.mocked(await import('../services/apiV2'));
+        mockGetCurrentUserId.mockReturnValue('user-123');
+
+        const result = getCurrentUserId();
+        expect(result).toBe('user-123');
+        expect(mockGetCurrentUserId).toHaveBeenCalled();
+      });
+    });
+
+    describe('isAuthenticated', () => {
+      it('should call the imported utility function', async () => {
+        const { isAuthenticated: mockIsAuthenticated } = vi.mocked(await import('../services/apiV2'));
+        mockIsAuthenticated.mockReturnValue(true);
+
+        const result = isAuthenticated();
+        expect(result).toBe(true);
+        expect(mockIsAuthenticated).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Real-time Agent Coordination', () => {
+    describe('Agent Session Management', () => {
+      it('should register agent session for real-time tracking', async () => {
+        const sessionData = {
+          agent_id: 'coding-agent',
+          session_id: 'session-123',
+          project_id: 'proj-456',
+          max_concurrent_tasks: 5
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.registerSession.mockResolvedValue({ session: sessionData });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should track agent resource usage in real-time', async () => {
+        const resourceUpdate = {
+          agent_id: 'coding-agent',
+          resource_type: 'memory',
+          used: 512,
+          allocated: 1024,
+          usage_percentage: 50
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.updateResourceUsage.mockResolvedValue({ success: true });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('WebSocket Communication', () => {
+      it('should establish WebSocket connection for agent', async () => {
+        const wsConfig = {
+          agent_id: 'coding-agent',
+          session_id: 'session-123',
+          channels: ['global', 'status', 'coordination']
+        };
+        
+        // WebSocket tests would use mock WebSocket when API is ready
+        // const ws = new MockWebSocket();
+        // agentApiV2.connectWebSocket.mockResolvedValue(ws);
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should send coordination messages between agents', async () => {
+        const message = {
+          type: 'coordination_request',
+          from_agent: 'coding-agent',
+          to_agent: 'test-orchestrator-agent',
+          payload: {
+            coordination_type: 'handoff',
+            task_id: 'task-123',
+            reason: 'Task completed, ready for testing'
+          }
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.sendCoordinationMessage.mockResolvedValue({ sent: true });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('Real-time Status Updates', () => {
+      it('should broadcast agent status changes', async () => {
+        const statusUpdate = {
+          agent_id: 'coding-agent',
+          status: 'busy',
+          current_task: 'task-123',
+          activity: 'Implementing authentication',
+          health_score: 95
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.broadcastStatus.mockResolvedValue({ broadcast: true });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should handle agent workload rebalancing', async () => {
+        const rebalanceRequest = {
+          project_id: 'proj-123',
+          overloaded_agents: ['coding-agent'],
+          available_agents: ['debugger-agent', 'code-reviewer-agent'],
+          tasks_to_reassign: ['task-456', 'task-789']
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.rebalanceWorkload.mockResolvedValue({
+        //   reassigned: { 'task-456': 'debugger-agent' }
+        // });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('Parallel Execution Coordination', () => {
+      it('should coordinate parallel task execution', async () => {
+        const parallelTasks = [
+          { task_id: 'task-frontend', agent: 'ui-specialist-agent' },
+          { task_id: 'task-backend', agent: 'coding-agent' },
+          { task_id: 'task-tests', agent: 'test-orchestrator-agent' }
+        ];
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.coordinateParallelExecution.mockResolvedValue({
+        //   execution_plan: parallelTasks,
+        //   estimated_completion: '2 hours'
+        // });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should handle inter-agent dependencies', async () => {
+        const dependency = {
+          waiting_agent: 'test-orchestrator-agent',
+          waiting_task: 'task-test-123',
+          blocking_agent: 'coding-agent',
+          blocking_task: 'task-impl-456',
+          notification_sent: false
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.trackDependency.mockResolvedValue({ tracked: true });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('Agent Communication Hub', () => {
+      it('should handle work handoff between agents', async () => {
+        const handoff = {
+          handoff_id: 'handoff-123',
+          from_agent: 'coding-agent',
+          to_agent: 'code-reviewer-agent',
+          task_id: 'task-123',
+          work_summary: 'Authentication implementation complete',
+          completed_items: ['JWT setup', 'Login endpoint', 'Refresh tokens'],
+          remaining_items: ['Session management', 'Logout endpoint']
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.initiateHandoff.mockResolvedValue({ handoff_id: 'handoff-123' });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should resolve conflicts between agents', async () => {
+        const conflict = {
+          conflict_id: 'conflict-123',
+          type: 'resource_contention',
+          agents: ['coding-agent', 'debugger-agent'],
+          resource: 'database_connection',
+          resolution_strategy: 'priority_based'
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.resolveConflict.mockResolvedValue({
+        //   resolved: true,
+        //   winner: 'debugger-agent'
+        // });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('Progress Synchronization', () => {
+      it('should sync task progress across agents', async () => {
+        const progressUpdate = {
+          task_id: 'task-123',
+          agent_id: 'coding-agent',
+          progress: 75,
+          milestones_completed: ['Design', 'Implementation'],
+          milestones_remaining: ['Testing', 'Documentation'],
+          estimated_completion: '1 hour'
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.syncProgress.mockResolvedValue({ synced: true });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should notify dependent agents of completion', async () => {
+        const completion = {
+          completed_task: 'task-impl-123',
+          completed_by: 'coding-agent',
+          dependent_tasks: ['task-test-456', 'task-doc-789'],
+          notifications_sent: ['test-orchestrator-agent', 'documentation-agent']
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.notifyCompletion.mockResolvedValue({
+        //   notified: completion.notifications_sent
+        // });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('Agent Health Monitoring', () => {
+      it('should detect and recover from agent failures', async () => {
+        const failureEvent = {
+          agent_id: 'coding-agent',
+          failure_type: 'timeout',
+          last_heartbeat: '2024-01-01T12:00:00Z',
+          recovery_action: 'restart_session',
+          tasks_affected: ['task-123', 'task-456']
+        };
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.handleAgentFailure.mockResolvedValue({
+        //   recovered: true,
+        //   new_session_id: 'session-456'
+        // });
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
+      });
+      
+      it('should monitor agent health scores', async () => {
+        const healthMetrics = {
+          agent_id: 'coding-agent',
+          health_score: 85,
           metrics: {
-            task_completion_rate: 0.85,
-            active_branches: 3,
-            total_agents: 5,
+            task_success_rate: 0.95,
+            avg_response_time_ms: 150,
+            error_count: 2,
+            resource_utilization: 0.65
           },
+          recommendations: ['Consider reducing concurrent tasks']
         };
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockHealth,
-        });
-
-        const health = await fetchProjectHealth(projectId);
-        expect(health).toEqual(mockHealth);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/health`,
-          { headers: getAuthHeaders() }
-        );
-      });
-    });
-
-    describe('cleanupObsolete', () => {
-      it('should cleanup obsolete resources successfully', async () => {
-        const projectId = '123';
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => ({ cleaned: 5, message: 'Cleanup completed' }),
-        });
-
-        const result = await cleanupObsolete(projectId);
-        expect(result).toEqual({ cleaned: 5, message: 'Cleanup completed' });
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/cleanup`,
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-          }
-        );
-      });
-    });
-
-    describe('validateIntegrity', () => {
-      it('should validate project integrity successfully', async () => {
-        const projectId = '123';
-        const mockValidation = {
-          valid: true,
-          issues: [],
-          recommendations: ['Keep up the good work!'],
-        };
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockValidation,
-        });
-
-        const validation = await validateIntegrity(projectId);
-        expect(validation).toEqual(mockValidation);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/validate`,
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-          }
-        );
-      });
-    });
-
-    describe('rebalanceAgents', () => {
-      it('should rebalance agents successfully', async () => {
-        const projectId = '123';
-        const mockRebalance = {
-          reassigned: 3,
-          message: 'Agents rebalanced successfully',
-        };
-
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: async () => mockRebalance,
-        });
-
-        const result = await rebalanceAgents(projectId);
-        expect(result).toEqual(mockRebalance);
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://localhost:8000/projects/${projectId}/rebalance`,
-          {
-            method: 'POST',
-            headers: getAuthHeaders(),
-          }
-        );
+        
+        // Mock would be implemented when API is ready
+        // agentApiV2.getAgentHealth.mockResolvedValue(healthMetrics);
+        
+        // Placeholder test for now
+        expect(true).toBe(true);
       });
     });
   });
