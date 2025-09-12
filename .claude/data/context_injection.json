@@ -370,5 +370,107 @@
     "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
     "injection_successful": true,
     "context_size": 96
+  },
+  {
+    "timestamp": "2025-09-12T12:42:50.918516",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:43:19.451528",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:43:24.146354",
+    "tool_name": "Write",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:43:37.836335",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:43:44.831928",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "injection_successful": true,
+    "context_size": 96
+  },
+  {
+    "timestamp": "2025-09-12T12:43:50.565923",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "injection_successful": true,
+    "context_size": 96
+  },
+  {
+    "timestamp": "2025-09-12T12:43:58.394659",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:44:49.947931",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:45:23.902519",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:46:18.878611",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:46:37.634834",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:47:05.293917",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:47:09.161257",
+    "tool_name": "Write",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:47:17.967781",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
+  },
+  {
+    "timestamp": "2025-09-12T12:47:24.003814",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "injection_successful": true,
+    "context_size": 96
+  },
+  {
+    "timestamp": "2025-09-12T12:47:30.408405",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "injection_successful": true,
+    "context_size": 96
+  },
+  {
+    "timestamp": "2025-09-12T12:47:35.744280",
+    "tool_name": "Edit",
+    "injection_successful": true,
+    "context_size": 98
   }
 ]
