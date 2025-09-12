@@ -9,15 +9,13 @@ import uuid
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 
-from ....task_management.interface.ddd_compliant_mcp_tools import MCPController
 from ...domain.entities.planning_request import PlanningRequest, RequirementItem, PlanningContext
 from ...application.services.ai_planning_service import AITaskPlanningService
 
-class AITaskPlanningMCPController(MCPController):
+class AITaskPlanningMCPController:
     """MCP controller for AI task planning operations"""
     
     def __init__(self):
-        super().__init__()
         self.planning_service = AITaskPlanningService()
     
     async def create_ai_plan(self, **kwargs) -> Dict[str, Any]:

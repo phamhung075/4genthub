@@ -185,7 +185,7 @@ def create_hook_token(user_id: str = "hook-user", expires_in_days: int = 30) -> 
     Returns:
         JWT token string
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expire = now + timedelta(days=expires_in_days)
     
     payload = {

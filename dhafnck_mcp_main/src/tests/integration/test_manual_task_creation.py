@@ -37,23 +37,23 @@ async def test_manual_task_creation():
         estimated_effort="2 hours"
     )
     
-    print(f"DTO assignees after processing: {request.assignees}")
+    print(f"DTO assignees after processing: {pytest_request.assignees}")
     
     # Step 3: Test Task entity creation
     from fastmcp.task_management.domain.entities.task import Task
     
     try:
         task = Task(
-            title=request.title,
-            description=request.description,
-            assignees=request.assignees,
-            git_branch_id=request.git_branch_id
+            title=pytest_request.title,
+            description=pytest_request.description,
+            assignees=pytest_request.assignees,
+            git_branch_id=pytest_request.git_branch_id
         )
         print(f"Task created successfully!")
         print(f"Task assignees: {task.assignees}")
         
         # Step 4: Test the validation that fails in CRUD handler
-        validation_passes = not (not request.assignees or len(request.assignees) == 0)
+        validation_passes = not (not pytest_request.assignees or len(pytest_request.assignees) == 0)
         print(f"CRUD handler validation passes: {validation_passes}")
         
     except Exception as e:

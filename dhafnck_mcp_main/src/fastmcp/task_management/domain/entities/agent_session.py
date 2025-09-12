@@ -94,9 +94,9 @@ class AgentSession:
         self.agent_id = agent_id
         self.user_id = user_id
         self.project_id = project_id
-        self.started_at = started_at or datetime.utcnow()
+        self.started_at = started_at or datetime.now(timezone.utc)
         self.state = SessionState.INITIALIZING
-        self.last_heartbeat = datetime.utcnow()
+        self.last_heartbeat = datetime.now(timezone.utc)
         self.heartbeat_interval = heartbeat_interval
         self.max_idle_time = max_idle_time
         self.max_session_duration = max_session_duration
@@ -141,7 +141,7 @@ class AgentSession:
     
     def update_heartbeat(self) -> None:
         """Update session heartbeat"""
-        self.last_heartbeat = datetime.utcnow()
+        self.last_heartbeat = datetime.now(timezone.utc)
         if self.state == SessionState.IDLE:
             self.state = SessionState.ACTIVE
     
@@ -150,7 +150,7 @@ class AgentSession:
         if self.state in [SessionState.DISCONNECTED, SessionState.TERMINATED]:
             return False
         
-        time_since_heartbeat = (datetime.utcnow() - self.last_heartbeat).total_seconds()
+        time_since_heartbeat = (datetime.now(timezone.utc) - self.last_heartbeat).total_seconds()
         return time_since_heartbeat < self.heartbeat_interval * 2  # Allow 2x interval
     
     def is_expired(self) -> bool:
@@ -158,13 +158,13 @@ class AgentSession:
         if not self.max_session_duration:
             return False
         
-        session_duration = (datetime.utcnow() - self.started_at).total_seconds()
+        session_duration = (datetime.now(timezone.utc) - self.started_at).total_seconds()
         return session_duration > self.max_session_duration
     
     def is_idle(self) -> bool:
         """Check if session is idle"""
         if not self.active_tasks:
-            time_since_heartbeat = (datetime.utcnow() - self.last_heartbeat).total_seconds()
+            time_since_heartbeat = (datetime.now(timezone.utc) - self.last_heartbeat).total_seconds()
             return time_since_heartbeat > self.max_idle_time
         return False
     
@@ -202,7 +202,7 @@ class AgentSession:
             resource_type=resource_type,
             allocated_amount=amount,
             used_amount=0,
-            allocation_time=datetime.utcnow(),
+            allocation_time=datetime.now(timezone.utc),
             resource_id=resource_id
         )
         
@@ -265,7 +265,7 @@ class AgentSession:
         channel = CommunicationChannel(
             channel_id=channel_id,
             channel_type=channel_type,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             participants=participants
         )
         self.channels[channel_id] = channel
@@ -338,7 +338,7 @@ class AgentSession:
         # Session duration impact (max -20 points)
         if self.max_session_duration:
             duration_percentage = (
-                (datetime.utcnow() - self.started_at).total_seconds() /
+                (datetime.now(timezone.utc) - self.started_at).total_seconds() /
                 self.max_session_duration
             ) * 100
             if duration_percentage > 90:
@@ -385,7 +385,7 @@ class AgentSession:
         
         self.resources.clear()
         self.metadata["termination_reason"] = reason
-        self.metadata["terminated_at"] = datetime.utcnow().isoformat()
+        self.metadata["terminated_at"] = datetime.now(timezone.utc).isoformat()
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert session to dictionary"""

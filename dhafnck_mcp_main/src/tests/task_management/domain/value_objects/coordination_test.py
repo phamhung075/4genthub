@@ -24,7 +24,7 @@ class TestCoordinationRequest:
     """Test coordination request value object"""
 
     @pytest.fixture
-    def request(self):
+    def coord_request(self):
         """Create test coordination request"""
         return CoordinationRequest(
             request_id="req-123",
@@ -32,26 +32,26 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-1",
             target_agent_id="agent-2",
             task_id="task-456",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             reason="Need expertise in frontend",
             priority="high",
-            deadline=datetime.utcnow() + timedelta(hours=2)
+            deadline=datetime.now(timezone.utc) + timedelta(hours=2)
         )
 
-    def test_request_creation(self, request):
+    def test_request_creation(self, coord_request):
         """Test creating coordination request"""
-        assert request.request_id == "req-123"
-        assert request.coordination_type == CoordinationType.HANDOFF
-        assert request.requesting_agent_id == "agent-1"
-        assert request.target_agent_id == "agent-2"
-        assert request.task_id == "task-456"
-        assert request.reason == "Need expertise in frontend"
-        assert request.priority == "high"
+        assert coord_request.request_id == "req-123"
+        assert coord_request.coordination_type == CoordinationType.HANDOFF
+        assert coord_request.requesting_agent_id == "agent-1"
+        assert coord_request.target_agent_id == "agent-2"
+        assert coord_request.task_id == "task-456"
+        assert coord_request.reason == "Need expertise in frontend"
+        assert coord_request.priority == "high"
 
-    def test_is_expired(self, request):
+    def test_is_expired(self, coord_request):
         """Test checking if request is expired"""
         # Not expired
-        assert not request.is_expired()
+        assert not coord_request.is_expired()
         
         # Create expired request
         expired_request = CoordinationRequest(
@@ -60,9 +60,9 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-1",
             target_agent_id="agent-2",
             task_id="task-1",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             reason="Review needed",
-            deadline=datetime.utcnow() - timedelta(hours=1)
+            deadline=datetime.now(timezone.utc) - timedelta(hours=1)
         )
         assert expired_request.is_expired()
         
@@ -73,14 +73,14 @@ class TestCoordinationRequest:
             requesting_agent_id="agent-1",
             target_agent_id="agent-2",
             task_id="task-1",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             reason="Need advice"
         )
         assert not no_deadline.is_expired()
 
-    def test_to_notification(self, request):
+    def test_to_notification(self, coord_request):
         """Test converting to notification"""
-        notification = request.to_notification()
+        notification = coord_request.to_notification()
         
         assert notification["type"] == "coordination_handoff"
         assert notification["from_agent"] == "agent-1"
@@ -90,10 +90,10 @@ class TestCoordinationRequest:
         assert notification["deadline"] is not None
         assert isinstance(notification["context"], dict)
 
-    def test_frozen_dataclass(self, request):
+    def test_frozen_dataclass(self, coord_request):
         """Test that request is immutable"""
         with pytest.raises(AttributeError):
-            request.priority = "low"
+            coord_request.priority = "low"
 
 
 class TestWorkAssignment:
@@ -107,11 +107,11 @@ class TestWorkAssignment:
             task_id="task-456",
             assigned_agent_id="agent-789",
             assigned_by_agent_id="manager-1",
-            assigned_at=datetime.utcnow(),
+            assigned_at=datetime.now(timezone.utc),
             role="frontend_developer",
             responsibilities=["Implement UI", "Write tests"],
             estimated_hours=8.0,
-            due_date=datetime.utcnow() + timedelta(days=2)
+            due_date=datetime.now(timezone.utc) + timedelta(days=2)
         )
 
     def test_assignment_creation(self, assignment):
@@ -134,8 +134,8 @@ class TestWorkAssignment:
             task_id="task-1",
             assigned_agent_id="agent-1",
             assigned_by_agent_id="manager-1",
-            assigned_at=datetime.utcnow(),
-            due_date=datetime.utcnow() - timedelta(hours=1)
+            assigned_at=datetime.now(timezone.utc),
+            due_date=datetime.now(timezone.utc) - timedelta(hours=1)
         )
         assert overdue.is_overdue()
 
@@ -161,7 +161,7 @@ class TestWorkHandoff:
             from_agent_id="agent-1",
             to_agent_id="agent-2",
             task_id="task-456",
-            initiated_at=datetime.utcnow(),
+            initiated_at=datetime.now(timezone.utc),
             work_summary="Completed backend API",
             completed_items=["API endpoints", "Database schema"],
             remaining_items=["Frontend integration", "Documentation"]
@@ -237,7 +237,7 @@ class TestConflictResolution:
             conflict_type=ConflictType.CONCURRENT_EDIT,
             involved_agents=["agent-1", "agent-2"],
             task_id="task-456",
-            detected_at=datetime.utcnow(),
+            detected_at=datetime.now(timezone.utc),
             description="Both agents editing same file",
             impact_assessment="medium"
         )
@@ -304,13 +304,13 @@ class TestAgentCommunication:
             from_agent_id="agent-1",
             to_agent_ids=["agent-2", "agent-3"],
             task_id="task-456",
-            sent_at=datetime.utcnow(),
+            sent_at=datetime.now(timezone.utc),
             message_type="status_update",
             subject="Progress Update",
             content="Completed 50% of implementation",
             priority="normal",
             requires_response=True,
-            response_deadline=datetime.utcnow() + timedelta(hours=1)
+            response_deadline=datetime.now(timezone.utc) + timedelta(hours=1)
         )
 
     def test_communication_creation(self, communication):
@@ -331,7 +331,7 @@ class TestAgentCommunication:
             from_agent_id="agent-1",
             to_agent_ids=["agent-2"],
             task_id=None,
-            sent_at=datetime.utcnow(),
+            sent_at=datetime.now(timezone.utc),
             message_type="question",
             subject="Question",
             content="Need clarification"
@@ -349,7 +349,7 @@ class TestAgentCommunication:
             from_agent_id="agent-1",
             to_agent_ids=["agent-2"],
             task_id=None,
-            sent_at=datetime.utcnow(),
+            sent_at=datetime.now(timezone.utc),
             message_type="question",
             subject="Urgent",
             content="Need immediate help",
@@ -364,7 +364,7 @@ class TestAgentCommunication:
             from_agent_id="agent-1",
             to_agent_ids=["agent-2"],
             task_id=None,
-            sent_at=datetime.utcnow(),
+            sent_at=datetime.now(timezone.utc),
             message_type="notification",
             subject="FYI",
             content="Just letting you know",
@@ -389,7 +389,7 @@ class TestCoordinationMessage:
             message_type="handoff_request",
             from_agent_id="agent-1",
             to_agent_id="agent-2",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"task_id": "task-456", "reason": "Need help"},
             priority="high",
             requires_response=True,
@@ -417,7 +417,7 @@ class TestCoordinationMessage:
             message_type="status_update",
             from_agent_id="agent-1",
             to_agent_id=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"status": "available"}
         )
         assert broadcast.is_broadcast()

@@ -174,7 +174,7 @@
         "path": "_obsolete_docs/ddd-violations-audit-report.md"
       },
       {
-        "moved_date": "2025-09-11T21:56:04.203969",
+        "moved_date": "2025-09-12T21:13:35.531690",
         "path": "_obsolete_docs/mcp-auto-injection-working-2025-09-11.md"
       },
       {
@@ -567,11 +567,11 @@
           "size": 7491
         },
         {
-          "hash": "b5179b82c23dd2f55021b980966b1cb7",
-          "modified": "2025-09-11T21:56:04.203969",
+          "hash": "6d5c684c1204057c3330063efc6a1840",
+          "modified": "2025-09-12T21:13:35.531690",
           "name": "mcp-auto-injection-working-2025-09-11.md",
           "path": "_obsolete_docs/mcp-auto-injection-working-2025-09-11.md",
-          "size": 3462
+          "size": 3433
         },
         {
           "hash": "16d7a4a5bb0bbfa81185d3a236a28c94",
@@ -2073,8 +2073,22 @@
       "path": ""
     },
     "security": {
-      "count": 1,
+      "count": 3,
       "files": [
+        {
+          "hash": "7795897afab023ce463198c1e372a3ca",
+          "modified": "2025-09-12T21:19:51.897152",
+          "name": "markdown-secret-cleanup-2025-09-12.md",
+          "path": "security/markdown-secret-cleanup-2025-09-12.md",
+          "size": 3823
+        },
+        {
+          "hash": "6023014c9975889f961159ca11b0cf47",
+          "modified": "2025-09-12T21:13:19.320775",
+          "name": "secret-leak-cleanup-report-2025-09-12.md",
+          "path": "security/secret-leak-cleanup-report-2025-09-12.md",
+          "size": 6480
+        },
         {
           "hash": "3149c11cd70de4f911f5f60af025be63",
           "modified": "2025-09-12T01:25:28.601193",
@@ -2155,7 +2169,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 36,
+      "count": 37,
       "files": [
         {
           "hash": "f5a4c5c6666ac6598cc9394c579deacb",
@@ -2198,6 +2212,13 @@
           "name": "testing.md",
           "path": "testing-qa/testing.md",
           "size": 7876
+        },
+        {
+          "hash": "2cab246f34d8010c0d4a4783061b5abf",
+          "modified": "2025-09-12T20:49:15.599039",
+          "name": "test-suite-repair-results-2025-09-12.md",
+          "path": "testing-qa/test-suite-repair-results-2025-09-12.md",
+          "size": 5552
         },
         {
           "hash": "f84ea0ff502042887067568b4ada4829",
@@ -2600,7 +2621,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T17:12:04.730937",
+  "generated_at": "2025-09-12T21:19:52.034965",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2931,7 +2952,9 @@
     },
     "security": {
       "files": [
-        "hook-authentication-setup.md"
+        "hook-authentication-setup.md",
+        "markdown-secret-cleanup-2025-09-12.md",
+        "secret-leak-cleanup-report-2025-09-12.md"
       ]
     },
     "setup-guides": {
@@ -2988,6 +3011,7 @@
         "test-cleanup-report-2025-09-12.md",
         "test-modernization-guide.md",
         "test-results-and-issues.md",
+        "test-suite-repair-results-2025-09-12.md",
         "test-summary-2025-09-09.md",
         "testing.md"
       ]
@@ -3022,5 +3046,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 319
+  "total_files": 322
 }

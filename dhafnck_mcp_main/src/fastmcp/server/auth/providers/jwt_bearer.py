@@ -171,11 +171,11 @@ class JWTBearerAuthProvider(BearerAuthProvider):
             
             # Check if token has expired
             from datetime import datetime
-            if token.expires_at < datetime.utcnow():
+            if token.expires_at < datetime.now(timezone.utc):
                 return False
             
             # Update usage statistics
-            token.last_used_at = datetime.utcnow()
+            token.last_used_at = datetime.now(timezone.utc)
             token.usage_count += 1
             
             # Check rate limit

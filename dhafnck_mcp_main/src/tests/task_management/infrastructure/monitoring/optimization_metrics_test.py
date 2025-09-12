@@ -31,7 +31,7 @@ class TestOptimizationMetric:
 
     def test_optimization_metric_creation(self):
         """Test basic optimization metric creation"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = OptimizationMetric(
             name="response_optimization",
             value=75.5,
@@ -57,7 +57,7 @@ class TestOptimizationMetric:
             name="test_metric",
             value=0.0,
             unit="percent",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             optimization_type="MINIMAL",
             operation="test",
             original_size=1000,
@@ -73,7 +73,7 @@ class TestOptimizationMetric:
             name="test_metric",
             value=0.0,
             unit="percent",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             optimization_type="STANDARD",
             operation="test"
         )
@@ -82,7 +82,7 @@ class TestOptimizationMetric:
 
     def test_prometheus_format_with_optimization_context(self):
         """Test Prometheus format includes optimization context"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = OptimizationMetric(
             name="response_opt",
             value=85.0,
@@ -432,15 +432,15 @@ class TestOptimizationMetricsCollector:
         # Create scenario with poor compression
         poor_optimizations = [
             OptimizationMetric(
-                name="test", value=0.0, unit="percent", timestamp=datetime.utcnow(),
+                name="test", value=0.0, unit="percent", timestamp=datetime.now(timezone.utc),
                 optimization_type="DEBUG", operation="test",
                 original_size=1000, optimized_size=950  # Only 5% compression
             ) for _ in range(5)
         ]
         
         alerts = [
-            {"type": "cache_hit_rate_low", "severity": "warning", "timestamp": datetime.utcnow().isoformat()},
-            {"type": "high_processing_time", "severity": "critical", "timestamp": datetime.utcnow().isoformat()}
+            {"type": "cache_hit_rate_low", "severity": "warning", "timestamp": datetime.now(timezone.utc).isoformat()},
+            {"type": "high_processing_time", "severity": "critical", "timestamp": datetime.now(timezone.utc).isoformat()}
         ]
         
         recommendations = self.collector._generate_optimization_recommendations(poor_optimizations, alerts)

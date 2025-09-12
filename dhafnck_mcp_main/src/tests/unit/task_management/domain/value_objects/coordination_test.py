@@ -96,20 +96,20 @@ class TestCoordinationRequest:
             reason="Need help with implementation"
         )
         
-        assert request.request_id == "req-123"
-        assert request.coordination_type == CoordinationType.HANDOFF
-        assert request.requesting_agent_id == "agent-1"
-        assert request.target_agent_id == "agent-2"
-        assert request.task_id == "task-123"
-        assert request.created_at == now
-        assert request.reason == "Need help with implementation"
-        assert request.priority == "medium"
-        assert request.deadline is None
-        assert request.context == {}
-        assert request.handoff_notes is None
-        assert request.completion_criteria == []
-        assert request.review_items == []
-        assert request.review_checklist == {}
+        assert pytest_request.request_id == "req-123"
+        assert pytest_request.coordination_type == CoordinationType.HANDOFF
+        assert pytest_request.requesting_agent_id == "agent-1"
+        assert pytest_request.target_agent_id == "agent-2"
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.created_at == now
+        assert pytest_request.reason == "Need help with implementation"
+        assert pytest_request.priority == "medium"
+        assert pytest_request.deadline is None
+        assert pytest_request.context == {}
+        assert pytest_request.handoff_notes is None
+        assert pytest_request.completion_criteria == []
+        assert pytest_request.review_items == []
+        assert pytest_request.review_checklist == {}
     
     def test_create_coordination_request_full(self):
         """Test creating coordination request with all fields."""
@@ -133,13 +133,13 @@ class TestCoordinationRequest:
             review_checklist={"security": True, "performance": False}
         )
         
-        assert request.context == {"pr_number": 123, "branch": "feature/auth"}
-        assert request.priority == "high"
-        assert request.deadline == deadline
-        assert request.handoff_notes == "Please check authentication logic"
-        assert request.completion_criteria == ["All tests pass", "Security review complete"]
-        assert request.review_items == ["auth.py", "login.py"]
-        assert request.review_checklist == {"security": True, "performance": False}
+        assert pytest_request.context == {"pr_number": 123, "branch": "feature/auth"}
+        assert pytest_request.priority == "high"
+        assert pytest_request.deadline == deadline
+        assert pytest_request.handoff_notes == "Please check authentication logic"
+        assert pytest_request.completion_criteria == ["All tests pass", "Security review complete"]
+        assert pytest_request.review_items == ["auth.py", "login.py"]
+        assert pytest_request.review_checklist == {"security": True, "performance": False}
     
     def test_coordination_request_immutable(self):
         """Test that coordination request is immutable."""
@@ -154,7 +154,7 @@ class TestCoordinationRequest:
         )
         
         with pytest.raises(AttributeError):
-            request.priority = "critical"
+            pytest_request.priority = "critical"
     
     def test_is_expired_no_deadline(self):
         """Test is_expired when no deadline is set."""
@@ -168,7 +168,7 @@ class TestCoordinationRequest:
             reason="Need expertise"
         )
         
-        assert not request.is_expired()
+        assert not pytest_request.is_expired()
     
     def test_is_expired_future_deadline(self):
         """Test is_expired with future deadline."""
@@ -183,7 +183,7 @@ class TestCoordinationRequest:
             deadline=datetime.now() + timedelta(hours=1)
         )
         
-        assert not request.is_expired()
+        assert not pytest_request.is_expired()
     
     def test_is_expired_past_deadline(self):
         """Test is_expired with past deadline."""
@@ -198,7 +198,7 @@ class TestCoordinationRequest:
             deadline=datetime.now() - timedelta(hours=1)
         )
         
-        assert request.is_expired()
+        assert pytest_request.is_expired()
     
     def test_to_notification(self):
         """Test converting request to notification format."""
@@ -218,7 +218,7 @@ class TestCoordinationRequest:
             deadline=deadline
         )
         
-        notification = request.to_notification()
+        notification = pytest_request.to_notification()
         
         assert notification["type"] == "coordination_collaboration"
         assert notification["from_agent"] == "agent-13"

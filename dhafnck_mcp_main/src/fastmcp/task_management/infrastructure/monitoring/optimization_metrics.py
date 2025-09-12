@@ -107,7 +107,7 @@ class OptimizationMetricsCollector(MetricsCollector):
             name="response_optimization",
             value=compression_ratio,
             unit="percent",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             optimization_type=optimization_type,
             operation=operation,
             original_size=original_size,
@@ -322,7 +322,7 @@ class OptimizationMetricsCollector(MetricsCollector):
             "type": alert_type,
             "message": message,
             "context": context,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "severity": self._get_alert_severity(alert_type)
         }
         
@@ -350,7 +350,7 @@ class OptimizationMetricsCollector(MetricsCollector):
     def get_optimization_summary(self, time_window_hours: float = 1) -> Dict[str, Any]:
         """Get comprehensive optimization performance summary."""
         
-        cutoff_time = datetime.utcnow() - timedelta(hours=time_window_hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=time_window_hours)
         
         # Filter recent optimization metrics
         with self._optimization_lock:
@@ -541,7 +541,7 @@ class OptimizationMetricsCollector(MetricsCollector):
         
         report = {
             "report_metadata": {
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "time_window_hours": time_window_hours,
                 "report_type": "optimization_performance"
             },

@@ -55,16 +55,16 @@ class TestCreateContextRequest:
             data={"custom": "data"}
         )
         
-        assert request.task_id == "task-123"
-        assert request.title == "Test Context"
-        assert request.description == "Test Description"
-        assert request.status == "in_progress"
-        assert request.priority == "high"
-        assert request.assignees == ["user-1", "user-2"]
-        assert request.labels == ["bug", "urgent"]
-        assert request.estimated_effort == "3 hours"
-        assert request.due_date == now
-        assert request.data == {"custom": "data"}
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.title == "Test Context"
+        assert pytest_request.description == "Test Description"
+        assert pytest_request.status == "in_progress"
+        assert pytest_request.priority == "high"
+        assert pytest_request.assignees == ["user-1", "user-2"]
+        assert pytest_request.labels == ["bug", "urgent"]
+        assert pytest_request.estimated_effort == "3 hours"
+        assert pytest_request.due_date == now
+        assert pytest_request.data == {"custom": "data"}
     
     def test_create_context_request_minimal(self):
         """Test creating a CreateContextRequest with minimal fields"""
@@ -73,16 +73,16 @@ class TestCreateContextRequest:
             title="Test Context"
         )
         
-        assert request.task_id == "task-123"
-        assert request.title == "Test Context"
-        assert request.description == ""
-        assert request.status is None
-        assert request.priority is None
-        assert request.assignees is None
-        assert request.labels is None
-        assert request.estimated_effort is None
-        assert request.due_date is None
-        assert request.data is None
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.title == "Test Context"
+        assert pytest_request.description == ""
+        assert pytest_request.status is None
+        assert pytest_request.priority is None
+        assert pytest_request.assignees is None
+        assert pytest_request.labels is None
+        assert pytest_request.estimated_effort is None
+        assert pytest_request.due_date is None
+        assert pytest_request.data is None
     
     def test_create_context_request_is_dataclass(self):
         """Test that CreateContextRequest is a proper dataclass"""
@@ -107,15 +107,15 @@ class TestUpdateContextRequest:
             data={"status": "completed", "progress": 100}
         )
         
-        assert request.task_id == "task-123"
-        assert request.data == {"status": "completed", "progress": 100}
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.data == {"status": "completed", "progress": 100}
     
     def test_update_context_request_minimal(self):
         """Test creating an UpdateContextRequest with minimal fields"""
         request = UpdateContextRequest(task_id="task-123")
         
-        assert request.task_id == "task-123"
-        assert request.data is None
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.data is None
 
 
 class TestGetContextRequest:
@@ -125,7 +125,7 @@ class TestGetContextRequest:
         """Test creating a GetContextRequest instance"""
         request = GetContextRequest(task_id="task-123")
         
-        assert request.task_id == "task-123"
+        assert pytest_request.task_id == "task-123"
     
     def test_get_context_request_is_dataclass(self):
         """Test that GetContextRequest is a proper dataclass"""
@@ -141,7 +141,7 @@ class TestDeleteContextRequest:
         """Test creating a DeleteContextRequest instance"""
         request = DeleteContextRequest(task_id="task-123")
         
-        assert request.task_id == "task-123"
+        assert pytest_request.task_id == "task-123"
     
     def test_delete_context_request_is_dataclass(self):
         """Test that DeleteContextRequest is a proper dataclass"""
@@ -160,15 +160,15 @@ class TestListContextsRequest:
             project_id="project-456"
         )
         
-        assert request.user_id == "user-123"
-        assert request.project_id == "project-456"
+        assert pytest_request.user_id == "user-123"
+        assert pytest_request.project_id == "project-456"
     
     def test_list_contexts_request_defaults(self):
         """Test ListContextsRequest with default values"""
         request = ListContextsRequest()
         
-        assert request.user_id is None
-        assert request.project_id == ""
+        assert pytest_request.user_id is None
+        assert pytest_request.project_id == ""
 
 
 class TestGetPropertyRequest:
@@ -181,8 +181,8 @@ class TestGetPropertyRequest:
             property_path="data.custom.field"
         )
         
-        assert request.task_id == "task-123"
-        assert request.property_path == "data.custom.field"
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.property_path == "data.custom.field"
 
 
 class TestUpdatePropertyRequest:
@@ -196,9 +196,9 @@ class TestUpdatePropertyRequest:
             value="completed"
         )
         
-        assert request.task_id == "task-123"
-        assert request.property_path == "data.status"
-        assert request.value == "completed"
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.property_path == "data.status"
+        assert pytest_request.value == "completed"
     
     def test_update_property_request_complex_value(self):
         """Test UpdatePropertyRequest with complex value"""
@@ -209,7 +209,7 @@ class TestUpdatePropertyRequest:
             value=complex_value
         )
         
-        assert request.value == complex_value
+        assert pytest_request.value == complex_value
 
 
 class TestMergeContextRequest:
@@ -226,8 +226,8 @@ class TestMergeContextRequest:
             data=merge_data
         )
         
-        assert request.task_id == "task-123"
-        assert request.data == merge_data
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.data == merge_data
 
 
 class TestMergeDataRequest:
@@ -241,8 +241,8 @@ class TestMergeDataRequest:
             data=merge_data
         )
         
-        assert request.task_id == "task-123"
-        assert request.data == merge_data
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.data == merge_data
     
     def test_merge_data_request_is_dataclass(self):
         """Test that MergeDataRequest is a proper dataclass"""
@@ -264,11 +264,11 @@ class TestAddInsightRequest:
             importance="high"
         )
         
-        assert request.task_id == "task-123"
-        assert request.agent == "debugger-agent"
-        assert request.category == "performance"
-        assert request.content == "Found memory leak in authentication module"
-        assert request.importance == "high"
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.agent == "debugger-agent"
+        assert pytest_request.category == "performance"
+        assert pytest_request.content == "Found memory leak in authentication module"
+        assert pytest_request.importance == "high"
     
     def test_add_insight_request_default_importance(self):
         """Test AddInsightRequest with default importance"""
@@ -279,7 +279,7 @@ class TestAddInsightRequest:
             content="Refactored database queries"
         )
         
-        assert request.importance == "medium"
+        assert pytest_request.importance == "medium"
 
 
 class TestAddProgressRequest:
@@ -295,11 +295,11 @@ class TestAddProgressRequest:
             status="completed"
         )
         
-        assert request.task_id == "task-123"
-        assert request.action == "update_code"
-        assert request.agent == "coding-agent"
-        assert request.details == "Implemented JWT authentication"
-        assert request.status == "completed"
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.action == "update_code"
+        assert pytest_request.agent == "coding-agent"
+        assert pytest_request.details == "Implemented JWT authentication"
+        assert pytest_request.status == "completed"
     
     def test_add_progress_request_defaults(self):
         """Test AddProgressRequest with default values"""
@@ -309,8 +309,8 @@ class TestAddProgressRequest:
             agent="debugger-agent"
         )
         
-        assert request.details == ""
-        assert request.status == "completed"
+        assert pytest_request.details == ""
+        assert pytest_request.status == "completed"
 
 
 class TestUpdateNextStepsRequest:
@@ -328,8 +328,8 @@ class TestUpdateNextStepsRequest:
             next_steps=next_steps
         )
         
-        assert request.task_id == "task-123"
-        assert request.next_steps == next_steps
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.next_steps == next_steps
     
     def test_update_next_steps_request_empty_list(self):
         """Test UpdateNextStepsRequest with empty list"""
@@ -338,8 +338,8 @@ class TestUpdateNextStepsRequest:
             next_steps=[]
         )
         
-        assert request.task_id == "task-123"
-        assert request.next_steps == []
+        assert pytest_request.task_id == "task-123"
+        assert pytest_request.next_steps == []
 
 
 class TestDTORelationships:

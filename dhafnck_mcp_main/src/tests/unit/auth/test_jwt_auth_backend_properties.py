@@ -64,8 +64,8 @@ class TestJWTAuthBackendProperties:
             "token_id": "tok_test123",
             "user_id": "user_123",
             "scopes": ["read", "write"],
-            "exp": datetime.utcnow() + timedelta(days=30),
-            "iat": datetime.utcnow(),
+            "exp": datetime.now(timezone.utc) + timedelta(days=30),
+            "iat": datetime.now(timezone.utc),
             "type": "api_token"
         }
         

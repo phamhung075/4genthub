@@ -84,14 +84,14 @@ class TestDelegationDataClasses:
             confidence_score=0.8
         )
         
-        assert request.source_level == "task"
-        assert request.source_id == "task_123"
-        assert request.target_level == "project"
-        assert request.target_id == "proj_456"
-        assert request.delegated_data["pattern"] == "auth_flow"
-        assert request.reason == "Reusable authentication pattern"
-        assert request.trigger_type == "manual"
-        assert request.confidence_score == 0.8
+        assert pytest_request.source_level == "task"
+        assert pytest_request.source_id == "task_123"
+        assert pytest_request.target_level == "project"
+        assert pytest_request.target_id == "proj_456"
+        assert pytest_request.delegated_data["pattern"] == "auth_flow"
+        assert pytest_request.reason == "Reusable authentication pattern"
+        assert pytest_request.trigger_type == "manual"
+        assert pytest_request.confidence_score == 0.8
 
     def test_delegation_request_defaults(self):
         """Test DelegationRequest with default values."""
@@ -104,8 +104,8 @@ class TestDelegationDataClasses:
             reason="Test reason"
         )
         
-        assert request.trigger_type == "manual"  # Default value
-        assert request.confidence_score is None  # Default value
+        assert pytest_request.trigger_type == "manual"  # Default value
+        assert pytest_request.confidence_score is None  # Default value
 
     def test_delegation_result_creation(self):
         """Test DelegationResult creation."""
@@ -325,7 +325,7 @@ class TestDelegationValidation:
     """Test delegation validation functionality."""
 
     def test_validate_delegation_request_valid(self):
-        """Test validation of valid delegation request."""
+        """Test validation of valid delegation pytest_request."""
         service = ContextDelegationService()
         
         result = service._validate_delegation_request(

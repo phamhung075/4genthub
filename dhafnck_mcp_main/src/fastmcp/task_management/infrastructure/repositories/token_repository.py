@@ -288,7 +288,7 @@ class TokenRepository(ITokenRepository):
             if not token:
                 return False
             
-            token.last_used_at = datetime.utcnow()
+            token.last_used_at = datetime.now(timezone.utc)
             token.usage_count = (token.usage_count or 0) + 1
             self.session.commit()
             return True

@@ -18,9 +18,9 @@ class TestTokenExtraction:
         """Create a mock Keycloak JWT token with user information"""
         # Keycloak token payload structure
         payload = {
-            "exp": int((datetime.utcnow() + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.utcnow().timestamp()),
-            "auth_time": int(datetime.utcnow().timestamp()),
+            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "auth_time": int(datetime.now(timezone.utc).timestamp()),
             "jti": "test-jwt-id-123",
             "iss": "http://localhost:8080/realms/dhafnck",
             "aud": "dhafnck-client",
@@ -128,7 +128,7 @@ class TestTokenExtraction:
         # Token without 'sub' claim
         payload = {
             "email": "user@test.com",
-            "exp": int((datetime.utcnow() + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
         }
         token = jwt.encode(payload, "test-secret", algorithm="HS256")
         
@@ -147,7 +147,7 @@ class TestTokenExtraction:
         # Expired token
         payload = {
             "sub": "test-user-id-999",
-            "exp": int((datetime.utcnow() - timedelta(hours=1)).timestamp())  # Expired
+            "exp": int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp())  # Expired
         }
         token = jwt.encode(payload, "test-secret", algorithm="HS256")
         
@@ -203,7 +203,7 @@ class TestTokenExtraction:
                 "email": user_data["email"],
                 "name": user_data["name"],
                 "realm_access": {"roles": user_data["roles"]},
-                "exp": int((datetime.utcnow() + timedelta(hours=1)).timestamp())
+                "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
             }
             
             token = jwt.encode(payload, "test-secret", algorithm="HS256")

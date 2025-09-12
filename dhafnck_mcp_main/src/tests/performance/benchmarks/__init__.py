@@ -14,11 +14,7 @@ from .performance_suite import (
     BenchmarkResult, 
     ResourceMonitor,
     PerformanceBenchmark,
-    MCPClientBenchmark,
-    SessionHookBenchmark,
-    ImprovementBenchmark,
-    PerformanceSuite,
-    run_performance_validation
+    PerformanceSuite
 )
 
 __all__ = [
@@ -26,9 +22,5 @@ __all__ = [
     'BenchmarkResult',
     'ResourceMonitor', 
     'PerformanceBenchmark',
-    'MCPClientBenchmark',
-    'SessionHookBenchmark',
-    'ImprovementBenchmark',
-    'PerformanceSuite',
-    'run_performance_validation'
+    'PerformanceSuite'
 ]

@@ -52,8 +52,8 @@ class TestDataModels:
         request = LoginRequest(email="test@example.com", password="password123")
         
         # Assert
-        assert request.email == "test@example.com"
-        assert request.password == "password123"
+        assert pytest_request.email == "test@example.com"
+        assert pytest_request.password == "password123"
     
     def test_register_request_model_valid(self):
         """Test RegisterRequest model with valid data"""
@@ -65,9 +65,9 @@ class TestDataModels:
         )
         
         # Assert
-        assert request.email == "test@example.com"
-        assert request.password == "Password123!"
-        assert request.username == "testuser"
+        assert pytest_request.email == "test@example.com"
+        assert pytest_request.password == "Password123!"
+        assert pytest_request.username == "testuser"
     
     def test_register_request_password_validation(self):
         """Test password validation in RegisterRequest"""
@@ -1117,8 +1117,8 @@ class TestTokenManagementEndpoints:
                 "id": "token-123",
                 "name": "Test Token",
                 "scopes": ["read"],
-                "created_at": datetime.utcnow(),
-                "expires_at": datetime.utcnow() + timedelta(days=30),
+                "created_at": datetime.now(timezone.utc),
+                "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
                 "token": "generated-token-string"
             }
         }
@@ -1158,13 +1158,13 @@ class TestTokenManagementEndpoints:
                     "id": "token-1",
                     "name": "Token 1",
                     "scopes": ["read"],
-                    "created_at": datetime.utcnow()
+                    "created_at": datetime.now(timezone.utc)
                 },
                 {
                     "id": "token-2",
                     "name": "Token 2",
                     "scopes": ["read", "write"],
-                    "created_at": datetime.utcnow()
+                    "created_at": datetime.now(timezone.utc)
                 }
             ],
             "total": 2

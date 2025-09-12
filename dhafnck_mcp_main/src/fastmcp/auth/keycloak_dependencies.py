@@ -135,7 +135,7 @@ async def validate_keycloak_token(token: str) -> User:
         
         # Check token expiration
         exp = payload.get("exp")
-        if exp and datetime.utcnow().timestamp() > exp:
+        if exp and datetime.now(timezone.utc).timestamp() > exp:
             logger.error("Keycloak token expired")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -204,7 +204,7 @@ def validate_local_token(token: str) -> User:
         
         # Check token expiration
         exp = payload.get("exp")
-        if exp and datetime.utcnow().timestamp() > exp:
+        if exp and datetime.now(timezone.utc).timestamp() > exp:
             logger.error("Local token expired")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

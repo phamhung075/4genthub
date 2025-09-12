@@ -341,7 +341,7 @@ class RealTimeStatusTracker:
         session.metadata["last_error"] = {
             "type": error_type,
             "message": error_message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "context": error_context
         }
         
@@ -391,7 +391,7 @@ class RealTimeStatusTracker:
         history = self.status_history[agent_id]
         
         if hours:
-            cutoff = datetime.utcnow() - timedelta(hours=hours)
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
             return [s for s in history if s.timestamp >= cutoff]
         
         return history.copy()
@@ -409,7 +409,7 @@ class RealTimeStatusTracker:
             update_types = set(StatusUpdateType)
         
         subscription = StatusSubscription(
-            subscription_id=f"sub_{subscriber_id}_{datetime.utcnow().timestamp()}",
+            subscription_id=f"sub_{subscriber_id}_{datetime.now(timezone.utc).timestamp()}",
             subscriber_id=subscriber_id,
             agent_patterns=agent_patterns,
             update_types=update_types,
@@ -434,7 +434,7 @@ class RealTimeStatusTracker:
         return StatusSnapshot(
             agent_id=session.agent_id,
             session_id=session.session_id,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             state=session.state,
             health_score=session.calculate_health_score(),
             active_tasks=list(session.active_tasks),
@@ -450,7 +450,7 @@ class RealTimeStatusTracker:
             last_error=session.metadata.get("last_error", {}).get("message"),
             metadata={
                 "project_id": session.project_id,
-                "uptime_seconds": (datetime.utcnow() - session.started_at).total_seconds()
+                "uptime_seconds": (datetime.now(timezone.utc) - session.started_at).total_seconds()
             }
         )
     
@@ -497,7 +497,7 @@ class RealTimeStatusTracker:
                 "subscription_id": subscription.subscription_id,
                 "agent_id": agent_id,
                 "update_type": update_type.value,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "data": data
             }
             
@@ -617,7 +617,7 @@ class RealTimeStatusTracker:
         """Background task to cleanup old history"""
         while self._is_running:
             try:
-                cutoff = datetime.utcnow() - timedelta(hours=self.history_retention_hours)
+                cutoff = datetime.now(timezone.utc) - timedelta(hours=self.history_retention_hours)
                 
                 for agent_id in list(self.status_history.keys()):
                     history = self.status_history[agent_id]

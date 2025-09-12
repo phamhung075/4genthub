@@ -11,7 +11,7 @@ import os
 import pytest
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from fastmcp.auth.service_account import (
@@ -68,7 +68,7 @@ class TestServiceAccountAuth:
         token = ServiceToken(
             access_token="test-token",
             expires_in=300,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
         # Token should not be expired
@@ -79,7 +79,7 @@ class TestServiceAccountAuth:
         expired_token = ServiceToken(
             access_token="expired-token",
             expires_in=60,
-            created_at=datetime.utcnow() - timedelta(seconds=120)
+            created_at=datetime.now(timezone.utc) - timedelta(seconds=120)
         )
         
         # Token should be expired
@@ -281,7 +281,7 @@ class TestServiceAccountAuth:
         expired_token = ServiceToken(
             access_token="expired-header-token",
             expires_in=60,
-            created_at=datetime.utcnow() - timedelta(seconds=120)
+            created_at=datetime.now(timezone.utc) - timedelta(seconds=120)
         )
         self.auth._current_token = expired_token
         
@@ -334,7 +334,7 @@ class TestAuthenticationHelper:
             "azp": "test-client",
             "sub": "service-account-test",
             "scope": "openid mcp:read mcp:write",
-            "exp": int((datetime.utcnow() + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
         }
         
         with patch('fastmcp.auth.service_account.get_service_account_auth') as mock_get_auth:

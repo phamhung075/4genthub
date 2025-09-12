@@ -139,7 +139,7 @@ class ContextVersioningService:
             change_type=change_type,
             change_summary=change_summary,
             changed_by=changed_by,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             parent_version_id=current_version_id,
             delta=delta,
             is_milestone=is_milestone,
@@ -498,7 +498,7 @@ class ContextVersioningService:
         export_data = {
             'context_level': context_level.value,
             'context_id': context_id,
-            'export_date': datetime.utcnow().isoformat(),
+            'export_date': datetime.now(timezone.utc).isoformat(),
             'versions': [
                 {
                     'version_id': v.version_id,

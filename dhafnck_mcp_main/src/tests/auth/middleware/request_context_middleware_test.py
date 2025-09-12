@@ -40,11 +40,11 @@ class TestRequestContextMiddleware:
     def mock_request(self):
         """Create a mock request object"""
         request = MagicMock(spec=Request)
-        request.url = MagicMock()
-        request.url.path = "/api/v2/test"
-        request.method = "GET"
-        request.state = MagicMock()
-        request.scope = {}  # ASGI scope dictionary
+        pytest_request.url = MagicMock()
+        pytest_request.url.path = "/api/v2/test"
+        pytest_request.method = "GET"
+        pytest_request.state = MagicMock()
+        pytest_request.scope = {}  # ASGI scope dictionary
         return request
 
     @pytest.fixture
@@ -77,7 +77,7 @@ class TestRequestContextMiddleware:
     @pytest.mark.asyncio
     async def test_dispatch_no_auth(self, middleware, mock_request):
         """Test dispatch with no authentication"""
-        # No auth info in request.state - explicitly set to None
+        # No auth info in pytest_request.state - explicitly set to None
         mock_request.state = MagicMock()
         mock_request.state.user_id = None
         mock_request.state.auth_type = None
@@ -99,7 +99,7 @@ class TestRequestContextMiddleware:
     @pytest.mark.asyncio
     async def test_dispatch_with_auth(self, middleware, mock_request):
         """Test dispatch with authentication info"""
-        # Set auth info in request.state (as DualAuthMiddleware would)
+        # Set auth info in pytest_request.state (as DualAuthMiddleware would)
         mock_request.state.user_id = "test-user-123"
         mock_request.state.auth_type = "unified"
         mock_request.state.auth_info = {
@@ -142,9 +142,9 @@ class TestRequestContextMiddleware:
         # Mock call_next
         async def call_next(request):
             # Check that user was set in ASGI scope
-            assert 'user' in request.scope
-            assert request.scope['user']['user_id'] == 'mcp-user-456'
-            assert request.scope['user']['auth_method'] == 'mcp_token'
+            assert 'user' in pytest_request.scope
+            assert pytest_request.scope['user']['user_id'] == 'mcp-user-456'
+            assert pytest_request.scope['user']['auth_method'] == 'mcp_token'
             return expected_response
         
         response = await middleware.dispatch(mock_request, call_next)
@@ -190,8 +190,8 @@ class TestRequestContextMiddleware:
         """Test capturing auth context when request has no state"""
         request = MagicMock()
         # Remove state attribute
-        if hasattr(request, 'state'):
-            delattr(request, 'state')
+        if hasattr(pytest_request, 'state'):
+            delattr(pytest_request, 'state')
         
         with patch('fastmcp.auth.middleware.request_context_middleware.logger') as mock_logger:
             middleware._capture_auth_context_from_request_state(request)
@@ -350,7 +350,7 @@ class TestRequestContextMiddleware:
         mock_request.scope = {}
         
         async def check_non_mcp(request):
-            assert 'user' not in request.scope
+            assert 'user' not in pytest_request.scope
             return Response("OK")
         
         await middleware.dispatch(mock_request, check_non_mcp)
@@ -364,7 +364,7 @@ class TestRequestContextMiddleware:
         mock_request.scope = {}
         
         async def check_no_user(request):
-            assert 'user' not in request.scope
+            assert 'user' not in pytest_request.scope
             return Response("OK")
         
         await middleware.dispatch(mock_request, check_no_user)

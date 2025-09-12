@@ -48,8 +48,8 @@ class TestRealTimeStatusTracker:
         session.project_id = "proj-456"
         session.state = SessionState.IDLE
         session.active_tasks = set()
-        session.started_at = datetime.utcnow()
-        session.last_heartbeat = datetime.utcnow()
+        session.started_at = datetime.now(timezone.utc)
+        session.last_heartbeat = datetime.now(timezone.utc)
         session.max_idle_time = 300
         session.metrics = {
             "messages_sent": 10,
@@ -463,7 +463,7 @@ class TestRealTimeStatusTracker:
         old_snapshot = StatusSnapshot(
             agent_id=mock_session.agent_id,
             session_id=mock_session.session_id,
-            timestamp=datetime.utcnow() - timedelta(hours=2),
+            timestamp=datetime.now(timezone.utc) - timedelta(hours=2),
             state=SessionState.IDLE,
             health_score=0.9,
             active_tasks=[],

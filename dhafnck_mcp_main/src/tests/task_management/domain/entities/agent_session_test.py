@@ -25,7 +25,7 @@ class TestResourceUsage:
             resource_type=ResourceType.CPU_THREAD,
             allocated_amount=100.0,
             used_amount=75.0,
-            allocation_time=datetime.utcnow()
+            allocation_time=datetime.now(timezone.utc)
         )
         
         assert resource.usage_percentage == 75.0
@@ -40,7 +40,7 @@ class TestResourceUsage:
             resource_type=ResourceType.MEMORY_ALLOCATION,
             allocated_amount=1000.0,
             used_amount=950.0,
-            allocation_time=datetime.utcnow()
+            allocation_time=datetime.now(timezone.utc)
         )
         
         assert resource.is_overutilized()  # Default 90% threshold
@@ -106,11 +106,11 @@ class TestAgentSession:
         assert session.is_alive()
         
         # Simulate old heartbeat
-        session.last_heartbeat = datetime.utcnow() - timedelta(seconds=70)
+        session.last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=70)
         assert not session.is_alive()
         
         # Disconnected state
-        session.last_heartbeat = datetime.utcnow()
+        session.last_heartbeat = datetime.now(timezone.utc)
         session.state = SessionState.DISCONNECTED
         assert not session.is_alive()
 
@@ -119,7 +119,7 @@ class TestAgentSession:
         assert not session.is_expired()
         
         # Simulate old session
-        session.started_at = datetime.utcnow() - timedelta(seconds=3700)
+        session.started_at = datetime.now(timezone.utc) - timedelta(seconds=3700)
         assert session.is_expired()
         
         # No max duration
@@ -134,11 +134,11 @@ class TestAgentSession:
         
         # No tasks, recent heartbeat - not idle
         session.active_tasks.clear()
-        session.last_heartbeat = datetime.utcnow()
+        session.last_heartbeat = datetime.now(timezone.utc)
         assert not session.is_idle()
         
         # No tasks, old heartbeat - idle
-        session.last_heartbeat = datetime.utcnow() - timedelta(seconds=400)
+        session.last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=400)
         assert session.is_idle()
 
     def test_start_task(self, session):
@@ -416,7 +416,7 @@ class TestAgentSession:
         )
         
         # Should never expire
-        session.started_at = datetime.utcnow() - timedelta(days=7)
+        session.started_at = datetime.now(timezone.utc) - timedelta(days=7)
         assert not session.is_expired()
 
     def test_default_resource_allocation(self, session):

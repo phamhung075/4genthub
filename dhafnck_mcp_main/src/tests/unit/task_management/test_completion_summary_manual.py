@@ -144,8 +144,8 @@ def test_completion_summary_storage():
             user_id=test_user_id
         )
         
-        print(f"🔍 Debug: Request object git_branch_id='{request.git_branch_id}' (type: {type(request.git_branch_id)})")
-        print(f"🔍 Debug: Request object user_id='{request.user_id}' (type: {type(request.user_id)})")
+        print(f"🔍 Debug: Request object git_branch_id='{pytest_request.git_branch_id}' (type: {type(pytest_request.git_branch_id)})")
+        print(f"🔍 Debug: Request object user_id='{pytest_request.user_id}' (type: {type(pytest_request.user_id)})")
         
         # Execute create task use case (it generates its own task_id)
         print(f"🔍 Debug: About to execute create task use case")

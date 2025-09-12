@@ -47,7 +47,7 @@ class ServiceToken:
     
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
     
     @property
     def expires_at(self) -> datetime:
@@ -59,12 +59,12 @@ class ServiceToken:
         """Check if token has expired (with 30 second buffer)"""
         buffer_seconds = 30
         expiry_with_buffer = self.expires_at - timedelta(seconds=buffer_seconds)
-        return datetime.utcnow() >= expiry_with_buffer
+        return datetime.now(timezone.utc) >= expiry_with_buffer
     
     @property
     def seconds_until_expiry(self) -> int:
         """Get seconds until token expires"""
-        delta = self.expires_at - datetime.utcnow()
+        delta = self.expires_at - datetime.now(timezone.utc)
         return max(0, int(delta.total_seconds()))
 
 class ServiceAccountAuth:
@@ -200,7 +200,7 @@ class ServiceAccountAuth:
                         token_type=token_data.get("token_type", "Bearer"),
                         expires_in=token_data.get("expires_in", 300),
                         scope=token_data.get("scope", ""),
-                        created_at=datetime.utcnow()
+                        created_at=datetime.now(timezone.utc)
                     )
                     
                     logger.info(f"✅ Service account authenticated successfully. Token expires in {self._current_token.expires_in}s")

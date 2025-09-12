@@ -10,10 +10,8 @@ from typing import Dict, List, Any
 from fastmcp.task_management.application.services.metrics_dashboard import (
     MetricsDashboard,
     MetricType,
-    TimeRange,
-    AggregationType,
-    DashboardWidget,
-    MetricAlert
+    MetricPoint,
+    Metric
 )
 
 

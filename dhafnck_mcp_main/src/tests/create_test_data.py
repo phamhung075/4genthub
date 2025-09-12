@@ -6,7 +6,7 @@ Create test data for context injection system testing
 import sys
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add project root to path
 sys.path.insert(0, '/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src')
@@ -30,8 +30,8 @@ def create_test_data():
             name="Context Injection Test Project",
             description="Test project for validating context injection system",
             user_id="test-user-001",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         session.add(project)
         print(f"✅ Created project: {project.name}")
@@ -43,8 +43,8 @@ def create_test_data():
             description="Implementing real-time context injection for hooks",
             project_id=project.id,
             user_id="test-user-001",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         session.add(git_branch)
         print(f"✅ Created git branch: {git_branch.name}")
@@ -94,8 +94,8 @@ def create_test_data():
                 git_branch_id=git_branch.id,
                 user_id="test-user-001",
                 estimated_effort="2 hours",
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
             )
             session.add(task)
             print(f"✅ Created task: {task.title} ({task.status})")
@@ -117,8 +117,8 @@ def create_test_data():
                         status=st_data["status"],
                         task_id=task.id,
                         user_id="test-user-001",
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
+                        created_at=datetime.now(timezone.utc),
+                        updated_at=datetime.now(timezone.utc)
                     )
                     session.add(subtask)
                     print(f"  ✅ Created subtask: {subtask.title}")
@@ -142,8 +142,8 @@ def create_test_data():
                 "status": "active"
             },
             user_id="test-user-001",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         session.add(project_context)
         print(f"✅ Created project context with data: {list(project_context.data.keys())}")

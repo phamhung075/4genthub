@@ -194,7 +194,7 @@ class TokenApplicationFacade:
             )
             
             # Calculate expiration
-            expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
             
             # Hash token for secure storage
             token_hash = hashlib.sha256(jwt_token.encode()).hexdigest()

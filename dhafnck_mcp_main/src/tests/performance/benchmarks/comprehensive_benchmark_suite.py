@@ -323,7 +323,7 @@ class Phase4ComprehensiveBenchmarkSuite:
         # Header
         report_lines.extend([
             "# Phase 4 Comprehensive Performance Validation Report",
-            f"Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             f"Suite Duration: {suite_duration:.2f} seconds",
             ""
         ])
@@ -424,7 +424,7 @@ class Phase4ComprehensiveBenchmarkSuite:
     
     async def _save_comprehensive_results(self, all_results: Dict[str, Any], report: str):
         """Save comprehensive results to files."""
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         
         # Save JSON results
         results_file = self.output_dir / f"phase4_comprehensive_results_{timestamp}.json"

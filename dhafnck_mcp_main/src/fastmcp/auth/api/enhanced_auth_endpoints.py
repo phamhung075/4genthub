@@ -318,7 +318,7 @@ async def test_email_service(
             "success": result["success"],
             "message": result["message"],
             "error": result.get("error_message"),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
     except Exception as e:
@@ -327,7 +327,7 @@ async def test_email_service(
             "success": False,
             "message": "Email service test failed",
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -359,7 +359,7 @@ async def health_check(
                     "stats": stats_result.get("stats", {})
                 }
             },
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
     except Exception as e:
@@ -367,5 +367,5 @@ async def health_check(
         return {
             "status": "unhealthy",
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }

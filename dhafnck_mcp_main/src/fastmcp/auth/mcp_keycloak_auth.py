@@ -305,7 +305,7 @@ class MCPKeycloakAuth:
         Returns:
             MCP session data
         """
-        session_id = f"mcp-{user_data['sub']}-{datetime.utcnow().timestamp()}"
+        session_id = f"mcp-{user_data['sub']}-{datetime.now(timezone.utc).timestamp()}"
 
         session = {
             "session_id": session_id,
@@ -314,8 +314,8 @@ class MCPKeycloakAuth:
             "roles": user_data.get("roles", []),
             "permissions": user_data.get("mcp_permissions", []),
             "tools": user_data.get("mcp_tools", {}),
-            "created_at": datetime.utcnow().isoformat(),
-            "expires_at": (datetime.utcnow() + timedelta(hours=24)).isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
         }
 
         # Store session in cache/database if needed

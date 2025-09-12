@@ -118,9 +118,9 @@ class TestTaskGitBranchFiltering:
         
         # Configure mock to return different results for different branches
         def mock_list_tasks_side_effect(request):
-            if request.git_branch_id == self.branch_a_id:
+            if pytest_request.git_branch_id == self.branch_a_id:
                 return {"success": True, "tasks": self.tasks_branch_a}
-            elif request.git_branch_id == self.branch_b_id:
+            elif pytest_request.git_branch_id == self.branch_b_id:
                 return {"success": True, "tasks": self.tasks_branch_b}
             else:
                 return {"success": True, "tasks": []}

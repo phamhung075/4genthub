@@ -13,8 +13,7 @@ from fastmcp.task_management.application.services.performance_benchmarker import
     PerformanceBenchmarker,
     BenchmarkResult,
     BenchmarkSuite,
-    PerformanceTarget,
-    BenchmarkComparison
+    BenchmarkCategory
 )
 
 

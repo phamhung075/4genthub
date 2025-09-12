@@ -153,7 +153,7 @@ class MetricsCollector:
             name=name,
             value=value,
             unit=unit,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             tags=tags or {},
             category=category
         )
@@ -250,7 +250,7 @@ class MetricsCollector:
                 self._aggregated_metrics[metric.name].append(metric)
         
         # Save to file
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         filename = self.output_directory / f"metrics_batch_{timestamp}.json"
         
         def write_metrics():
@@ -317,7 +317,7 @@ class MetricsCollector:
             
             # Filter by time window if specified
             if time_window_hours:
-                cutoff_time = datetime.utcnow() - timedelta(hours=time_window_hours)
+                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=time_window_hours)
                 metrics = [m for m in metrics if m.timestamp >= cutoff_time]
             
             if not metrics:
@@ -375,7 +375,7 @@ class MetricsCollector:
     def generate_performance_report(self, time_window_hours: float = 24) -> Dict[str, Any]:
         """Generate comprehensive performance report."""
         report = {
-            "report_timestamp": datetime.utcnow().isoformat(),
+            "report_timestamp": datetime.now(timezone.utc).isoformat(),
             "time_window_hours": time_window_hours,
             "metric_summaries": {},
             "system_health": {},
@@ -432,7 +432,7 @@ class MetricsCollector:
     
     def clear_old_metrics(self, hours_to_keep: float = 24) -> int:
         """Clear metrics older than specified hours."""
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours_to_keep)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours_to_keep)
         removed_count = 0
         
         with self._aggregation_lock:

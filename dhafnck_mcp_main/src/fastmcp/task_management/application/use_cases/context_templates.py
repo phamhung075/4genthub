@@ -581,7 +581,7 @@ class ContextTemplateService:
             'id': template.id,
             'name': template.name,
             'version': template.version,
-            'applied_at': datetime.utcnow().isoformat()
+            'applied_at': datetime.now(timezone.utc).isoformat()
         }
         
         # Create context from template
@@ -596,7 +596,7 @@ class ContextTemplateService:
         
         # Update template usage statistics
         template.usage_count += 1
-        template.last_used_at = datetime.utcnow()
+        template.last_used_at = datetime.now(timezone.utc)
         
         return result
     

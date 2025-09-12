@@ -6,7 +6,7 @@ to domain events across the application with support for async handlers.
 
 import asyncio
 import logging
-from typing import Dict, List, Type, Callable, Any, Optional, Set
+from typing import Dict, List, Type, Callable, Any, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -80,7 +80,7 @@ class EventHandler:
         if self.filter_func and not self.filter_func(event):
             return None
         
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         self.call_count += 1
         
         try:
@@ -90,7 +90,7 @@ class EventHandler:
                 result = self.handler(event)
             
             # Track duration
-            duration = (datetime.utcnow() - start_time).total_seconds() * 1000
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             self.total_duration_ms += duration
             
             return result
