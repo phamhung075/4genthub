@@ -1081,7 +1081,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 18,
+      "count": 20,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -1103,6 +1103,13 @@
           "name": "real-time-context-injection-system.md",
           "path": "core-architecture/real-time-context-injection-system.md",
           "size": 8344
+        },
+        {
+          "hash": "fc1705e85ca4f51c296ab12c21ee22b3",
+          "modified": "2025-09-12T12:39:02.065966",
+          "name": "system-architecture-overview.md",
+          "path": "core-architecture/system-architecture-overview.md",
+          "size": 13896
         },
         {
           "hash": "82ca22389b5d5f7006786c75cb6c63f0",
@@ -1152,6 +1159,13 @@
           "name": "initial-problem.md",
           "path": "core-architecture/initial-problem.md",
           "size": 4409
+        },
+        {
+          "hash": "757a620fe140dd27c1ae6f95871676cf",
+          "modified": "2025-09-12T12:41:09.334607",
+          "name": "domain-driven-design-layers.md",
+          "path": "core-architecture/domain-driven-design-layers.md",
+          "size": 18932
         },
         {
           "hash": "08cc937e96d02d232771f4e3b2751fe4",
@@ -1213,7 +1227,7 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 42,
+      "count": 49,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -1272,11 +1286,25 @@
           "size": 10587
         },
         {
+          "hash": "5375deedd2bbf4df8fb7d88156779339",
+          "modified": "2025-09-12T12:09:50.938668",
+          "name": "pattern-implementation-examples.md",
+          "path": "development-guides/pattern-implementation-examples.md",
+          "size": 29913
+        },
+        {
           "hash": "f67b8cd9130fca937a156582d8224db7",
           "modified": "2025-09-11T10:15:22.518433",
           "name": "REPOSITORY_SWITCHING_GUIDE.md",
           "path": "development-guides/REPOSITORY_SWITCHING_GUIDE.md",
           "size": 12974
+        },
+        {
+          "hash": "6254ba3f6325f5cbcbe46523f52f774a",
+          "modified": "2025-09-12T12:02:26.737005",
+          "name": "factory-refactoring-templates.md",
+          "path": "development-guides/factory-refactoring-templates.md",
+          "size": 27355
         },
         {
           "hash": "51e08689b597a8d1e03d995cafb3a219",
@@ -1356,6 +1384,13 @@
           "size": 11449
         },
         {
+          "hash": "5587b34833b0b6e41373e3a2ee477e55",
+          "modified": "2025-09-12T12:28:30.439513",
+          "name": "refactored-hook-architecture.md",
+          "path": "development-guides/refactored-hook-architecture.md",
+          "size": 9845
+        },
+        {
           "hash": "9e56b1310c8907fc76e0437b6bbee715",
           "modified": "2025-09-11T21:15:54.152183",
           "name": "agent-library-cleanup-recommendations.md",
@@ -1375,6 +1410,13 @@
           "name": "DDD_COMPLIANCE_ANALYSIS_REPORT.md",
           "path": "development-guides/DDD_COMPLIANCE_ANALYSIS_REPORT.md",
           "size": 12998
+        },
+        {
+          "hash": "8f88acecf4d2974a47e02940b26a7223",
+          "modified": "2025-09-12T12:04:00.460747",
+          "name": "factory-refactoring-example.md",
+          "path": "development-guides/factory-refactoring-example.md",
+          "size": 16094
         },
         {
           "hash": "4b52f5d9411be6d95db6ce551028eebf",
@@ -1403,6 +1445,13 @@
           "name": "mcp-integration-guide.md",
           "path": "development-guides/mcp-integration-guide.md",
           "size": 12263
+        },
+        {
+          "hash": "ad8297ac4d1b060146d451919db50ff4",
+          "modified": "2025-09-12T12:21:23.695560",
+          "name": "mcp-task-creation-guide.md",
+          "path": "development-guides/mcp-task-creation-guide.md",
+          "size": 18072
         },
         {
           "hash": "6b22afe63974f5ccced52d263b74a7cc",
@@ -1440,11 +1489,25 @@
           "size": 28713
         },
         {
+          "hash": "202dc474cad0b3e0c0a97a0afbcf3a2d",
+          "modified": "2025-09-12T12:26:58.191759",
+          "name": "mcp-hint-system-implementation.md",
+          "path": "development-guides/mcp-hint-system-implementation.md",
+          "size": 7966
+        },
+        {
           "hash": "ea9788e66a5b30426182b79cab64976f",
           "modified": "2025-08-28T13:36:14.416231",
           "name": "VISUAL_FLOW_VERIFICATION_PROMPT.md",
           "path": "development-guides/VISUAL_FLOW_VERIFICATION_PROMPT.md",
           "size": 14430
+        },
+        {
+          "hash": "7284bd190e9cae6e3789167e383de4c5",
+          "modified": "2025-09-12T12:19:24.286393",
+          "name": "ai-task-planning-prompt.md",
+          "path": "development-guides/ai-task-planning-prompt.md",
+          "size": 15649
         },
         {
           "hash": "4f9c553bb7edf206d60d8fa673dfb49e",
@@ -1864,6 +1927,26 @@
       ],
       "path": "product-requirements"
     },
+    "reports-status": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "e5aeae1769b7a365e2ddc54e638e0059",
+          "modified": "2025-09-12T12:07:30.439649",
+          "name": "design-patterns-analysis.md",
+          "path": "reports-status/design-patterns-analysis.md",
+          "size": 11136
+        },
+        {
+          "hash": "62b622bf2e8bde41441e844240bd602d",
+          "modified": "2025-09-12T12:05:06.836103",
+          "name": "factory-check-status.md",
+          "path": "reports-status/factory-check-status.md",
+          "size": 20200
+        }
+      ],
+      "path": "reports-status"
+    },
     "root": {
       "count": 10,
       "files": [
@@ -2266,7 +2349,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 22,
+      "count": 23,
       "files": [
         {
           "hash": "1f5aacc2420086ffda20de725a65cd27",
@@ -2302,6 +2385,13 @@
           "name": "tdd-remediation-fixes.md",
           "path": "troubleshooting-guides/tdd-remediation-fixes.md",
           "size": 5101
+        },
+        {
+          "hash": "bf3bd6be70b4b11ea3cd91cdb3c17e9c",
+          "modified": "2025-09-12T12:28:06.426989",
+          "name": "mcp-hint-system-resolved-issues.md",
+          "path": "troubleshooting-guides/mcp-hint-system-resolved-issues.md",
+          "size": 7806
         },
         {
           "hash": "228caad46ffee8d8cc3c00d8292509b5",
@@ -2426,7 +2516,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T11:16:17.593356",
+  "generated_at": "2025-09-12T12:41:09.447577",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2597,6 +2687,7 @@
         "architecture.md",
         "database-architecture.md",
         "deprecated-agent-mappings.md",
+        "domain-driven-design-layers.md",
         "implementation-methodology-pattern.md",
         "index.md",
         "initial-problem.md",
@@ -2606,7 +2697,8 @@
         "real-time-context-injection-system.md",
         "real-time-injection-system.md",
         "session-type-detection.md",
-        "sub-agent-instructions.md"
+        "sub-agent-instructions.md",
+        "system-architecture-overview.md"
       ]
     },
     "development-guides": {
@@ -2631,6 +2723,7 @@
         "agent-library-cleanup-recommendations.md",
         "agent-optimization-analysis.md",
         "agent-optimization-implementation-plan.md",
+        "ai-task-planning-prompt.md",
         "authentication-testing-patterns.md",
         "automated-agent-workflow-patterns.md",
         "claude-code-integration.md",
@@ -2640,14 +2733,20 @@
         "domain-driven-design.md",
         "email-authentication-setup.md",
         "error-handling-and-logging.md",
+        "factory-refactoring-example.md",
+        "factory-refactoring-templates.md",
         "frontend-ux-enhancements.md",
         "index.md",
         "jwt-authentication-guide.md",
+        "mcp-hint-system-implementation.md",
         "mcp-integration-guide.md",
         "mcp-simple-wrapper-design.md",
+        "mcp-task-creation-guide.md",
         "modular-controller-architecture.md",
         "orm-agent-repository-implementation.md",
         "parameter-enforcement-technical-spec.md",
+        "pattern-implementation-examples.md",
+        "refactored-hook-architecture.md",
         "role-based-tool-assignment-system.md",
         "server-initialization-patterns.md",
         "test-organization-guide.md",
@@ -2733,6 +2832,12 @@
         "README.md"
       ]
     },
+    "reports-status": {
+      "files": [
+        "design-patterns-analysis.md",
+        "factory-check-status.md"
+      ]
+    },
     "security": {
       "files": [
         "hook-authentication-setup.md"
@@ -2808,6 +2913,7 @@
         "global-context-singleton-setup-solution.md",
         "index.md",
         "mcp-connection-issues.md",
+        "mcp-hint-system-resolved-issues.md",
         "orchestrator-bypass-analysis.md",
         "subtask-persistence-debugging-guide.md",
         "task-context-completion-summary-fixes.md",
@@ -2819,6 +2925,6 @@
       ]
     }
   },
-  "total_directories": 26,
-  "total_files": 295
+  "total_directories": 27,
+  "total_files": 307
 }

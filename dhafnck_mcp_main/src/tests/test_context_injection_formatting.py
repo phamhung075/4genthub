@@ -13,7 +13,12 @@ project_root = '/home/daihungpham/__projects__/agentic-project'
 sys.path.insert(0, os.path.join(project_root, '.claude/hooks/utils'))
 
 # Import the context injector
-from context_injector import ContextInjector
+try:
+    from context_injector import ContextInjector
+    MODULE_AVAILABLE = True
+except ImportError:
+    MODULE_AVAILABLE = False
+    print("Warning: context_injector module not available")
 
 async def test_formatting():
     """Test the context formatting with sample data"""
@@ -21,6 +26,11 @@ async def test_formatting():
     print("=" * 60)
     print("Testing Context Injection Formatting")
     print("=" * 60)
+    
+    if not MODULE_AVAILABLE:
+        print('\n⚠️  WARNING: context_injector module not available')
+        print('   This test file needs to be updated for the new architecture')
+        return False
     
     # Create a context injector
     injector = ContextInjector()

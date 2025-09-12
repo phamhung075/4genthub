@@ -4,7 +4,17 @@
     "call agent to thinking about system injection prompt continue pre_tool_use\n--> display hint for help ai working correct when use mcp__dhafnck_mcp\nexample: remember update context before complete task\nif update task on process remember to complete task\nwhen create task : you can break down task to subtask for better manage workflow \n<you must thinking more hint case useful>",
     "yes how impliment this on hook system actual ?",
     "you need detect by action tool of tool_name and tool_input for make correct hint\nneed make matrice data for that",
-    "i thing this hint need on post_tool_use (after use tool for remember) not before use tool "
+    "i thing this hint need on post_tool_use (after use tool for remember) not before use tool ",
+    "i no see post tool use is run",
+    "you need display on Claude's interface like <session-start-hook>",
+    "continue",
+    "hook is very complicate now i need you refactoris all .claude/hooks base on SOLID and CLEAN",
+    "is working why i see PreToolUse:Bash [python3 \n  /home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py] failed with \n  non-blocking status code 1: Traceback (most recent call last):\n    File \"/home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py\", line \n  18, in <module>\n      from validators import (\n    File \"/home/daihungpham/__projects__/agentic-project/.claude/hooks/validators/__init__.py\",\n   line 5, in <module>\n      from .file_validator import FileValidator\n    File \n  \"/home/daihungpham/__projects__/agentic-project/.claude/hooks/validators/file_validator.py\", \n  line 7, in <module>\n      from ..core.base import Validator\n  ImportError: attempted relative import beyond top-level package ?",
+    "call a simple tool next task for check",
+    "why balise </post-action-hook> is display ?",
+    "<session-start-hook> tag is need for claude interface ?",
+    "<session-start-hook> on start session need change or not ?",
+    "update documentation"
   ],
   "agent_name": "Echo"
 }

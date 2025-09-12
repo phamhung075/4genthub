@@ -1,0 +1,299 @@
+[
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management -type d | head -30",
+      "description": "Check task management module structure"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "create",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "title": "1. Create System Architecture Overview",
+      "description": "Create system-architecture-overview.md with high-level system architecture diagram, layer separation, technology stack, and component interactions",
+      "progress_percentage": 0,
+      "priority": "high"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "create",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "title": "2. Create Domain-Driven Design Layers Documentation",
+      "description": "Create domain-driven-design-layers.md covering all 4 DDD layers with their responsibilities and examples",
+      "progress_percentage": 0
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "create",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "title": "3. Document Context Hierarchy System",
+      "description": "Create context-hierarchy-system.md documenting the 4-tier context system with inheritance patterns",
+      "progress_percentage": 0
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "create",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "title": "4. Document Agent Orchestration Architecture",
+      "description": "Create agent-orchestration-architecture.md covering 43+ agents, assignment patterns, and MCP integration",
+      "progress_percentage": 0
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "create",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "title": "5. Create Design Patterns Documentation",
+      "description": "Create design-patterns-in-architecture.md based on the pattern analysis, including current usage and standards",
+      "progress_percentage": 0
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "update",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "subtask_id": "7a836ce4-d4e3-4c07-897c-7fb0cc549938",
+      "progress_percentage": 10,
+      "progress_notes": "Starting system architecture overview - analyzing existing architecture and creating high-level documentation structure"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -la /home/daihungpham/__projects__/agentic-project/ai_docs/core-architecture/",
+      "description": "Check if core-architecture directory exists"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "/home/daihungpham/__projects__/agentic-project/ai_docs/core-architecture/system-architecture-overview.md",
+      "content": "# DhafnckMCP System Architecture Overview\n\n**Document Version:** 1.0  \n**Last Updated:** 2025-09-12  \n**Status:** Active  \n\n## Executive Summary\n\nThe DhafnckMCP system is a sophisticated multi-agent project management platform built on Domain-Driven Design (DDD) principles with a 4-tier context hierarchy. The system orchestrates 43+ specialized agents through MCP (Model Context Protocol) integration, providing intelligent task management, automated workflows, and comprehensive project coordination capabilities.\n\n## Quick Navigation\n\n- [High-Level Architecture](#high-level-architecture)\n- [System Layers](#system-layers)\n- [Technology Stack](#technology-stack)\n- [Component Interactions](#component-interactions)\n- [Data Flow](#data-flow)\n- [Deployment Architecture](#deployment-architecture)\n- [Related Documentation](#related-documentation)\n\n## High-Level Architecture\n\n```mermaid\ngraph TB\n    subgraph \"External Layer\"\n        UI[Frontend UI<br/>React/TypeScript<br/>Port 3800]\n        CLI[Claude Code CLI]\n        API[External APIs<br/>Keycloak, etc.]\n    end\n    \n    subgraph \"Interface Layer\"\n        MCP[MCP Controllers<br/>15+ Controllers]\n        HTTP[HTTP Endpoints<br/>FastAPI Routes]\n        WF[Workflow Guidance]\n    end\n    \n    subgraph \"Application Layer\"\n        ORCH[Master Orchestrator]\n        AGENTS[43+ Specialized Agents]\n        FACADE[Application Facades]\n        SERVICES[Application Services]\n        USE_CASES[Use Cases]\n    end\n    \n    subgraph \"Domain Layer\"\n        ENT[Domain Entities]\n        VO[Value Objects]\n        DOM_SVC[Domain Services]\n        EVENTS[Domain Events]\n        REPO_INT[Repository Interfaces]\n    end\n    \n    subgraph \"Infrastructure Layer\"\n        REPO[ORM Repositories]\n        DB[(Database<br/>SQLite/PostgreSQL)]\n        CACHE[Cache Services]\n        EVENT_BUS[Event Bus]\n        EXT_SVC[External Services]\n    end\n    \n    subgraph \"Context Hierarchy System\"\n        GLOBAL[Global Context<br/>Per-user]\n        PROJECT[Project Context]\n        BRANCH[Branch Context]\n        TASK[Task Context]\n        \n        GLOBAL --> PROJECT\n        PROJECT --> BRANCH\n        BRANCH --> TASK\n    end\n    \n    UI --> MCP\n    CLI --> MCP\n    MCP --> FACADE\n    HTTP --> SERVICES\n    \n    ORCH --> AGENTS\n    FACADE --> USE_CASES\n    USE_CASES --> DOM_SVC\n    DOM_SVC --> ENT\n    \n    REPO_INT --> REPO\n    REPO --> DB\n    SERVICES --> CACHE\n    \n    AGENTS --> GLOBAL\n    AGENTS --> PROJECT\n    AGENTS --> BRANCH\n    AGENTS --> TASK\n```\n\n## System Layers\n\n### 1. Interface Layer\n**Purpose:** Handle external interactions and protocol communications\n- **MCP Controllers:** 15+ controllers for specialized operations\n- **HTTP Endpoints:** REST API endpoints for web interface\n- **Workflow Guidance:** AI-driven workflow recommendations\n- **Response Formatting:** Consistent response structures\n\n### 2. Application Layer  \n**Purpose:** Orchestrate business use cases and coordinate agents\n- **Master Orchestrator:** Central coordination agent\n- **Specialized Agents:** 43+ agents with domain expertise\n- **Application Facades:** Simplified interfaces for complex operations  \n- **Application Services:** Cross-cutting concerns and coordination\n- **Use Cases:** Business operation implementations\n\n### 3. Domain Layer\n**Purpose:** Core business logic and rules\n- **Domain Entities:** Task, Project, Agent, Context objects\n- **Value Objects:** Immutable domain concepts\n- **Domain Services:** Business logic that doesn't belong in entities\n- **Domain Events:** Business event notifications\n- **Repository Interfaces:** Data access abstractions\n\n### 4. Infrastructure Layer\n**Purpose:** Technical implementation details\n- **ORM Repositories:** SQLAlchemy-based data persistence\n- **Database:** SQLite (dev) / PostgreSQL (prod) with migrations\n- **Cache Services:** Performance optimization\n- **Event Bus:** Event-driven architecture support\n- **External Services:** Third-party integrations\n\n## Technology Stack\n\n### Backend Technologies\n```\nLanguage:         Python 3.11+\nFramework:        FastMCP (custom MCP server framework)\nORM:              SQLAlchemy 2.0+\nDatabase:         SQLite (dev) / PostgreSQL (prod)\nCache:            Redis (optional)\nAuthentication:   Keycloak + JWT\nEvent System:     Custom Event Bus\nTesting:          pytest, unittest\nDocumentation:    Markdown + Mermaid\n```\n\n### Frontend Technologies  \n```\nLanguage:         TypeScript\nFramework:        React 18+\nStyling:          Tailwind CSS\nState Management: React Context + Custom Hooks\nBuild Tool:       Vite\nHTTP Client:      Fetch API\nPort:             3800\n```\n\n### Infrastructure\n```\nContainerization: Docker + docker-compose\nDatabase Volume:  /data/dhafnck_mcp.db\nBackend Port:     8000\nEnvironment:      .env configuration\nOrchestration:    docker-system/docker-menu.sh\n```\n\n### Agent System\n```\nTotal Agents:     43+ specialized agents\nCategories:       15+ (Development, Testing, Architecture, etc.)\nProtocol:         MCP (Model Context Protocol)\nOrchestration:    Master Orchestrator Agent\nTask Management:  MCP Task/Subtask system\nContext:          4-tier hierarchy with inheritance\n```\n\n## Component Interactions\n\n### Agent Orchestration Flow\n```mermaid\nsequenceDiagram\n    participant User\n    participant CLI as Claude CLI\n    participant Master as Master Orchestrator\n    participant MCP as MCP Task System\n    participant Agent as Specialized Agent\n    participant DB as Database\n\n    User->>CLI: Request complex task\n    CLI->>Master: Load master-orchestrator-agent\n    Master->>MCP: Create task with full context\n    MCP->>DB: Store task details\n    Master->>Agent: Delegate with task_id only\n    Agent->>MCP: Retrieve task context\n    Agent->>Agent: Execute specialized work\n    Agent->>MCP: Update progress & results\n    MCP->>Master: Completion notification\n    Master->>User: Report final results\n```\n\n### Context Inheritance Flow\n```mermaid\ngraph TD\n    A[User Request] --> B[Global Context<br/>User-scoped settings]\n    B --> C[Project Context<br/>Project-specific data]\n    C --> D[Branch Context<br/>Feature/task tree]\n    D --> E[Task Context<br/>Individual task data]\n    \n    E --> F[Agent Access]\n    F --> G[Inherited Configuration]\n    \n    style B fill:#e1f5fe\n    style C fill:#f3e5f5  \n    style D fill:#e8f5e8\n    style E fill:#fff3e0\n```\n\n### MCP Protocol Communication\n```mermaid\ngraph LR\n    subgraph \"Claude Code CLI\"\n        CC[Claude Client]\n    end\n    \n    subgraph \"MCP Server (DhafnckMCP)\"\n        TOOLS[MCP Tools<br/>manage_task<br/>manage_agent<br/>call_agent]\n        CTRL[MCP Controllers]\n        SVC[Application Services]\n    end\n    \n    CC -->|MCP Protocol| TOOLS\n    TOOLS --> CTRL\n    CTRL --> SVC\n    SVC -->|Response| CTRL\n    CTRL -->|MCP Response| CC\n```\n\n## Data Flow\n\n### Task Management Data Flow\n1. **Task Creation:** User \u2192 Master Orchestrator \u2192 MCP Task System \u2192 Database\n2. **Task Assignment:** Master Orchestrator \u2192 Specialized Agent (via task_id)\n3. **Context Retrieval:** Agent \u2192 MCP System \u2192 Context Hierarchy \u2192 Merged Context\n4. **Progress Updates:** Agent \u2192 MCP System \u2192 Database \u2192 User Visibility\n5. **Task Completion:** Agent \u2192 MCP System \u2192 Master Orchestrator \u2192 User\n\n### Context Data Flow\n- **Global Context:** Persistent user preferences and system defaults\n- **Project Context:** Inherits from Global + project-specific settings\n- **Branch Context:** Inherits from Project + branch/feature-specific data  \n- **Task Context:** Inherits from Branch + task-specific details\n\n### Event-Driven Data Flow\n1. **Domain Events:** Generated by entity state changes\n2. **Event Bus:** Routes events to registered handlers\n3. **Event Handlers:** Update related systems (cache, search, etc.)\n4. **Integration Events:** Communicate with external systems\n\n## Key Architectural Principles\n\n### Domain-Driven Design (DDD)\n- **Clear layer separation** with defined responsibilities\n- **Rich domain models** with behavior, not anemic data structures\n- **Ubiquitous language** consistent across code and documentation\n- **Bounded contexts** for different business domains\n\n### 4-Tier Context Hierarchy\n- **Inheritance-based** configuration and data flow\n- **UUID-based identification** for all entities\n- **Auto-creation** of contexts when needed\n- **Multi-tenant isolation** at the user level\n\n### Agent-Centric Architecture  \n- **Master Orchestrator** coordinates all complex workflows\n- **Specialized Agents** with domain expertise (43+ agents)\n- **Token-efficient delegation** using task IDs instead of full context\n- **Transparent progress tracking** through MCP task system\n\n### Event-Driven Architecture\n- **Domain events** for business state changes\n- **Event sourcing** for audit trails and debugging\n- **Asynchronous processing** for non-blocking operations\n- **Integration events** for external system communication\n\n## Performance Characteristics\n\n### Scalability Patterns\n- **Repository caching** for frequently accessed data\n- **Context inheritance caching** for performance optimization\n- **Agent connection pooling** for efficient resource usage\n- **Database connection management** with SQLAlchemy\n\n### Token Economy (AI Efficiency)\n- **95% token savings** through task_id-based delegation\n- **Context reuse** via inheritance hierarchy\n- **Compressed responses** from MCP tools\n- **Efficient agent handoffs** without context duplication\n\n## Security Architecture\n\n### Authentication & Authorization\n- **Keycloak** as the single source of truth for user identity\n- **JWT tokens** with automatic refresh\n- **Multi-tenant isolation** with user-scoped data\n- **Role-based access control** for different agent capabilities\n\n### Data Protection\n- **Environment variable security** for all secrets\n- **Database encryption** for sensitive data\n- **API rate limiting** to prevent abuse\n- **Audit trails** for all operations\n\n## Deployment Architecture\n\n### Development Environment\n```\nDocker Containers:\n\u251c\u2500\u2500 dhafnck-backend (Python/FastMCP)\n\u251c\u2500\u2500 dhafnck-frontend (React/TypeScript) \n\u251c\u2500\u2500 postgresql (Database)\n\u251c\u2500\u2500 keycloak (Authentication)\n\u2514\u2500\u2500 redis (Optional caching)\n\nPorts:\n- Backend: 8000\n- Frontend: 3800\n- Database: 5432\n- Keycloak: 8080\n```\n\n### Production Considerations\n- **Container orchestration** with Docker Compose\n- **Database migration** management with SQLAlchemy\n- **Environment-specific** configuration via .env files\n- **Health checks** and monitoring for all services\n\n## Quality Attributes\n\n### Maintainability\n- **Clean Architecture** with clear separation of concerns\n- **SOLID principles** applied throughout the codebase\n- **Design patterns** consistently implemented\n- **Comprehensive documentation** for all components\n\n### Testability\n- **Dependency injection** for easy mocking\n- **Repository pattern** for data access abstraction  \n- **Event-driven architecture** for integration testing\n- **Factory patterns** for test data creation\n\n### Extensibility\n- **Plugin architecture** for new agents\n- **Factory pattern** for dynamic object creation\n- **Strategy pattern** for varying algorithms\n- **Observer pattern** for event handling\n\n## System Boundaries\n\n### Internal Boundaries\n- **Layer boundaries** enforced through dependency direction\n- **Context boundaries** defined by business domains\n- **Agent boundaries** with specialized responsibilities\n- **Data boundaries** with repository abstractions\n\n### External Boundaries\n- **MCP protocol** for Claude Code integration\n- **HTTP/REST** for web client communication  \n- **Database protocol** for data persistence\n- **Authentication protocol** with Keycloak\n\n## Related Documentation\n\n### Architecture Details\n- [Domain-Driven Design Layers](./domain-driven-design-layers.md)\n- [Context Hierarchy System](./context-hierarchy-system.md)\n- [Agent Orchestration Architecture](./agent-orchestration-architecture.md)\n- [Design Patterns in Architecture](./design-patterns-in-architecture.md)\n\n### Analysis Reports\n- [Design Patterns Analysis](../reports-status/design-patterns-analysis.md)\n- [Factory Check Status](../reports-status/factory-check-status.md)\n- [Factory Refactoring Templates](../development-guides/factory-refactoring-templates.md)\n\n### Implementation Guides\n- [MCP Task Creation Guide](../development-guides/mcp-task-creation-guide.md)\n- [AI Task Planning Prompt](../development-guides/ai-task-planning-prompt.md)\n- [Setup Guides](../setup-guides/)\n\n## Architectural Decision Records (ADRs)\n\n### Major Decisions\n1. **Domain-Driven Design:** Chosen for clear business logic separation\n2. **4-Tier Context Hierarchy:** Enables configuration inheritance and isolation\n3. **Agent-Centric Architecture:** Provides specialized expertise and scalability\n4. **MCP Protocol Integration:** Enables seamless Claude Code integration\n5. **Event-Driven Architecture:** Supports loose coupling and extensibility\n\n### Trade-offs Made\n- **Complexity vs. Maintainability:** DDD adds complexity but improves long-term maintainability\n- **Performance vs. Flexibility:** Context hierarchy adds overhead but enables powerful inheritance\n- **Token Usage vs. Transparency:** Task-based delegation saves tokens while maintaining visibility\n\n## Future Evolution\n\n### Planned Enhancements\n- **Advanced caching strategies** for improved performance\n- **Machine learning integration** for intelligent task assignment\n- **Real-time collaboration** features for multi-user workflows\n- **Advanced analytics** and reporting capabilities\n\n### Extensibility Points\n- **New agent types** can be added through the agent registration system\n- **Custom contexts** can be added to the hierarchy system\n- **New event types** can be integrated into the event bus\n- **External integrations** can be added through adapter patterns\n\n---\n\n**Last Updated:** 2025-09-12  \n**Document Owner:** DhafnckMCP Architecture Team  \n**Review Schedule:** Monthly  \n**Status:** Living Document - Updated as system evolves"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "complete",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "subtask_id": "7a836ce4-d4e3-4c07-897c-7fb0cc549938",
+      "completion_summary": "Created comprehensive system-architecture-overview.md with high-level architecture diagrams, technology stack details, component interactions, and deployment architecture. Includes Mermaid diagrams for visual representation and links to related documentation.",
+      "impact_on_parent": "First major documentation piece complete - provides foundation for all other architecture documents",
+      "insights_found": "System has clear 4-layer DDD structure with 43+ agents, token-efficient delegation patterns, and sophisticated context hierarchy that enables inheritance-based configuration"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "update",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "subtask_id": "2f69d6e6-65b2-4324-bf94-213fce594989",
+      "progress_percentage": 15,
+      "progress_notes": "Starting DDD layers documentation - analyzing codebase structure and domain patterns"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain -name \"*.py\" | head -15",
+      "description": "Check domain layer structure"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/application -name \"*.py\" | head -15",
+      "description": "Check application layer structure"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "find /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management -name \"*entities*\" -o -name \"*value_objects*\" -o -name \"*services*\" | head -10",
+      "description": "Find domain entities and value objects"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain/repositories/task_repository.py",
+      "limit": 30
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Read",
+    "tool_input": {
+      "file_path": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/task.py",
+      "limit": 50
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -la /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/",
+      "description": "Check domain entities directory"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -la /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain/value_objects/",
+      "description": "Check value objects directory"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "ls -la /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain/services/",
+      "description": "Check domain services directory"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "/home/daihungpham/__projects__/agentic-project/ai_docs/core-architecture/domain-driven-design-layers.md",
+      "content": "# Domain-Driven Design Layers in DhafnckMCP\n\n**Document Version:** 1.0  \n**Last Updated:** 2025-09-12  \n**Status:** Active  \n\n## Executive Summary\n\nThe DhafnckMCP system implements a strict 4-layer Domain-Driven Design architecture that ensures clear separation of concerns, maintainability, and testability. Each layer has well-defined responsibilities and dependencies flow inward toward the domain core, following the principles of Clean Architecture and DDD.\n\n## Quick Navigation\n\n- [DDD Layer Overview](#ddd-layer-overview)\n- [Domain Layer (Core)](#domain-layer-core)\n- [Application Layer](#application-layer)\n- [Infrastructure Layer](#infrastructure-layer)\n- [Interface Layer](#interface-layer)\n- [Layer Dependencies](#layer-dependencies)\n- [Design Patterns by Layer](#design-patterns-by-layer)\n- [Implementation Examples](#implementation-examples)\n\n## DDD Layer Overview\n\n```mermaid\ngraph TB\n    subgraph \"Interface Layer (Outermost)\"\n        MCP_CTRL[MCP Controllers]\n        HTTP_CTRL[HTTP Controllers]\n        CLI[Command Line Interface]\n        WEB_UI[Web UI Components]\n    end\n    \n    subgraph \"Application Layer\"\n        FACADES[Application Facades]\n        APP_SVC[Application Services]\n        USE_CASES[Use Cases]\n        DTOS[DTOs & Requests]\n        FACTORIES[Factories]\n        ORCHESTRATORS[Orchestrators]\n    end\n    \n    subgraph \"Domain Layer (Core)\"\n        ENTITIES[Domain Entities]\n        VALUE_OBJ[Value Objects]\n        DOMAIN_SVC[Domain Services]\n        REPO_INT[Repository Interfaces]\n        DOMAIN_EVENTS[Domain Events]\n        ENUMS[Domain Enums]\n    end\n    \n    subgraph \"Infrastructure Layer\"\n        ORM_REPO[ORM Repositories]\n        DB[Database]\n        CACHE[Cache Services]\n        EXT_API[External APIs]\n        EVENT_BUS[Event Bus]\n        ADAPTERS[Adapters]\n    end\n    \n    MCP_CTRL --> FACADES\n    HTTP_CTRL --> APP_SVC\n    FACADES --> USE_CASES\n    USE_CASES --> DOMAIN_SVC\n    DOMAIN_SVC --> ENTITIES\n    ENTITIES --> VALUE_OBJ\n    \n    REPO_INT -.-> ORM_REPO\n    ORM_REPO --> DB\n    APP_SVC --> CACHE\n    DOMAIN_EVENTS --> EVENT_BUS\n```\n\n## Domain Layer (Core)\n\n**Purpose:** Contains the business logic, domain rules, and core concepts of the system\n**Dependencies:** None (completely independent)\n\n### Domain Entities\n\nRich objects with identity, state, and business behavior:\n\n#### Key Domain Entities\n\n1. **Task** (`task.py`)\n   - **Identity:** TaskId (UUID-based value object)\n   - **Behavior:** Progress tracking, status transitions, validation\n   - **State Management:** Created, in progress, completed, blocked\n   - **Business Rules:** Priority assignment, effort estimation\n\n```python\n@dataclass\nclass Task:\n    \"\"\"Task domain entity with business logic\"\"\"\n    title: str\n    description: str\n    id: TaskId | None = None\n    status: TaskStatus | None = None\n    priority: Priority | None = None\n    \n    def can_be_completed(self) -> bool:\n        \"\"\"Business rule: Task can only be completed if all dependencies are done\"\"\"\n        return all(dep.is_completed() for dep in self.dependencies)\n    \n    def assign_to_agent(self, agent: AgentRole) -> None:\n        \"\"\"Business logic for agent assignment\"\"\"\n        if agent.can_handle_task_type(self.get_task_type()):\n            self.assignees.append(agent.name)\n        else:\n            raise InvalidAgentAssignmentError()\n```\n\n2. **Project** (`project.py`)\n   - **Identity:** ProjectId\n   - **Aggregation:** Contains multiple tasks and git branches\n   - **Business Rules:** Project health monitoring, agent balancing\n\n3. **Subtask** (`subtask.py`)\n   - **Identity:** SubtaskId\n   - **Parent Relationship:** Belongs to a Task\n   - **Progress Tracking:** Granular completion percentages\n\n4. **Agent** (`agent.py`)\n   - **Identity:** AgentId\n   - **Capabilities:** Specialized domain expertise\n   - **Assignment Rules:** Task compatibility, workload balancing\n\n5. **Context** (`context.py`)\n   - **Hierarchy Management:** Global \u2192 Project \u2192 Branch \u2192 Task\n   - **Inheritance Logic:** Configuration and data flow\n   - **Multi-tenant Isolation:** User-scoped contexts\n\n### Value Objects\n\nImmutable objects representing domain concepts:\n\n1. **TaskId** (`task_id.py`)\n   - UUID-based unique identifier\n   - Validation and formatting logic\n   - Immutable and equality-based\n\n2. **TaskStatus** (`task_status.py`)\n   - Enumerated status values\n   - State transition validation\n   - Business rule enforcement\n\n```python\n@dataclass(frozen=True)\nclass TaskStatus:\n    \"\"\"Value object representing task status with validation\"\"\"\n    value: TaskStatusEnum\n    \n    def can_transition_to(self, new_status: 'TaskStatus') -> bool:\n        \"\"\"Domain rule: Valid status transitions\"\"\"\n        valid_transitions = {\n            TaskStatusEnum.TODO: [TaskStatusEnum.IN_PROGRESS],\n            TaskStatusEnum.IN_PROGRESS: [TaskStatusEnum.DONE, TaskStatusEnum.BLOCKED],\n            TaskStatusEnum.BLOCKED: [TaskStatusEnum.IN_PROGRESS],\n        }\n        return new_status.value in valid_transitions.get(self.value, [])\n```\n\n3. **Priority** (`priority.py`)\n   - Business priority levels\n   - Comparison and ordering logic\n   - Impact on task scheduling\n\n4. **ProgressSnapshot** (`progress.py`)\n   - Point-in-time progress representation\n   - Calculation strategies for different metrics\n   - Timeline tracking capabilities\n\n### Domain Services\n\nEncapsulate domain logic that doesn't belong in entities:\n\n1. **TaskValidationService** (`task_validation_service.py`)\n   - Cross-entity validation rules\n   - Complex business logic coordination\n   - Consistency enforcement\n\n2. **TaskPriorityService** (`task_priority_service.py`)\n   - Priority calculation algorithms\n   - Impact analysis for priority changes\n   - Resource allocation optimization\n\n3. **DependencyValidationService** (`dependency_validation_service.py`)\n   - Circular dependency detection\n   - Dependency chain analysis\n   - Blocking relationship management\n\n4. **TaskCompletionService** (`task_completion_service.py`)\n   - Completion criteria validation\n   - Progress aggregation from subtasks\n   - Automated status transitions\n\n### Domain Events\n\nRepresent significant business occurrences:\n\n1. **TaskCreated** - When a new task is created\n2. **TaskUpdated** - When task properties change\n3. **TaskCompleted** - When a task reaches completion\n4. **ProgressMilestoneReached** - When significant progress is made\n5. **AgentAssigned** - When an agent is assigned to work\n\n### Repository Interfaces\n\nDefine data access contracts without implementation:\n\n```python\nclass TaskRepository(ABC):\n    \"\"\"Repository interface for Task aggregate\"\"\"\n    \n    @abstractmethod\n    def save(self, task: Task) -> Optional[Task]:\n        pass\n    \n    @abstractmethod\n    def find_by_id(self, task_id: TaskId) -> Optional[Task]:\n        pass\n        \n    @abstractmethod\n    def find_by_status(self, status: TaskStatus) -> List[Task]:\n        pass\n```\n\n## Application Layer\n\n**Purpose:** Orchestrate domain objects to fulfill use cases\n**Dependencies:** Domain Layer only\n\n### Application Services\n\nCoordinate complex workflows and cross-cutting concerns:\n\n1. **TaskApplicationService** - Task CRUD operations\n2. **AgentCoordinationService** - Multi-agent orchestration\n3. **ContextManagementService** - Context hierarchy management\n4. **WorkflowOrchestrationService** - Complex workflow coordination\n\n### Use Cases\n\nImplement specific business operations:\n\n```python\nclass CreateTaskUseCase:\n    \"\"\"Use case for creating a new task with full validation\"\"\"\n    \n    def __init__(\n        self, \n        task_repo: TaskRepository,\n        validation_service: TaskValidationService\n    ):\n        self._task_repo = task_repo\n        self._validation_service = validation_service\n    \n    def execute(self, request: CreateTaskRequest) -> TaskResponse:\n        # 1. Validate request\n        self._validation_service.validate_creation_request(request)\n        \n        # 2. Create domain entity\n        task = Task(\n            title=request.title,\n            description=request.description,\n            priority=Priority.from_string(request.priority)\n        )\n        \n        # 3. Apply business rules\n        task.assign_default_priority()\n        task.validate_assignees(request.assignees)\n        \n        # 4. Persist\n        saved_task = self._task_repo.save(task)\n        \n        # 5. Return response\n        return TaskResponse.from_entity(saved_task)\n```\n\n### Application Facades\n\nSimplify complex interactions for external consumers:\n\n```python\nclass TaskApplicationFacade:\n    \"\"\"Simplified interface for task operations\"\"\"\n    \n    def create_task(self, user_id: str, **kwargs) -> Dict[str, Any]:\n        # Coordinates multiple use cases and services\n        # Handles error translation and response formatting\n        # Provides single entry point for task operations\n```\n\n### DTOs and Request/Response Objects\n\nData transfer objects for layer boundaries:\n\n```python\n@dataclass\nclass CreateTaskRequest:\n    \"\"\"Request DTO for task creation\"\"\"\n    title: str\n    description: str\n    priority: str\n    assignees: List[str]\n    git_branch_id: str\n    \n    def to_domain_entity(self) -> Task:\n        \"\"\"Convert to domain entity\"\"\"\n```\n\n### Factories\n\nCreate complex domain objects and services:\n\n1. **TaskFacadeFactory** - Creates fully configured task facades\n2. **OperationFactory** - Creates operation handlers\n3. **ServiceFactory** - Manages service instantiation\n\n## Infrastructure Layer  \n\n**Purpose:** Implement technical concerns and external integrations\n**Dependencies:** Application Layer, Domain Layer interfaces\n\n### ORM Repositories\n\nConcrete implementations of repository interfaces:\n\n```python\nclass ORMTaskRepository(TaskRepository):\n    \"\"\"SQLAlchemy implementation of TaskRepository\"\"\"\n    \n    def __init__(self, session: Session):\n        self._session = session\n    \n    def save(self, task: Task) -> Optional[Task]:\n        orm_task = TaskORM.from_domain_entity(task)\n        self._session.add(orm_task)\n        self._session.commit()\n        return orm_task.to_domain_entity()\n    \n    def find_by_id(self, task_id: TaskId) -> Optional[Task]:\n        orm_task = self._session.query(TaskORM).filter_by(\n            id=str(task_id)\n        ).first()\n        return orm_task.to_domain_entity() if orm_task else None\n```\n\n### Database Models (ORM)\n\nSQLAlchemy models for persistence:\n\n```python\nclass TaskORM(Base):\n    \"\"\"ORM model for Task entity\"\"\"\n    __tablename__ = 'tasks'\n    \n    id = Column(String, primary_key=True)\n    title = Column(String, nullable=False)\n    status = Column(String, nullable=False)\n    \n    def to_domain_entity(self) -> Task:\n        \"\"\"Convert ORM to domain entity\"\"\"\n        return Task(\n            id=TaskId(self.id),\n            title=self.title,\n            status=TaskStatus.from_string(self.status)\n        )\n```\n\n### Cache Services\n\nPerformance optimization layers:\n\n```python\nclass RedisCacheService:\n    \"\"\"Redis-based caching implementation\"\"\"\n    \n    def get_task(self, task_id: TaskId) -> Optional[Task]:\n        # Cache layer for frequent task access\n        \n    def invalidate_task_cache(self, task_id: TaskId):\n        # Cache invalidation on updates\n```\n\n### External Service Adapters\n\nIntegration with external systems:\n\n1. **KeycloakAuthAdapter** - Authentication service integration\n2. **DatabaseAdapter** - Database connection management\n3. **EventBusAdapter** - Message broker integration\n\n## Interface Layer\n\n**Purpose:** Handle external communications and protocols\n**Dependencies:** Application Layer\n\n### MCP Controllers\n\nHandle Model Context Protocol communications:\n\n```python\nclass TaskMCPController:\n    \"\"\"MCP controller for task operations\"\"\"\n    \n    def __init__(self, task_facade: TaskApplicationFacade):\n        self._task_facade = task_facade\n        self._operation_factory = OperationFactory(task_facade)\n    \n    def handle_task_operation(self, operation: str, **params) -> Dict[str, Any]:\n        handler = self._operation_factory.create_handler(operation)\n        return handler.execute(params)\n```\n\n### HTTP Controllers  \n\nREST API endpoints for web interface:\n\n```python\nclass TaskHTTPController:\n    \"\"\"HTTP REST controller for tasks\"\"\"\n    \n    @router.post(\"/tasks\")\n    def create_task(self, request: CreateTaskRequest) -> TaskResponse:\n        return self._task_service.create_task(request)\n```\n\n### Response Formatters\n\nEnsure consistent response structures:\n\n```python\nclass MCPResponseFormatter:\n    \"\"\"Formats responses for MCP protocol\"\"\"\n    \n    def format_task_response(self, task: Task) -> Dict[str, Any]:\n        return {\n            \"task\": TaskResponse.from_entity(task).dict(),\n            \"success\": True,\n            \"metadata\": self._create_metadata()\n        }\n```\n\n## Layer Dependencies\n\n### Dependency Flow Rules\n\n```mermaid\ngraph TB\n    INTERFACE[Interface Layer]\n    APPLICATION[Application Layer]\n    DOMAIN[Domain Layer]\n    INFRASTRUCTURE[Infrastructure Layer]\n    \n    INTERFACE --> APPLICATION\n    APPLICATION --> DOMAIN\n    INFRASTRUCTURE --> DOMAIN\n    INFRASTRUCTURE --> APPLICATION\n    \n    INTERFACE -.->|\"\u274c Not Allowed\"| DOMAIN\n    INTERFACE -.->|\"\u274c Not Allowed\"| INFRASTRUCTURE\n```\n\n### Dependency Inversion\n\n- **Domain Layer** defines interfaces (Repository, Services)\n- **Infrastructure Layer** implements interfaces\n- **Application Layer** depends on abstractions, not concretions\n- **Interface Layer** depends only on application contracts\n\n## Design Patterns by Layer\n\n### Domain Layer Patterns\n- **Entity Pattern** - Rich domain objects with identity\n- **Value Object Pattern** - Immutable domain concepts\n- **Domain Service Pattern** - Domain logic not belonging to entities\n- **Repository Pattern** - Data access abstraction\n- **Domain Events Pattern** - Business event notifications\n\n### Application Layer Patterns\n- **Use Case Pattern** - Single business operation encapsulation\n- **Facade Pattern** - Simplified complex subsystem interfaces\n- **Factory Pattern** - Complex object creation\n- **DTO Pattern** - Data transfer across boundaries\n\n### Infrastructure Layer Patterns\n- **Repository Implementation** - Concrete data access\n- **Adapter Pattern** - External system integration\n- **Unit of Work Pattern** - Transaction management\n\n### Interface Layer Patterns\n- **Controller Pattern** - Request handling and routing\n- **Command Pattern** - Operation encapsulation\n- **Strategy Pattern** - Multiple algorithm implementations\n\n## Implementation Examples\n\n### Complete Flow Example: Task Creation\n\n1. **Interface Layer**\n   ```python\n   # MCP Controller receives request\n   controller.handle_task_operation(\"create\", **params)\n   ```\n\n2. **Application Layer**\n   ```python\n   # Facade coordinates the operation\n   facade.create_task(user_id, **task_data)\n   # Use case executes business logic\n   use_case.execute(CreateTaskRequest(**task_data))\n   ```\n\n3. **Domain Layer**\n   ```python\n   # Domain entity encapsulates business rules\n   task = Task(title, description)\n   task.validate_priority()\n   task.assign_default_status()\n   ```\n\n4. **Infrastructure Layer**\n   ```python\n   # Repository persists the data\n   orm_repo.save(task)\n   # Event bus publishes domain events\n   event_bus.publish(TaskCreated(task))\n   ```\n\n### Error Handling Across Layers\n\n```python\n# Domain Layer - Domain-specific exceptions\nclass InvalidTaskStatusTransitionError(DomainError):\n    pass\n\n# Application Layer - Coordinates and translates\nclass TaskApplicationService:\n    def update_task_status(self, task_id, new_status):\n        try:\n            task.transition_to(new_status)\n        except InvalidTaskStatusTransitionError as e:\n            raise ApplicationError(f\"Cannot update task: {e}\")\n\n# Interface Layer - User-friendly responses\nclass TaskMCPController:\n    def handle_update(self, params):\n        try:\n            return self._service.update_task_status(...)\n        except ApplicationError as e:\n            return {\"success\": False, \"error\": str(e)}\n```\n\n## Best Practices by Layer\n\n### Domain Layer Best Practices\n- Keep domain logic pure and testable\n- Avoid dependencies on frameworks or external libraries\n- Use domain events for cross-aggregate communication\n- Implement rich domain models with behavior\n\n### Application Layer Best Practices\n- Orchestrate domain objects without business logic\n- Handle cross-cutting concerns (logging, caching)\n- Coordinate transactions and persistence\n- Transform between domain and external representations\n\n### Infrastructure Layer Best Practices\n- Implement interfaces defined by inner layers\n- Handle technical concerns (database, networking)\n- Provide adapters for external systems\n- Manage configuration and deployment concerns\n\n### Interface Layer Best Practices\n- Focus on protocol-specific concerns\n- Validate input and format output\n- Handle authentication and authorization\n- Route requests to appropriate application services\n\n## Testing Strategy by Layer\n\n### Domain Layer Testing\n```python\ndef test_task_status_transition():\n    # Pure unit tests - no mocks needed\n    task = Task(\"Test task\", \"Description\")\n    task.start_progress()\n    assert task.status == TaskStatus.IN_PROGRESS\n```\n\n### Application Layer Testing\n```python\ndef test_create_task_use_case():\n    # Mock external dependencies\n    mock_repo = Mock(spec=TaskRepository)\n    use_case = CreateTaskUseCase(mock_repo)\n    \n    result = use_case.execute(CreateTaskRequest(...))\n    mock_repo.save.assert_called_once()\n```\n\n### Infrastructure Layer Testing\n```python\ndef test_orm_task_repository():\n    # Integration tests with test database\n    repo = ORMTaskRepository(test_session)\n    task = Task(\"Test\", \"Description\")\n    \n    saved_task = repo.save(task)\n    assert saved_task.id is not None\n```\n\n### Interface Layer Testing\n```python\ndef test_task_mcp_controller():\n    # Test protocol-specific behavior\n    mock_facade = Mock(spec=TaskApplicationFacade)\n    controller = TaskMCPController(mock_facade)\n    \n    response = controller.handle_task_operation(\"create\", ...)\n    assert response[\"success\"] is True\n```\n\n## Migration and Evolution\n\n### Adding New Features\n1. Start with domain modeling and business rules\n2. Create domain entities and value objects\n3. Define repository interfaces\n4. Implement use cases in application layer\n5. Add infrastructure implementations\n6. Create interface layer endpoints\n\n### Refactoring Guidelines\n- Always maintain layer boundaries\n- Use dependency inversion for testability\n- Extract domain services for complex business logic\n- Keep infrastructure concerns separate from business logic\n\n---\n\n**Related Documentation:**\n- [System Architecture Overview](./system-architecture-overview.md)\n- [Design Patterns in Architecture](./design-patterns-in-architecture.md)\n- [Context Hierarchy System](./context-hierarchy-system.md)\n\n**Last Updated:** 2025-09-12  \n**Document Owner:** DhafnckMCP Architecture Team  \n**Review Schedule:** Monthly  \n**Status:** Living Document"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "complete",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "subtask_id": "2f69d6e6-65b2-4324-bf94-213fce594989",
+      "completion_summary": "Created comprehensive domain-driven-design-layers.md documenting all 4 DDD layers with detailed examples from actual codebase. Includes layer responsibilities, dependencies, design patterns, implementation examples, and testing strategies.",
+      "impact_on_parent": "Second major architecture document complete - provides detailed view of system structure and layer separation",
+      "insights_found": "System follows strict DDD principles with clear separation of concerns, rich domain models, and proper dependency inversion. Found 12+ domain entities, 15+ value objects, and 10+ domain services."
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "permission_mode": "bypassPermissions",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
+    "tool_input": {
+      "action": "update",
+      "task_id": "d7c078cd-d168-4223-aaae-464d4712426a",
+      "subtask_id": "a5a3268a-5101-41c6-9f8b-a156e24bd234",
+      "progress_percentage": 20,
+      "progress_notes": "Starting context hierarchy documentation - analyzing 4-tier inheritance system and context management patterns"
+    }
+  }
+]

@@ -1,0 +1,969 @@
+[
+  {
+    "session_id": "5fdc81c6-2d49-4217-8eb0-7ae5d78364c4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/5fdc81c6-2d49-4217-8eb0-7ae5d78364c4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "5fdc81c6-2d49-4217-8eb0-7ae5d78364c4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/5fdc81c6-2d49-4217-8eb0-7ae5d78364c4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "c45ea990-a44e-40e4-8fae-042981be8dac",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/c45ea990-a44e-40e4-8fae-042981be8dac.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "9f1e70ee-b11a-473d-b821-e42204e527cb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9f1e70ee-b11a-473d-b821-e42204e527cb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "9a0f88df-1e2a-4151-ab81-a7e9f051e429",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9a0f88df-1e2a-4151-ab81-a7e9f051e429.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "63ec566d-5686-485d-833b-3ba862480de2",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/63ec566d-5686-485d-833b-3ba862480de2.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/agent-library/agents",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "f91ae0b2-1751-4c07-981c-61f3b660fb14",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f91ae0b2-1751-4c07-981c-61f3b660fb14.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume"
+  },
+  {
+    "session_id": "8c060011-bcee-4462-a92b-783bf057325f",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8c060011-bcee-4462-a92b-783bf057325f.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "b9982806-5fc2-4300-b510-18f05914b89a",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/b9982806-5fc2-4300-b510-18f05914b89a.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "d14e8269-2fcb-4d8c-8064-26d34bd43be1",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d14e8269-2fcb-4d8c-8064-26d34bd43be1.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "3f305a09-9212-42a7-a60e-a78b678050d3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/3f305a09-9212-42a7-a60e-a78b678050d3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "b9d2e382-d4c7-4fe5-a414-e26933453a91",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/b9d2e382-d4c7-4fe5-a414-e26933453a91.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "9ddaa5d0-111c-4476-b6f4-da85f5b0a842",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9ddaa5d0-111c-4476-b6f4-da85f5b0a842.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "a53150e7-dda1-4863-9489-9913c9b15e87",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a53150e7-dda1-4863-9489-9913c9b15e87.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "8571332d-5ac3-4529-9887-d16652ae84fb",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8571332d-5ac3-4529-9887-d16652ae84fb.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "6e26c911-490d-4a36-9f4d-ed38312ed9f3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/6e26c911-490d-4a36-9f4d-ed38312ed9f3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "66bb0800-1c6b-4ba4-8862-79b26c7b76ad",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/66bb0800-1c6b-4ba4-8862-79b26c7b76ad.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "d9ae82e9-6e28-4092-839b-4d537eb48678",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d9ae82e9-6e28-4092-839b-4d537eb48678.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "3609f36a-192a-43d2-a2ee-d6902b4a11c7",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/3609f36a-192a-43d2-a2ee-d6902b4a11c7.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "e47d1974-5a66-43f6-9454-ae13f630ae5e",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/e47d1974-5a66-43f6-9454-ae13f630ae5e.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "d329a37c-2ef7-491b-ac6c-39400351d65b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d329a37c-2ef7-491b-ac6c-39400351d65b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "53030cf4-f3a2-45f8-8387-76cabcff5d7f",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/53030cf4-f3a2-45f8-8387-76cabcff5d7f.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "90d879be-33d0-40ef-ac53-47bfd7948c77",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/90d879be-33d0-40ef-ac53-47bfd7948c77.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "c7f0192a-62f7-4e58-be78-cb1fd3f13ced",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/c7f0192a-62f7-4e58-be78-cb1fd3f13ced.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "994da8b0-ddb1-463d-bf4f-d1a4477947af",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/994da8b0-ddb1-463d-bf4f-d1a4477947af.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "f241069f-8636-4fc8-9b1c-4c0750d4bac4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f241069f-8636-4fc8-9b1c-4c0750d4bac4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "a6b21111-9f95-4c23-a248-8a459886ba5c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a6b21111-9f95-4c23-a248-8a459886ba5c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "e2bda1ec-b57d-4bff-b8c3-b4d2ab4ef4b1",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/e2bda1ec-b57d-4bff-b8c3-b4d2ab4ef4b1.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "e0e4a18f-a8d7-4811-a67e-3f5430843378",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/e0e4a18f-a8d7-4811-a67e-3f5430843378.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "1f342373-a517-4dd5-90e7-5ba8f20b8065",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/1f342373-a517-4dd5-90e7-5ba8f20b8065.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ff22c948-3b22-439e-85d9-a94075019e57",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ff22c948-3b22-439e-85d9-a94075019e57.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "126de983-676a-4b0b-8bf4-fbb0525148c8",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/126de983-676a-4b0b-8bf4-fbb0525148c8.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "0135c2dc-7e3e-43db-8191-a630b443e8c5",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0135c2dc-7e3e-43db-8191-a630b443e8c5.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "f9eaa0ed-e70b-4026-9286-10850eec2157",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f9eaa0ed-e70b-4026-9286-10850eec2157.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "ee4837b3-0237-4df8-9db2-2b25ce46d7fa",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ee4837b3-0237-4df8-9db2-2b25ce46d7fa.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "f6a7c1c8-670e-412b-b793-3a1ede248f19",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f6a7c1c8-670e-412b-b793-3a1ede248f19.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "8bd83d01-a0fd-4dc4-83e2-ce56b02dda3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8bd83d01-a0fd-4dc4-83e2-ce56b02dda3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "d54c5c2d-8e56-472a-9af5-bca9194ca720",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d54c5c2d-8e56-472a-9af5-bca9194ca720.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "273cfc64-c9d7-4e4d-8787-d6e2a371fdff",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/273cfc64-c9d7-4e4d-8787-d6e2a371fdff.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "d9aea17e-3adb-4e15-81e0-f4b56d117faf",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/d9aea17e-3adb-4e15-81e0-f4b56d117faf.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "eb364d94-6e8a-408d-9c86-26da1c69bf34",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/eb364d94-6e8a-408d-9c86-26da1c69bf34.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "0224970a-067f-40e3-9b43-e4c8da2e9751",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0224970a-067f-40e3-9b43-e4c8da2e9751.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "4418d4c6-7283-4f77-b941-f8332d96ebf5",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/4418d4c6-7283-4f77-b941-f8332d96ebf5.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "8f4540b0-f51b-4e32-9460-e22c47e23588",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8f4540b0-f51b-4e32-9460-e22c47e23588.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "b0b75d28-8fe4-46e3-8394-d7864cc120e9",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/b0b75d28-8fe4-46e3-8394-d7864cc120e9.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "411d80ee-5d2f-496d-8736-a253e8cdb49e",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/411d80ee-5d2f-496d-8736-a253e8cdb49e.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "135fdb0c-9b26-4774-a60f-2bb69961a92f",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/135fdb0c-9b26-4774-a60f-2bb69961a92f.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "834ceb5a-4faf-40d3-8345-a0a8d6311aa7",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/834ceb5a-4faf-40d3-8345-a0a8d6311aa7.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "aa3897ca-75f0-4cb5-956d-2023a767fa0b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/aa3897ca-75f0-4cb5-956d-2023a767fa0b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "77b6a657-09a4-4008-98bc-5997c5d76936",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/77b6a657-09a4-4008-98bc-5997c5d76936.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "019520e2-ca83-4c0c-bc51-7297b0ce8cb3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/019520e2-ca83-4c0c-bc51-7297b0ce8cb3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "999b3994-2848-4b4c-a888-e8cefb5fbf8b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/999b3994-2848-4b4c-a888-e8cefb5fbf8b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "c2705334-421c-4e6a-81ad-6e69ae8129af",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/c2705334-421c-4e6a-81ad-6e69ae8129af.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "test-123",
+    "source": "startup"
+  },
+  {
+    "session_id": "a1389baf-e097-43ed-94ab-159dc0f71516",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/a1389baf-e097-43ed-94ab-159dc0f71516.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "0a952161-ae16-4f40-b187-6742bf143e31",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0a952161-ae16-4f40-b187-6742bf143e31.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "28e57514-2d37-4eb0-86ba-70508a31b623",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/28e57514-2d37-4eb0-86ba-70508a31b623.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "8a4cbb8b-e25c-4f39-9ef1-5a4781967542",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8a4cbb8b-e25c-4f39-9ef1-5a4781967542.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume"
+  },
+  {
+    "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9f6e19e7-05f0-4097-8265-52744859d597.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "af729401-24fc-4c62-9367-61a570383024",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/af729401-24fc-4c62-9367-61a570383024.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "e6cd047c-8241-4a49-8638-de01d2d85c21",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/e6cd047c-8241-4a49-8638-de01d2d85c21.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "9400d82e-d5c5-4184-b64e-e37a4ad6e0c4",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9400d82e-d5c5-4184-b64e-e37a4ad6e0c4.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  },
+  {
+    "session_id": "751dfd39-f605-4d90-8bf9-40096ebade4b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/751dfd39-f605-4d90-8bf9-40096ebade4b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact"
+  },
+  {
+    "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/9f6e19e7-05f0-4097-8265-52744859d597.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-11T22:32:35.573622",
+    "injection_result": {
+      "session_id": "9f6e19e7-05f0-4097-8265-52744859d597",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 641,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T22:32:35.573577"
+    }
+  },
+  {
+    "session_id": "c0d4056f-f211-449b-89cd-4601c867ead6",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/c0d4056f-f211-449b-89cd-4601c867ead6.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-11T22:34:08.754640",
+    "injection_result": {
+      "session_id": "c0d4056f-f211-449b-89cd-4601c867ead6",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 641,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T22:34:08.754600"
+    }
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-11T22:37:01.358232",
+    "injection_result": {
+      "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 641,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T22:37:01.358187"
+    }
+  },
+  {
+    "session_id": "f8ead01c-4146-464a-901a-d97d237bc3a6",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f8ead01c-4146-464a-901a-d97d237bc3a6.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-11T23:02:11.231398",
+    "injection_result": {
+      "session_id": "f8ead01c-4146-464a-901a-d97d237bc3a6",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 794,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T23:02:11.231351"
+    }
+  },
+  {
+    "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0393897f-ebf9-4406-93a6-297d0135c051.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-11T23:04:45.067496",
+    "injection_result": {
+      "session_id": "0393897f-ebf9-4406-93a6-297d0135c051",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 794,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T23:04:45.067454"
+    }
+  },
+  {
+    "session_id": "53b8b3f0-7955-4d4c-a51c-4163b6ddc741",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/53b8b3f0-7955-4d4c-a51c-4163b6ddc741.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-11T23:08:00.456064",
+    "injection_result": {
+      "session_id": "53b8b3f0-7955-4d4c-a51c-4163b6ddc741",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 686,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T23:08:00.456022"
+    }
+  },
+  {
+    "session_id": "87e5cdab-191c-4a16-a293-70fe8a17b6ca",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87e5cdab-191c-4a16-a293-70fe8a17b6ca.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-11T23:33:28.746124",
+    "injection_result": {
+      "session_id": "87e5cdab-191c-4a16-a293-70fe8a17b6ca",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 717,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T23:33:28.746082"
+    }
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-11T23:59:36.537456",
+    "injection_result": {
+      "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 717,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-11T23:59:36.537414"
+    }
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-12T00:57:50.967702",
+    "injection_result": {
+      "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 748,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T00:57:50.967653"
+    }
+  },
+  {
+    "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bec23a3f-157f-47a5-89be-5b9676211d11.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-12T01:54:20.884874",
+    "injection_result": {
+      "session_id": "bec23a3f-157f-47a5-89be-5b9676211d11",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 749,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T01:54:20.884831"
+    }
+  },
+  {
+    "session_id": "28bed66c-2067-4fc3-acd6-9b855cdafe37",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/28bed66c-2067-4fc3-acd6-9b855cdafe37.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T02:18:21.299361",
+    "injection_result": {
+      "session_id": "28bed66c-2067-4fc3-acd6-9b855cdafe37",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 749,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T02:18:21.299297"
+    }
+  },
+  {
+    "session_id": "79de03db-66a7-4439-8e9b-886a69f407ed",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/79de03db-66a7-4439-8e9b-886a69f407ed.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T02:18:49.438522",
+    "injection_result": {
+      "session_id": "79de03db-66a7-4439-8e9b-886a69f407ed",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 749,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T02:18:49.438450"
+    }
+  },
+  {
+    "session_id": "0634597b-dd51-4d8c-a024-6a2fa705c236",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/0634597b-dd51-4d8c-a024-6a2fa705c236.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T02:36:54.724260",
+    "injection_result": {
+      "session_id": "0634597b-dd51-4d8c-a024-6a2fa705c236",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 749,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T02:36:54.724209"
+    }
+  },
+  {
+    "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8283f272-110e-4415-b0a7-21e7e99d03f3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T03:03:37.632781",
+    "injection_result": {
+      "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 719,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T03:03:37.632703"
+    }
+  },
+  {
+    "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/8283f272-110e-4415-b0a7-21e7e99d03f3.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-12T03:28:10.939711",
+    "injection_result": {
+      "session_id": "8283f272-110e-4415-b0a7-21e7e99d03f3",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 750,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T03:28:10.939663"
+    }
+  },
+  {
+    "session_id": "95ee4518-3eb3-4044-9c53-ae84d554b6f7",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/95ee4518-3eb3-4044-9c53-ae84d554b6f7.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T03:37:12.084032",
+    "injection_result": {
+      "session_id": "95ee4518-3eb3-4044-9c53-ae84d554b6f7",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 750,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T03:37:12.083979"
+    }
+  },
+  {
+    "session_id": "ade48225-f90f-4d72-a491-f3379236331e",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ade48225-f90f-4d72-a491-f3379236331e.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "injection_timestamp": "2025-09-12T03:37:27.516147",
+    "injection_result": {
+      "session_id": "ade48225-f90f-4d72-a491-f3379236331e",
+      "source": "resume",
+      "context_loaded": true,
+      "context_length": 749,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T03:37:27.516101"
+    }
+  },
+  {
+    "session_id": "fc14f7f7-82cc-433f-9f99-9c6e2926a4ee",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/fc14f7f7-82cc-433f-9f99-9c6e2926a4ee.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T04:20:26.420844",
+    "injection_result": {
+      "session_id": "fc14f7f7-82cc-433f-9f99-9c6e2926a4ee",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 751,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T04:20:26.420797"
+    }
+  },
+  {
+    "session_id": "ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T10:25:29.198901",
+    "injection_result": {
+      "session_id": "ba1b46bd-d11b-45ef-8d23-3b9cdbde2e05",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 751,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T10:25:29.198844"
+    }
+  },
+  {
+    "session_id": "21549867-c110-4a6e-8a2c-d3c559471c2b",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/21549867-c110-4a6e-8a2c-d3c559471c2b.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "resume",
+    "injection_timestamp": "2025-09-12T10:25:32.099696",
+    "injection_result": {
+      "session_id": "21549867-c110-4a6e-8a2c-d3c559471c2b",
+      "source": "resume",
+      "context_loaded": true,
+      "context_length": 750,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T10:25:32.099654"
+    }
+  },
+  {
+    "session_id": "87f763d9-4bc0-405a-858a-28648cbc2bfa",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/87f763d9-4bc0-405a-858a-28648cbc2bfa.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T10:47:40.700692",
+    "injection_result": {
+      "session_id": "87f763d9-4bc0-405a-858a-28648cbc2bfa",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 751,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T10:47:40.700651"
+    }
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T10:52:16.925105",
+    "injection_result": {
+      "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 751,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T10:52:16.925064"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T11:45:22.200963",
+    "injection_result": {
+      "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 728,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T11:45:22.200905"
+    }
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-12T12:04:35.409281",
+    "injection_result": {
+      "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 729,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T12:04:35.409223"
+    }
+  },
+  {
+    "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-12T12:25:28.826121",
+    "injection_result": {
+      "session_id": "bf0849c2-e75d-40a7-bde0-3ca9f8c85b3c",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 729,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T12:25:28.826074"
+    }
+  },
+  {
+    "session_id": "e559a22e-470a-4cd1-8146-5fd0e83b7ca1",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/e559a22e-470a-4cd1-8146-5fd0e83b7ca1.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "startup",
+    "injection_timestamp": "2025-09-12T12:25:35.765050",
+    "injection_result": {
+      "session_id": "e559a22e-470a-4cd1-8146-5fd0e83b7ca1",
+      "source": "startup",
+      "context_loaded": true,
+      "context_length": 729,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T12:25:35.765003"
+    }
+  },
+  {
+    "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+    "transcript_path": "/home/daihungpham/.claude/projects/-home-daihungpham---projects---agentic-project/f0f8ffe3-0c55-4121-940b-e2f21d10c531.jsonl",
+    "cwd": "/home/daihungpham/__projects__/agentic-project",
+    "hook_event_name": "SessionStart",
+    "source": "compact",
+    "injection_timestamp": "2025-09-12T12:34:43.403864",
+    "injection_result": {
+      "session_id": "f0f8ffe3-0c55-4121-940b-e2f21d10c531",
+      "source": "compact",
+      "context_loaded": true,
+      "context_length": 729,
+      "mcp_tasks_injected": 0,
+      "git_context_included": true,
+      "timestamp": "2025-09-12T12:34:43.403819"
+    }
+  }
+]
