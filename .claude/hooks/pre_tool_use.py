@@ -472,6 +472,24 @@ def main():
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
         
+        # CONTEXT INJECTION: Inject relevant context for MCP tools
+        if CONTEXT_INJECTION_ENABLED and inject_context_sync and tool_name.startswith('mcp__'):
+            try:
+                # Inject context synchronously (uses cached or fresh data)
+                context = inject_context_sync(tool_name, tool_input)
+                if context:
+                    # Log that context was injected (for debugging)
+                    log_dir = get_ai_data_path()
+                    context_log_path = log_dir / 'context_injection.log'
+                    with open(context_log_path, 'a') as f:
+                        f.write(f"{datetime.now().isoformat()} - Injected context for {tool_name}: {len(str(context))} bytes\n")
+            except Exception as e:
+                # Log error but don't block the operation
+                log_dir = get_ai_data_path()
+                error_log_path = log_dir / 'context_injection_errors.log'
+                with open(error_log_path, 'a') as f:
+                    f.write(f"{datetime.now().isoformat()} - Error injecting context for {tool_name}: {e}\n")
+        
         # VALIDATION STEP 0: Check if editing .claude files is allowed
         if tool_name in ['Write', 'Edit', 'MultiEdit']:
             file_path = tool_input.get('file_path', '')

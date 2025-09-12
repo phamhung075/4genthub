@@ -1,0 +1,8 @@
+{
+  "session_id": "79de03db-66a7-4439-8e9b-886a69f407ed",
+  "prompts": [
+    "use mcp",
+    "1. Clean up background processes (Multiple servers running)\n\n  # Kill all existing MCP server processes\n  pkill -f mcp_http_server.py\n\n  2. Start fresh MCP server with proper environment\n\n  cd /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main\n  HOOK_JWT_SECRET=\"dhafnck-mcp-hook-secret-2025\" HOOK_JWT_ALGORITHM=\"HS256\" python3\n  src/mcp_http_server.py\n\n  3. Create test data in the database\n\n  - Create a sample project\n  - Create a git branch\n  - Create some tasks with different statuses\n  - This will allow the context injection to retrieve real data\n\n  4. Test the complete flow\n\n  # Run the comprehensive test\n  HOOK_JWT_SECRET=\"dhafnck-mcp-hook-secret-2025\" HOOK_JWT_ALGORITHM=\"HS256\" python3\n  src/tests/test_context_injection_system.py\n\n  5. Integration with Claude hooks\n\n  - Update .claude/hooks/pre_tool_use.py to use the context injector\n  - Configure the hook to inject context for relevant MCP operations\n\n  6. Documentation update\n\n  - Update ai_docs/core-architecture/real-time-injection-system.md with the implementation details\n  - Document the authentication flow and environment variables required\n\n  The system is now architecturally complete and ready for production use once these setup steps\n  are completed."
+  ],
+  "agent_name": "Oracle"
+}
