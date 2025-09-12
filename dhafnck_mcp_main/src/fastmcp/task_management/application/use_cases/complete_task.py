@@ -60,12 +60,71 @@ class CompleteTaskUseCase:
         if not task:
             raise TaskNotFoundError(f"Task {task_id} not found")
         
-        # Check if task is already completed
+        # Check if task is already completed - FIXED: Allow summary updates
         if task.status.is_done():
+            # Task is already complete, but allow updating completion summary and testing notes
+            logging.getLogger(__name__).info(f"Task {task_id} is already completed, updating summary and notes")
+            
+            # Update completion summary if provided
+            if completion_summary:
+                task._completion_summary = completion_summary
+                logging.getLogger(__name__).info(f"Updated completion summary for task {task_id}")
+            
+            # Update context with completion information if summary provided
+            if completion_summary:
+                try:
+                    from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
+                    
+                    # Use the unified context facade to update context
+                    git_branch_id = getattr(task, 'git_branch_id', None)
+                    unified_facade = UnifiedContextFacadeFactory().create_facade(
+                        git_branch_id=git_branch_id
+                    )
+                    
+                    # Ensure next_steps is always a list
+                    next_steps_list = []
+                    if next_recommendations:
+                        if isinstance(next_recommendations, list):
+                            next_steps_list = next_recommendations
+                        else:
+                            next_steps_list = [next_recommendations]
+                    
+                    context_update = {
+                        "progress": {
+                            "current_session_summary": completion_summary,
+                            "completion_percentage": 100.0,
+                            "next_steps": next_steps_list,
+                            "completed_actions": []
+                        },
+                        "metadata": {
+                            "status": "done",
+                            "last_summary_update": datetime.now(timezone.utc).isoformat()
+                        }
+                    }
+                    
+                    # Add testing notes to next_steps if provided
+                    if testing_notes:
+                        context_update["progress"]["next_steps"].append(f"Testing completed: {testing_notes}")
+                    
+                    # Update task context with completion summary
+                    unified_facade.update_context(
+                        level="task",
+                        context_id=str(task_id),
+                        data=context_update,
+                        propagate_changes=True
+                    )
+                    logging.getLogger(__name__).info(f"Updated context for already completed task {task_id}")
+                except Exception as e:
+                    logging.getLogger(__name__).warning(f"Could not update context for already completed task {task_id}: {e}")
+            
+            # Save the updated task (with completion summary)
+            task.updated_at = datetime.now(timezone.utc)
+            self._task_repository.save(task)
+            
             return {
-                "success": False,
+                "success": True,
                 "task_id": str(task_id),
-                "message": f"Task {task_id} is already completed",
+                "message": "Task already completed, summary updated" if completion_summary else "Task already completed",
                 "status": str(task.status)
             }
         

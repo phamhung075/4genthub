@@ -163,12 +163,14 @@ class TestCompleteTaskUseCaseBasicExecution:
         self.mock_task_repo.find_by_id.assert_called_once()
     
     @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory')
-    def test_execute_task_already_completed(self, mock_facade_factory):
-        """Test completion of already completed task."""
+    def test_execute_task_already_completed_with_summary_update(self, mock_facade_factory):
+        """Test completion of already completed task - FIXED: should succeed with summary update."""
         # Setup mocked context facade
         mock_context_facade = Mock()
         mock_context_facade.resolve.return_value = {'success': True, 'data': {'context': 'exists'}}
-        mock_facade_factory.create.return_value = mock_context_facade
+        mock_context_facade.create_facade.return_value = mock_context_facade
+        mock_context_facade.update_context.return_value = {'success': True}
+        mock_facade_factory.return_value.create_facade.return_value = mock_context_facade
         
         # Setup already completed task
         mock_task = Mock(spec=Task)
@@ -176,21 +178,63 @@ class TestCompleteTaskUseCaseBasicExecution:
         mock_task.git_branch_id = "branch-456"
         # Use actual TaskStatus instance for done status
         mock_task.status = TaskStatus.done()
+        mock_task._completion_summary = None  # No previous summary
+        mock_task.updated_at = datetime.now(timezone.utc)
         
         self.mock_task_repo.find_by_id.return_value = mock_task
+        self.mock_task_repo.save.return_value = True
         
         result = self.use_case.execute(
             task_id="task-123",
-            completion_summary="Trying to complete already done task"
+            completion_summary="Updated summary for already completed task",
+            testing_notes="Additional testing notes"
         )
         
-        # Verify failure response
-        assert result["success"] is False
+        # FIXED: Verify success response with summary update
+        assert result["success"] is True
         assert result["task_id"] == "task-123"
-        assert "already completed" in result["message"]
+        assert result["message"] == "Task already completed, summary updated"
         
-        # Verify no save operation was attempted
-        self.mock_task_repo.save.assert_not_called()
+        # Verify completion summary was updated
+        assert mock_task._completion_summary == "Updated summary for already completed task"
+        
+        # Verify save operation was performed to persist the summary update
+        self.mock_task_repo.save.assert_called_once()
+        
+        # Verify context update was attempted
+        mock_context_facade.update_context.assert_called_once()
+    
+    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory')
+    def test_execute_task_already_completed_no_summary(self, mock_facade_factory):
+        """Test completion of already completed task without new summary."""
+        # Setup mocked context facade
+        mock_context_facade = Mock()
+        mock_context_facade.resolve.return_value = {'success': True, 'data': {'context': 'exists'}}
+        mock_context_facade.create_facade.return_value = mock_context_facade
+        mock_facade_factory.return_value.create_facade.return_value = mock_context_facade
+        
+        # Setup already completed task
+        mock_task = Mock(spec=Task)
+        mock_task.id = "task-123"
+        mock_task.git_branch_id = "branch-456"
+        mock_task.status = TaskStatus.done()
+        mock_task.updated_at = datetime.now(timezone.utc)
+        
+        self.mock_task_repo.find_by_id.return_value = mock_task
+        self.mock_task_repo.save.return_value = True
+        
+        result = self.use_case.execute(task_id="task-123")  # No completion_summary
+        
+        # Verify success response without summary update
+        assert result["success"] is True
+        assert result["task_id"] == "task-123"
+        assert result["message"] == "Task already completed"
+        
+        # Verify save operation was still performed to update timestamp
+        self.mock_task_repo.save.assert_called_once()
+        
+        # Verify context update was NOT attempted since no summary provided
+        mock_context_facade.update_context.assert_not_called()
 
 
 class TestCompleteTaskUseCaseVisionSystemIntegration:
