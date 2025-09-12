@@ -1,8 +1,0 @@
-{
-  "session_id": "588f8b4f-80cb-4cc0-a905-763be3923d99",
-  "prompts": [
-    "call a agent for test tool call_agent",
-    "call a agent for test tool call_agent again"
-  ],
-  "agent_name": "Flux"
-}

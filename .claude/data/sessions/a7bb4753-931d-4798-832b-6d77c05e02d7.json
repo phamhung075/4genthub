@@ -1,8 +1,0 @@
-{
-  "session_id": "a7bb4753-931d-4798-832b-6d77c05e02d7",
-  "prompts": [
-    "actual path on .claude/hooks files py is hardcord by logs for save data generate by hook\ni want need load AI_DATA on .env \nAI_DATA=logs actual",
-    ".claude/hooks/utils/env_loader.py\nneed add load AI_DOCS and LOG_PATH for display on status line .claude/status_lines/status_line.py"
-  ],
-  "agent_name": "Axiom"
-}

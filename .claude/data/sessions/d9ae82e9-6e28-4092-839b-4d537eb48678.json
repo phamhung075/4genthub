@@ -1,9 +1,0 @@
-{
-  "session_id": "d9ae82e9-6e28-4092-839b-4d537eb48678",
-  "prompts": [
-    "analyze ai_docs, find contraint information for correct, find obsolete inforamtion for update",
-    "delegate this report to task planner agent for make task",
-    "delegate each task for each agent and all task must do parallele"
-  ],
-  "agent_name": "Nebula"
-}

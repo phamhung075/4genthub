@@ -1,7 +1,0 @@
-{
-  "session_id": "4f9fdb18-7d0a-43f0-8d91-9f5d4e1ea2c1",
-  "prompts": [
-    "continue for each prompt call a agent for fix, run paralelle"
-  ],
-  "agent_name": "Oracle"
-}

@@ -1,8 +1,0 @@
-{
-  "session_id": "3609f36a-192a-43d2-a2ee-d6902b4a11c7",
-  "prompts": [
-    "/all_tools ",
-    "ai_docs/tools_list.md update"
-  ],
-  "agent_name": "Vertex"
-}

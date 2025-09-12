@@ -1,9 +1,0 @@
-{
-  "session_id": "f91ae0b2-1751-4c07-981c-61f3b660fb14",
-  "prompts": [
-    "continue",
-    "master-orchestrator-agent is change name  to master-orchestrator-agent, need correct all",
-    "need update all other agent need call back to master-orchestrator-agent. after finish work"
-  ],
-  "agent_name": "Zenith"
-}

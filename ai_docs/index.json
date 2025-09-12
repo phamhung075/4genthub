@@ -1081,7 +1081,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 22,
+      "count": 23,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -1215,6 +1215,13 @@
           "name": "prompt-analyze.md",
           "path": "core-architecture/prompt-analyze.md",
           "size": 20661
+        },
+        {
+          "hash": "a918b5610e29e778a012b977f7a3f69e",
+          "modified": "2025-09-12T12:50:57.707042",
+          "name": "design-patterns-in-architecture.md",
+          "path": "core-architecture/design-patterns-in-architecture.md",
+          "size": 34828
         },
         {
           "hash": "54842f7f299f0f16b89c453ea1860961",
@@ -2530,7 +2537,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T12:47:09.328116",
+  "generated_at": "2025-09-12T12:50:57.808059",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2703,6 +2710,7 @@
         "context-hierarchy-system.md",
         "database-architecture.md",
         "deprecated-agent-mappings.md",
+        "design-patterns-in-architecture.md",
         "domain-driven-design-layers.md",
         "implementation-methodology-pattern.md",
         "index.md",
@@ -2942,5 +2950,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 309
+  "total_files": 310
 }
