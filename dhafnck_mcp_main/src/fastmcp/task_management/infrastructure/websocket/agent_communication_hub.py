@@ -16,10 +16,10 @@ import uuid
 from fastapi import WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
-from ....domain.value_objects.coordination import (
+from fastmcp.task_management.domain.value_objects.coordination import (
     AgentCommunication, CoordinationMessage
 )
-from ....domain.entities.agent_session import AgentSession
+from fastmcp.task_management.domain.entities.agent_session import AgentSession
 from ...application.services.real_time_status_tracker import RealTimeStatusTracker
 
 logger = logging.getLogger(__name__)

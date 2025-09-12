@@ -3,6 +3,7 @@
 scope: global
 - Only uses environment variables and remove any hardcoded secrets
 - No backward, no legacy, no compatibility code
+- debug addressing the root cause, do not fixing symptoms only
 ---
 # DhafnckMCP Agent System - CLAUDE AS MASTER ORCHESTRATOR
 

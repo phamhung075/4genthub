@@ -1,7 +1,24 @@
 """Test suite for PatternRecognitionEngine"""
 
 import pytest
-import numpy as np
+
+# Optional numpy import with mock
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    # Mock numpy for tests
+    class MockNumpy:
+        @staticmethod
+        def array(values):
+            return list(values)
+        
+        @staticmethod
+        def mean(values):
+            return sum(values) / len(values) if values else 0.0
+    
+    np = MockNumpy()
+    NUMPY_AVAILABLE = False
 from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 from fastmcp.task_management.domain.services.intelligence.pattern_recognition_engine import (

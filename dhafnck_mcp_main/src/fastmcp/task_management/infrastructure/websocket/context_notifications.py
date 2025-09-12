@@ -10,7 +10,7 @@ import json
 import logging
 from typing import Dict, Any, List, Optional, Set, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from collections import defaultdict
 import weakref

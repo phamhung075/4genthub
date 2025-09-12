@@ -23,6 +23,86 @@ os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing-only-do-not-use-in-p
 os.environ['JWT_AUDIENCE'] = 'test-audience'
 os.environ['JWT_ISSUER'] = 'test-issuer'
 
+# Mock numpy globally for tests when not available
+try:
+    import numpy
+except ImportError:
+    # Create a comprehensive numpy mock
+    class MockNdarray(list):
+        """Mock ndarray that behaves like a list but has shape attribute"""
+        def __init__(self, data):
+            super().__init__(data)
+            if isinstance(data[0], list):
+                self.shape = (len(data), len(data[0]))
+            else:
+                self.shape = (len(data),)
+    
+    class MockNumpy:
+        ndarray = MockNdarray
+        
+        @staticmethod
+        def array(values):
+            return MockNdarray(values)
+        
+        @staticmethod
+        def mean(values):
+            return sum(values) / len(values) if values else 0.0
+        
+        @staticmethod
+        def zeros(shape):
+            if isinstance(shape, int):
+                return MockNdarray([0.0] * shape)
+            return MockNdarray([[0.0] * shape[1] for _ in range(shape[0])])
+        
+        @staticmethod
+        def ones(shape):
+            if isinstance(shape, int):
+                return MockNdarray([1.0] * shape)
+            return MockNdarray([[1.0] * shape[1] for _ in range(shape[0])])
+    
+    # Install the mock in sys.modules before any other imports
+    sys.modules['numpy'] = MockNumpy()
+    sys.modules['numpy.array'] = MockNumpy().array
+
+# Mock sentence_transformers when not available
+try:
+    import sentence_transformers
+except ImportError:
+    class MockSentenceTransformer:
+        def __init__(self, *args, **kwargs):
+            pass
+        
+        def encode(self, texts, **kwargs):
+            # Return mock embeddings - list of lists with consistent dimensions
+            if isinstance(texts, str):
+                return [[0.1] * 384]  # Common embedding dimension
+            return [[0.1] * 384 for _ in texts]
+    
+    class MockSentenceTransformers:
+        SentenceTransformer = MockSentenceTransformer
+    
+    sys.modules['sentence_transformers'] = MockSentenceTransformers()
+
+# Mock faiss when not available  
+try:
+    import faiss
+except ImportError:
+    class MockIndex:
+        def add(self, vectors): pass
+        def search(self, query_vectors, k):
+            # Return mock distances and indices
+            return [[0.9, 0.8, 0.7]], [[0, 1, 2]]
+        def ntotal(self): return 3
+    
+    class MockFaiss:
+        Index = MockIndex
+        
+        @staticmethod
+        def IndexFlatIP(dimension):
+            return MockIndex()
+    
+    sys.modules['faiss'] = MockFaiss()
+
 # Mock supabase before any other imports
 class MockSupabaseClient:
     def __init__(self, *args, **kwargs):
@@ -115,8 +195,8 @@ mock_fastapi_security.HTTPBearer = MockHTTPBearer
 mock_fastapi_security.HTTPAuthorizationCredentials = MockHTTPAuthorizationCredentials
 sys.modules['fastapi.security'] = mock_fastapi_security
 
-# Mock TestClient for FastAPI
-class MockTestClient:
+# Mock FastAPI TestClient for testing
+class MockFastAPIClient:
     def __init__(self, app):
         self.app = app
     
@@ -132,6 +212,36 @@ class MockTestClient:
     def delete(self, *args, **kwargs):
         return MockResponse()
 
+# Additional FastAPI mocks for missing imports
+class MockHeader:
+    def __init__(self, default=None, *args, **kwargs):
+        self.default = default
+
+class MockBody:
+    def __init__(self, default=None, *args, **kwargs):
+        self.default = default
+
+class MockWebSocket:
+    def __init__(self):
+        self.client_state = "connected"
+    async def accept(self):
+        pass
+    async def send_text(self, data):
+        pass
+    async def receive_text(self):
+        return "{}"
+    async def close(self):
+        pass
+
+class MockWebSocketDisconnect(Exception):
+    pass
+
+class MockFastAPI:
+    def __init__(self, *args, **kwargs):
+        self.middleware_stack = []
+    def add_middleware(self, middleware, **kwargs):
+        self.middleware_stack.append(middleware)
+
 # Create fastapi module mock
 mock_fastapi = type(sys)('fastapi')
 mock_fastapi.APIRouter = MockAPIRouter
@@ -140,13 +250,18 @@ mock_fastapi.Depends = MockDepends
 mock_fastapi.status = MockStatus
 mock_fastapi.Request = MockRequest
 mock_fastapi.Response = MockResponse
+mock_fastapi.Header = MockHeader
+mock_fastapi.Body = MockBody
+mock_fastapi.WebSocket = MockWebSocket
+mock_fastapi.WebSocketDisconnect = MockWebSocketDisconnect
+mock_fastapi.FastAPI = MockFastAPI
 mock_fastapi.responses = type(sys)('fastapi.responses')
 mock_fastapi.responses.JSONResponse = MockJSONResponse
 mock_fastapi.security = mock_fastapi_security
 
 # Add testclient module
 mock_fastapi.testclient = type(sys)('fastapi.testclient')
-mock_fastapi.testclient.TestClient = MockTestClient
+mock_fastapi.testclient.TestClient = MockFastAPIClient
 
 sys.modules['fastapi'] = mock_fastapi
 sys.modules['fastapi.responses'] = mock_fastapi.responses

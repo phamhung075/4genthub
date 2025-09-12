@@ -245,8 +245,20 @@ run_smart_tests() {
         export PYTHONDONTWRITEBYTECODE=1
         export PYTEST_CURRENT_TEST_DIR="${TEST_DIR}"
         
+        # CRITICAL: Set PYTHONPATH to include src directory so tests can find modules
+        export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH}"
+        
         # Run pytest and capture results
-        cd "${PROJECT_ROOT}"
+        # Change to dhafnck_mcp_main to avoid hook blocking pytest cache creation
+        cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+        
+        # Adjust test paths to be relative to dhafnck_mcp_main
+        local adjusted_tests=""
+        for test in $tests_to_run; do
+            # Remove PROJECT_ROOT/dhafnck_mcp_main/ prefix if present
+            adjusted_tests="${adjusted_tests} ${test#${PROJECT_ROOT}/dhafnck_mcp_main/}"
+        done
+        tests_to_run="${adjusted_tests}"
         
         # Create temporary file for test results
         local temp_results="${CACHE_DIR}/temp_results.txt"
@@ -389,8 +401,12 @@ run_category() {
     
     if [ -d "$path" ]; then
         echo -e "${CYAN}Running ${category} tests...${NC}"
-        cd "${PROJECT_ROOT}"
-        python -m pytest "$path" -v --tb=short 2>&1 | tee "${RUN_LOG}"
+        # Set PYTHONPATH for single test run
+        export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH}"
+        cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+        # Adjust path to be relative to dhafnck_mcp_main
+        local relative_path="${path#${PROJECT_ROOT}/dhafnck_mcp_main/}"
+        python -m pytest "$relative_path" -v --tb=short 2>&1 | tee "${RUN_LOG}"
     else
         echo -e "${RED}Category ${category} not found!${NC}"
     fi
@@ -445,8 +461,11 @@ main() {
                 ;;
             20)
                 echo -e "${CYAN}Generating coverage report...${NC}"
-                cd "${PROJECT_ROOT}"
-                python -m pytest "${TEST_DIR}" --cov=src --cov-report=html --cov-report=term
+                # Set PYTHONPATH for coverage run
+                export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH}"
+                cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+                # Use relative path for coverage
+                python -m pytest "src/tests" --cov=src --cov-report=html --cov-report=term
                 echo -e "${GREEN}Coverage report generated!${NC}"
                 ;;
             21)

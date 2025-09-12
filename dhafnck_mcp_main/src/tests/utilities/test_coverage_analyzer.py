@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Dict, Set
 
 
-class TestCoverageAnalyzer:
+class CoverageAnalyzer:
     """Analyzes test coverage for DDD-structured Python codebase."""
     
     def __init__(self, src_root: str, tests_root: str):
@@ -147,7 +147,7 @@ def main():
     src_root = script_dir.parent.parent  # dhafnck_mcp_main/src
     tests_root = script_dir.parent       # dhafnck_mcp_main/src/tests
     
-    analyzer = TestCoverageAnalyzer(str(src_root), str(tests_root))
+    analyzer = CoverageAnalyzer(str(src_root), str(tests_root))
     report = analyzer.generate_report(domain)
     
     print(report)

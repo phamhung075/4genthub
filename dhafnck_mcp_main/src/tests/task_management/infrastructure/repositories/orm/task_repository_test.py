@@ -13,14 +13,14 @@ from fastmcp.task_management.infrastructure.repositories.orm.task_repository imp
     TaskRepository
 )
 from fastmcp.task_management.infrastructure.orm.models import (
-    TaskORM,
-    ProjectORM,
-    SubtaskORM,
-    TaskAssigneeORM,
-    TaskDependencyORM,
-    ContextORM
+    Task as TaskORM,
+    Project as ProjectORM,
+    TaskSubtask,
+    TaskAssignee,
+    TaskDependency,
+    TaskContext
 )
-from fastmcp.task_management.domain.entities import Task, TaskStatus, TaskPriority
+from fastmcp.task_management.domain.entities import Task as TaskEntity, TaskStatus, TaskPriority
 
 
 class TestTaskRepository:

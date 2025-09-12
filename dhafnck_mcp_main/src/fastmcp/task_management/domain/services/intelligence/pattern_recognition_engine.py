@@ -7,7 +7,20 @@ for new tasks using machine learning techniques.
 
 import logging
 import json
-import numpy as np
+
+# Optional numpy import with fallback
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    # Mock numpy functions when not available
+    class MockNumpy:
+        @staticmethod
+        def mean(values):
+            return sum(values) / len(values) if values else 0.0
+    
+    np = MockNumpy()
+    NUMPY_AVAILABLE = False
 from typing import List, Dict, Optional, Any, Tuple, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

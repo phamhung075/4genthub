@@ -12,7 +12,7 @@ import time
 import asyncio
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 
@@ -44,7 +44,8 @@ class RegisterRequest(BaseModel):
     password: str
     username: Optional[str] = None
     
-    @validator('password')
+    @field_validator('password')
+    @classmethod
     def validate_password(cls, v):
         """Validate password meets Keycloak policy requirements"""
         import re
@@ -80,7 +81,8 @@ class RegisterRequest(BaseModel):
         
         return v
     
-    @validator('email')
+    @field_validator('email')
+    @classmethod
     def validate_email(cls, v):
         """Validate email format"""
         import re
@@ -89,7 +91,8 @@ class RegisterRequest(BaseModel):
             raise ValueError('Please enter a valid email address (e.g., user@example.com)')
         return v.lower()  # Normalize email to lowercase
     
-    @validator('username')
+    @field_validator('username')
+    @classmethod
     def validate_username(cls, v):
         """Validate username if provided"""
         if v:
