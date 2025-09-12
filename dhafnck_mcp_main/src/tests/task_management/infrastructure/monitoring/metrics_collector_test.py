@@ -33,7 +33,7 @@ class TestMetricPoint:
 
     def test_metric_point_creation(self):
         """Test basic metric point creation"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = MetricPoint(
             name="test_metric",
             value=42.5,
@@ -52,7 +52,7 @@ class TestMetricPoint:
 
     def test_metric_point_to_dict(self):
         """Test metric point dictionary conversion"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = MetricPoint(
             name="test_metric",
             value=100.0,
@@ -73,7 +73,7 @@ class TestMetricPoint:
 
     def test_metric_point_to_prometheus_format(self):
         """Test conversion to Prometheus format"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = MetricPoint(
             name="http_requests_total",
             value=1234.0,
@@ -94,7 +94,7 @@ class TestMetricPoint:
 
     def test_metric_point_prometheus_format_no_tags(self):
         """Test Prometheus format without tags"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = MetricPoint(
             name="simple_metric",
             value=5.0,
@@ -109,7 +109,7 @@ class TestMetricPoint:
 
     def test_metric_point_default_values(self):
         """Test metric point with default values"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         metric = MetricPoint(
             name="test",
             value=1.0,
@@ -126,8 +126,8 @@ class TestMetricSummary:
 
     def test_metric_summary_creation(self):
         """Test metric summary creation"""
-        start_time = datetime.utcnow() - timedelta(hours=1)
-        end_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc) - timedelta(hours=1)
+        end_time = datetime.now(timezone.utc)
         
         summary = MetricSummary(
             name="response_time",
@@ -154,8 +154,8 @@ class TestMetricSummary:
 
     def test_metric_summary_to_dict(self):
         """Test metric summary dictionary conversion"""
-        start_time = datetime.utcnow() - timedelta(hours=1)
-        end_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc) - timedelta(hours=1)
+        end_time = datetime.now(timezone.utc)
         
         summary = MetricSummary(
             name="test_metric",
@@ -379,14 +379,14 @@ class TestMetricsCollector:
             name="test_metric",
             value=100.0,
             unit="count",
-            timestamp=datetime.utcnow() - timedelta(hours=25)  # 25 hours ago
+            timestamp=datetime.now(timezone.utc) - timedelta(hours=25)  # 25 hours ago
         )
         
         recent_metric = MetricPoint(
             name="test_metric", 
             value=200.0,
             unit="count",
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
         
         self.collector._aggregated_metrics["test_metric"] = [old_metric, recent_metric]
@@ -463,14 +463,14 @@ class TestMetricsCollector:
             name="old_metric",
             value=1.0,
             unit="count", 
-            timestamp=datetime.utcnow() - timedelta(hours=25)
+            timestamp=datetime.now(timezone.utc) - timedelta(hours=25)
         )
         
         new_metric = MetricPoint(
             name="new_metric",
             value=2.0,
             unit="count",
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
         
         self.collector._aggregated_metrics["old_metric"] = [old_metric]

@@ -381,13 +381,13 @@ class TestListTasksUseCase:
         """Test that legacy assignee field is supported"""
         # Arrange
         request = Mock(spec=ListTasksRequest)
-        request.git_branch_id = "branch-123"
-        request.status = None
-        request.priority = None
-        request.assignees = None  # New field not set
-        request.assignee = "user-1"  # Legacy field set
-        request.labels = None
-        request.limit = None
+        pytest_request.git_branch_id = "branch-123"
+        pytest_request.status = None
+        pytest_request.priority = None
+        pytest_request.assignees = None  # New field not set
+        pytest_request.assignee = "user-1"  # Legacy field set
+        pytest_request.labels = None
+        pytest_request.limit = None
         
         mock_task_repository.find_by_criteria.return_value = [sample_task]
         

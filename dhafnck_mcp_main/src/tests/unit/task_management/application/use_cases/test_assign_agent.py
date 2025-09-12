@@ -187,9 +187,9 @@ class TestAssignAgentUseCase:
         )
         
         # Assert
-        assert request.project_id == "proj-123"
-        assert request.agent_id == "agent-456"
-        assert request.git_branch_id == "branch-789"
+        assert pytest_request.project_id == "proj-123"
+        assert pytest_request.agent_id == "agent-456"
+        assert pytest_request.git_branch_id == "branch-789"
     
     def test_response_dto_success_creation(self):
         """Test AssignAgentResponse DTO creation for success"""

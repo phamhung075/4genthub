@@ -20,14 +20,14 @@ class TestAITaskCreationRequest:
             git_branch_id="branch_123"
         )
         
-        assert request.title == "Test Task"
-        assert request.description == "Test Description"
-        assert request.git_branch_id == "branch_123"
-        assert request.priority == 'medium'  # Default
-        assert request.enable_ai_breakdown is False  # Default
-        assert request.enable_smart_assignment is False  # Default
-        assert request.enable_auto_subtasks is False  # Default
-        assert request.planning_context == 'new_feature'  # Default
+        assert pytest_request.title == "Test Task"
+        assert pytest_request.description == "Test Description"
+        assert pytest_request.git_branch_id == "branch_123"
+        assert pytest_request.priority == 'medium'  # Default
+        assert pytest_request.enable_ai_breakdown is False  # Default
+        assert pytest_request.enable_smart_assignment is False  # Default
+        assert pytest_request.enable_auto_subtasks is False  # Default
+        assert pytest_request.planning_context == 'new_feature'  # Default
     
     def test_create_request_with_ai_options(self):
         """Test creating request with AI enhancement options"""
@@ -44,13 +44,13 @@ class TestAITaskCreationRequest:
             ai_requirements="Fix authentication bug and add tests"
         )
         
-        assert request.priority == "high"
-        assert request.assignees == ["dev1", "dev2"]
-        assert request.enable_ai_breakdown is True
-        assert request.enable_smart_assignment is True
-        assert request.enable_auto_subtasks is True
-        assert request.planning_context == "bug_fix"
-        assert request.ai_requirements == "Fix authentication bug and add tests"
+        assert pytest_request.priority == "high"
+        assert pytest_request.assignees == ["dev1", "dev2"]
+        assert pytest_request.enable_ai_breakdown is True
+        assert pytest_request.enable_smart_assignment is True
+        assert pytest_request.enable_auto_subtasks is True
+        assert pytest_request.planning_context == "bug_fix"
+        assert pytest_request.ai_requirements == "Fix authentication bug and add tests"
 
 
 class TestAITaskCreationUseCase:

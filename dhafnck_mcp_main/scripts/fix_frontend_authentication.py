@@ -95,8 +95,8 @@ def solution_2_generate_dev_token():
                 payload = {
                     'sub': 'dev-user-123',
                     'email': 'developer@localhost.com',
-                    'iat': datetime.utcnow(),
-                    'exp': datetime.utcnow() + timedelta(days=30)
+                    'iat': datetime.now(timezone.utc),
+                    'exp': datetime.now(timezone.utc) + timedelta(days=30)
                 }
                 
                 token = jwt.encode(payload, jwt_secret, algorithm='HS256')

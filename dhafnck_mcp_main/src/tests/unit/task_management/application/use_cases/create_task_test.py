@@ -54,7 +54,7 @@ class TestCreateTaskUseCaseExecution:
         self.use_case = CreateTaskUseCase(self.mock_repository)
     
     def test_execute_minimal_request_success(self):
-        """Test successful execution with minimal request."""
+        """Test successful execution with minimal pytest_request."""
         # Setup
         task_id = TaskId("task-123")
         self.mock_repository.get_next_id.return_value = task_id

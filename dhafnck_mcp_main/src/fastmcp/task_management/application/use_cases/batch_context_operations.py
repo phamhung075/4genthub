@@ -120,11 +120,11 @@ class BatchContextOperations:
         
         try:
             for op in operations:
-                start_time = datetime.utcnow()
+                start_time = datetime.now(timezone.utc)
                 
                 try:
                     result = await self._execute_single_operation(op)
-                    execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                    execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                     
                     results.append(BatchOperationResult(
                         success=True,
@@ -133,7 +133,7 @@ class BatchContextOperations:
                         execution_time_ms=execution_time
                     ))
                 except Exception as e:
-                    execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                    execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                     
                     results.append(BatchOperationResult(
                         success=False,
@@ -173,11 +173,11 @@ class BatchContextOperations:
         results = []
         
         for op in operations:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             
             try:
                 result = await self._execute_single_operation(op)
-                execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 
                 results.append(BatchOperationResult(
                     success=True,
@@ -186,7 +186,7 @@ class BatchContextOperations:
                     execution_time_ms=execution_time
                 ))
             except Exception as e:
-                execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 
                 results.append(BatchOperationResult(
                     success=False,
@@ -215,11 +215,11 @@ class BatchContextOperations:
         """Execute operations in parallel"""
         
         async def execute_with_timing(op: BatchOperation) -> BatchOperationResult:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
             
             try:
                 result = await self._execute_single_operation(op)
-                execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 
                 return BatchOperationResult(
                     success=True,
@@ -228,7 +228,7 @@ class BatchContextOperations:
                     execution_time_ms=execution_time
                 )
             except Exception as e:
-                execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+                execution_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 
                 return BatchOperationResult(
                     success=False,

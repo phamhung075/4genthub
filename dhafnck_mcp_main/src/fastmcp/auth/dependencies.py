@@ -65,7 +65,7 @@ async def get_current_user(
         # Check token expiration
         exp = payload.get("exp")
         if exp:
-            if datetime.utcnow().timestamp() > exp:
+            if datetime.now(timezone.utc).timestamp() > exp:
                 logger.error("Token expired")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,

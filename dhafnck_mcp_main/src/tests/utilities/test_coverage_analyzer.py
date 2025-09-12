@@ -1,3 +1,4 @@
+from typing import List
 #!/usr/bin/env python3
 """
 Test Coverage Analyzer - Identifies Python source files without corresponding unit tests.

@@ -193,7 +193,7 @@ class ContextNotificationService:
                     if isinstance(websocket, WebSocket):
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json(event.to_dict())
-                            subscription.last_activity = datetime.utcnow()
+                            subscription.last_activity = datetime.now(timezone.utc)
                             self.stats['events_sent'] += 1
                         else:
                             disconnected.append(client_id)
@@ -249,7 +249,7 @@ class ContextNotificationService:
                 'type': 'welcome',
                 'client_id': client_id,
                 'scope': scope.value,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             })
         
         return subscription
@@ -328,7 +328,7 @@ class ContextNotificationService:
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json({
                                 'type': 'heartbeat',
-                                'timestamp': datetime.utcnow().isoformat()
+                                'timestamp': datetime.now(timezone.utc).isoformat()
                             })
                         else:
                             disconnected.append(client_id)
@@ -398,7 +398,7 @@ class WebSocketManager:
             # Respond to ping
             await websocket.send_json({
                 'type': 'pong',
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             })
         
         elif msg_type == 'get_stats':

@@ -388,7 +388,7 @@ class ContextSearchEngine:
             if isinstance(updated, str):
                 updated = datetime.fromisoformat(updated)
             
-            age = datetime.utcnow() - updated
+            age = datetime.now(timezone.utc) - updated
             if age < timedelta(days=1):
                 boost *= 1.3
             elif age < timedelta(days=7):
@@ -470,7 +470,7 @@ class ContextSearchEngine:
             levels=levels,
             mode=SearchMode.REGEX,
             user_id=user_id,
-            updated_after=datetime.utcnow() - timedelta(days=days),
+            updated_after=datetime.now(timezone.utc) - timedelta(days=days),
             limit=limit
         )
         

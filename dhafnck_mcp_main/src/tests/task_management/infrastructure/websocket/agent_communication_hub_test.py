@@ -31,7 +31,7 @@ class TestWebSocketMessage:
             type=MessageType.STATUS_UPDATE,
             from_agent="agent-1",
             to_agents=["agent-2", "agent-3"],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"status": "busy"},
             requires_ack=True,
             correlation_id="corr-456"
@@ -47,7 +47,7 @@ class TestWebSocketMessage:
 
     def test_to_json(self):
         """Test converting message to JSON"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         msg = WebSocketMessage(
             id="msg-123",
             type=MessageType.DIRECT_MESSAGE,
@@ -70,7 +70,7 @@ class TestWebSocketMessage:
 
     def test_from_json(self):
         """Test creating message from JSON"""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         json_data = {
             "id": "msg-123",
             "type": "broadcast_message",
@@ -110,8 +110,8 @@ class TestAgentConnection:
             agent_id="agent-123",
             session_id="session-456",
             websocket=mock_websocket,
-            connected_at=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow()
+            connected_at=datetime.now(timezone.utc),
+            last_heartbeat=datetime.now(timezone.utc)
         )
 
     @pytest.mark.asyncio
@@ -122,7 +122,7 @@ class TestAgentConnection:
             type=MessageType.STATUS_UPDATE,
             from_agent="hub",
             to_agents=["agent-123"],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"status": "active"}
         )
         
@@ -143,7 +143,7 @@ class TestAgentConnection:
             type=MessageType.HEARTBEAT,
             from_agent="hub",
             to_agents=["agent-123"],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={}
         )
         
@@ -155,7 +155,7 @@ class TestAgentConnection:
         assert connection.is_alive()
         
         # Old heartbeat
-        connection.last_heartbeat = datetime.utcnow() - timedelta(seconds=70)
+        connection.last_heartbeat = datetime.now(timezone.utc) - timedelta(seconds=70)
         assert not connection.is_alive()
         
         # Custom timeout
@@ -376,7 +376,7 @@ class TestAgentCommunicationHub:
             type=MessageType.STATUS_UPDATE,
             from_agent="agent-123",
             to_agents=[],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"status": "busy", "task": "processing"},
             requires_ack=True
         )
@@ -388,7 +388,7 @@ class TestAgentCommunicationHub:
         assert hub.metrics["messages_received"] == 1
         
         # Verify heartbeat updated
-        assert hub.connections["agent-123"].last_heartbeat > datetime.utcnow() - timedelta(seconds=1)
+        assert hub.connections["agent-123"].last_heartbeat > datetime.now(timezone.utc) - timedelta(seconds=1)
 
     @pytest.mark.asyncio
     async def test_handle_status_update(self, hub, status_tracker):
@@ -398,7 +398,7 @@ class TestAgentCommunicationHub:
             type=MessageType.STATUS_UPDATE,
             from_agent="agent-123",
             to_agents=[],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={
                 "status": "active",
                 "current_task_id": "task-456",
@@ -427,7 +427,7 @@ class TestAgentCommunicationHub:
             type=MessageType.HEARTBEAT,
             from_agent="hub",
             to_agents=["agent-123"],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={}
         )
         hub.pending_acks["msg-1"] = original_msg
@@ -438,7 +438,7 @@ class TestAgentCommunicationHub:
             type=MessageType.ACK,
             from_agent="agent-123",
             to_agents=["hub"],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"ack_message_id": "msg-1"}
         )
         
@@ -463,7 +463,7 @@ class TestAgentCommunicationHub:
             type=MessageType.ALERT,
             from_agent="agent-123",
             to_agents=[],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={"alert": "test"}
         )
         
@@ -497,7 +497,7 @@ class TestAgentCommunicationHub:
         await hub.connect_agent("agent-123", "session-456", ws)
         
         # Make connection appear dead
-        hub.connections["agent-123"].last_heartbeat = datetime.utcnow() - timedelta(minutes=5)
+        hub.connections["agent-123"].last_heartbeat = datetime.now(timezone.utc) - timedelta(minutes=5)
         
         # Run cleanup
         await hub._cleanup_loop()
@@ -515,7 +515,7 @@ class TestAgentCommunicationHub:
                 type=MessageType.STATUS_UPDATE,
                 from_agent="agent-123",
                 to_agents=[],
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 payload={"status": "ready"}
             ).to_json(),
             WebSocketMessage(
@@ -523,7 +523,7 @@ class TestAgentCommunicationHub:
                 type=MessageType.HEARTBEAT,
                 from_agent="agent-123",
                 to_agents=[],
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 payload={}
             ).to_json()
         ]

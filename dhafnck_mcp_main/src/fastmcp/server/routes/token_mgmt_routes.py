@@ -367,7 +367,7 @@ async def get_token_usage_stats(
         # Calculate stats from the retrieved token data
         created_at = datetime.fromisoformat(token_data["created_at"])
         expires_at = datetime.fromisoformat(token_data["expires_at"]) if token_data["expires_at"] else None
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         days_active = (now - created_at).days
         days_remaining = max(0, (expires_at - now).days) if expires_at else None

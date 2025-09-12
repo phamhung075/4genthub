@@ -11,7 +11,7 @@ import asyncio
 import argparse
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent.parent.parent
@@ -201,7 +201,7 @@ async def main():
     output_dir = args.output or Path("./results/phase4")
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    logger.info(f"Phase 4 Performance Benchmarks - Started at {datetime.utcnow().isoformat()}")
+    logger.info(f"Phase 4 Performance Benchmarks - Started at {datetime.now(timezone.utc).isoformat()}")
     logger.info(f"Output directory: {output_dir.absolute()}")
     
     if args.ci_mode:

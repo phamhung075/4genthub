@@ -108,7 +108,7 @@ class AgentConnection:
     
     def is_alive(self, timeout_seconds: int = 60) -> bool:
         """Check if connection is still alive"""
-        elapsed = (datetime.utcnow() - self.last_heartbeat).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - self.last_heartbeat).total_seconds()
         return elapsed < timeout_seconds
 
 
@@ -209,8 +209,8 @@ class AgentCommunicationHub:
             agent_id=agent_id,
             session_id=session_id,
             websocket=websocket,
-            connected_at=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow()
+            connected_at=datetime.now(timezone.utc),
+            last_heartbeat=datetime.now(timezone.utc)
         )
         
         self.connections[agent_id] = connection
@@ -225,7 +225,7 @@ class AgentCommunicationHub:
             type=MessageType.CONNECT,
             from_agent="hub",
             to_agents=[agent_id],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload={
                 "status": "connected",
                 "session_id": session_id,
@@ -243,7 +243,7 @@ class AgentCommunicationHub:
             {
                 "event": "agent_connected",
                 "agent_id": agent_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             },
             exclude=[agent_id]
         )
@@ -278,7 +278,7 @@ class AgentCommunicationHub:
             {
                 "event": "agent_disconnected",
                 "agent_id": agent_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
         
@@ -330,7 +330,7 @@ class AgentCommunicationHub:
             
             # Update heartbeat
             if from_agent in self.connections:
-                self.connections[from_agent].last_heartbeat = datetime.utcnow()
+                self.connections[from_agent].last_heartbeat = datetime.now(timezone.utc)
             
             # Handle acknowledgments
             if message.type == MessageType.ACK:
@@ -387,7 +387,7 @@ class AgentCommunicationHub:
             type=message_type,
             from_agent="hub",
             to_agents=[to_agent],
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload=payload,
             requires_ack=requires_ack,
             correlation_id=correlation_id
@@ -421,7 +421,7 @@ class AgentCommunicationHub:
             type=message_type,
             from_agent="hub",
             to_agents=[],  # Empty for broadcast
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             payload=payload,
             requires_ack=False
         )
@@ -601,7 +601,7 @@ class AgentCommunicationHub:
         await self.send_message(
             agent_id,
             MessageType.HEARTBEAT,
-            {"timestamp": datetime.utcnow().isoformat()},
+            {"timestamp": datetime.now(timezone.utc).isoformat()},
             requires_ack=True
         )
     

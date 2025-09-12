@@ -35,8 +35,8 @@ class TestJWTAuthMiddleware:
         """Generate a valid JWT token"""
         payload = {
             "sub": "user123",
-            "exp": datetime.utcnow() + timedelta(hours=1),
-            "iat": datetime.utcnow()
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "iat": datetime.now(timezone.utc)
         }
         return jwt.encode(payload, secret_key, algorithm=algorithm)
     
@@ -45,8 +45,8 @@ class TestJWTAuthMiddleware:
         """Generate a valid JWT token with user_id field"""
         payload = {
             "user_id": "user456",
-            "exp": datetime.utcnow() + timedelta(hours=1),
-            "iat": datetime.utcnow()
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "iat": datetime.now(timezone.utc)
         }
         return jwt.encode(payload, secret_key, algorithm=algorithm)
     
@@ -55,8 +55,8 @@ class TestJWTAuthMiddleware:
         """Generate an expired JWT token"""
         payload = {
             "sub": "user789",
-            "exp": datetime.utcnow() - timedelta(hours=1),
-            "iat": datetime.utcnow() - timedelta(hours=2)
+            "exp": datetime.now(timezone.utc) - timedelta(hours=1),
+            "iat": datetime.now(timezone.utc) - timedelta(hours=2)
         }
         return jwt.encode(payload, secret_key, algorithm=algorithm)
     
@@ -96,8 +96,8 @@ class TestJWTAuthMiddleware:
     def test_extract_user_from_token_without_user_claim(self, middleware, secret_key, algorithm):
         """Test extracting user from token without user_id or sub claim"""
         payload = {
-            "exp": datetime.utcnow() + timedelta(hours=1),
-            "iat": datetime.utcnow(),
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "iat": datetime.now(timezone.utc),
             "other": "data"
         }
         token = jwt.encode(payload, secret_key, algorithm=algorithm)
@@ -266,11 +266,11 @@ class TestJWTAuthMiddleware:
         """Test require_auth decorator with valid token"""
         # Mock request
         request = Mock()
-        request.headers = {"Authorization": f"Bearer {valid_token}"}
+        pytest_request.headers = {"Authorization": f"Bearer {valid_token}"}
         
         # Test function
         @middleware.require_auth
-        async def test_handler(request, *args, **kwargs):
+        async def test_handler(pytest_request, *args, **kwargs):
             return {"user_id": kwargs.get("user_id")}
         
         result = await test_handler(request)
@@ -281,10 +281,10 @@ class TestJWTAuthMiddleware:
         """Test require_auth decorator without Authorization header"""
         # Mock request without auth header
         request = Mock()
-        request.headers = {}
+        pytest_request.headers = {}
         
         @middleware.require_auth
-        async def test_handler(request, *args, **kwargs):
+        async def test_handler(pytest_request, *args, **kwargs):
             return {"success": True}
         
         result = await test_handler(request)
@@ -295,10 +295,10 @@ class TestJWTAuthMiddleware:
         """Test require_auth decorator with invalid token"""
         # Mock request with invalid token
         request = Mock()
-        request.headers = {"Authorization": "Bearer invalid.token"}
+        pytest_request.headers = {"Authorization": "Bearer invalid.token"}
         
         @middleware.require_auth
-        async def test_handler(request, *args, **kwargs):
+        async def test_handler(pytest_request, *args, **kwargs):
             return {"success": True}
         
         result = await test_handler(request)

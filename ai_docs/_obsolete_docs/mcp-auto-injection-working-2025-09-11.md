@@ -7,7 +7,7 @@ The MCP auto-injection system is now fully functional and working correctly. The
 
 ### 1. **Authentication Working**
 - The MCP client successfully uses the JWT Bearer token from `.mcp.json`
-- Token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (API token)
+- Token: `[REDACTED]` (API token)
 - Authentication validated by the dual auth middleware in FastMCP server
 
 ### 2. **Protocol Implementation**

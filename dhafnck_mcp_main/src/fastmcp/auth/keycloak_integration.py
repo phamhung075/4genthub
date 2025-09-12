@@ -93,7 +93,7 @@ class KeycloakAuthProvider:
         Get OpenID Connect configuration from Keycloak.
         Cached for performance.
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Check cache
         if self._oidc_config and self._last_config_fetch:
@@ -162,7 +162,7 @@ class KeycloakAuthProvider:
                 return None
 
             # Check if token is active
-            now = datetime.utcnow().timestamp()
+            now = datetime.now(timezone.utc).timestamp()
             if payload.get("exp", 0) < now:
                 logger.warning("Token expired")
                 return None
@@ -427,8 +427,8 @@ class KeycloakMCPAuth:
             "user_id": payload.get("sub"),
             "username": payload.get("preferred_username"),
             "scopes": scopes or ["mcp:read", "mcp:execute"],
-            "created_at": datetime.utcnow().isoformat(),
-            "expires_at": (datetime.utcnow() + timedelta(days=30)).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
             "keycloak_session": payload.get("sid"),
             "active": True
         }

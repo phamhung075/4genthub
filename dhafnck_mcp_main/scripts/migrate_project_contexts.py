@@ -128,7 +128,7 @@ class ProjectContextMigrator:
                 user_id=self.user_id,
                 autonomous_rules={
                     "created_by": "migration-script",
-                    "migration_date": datetime.utcnow().isoformat(),
+                    "migration_date": datetime.now(timezone.utc).isoformat(),
                     "purpose": f"User-scoped global context for user {self.user_id}"
                 },
                 security_policies={},
@@ -208,7 +208,7 @@ class ProjectContextMigrator:
                     "project_description": project.description,
                     "project_status": project.status,
                     "created_by": "migration-script",
-                    "migration_date": datetime.utcnow().isoformat()
+                    "migration_date": datetime.now(timezone.utc).isoformat()
                 },
                 team_preferences={},
                 technology_stack={},
@@ -275,7 +275,7 @@ class ProjectContextMigrator:
                         "branch_status": branch.status,
                         "project_id": project.id,
                         "created_by": "migration-script",
-                        "migration_date": datetime.utcnow().isoformat()
+                        "migration_date": datetime.now(timezone.utc).isoformat()
                     },
                     branch_workflow={},
                     feature_flags={},
@@ -352,7 +352,7 @@ class ProjectContextMigrator:
                             "branch_id": branch.id,
                             "project_id": project.id,
                             "created_by": "migration-script",
-                            "migration_date": datetime.utcnow().isoformat()
+                            "migration_date": datetime.now(timezone.utc).isoformat()
                         },
                         task_data={
                             "title": task.title,

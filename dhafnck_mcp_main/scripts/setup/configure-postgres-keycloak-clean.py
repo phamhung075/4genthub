@@ -491,7 +491,7 @@ class MCPKeycloakIntegration:
         # Calculate expiration
         expires_at = None
         if expires_in_days:
-            expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
         
         # Store in database
         conn = self._get_connection()
@@ -516,7 +516,7 @@ class MCPKeycloakIntegration:
                 user_id,
                 token_hash,
                 self.token_prefix,
-                name or f"Token-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+                name or f"Token-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
                 scopes or [],
                 expires_at,
                 '{}'

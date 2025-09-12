@@ -35,7 +35,7 @@ class TestGetCurrentUser:
             "sub": "user123",
             "email": "user@example.com",
             "username": "testuser",
-            "exp": (datetime.utcnow() + timedelta(hours=1)).timestamp()
+            "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
         }
     
     @pytest.mark.asyncio
@@ -64,7 +64,7 @@ class TestGetCurrentUser:
             payload = {
                 "user_id": "user456",  # Using user_id instead of sub
                 "email": "another@example.com",
-                "exp": (datetime.utcnow() + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
             }
             
             with patch('jwt.decode', return_value=payload):
@@ -123,7 +123,7 @@ class TestGetCurrentUser:
             
             payload = {
                 "email": "user@example.com",
-                "exp": (datetime.utcnow() + timedelta(hours=1)).timestamp()
+                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
                 # Missing both sub and user_id
             }
             
@@ -143,7 +143,7 @@ class TestGetCurrentUser:
             
             payload = {
                 "sub": "user123",
-                "exp": (datetime.utcnow() - timedelta(hours=1)).timestamp()  # Expired
+                "exp": (datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()  # Expired
             }
             
             with patch('jwt.decode', return_value=payload):

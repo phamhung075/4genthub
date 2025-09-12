@@ -137,7 +137,7 @@ mcp__dhafnck_mcp_http__manage_task action create title Implement login feature g
 
 2 HTTP Request
 POST /api/v1/mcp/tools/call
-Authorization Bearer eyJhbGc...
+Authorization Bearer [REDACTED]
 Body name mcp__dhafnck_mcp_http__manage_task arguments action create title Implement login feature git_branch_id abc123
 
 3 Authentication

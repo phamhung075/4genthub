@@ -34,13 +34,13 @@ class TestDualAuthMiddleware:
     def mock_request(self):
         """Create a mock request with common attributes."""
         request = Mock(spec=Request)
-        request.url = Mock()
-        request.url.path = "/api/v2/test"
-        request.method = "GET"
-        request.headers = Headers({})
-        request.cookies = {}
-        request.query_params = QueryParams()
-        request.state = Mock()
+        pytest_request.url = Mock()
+        pytest_request.url.path = "/api/v2/test"
+        pytest_request.method = "GET"
+        pytest_request.headers = Headers({})
+        pytest_request.cookies = {}
+        pytest_request.query_params = QueryParams()
+        pytest_request.state = Mock()
         return request
     
     @pytest.fixture

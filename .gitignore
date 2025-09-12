@@ -24,6 +24,36 @@
 !.env.keycloak.example
 
 # =============================================================================
+# 🚨 SECURITY: PREVENT SECRET LEAKS
+# =============================================================================
+# MCP configuration files with potential secrets
+.mcp.json
+.cursor/mcp.json
+!.mcp.json.template
+!.cursor/mcp.json.template
+
+# Claude session and runtime data
+.claude/data/sessions/
+.claude/data/*.json
+.claude/runtime_agent_context.json
+dhafnck_mcp_main/.claude/
+
+# JWT tokens and API keys
+*.jwt
+*.token
+*.key
+*.pem
+*.cert
+*.crt
+
+# API keys patterns
+*api_key*
+*apikey*
+*secret*
+!*secret*.md
+!*secret*.test.*
+
+# =============================================================================
 # BUILD OUTPUTS AND DEPENDENCIES
 # =============================================================================
 # Node.js

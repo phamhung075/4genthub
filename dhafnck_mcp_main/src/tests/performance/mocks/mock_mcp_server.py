@@ -1,3 +1,4 @@
+from typing import List
 """
 Mock MCP Server for Performance Testing
 
@@ -40,7 +41,7 @@ class MockTask:
         if not self.assignees:
             self.assignees = ["coding-agent"]
         if not self.created_at:
-            self.created_at = datetime.utcnow().isoformat()
+            self.created_at = datetime.now(timezone.utc).isoformat()
         if not self.updated_at:
             self.updated_at = self.created_at
 
@@ -56,7 +57,7 @@ class MockGitBranch:
     
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.utcnow().isoformat()
+            self.created_at = datetime.now(timezone.utc).isoformat()
 
 
 class MockKeycloakServer:
