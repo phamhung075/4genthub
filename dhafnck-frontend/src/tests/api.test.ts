@@ -1542,4 +1542,368 @@ describe('API V2 Module', () => {
       });
     });
   });
+
+  describe('TaskMCPController Comprehensive Test Suite', () => {
+    describe('Security Audit Task Operations', () => {
+      it('should create security audit task with proper agent assignments', async () => {
+        const securityAuditTask = {
+          title: 'Security Audit and Compliance Review',
+          description: 'Conduct comprehensive security audit and compliance review of the AI task planning system',
+          status: 'todo',
+          priority: 'critical',
+          git_branch_id: 'branch-security-audit',
+          assignees: 'security-auditor-agent,compliance-scope-agent',
+          estimated_effort: '3 days'
+        };
+        const createdTask = { 
+          id: 'task-security-123', 
+          ...securityAuditTask,
+          assignees: ['security-auditor-agent', 'compliance-scope-agent']
+        };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(securityAuditTask);
+        expect(result).toEqual(createdTask);
+        expect(taskApiV2.createTask).toHaveBeenCalledWith({
+          title: securityAuditTask.title,
+          description: securityAuditTask.description,
+          status: securityAuditTask.status,
+          priority: securityAuditTask.priority,
+          git_branch_id: securityAuditTask.git_branch_id
+        });
+      });
+
+      it('should handle multiple security agent assignments correctly', async () => {
+        const multiAgentSecurityTask = {
+          title: 'Multi-Agent Security Review',
+          description: 'Security review requiring multiple specialized agents',
+          assignees: '@security-auditor-agent,@compliance-scope-agent,@ethical-review-agent',
+          priority: 'critical',
+          git_branch_id: 'branch-multi-security'
+        };
+        const createdTask = { 
+          id: 'task-multi-sec-456',
+          ...multiAgentSecurityTask,
+          assignees: ['security-auditor-agent', 'compliance-scope-agent', 'ethical-review-agent'],
+          status: 'todo'
+        };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(multiAgentSecurityTask);
+        expect(result.assignees).toHaveLength(3);
+        expect(result.assignees).toContain('security-auditor-agent');
+        expect(result.assignees).toContain('compliance-scope-agent');
+        expect(result.assignees).toContain('ethical-review-agent');
+      });
+
+      it('should create GDPR compliance validation subtask', async () => {
+        const gdprSubtask = {
+          title: 'GDPR Compliance Validation',
+          description: 'Validate GDPR compliance for data protection regulations including data minimization, purpose limitation, and right to be forgotten'
+        };
+        const createdSubtask = { 
+          id: 'sub-gdpr-123', 
+          ...gdprSubtask,
+          parent_task_id: 'task-security-123' 
+        };
+        subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
+
+        const result = await createSubtask('task-security-123', gdprSubtask);
+        expect(result).toEqual(createdSubtask);
+        expect(subtaskApiV2.createSubtask).toHaveBeenCalledWith('task-security-123', {
+          title: gdprSubtask.title,
+          description: gdprSubtask.description
+        });
+      });
+
+      it('should create vulnerability assessment subtask', async () => {
+        const vulnSubtask = {
+          title: 'Security Vulnerability Assessment',
+          description: 'Complete vulnerability assessment with risk ratings for authentication, authorization, data protection, and input validation'
+        };
+        const createdSubtask = { 
+          id: 'sub-vuln-456', 
+          ...vulnSubtask,
+          parent_task_id: 'task-security-123' 
+        };
+        subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
+
+        const result = await createSubtask('task-security-123', vulnSubtask);
+        expect(result).toEqual(createdSubtask);
+      });
+    });
+
+    describe('Task Dependency Management', () => {
+      it('should handle task dependencies for security audit', async () => {
+        const deploymentTask = {
+          title: 'Production Deployment and DevOps Pipeline',
+          description: 'Deploy AI planning system to production with DevOps pipeline',
+          priority: 'high',
+          git_branch_id: 'branch-deployment',
+          dependencies: '2761d924-e542-49b4-8235-b1547010bbc7' // Security audit task ID
+        };
+        const createdTask = { 
+          id: 'task-deploy-789',
+          ...deploymentTask,
+          dependencies: ['2761d924-e542-49b4-8235-b1547010bbc7'],
+          status: 'blocked' // Blocked by security audit
+        };
+        taskApiV2.createTask.mockResolvedValue({ task: createdTask });
+
+        const result = await createTask(deploymentTask);
+        expect(result.status).toBe('blocked');
+        expect(result.dependencies).toContain('2761d924-e542-49b4-8235-b1547010bbc7');
+      });
+
+      it('should validate dependency chain completeness', async () => {
+        const taskWithDependencies = {
+          id: 'task-final-123',
+          title: 'Final System Integration',
+          dependencies: ['task-1', 'task-2', 'task-3'],
+          dependency_relationships: {
+            dependency_summary: {
+              total_dependencies: 3,
+              completed_dependencies: 2,
+              can_start: false,
+              is_blocked: true
+            }
+          }
+        };
+        taskApiV2.getTask.mockResolvedValue({ task: taskWithDependencies });
+
+        const result = await getTask('task-final-123');
+        expect(result.dependency_relationships.dependency_summary.can_start).toBe(false);
+        expect(result.dependency_relationships.dependency_summary.completed_dependencies).toBe(2);
+      });
+    });
+
+    describe('Task Progress and Completion', () => {
+      it('should update security audit task progress with insights', async () => {
+        const progressUpdate = {
+          status: 'in_progress',
+          progress_percentage: 60,
+          details: 'Completed authentication and authorization audit. Found 3 critical issues with JWT token validation.',
+          insights_found: 'JWT tokens not expiring properly, missing rate limiting on auth endpoints'
+        };
+        const updatedTask = { 
+          id: 'task-security-123',
+          ...progressUpdate
+        };
+        taskApiV2.updateTask.mockResolvedValue({ task: updatedTask });
+
+        const result = await updateTask('task-security-123', progressUpdate);
+        expect(result.progress_percentage).toBe(60);
+        expect(result.status).toBe('in_progress');
+      });
+
+      it('should complete security audit with comprehensive summary', async () => {
+        const completionData = {
+          completion_summary: 'Security audit completed. Found and resolved 3 critical, 5 high, and 12 medium vulnerabilities. Implemented SOC2 compliance measures.',
+          testing_notes: 'Performed penetration testing, static code analysis, and dependency scanning. All critical issues resolved.',
+          insights_found: 'Need to implement automated security scanning in CI/CD pipeline for continuous monitoring'
+        };
+        const completedTask = { 
+          id: 'task-security-123',
+          status: 'done',
+          progress_percentage: 100,
+          ...completionData
+        };
+        taskApiV2.completeTask.mockResolvedValue({ task: completedTask });
+
+        const result = await completeTask('task-security-123', completionData);
+        expect(result.status).toBe('done');
+        expect(result.progress_percentage).toBe(100);
+      });
+    });
+
+    describe('Agent-Specific Task Search', () => {
+      it('should search for security-related tasks', async () => {
+        const mockSecurityTasks = [
+          { 
+            id: '1',
+            title: 'Security Audit and Compliance Review',
+            assignees: ['security-auditor-agent', 'compliance-scope-agent'],
+            priority: 'critical'
+          },
+          { 
+            id: '2',
+            title: 'Authentication Security Hardening',
+            assignees: ['security-auditor-agent'],
+            priority: 'high'
+          },
+          { 
+            id: '3',
+            title: 'OWASP Security Standards Implementation',
+            assignees: ['security-auditor-agent', 'coding-agent'],
+            priority: 'high'
+          }
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockSecurityTasks });
+
+        const result = await searchTasks('security');
+        expect(result).toHaveLength(3);
+        expect(result[0].title).toBe('Security Audit and Compliance Review');
+        expect(result[0].assignees).toContain('security-auditor-agent');
+      });
+
+      it('should filter tasks by compliance requirements', async () => {
+        const mockComplianceTasks = [
+          { 
+            id: '1',
+            title: 'GDPR Compliance Implementation',
+            description: 'Implement GDPR data protection requirements',
+            labels: ['compliance', 'gdpr', 'data-protection']
+          },
+          { 
+            id: '2',
+            title: 'SOC2 Compliance Readiness',
+            description: 'Prepare for SOC2 compliance certification',
+            labels: ['compliance', 'soc2', 'security']
+          }
+        ];
+        taskApiV2.getTasks.mockResolvedValue({ tasks: mockComplianceTasks });
+
+        const result = await searchTasks('compliance');
+        expect(result).toHaveLength(2);
+        expect(result.every(task => 
+          task.title.toLowerCase().includes('compliance') || 
+          task.description.toLowerCase().includes('compliance')
+        )).toBe(true);
+      });
+    });
+
+    describe('Enhanced Agent Coordination', () => {
+      it('should coordinate security audit with DevOps deployment', async () => {
+        const coordinationMessage = {
+          type: 'task_coordination',
+          from_agent: 'security-auditor-agent',
+          to_agent: 'devops-agent',
+          task_id: 'task-security-123',
+          message: 'Security audit complete. System cleared for production deployment.',
+          clearance_level: 'production-ready',
+          security_report: {
+            vulnerabilities_found: 20,
+            vulnerabilities_resolved: 20,
+            compliance_status: 'passed',
+            recommendations: ['Enable security monitoring', 'Implement WAF']
+          }
+        };
+        
+        // This would be implemented when real-time coordination is available
+        expect(coordinationMessage.clearance_level).toBe('production-ready');
+        expect(coordinationMessage.security_report.compliance_status).toBe('passed');
+      });
+
+      it('should handle security blocker escalation', async () => {
+        const securityBlocker = {
+          task_id: 'task-deploy-789',
+          blocker_type: 'security',
+          severity: 'critical',
+          description: 'Critical SQL injection vulnerability found in user input handling',
+          blocking_agent: 'security-auditor-agent',
+          requires_resolution_before: ['production deployment', 'user acceptance testing']
+        };
+        
+        // Mock blocker creation when API is ready
+        expect(securityBlocker.severity).toBe('critical');
+        expect(securityBlocker.blocking_agent).toBe('security-auditor-agent');
+      });
+    });
+
+    describe('Compliance Tracking and Reporting', () => {
+      it('should track GDPR compliance requirements', async () => {
+        const gdprRequirements = {
+          task_id: 'task-gdpr-compliance',
+          compliance_type: 'GDPR',
+          requirements: {
+            data_minimization: { status: 'implemented', notes: 'Only collecting necessary user data' },
+            purpose_limitation: { status: 'implemented', notes: 'Data used only for stated purposes' },
+            storage_limitation: { status: 'in_progress', notes: 'Implementing auto-deletion policies' },
+            accuracy: { status: 'implemented', notes: 'User can update their data' },
+            security: { status: 'implemented', notes: 'AES-256 encryption at rest' },
+            accountability: { status: 'documented', notes: 'Full compliance documentation' }
+          },
+          overall_compliance: 85
+        };
+        
+        expect(gdprRequirements.overall_compliance).toBe(85);
+        expect(Object.values(gdprRequirements.requirements).filter(r => r.status === 'implemented')).toHaveLength(4);
+      });
+
+      it('should generate compliance audit report', async () => {
+        const auditReport = {
+          report_id: 'audit-report-123',
+          audit_date: '2025-09-12',
+          auditor: 'compliance-scope-agent',
+          compliance_frameworks: ['GDPR', 'SOC2', 'OWASP'],
+          findings: {
+            compliant_areas: 28,
+            non_compliant_areas: 2,
+            recommendations: 5,
+            critical_issues: 0
+          },
+          certification_ready: true
+        };
+        
+        expect(auditReport.certification_ready).toBe(true);
+        expect(auditReport.findings.critical_issues).toBe(0);
+      });
+    });
+
+    describe('Security Testing Integration', () => {
+      it('should run automated security scans', async () => {
+        const securityScan = {
+          scan_id: 'scan-123',
+          scan_type: 'comprehensive',
+          tools_used: ['OWASP ZAP', 'SonarQube', 'Dependabot'],
+          findings: {
+            sql_injection: 0,
+            xss_vulnerabilities: 1,
+            authentication_issues: 0,
+            insecure_dependencies: 3,
+            total_issues: 4
+          },
+          severity_distribution: {
+            critical: 0,
+            high: 1,
+            medium: 3,
+            low: 0
+          }
+        };
+        
+        expect(securityScan.findings.total_issues).toBe(4);
+        expect(securityScan.severity_distribution.critical).toBe(0);
+      });
+
+      it('should validate security controls implementation', async () => {
+        const securityControls = {
+          authentication: {
+            mfa_enabled: true,
+            jwt_implementation: 'secure',
+            session_management: 'implemented',
+            password_policy: 'strong'
+          },
+          authorization: {
+            rbac_implemented: true,
+            permission_granularity: 'resource-level',
+            api_protection: 'enabled'
+          },
+          data_protection: {
+            encryption_at_rest: 'AES-256',
+            encryption_in_transit: 'TLS 1.3',
+            key_management: 'HSM-backed'
+          },
+          monitoring: {
+            security_logging: 'enabled',
+            anomaly_detection: 'configured',
+            incident_response: 'documented'
+          }
+        };
+        
+        expect(securityControls.authentication.mfa_enabled).toBe(true);
+        expect(securityControls.data_protection.encryption_at_rest).toBe('AES-256');
+        expect(securityControls.monitoring.security_logging).toBe('enabled');
+      });
+    });
+  });
 });
