@@ -1081,7 +1081,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 24,
+      "count": 25,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -1201,6 +1201,13 @@
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
           "size": 6369
+        },
+        {
+          "hash": "1164b62c5119ebd9364fb0e0c8d5e36a",
+          "modified": "2025-09-12T13:35:53.430216",
+          "name": "dependency-management-engine-architecture.md",
+          "path": "core-architecture/dependency-management-engine-architecture.md",
+          "size": 18952
         },
         {
           "hash": "31c648305590ed953e55812c51c7d2c2",
@@ -2544,7 +2551,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T13:10:13.232144",
+  "generated_at": "2025-09-12T13:35:53.541030",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2717,6 +2724,7 @@
         "claude-hooks-refactoring-architecture.md",
         "context-hierarchy-system.md",
         "database-architecture.md",
+        "dependency-management-engine-architecture.md",
         "deprecated-agent-mappings.md",
         "design-patterns-in-architecture.md",
         "domain-driven-design-layers.md",
@@ -2958,5 +2966,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 311
+  "total_files": 312
 }
