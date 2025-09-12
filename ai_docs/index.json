@@ -1081,7 +1081,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 23,
+      "count": 24,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -1110,6 +1110,13 @@
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
           "size": 13896
+        },
+        {
+          "hash": "ecfe6c884554eba0685b104218229d09",
+          "modified": "2025-09-12T13:10:13.128462",
+          "name": "claude-hooks-refactoring-architecture.md",
+          "path": "core-architecture/claude-hooks-refactoring-architecture.md",
+          "size": 18470
         },
         {
           "hash": "82ca22389b5d5f7006786c75cb6c63f0",
@@ -2537,7 +2544,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T12:50:57.808059",
+  "generated_at": "2025-09-12T13:10:13.232144",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2707,6 +2714,7 @@
         "agent-orchestration-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
+        "claude-hooks-refactoring-architecture.md",
         "context-hierarchy-system.md",
         "database-architecture.md",
         "deprecated-agent-mappings.md",
@@ -2950,5 +2958,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 310
+  "total_files": 311
 }

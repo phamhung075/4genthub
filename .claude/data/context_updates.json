@@ -1,89 +1,5 @@
 [
   {
-    "timestamp": "2025-09-12T12:51:03.564473",
-    "tool_name": "Write",
-    "update_successful": true,
-    "modified_file": "/home/daihungpham/__projects__/agentic-project/ai_docs/core-architecture/design-patterns-in-architecture.md"
-  },
-  {
-    "timestamp": "2025-09-12T12:51:13.837019",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_subtask",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:51:31.746253",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:51:39.830073",
-    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:52:01.602528",
-    "tool_name": "Task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:52:20.970350",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:52:30.160451",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:52:37.395157",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:57:18.618434",
-    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:57:47.273271",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_project",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:58:09.006566",
-    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:58:18.255964",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:58:28.121466",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
-    "timestamp": "2025-09-12T12:58:45.008522",
-    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
-    "update_successful": true,
-    "modified_file": null
-  },
-  {
     "timestamp": "2025-09-12T12:58:51.420753",
     "tool_name": "mcp__sequential-thinking__sequentialthinking",
     "update_successful": true,
@@ -289,6 +205,396 @@
   },
   {
     "timestamp": "2025-09-12T13:04:11.141418",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:05:25.212148",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:05:29.753553",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:05:33.779146",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:05:38.038561",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:09.629194",
+    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:20.466364",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:30.503661",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:41.675512",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:48.506715",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:52.652249",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:06:56.082514",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:01.240658",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:05.301525",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:09.580379",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:16.075430",
+    "tool_name": "TodoWrite",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:24.803854",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:28.341273",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:32.112261",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:40.035419",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:43.720448",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:48.166038",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:07:56.009682",
+    "tool_name": "TodoWrite",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:08:05.127002",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:08:18.063570",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:08:29.694693",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:08:38.518574",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:08:53.704869",
+    "tool_name": "mcp__sequential-thinking__sequentialthinking",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:09:01.661731",
+    "tool_name": "TodoWrite",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:10:16.264770",
+    "tool_name": "Write",
+    "update_successful": true,
+    "modified_file": "/home/daihungpham/__projects__/agentic-project/ai_docs/core-architecture/claude-hooks-refactoring-architecture.md"
+  },
+  {
+    "timestamp": "2025-09-12T13:10:22.805251",
+    "tool_name": "TodoWrite",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:10:50.545782",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:10:54.975225",
+    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:11:18.057281",
+    "tool_name": "Task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:11:34.656764",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:11:47.631559",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:19:36.134307",
+    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:19:43.588292",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:19:55.202379",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:05.919932",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:12.390872",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:16.425043",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:23.405161",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:27.596915",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:33.436589",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:38.175434",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:48.415650",
+    "tool_name": "Grep",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:20:56.697710",
+    "tool_name": "Grep",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:21:01.550152",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:21:07.746575",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:21:12.860630",
+    "tool_name": "Grep",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:21:19.221196",
+    "tool_name": "Grep",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:21:23.672821",
+    "tool_name": "Grep",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:21:39.496967",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:22:03.948562",
+    "tool_name": "Edit",
+    "update_successful": true,
+    "modified_file": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/application/use_cases/complete_task.py"
+  },
+  {
+    "timestamp": "2025-09-12T13:22:09.135367",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:22:14.940939",
+    "tool_name": "Read",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:22:44.895950",
+    "tool_name": "Edit",
+    "update_successful": true,
+    "modified_file": "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/application/use_cases/complete_task_test.py"
+  },
+  {
+    "timestamp": "2025-09-12T13:23:04.794436",
+    "tool_name": "Bash",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:23:20.448966",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:23:41.673337",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:23:46.381023",
+    "tool_name": "mcp__dhafnck_mcp_http__call_agent",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:24:00.956139",
+    "tool_name": "Task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:24:15.519397",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:24:20.690913",
+    "tool_name": "mcp__dhafnck_mcp_http__manage_task",
+    "update_successful": true,
+    "modified_file": null
+  },
+  {
+    "timestamp": "2025-09-12T13:24:28.745689",
     "tool_name": "mcp__dhafnck_mcp_http__manage_task",
     "update_successful": true,
     "modified_file": null
