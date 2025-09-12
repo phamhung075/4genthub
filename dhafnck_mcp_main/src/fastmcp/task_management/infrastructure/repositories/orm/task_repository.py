@@ -7,7 +7,7 @@ supporting both SQLite and PostgreSQL databases.
 
 import logging
 from datetime import datetime
-from typing import Any, List
+from typing import Any, List, Dict, Optional, Union
 
 from sqlalchemy import and_, desc, or_, text, func
 from sqlalchemy.orm import joinedload, selectinload
@@ -27,6 +27,7 @@ from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, La
 from ..base_orm_repository import BaseORMRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
+from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,9 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
         self.git_branch_id = git_branch_id
         self.project_id = project_id
         self.git_branch_name = git_branch_name
+        
+        # Initialize field selector for selective queries
+        self._field_selector = ContextFieldSelector()
     
     def _load_task_with_relationships(self, session, task_id: str) -> Task | None:
         """
@@ -1295,3 +1299,216 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
         except Exception as e:
             logger.error(f"Failed to get tasks by git_branch_id {git_branch_id}: {e}")
             return []
+    
+    def get_task_selective_fields(
+        self, 
+        task_id: str, 
+        fields: Optional[Union[List[str], FieldSet]] = None
+    ) -> Dict[str, Any]:
+        """
+        Get task with only specified fields for performance optimization
+        
+        Args:
+            task_id: The task ID to fetch
+            fields: List of field names or a FieldSet enum value
+            
+        Returns:
+            Dictionary containing only requested fields
+        """
+        try:
+            # Get field specification from the selector
+            field_spec = self._field_selector.get_task_fields(task_id, fields)
+            
+            with self.get_db_session() as session:
+                # Check cache first
+                if field_spec.get("optimized") and field_spec["fields"]:
+                    cached_data = self._field_selector.get_cached_fields(task_id, field_spec["fields"])
+                    if cached_data:
+                        return cached_data
+                
+                # Build selective query
+                if field_spec.get("optimized") and field_spec["fields"]:
+                    # Build SQLAlchemy query with only requested fields
+                    field_attrs = []
+                    for field in field_spec["fields"]:
+                        if hasattr(Task, field):
+                            field_attrs.append(getattr(Task, field))
+                        else:
+                            logger.warning(f"Field {field} not found in Task model")
+                    
+                    if field_attrs:
+                        # Apply user filter and task ID filter
+                        base_query = session.query(*field_attrs)
+                        base_query = self.apply_user_filter(base_query)
+                        base_query = base_query.filter(Task.id == task_id)
+                        
+                        result = base_query.first()
+                        
+                        if result:
+                            # Convert tuple result to dictionary
+                            data = dict(zip(field_spec["fields"], result))
+                            
+                            # Cache the result
+                            self._field_selector.cache_field_mapping(task_id, field_spec["fields"], data)
+                            
+                            # Log access for audit
+                            self.log_access('get_selective_fields', 'task', task_id)
+                            
+                            return data
+                else:
+                    # Fall back to full entity query if no field optimization
+                    task = self.get_task(task_id)
+                    if task:
+                        # Convert entity to dictionary
+                        return {
+                            'id': str(task.id),
+                            'title': task.title,
+                            'description': task.description,
+                            'status': str(task.status),
+                            'priority': str(task.priority),
+                            'assignees': task.assignees,
+                            'labels': task.labels,
+                            'details': task.details,
+                            'estimated_effort': task.estimated_effort,
+                            'due_date': task.due_date,
+                            'created_at': task.created_at,
+                            'updated_at': task.updated_at,
+                            'context_id': task.context_id,
+                            'git_branch_id': task.git_branch_id,
+                            'progress_percentage': getattr(task, 'overall_progress', 0)
+                        }
+                
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to get task {task_id} with selective fields: {e}")
+            return None
+    
+    def list_tasks_selective_fields(
+        self,
+        fields: Optional[Union[List[str], FieldSet]] = None,
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        assignee_id: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        List tasks with only specified fields for performance optimization
+        
+        Args:
+            fields: List of field names or a FieldSet enum value
+            status: Optional status filter
+            priority: Optional priority filter
+            assignee_id: Optional assignee filter
+            limit: Maximum number of results
+            offset: Result offset for pagination
+            
+        Returns:
+            List of task dictionaries with only requested fields
+        """
+        try:
+            # Determine optimal field set based on operation
+            if fields is None:
+                fields = self._field_selector.get_optimal_field_set("list", "task")
+            
+            # Get field specification from the selector
+            field_spec = self._field_selector.get_task_fields("list_operation", fields)
+            
+            with self.get_db_session() as session:
+                # Build selective query
+                if field_spec.get("optimized") and field_spec["fields"]:
+                    # Build SQLAlchemy query with only requested fields
+                    field_attrs = []
+                    for field in field_spec["fields"]:
+                        if hasattr(Task, field):
+                            field_attrs.append(getattr(Task, field))
+                        else:
+                            logger.warning(f"Field {field} not found in Task model")
+                    
+                    if field_attrs:
+                        # Build base query with selective fields
+                        base_query = session.query(*field_attrs)
+                        
+                        # Apply user filter for data isolation
+                        base_query = self.apply_user_filter(base_query)
+                        
+                        # Apply filters
+                        filters = []
+                        if self.git_branch_id:
+                            filters.append(Task.git_branch_id == self.git_branch_id)
+                        if status:
+                            filters.append(Task.status == status)
+                        if priority:
+                            filters.append(Task.priority == priority)
+                        
+                        if filters:
+                            base_query = base_query.filter(and_(*filters))
+                        
+                        # Filter by assignee if specified
+                        if assignee_id:
+                            base_query = base_query.join(TaskAssignee).filter(
+                                TaskAssignee.assignee_id == assignee_id
+                            )
+                        
+                        # Apply ordering and pagination
+                        base_query = base_query.order_by(desc(Task.created_at))
+                        base_query = base_query.offset(offset).limit(limit)
+                        
+                        results = base_query.all()
+                        
+                        # Convert tuple results to dictionaries
+                        tasks = []
+                        for result in results:
+                            task_data = dict(zip(field_spec["fields"], result))
+                            tasks.append(task_data)
+                        
+                        # Log access for audit
+                        self.log_access('list_selective_fields', 'task')
+                        
+                        return tasks
+                
+                # Fall back to regular list if no optimization
+                task_entities = self.list_tasks(status, priority, assignee_id, limit, offset)
+                
+                # Convert entities to minimal dictionaries
+                tasks = []
+                for task in task_entities:
+                    tasks.append({
+                        'id': str(task.id),
+                        'title': task.title,
+                        'status': str(task.status),
+                        'priority': str(task.priority),
+                        'progress_percentage': getattr(task, 'overall_progress', 0),
+                        'updated_at': task.updated_at
+                    })
+                
+                return tasks
+                
+        except Exception as e:
+            logger.error(f"Failed to list tasks with selective fields: {e}")
+            return []
+    
+    def get_field_selector_metrics(self) -> Dict[str, int]:
+        """
+        Get performance metrics from the field selector
+        
+        Returns:
+            Dictionary of performance metrics
+        """
+        return self._field_selector.get_metrics()
+    
+    def estimate_field_optimization_savings(
+        self, 
+        field_set: FieldSet
+    ) -> Dict[str, float]:
+        """
+        Estimate performance savings for using selective fields
+        
+        Args:
+            field_set: The field set to evaluate
+            
+        Returns:
+            Dictionary with estimated savings percentages
+        """
+        return self._field_selector.estimate_savings("task", field_set)

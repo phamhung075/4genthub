@@ -1,8 +1,8 @@
 connectivity:
   interactsWith:
   - ui-designer-agent
-  - @coding-agent
-  - @system-architect-agent
+  - coding-agent
+  - system-architect-agent
   - design-system-agent
   - accessibility-agent
   - performance-agent

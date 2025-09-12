@@ -1,0 +1,8 @@
+{
+  "session_id": "fc14f7f7-82cc-433f-9f99-9c6e2926a4ee",
+  "prompts": [
+    "call agent to verify branch 062048b9-7eab-4d85-950e-734f290a095a task has completed",
+    "for each task generate todo then delegate to agent for recheck if complete or not"
+  ],
+  "agent_name": "Phoenix"
+}

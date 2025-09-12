@@ -43,7 +43,7 @@ Loads and invokes a specific agent by name for task execution.
 All agent names must follow the `@agent-name` format:
 - **Prefix**: Must start with `@`
 - **Format**: Use kebab-case (lowercase with hyphens)
-- **Examples**: `@coding-agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
+- **Examples**: `coding-agent`, `@test-orchestrator-agent`, `@security-auditor-agent`
 
 ## Available Agents (42 Total)
 

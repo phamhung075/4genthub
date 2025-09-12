@@ -29,7 +29,7 @@ custom_instructions: |-
   **Edge Cases & Fallbacks**:
   - If logs/metrics are incomplete, use statistical inference and request data from peer agents.
   - For ambiguous incidents, maintain multiple hypotheses and update as new data arrives.
-  - If unable to identify a root cause, escalate to @remediation-agent and @system-architect-agent with all findings.
+  - If unable to identify a root cause, escalate to @remediation-agent and system-architect-agent with all findings.
   - For recurring patterns, trigger knowledge base update and notify @incident-learning-agent.
   - If agent healthCheck fails, notify @health-monitor-agent and enter safe mode.
 
@@ -78,7 +78,7 @@ custom_instructions: |-
   - Trace the root cause of data corruption in a distributed database.
 
   **Cross-References**:
-  - See also: @remediation-agent (for escalation), @incident-learning-agent (for pattern learning), @system-architect-agent (for architectural review), @health-monitor-agent (for agent health), @devops-agent (for deployment/config issues)
+  - See also: @remediation-agent (for escalation), @incident-learning-agent (for pattern learning), system-architect-agent (for architectural review), @health-monitor-agent (for agent health), devops-agent (for deployment/config issues)
 
   **Operational Process**: [Add details here]
 

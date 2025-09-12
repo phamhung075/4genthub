@@ -39,6 +39,14 @@ except ImportError:
     switch_to_agent = None
     AGENT_CONTEXT_ENABLED = False
 
+# Import MCP hint matrix for post-action reminders
+try:
+    from utils.mcp_post_action_hints import generate_post_action_hints
+    MCP_POST_HINTS_ENABLED = True
+except ImportError:
+    generate_post_action_hints = None
+    MCP_POST_HINTS_ENABLED = False
+
 def get_modified_file(tool_name, tool_input):
     """Extract the file path that was modified by the tool."""
     if tool_name == 'Write' or tool_name == 'Edit' or tool_name == 'MultiEdit':
@@ -63,6 +71,29 @@ def main():
         
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
+        tool_result = input_data.get('tool_result', None)  # Get result if available
+        
+        # MCP POST-ACTION HINTS: Provide reminders after MCP operations
+        if MCP_POST_HINTS_ENABLED and generate_post_action_hints and tool_name.startswith('mcp__dhafnck_mcp_http'):
+            try:
+                # Generate post-action hints based on what was just done
+                post_hints = generate_post_action_hints(tool_name, tool_input, tool_result)
+                if post_hints:
+                    # Output hints to stderr for Claude to see
+                    print(post_hints, file=sys.stderr)
+                    
+                    # Log that hints were provided
+                    log_dir = get_ai_data_path()
+                    hints_log_path = log_dir / 'mcp_post_hints.log'
+                    with open(hints_log_path, 'a') as f:
+                        action = tool_input.get('action', 'default')
+                        f.write(f"{datetime.now().isoformat()} - Post-action hints for {tool_name}:{action}\n")
+            except Exception as e:
+                # Log error but don't block
+                log_dir = get_ai_data_path()
+                error_log_path = log_dir / 'mcp_post_hint_errors.log'
+                with open(error_log_path, 'a') as f:
+                    f.write(f"{datetime.now().isoformat()} - Error generating post hints: {e}\n")
         
         # AGENT CONTEXT SWITCHING: Detect call_agent tool and provide runtime context switch
         if AGENT_CONTEXT_ENABLED and tool_name == 'mcp__dhafnck_mcp_http__call_agent':

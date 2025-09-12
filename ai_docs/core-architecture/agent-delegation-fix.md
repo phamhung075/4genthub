@@ -21,7 +21,7 @@ Task(subagent_type="any-agent", prompt="Do work")
 ### Evidence
 From session logs:
 ```
-● @coding-agent(Task: Clean debug logs (using @coding-agent agent)
+● coding-agent(Task: Clean debug logs (using coding-agent agent)
   ⏿  Running hook PreToolUse:Task...
   ⏿ dhafnck_mcp_http - call_agent (MCP)(name_agent: "master-orchestrator-agent")
 ```

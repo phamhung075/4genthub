@@ -2,8 +2,8 @@
 Test for assignees validation fix in task management system.
 
 Tests that various assignee formats are correctly handled:
-- Single agent: "@coding-agent"
-- Multiple agents: "@coding-agent,@security-auditor-agent"
+- Single agent: "coding-agent"
+- Multiple agents: "coding-agent,@security-auditor-agent"
 - User ID: "user123"
 """
 
@@ -26,7 +26,7 @@ class TestAssigneesValidationFix:
     def test_single_agent_validation(self):
         """Test validation of single agent identifier."""
         # Test with @ prefix
-        assert self.validator._is_valid_assignees_list(["@coding-agent"])
+        assert self.validator._is_valid_assignees_list(["coding-agent"])
         assert self.validator._is_valid_assignees_list(["@test-orchestrator-agent"])
         assert self.validator._is_valid_assignees_list(["@security-auditor-agent"])
         
@@ -36,11 +36,11 @@ class TestAssigneesValidationFix:
     
     def test_multiple_agents_validation(self):
         """Test validation of multiple agent identifiers."""
-        assignees = ["@coding-agent", "@security-auditor-agent", "@test-orchestrator-agent"]
+        assignees = ["coding-agent", "@security-auditor-agent", "@test-orchestrator-agent"]
         assert self.validator._is_valid_assignees_list(assignees)
         
         # Mixed with/without @ prefix
-        mixed_assignees = ["@coding-agent", "security-auditor-agent", "@test-orchestrator-agent"]
+        mixed_assignees = ["coding-agent", "security-auditor-agent", "@test-orchestrator-agent"]
         assert self.validator._is_valid_assignees_list(mixed_assignees)
     
     def test_user_id_validation(self):
@@ -61,7 +61,7 @@ class TestAssigneesValidationFix:
         assert not self.validator._is_valid_assignees_list(["agent name"])
         
         # Not a list
-        assert not self.validator._is_valid_assignees_list("@coding-agent")
+        assert not self.validator._is_valid_assignees_list("coding-agent")
         assert not self.validator._is_valid_assignees_list(None)
     
     def test_create_task_params_validation_success(self):
@@ -70,7 +70,7 @@ class TestAssigneesValidationFix:
         is_valid, error = self.validator.validate_create_task_params(
             title="Test Task",
             git_branch_id="550e8400-e29b-41d4-a716-446655440000",
-            assignees=["@coding-agent"]
+            assignees=["coding-agent"]
         )
         assert is_valid
         assert error is None
@@ -79,7 +79,7 @@ class TestAssigneesValidationFix:
         is_valid, error = self.validator.validate_create_task_params(
             title="Test Task",
             git_branch_id="550e8400-e29b-41d4-a716-446655440000",
-            assignees=["@coding-agent", "@security-auditor-agent"]
+            assignees=["coding-agent", "@security-auditor-agent"]
         )
         assert is_valid
         assert error is None
@@ -119,21 +119,21 @@ def test_string_to_list_conversion_logic():
         return assignees
     
     # Single agent
-    assert convert_assignees("@coding-agent") == ["@coding-agent"]
+    assert convert_assignees("coding-agent") == ["coding-agent"]
     assert convert_assignees("user123") == ["user123"]
     
     # Comma-separated agents
-    assert convert_assignees("@coding-agent,@security-auditor-agent") == ["@coding-agent", "@security-auditor-agent"]
-    assert convert_assignees("@coding-agent, @security-auditor-agent") == ["@coding-agent", "@security-auditor-agent"]
+    assert convert_assignees("coding-agent,@security-auditor-agent") == ["coding-agent", "@security-auditor-agent"]
+    assert convert_assignees("coding-agent, @security-auditor-agent") == ["coding-agent", "@security-auditor-agent"]
     
     # Edge cases
     assert convert_assignees("") == []
     assert convert_assignees(" ") == []
-    assert convert_assignees("@coding-agent,") == ["@coding-agent"]
-    assert convert_assignees(",@coding-agent") == ["@coding-agent"]
+    assert convert_assignees("coding-agent,") == ["coding-agent"]
+    assert convert_assignees(",coding-agent") == ["coding-agent"]
     
     # Already a list
-    assert convert_assignees(["@coding-agent"]) == ["@coding-agent"]
+    assert convert_assignees(["coding-agent"]) == ["coding-agent"]
     assert convert_assignees(None) is None
 
 

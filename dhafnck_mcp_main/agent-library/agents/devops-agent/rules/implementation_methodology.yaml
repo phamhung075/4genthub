@@ -30,22 +30,22 @@ implementation_methodology:
       
     infrastructure_delegation:
       container_setup:
-        agent: "@devops-agent"
+        agent: "devops-agent"
         context: "Dockerfile, docker-compose"
         size: "8,000 tokens"
         
       ci_pipeline:
-        agent: "@devops-agent"
+        agent: "devops-agent"
         context: "GitHub Actions, build steps"
         size: "7,000 tokens"
         
       cloud_resources:
-        agent: "@devops-agent"
+        agent: "devops-agent"
         context: "Terraform/CloudFormation specs"
         size: "10,000 tokens"
         
       monitoring_setup:
-        agent: "@devops-agent"
+        agent: "devops-agent"
         context: "Metrics, alerts, dashboards"
         size: "6,000 tokens"
         

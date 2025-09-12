@@ -12,7 +12,7 @@ covering:
 Test IDs:
 - Project ID: 2fb85ec6-d2d3-42f7-a75c-c5a0befd3407
 - Git Branch ID: 741854b4-a0f4-4b39-b2ab-b27dfc97a851
-- Agent names: @coding-agent, @test-orchestrator-agent, @security-auditor-agent
+- Agent names: coding-agent, @test-orchestrator-agent, @security-auditor-agent
 """
 
 import pytest
@@ -39,7 +39,7 @@ class TestComprehensiveAgentManagement:
     # Test IDs as specified in requirements
     PROJECT_ID = "2fb85ec6-d2d3-42f7-a75c-c5a0befd3407"
     GIT_BRANCH_ID = "741854b4-a0f4-4b39-b2ab-b27dfc97a851"
-    AGENT_NAMES = ["@coding-agent", "@test-orchestrator-agent", "@security-auditor-agent"]
+    AGENT_NAMES = ["coding-agent", "@test-orchestrator-agent", "@security-auditor-agent"]
     
     @pytest.fixture
     def mock_agent_repository(self):
@@ -136,7 +136,7 @@ class TestComprehensiveAgentManagement:
         """Test agent registration with role validation."""
         # Test valid agent roles
         valid_agents = [
-            ("coding-agent", "@coding-agent"),
+            ("coding-agent", "coding-agent"),
             ("test-orchestrator-agent", "@test-orchestrator-agent"), 
             ("security-auditor-agent", "@security-auditor-agent")
         ]
@@ -253,7 +253,7 @@ class TestComprehensiveAgentManagement:
     def test_agent_inheritance_in_subtasks(self, parameter_validator):
         """Test that subtasks inherit agents from parent tasks."""
         # Test parent task with multiple agents
-        parent_assignees = ["@coding-agent", "@security-auditor-agent"]
+        parent_assignees = ["coding-agent", "@security-auditor-agent"]
         
         # Validate parent task assignees
         is_valid, error = parameter_validator.validate_create_task_params(
@@ -276,7 +276,7 @@ class TestComprehensiveAgentManagement:
     def test_agent_inheritance_override(self, parameter_validator):
         """Test that subtasks can override inherited agents."""
         # Parent has coding and security agents
-        parent_assignees = ["@coding-agent", "@security-auditor-agent"]
+        parent_assignees = ["coding-agent", "@security-auditor-agent"]
         
         # Subtask overrides with just test agent
         subtask_assignees = ["@test-orchestrator-agent"]
@@ -301,12 +301,12 @@ class TestComprehensiveAgentManagement:
         """Test various assignees format validation through task creation validation."""
         test_cases = [
             # Valid cases
-            (["@coding-agent"], True, "Single agent with @"),
+            (["coding-agent"], True, "Single agent with @"),
             (["coding-agent"], True, "Single agent without @"), 
-            (["@coding-agent", "@security-auditor-agent"], True, "Multiple agents with @"),
+            (["coding-agent", "@security-auditor-agent"], True, "Multiple agents with @"),
             (["coding-agent", "security-auditor-agent"], True, "Multiple agents without @"),
             (["user123"], True, "User ID"),
-            (["@coding-agent", "user123"], True, "Mixed agent and user"),
+            (["coding-agent", "user123"], True, "Mixed agent and user"),
             ([], True, "Empty list for inheritance"),  # Empty list is valid for inheritance
             
             # Invalid cases would need to be tested through actual MCP calls
@@ -334,14 +334,14 @@ class TestComprehensiveAgentManagement:
             return assignees
         
         test_cases = [
-            ("@coding-agent", ["@coding-agent"]),
-            ("@coding-agent,@test-orchestrator-agent", ["@coding-agent", "@test-orchestrator-agent"]),
-            ("@coding-agent, @test-orchestrator-agent", ["@coding-agent", "@test-orchestrator-agent"]),
+            ("coding-agent", ["coding-agent"]),
+            ("coding-agent,@test-orchestrator-agent", ["coding-agent", "@test-orchestrator-agent"]),
+            ("coding-agent, @test-orchestrator-agent", ["coding-agent", "@test-orchestrator-agent"]),
             ("", []),
             (" ", []),
-            ("@coding-agent,", ["@coding-agent"]),
-            (",@coding-agent", ["@coding-agent"]),
-            (["@coding-agent"], ["@coding-agent"]),  # Already a list
+            ("coding-agent,", ["coding-agent"]),
+            (",coding-agent", ["coding-agent"]),
+            (["coding-agent"], ["coding-agent"]),  # Already a list
             (None, None),
         ]
         

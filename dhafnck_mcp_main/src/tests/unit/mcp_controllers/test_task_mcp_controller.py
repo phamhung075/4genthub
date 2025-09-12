@@ -71,7 +71,7 @@ class TestTaskMCPController:
             "description": "Test task description",
             "status": "todo",
             "priority": "medium",
-            "assignees": ["@coding-agent"],
+            "assignees": ["coding-agent"],
             "labels": ["backend", "api"],
             "due_date": "2024-12-31T23:59:59Z",
             "dependencies": []

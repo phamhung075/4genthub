@@ -31,7 +31,7 @@ class TestAddSubtaskWithInheritance:
             id=self.parent_task_id,
             title="Parent Task",
             description="Task with assignees",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"]
         )
         
         # Configure task repository to return the parent task
@@ -66,13 +66,13 @@ class TestAddSubtaskWithInheritance:
         # Verify response indicates inheritance was applied
         assert response.agent_inheritance_applied is True
         assert len(response.inherited_assignees) == 2
-        assert "@coding-agent" in response.inherited_assignees
+        assert "coding-agent" in response.inherited_assignees
         assert "@test-orchestrator-agent" in response.inherited_assignees
         
         # Verify subtask has inherited assignees
         saved_subtask_call = self.subtask_repository.save.call_args[0][0]
         assert len(saved_subtask_call.assignees) == 2
-        assert "@coding-agent" in saved_subtask_call.assignees
+        assert "coding-agent" in saved_subtask_call.assignees
         assert "@test-orchestrator-agent" in saved_subtask_call.assignees
     
     def test_subtask_creation_with_assignees_does_not_inherit(self):
@@ -96,7 +96,7 @@ class TestAddSubtaskWithInheritance:
         saved_subtask_call = self.subtask_repository.save.call_args[0][0]
         assert len(saved_subtask_call.assignees) == 1
         assert "@security-auditor-agent" in saved_subtask_call.assignees
-        assert "@coding-agent" not in saved_subtask_call.assignees
+        assert "coding-agent" not in saved_subtask_call.assignees
     
     def test_subtask_creation_with_parent_having_no_assignees(self):
         """Test subtask creation when parent task has no assignees"""
@@ -153,7 +153,7 @@ class TestAddSubtaskWithInheritance:
             id=parent_task_id_3,
             title="Mixed Assignees Parent",
             description="Task with various assignee formats",
-            assignees=["@coding-agent", "test-orchestrator-agent", "@security-auditor-agent", ""]
+            assignees=["coding-agent", "test-orchestrator-agent", "@security-auditor-agent", ""]
         )
         self.task_repository.find_by_id.return_value = parent_task_mixed
         
@@ -217,7 +217,7 @@ class TestAddSubtaskWithInheritance:
         assert response_dict["agent_inheritance_applied"] is True
         assert "inherited_assignees" in response_dict
         assert len(response_dict["inherited_assignees"]) == 2
-        assert "@coding-agent" in response_dict["inherited_assignees"]
+        assert "coding-agent" in response_dict["inherited_assignees"]
         assert "@test-orchestrator-agent" in response_dict["inherited_assignees"]
     
     def test_no_inheritance_response_to_dict_excludes_inheritance_info(self):
@@ -308,7 +308,7 @@ class TestAddSubtaskInheritanceErrorCases:
             id=TaskId(str(self.parent_task_id)),
             title="Parent Task",
             description="Task with assignees",
-            assignees=["@coding-agent"]
+            assignees=["coding-agent"]
         )
         self.task_repository.find_by_id.return_value = parent_task
         self.subtask_repository.get_next_id.return_value = SubtaskId(str(uuid.uuid4()))
@@ -333,7 +333,7 @@ class TestAddSubtaskInheritanceErrorCases:
             id=TaskId(str(self.parent_task_id)),
             title="Parent Task",
             description="Task with assignees",
-            assignees=["@coding-agent"]
+            assignees=["coding-agent"]
         )
         self.task_repository.find_by_id.return_value = parent_task
         

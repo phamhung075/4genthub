@@ -83,13 +83,13 @@ custom_instructions: |-
   - Integrating design system with developer tooling and CI/CD
 
   **Integration Diagram**:
-  - [design-system-agent] <peer> [@branding-agent, ui-designer-agent, ux-researcher-agent, design-qa-analyst]
+  - [design-system-agent] <peer> [branding-agent, ui-designer-agent, ux-researcher-agent, design-qa-analyst]
   - [design-system-agent] <reviewer> [design-qa-analyst]
   - [design-system-agent] <syncs with> [ui-designer-agent]
-  - [design-system-agent] <peer> [@branding-agent]
+  - [design-system-agent] <peer> [branding-agent]
 
   **Related Agents**:
-  - @branding-agent: Brand visual identity and guidelines
+  - branding-agent: Brand visual identity and guidelines
   - ui-designer-agent: UI design and prototyping
   - ux-researcher-agent: User research and usability
   - design-qa-analyst: Design quality assurance

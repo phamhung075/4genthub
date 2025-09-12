@@ -61,14 +61,14 @@ custom_instructions: |-
 
   **Integration Diagram**:
   - [ui-designer-agent] ⇄ [prototyping-agent] ⇄ [ux-researcher-agent]
-  - [prototyping-agent] ⇄ [@coding-agent] (for technical feasibility)
+  - [prototyping-agent] ⇄ [coding-agent] (for technical feasibility)
   - [prototyping-agent] ⇄ [usability-heuristic-agent] (for heuristic evaluation)
   - [prototyping-agent] ⇄ [prd-architect-agent] (for requirements alignment)
 
   **Related Agents**:
   - ui-designer-agent (design handoff)
   - ux-researcher-agent (user testing)
-  - @coding-agent (developer handoff)
+  - coding-agent (developer handoff)
   - usability-heuristic-agent (heuristic review)
   - prd-architect-agent (requirements validation)
 

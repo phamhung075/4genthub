@@ -55,7 +55,7 @@ class TestAgentAssignmentAtCreation:
             id=TaskId("test-task-123"),
             title="Test Task",
             description="Test Description",
-            assignees=["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
         )
         
         mock_task_response = Mock()
@@ -128,7 +128,7 @@ class TestAgentInheritanceFlow:
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"]
         )
         
         # Setup repository mocks
@@ -153,12 +153,12 @@ class TestAgentInheritanceFlow:
                 "subtask": {
                     "id": "subtask-456",
                     "title": "Test Subtask",
-                    "assignees": ["@coding-agent", "@test-orchestrator-agent"]
+                    "assignees": ["coding-agent", "@test-orchestrator-agent"]
                 },
                 "task_id": "parent-task-123",
                 "progress": {},
                 "agent_inheritance_applied": True,
-                "inherited_assignees": ["@coding-agent", "@test-orchestrator-agent"]
+                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent"]
             }
             mock_handle.return_value = mock_response
             
@@ -171,7 +171,7 @@ class TestAgentInheritanceFlow:
         
         assert result["success"] is True
         assert result.get("agent_inheritance_applied") is True
-        assert result.get("inherited_assignees") == ["@coding-agent", "@test-orchestrator-agent"]
+        assert result.get("inherited_assignees") == ["coding-agent", "@test-orchestrator-agent"]
         assert "inheritance_info" in result
         assert result["inheritance_info"]["applied"] is True
 
@@ -251,7 +251,7 @@ class TestEndToEndAgentFlow:
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
         )
         
         # Mock task creation
@@ -287,12 +287,12 @@ class TestEndToEndAgentFlow:
                 "subtask": {
                     "id": "subtask-456",
                     "title": "Child Subtask",
-                    "assignees": ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
+                    "assignees": ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
                 },
                 "task_id": "parent-task-123",
                 "progress": {},
                 "agent_inheritance_applied": True,
-                "inherited_assignees": ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
+                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
             }
             mock_handle.return_value = mock_subtask_response
             
@@ -315,7 +315,7 @@ class TestEndToEndAgentFlow:
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["@coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"]
         )
         
         self.mock_task_repo.find_by_id.return_value = parent_task
@@ -325,7 +325,7 @@ class TestEndToEndAgentFlow:
             mock_handle.return_value = {
                 "success": True,
                 "agent_inheritance_applied": True,
-                "inherited_assignees": ["@coding-agent", "@test-orchestrator-agent"]
+                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent"]
             }
             
             result1 = self.subtask_handler.create_subtask(

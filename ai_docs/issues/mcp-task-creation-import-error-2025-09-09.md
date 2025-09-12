@@ -148,7 +148,7 @@ Once fixed, verify these operations work:
 
 ```bash
 # Basic task creation
-mcp__dhafnck_mcp_http__manage_task(action="create", git_branch_id="...", title="Test Task", assignees="@coding-agent")
+mcp__dhafnck_mcp_http__manage_task(action="create", git_branch_id="...", title="Test Task", assignees="coding-agent")
 
 # Complex task creation with dependencies
 mcp__dhafnck_mcp_http__manage_task(action="create", ..., dependencies=["task-id-1"])

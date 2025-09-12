@@ -144,13 +144,13 @@ planning_methodology:
     implementation_steps:
       - step_number: 1
         description: "Create JWT service with token generation and verification"
-        assigned_agent: "@coding-agent"
+        assigned_agent: "coding-agent"
         files_affected: ["/src/auth/jwt.service.ts"]
         estimated_effort: "1 hour"
         
       - step_number: 2
         description: "Implement authentication middleware"
-        assigned_agent: "@coding-agent"
+        assigned_agent: "coding-agent"
         dependencies: [1]
         files_affected: ["/src/middleware/auth.middleware.ts"]
         estimated_effort: "30 minutes"
@@ -185,7 +185,7 @@ planning_methodology:
       - agent_name: "test-orchestrator-agent"
         responsibilities: "Create and run all tests"
         deliverables: ["jwt.service.test.ts", "auth.integration.test.ts"]
-        dependencies: "Completed implementation from @coding-agent"
+        dependencies: "Completed implementation from coding-agent"
         
       - agent_name: "security-auditor-agent"
         responsibilities: "Review security implications"

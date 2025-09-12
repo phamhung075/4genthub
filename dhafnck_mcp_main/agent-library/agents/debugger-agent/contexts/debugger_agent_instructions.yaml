@@ -12,7 +12,7 @@ custom_instructions: |-
   - Error monitoring and alerting configuration (Sentry, Datadog, custom)
   - Code quality improvement and defect prevention
   - Automated health checks and self-tests for critical systems
-  - Fallback: If unable to reproduce or fix, escalate to @system-architect-agent or @devops-agent with full context
+  - Fallback: If unable to reproduce or fix, escalate to system-architect-agent or devops-agent with full context
 
   **Debugging Process**:
   1. **Issue Analysis**: Analyze bug reports, error logs, and system behavior patterns.

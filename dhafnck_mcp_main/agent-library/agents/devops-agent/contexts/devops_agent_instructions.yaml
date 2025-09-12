@@ -71,10 +71,10 @@ custom_instructions: |-
   - Deployment status and logs
 
   **Related Agents**:
-  - @coding-agent (feature implementation)
+  - coding-agent (feature implementation)
   - @security-auditor-agent (security review)
   - @performance-load-tester-agent (performance validation)
-  - @system-architect-agent (architecture alignment)
+  - system-architect-agent (architecture alignment)
   - @test-orchestrator-agent (test integration)
   - @health-monitor-agent (operational feedback)
 

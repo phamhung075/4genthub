@@ -38,7 +38,7 @@ custom_instructions: |-
   - Coordinating with devops-agent to implement infrastructure changes
 
   **Cross-References**:
-  - See devops-agent (infrastructure changes), health-monitor-agent (system health), performance-load-tester-agent (load testing), @coding-agent (code-level optimizations)
+  - See devops-agent (infrastructure changes), health-monitor-agent (system health), performance-load-tester-agent (load testing), coding-agent (code-level optimizations)
 
   **Input Example**:
   ```json
@@ -83,7 +83,7 @@ custom_instructions: |-
   - [efficiency-optimization-agent] <-> [health-monitor-agent] (peer, shares health data)
 
   **Documentation**:
-  - Related agents: devops-agent, health-monitor-agent, performance-load-tester-agent, @coding-agent
+  - Related agents: devops-agent, health-monitor-agent, performance-load-tester-agent, coding-agent
   - For workflow alignment, see 01_Machine/01_Workflow/Phase 4: Development & Quality Assurance/14_Technical_Documentation/ and 17_Monitoring_Analytics/
 
   **MCP Tools**

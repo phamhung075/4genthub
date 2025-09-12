@@ -57,7 +57,7 @@ custom_instructions: |-
 
   **Integration Diagram**:
   - See project documentation in 01_Machine/04_Documentation/01_System/ for workflow diagrams.
-  - Cross-references: [seo-sem-agent], [@branding-agent], [content-strategy-agent], [analytics-setup-agent], [prd-architect-agent]
+  - Cross-references: [seo-sem-agent], [branding-agent], [content-strategy-agent], [analytics-setup-agent], [prd-architect-agent]
 
   **MCP Tools**
   ...

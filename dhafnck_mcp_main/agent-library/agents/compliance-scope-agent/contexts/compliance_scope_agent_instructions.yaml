@@ -126,7 +126,7 @@ custom_instructions: |-
 
   **Integration Diagram**:
   - See project documentation for agent collaboration diagrams.
-  - Cross-references: compliance-testing-agent (testing), security-auditor-agent (security), @system-architect-agent (architecture).
+  - Cross-references: compliance-testing-agent (testing), security-auditor-agent (security), system-architect-agent (architecture).
 
   **MCP Tools**:
   - `sequential-thinking`: For systematic compliance analysis and documentation

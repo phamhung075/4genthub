@@ -30,7 +30,7 @@ implementation_methodology:
       
     review_delegation:
       code_quality:
-        agent: "@code-reviewer-agent"
+        agent: "code-reviewer-agent"
         context: "Style, readability, patterns"
         size: "7,000 tokens"
         
@@ -40,7 +40,7 @@ implementation_methodology:
         size: "8,000 tokens"
         
       performance_review:
-        agent: "@code-reviewer-agent"
+        agent: "code-reviewer-agent"
         context: "Algorithms, complexity"
         size: "6,000 tokens"
         

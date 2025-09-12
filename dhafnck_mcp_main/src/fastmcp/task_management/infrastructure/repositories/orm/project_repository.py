@@ -6,7 +6,7 @@ supporting both SQLite and PostgreSQL databases.
 """
 
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.orm import joinedload
@@ -22,6 +22,7 @@ from ....domain.exceptions.base_exceptions import (
     ValidationException,
     DatabaseException
 )
+from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,9 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
         BaseUserScopedRepository.__init__(self, session, user_id)
         # Initialize CacheInvalidationMixin
         CacheInvalidationMixin.__init__(self)
+        
+        # Initialize field selector for selective queries
+        self._field_selector = ContextFieldSelector()
     
     def _model_to_entity(self, project: Project) -> ProjectEntity:
         """Convert SQLAlchemy model to domain entity"""
@@ -578,3 +582,187 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                 "created_at": project.created_at.isoformat(),
                 "updated_at": project.updated_at.isoformat()
             }
+    
+    def get_project_selective_fields(
+        self, 
+        project_id: str, 
+        fields: Optional[Union[List[str], FieldSet]] = None
+    ) -> Dict[str, Any]:
+        """
+        Get project with only specified fields for performance optimization
+        
+        Args:
+            project_id: The project ID to fetch
+            fields: List of field names or a FieldSet enum value
+            
+        Returns:
+            Dictionary containing only requested fields
+        """
+        try:
+            # Get field specification from the selector
+            field_spec = self._field_selector.get_project_fields(project_id, fields)
+            
+            with self.get_db_session() as session:
+                # Check cache first
+                if field_spec.get("optimized") and field_spec["fields"]:
+                    cached_data = self._field_selector.get_cached_fields(project_id, field_spec["fields"])
+                    if cached_data:
+                        return cached_data
+                
+                # Build selective query
+                if field_spec.get("optimized") and field_spec["fields"]:
+                    # Build SQLAlchemy query with only requested fields
+                    field_attrs = []
+                    for field in field_spec["fields"]:
+                        if hasattr(Project, field):
+                            field_attrs.append(getattr(Project, field))
+                        else:
+                            logger.warning(f"Field {field} not found in Project model")
+                    
+                    if field_attrs:
+                        # Apply user filter and project ID filter
+                        base_query = session.query(*field_attrs)
+                        base_query = self.apply_user_filter(base_query)
+                        base_query = base_query.filter(Project.id == project_id)
+                        
+                        result = base_query.first()
+                        
+                        if result:
+                            # Convert tuple result to dictionary
+                            data = dict(zip(field_spec["fields"], result))
+                            
+                            # Cache the result
+                            self._field_selector.cache_field_mapping(project_id, field_spec["fields"], data)
+                            
+                            # Log access for audit
+                            self.log_access('get_selective_fields', 'project', project_id)
+                            
+                            return data
+                else:
+                    # Fall back to full entity query if no field optimization
+                    project = self.get_project(project_id)
+                    if project:
+                        # Convert entity to dictionary
+                        return {
+                            'id': project.id,
+                            'name': project.name,
+                            'description': project.description,
+                            'created_at': project.created_at,
+                            'updated_at': project.updated_at,
+                            'status': getattr(project, 'status', 'active')
+                        }
+                
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to get project {project_id} with selective fields: {e}")
+            return None
+    
+    def list_projects_selective_fields(
+        self,
+        fields: Optional[Union[List[str], FieldSet]] = None,
+        status: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        List projects with only specified fields for performance optimization
+        
+        Args:
+            fields: List of field names or a FieldSet enum value
+            status: Optional status filter
+            limit: Maximum number of results
+            offset: Result offset for pagination
+            
+        Returns:
+            List of project dictionaries with only requested fields
+        """
+        try:
+            # Determine optimal field set based on operation
+            if fields is None:
+                fields = self._field_selector.get_optimal_field_set("list", "project")
+            
+            # Get field specification from the selector
+            field_spec = self._field_selector.get_project_fields("list_operation", fields)
+            
+            with self.get_db_session() as session:
+                # Build selective query
+                if field_spec.get("optimized") and field_spec["fields"]:
+                    # Build SQLAlchemy query with only requested fields
+                    field_attrs = []
+                    for field in field_spec["fields"]:
+                        if hasattr(Project, field):
+                            field_attrs.append(getattr(Project, field))
+                        else:
+                            logger.warning(f"Field {field} not found in Project model")
+                    
+                    if field_attrs:
+                        # Build base query with selective fields
+                        base_query = session.query(*field_attrs)
+                        
+                        # Apply user filter for data isolation
+                        base_query = self.apply_user_filter(base_query)
+                        
+                        # Apply filters
+                        if status:
+                            base_query = base_query.filter(Project.status == status)
+                        
+                        # Apply ordering and pagination
+                        base_query = base_query.order_by(desc(Project.created_at))
+                        base_query = base_query.offset(offset).limit(limit)
+                        
+                        results = base_query.all()
+                        
+                        # Convert tuple results to dictionaries
+                        projects = []
+                        for result in results:
+                            project_data = dict(zip(field_spec["fields"], result))
+                            projects.append(project_data)
+                        
+                        # Log access for audit
+                        self.log_access('list_selective_fields', 'project')
+                        
+                        return projects
+                
+                # Fall back to regular list if no optimization
+                project_entities = self.list_projects(status, limit, offset)
+                
+                # Convert entities to minimal dictionaries
+                projects = []
+                for project in project_entities:
+                    projects.append({
+                        'id': project.id,
+                        'name': project.name,
+                        'status': getattr(project, 'status', 'active'),
+                        'updated_at': project.updated_at
+                    })
+                
+                return projects
+                
+        except Exception as e:
+            logger.error(f"Failed to list projects with selective fields: {e}")
+            return []
+    
+    def get_field_selector_metrics(self) -> Dict[str, int]:
+        """
+        Get performance metrics from the field selector
+        
+        Returns:
+            Dictionary of performance metrics
+        """
+        return self._field_selector.get_metrics()
+    
+    def estimate_field_optimization_savings(
+        self, 
+        field_set: FieldSet
+    ) -> Dict[str, float]:
+        """
+        Estimate performance savings for using selective fields
+        
+        Args:
+            field_set: The field set to evaluate
+            
+        Returns:
+            Dictionary with estimated savings percentages
+        """
+        return self._field_selector.estimate_savings("project", field_set)

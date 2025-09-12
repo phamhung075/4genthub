@@ -19,7 +19,7 @@ Comprehensive testing of dhafnck_mcp_http tools revealed critical issues with ta
 - **Branches Created**:
   1. feature/user-authentication (Project 1)
   2. feature/data-pipeline (Project 2)
-- **Agent Assignment**: Successfully assigned @coding-agent to branch
+- **Agent Assignment**: Successfully assigned coding-agent to branch
 - **Status**: All operations working correctly
 
 ### ❌ Task Management - CRITICAL FAILURE
@@ -48,7 +48,7 @@ Comprehensive testing of dhafnck_mcp_http tools revealed critical issues with ta
 - Issue is in the parameter passing pipeline
 
 **Attempted Formats** (all failed):
-- @coding-agent
+- coding-agent
 - coding-agent
 - coding-agent
 - CODING

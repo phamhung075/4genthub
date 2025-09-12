@@ -69,7 +69,7 @@ if not assignees or len(assignees) == 0:
 
 All of these formats failed with the same error:
 
-1. `assignees="@coding-agent"`
+1. `assignees="coding-agent"`
 2. `assignees="coding-agent"`
 3. `assignees="coding-agent"`
 4. `assignees="CODING"`
@@ -157,7 +157,7 @@ logger.debug(f"All parameters: {locals()}")
 
 ## Related Issues
 - Legacy role mapping was fixed but didn't resolve the issue
-- Error hints are misleading (suggest @coding-agent format which doesn't work)
+- Error hints are misleading (suggest coding-agent format which doesn't work)
 - Documentation needs update once correct format is determined
 
 ## Priority Justification
@@ -199,7 +199,7 @@ Verify the fix by successfully creating a task with assignees.
 
 ### Prompt 3: Update Error Messages
 ```
-Update the error hint in crud_handler.py line 82 to show the correct format once determined. Current hint is misleading as it suggests '@coding-agent' format which doesn't work.
+Update the error hint in crud_handler.py line 82 to show the correct format once determined. Current hint is misleading as it suggests 'coding-agent' format which doesn't work.
 ```
 
 ## Contact

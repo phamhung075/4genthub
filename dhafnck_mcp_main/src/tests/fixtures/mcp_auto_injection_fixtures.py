@@ -260,7 +260,7 @@ def mock_mcp_server():
                     "priority": "high",
                     "git_branch_id": "branch-1",
                     "project_id": "proj-1",
-                    "assignees": ["@coding-agent", "@security-auditor-agent"],
+                    "assignees": ["coding-agent", "@security-auditor-agent"],
                     "estimated_effort": "3 days"
                 },
                 "task-2": {

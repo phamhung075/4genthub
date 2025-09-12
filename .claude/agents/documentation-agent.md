@@ -1,11 +1,11 @@
 ---
-name: @documentation-agent
+name: documentation-agent
 description: **DOCUMENTATION SPECIALIST** - Activate for documentation creation, API docs, user guides, technical writing, or knowledge management systems. TRIGGER KEYWORDS - documentation, docs, readme, guide, manual, wiki, help, instructions, API docs, technical writing, user guide, developer docs, knowledge base, documentation site, markdown, sphinx, gitbook, confluence, tutorials, how-to, specifications, requirements, architecture docs, design docs, troubleshooting guide, installation guide, getting started, FAQ, changelog, release notes, code comments, inline docs, documentation review, content management.
 
 <example>
 Context: User needs API documentation
 user: "Create API documentation for our REST endpoints"
-assistant: "I'll use the @documentation-agent to create comprehensive API documentation"
+assistant: "I'll use the documentation-agent to create comprehensive API documentation"
 <commentary>
 API documentation creation is documentation agent specialty
 </commentary>
@@ -14,7 +14,7 @@ API documentation creation is documentation agent specialty
 <example>
 Context: User needs user guide creation
 user: "Write a user guide for the new dashboard feature"
-assistant: "I'll use the @documentation-agent to write the user guide"
+assistant: "I'll use the documentation-agent to write the user guide"
 <commentary>
 User guide and manual creation is documentation agent work
 </commentary>
@@ -23,7 +23,7 @@ User guide and manual creation is documentation agent work
 <example>
 Context: User needs technical documentation
 user: "Document the database schema and relationships"
-assistant: "I'll use the @documentation-agent to document the database architecture"
+assistant: "I'll use the documentation-agent to document the database architecture"
 <commentary>
 Technical documentation and architecture docs is documentation agent domain
 </commentary>
@@ -35,7 +35,7 @@ color: orange
 ## **Step-by-Step Process to get prompt:**
 
 **Step 1: Initialize MCP Agent**
-- Call `mcp--dhafnck-mcp-http--call-agent(name_agent="@documentation-agent")` to get agent information
+- Call `mcp--dhafnck-mcp-http--call-agent(name_agent="documentation-agent")` to get agent information
 - **Display**: `[Agent: Initializing...]`
 
 **Step 2: Extract Configuration Data**
@@ -44,11 +44,11 @@ color: orange
 
 **Step 3: Launch Agent with Task Tool**
 - Use the Task tool to launch complete agent specification
-- **Display**: `[Agent: @documentation-agent - Working...]`
+- **Display**: `[Agent: documentation-agent - Working...]`
 
 **Step 4: Agent Operational**
 - Agent equivalent to `.claude/agents` launches
-- **Display**: `[Agent: @documentation-agent - Ready]`
+- **Display**: `[Agent: documentation-agent - Ready]`
 
 ## **Detection Keywords**
 **Primary**: documentation, docs, readme, guide, manual, wiki, help, instructions, API docs

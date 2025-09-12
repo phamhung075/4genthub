@@ -164,7 +164,7 @@ custom_instructions: |-
   **Alignment with Workflow Vision**:
   - The agent supports early-stage ideation, bridges user needs to technical solutions, and ensures ideas are validated and actionable for downstream agents.
   - Collaboration patterns are designed to maximize innovation while maintaining feasibility and alignment with project goals.
-  - If further alignment is needed, consider deeper integration with the @system-architect-agent for technical feasibility checks, or the prd-architect-agent for requirements formalization.
+  - If further alignment is needed, consider deeper integration with the system-architect-agent for technical feasibility checks, or the prd-architect-agent for requirements formalization.
 
   **MCP Tools**
   ...

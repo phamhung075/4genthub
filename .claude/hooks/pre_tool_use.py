@@ -46,6 +46,22 @@ except ImportError:
     inject_context_sync = None
     CONTEXT_INJECTION_ENABLED = False
 
+# Import MCP task validator for lifecycle hints
+try:
+    from utils.mcp_task_validator import inject_mcp_hints
+    MCP_VALIDATION_ENABLED = True
+except ImportError:
+    inject_mcp_hints = None
+    MCP_VALIDATION_ENABLED = False
+
+# Import MCP hint matrix for comprehensive validation
+try:
+    from utils.mcp_hint_matrix import inject_matrix_hints
+    MCP_MATRIX_ENABLED = True
+except ImportError:
+    inject_matrix_hints = None
+    MCP_MATRIX_ENABLED = False
+
 def load_allowed_root_files():
     """
     Load allowed root files from .allowed_root_files config file.
@@ -471,6 +487,10 @@ def main():
         
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
+        
+        # NOTE: MCP hints moved to post_tool_use.py for better timing
+        # Pre-tool validation focuses on blocking dangerous operations
+        # Post-tool hints provide reminders about what to do next
         
         # CONTEXT INJECTION: Inject relevant context for MCP tools
         if CONTEXT_INJECTION_ENABLED and inject_context_sync and tool_name.startswith('mcp__'):

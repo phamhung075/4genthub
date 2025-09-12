@@ -1,6 +1,6 @@
 connectivity:
   interactsWith:
-  - @coding-agent
+  - coding-agent
   feedbackLoop:
     description: Collects data on project setup effectiveness, team satisfaction, delivery success, and error logs. Uses post-init surveys, milestone reviews, and incident reports to refine initiation processes. Feedback is analyzed for recurring issues and improvement opportunities.
     dataCollected:
@@ -9,4 +9,4 @@ connectivity:
     - blocker frequency
     - user feedback
     - incident logs
-    application: Patterns and issues are used to update onboarding templates, checklists, and fallback strategies. Major issues trigger review with @system-architect-agent or @devops-agent.
+    application: Patterns and issues are used to update onboarding templates, checklists, and fallback strategies. Major issues trigger review with system-architect-agent or devops-agent.

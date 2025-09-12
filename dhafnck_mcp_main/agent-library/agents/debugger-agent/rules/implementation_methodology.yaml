@@ -31,7 +31,7 @@ implementation_methodology:
       
     delegation_pattern:
       hypothesis_1:
-        agent: "@coding-agent"
+        agent: "coding-agent"
         focus: "Data validation issue"
         context: "Input validation code only"
         size: "5,000 tokens"

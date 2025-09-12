@@ -9,7 +9,7 @@ agent_info:
     maintained throughout the project lifecycle.
   migration_date: '2025-09-09T12:00:00.000000'
   name: "\U0001F4C4 Documentation Agent"
-  slug: @documentation-agent
+  slug: documentation-agent
   usage_scenarios: Activate when creating any documentation including project docs,
     technical specifications, PRDs, API documentation, data models, component designs,
     integration plans, user guides, or when comprehensive documentation expertise is needed.
