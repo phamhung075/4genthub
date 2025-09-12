@@ -1482,11 +1482,11 @@
           "size": 12263
         },
         {
-          "hash": "ad8297ac4d1b060146d451919db50ff4",
-          "modified": "2025-09-12T12:21:23.695560",
+          "hash": "b044c18a51205614ed258865e8c92756",
+          "modified": "2025-09-12T13:47:58.594404",
           "name": "mcp-task-creation-guide.md",
           "path": "development-guides/mcp-task-creation-guide.md",
-          "size": 18072
+          "size": 18071
         },
         {
           "hash": "6b22afe63974f5ccced52d263b74a7cc",
@@ -1538,11 +1538,11 @@
           "size": 14430
         },
         {
-          "hash": "7284bd190e9cae6e3789167e383de4c5",
-          "modified": "2025-09-12T12:19:24.286393",
+          "hash": "3427a9b40611bb9abd0e3c6057029068",
+          "modified": "2025-09-12T13:47:58.594404",
           "name": "ai-task-planning-prompt.md",
           "path": "development-guides/ai-task-planning-prompt.md",
-          "size": 15649
+          "size": 15647
         },
         {
           "hash": "4f9c553bb7edf206d60d8fa673dfb49e",
@@ -2141,7 +2141,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 32,
+      "count": 33,
       "files": [
         {
           "hash": "f5a4c5c6666ac6598cc9394c579deacb",
@@ -2319,6 +2319,13 @@
           "size": 7910
         },
         {
+          "hash": "e6db9499a69e78e51c53986086cf60f7",
+          "modified": "2025-09-12T13:36:43.089333",
+          "name": "task-application-service-test-coverage.md",
+          "path": "testing-qa/task-application-service-test-coverage.md",
+          "size": 4754
+        },
+        {
           "hash": "9a755e64b63cda7d63a570054a5359e3",
           "modified": "2025-08-25T00:30:42.579211",
           "name": "comprehensive-mcp-tools-test-suite.md",
@@ -2384,8 +2391,15 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 23,
+      "count": 24,
       "files": [
+        {
+          "hash": "233907fb0caebbb2033eba14d5665a52",
+          "modified": "2025-09-12T13:48:33.758016",
+          "name": "memory-leak-diagnosis-report.md",
+          "path": "troubleshooting-guides/memory-leak-diagnosis-report.md",
+          "size": 5804
+        },
         {
           "hash": "1f5aacc2420086ffda20de725a65cd27",
           "modified": "2025-09-02T21:56:01.661495",
@@ -2551,7 +2565,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T13:35:53.541030",
+  "generated_at": "2025-09-12T13:48:33.880304",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2928,6 +2942,7 @@
         "session-hook-performance-tests.md",
         "subtask-tdd-findings-2025-09-09.md",
         "subtask-tdd-methodology.md",
+        "task-application-service-test-coverage.md",
         "task-creation-import-fix-test-results.md",
         "task-creation-request-2025-09-09.md",
         "task-management-crud-test-results-2025-09-09.md",
@@ -2954,6 +2969,7 @@
         "index.md",
         "mcp-connection-issues.md",
         "mcp-hint-system-resolved-issues.md",
+        "memory-leak-diagnosis-report.md",
         "orchestrator-bypass-analysis.md",
         "subtask-persistence-debugging-guide.md",
         "task-context-completion-summary-fixes.md",
@@ -2966,5 +2982,5 @@
     }
   },
   "total_directories": 27,
-  "total_files": 312
+  "total_files": 314
 }

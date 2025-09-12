@@ -47,7 +47,7 @@ class ResponseOptimizer:
     
     # AI agent indicators in request headers or parameters
     AI_AGENT_INDICATORS = [
-        "coding-agent", "@test-orchestrator-agent", "@debugger-agent",
+        "coding-agent", "@test-orchestrator-agent", "debugger-agent",
         "system-architect-agent", "documentation-agent", "ai-agent",
         "agent", "autonomous", "orchestrator"
     ]

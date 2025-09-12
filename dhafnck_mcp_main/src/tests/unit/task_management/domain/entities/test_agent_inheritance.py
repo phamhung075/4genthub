@@ -89,14 +89,14 @@ class TestAgentInheritance:
             id=TaskId("task-001"),
             title="Parent task",
             description="Task with agents to inherit",
-            assignees=["coding-agent", "@debugger-agent"]
+            assignees=["coding-agent", "debugger-agent"]
         )
         
         inherited = task.get_inherited_assignees_for_subtasks()
         
         assert len(inherited) == 2
         assert "coding-agent" in inherited
-        assert "@debugger-agent" in inherited
+        assert "debugger-agent" in inherited
         # Ensure it's a copy, not the original list
         inherited.append("@new-agent")
         assert "@new-agent" not in task.assignees

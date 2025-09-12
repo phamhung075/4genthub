@@ -21,7 +21,7 @@ from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_
 from fastmcp.task_management.application.services.facade_service import FacadeService
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
 from fastmcp.task_management.interface.mcp_controllers.workflow_hint_enhancer import WorkflowHintEnhancer
-from fastmcp.task_management.utils.response_formatter import StandardResponseFormatter, ResponseStatus, ErrorCodes
+from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter, ResponseStatus, ErrorCodes
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
 
 # Import DTOs for request/response validation

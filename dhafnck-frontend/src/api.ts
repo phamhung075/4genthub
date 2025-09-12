@@ -374,7 +374,7 @@ export const getAvailableAgents = async (): Promise<string[]> => {
     // Return all 42 available agents from the agent library
     return [
         'coding-agent',
-        '@debugger-agent',
+        'debugger-agent',
         'code-reviewer-agent',
         '@prototyping-agent',
         '@test-orchestrator-agent',

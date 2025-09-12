@@ -54,7 +54,7 @@ custom_instructions: |-
 
   Development & Coding:
   - coding-agent - Implementation, features, APIs, backend development
-  - @debugger-agent - Bug fixing, troubleshooting, error resolution
+  - debugger-agent - Bug fixing, troubleshooting, error resolution
   - code-reviewer-agent - Code quality, review, standards
   - @prototyping-agent - Rapid prototypes, POCs, experiments
 
@@ -226,7 +226,7 @@ custom_instructions: |-
     action="create",
     title="Fix identified performance issue",
     description="Implement fix for login performance bottleneck",
-    assignees="@debugger-agent",
+    assignees="debugger-agent",
     details="Root cause from Task 1. Fix location: /src/auth/login.py:45-67. Related: /src/auth/db_queries.py. Context: /docs/performance_requirements.md:login_targets. Target: <500ms login time.",
     dependencies="[task_1_id]",
     priority="urgent"

@@ -17,7 +17,7 @@ from fastmcp.task_management.application.services.facade_service import FacadeSe
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
 from fastmcp.task_management.application.facades.project_application_facade import ProjectApplicationFacade
 from fastmcp.task_management.application.facades.git_branch_application_facade import GitBranchApplicationFacade
-from fastmcp.task_management.utils.response_formatter import StandardResponseFormatter
+from fastmcp.task_management.interface.utils.response_formatter import StandardResponseFormatter
 
 
 @pytest.fixture(scope="session")

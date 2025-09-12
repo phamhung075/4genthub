@@ -156,7 +156,7 @@ agent_assignment_rules:
     keywords: ["implement", "create", "build", "develop", "write code"]
     
   debugging_tasks:
-    agents: ["@debugger-agent"]
+    agents: ["debugger-agent"]
     keywords: ["fix", "debug", "error", "bug", "troubleshoot"]
     
   testing_tasks:
@@ -405,7 +405,7 @@ def create_bug_fix_task(bug_description, affected_files, error_logs):
     return mcp__dhafnck_mcp_http__manage_task(
         action="create",
         title=f"[BUG] {bug_description[:50]}",
-        assignees="@debugger-agent",
+        assignees="debugger-agent",
         priority="urgent",
         labels="bug,fix,production",
         details=f"""
