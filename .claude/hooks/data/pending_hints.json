@@ -67,6 +67,6 @@
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
     "from_action": "update",
     "created_at": "2025-09-12T13:24:28.734328",
-    "displayed": false
+    "displayed": true
   }
 ]

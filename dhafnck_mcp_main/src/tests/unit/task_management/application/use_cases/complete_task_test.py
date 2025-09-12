@@ -190,7 +190,7 @@ class TestCompleteTaskUseCaseBasicExecution:
             testing_notes="Additional testing notes"
         )
         
-        # FIXED: Verify success response with summary update
+        # FIXED: Verify success response with summary update - matches new code behavior
         assert result["success"] is True
         assert result["task_id"] == "task-123"
         assert result["message"] == "Task already completed, summary updated"

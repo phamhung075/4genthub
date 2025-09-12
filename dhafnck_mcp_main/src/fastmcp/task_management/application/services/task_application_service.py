@@ -19,7 +19,7 @@ from fastmcp.task_management.application.use_cases.update_task import UpdateTask
 from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
 from fastmcp.task_management.application.use_cases.search_tasks import SearchTasksUseCase
 from fastmcp.task_management.application.use_cases.delete_task import DeleteTaskUseCase
-from fastmcp.task_management.application.use_cases.complete_task import CompleteTaskUseCase
+# Import delayed to avoid circular import
 
 
 class TaskApplicationService:
@@ -42,9 +42,8 @@ class TaskApplicationService:
         self._search_tasks_use_case = SearchTasksUseCase(self._get_user_scoped_repository())
         self._delete_task_use_case = DeleteTaskUseCase(self._get_user_scoped_repository())
         
-        # Initialize complete task use case
-        # Task context repository should be injected if needed, not created here
-        # This maintains DDD boundaries - application layer shouldn't know about infrastructure
+        # Initialize complete task use case with delayed import to avoid circular import
+        from fastmcp.task_management.application.use_cases.complete_task import CompleteTaskUseCase
         self._complete_task_use_case = CompleteTaskUseCase(self._get_user_scoped_repository(), None, None)
     
     def _get_user_scoped_repository(self) -> TaskRepository:
