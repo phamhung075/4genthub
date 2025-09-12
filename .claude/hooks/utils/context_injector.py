@@ -20,8 +20,13 @@ from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
 
 # Import MCP client and cache manager
-from .mcp_client import OptimizedMCPClient
-from .cache_manager import SessionContextCache
+try:
+    from .mcp_client import OptimizedMCPClient
+    from .cache_manager import SessionContextCache
+except ImportError:
+    # Fall back to absolute imports when run as script
+    from mcp_client import OptimizedMCPClient
+    from cache_manager import SessionContextCache
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -242,6 +247,12 @@ class MCPContextQuery:
         
         context_data = {'mcp_operation': {'tool': tool_name, 'action': action}}
         
+        # For list/search actions, get recent tasks
+        if action in ['list', 'search']:
+            recent_tasks = await self._get_recent_tasks()
+            if recent_tasks:
+                context_data['recent_tasks'] = recent_tasks
+        
         # Get task context if needed
         if 'task_id' in requirements:
             task_context = await self._get_task_context(requirements['task_id'])
@@ -253,6 +264,12 @@ class MCPContextQuery:
             branch_context = await self._get_branch_context(requirements['git_branch_id'])
             if branch_context:
                 context_data['git_branch'] = branch_context
+        
+        # Get project context for project operations
+        if 'project' in tool_name.lower():
+            project_context = await self._get_project_context()
+            if project_context:
+                context_data['project'] = project_context
         
         return context_data
     
@@ -335,8 +352,14 @@ class MCPContextQuery:
                 "include_context": True
             })
             
-            if result and result.get("success"):
-                return result.get("data", {}).get("task")
+            if result:
+                # Handle both direct result and nested data structure
+                if "task" in result:
+                    return result["task"]
+                elif "data" in result and "task" in result["data"]:
+                    return result["data"]["task"]
+                elif "success" in result and result.get("data", {}).get("task"):
+                    return result["data"]["task"]
         except Exception as e:
             logger.warning(f"Failed to get task context for {task_id}: {e}")
         
@@ -366,18 +389,68 @@ class MCPContextQuery:
             'cached': True
         }
     
+    async def _get_recent_tasks(self, limit: int = 5) -> Optional[List[Dict]]:
+        """Get recent tasks from MCP."""
+        try:
+            result = self.mcp_client.make_request("/mcp/manage_task", {
+                "action": "list",
+                "limit": limit,
+                "status": "in_progress"  # Focus on active tasks
+            })
+            
+            if result:
+                # Handle different response formats
+                if "tasks" in result:
+                    return result["tasks"]
+                elif "data" in result and "tasks" in result["data"]:
+                    return result["data"]["tasks"]
+                elif isinstance(result, list):
+                    return result[:limit]
+        except Exception as e:
+            logger.warning(f"Failed to get recent tasks: {e}")
+        
+        return None
+    
+    async def _get_project_context(self) -> Optional[Dict]:
+        """Get current project context from MCP."""
+        try:
+            result = self.mcp_client.make_request("/mcp/manage_project", {
+                "action": "list",
+                "limit": 1  # Get current project
+            })
+            
+            if result:
+                # Handle different response formats
+                if "projects" in result and result["projects"]:
+                    return result["projects"][0]
+                elif "data" in result and "projects" in result["data"]:
+                    projects = result["data"]["projects"]
+                    return projects[0] if projects else None
+        except Exception as e:
+            logger.warning(f"Failed to get project context: {e}")
+        
+        return None
+    
     async def _get_file_related_tasks(self, file_path: str) -> Optional[List[Dict]]:
         """Get tasks related to a specific file."""
         # Search for tasks mentioning this file
         try:
+            # Extract filename for search
+            from pathlib import Path
+            filename = Path(file_path).name
+            
             result = self.mcp_client.make_request("/mcp/manage_task", {
                 "action": "search",
-                "query": file_path,
+                "query": filename,
                 "limit": 5
             })
             
-            if result and result.get("success"):
-                return result.get("data", {}).get("tasks", [])
+            if result:
+                # Handle different response formats
+                if "tasks" in result:
+                    return result["tasks"]
+                elif "data" in result and "tasks" in result["data"]:
+                    return result["data"]["tasks"]
         except Exception as e:
             logger.warning(f"Failed to get file related tasks for {file_path}: {e}")
         

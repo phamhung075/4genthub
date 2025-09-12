@@ -1,0 +1,9 @@
+{
+  "session_id": "0634597b-dd51-4d8c-a024-6a2fa705c236",
+  "prompts": [
+    "call agent to analyze response of task_manager mcp, call it for see , how we can make better, remove redunance and data heping ai understand better context",
+    "review i see it has doublon ",
+    "modify document you make"
+  ],
+  "agent_name": "Catalyst"
+}

@@ -1081,7 +1081,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 17,
+      "count": 18,
       "files": [
         {
           "hash": "134c4b083eb9ca196677d3c8c6200b2c",
@@ -1096,6 +1096,13 @@
           "name": "sub-agent-instructions.md",
           "path": "core-architecture/sub-agent-instructions.md",
           "size": 3485
+        },
+        {
+          "hash": "b6129eae9dff5f725430f2ed51d0a40f",
+          "modified": "2025-09-12T02:28:00.416784",
+          "name": "real-time-context-injection-system.md",
+          "path": "core-architecture/real-time-context-injection-system.md",
+          "size": 8344
         },
         {
           "hash": "82ca22389b5d5f7006786c75cb6c63f0",
@@ -1699,7 +1706,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 17,
+      "count": 18,
       "files": [
         {
           "hash": "8a089beed43dd67720e00a56eabc2edd",
@@ -1721,6 +1728,13 @@
           "name": "production-deployment-guide.md",
           "path": "operations/production-deployment-guide.md",
           "size": 13619
+        },
+        {
+          "hash": "39572116d2f04a1a870ea4b0d64d71ec",
+          "modified": "2025-09-12T02:42:16.057155",
+          "name": "mcp-response-optimization-recommendations.md",
+          "path": "operations/mcp-response-optimization-recommendations.md",
+          "size": 8364
         },
         {
           "hash": "3d8237970285321679933471ac8caaeb",
@@ -1918,6 +1932,19 @@
         }
       ],
       "path": ""
+    },
+    "security": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "3149c11cd70de4f911f5f60af025be63",
+          "modified": "2025-09-12T01:25:28.601193",
+          "name": "hook-authentication-setup.md",
+          "path": "security/hook-authentication-setup.md",
+          "size": 2226
+        }
+      ],
+      "path": "security"
     },
     "setup-guides": {
       "count": 9,
@@ -2392,7 +2419,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-11T23:57:35.334790",
+  "generated_at": "2025-09-12T02:42:16.231403",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2569,6 +2596,7 @@
         "mcp-auto-injection-architecture.md",
         "mcp-injection-task-dependencies.md",
         "prompt-analyze.md",
+        "real-time-context-injection-system.md",
         "real-time-injection-system.md",
         "session-type-detection.md",
         "sub-agent-instructions.md"
@@ -2684,6 +2712,7 @@
         "environment-setup.md",
         "index.md",
         "mcp-registration-system.md",
+        "mcp-response-optimization-recommendations.md",
         "performance-optimization-guide.md",
         "performance-tuning-guide.md",
         "postgresql-configuration-guide.md",
@@ -2694,6 +2723,11 @@
       "files": [
         "PRD.md",
         "README.md"
+      ]
+    },
+    "security": {
+      "files": [
+        "hook-authentication-setup.md"
       ]
     },
     "setup-guides": {
@@ -2777,6 +2811,6 @@
       ]
     }
   },
-  "total_directories": 25,
-  "total_files": 291
+  "total_directories": 26,
+  "total_files": 294
 }

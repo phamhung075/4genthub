@@ -1,8 +1,11 @@
 # DhafnckMCP Agent System - CLAUDE AS MASTER ORCHESTRATOR
 
+- Only uses environment variables and remove any hardcoded secrets
+
 ## 🚀 INITIALIZATION: LOAD MASTER ORCHESTRATOR CAPABILITIES
 
-**ON STARTUP**: Claude MUST immediately call:
+
+**ON STARTUP PRINCIPAL(NOT SUB AGENTS)**: Claude MUST immediately call:
 ```typescript
 mcp__dhafnck_mcp_http__call_agent("master-orchestrator-agent")
 ```
