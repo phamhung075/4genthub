@@ -3,7 +3,7 @@ Database model for API tokens.
 """
 
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, ARRAY
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
 Base = declarative_base()

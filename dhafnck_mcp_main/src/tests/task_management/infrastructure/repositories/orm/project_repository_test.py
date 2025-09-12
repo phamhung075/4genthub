@@ -12,11 +12,11 @@ from fastmcp.task_management.infrastructure.repositories.orm.project_repository 
     ProjectRepository
 )
 from fastmcp.task_management.infrastructure.orm.models import (
-    ProjectORM,
-    TaskORM,
-    AgentORM,
-    GitBranchORM,
-    ContextORM
+    Project as ProjectORM,
+    Task as TaskORM,
+    Agent as AgentORM,
+    ProjectGitBranch as GitBranchORM,
+    ProjectContext as ContextORM
 )
 from fastmcp.task_management.domain.entities import Project
 

@@ -588,3 +588,4 @@ class ContextInheritanceCache(Base):
         Index('idx_cache_expires', 'expires_at'),
         Index('idx_cache_invalidated', 'invalidated'),
     )
+

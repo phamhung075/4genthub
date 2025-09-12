@@ -1963,8 +1963,36 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 4,
+      "count": 9,
       "files": [
+        {
+          "hash": "217883a94794946cb82933003f0af904",
+          "modified": "2025-09-12T23:28:13.954157",
+          "name": "test-fixes-root-cause-resolution.md",
+          "path": "reports-status/test-fixes-root-cause-resolution.md",
+          "size": 2366
+        },
+        {
+          "hash": "d4abfa3729515a561032ca78a0a27ab2",
+          "modified": "2025-09-12T21:34:36.669934",
+          "name": "test-fixes-validation-report-2025-09-12.md",
+          "path": "reports-status/test-fixes-validation-report-2025-09-12.md",
+          "size": 6792
+        },
+        {
+          "hash": "315ba8a3b6ce179e5390dd83d157e137",
+          "modified": "2025-09-12T22:15:06.853880",
+          "name": "test-error-resolution-final.md",
+          "path": "reports-status/test-error-resolution-final.md",
+          "size": 1489
+        },
+        {
+          "hash": "4b759470ad3700c98eb87161c4bd3f6a",
+          "modified": "2025-09-12T22:54:45.784036",
+          "name": "test-fixes-final-status.md",
+          "path": "reports-status/test-fixes-final-status.md",
+          "size": 3108
+        },
         {
           "hash": "15a1d64655b2f13244465a5bc85aebe2",
           "modified": "2025-09-12T15:43:19.599224",
@@ -1978,6 +2006,13 @@
           "name": "design-patterns-analysis.md",
           "path": "reports-status/design-patterns-analysis.md",
           "size": 11136
+        },
+        {
+          "hash": "c8b017cd1c5d780ba65816a725204345",
+          "modified": "2025-09-12T22:12:41.733472",
+          "name": "test-cleanup-report-2025-09-12.md",
+          "path": "reports-status/test-cleanup-report-2025-09-12.md",
+          "size": 2674
         },
         {
           "hash": "62b622bf2e8bde41441e844240bd602d",
@@ -2447,7 +2482,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 24,
+      "count": 27,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2455,6 +2490,13 @@
           "name": "memory-leak-diagnosis-report.md",
           "path": "troubleshooting-guides/memory-leak-diagnosis-report.md",
           "size": 5804
+        },
+        {
+          "hash": "1da8cd3933efef80496e3d60cd97b25b",
+          "modified": "2025-09-12T22:40:02.058595",
+          "name": "test-import-errors-complete-fix.md",
+          "path": "troubleshooting-guides/test-import-errors-complete-fix.md",
+          "size": 2760
         },
         {
           "hash": "1f5aacc2420086ffda20de725a65cd27",
@@ -2604,11 +2646,25 @@
           "size": 6597
         },
         {
+          "hash": "7b9096cfeb80bffd6448b4ddb5b7e98c",
+          "modified": "2025-09-12T22:11:53.104311",
+          "name": "test-import-errors-fix.md",
+          "path": "troubleshooting-guides/test-import-errors-fix.md",
+          "size": 1869
+        },
+        {
           "hash": "026da6676725cc99e43f4f05b4bc6a3b",
           "modified": "2025-08-25T23:27:27.759161",
           "name": "mcp-connection-issues.md",
           "path": "troubleshooting-guides/mcp-connection-issues.md",
           "size": 7036
+        },
+        {
+          "hash": "94e154f7d4610479bed5708f2ef1b445",
+          "modified": "2025-09-12T22:36:15.118786",
+          "name": "test-menu-fix-applied.md",
+          "path": "troubleshooting-guides/test-menu-fix-applied.md",
+          "size": 1396
         },
         {
           "hash": "5c8b81d9269adffe7da7aeef9d5193d1",
@@ -2621,7 +2677,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T21:19:52.034965",
+  "generated_at": "2025-09-12T23:30:51.342908",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2947,6 +3003,11 @@
         "ai-task-planning-system-complete-2025-09-12.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
+        "test-cleanup-report-2025-09-12.md",
+        "test-error-resolution-final.md",
+        "test-fixes-final-status.md",
+        "test-fixes-root-cause-resolution.md",
+        "test-fixes-validation-report-2025-09-12.md",
         "uat-comprehensive-report-2025-09-12.md"
       ]
     },
@@ -3041,10 +3102,13 @@
         "task-persistence-fix-guide.md",
         "task-persistence-issue-analysis.md",
         "tdd-remediation-fixes.md",
+        "test-import-errors-complete-fix.md",
+        "test-import-errors-fix.md",
+        "test-menu-fix-applied.md",
         "v2-api-git-branch-filtering-fix.md"
       ]
     }
   },
   "total_directories": 27,
-  "total_files": 322
+  "total_files": 330
 }

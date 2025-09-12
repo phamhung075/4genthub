@@ -21,6 +21,30 @@ import json
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class UserPreferences:
+    """User preferences for context expansion behavior"""
+    
+    # Expansion preferences
+    auto_expand_related: bool = True
+    max_expansion_depth: int = 3
+    preferred_context_level: str = "PROJECT"  # Will be converted to ContextLevel
+    
+    # Performance preferences  
+    max_tokens_per_request: int = 4000
+    prefetch_enabled: bool = True
+    cache_expansion_results: bool = True
+    
+    # Filtering preferences
+    include_archived: bool = False
+    include_completed: bool = True
+    priority_threshold: str = "LOW"  # LOW, MEDIUM, HIGH, URGENT
+    
+    # Notification preferences
+    notify_on_expansion: bool = False
+    expansion_notifications: List[str] = field(default_factory=list)
+
+
 class ContextLevel(Enum):
     """Context expansion levels following the 4-tier hierarchy."""
     GLOBAL = "global"      # Organization-wide context

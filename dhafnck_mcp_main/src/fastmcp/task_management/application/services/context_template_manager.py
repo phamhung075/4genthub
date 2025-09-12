@@ -62,6 +62,40 @@ class OperationType(Enum):
     AGENT_CALL = "agent.call"
 
 
+class TemplateValidationError(Exception):
+    """Exception raised when template validation fails"""
+    pass
+
+
+class TemplateVariable:
+    """Represents a variable in a context template"""
+    
+    def __init__(self, name: str, required: bool = True, default: Any = None, description: str = ""):
+        self.name = name
+        self.required = required
+        self.default = default
+        self.description = description
+
+
+class ContextTemplate:
+    """Represents a context template with variables and requirements"""
+    
+    def __init__(self, name: str, operation_type: OperationType, variables: List[TemplateVariable] = None,
+                 context_requirements: List[str] = None, description: str = ""):
+        self.name = name
+        self.operation_type = operation_type
+        self.variables = variables or []
+        self.context_requirements = context_requirements or []
+        self.description = description
+    
+    def validate(self, context: Dict[str, Any]) -> bool:
+        """Validate that context meets template requirements"""
+        for variable in self.variables:
+            if variable.required and variable.name not in context:
+                raise TemplateValidationError(f"Required variable '{variable.name}' missing from context")
+        return True
+
+
 class ContextTemplateManager:
     """Manages context templates for all MCP operations"""
     

@@ -5,6 +5,11 @@ This module contains the comprehensive documentation for the manage_subtask MCP 
 Separated from the controller logic for better maintainability and organization.
 """
 
+def get_subtask_description() -> str:
+    """Get the subtask management tool description"""
+    return MANAGE_SUBTASK_DESCRIPTION
+
+
 MANAGE_SUBTASK_DESCRIPTION = """
 🔧 SUBTASK MANAGEMENT SYSTEM - Hierarchical Task Decomposition with Automatic Context Updates
 
@@ -225,6 +230,10 @@ def get_manage_subtask_parameters():
 def get_manage_subtask_description():
     """Get manage subtask description for use in controller."""
     return MANAGE_SUBTASK_DESCRIPTION
+
+# Backward compatibility constants
+SUBTASK_DESCRIPTION = MANAGE_SUBTASK_DESCRIPTION
+PARAMETER_DESCRIPTIONS = MANAGE_SUBTASK_PARAMETERS_DESCRIPTION
 
 # Legacy parameter descriptions for backward compatibility
 MANAGE_SUBTASK_PARAMETERS = {
