@@ -38,6 +38,8 @@ Pipfile.lock
 # Build and deployment
 docker-menu.sh
 test-menu.sh
+captain-definition.backend
+captain-definition.frontend
 
 # Python configuration
 setup.py
