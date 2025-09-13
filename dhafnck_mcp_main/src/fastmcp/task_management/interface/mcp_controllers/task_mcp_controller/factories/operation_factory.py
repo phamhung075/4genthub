@@ -181,9 +181,30 @@ class OperationFactory:
             search_kwargs = {k: v for k, v in kwargs.items() if k not in excluded_params}
         
         if operation == 'list':
-            return handler.list_tasks(facade, **search_kwargs)
+            return handler.list_tasks(
+                facade=facade,
+                status=search_kwargs.get('status'),
+                priority=search_kwargs.get('priority'),
+                assignee=search_kwargs.get('assignee'),
+                tag=search_kwargs.get('tag'),
+                git_branch_id=search_kwargs.get('git_branch_id'),
+                limit=search_kwargs.get('limit'),
+                offset=search_kwargs.get('offset'),
+                sort_by=search_kwargs.get('sort_by'),
+                sort_order=search_kwargs.get('sort_order')
+            )
         elif operation == 'search':
-            return handler.search_tasks(facade, **search_kwargs)
+            return handler.search_tasks(
+                facade=facade,
+                query=search_kwargs.get('query'),
+                status=search_kwargs.get('status'),
+                priority=search_kwargs.get('priority'),
+                assignee=search_kwargs.get('assignee'),
+                tag=search_kwargs.get('tag'),
+                git_branch_id=search_kwargs.get('git_branch_id'),
+                limit=search_kwargs.get('limit'),
+                offset=search_kwargs.get('offset')
+            )
         elif operation == 'next':
             result = await handler.get_next_task(facade, **search_kwargs)
             

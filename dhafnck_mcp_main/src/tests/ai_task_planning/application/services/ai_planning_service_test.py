@@ -35,7 +35,7 @@ class TestAITaskPlanningService:
         )
         
         # Add requirements
-        pytest_request.add_requirement(
+        request.add_requirement(
             description="Create user authentication with JWT tokens",
             priority="high",
             acceptance_criteria=[
@@ -45,7 +45,7 @@ class TestAITaskPlanningService:
             ]
         )
         
-        pytest_request.add_requirement(
+        request.add_requirement(
             description="Build user profile management UI",
             priority="medium",
             acceptance_criteria=[
@@ -55,7 +55,7 @@ class TestAITaskPlanningService:
             ]
         )
         
-        pytest_request.add_requirement(
+        request.add_requirement(
             description="Comprehensive test coverage for authentication",
             priority="high",
             acceptance_criteria=[
@@ -264,13 +264,13 @@ class TestAITaskPlanningService:
         )
         
         # Add requirements with different complexities
-        pytest_request.add_requirement(
+        request.add_requirement(
             description="Fix minor typo in documentation",
             priority="low",
             acceptance_criteria=["Fix typo"]
         )
         
-        pytest_request.add_requirement(
+        request.add_requirement(
             description="Build complete e-commerce platform with payment integration",
             priority="critical",
             acceptance_criteria=[
@@ -301,7 +301,7 @@ class TestAITaskPlanningService:
             title="Execution Test",
             description="Test execution without facade"
         )
-        pytest_request.add_requirement("Test requirement", "medium")
+        request.add_requirement("Test requirement", "medium")
         
         plan = await service.create_intelligent_plan(request)
         
@@ -324,7 +324,7 @@ class TestAITaskPlanningService:
             title="Execution with Facade Test",
             description="Test execution with facade"
         )
-        pytest_request.add_requirement("Implement feature", "high")
+        request.add_requirement("Implement feature", "high")
         
         plan = await service.create_intelligent_plan(request)
         

@@ -263,6 +263,51 @@ class AgentMCPController:
             "hint": f"Include '{field}' in your request for action '{action}'"
         }
     
+    # Backward compatibility methods for tests - delegate to factory
+    def handle_crud_operations(self, action: str, project_id: str, agent_id: Optional[str] = None, 
+                              name: Optional[str] = None, call_agent: Optional[str] = None) -> Dict[str, Any]:
+        """Backward compatibility method for tests - delegates to factory."""
+        facade = self._get_facade_for_request(project_id)
+        return self._operation_factory.handle_operation(
+            operation=action,
+            facade=facade,
+            project_id=project_id,
+            agent_id=agent_id,
+            name=name,
+            call_agent=call_agent,
+            git_branch_id=None,
+            user_id=None
+        )
+    
+    def handle_assignment_operations(self, action: str, project_id: str, agent_id: str, 
+                                   git_branch_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Backward compatibility method for tests - delegates to factory."""
+        facade = self._get_facade_for_request(project_id, user_id)
+        return self._operation_factory.handle_operation(
+            operation=action,
+            facade=facade,
+            project_id=project_id,
+            agent_id=agent_id,
+            name=None,
+            call_agent=None,
+            git_branch_id=git_branch_id,
+            user_id=user_id
+        )
+    
+    def handle_rebalance_operation(self, project_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Backward compatibility method for tests - delegates to factory."""
+        facade = self._get_facade_for_request(project_id, user_id)
+        return self._operation_factory.handle_operation(
+            operation="rebalance",
+            facade=facade,
+            project_id=project_id,
+            agent_id=None,
+            name=None,
+            call_agent=None,
+            git_branch_id=None,
+            user_id=user_id
+        )
+
     def _enhance_response_with_workflow_guidance(self, response: Dict[str, Any], action: str, 
                                                project_id: Optional[str] = None,
                                                agent_id: Optional[str] = None) -> Dict[str, Any]:

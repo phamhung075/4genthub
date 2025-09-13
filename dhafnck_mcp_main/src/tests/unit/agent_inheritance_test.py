@@ -46,7 +46,7 @@ class TestTaskEntityAgentInheritance:
         assignees = ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
         validated = self.task.validate_assignee_list(assignees)
         
-        expected = ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+        expected = ["@coding-agent", "@test-orchestrator-agent", "@documentation-agent"]
         assert validated == expected
 
     def test_validate_assignee_list_invalid(self):
@@ -243,7 +243,7 @@ class TestAgentInheritanceService:
         assignees = ["coding-agent", "@test-orchestrator-agent"]
         validated = self.service.validate_agent_assignments(assignees)
         
-        expected = ["coding-agent", "@test-orchestrator-agent"]
+        expected = ["@coding-agent", "@test-orchestrator-agent"]
         assert validated == expected
 
     def test_validate_agent_assignments_invalid(self):

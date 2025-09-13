@@ -8,7 +8,7 @@ from typing import Optional
 import jwt
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastmcp.auth.domain.entities.user import User
 

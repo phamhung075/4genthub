@@ -1,8 +1,9 @@
 """Test real-time status tracker service"""
 
 import pytest
+import pytest_asyncio
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -26,7 +27,7 @@ class TestRealTimeStatusTracker:
         """Create mock event bus"""
         return AsyncMock()
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def tracker(self, event_bus):
         """Create tracker instance"""
         tracker = RealTimeStatusTracker(
@@ -148,7 +149,7 @@ class TestRealTimeStatusTracker:
         # Update status
         await tracker.update_agent_status(
             agent_id=mock_session.agent_id,
-            status=AgentStatus.BUSY,
+            status=SessionState.BUSY,
             current_task_id="task-789",
             current_activity="Processing request",
             metadata={"custom": "data"}
@@ -210,7 +211,7 @@ class TestRealTimeStatusTracker:
         # Normal usage
         await tracker.report_resource_usage(
             agent_id=mock_session.agent_id,
-            resource_type="cpu",
+            resource_type="cpu_thread",
             used_amount=50.0,
             allocated_amount=100.0,
             resource_id="cpu-1"
@@ -221,7 +222,7 @@ class TestRealTimeStatusTracker:
         # High usage (anomaly)
         await tracker.report_resource_usage(
             agent_id=mock_session.agent_id,
-            resource_type="memory",
+            resource_type="memory_allocation",
             used_amount=95.0,
             allocated_amount=100.0,
             resource_id="mem-1"
@@ -281,13 +282,21 @@ class TestRealTimeStatusTracker:
     async def test_get_all_agent_statuses(self, tracker, mock_session):
         """Test getting all agent statuses"""
         # Register multiple sessions
-        sessions = [mock_session]
+        sessions = []
+        
+        # Register the main mock session first
+        await tracker.register_session(mock_session)
+        sessions.append(mock_session)
+        
+        # Register additional sessions
         for i in range(2):
             session = Mock(spec=AgentSession)
             session.session_id = str(uuid4())
             session.agent_id = f"agent-{i}"
+            session.project_id = f"proj-{i}"
             session.state = SessionState.BUSY
             session.active_tasks = set()
+            session.started_at = datetime.now(timezone.utc)
             session.calculate_health_score = Mock(return_value=0.9)
             session.get_resource_usage_summary = Mock(return_value={})
             session.metrics = mock_session.metrics.copy()
@@ -311,7 +320,7 @@ class TestRealTimeStatusTracker:
         for _ in range(5):
             await tracker.update_agent_status(
                 agent_id=mock_session.agent_id,
-                status=AgentStatus.BUSY
+                status=SessionState.BUSY
             )
             await asyncio.sleep(0.1)
         
@@ -379,7 +388,7 @@ class TestRealTimeStatusTracker:
         await tracker.register_session(mock_session)
         await tracker.update_agent_status(
             agent_id=mock_session.agent_id,
-            status=AgentStatus.BUSY
+            status=SessionState.BUSY
         )
         
         # Should have received notifications
@@ -417,8 +426,9 @@ class TestRealTimeStatusTracker:
         """Test background session monitoring"""
         await tracker.register_session(mock_session)
         
-        # Wait for monitoring cycle
-        await asyncio.sleep(1.5)
+        # Wait for monitoring cycle with buffer time
+        # Since snapshot_interval_seconds=1, wait for 2 full cycles
+        await asyncio.sleep(2.5)
         
         # Should have taken snapshots
         history = await tracker.get_agent_history(mock_session.agent_id)
@@ -432,8 +442,9 @@ class TestRealTimeStatusTracker:
         # Mark session as expired
         mock_session.is_expired.return_value = True
         
-        # Wait for monitoring cycle
-        await asyncio.sleep(1.5)
+        # Wait for monitoring cycle with buffer time
+        # Since snapshot_interval_seconds=1, wait for 2 full cycles
+        await asyncio.sleep(2.5)
         
         # Session should be unregistered
         assert mock_session.session_id not in tracker.active_sessions
@@ -447,8 +458,15 @@ class TestRealTimeStatusTracker:
         # Mark session as dead
         mock_session.is_alive.return_value = False
         
-        # Wait for monitoring cycle
-        await asyncio.sleep(1.5)
+        # Wait for monitoring cycle with timeout protection
+        # Since snapshot_interval_seconds=1, wait for at least 2 cycles
+        max_wait = 3.0
+        start_time = asyncio.get_event_loop().time()
+        
+        while mock_session.session_id in tracker.active_sessions:
+            if asyncio.get_event_loop().time() - start_time > max_wait:
+                break
+            await asyncio.sleep(0.1)
         
         # Session should be unregistered
         assert mock_session.session_id not in tracker.active_sessions

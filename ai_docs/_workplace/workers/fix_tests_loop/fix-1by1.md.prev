@@ -1,0 +1,2 @@
+fix all the failing tests listed in the .test_cache/failed_tests.txt file one by one, clear line test fail on list after fixed and retest
+debug addressing the root cause, do not fixing symptoms only

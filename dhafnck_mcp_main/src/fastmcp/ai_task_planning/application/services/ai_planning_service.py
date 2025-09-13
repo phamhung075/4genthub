@@ -391,7 +391,7 @@ class AITaskPlanningService:
             return TaskType.EPIC
         elif analysis.estimated_effort_hours > 16:
             return TaskType.FEATURE
-        elif 'testing' in [p.value for p in analysis.detected_patterns]:
+        elif 'testing_requirement' in [p.value for p in analysis.detected_patterns]:
             return TaskType.TESTING
         elif 'bug_fix' in [p.value for p in analysis.detected_patterns]:
             return TaskType.BUG

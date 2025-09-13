@@ -52,7 +52,7 @@ class TestAgentAssignmentAtCreation:
         
         # Mock successful task creation
         created_task = Task(
-            id=TaskId("test-task-123"),
+            id=TaskId("550e8400-e29b-41d4-a716-446655440000"),
             title="Test Task",
             description="Test Description",
             assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]

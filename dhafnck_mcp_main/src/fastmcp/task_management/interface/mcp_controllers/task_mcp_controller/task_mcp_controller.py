@@ -28,6 +28,7 @@ from ..workflow_hint_enhancer import WorkflowHintEnhancer
 from ..workflow_guidance.task import TaskWorkflowFactory
 from ...utils.error_handler import UserFriendlyErrorHandler
 from ...utils.response_formatter import StandardResponseFormatter, ResponseStatus, ErrorCodes
+from ...utils import description_loader
 
 from ....application.dtos.task.create_task_request import CreateTaskRequest
 from ....application.dtos.task.list_tasks_request import ListTasksRequest
@@ -37,6 +38,7 @@ from ....application.services.facade_service import FacadeService
 
 from ....application.facades.task_application_facade import TaskApplicationFacade
 from ....application.facades.unified_context_facade import UnifiedContextFacade
+from ....application.factories.task_facade_factory import TaskFacadeFactory
 # Services are created by factories with their required dependencies
 from ....application.services.parameter_enforcement_service import (
     ParameterEnforcementService, 
@@ -116,12 +118,25 @@ class TaskMCPController(ContextPropagationMixin):
     """
 
     def __init__(self, 
-                 facade_service: Optional[FacadeService] = None,
+                 facade_service_or_factory: Optional[Union[FacadeService, TaskFacadeFactory]] = None,
                  workflow_hint_enhancer: Optional[WorkflowHintEnhancer] = None):
-        """Initialize the modular task MCP controller."""
+        """Initialize the modular task MCP controller.
         
-        # Initialize core dependencies
-        self._facade_service = facade_service or FacadeService.get_instance()
+        Args:
+            facade_service_or_factory: Either a FacadeService (new interface) or TaskFacadeFactory (legacy interface)
+            workflow_hint_enhancer: Optional workflow hint enhancer
+        """
+        
+        # Handle both FacadeService and TaskFacadeFactory interfaces for backward compatibility
+        if isinstance(facade_service_or_factory, TaskFacadeFactory):
+            # Legacy interface - store the factory and use FacadeService internally
+            self._task_facade_factory = facade_service_or_factory
+            self._facade_service = FacadeService.get_instance()
+        else:
+            # New interface - use FacadeService directly
+            self._facade_service = facade_service_or_factory or FacadeService.get_instance()
+            self._task_facade_factory = None  # Not using legacy factory
+        
         self._workflow_hint_enhancer = workflow_hint_enhancer
         
         # Initialize response formatter and error handler
@@ -328,6 +343,28 @@ class TaskMCPController(ContextPropagationMixin):
             filtered_kwargs = {k: v for k, v in kwargs.items() if k != 'task_id'}
             logger.info(f"manage_task - filtered_kwargs keys: {list(filtered_kwargs.keys())}")
             
+            # Step 2.5: Handle flexible input types for parameters (string-to-list conversion for test compatibility)
+            if 'assignees' in filtered_kwargs and filtered_kwargs['assignees'] is not None and isinstance(filtered_kwargs['assignees'], str):
+                assignees = filtered_kwargs['assignees']
+                if ',' in assignees:
+                    filtered_kwargs['assignees'] = [a.strip() for a in assignees.split(',') if a.strip()]
+                else:
+                    filtered_kwargs['assignees'] = [assignees.strip()] if assignees.strip() else []
+            
+            if 'labels' in filtered_kwargs and filtered_kwargs['labels'] is not None and isinstance(filtered_kwargs['labels'], str):
+                labels = filtered_kwargs['labels']
+                if ',' in labels:
+                    filtered_kwargs['labels'] = [l.strip() for l in labels.split(',') if l.strip()]
+                else:
+                    filtered_kwargs['labels'] = [labels.strip()] if labels.strip() else []
+            
+            if 'dependencies' in filtered_kwargs and filtered_kwargs['dependencies'] is not None and isinstance(filtered_kwargs['dependencies'], str):
+                dependencies = filtered_kwargs['dependencies']
+                if ',' in dependencies:
+                    filtered_kwargs['dependencies'] = [d.strip() for d in dependencies.split(',') if d.strip()]
+                else:
+                    filtered_kwargs['dependencies'] = [dependencies.strip()] if dependencies.strip() else []
+            
             # Step 3: Get facade for request
             logger.debug(f"Getting facade for action={action}, task_id={task_id}, git_branch_id={git_branch_id}")
             facade = self._get_facade_for_request(
@@ -470,6 +507,49 @@ class TaskMCPController(ContextPropagationMixin):
             # For other actions, basic validation
             return True, None
 
+    def _create_missing_field_error(self, field: str, action: str) -> Dict[str, Any]:
+        """Create standardized missing field error response."""
+        return {
+            "status": "failure",
+            "error": {
+                "message": f"Validation failed for field: {field}",
+                "code": "VALIDATION_ERROR"
+            },
+            "operation": action,
+            "metadata": {
+                "validation_details": {
+                    "field": field,
+                    "expected": f"A valid {field} value",
+                    "hint": f"Include '{field}' in your request for action '{action}'"
+                }
+            }
+        }
+    
+    def _create_invalid_action_error(self, invalid_action: str) -> Dict[str, Any]:
+        """Create standardized invalid action error response."""
+        valid_actions = ["create", "update", "get", "delete", "complete", "list", "search", "next", "add_dependency", "remove_dependency", "ai_plan", "ai_create", "ai_enhance", "ai_analyze", "ai_suggest_agents"]
+        return {
+            "status": "failure",
+            "error": {
+                "message": "Validation failed for field: action",
+                "code": "VALIDATION_ERROR"
+            },
+            "operation": "unknown_action",
+            "metadata": {
+                "validation_details": {
+                    "field": "action",
+                    "expected": f"One of: {', '.join(valid_actions)}",
+                    "hint": f"Invalid action: {invalid_action}. Use one of the supported actions."
+                }
+            }
+        }
+
+    def _get_task_management_descriptions(self) -> Dict[str, Any]:
+        """Get task management descriptions from description loader."""
+        all_descriptions = description_loader.get_all_descriptions()
+        # Return only the tasks section
+        return all_descriptions.get("tasks", {})
+
     def _check_task_permissions(self, action: str, user_id: str, task_id: Optional[str] = None) -> tuple[bool, Optional[Dict[str, Any]]]:
         """
         Check if user has required permissions for task operations.
@@ -554,3 +634,71 @@ class TaskMCPController(ContextPropagationMixin):
             # On error, allow the operation to proceed (fail-open for now)
             # In production, you might want to fail-closed (deny access on errors)
             return True, None
+
+    # ===== BACKWARD COMPATIBILITY METHODS =====
+    # These methods provide compatibility with legacy test interfaces
+    # while delegating to the new modular factory architecture
+
+    async def handle_crud_operations(self, action: str, facade: Any, user_id: str, **kwargs) -> Dict[str, Any]:
+        """Handle CRUD operations - backward compatibility method."""
+        return await self._operation_factory.handle_operation(
+            operation=action,
+            facade=facade,
+            user_id=user_id,
+            **kwargs
+        )
+
+    async def handle_list_search_next(self, action: str, facade: Any, user_id: str, **kwargs) -> Dict[str, Any]:
+        """Handle list/search/next operations - backward compatibility method."""
+        return await self._operation_factory.handle_operation(
+            operation=action,
+            facade=facade,
+            user_id=user_id,
+            **kwargs
+        )
+
+    async def handle_recommendation_operations(self, action: str, facade: Any, user_id: str, **kwargs) -> Dict[str, Any]:
+        """Handle recommendation operations - backward compatibility method."""
+        return await self._operation_factory.handle_operation(
+            operation=action,
+            facade=facade,
+            user_id=user_id,
+            **kwargs
+        )
+
+    async def handle_dependency_operations(self, action: str, facade: Any, user_id: str, **kwargs) -> Dict[str, Any]:
+        """Handle dependency operations - backward compatibility method."""
+        return await self._operation_factory.handle_operation(
+            operation=action,
+            facade=facade,
+            user_id=user_id,
+            **kwargs
+        )
+
+    def manage_task_sync(self, action: str, user_id: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+        """Synchronous wrapper for manage_task - backward compatibility method for tests."""
+        import asyncio
+        
+        # Check if we're already in an async context
+        try:
+            loop = asyncio.get_running_loop()
+            # If we're in an async context, we need to run in a new thread
+            import concurrent.futures
+            import threading
+            
+            def run_in_thread():
+                # Create new event loop for this thread
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(self.manage_task(action, user_id, **kwargs))
+                finally:
+                    new_loop.close()
+            
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_thread)
+                return future.result()
+                
+        except RuntimeError:
+            # No running loop, we can create our own
+            return asyncio.run(self.manage_task(action, user_id, **kwargs))

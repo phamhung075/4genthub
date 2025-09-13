@@ -239,8 +239,14 @@ class MockWebSocketDisconnect(Exception):
 class MockFastAPI:
     def __init__(self, *args, **kwargs):
         self.middleware_stack = []
+        self.routers = []
+    
     def add_middleware(self, middleware, **kwargs):
         self.middleware_stack.append(middleware)
+    
+    def include_router(self, router, **kwargs):
+        """Mock implementation of include_router to match FastAPI behavior"""
+        self.routers.append(router)
 
 # Create fastapi module mock
 mock_fastapi = type(sys)('fastapi')

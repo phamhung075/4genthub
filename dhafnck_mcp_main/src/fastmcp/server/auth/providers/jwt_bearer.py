@@ -9,13 +9,13 @@ import os
 import time
 from typing import Optional, List
 import jwt
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, JSON
 
 from mcp.server.auth.provider import AccessToken
 from fastmcp.server.auth.providers.bearer import BearerAuthProvider
-from fastmcp.auth.mcp_integration.jwt_auth_backend import JWTAuthBackend
+from fastmcp.auth.mcp_integration.jwt_auth_backend import create_jwt_auth_backend
 from fastmcp.auth.interface.fastapi_auth import get_db
 
 

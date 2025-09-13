@@ -12,6 +12,7 @@ from typing import Dict, Any
 
 from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller import TaskMCPController
 from fastmcp.task_management.application.facades.task_application_facade import TaskApplicationFacade
+from fastmcp.task_management.application.services.facade_service import FacadeService
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
 
 
@@ -21,7 +22,6 @@ class TestTaskUserIdParameter:
     @pytest.fixture
     def mock_facade_service(self):
         """Mock facade service."""
-        from fastmcp.task_management.application.services.facade_service import FacadeService
         service = Mock(spec=FacadeService)
         mock_task_facade = Mock(spec=TaskApplicationFacade)
         service.get_task_facade.return_value = mock_task_facade
@@ -31,7 +31,7 @@ class TestTaskUserIdParameter:
     def controller(self, mock_facade_service):
         """Create TaskMCPController with mocked dependencies."""
         return TaskMCPController(
-            facade_service=mock_facade_service,
+            facade_service_or_factory=mock_facade_service,
             workflow_hint_enhancer=None
         )
 

@@ -15,7 +15,7 @@ os.environ['DATABASE_TYPE'] = 'sqlite'
 os.environ['PYTEST_CURRENT_TEST'] = 'test_completion_summary_manual.py::test_completion_summary_storage'
 
 # Add the project to Python path
-project_root = Path(__file__).parent
+project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
 # Import after setting environment

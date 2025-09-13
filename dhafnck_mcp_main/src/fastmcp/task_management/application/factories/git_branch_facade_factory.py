@@ -143,6 +143,23 @@ class GitBranchFacadeFactory:
         logger.info(f"Created new git branch facade for {cache_key}")
         return facade
     
+    def get_branch_facade(self, 
+                         project_id: str,
+                         user_id: Optional[str] = None) -> GitBranchApplicationFacade:
+        """
+        Get a git branch application facade (alias for create_facade).
+        
+        This method provides the interface expected by controllers and services.
+        
+        Args:
+            project_id: Project identifier for scoping
+            user_id: User identifier for authentication
+            
+        Returns:
+            GitBranchApplicationFacade instance
+        """
+        return self.create_facade(project_id=project_id, user_id=user_id)
+    
     def clear_cache(self):
         """Clear the facades cache."""
         self._facades_cache.clear()

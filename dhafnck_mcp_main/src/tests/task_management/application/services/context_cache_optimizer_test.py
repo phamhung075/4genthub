@@ -20,7 +20,7 @@ class TestContextCacheOptimizer:
     @pytest.fixture
     def optimizer(self):
         """Create cache optimizer instance"""
-        return ContextCacheOptimizer(max_size_mb=10, ttl_seconds=3600)
+        return ContextCacheOptimizer(max_size_mb=10, default_ttl=3600)
 
     @pytest.fixture
     def sample_context(self):
@@ -44,12 +44,12 @@ class TestContextCacheOptimizer:
 
     def test_cache_initialization(self):
         """Test cache optimizer initialization"""
-        optimizer = ContextCacheOptimizer(max_size_mb=5, ttl_seconds=1800)
+        optimizer = ContextCacheOptimizer(max_size_mb=5, default_ttl=1800)
         assert optimizer.max_size_bytes == 5 * 1024 * 1024
-        assert optimizer.ttl_seconds == 1800
-        assert len(optimizer.cache) == 0
-        assert optimizer.hit_count == 0
-        assert optimizer.miss_count == 0
+        assert optimizer.default_ttl == 1800
+        assert len(optimizer._cache) == 0
+        assert optimizer._metrics["cache_hits"] == 0
+        assert optimizer._metrics["cache_misses"] == 0
 
     def test_cache_key_generation(self, optimizer):
         """Test cache key generation"""
@@ -72,22 +72,22 @@ class TestContextCacheOptimizer:
         # Get item from cache
         result = optimizer.get(key)
         assert result == sample_context
-        assert optimizer.hit_count == 1
-        assert optimizer.miss_count == 0
+        assert optimizer._metrics["cache_hits"] == 1
+        assert optimizer._metrics["cache_misses"] == 0
 
     def test_cache_miss(self, optimizer):
         """Test cache miss scenario"""
         result = optimizer.get("non_existent_key")
         assert result is None
-        assert optimizer.hit_count == 0
-        assert optimizer.miss_count == 1
+        assert optimizer._metrics["cache_hits"] == 0
+        assert optimizer._metrics["cache_misses"] == 1
 
     def test_cache_expiration(self, optimizer, sample_context):
         """Test cache entry expiration"""
         key = "expiring_key"
         
         # Create optimizer with 1 second TTL
-        short_ttl_optimizer = ContextCacheOptimizer(max_size_mb=10, ttl_seconds=1)
+        short_ttl_optimizer = ContextCacheOptimizer(max_size_mb=10, default_ttl=1)
         
         # Put item in cache
         short_ttl_optimizer.put(key, sample_context)
@@ -95,20 +95,26 @@ class TestContextCacheOptimizer:
         # Item should be available immediately
         assert short_ttl_optimizer.get(key) == sample_context
         
-        # Mock time to simulate expiration
-        with patch('time.time') as mock_time:
-            # Set current time to 2 seconds later
-            mock_time.return_value = datetime.now().timestamp() + 2
+        # Mock datetime to simulate expiration
+        from datetime import datetime, timedelta
+        future_time = datetime.now() + timedelta(seconds=2)
+        
+        with patch('fastmcp.task_management.application.services.context_cache_optimizer.datetime') as mock_datetime:
+            # Set datetime.now() to return future time (2 seconds later)
+            mock_datetime.now.return_value = future_time
+            # Keep other datetime functionality working
+            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+            mock_datetime.fromisoformat = datetime.fromisoformat
             
             # Item should be expired
             result = short_ttl_optimizer.get(key)
             assert result is None
-            assert key not in short_ttl_optimizer.cache
+            assert key not in short_ttl_optimizer._cache
 
     def test_cache_size_limit(self, optimizer):
         """Test cache size limit enforcement"""
         # Create optimizer with very small size limit (1KB)
-        small_optimizer = ContextCacheOptimizer(max_size_mb=0.001, ttl_seconds=3600)
+        small_optimizer = ContextCacheOptimizer(max_size_mb=0.001, default_ttl=3600)
         
         # Create large data
         large_data = {"data": "x" * 2000}  # ~2KB
@@ -117,12 +123,12 @@ class TestContextCacheOptimizer:
         small_optimizer.put("key1", large_data)
         
         # Cache should be empty as data exceeds limit
-        assert len(small_optimizer.cache) == 0
+        assert len(small_optimizer._cache) == 0
 
     def test_cache_eviction_lru(self, optimizer):
         """Test LRU eviction when cache is full"""
         # Create optimizer with small size
-        small_optimizer = ContextCacheOptimizer(max_size_mb=0.01, ttl_seconds=3600)
+        small_optimizer = ContextCacheOptimizer(max_size_mb=0.01, default_ttl=3600)
         
         # Add multiple items
         for i in range(5):
@@ -148,13 +154,13 @@ class TestContextCacheOptimizer:
         optimizer.put("key1", sample_context)
         optimizer.put("key2", sample_context)
         
-        assert len(optimizer.cache) == 2
+        assert len(optimizer._cache) == 2
         
         # Clear cache
-        optimizer.clear()
+        optimizer.reset_cache()
         
-        assert len(optimizer.cache) == 0
-        assert optimizer.current_size == 0
+        assert len(optimizer._cache) == 0
+        assert optimizer._get_total_size() == 0
 
     def test_cache_metrics(self, optimizer, sample_context):
         """Test cache metrics calculation"""
@@ -266,7 +272,7 @@ class TestContextCacheOptimizer:
         # Create optimizer with adaptive TTL enabled
         adaptive_optimizer = ContextCacheOptimizer(
             max_size_mb=10, 
-            ttl_seconds=3600,
+            default_ttl=3600,
             adaptive_ttl=True
         )
         
@@ -279,7 +285,7 @@ class TestContextCacheOptimizer:
             adaptive_optimizer.get(key)
         
         # Frequently accessed items should have extended TTL
-        entry = adaptive_optimizer.cache.get(key)
+        entry = adaptive_optimizer._cache.get(key)
         assert entry is not None
         # TTL should be extended based on access frequency
         
@@ -306,12 +312,13 @@ class TestContextCacheOptimizer:
         assert retrieved == large_context
         
         # Check that compression actually reduced size
-        entry = optimizer.cache.get(key)
-        if hasattr(entry.data, '__sizeof__'):
-            compressed_size = entry.data.__sizeof__()
-            original_size = large_context.__sizeof__()
-            # Compression should reduce size (this is approximate)
-            assert compressed_size < original_size
+        entry = optimizer._cache.get(key)
+        if isinstance(entry.data, bytes):
+            # Compare actual sizes: compressed bytes vs original JSON
+            compressed_size = len(entry.data)
+            original_json_size = len(json.dumps(large_context, default=str).encode('utf-8'))
+            # Compression should reduce size significantly for repetitive data
+            assert compressed_size < original_json_size
 
     def test_cache_persistence(self, optimizer, sample_context, tmp_path):
         """Test cache persistence to disk"""
@@ -324,7 +331,7 @@ class TestContextCacheOptimizer:
         optimizer.save_to_disk(str(cache_file))
         
         # Create new optimizer and load cache
-        new_optimizer = ContextCacheOptimizer(max_size_mb=10, ttl_seconds=3600)
+        new_optimizer = ContextCacheOptimizer(max_size_mb=10, default_ttl=3600)
         new_optimizer.load_from_disk(str(cache_file))
         
         # Verify data is restored

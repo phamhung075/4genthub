@@ -4,7 +4,7 @@ Tests for FastAPI authentication dependencies.
 
 import pytest
 from unittest.mock import patch, Mock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 import jwt

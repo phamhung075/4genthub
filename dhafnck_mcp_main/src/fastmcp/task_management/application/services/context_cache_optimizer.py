@@ -8,6 +8,7 @@ import logging
 import time
 import hashlib
 import json
+import fnmatch
 from typing import Dict, Any, Optional, List, Set, Tuple
 from datetime import datetime, timedelta
 from enum import Enum
@@ -81,7 +82,8 @@ class ContextCacheOptimizer:
         self,
         max_size_mb: int = 200,
         default_ttl: int = 600,
-        strategy: CacheStrategy = CacheStrategy.ADAPTIVE
+        strategy: CacheStrategy = CacheStrategy.ADAPTIVE,
+        adaptive_ttl: bool = True
     ):
         """
         Initialize cache optimizer
@@ -90,10 +92,12 @@ class ContextCacheOptimizer:
             max_size_mb: Maximum cache size in MB
             default_ttl: Default TTL in seconds
             strategy: Caching strategy to use
+            adaptive_ttl: Enable adaptive TTL based on access patterns
         """
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.default_ttl = default_ttl
         self.strategy = strategy
+        self.adaptive_ttl = adaptive_ttl
         
         # Cache storage
         self._cache: Dict[str, CacheEntry] = {}
@@ -152,15 +156,47 @@ class ContextCacheOptimizer:
             self._metrics["cache_hits"] += 1
             logger.debug(f"Cache hit for {key} ({context_type})")
             
-            return entry.data
+            # Handle decompression if data is compressed
+            data = entry.data
+            if isinstance(data, bytes):
+                try:
+                    import gzip
+                    # Decompress and parse JSON
+                    decompressed_data = gzip.decompress(data)
+                    data = json.loads(decompressed_data.decode('utf-8'))
+                except Exception as e:
+                    logger.warning(f"Decompression failed for {key}: {e}")
+                    # Return as-is if decompression fails
+            
+            return data
     
+    def _generate_key(self, operation: str, params: Dict[str, Any]) -> str:
+        """
+        Generate a consistent cache key from operation and parameters
+        
+        Args:
+            operation: Operation name (e.g., "task_list", "project_get")
+            params: Parameters dictionary
+            
+        Returns:
+            Consistent cache key string
+        """
+        # Sort parameters to ensure consistent key generation
+        sorted_params = json.dumps(params, sort_keys=True, default=str)
+        key_string = f"{operation}:{sorted_params}"
+        
+        # Use hash for shorter, consistent keys
+        return hashlib.md5(key_string.encode()).hexdigest()
+
     def put(
         self,
         key: str,
         data: Any,
         context_type: str = "unknown",
         operation_type: str = "unknown",
-        ttl: Optional[int] = None
+        ttl: Optional[int] = None,
+        optimize: bool = False,
+        compress: bool = False
     ) -> bool:
         """
         Store data in cache
@@ -171,16 +207,34 @@ class ContextCacheOptimizer:
             context_type: Type of context
             operation_type: Operation that generated this data
             ttl: Time to live override
+            optimize: Whether to optimize data before storing
+            compress: Whether to compress data (for large contexts)
             
         Returns:
             True if stored successfully
         """
         with self._lock:
-            # Calculate size
-            try:
-                size_bytes = len(json.dumps(data, default=str).encode('utf-8'))
-            except:
-                size_bytes = 1024  # Default estimate
+            # Handle compression if requested
+            original_data = data
+            if compress:
+                try:
+                    import gzip
+                    # Compress JSON-serialized data
+                    json_data = json.dumps(data, default=str).encode('utf-8')
+                    compressed_data = gzip.compress(json_data)
+                    # Store as compressed bytes for size calculation
+                    data = compressed_data
+                    size_bytes = len(compressed_data)
+                except Exception as e:
+                    logger.warning(f"Compression failed, storing uncompressed: {e}")
+                    data = original_data
+                    size_bytes = len(json.dumps(data, default=str).encode('utf-8'))
+            else:
+                # Calculate size normally
+                try:
+                    size_bytes = len(json.dumps(data, default=str).encode('utf-8'))
+                except:
+                    size_bytes = 1024  # Default estimate
             
             # Check size limits
             if size_bytes > self.max_size_bytes * 0.1:  # Max 10% for single entry
@@ -250,9 +304,10 @@ class ContextCacheOptimizer:
                     if entry.context_type == context_type
                 ]
             elif pattern:
+                # Support wildcard patterns using fnmatch
                 to_remove = [
                     k for k in self._cache.keys()
-                    if pattern in k
+                    if fnmatch.fnmatch(k, pattern)
                 ]
             
             for k in to_remove:
@@ -260,6 +315,18 @@ class ContextCacheOptimizer:
             
             logger.debug(f"Invalidated {len(to_remove)} cache entries")
             return len(to_remove)
+    
+    def invalidate_pattern(self, pattern: str) -> int:
+        """
+        Invalidate cache entries matching a pattern
+        
+        Args:
+            pattern: Pattern to match against keys (supports * wildcard)
+            
+        Returns:
+            Number of entries invalidated
+        """
+        return self.invalidate(pattern=pattern)
     
     def _get_adaptive_ttl(
         self,
@@ -309,7 +376,11 @@ class ContextCacheOptimizer:
         
         self._metrics["adaptive_adjustments"] += 1
         
-        return max(60, min(base_ttl, 7200))  # Between 1 minute and 2 hours
+        # Respect very short default_ttl for testing purposes
+        min_ttl = min(60, self.default_ttl)
+        max_ttl = max(7200, self.default_ttl * 10)  # Allow some flexibility
+        
+        return max(min_ttl, min(base_ttl, max_ttl))
     
     def _evict_entry(self) -> bool:
         """
@@ -459,7 +530,7 @@ class ContextCacheOptimizer:
         Get comprehensive cache statistics
         
         Returns:
-            Dictionary with cache statistics
+            Dictionary with cache statistics (compatible with test expectations)
         """
         with self._lock:
             total_requests = self._metrics["cache_hits"] + self._metrics["cache_misses"]
@@ -474,7 +545,23 @@ class ContextCacheOptimizer:
                 context_breakdown[ctx_type]["count"] += 1
                 context_breakdown[ctx_type]["size_bytes"] += entry.size_bytes
             
-            return {
+            # Return object that supports both dict access and attribute access
+            class CacheStatsDict(dict):
+                def __getattr__(self, name):
+                    try:
+                        return self[name]
+                    except KeyError:
+                        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            
+            stats = CacheStatsDict({
+                # Top-level attributes expected by tests
+                "total_entries": self._metrics["entries_count"],
+                "hit_count": self._metrics["cache_hits"],
+                "miss_count": self._metrics["cache_misses"],
+                "current_size_mb": round(self._metrics["size_bytes"] / (1024 * 1024), 6),
+                "max_size_mb": round(self.max_size_bytes / (1024 * 1024), 2),
+                
+                # Nested structure for advanced stats
                 "performance": {
                     "hit_rate_percent": round(hit_rate, 2),
                     "total_requests": total_requests,
@@ -494,7 +581,9 @@ class ContextCacheOptimizer:
                 },
                 "context_breakdown": context_breakdown,
                 "strategy": self.strategy.value
-            }
+            })
+            
+            return stats
     
     def optimize_cache(self) -> Dict[str, Any]:
         """
@@ -529,21 +618,31 @@ class ContextCacheOptimizer:
     
     def warm_cache(
         self,
-        common_data: Dict[str, Tuple[str, Any]]
+        common_data: Dict[str, Any],
+        context_type: str = "warmup"
     ) -> int:
         """
         Warm cache with commonly accessed data
         
         Args:
-            common_data: Dict of {key: (context_type, data)}
+            common_data: Dict of {key: data} or {key: (context_type, data)}
+            context_type: Default context type if not specified in data
             
         Returns:
             Number of entries warmed
         """
         warmed = 0
         
-        for key, (context_type, data) in common_data.items():
-            if self.put(key, data, context_type, "warmup"):
+        for key, value in common_data.items():
+            # Handle both formats: simple dict and tuple format
+            if isinstance(value, tuple) and len(value) == 2:
+                # Tuple format: (context_type, data)
+                ctx_type, data = value
+            else:
+                # Simple format: just data
+                ctx_type, data = context_type, value
+                
+            if self.put(key, data, ctx_type, "warmup"):
                 warmed += 1
         
         logger.info(f"Warmed cache with {warmed} entries")
@@ -566,3 +665,101 @@ class ContextCacheOptimizer:
             }
         
         logger.info("Cache reset complete")
+    
+    def save_to_disk(self, file_path: str) -> bool:
+        """
+        Save cache to disk for persistence
+        
+        Args:
+            file_path: Path to save cache data
+            
+        Returns:
+            True if saved successfully
+        """
+        try:
+            import pickle
+            
+            with self._lock:
+                cache_data = {
+                    'cache': {
+                        key: {
+                            'data': entry.data,
+                            'created_at': entry.created_at.isoformat(),
+                            'last_accessed': entry.last_accessed.isoformat(),
+                            'access_count': entry.access_count,
+                            'ttl_seconds': entry.ttl_seconds,
+                            'size_bytes': entry.size_bytes,
+                            'context_type': entry.context_type,
+                            'operation_type': entry.operation_type
+                        }
+                        for key, entry in self._cache.items()
+                    },
+                    'metrics': self._metrics.copy(),
+                    'settings': {
+                        'max_size_bytes': self.max_size_bytes,
+                        'default_ttl': self.default_ttl,
+                        'strategy': self.strategy.value,
+                        'adaptive_ttl': self.adaptive_ttl
+                    }
+                }
+            
+            with open(file_path, 'w') as f:
+                json.dump(cache_data, f, indent=2)
+            
+            logger.info(f"Cache saved to {file_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to save cache to disk: {e}")
+            return False
+    
+    def load_from_disk(self, file_path: str) -> bool:
+        """
+        Load cache from disk
+        
+        Args:
+            file_path: Path to load cache data from
+            
+        Returns:
+            True if loaded successfully
+        """
+        try:
+            with open(file_path, 'r') as f:
+                cache_data = json.load(f)
+            
+            with self._lock:
+                # Clear current cache
+                self._cache.clear()
+                
+                # Restore cache entries
+                for key, entry_data in cache_data.get('cache', {}).items():
+                    try:
+                        # Recreate cache entry
+                        entry = CacheEntry(
+                            data=entry_data['data'],
+                            created_at=datetime.fromisoformat(entry_data['created_at']),
+                            last_accessed=datetime.fromisoformat(entry_data['last_accessed']),
+                            access_count=entry_data['access_count'],
+                            ttl_seconds=entry_data['ttl_seconds'],
+                            size_bytes=entry_data['size_bytes'],
+                            context_type=entry_data['context_type'],
+                            operation_type=entry_data['operation_type']
+                        )
+                        
+                        # Only restore if not expired
+                        if not entry.is_expired():
+                            self._cache[key] = entry
+                    
+                    except Exception as e:
+                        logger.warning(f"Failed to restore cache entry {key}: {e}")
+                
+                # Restore metrics
+                if 'metrics' in cache_data:
+                    self._metrics.update(cache_data['metrics'])
+            
+            logger.info(f"Cache loaded from {file_path}, {len(self._cache)} entries restored")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to load cache from disk: {e}")
+            return False

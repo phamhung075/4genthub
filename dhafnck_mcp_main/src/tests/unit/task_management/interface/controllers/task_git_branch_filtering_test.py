@@ -118,9 +118,9 @@ class TestTaskGitBranchFiltering:
         
         # Configure mock to return different results for different branches
         def mock_list_tasks_side_effect(request):
-            if pytest_request.git_branch_id == self.branch_a_id:
+            if request.git_branch_id == self.branch_a_id:
                 return {"success": True, "tasks": self.tasks_branch_a}
-            elif pytest_request.git_branch_id == self.branch_b_id:
+            elif request.git_branch_id == self.branch_b_id:
                 return {"success": True, "tasks": self.tasks_branch_b}
             else:
                 return {"success": True, "tasks": []}
@@ -264,15 +264,17 @@ class TestTaskGitBranchFilteringIntegration:
         self.mock_facade = Mock(spec=TaskApplicationFacade)
         self.mock_facade_factory.create_task_facade_with_git_branch_id.return_value = self.mock_facade
         
-        self.controller = TaskMCPController(self.mock_facade_factory)
+        # TaskMCPController expects facade_service_or_factory parameter
+        self.controller = TaskMCPController(facade_service_or_factory=self.mock_facade_factory)
         
         self.test_branch_id = "550e8400-e29b-41d4-a716-446655440001"
         self.test_tasks = [
             {"id": "task-1", "title": "Test Task 1", "git_branch_id": self.test_branch_id}
         ]
     
-    @patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id')
-    def test_full_mcp_controller_list_action_filters_by_branch(self, mock_get_auth_user_id):
+    @patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id')
+    @pytest.mark.asyncio
+    async def test_full_mcp_controller_list_action_filters_by_branch(self, mock_get_auth_user_id):
         """Integration test for full MCP controller list action with branch filtering.
         
         This test simulates the exact MCP call that would come from the frontend
@@ -299,7 +301,7 @@ class TestTaskGitBranchFilteringIntegration:
         
         # Act: Call the controller's manage_task method (this is what MCP calls)
         with patch.object(self.controller, '_get_facade_for_request', return_value=self.mock_facade):
-            result = self.controller.manage_task(**mcp_params)
+            result = await self.controller.manage_task(**mcp_params)
         
         # Assert: Verify the list_tasks was called on the facade
         self.mock_facade.list_tasks.assert_called_once()
@@ -312,9 +314,16 @@ class TestTaskGitBranchFilteringIntegration:
         
         # Assert: Result should be successful and contain the filtered tasks
         assert result["success"] is True
-        assert "tasks" in result
-        assert len(result["tasks"]) == 1
-        assert result["tasks"][0]["id"] == "task-1"
+        assert "data" in result
+        assert "tasks" in result["data"]
+        # Note: response format is different - tasks is a single object when there's one result
+        tasks_data = result["data"]["tasks"]
+        if isinstance(tasks_data, list):
+            assert len(tasks_data) == 1
+            assert tasks_data[0]["id"] == "task-1"
+        else:
+            # Single task object
+            assert tasks_data["id"] == "task-1"
 
 
 if __name__ == "__main__":

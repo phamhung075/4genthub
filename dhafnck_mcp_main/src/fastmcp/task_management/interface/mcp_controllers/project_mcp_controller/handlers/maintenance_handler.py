@@ -51,6 +51,10 @@ class ProjectMaintenanceHandler:
             else:
                 raise ValueError(f"Unknown maintenance action: {action}")
             
+            # Check if facade returned an error response
+            if isinstance(result, dict) and result.get("success") is False:
+                return result  # Pass through facade error response directly
+            
             return self._response_formatter.create_success_response(
                 operation=action,
                 data=result,

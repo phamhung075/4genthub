@@ -55,7 +55,9 @@ class TestJWTService:
         # Verify expiration is correct
         exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
         iat_time = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
-        assert (exp_time - iat_time).total_seconds() == pytest.approx(15 * 60, rel=10)
+        duration = (exp_time - iat_time).total_seconds()
+        expected = 15 * 60  # 15 minutes
+        assert abs(duration - expected) < 60, f"Expected ~{expected}s, got {duration}s"
     
     def test_create_access_token_with_additional_claims(self, jwt_service):
         """Test access token creation with additional claims"""
@@ -151,7 +153,9 @@ class TestJWTService:
         # Verify expiration is 24 hours
         exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
         iat_time = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
-        assert (exp_time - iat_time).total_seconds() == pytest.approx(24 * 3600, rel=10)
+        duration = (exp_time - iat_time).total_seconds()
+        expected = 24 * 3600  # 24 hours
+        assert abs(duration - expected) < 300, f"Expected ~{expected}s, got {duration}s"
     
     def test_verify_valid_access_token(self, jwt_service):
         """Test verification of valid access token"""

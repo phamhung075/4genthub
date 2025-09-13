@@ -409,7 +409,7 @@ class TestRuleInheritance:
         return RuleInheritance(
             parent_path="/rules/base/common.yml",
             child_path="/rules/auth/specific.yml",
-            inheritance_type=InheritanceType.MERGE,
+            inheritance_type=InheritanceType.FULL,
             inherited_sections=["validation", "common_rules"],
             overridden_sections=["auth_rules"],
             merged_variables={
@@ -427,7 +427,7 @@ class TestRuleInheritance:
         return RuleInheritance(
             parent_path="/rules/parent.yml",
             child_path="/rules/child.yml",
-            inheritance_type=InheritanceType.OVERRIDE
+            inheritance_type=InheritanceType.SELECTIVE
         )
 
     def test_rule_inheritance_creation(self, sample_inheritance: RuleInheritance):
@@ -435,7 +435,7 @@ class TestRuleInheritance:
         # Assert
         assert sample_inheritance.parent_path == "/rules/base/common.yml"
         assert sample_inheritance.child_path == "/rules/auth/specific.yml"
-        assert sample_inheritance.inheritance_type == InheritanceType.MERGE
+        assert sample_inheritance.inheritance_type == InheritanceType.FULL
         assert sample_inheritance.inherited_sections == ["validation", "common_rules"]
         assert sample_inheritance.overridden_sections == ["auth_rules"]
         assert sample_inheritance.merged_variables["timeout"] == 30
@@ -447,7 +447,7 @@ class TestRuleInheritance:
         # Assert
         assert minimal_inheritance.parent_path == "/rules/parent.yml"
         assert minimal_inheritance.child_path == "/rules/child.yml"
-        assert minimal_inheritance.inheritance_type == InheritanceType.OVERRIDE
+        assert minimal_inheritance.inheritance_type == InheritanceType.SELECTIVE
         assert minimal_inheritance.inherited_sections == []  # Default
         assert minimal_inheritance.overridden_sections == []  # Default
         assert minimal_inheritance.merged_variables == {}  # Default
@@ -640,7 +640,7 @@ class TestRuleEntitiesIntegration:
         inheritance = RuleInheritance(
             parent_path=parent_content.rule_path,
             child_path=child_content.rule_path,
-            inheritance_type=InheritanceType.MERGE,
+            inheritance_type=InheritanceType.FULL,
             inheritance_depth=1
         )
 
@@ -696,7 +696,7 @@ class TestRuleEntitiesIntegration:
         auth_inheritance = RuleInheritance(
             parent_path=rule_contents[0].rule_path,
             child_path=rule_contents[1].rule_path,
-            inheritance_type=InheritanceType.MERGE,
+            inheritance_type=InheritanceType.FULL,
             inheritance_depth=1
         )
         auth_inheritance.add_inherited_section("global")
@@ -708,7 +708,7 @@ class TestRuleEntitiesIntegration:
         jwt_inheritance = RuleInheritance(
             parent_path=rule_contents[1].rule_path,
             child_path=rule_contents[2].rule_path,
-            inheritance_type=InheritanceType.MERGE,
+            inheritance_type=InheritanceType.FULL,
             inheritance_depth=2
         )
         jwt_inheritance.add_inherited_section("global")

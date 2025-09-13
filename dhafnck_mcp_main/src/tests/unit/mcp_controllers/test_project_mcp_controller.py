@@ -83,20 +83,17 @@ class TestProjectMCPController:
     @pytest.fixture
     def mock_permissions(self):
         """Mock permission checking."""
-        with patch('fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller.get_current_request_context') as mock_context:
-            # Configure mock request context with project permissions
-            mock_request_context = Mock()
-            mock_user = Mock()
-            mock_user.token = {
-                "sub": "test-user", 
-                "permissions": [
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info') as mock_auth_info:
+            # Configure mock auth info with project permissions  
+            auth_info = {
+                "sub": "test-user",
+                "scopes": [
                     "projects:read", "projects:write", "projects:create", 
                     "projects:update", "projects:delete", "projects:manage"
                 ]
             }
-            mock_request_context.user = mock_user
-            mock_context.return_value = mock_request_context
-            yield mock_context
+            mock_auth_info.return_value = auth_info
+            yield mock_auth_info
 
     # Test Cases for CREATE operation
     @pytest.mark.asyncio
@@ -134,8 +131,8 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert "project_id" in result.get("data", {})
-        assert result["data"]["name"] == sample_project_data["name"]
+        assert "project_id" in result.get("data", {}).get("data", {})
+        assert result["data"]["data"]["name"] == sample_project_data["name"]
 
     @pytest.mark.asyncio
     async def test_create_project_missing_name(self, controller, mock_authentication, mock_permissions):
@@ -154,7 +151,9 @@ class TestProjectMCPController:
         # Verify validation error is returned
         assert result["success"] is False
         assert "error" in result
-        assert "name" in result["error"].lower() or "required" in result["error"].lower()
+        # Handle both string and dict error formats
+        error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
+        assert "name" in error_text.lower() or "required" in error_text.lower()
 
     @pytest.mark.asyncio
     async def test_create_project_duplicate_name(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
@@ -175,7 +174,8 @@ class TestProjectMCPController:
         )
 
         assert result["success"] is False
-        assert "duplicate" in result["error"].lower() or "already exists" in result["error"].lower()
+        error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
+        assert "duplicate" in error_text.lower() or "already exists" in error_text.lower()
 
     # Test Cases for GET operation
     @pytest.mark.asyncio
@@ -201,7 +201,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["project_id"] == sample_project_data["project_id"]
+        assert result["data"]["data"]["project_id"] == sample_project_data["project_id"]
 
     @pytest.mark.asyncio
     async def test_get_project_by_name_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
@@ -226,7 +226,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["name"] == sample_project_data["name"]
+        assert result["data"]["data"]["name"] == sample_project_data["name"]
 
     @pytest.mark.asyncio
     async def test_get_project_not_found(self, controller, mock_facade_service, mock_authentication, mock_permissions):
@@ -246,7 +246,8 @@ class TestProjectMCPController:
         )
 
         assert result["success"] is False
-        assert "not found" in result["error"].lower()
+        error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
+        assert "not found" in error_text.lower()
 
     @pytest.mark.asyncio
     async def test_get_project_missing_identifier(self, controller, mock_authentication, mock_permissions):
@@ -254,7 +255,8 @@ class TestProjectMCPController:
         result = await controller.manage_project(action="get")
         
         assert result["success"] is False
-        assert "project_id" in result["error"].lower() or "name" in result["error"].lower()
+        error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
+        assert "project_id" in error_text.lower() or "name" in error_text.lower()
 
     # Test Cases for UPDATE operation
     @pytest.mark.asyncio
@@ -286,7 +288,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["name"] == "Updated Project Name"
+        assert result["data"]["data"]["name"] == "Updated Project Name"
 
     @pytest.mark.asyncio
     async def test_update_project_missing_project_id(self, controller, mock_authentication, mock_permissions):
@@ -297,7 +299,8 @@ class TestProjectMCPController:
         )
         
         assert result["success"] is False
-        assert "project_id" in result["error"].lower()
+        error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
+        assert "project_id" in error_text.lower()
 
     # Test Cases for LIST operation
     @pytest.mark.asyncio
@@ -327,7 +330,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert len(result["data"]["projects"]) == 2
+        assert len(result["data"]["data"]["projects"]) == 2
 
     @pytest.mark.asyncio
     async def test_list_projects_empty(self, controller, mock_facade_service, mock_authentication, mock_permissions):
@@ -344,8 +347,8 @@ class TestProjectMCPController:
         result = await controller.manage_project(action="list")
 
         assert result["success"] is True
-        assert len(result["data"]["projects"]) == 0
-        assert result["data"]["total"] == 0
+        assert len(result["data"]["data"]["projects"]) == 0
+        assert result["data"]["data"]["total"] == 0
 
     # Test Cases for HEALTH CHECK operation
     @pytest.mark.asyncio
@@ -382,8 +385,8 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["health_status"] == "healthy"
-        assert "metrics" in result["data"]
+        assert result["data"]["data"]["health_status"] == "healthy"
+        assert "metrics" in result["data"]["data"]
 
     @pytest.mark.asyncio
     async def test_project_health_check_unhealthy(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
@@ -414,8 +417,8 @@ class TestProjectMCPController:
         )
 
         assert result["success"] is True
-        assert result["data"]["health_status"] == "unhealthy"
-        assert len(result["data"]["metrics"]["issues"]) > 0
+        assert result["data"]["data"]["health_status"] == "unhealthy"
+        assert len(result["data"]["data"]["metrics"]["issues"]) > 0
 
     # Test Cases for CLEANUP operations
     @pytest.mark.asyncio
@@ -446,7 +449,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["cleaned_tasks"] == 5
+        assert result["data"]["data"]["cleaned_tasks"] == 5
 
     @pytest.mark.asyncio
     async def test_cleanup_obsolete_with_force(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
@@ -498,7 +501,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["validation_status"] == "valid"
+        assert result["data"]["data"]["validation_status"] == "valid"
 
     @pytest.mark.asyncio
     async def test_validate_integrity_with_issues(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
@@ -525,8 +528,8 @@ class TestProjectMCPController:
         )
 
         assert result["success"] is True
-        assert result["data"]["validation_status"] == "issues_found"
-        assert len(result["data"]["issues"]) > 0
+        assert result["data"]["data"]["validation_status"] == "issues_found"
+        assert len(result["data"]["data"]["issues"]) > 0
 
     # Test Cases for REBALANCE AGENTS operation
     @pytest.mark.asyncio
@@ -557,7 +560,7 @@ class TestProjectMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["agents_rebalanced"] == 8
+        assert result["data"]["data"]["agents_rebalanced"] == 8
 
     # Test Cases for AUTHENTICATION and PERMISSIONS
     @pytest.mark.asyncio
@@ -569,20 +572,18 @@ class TestProjectMCPController:
             result = await controller.manage_project(action="list")
             
             assert result["success"] is False
-            assert "authentication" in result["error"].lower() or "permission" in result["error"].lower()
+            error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
+            assert "authentication" in error_text.lower() or "permission" in error_text.lower()
 
     @pytest.mark.asyncio
     async def test_insufficient_permissions(self, controller, mock_authentication):
         """Test request with insufficient permissions."""
         mock_auth, mock_log = mock_authentication
         
-        with patch('fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller.get_current_request_context') as mock_context:
-            # Configure mock user with insufficient permissions
-            mock_request_context = Mock()
-            mock_user = Mock()
-            mock_user.token = {"sub": "test-user", "permissions": ["projects:read"]}  # Only read permission
-            mock_request_context.user = mock_user
-            mock_context.return_value = mock_request_context
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info') as mock_auth_info:
+            # Configure mock auth info with insufficient permissions
+            auth_info = {"sub": "test-user", "scopes": ["projects:read"]}  # Only read permission
+            mock_auth_info.return_value = auth_info
             
             result = await controller.manage_project(
                 action="create", 

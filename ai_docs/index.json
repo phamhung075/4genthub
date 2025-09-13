@@ -611,6 +611,19 @@
       ],
       "path": "_obsolete_docs"
     },
+    "_workplace/workers/fix_tests_loop": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "6ee775557225fafb96517b1bbdba9141",
+          "modified": "2025-09-13T10:04:31.386603",
+          "name": "fix-1by1.md",
+          "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
+          "size": 2799
+        }
+      ],
+      "path": "_workplace/workers/fix_tests_loop"
+    },
     "api-behavior": {
       "count": 3,
       "files": [
@@ -2677,7 +2690,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-12T23:30:51.342908",
+  "generated_at": "2025-09-13T10:04:31.555546",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2744,7 +2757,15 @@
         "workplace.md"
       ]
     },
-    "_workplace": {},
+    "_workplace": {
+      "workers": {
+        "fix_tests_loop": {
+          "files": [
+            "fix-1by1.md"
+          ]
+        }
+      }
+    },
     "api-behavior": {
       "files": [
         "json-parameter-parsing.md",
@@ -3109,6 +3130,6 @@
       ]
     }
   },
-  "total_directories": 27,
-  "total_files": 330
+  "total_directories": 29,
+  "total_files": 331
 }
