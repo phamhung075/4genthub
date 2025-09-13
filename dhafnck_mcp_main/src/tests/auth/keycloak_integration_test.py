@@ -96,7 +96,7 @@ class TestKeycloakAuthProvider:
     
     def test_jwks_client_creation(self, provider):
         """Test JWKS client lazy initialization"""
-        with patch('jwt.PyJWKClient') as mock_jwks_class:
+        with patch('fastmcp.auth.keycloak_integration.PyJWKClient') as mock_jwks_class:
             mock_client = Mock()
             mock_jwks_class.return_value = mock_client
             
@@ -185,18 +185,19 @@ class TestKeycloakAuthProvider:
             mock_get_config.return_value = {"issuer": "https://keycloak.example.com/realms/test-realm"}
             
             # Mock JWKS client
-            with patch.object(provider, 'jwks_client') as mock_jwks:
-                mock_signing_key = Mock(key="test-key")
-                mock_jwks.get_signing_key_from_jwt.return_value = mock_signing_key
+            mock_jwks = Mock()
+            mock_signing_key = Mock(key="test-key")
+            mock_jwks.get_signing_key_from_jwt.return_value = mock_signing_key
+            provider._jwks_client = mock_jwks
                 
-                # Mock jwt.decode
-                with patch('jwt.decode') as mock_decode:
-                    mock_decode.return_value = mock_payload
-                    
-                    result = await provider.validate_token(token)
-                    
-                    assert result == mock_payload
-                    mock_decode.assert_called_once()
+            # Mock jwt.decode
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.return_value = mock_payload
+
+                result = await provider.validate_token(token)
+
+                assert result == mock_payload
+                mock_decode.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_validate_token_expired(self, provider):
@@ -205,16 +206,17 @@ class TestKeycloakAuthProvider:
         
         with patch.object(provider, 'get_oidc_configuration') as mock_get_config:
             mock_get_config.return_value = {"issuer": "test-issuer"}
-            
-            with patch.object(provider, 'jwks_client') as mock_jwks:
-                mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="test-key")
-                
-                with patch('jwt.decode') as mock_decode:
-                    mock_decode.side_effect = jwt.ExpiredSignatureError("Token expired")
-                    
-                    result = await provider.validate_token(token)
-                    
-                    assert result is None
+
+            mock_jwks = Mock()
+            mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="test-key")
+            provider._jwks_client = mock_jwks
+
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.side_effect = jwt.ExpiredSignatureError("Token expired")
+
+                result = await provider.validate_token(token)
+
+                assert result is None
     
     @pytest.mark.asyncio
     async def test_validate_token_invalid(self, provider):
@@ -223,16 +225,17 @@ class TestKeycloakAuthProvider:
         
         with patch.object(provider, 'get_oidc_configuration') as mock_get_config:
             mock_get_config.return_value = {"issuer": "test-issuer"}
-            
-            with patch.object(provider, 'jwks_client') as mock_jwks:
-                mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="test-key")
-                
-                with patch('jwt.decode') as mock_decode:
-                    mock_decode.side_effect = jwt.InvalidTokenError("Invalid signature")
-                    
-                    result = await provider.validate_token(token)
-                    
-                    assert result is None
+
+            mock_jwks = Mock()
+            mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="test-key")
+            provider._jwks_client = mock_jwks
+
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.side_effect = jwt.JWTError("Invalid signature")
+
+                result = await provider.validate_token(token)
+
+                assert result is None
     
     @pytest.mark.asyncio
     async def test_validate_token_missing_sub(self, provider):
@@ -246,16 +249,17 @@ class TestKeycloakAuthProvider:
         
         with patch.object(provider, 'get_oidc_configuration') as mock_get_config:
             mock_get_config.return_value = {"issuer": "test-issuer"}
-            
-            with patch.object(provider, 'jwks_client') as mock_jwks:
-                mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="test-key")
-                
-                with patch('jwt.decode') as mock_decode:
-                    mock_decode.return_value = mock_payload
-                    
-                    result = await provider.validate_token(token)
-                    
-                    assert result is None
+
+            mock_jwks = Mock()
+            mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="test-key")
+            provider._jwks_client = mock_jwks
+
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.return_value = mock_payload
+
+                result = await provider.validate_token(token)
+
+                assert result is None
     
     @pytest.mark.asyncio
     async def test_get_user_info_success(self, provider):

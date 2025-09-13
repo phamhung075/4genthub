@@ -366,16 +366,25 @@ class JWTAuthBackend(TokenVerifier):
         }
         
         scopes = ["mcp:access"]  # Base scope for all authenticated users
-        
+
         for role in roles:
             role_lower = role.lower()
+
+            # Add legacy admin scopes for admin role compatibility
+            if role_lower == "admin":
+                scopes.extend(["mcp:admin", "mcp:write"])
+
+            # Add legacy write scope for developer role compatibility
+            if role_lower in ["admin", "developer"]:
+                scopes.append("mcp:write")
+
             if role_lower in role_permissions:
                 permissions = role_permissions[role_lower]
                 for resource_type, actions in permissions.items():
                     for action in actions:
                         scope = f"{resource_type.value}:{action.value}"
                         scopes.append(scope)
-        
+
         return list(set(scopes))  # Remove duplicates
     
     @property

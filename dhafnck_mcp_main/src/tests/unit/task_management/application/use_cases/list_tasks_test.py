@@ -39,7 +39,7 @@ class TestListTasksUseCase:
             title="Test Task",
             description="Test description",
             git_branch_id="branch-123",
-            status=TaskStatus.TODO,
+            status=TaskStatus.todo(),
             priority=Priority.high(),
             assignees=["user-1", "user-2"],
             labels=["bug", "urgent"],
@@ -301,7 +301,7 @@ class TestListTasksUseCase:
             title="Task 1",
             description="Description 1",
             git_branch_id="branch-123",
-            status=TaskStatus.TODO,
+            status=TaskStatus.todo(),
             priority=Priority.high(),
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
@@ -347,7 +347,7 @@ class TestListTasksUseCase:
         assert task_response.git_branch_id == "branch-123"
         assert task_response.status == "todo"
         assert task_response.priority == "high"
-        assert task_response.assignees == ["user-1", "user-2"]
+        assert task_response.assignees == ["user-1-agent", "user-2-agent"]
         assert task_response.labels == ["bug", "urgent"]
         assert task_response.context_id == "context-123"
     
@@ -381,13 +381,13 @@ class TestListTasksUseCase:
         """Test that legacy assignee field is supported"""
         # Arrange
         request = Mock(spec=ListTasksRequest)
-        pytest_request.git_branch_id = "branch-123"
-        pytest_request.status = None
-        pytest_request.priority = None
-        pytest_request.assignees = None  # New field not set
-        pytest_request.assignee = "user-1"  # Legacy field set
-        pytest_request.labels = None
-        pytest_request.limit = None
+        request.git_branch_id = "branch-123"
+        request.status = None
+        request.priority = None
+        request.assignees = None  # New field not set
+        request.assignee = "user-1"  # Legacy field set
+        request.labels = None
+        request.limit = None
         
         mock_task_repository.find_by_criteria.return_value = [sample_task]
         

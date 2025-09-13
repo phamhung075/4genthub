@@ -57,13 +57,13 @@ class TestPlanningRequest:
             description="Implement complete user authentication system"
         )
         
-        assert pytest_request.id == "plan_123"
-        assert pytest_request.title == "Add User Authentication"
-        assert pytest_request.description == "Implement complete user authentication system"
-        assert pytest_request.context == PlanningContext.NEW_FEATURE
-        assert pytest_request.requirements == []
-        assert pytest_request.risk_tolerance == "medium"
-        assert isinstance(pytest_request.created_at, datetime)
+        assert request.id == "plan_123"
+        assert request.title == "Add User Authentication"
+        assert request.description == "Implement complete user authentication system"
+        assert request.context == PlanningContext.NEW_FEATURE
+        assert request.requirements == []
+        assert request.risk_tolerance == "medium"
+        assert isinstance(request.created_at, datetime)
     
     def test_add_requirement(self):
         """Test adding requirements to planning request"""
@@ -74,26 +74,26 @@ class TestPlanningRequest:
         )
         
         # Add first requirement
-        req1 = pytest_request.add_requirement(
+        req1 = request.add_requirement(
             description="Create login endpoint",
             priority="high",
             acceptance_criteria=["Support email/password", "Return JWT token"]
         )
-        
+
         assert req1.id == "plan_123_req_1"
         assert req1.description == "Create login endpoint"
         assert req1.priority == "high"
         assert len(req1.acceptance_criteria) == 2
-        assert len(pytest_request.requirements) == 1
-        
+        assert len(request.requirements) == 1
+
         # Add second requirement
-        req2 = pytest_request.add_requirement(
+        req2 = request.add_requirement(
             description="Create logout endpoint",
             priority="medium"
         )
-        
+
         assert req2.id == "plan_123_req_2"
-        assert len(pytest_request.requirements) == 2
+        assert len(request.requirements) == 2
     
     def test_add_code_reference(self):
         """Test adding code references"""
@@ -104,15 +104,15 @@ class TestPlanningRequest:
         )
         
         # Add references
-        pytest_request.add_code_reference("auth/login.py", ["23-45", "67-89"])
-        pytest_request.add_code_reference("auth/jwt.py", ["10-20"])
-        pytest_request.add_code_reference("auth/login.py", ["100-120"])
-        
-        assert len(pytest_request.code_references) == 2
-        assert len(pytest_request.code_references["auth/login.py"]) == 3
-        assert "23-45" in pytest_request.code_references["auth/login.py"]
-        assert "100-120" in pytest_request.code_references["auth/login.py"]
-        assert len(pytest_request.code_references["auth/jwt.py"]) == 1
+        request.add_code_reference("auth/login.py", ["23-45", "67-89"])
+        request.add_code_reference("auth/jwt.py", ["10-20"])
+        request.add_code_reference("auth/login.py", ["100-120"])
+
+        assert len(request.code_references) == 2
+        assert len(request.code_references["auth/login.py"]) == 3
+        assert "23-45" in request.code_references["auth/login.py"]
+        assert "100-120" in request.code_references["auth/login.py"]
+        assert len(request.code_references["auth/jwt.py"]) == 1
     
     def test_estimate_overall_complexity_empty(self):
         """Test complexity estimation with no requirements"""
@@ -122,7 +122,7 @@ class TestPlanningRequest:
             description="Plan with no requirements"
         )
         
-        complexity = pytest_request.estimate_overall_complexity()
+        complexity = request.estimate_overall_complexity()
         assert complexity == ComplexityLevel.SIMPLE
     
     def test_estimate_overall_complexity_with_estimates(self):
@@ -150,10 +150,10 @@ class TestPlanningRequest:
             estimated_complexity=ComplexityLevel.EPIC
         )
         
-        pytest_request.requirements = [req1, req2, req3]
-        
+        request.requirements = [req1, req2, req3]
+
         # Average: (2 + 4 + 5) / 3 = 3.67 -> COMPLEX
-        complexity = pytest_request.estimate_overall_complexity()
+        complexity = request.estimate_overall_complexity()
         assert complexity == ComplexityLevel.COMPLEX
     
     def test_estimate_overall_complexity_heuristics(self):
@@ -181,10 +181,10 @@ class TestPlanningRequest:
             acceptance_criteria=["C1", "C2", "C3", "C4", "C5", "C6"]  # 6 criteria -> Complex (4)
         )
         
-        pytest_request.requirements = [req1, req2, req3]
-        
+        request.requirements = [req1, req2, req3]
+
         # Average: (2 + 3 + 4) / 3 = 3.0 -> MODERATE
-        complexity = pytest_request.estimate_overall_complexity()
+        complexity = request.estimate_overall_complexity()
         assert complexity == ComplexityLevel.MODERATE
     
     def test_planning_request_with_full_context(self):
@@ -209,13 +209,13 @@ class TestPlanningRequest:
             tags=["api", "integration", "external"]
         )
         
-        assert pytest_request.context == PlanningContext.INTEGRATION
-        assert pytest_request.project_id == "proj_789"
-        assert pytest_request.deadline == deadline
-        assert len(pytest_request.available_agents) == 2
-        assert "coding-agent" in pytest_request.available_agents
-        assert pytest_request.risk_tolerance == "low"
-        assert len(pytest_request.tags) == 3
+        assert request.context == PlanningContext.INTEGRATION
+        assert request.project_id == "proj_789"
+        assert request.deadline == deadline
+        assert len(request.available_agents) == 2
+        assert "coding-agent" in request.available_agents
+        assert request.risk_tolerance == "low"
+        assert len(request.tags) == 3
     
     def test_to_dict_serialization(self):
         """Test serializing planning request to dictionary"""
@@ -231,17 +231,17 @@ class TestPlanningRequest:
         )
         
         # Add a requirement
-        pytest_request.add_requirement(
+        request.add_requirement(
             description="Fix critical bug",
             priority="critical",
             acceptance_criteria=["Bug is fixed", "Tests pass"]
         )
-        
+
         # Add code reference
-        pytest_request.add_code_reference("buggy/module.py", ["45-67"])
-        
+        request.add_code_reference("buggy/module.py", ["45-67"])
+
         # Convert to dict
-        data = pytest_request.to_dict()
+        data = request.to_dict()
         
         assert data['id'] == "plan_789"
         assert data['title'] == "Serialization Test"
@@ -286,16 +286,16 @@ class TestPlanningRequest:
         
         request = PlanningRequest.from_dict(data)
         
-        assert pytest_request.id == 'plan_999'
-        assert pytest_request.title == 'Deserialization Test'
-        assert pytest_request.context == PlanningContext.REFACTORING
-        assert pytest_request.deadline.isoformat() == deadline.isoformat()
-        assert pytest_request.created_by == 'test_user'
-        assert pytest_request.risk_tolerance == 'high'
-        assert len(pytest_request.requirements) == 1
-        assert pytest_request.requirements[0].estimated_complexity == ComplexityLevel.MODERATE
-        assert len(pytest_request.code_references['module.py']) == 2
-        assert len(pytest_request.tags) == 2
+        assert request.id == 'plan_999'
+        assert request.title == 'Deserialization Test'
+        assert request.context == PlanningContext.REFACTORING
+        assert request.deadline.isoformat() == deadline.isoformat()
+        assert request.created_by == 'test_user'
+        assert request.risk_tolerance == 'high'
+        assert len(request.requirements) == 1
+        assert request.requirements[0].estimated_complexity == ComplexityLevel.MODERATE
+        assert len(request.code_references['module.py']) == 2
+        assert len(request.tags) == 2
     
     def test_complexity_level_enum_values(self):
         """Test ComplexityLevel enum values"""

@@ -256,8 +256,7 @@ class TestAgentManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         
         original_updated = project.updated_at
@@ -275,8 +274,7 @@ class TestAgentManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -311,8 +309,7 @@ class TestAgentManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -326,8 +323,7 @@ class TestAgentManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -352,14 +348,12 @@ class TestAgentManagement:
         agent1 = Agent(
             id="agent-1",
             name="Agent 1",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         agent2 = Agent(
             id="agent-2",
             name="Agent 2",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         
         project.register_agent(agent1)
@@ -490,8 +484,7 @@ class TestWorkSessionManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -539,8 +532,7 @@ class TestWorkSessionManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -555,8 +547,7 @@ class TestWorkSessionManagement:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -707,8 +698,7 @@ class TestOrchestrationStatus:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -766,8 +756,7 @@ class TestGetAvailableWork:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         
@@ -781,8 +770,7 @@ class TestGetAvailableWork:
         agent = Agent(
             id="agent-123",
             name="Test Agent",
-            capabilities={AgentCapability.PROJECT_MANAGEMENT},
-            project_id=project.id
+            capabilities={AgentCapability.PROJECT_MANAGEMENT}
         )
         project.register_agent(agent)
         

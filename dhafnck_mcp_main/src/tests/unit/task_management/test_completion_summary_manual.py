@@ -82,8 +82,8 @@ def test_completion_summary_storage():
             f"Expected completion_summary '{completion_summary}', got '{actual_completion_summary}'"
 
         # Assert that task status is completed
-        assert task.status.value == TaskStatus.DONE, \
-            f"Expected task status to be DONE, got {task.status}"
+        assert task.status.value == "done", \
+            f"Expected task status to be done, got {task.status.value}"
 
         print("✅ All assertions passed!")
         print("✅ completion_summary is stored and retrieved correctly")

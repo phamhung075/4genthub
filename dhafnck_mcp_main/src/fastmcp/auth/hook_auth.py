@@ -61,7 +61,8 @@ class HookAuthValidator:
                     payload = jwt.decode(
                         token,
                         self.secret,
-                        algorithms=[self.algorithm]
+                        algorithms=[self.algorithm],
+                        audience="mcp-server"  # Expected audience for MCP tokens
                     )
                     
                     # Check expiration

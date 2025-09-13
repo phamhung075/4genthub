@@ -266,11 +266,11 @@ class TestJWTAuthMiddleware:
         """Test require_auth decorator with valid token"""
         # Mock request
         request = Mock()
-        pytest_request.headers = {"Authorization": f"Bearer {valid_token}"}
+        request.headers = {"Authorization": f"Bearer {valid_token}"}
         
         # Test function
         @middleware.require_auth
-        async def test_handler(pytest_request, *args, **kwargs):
+        async def test_handler(request, *args, **kwargs):
             return {"user_id": kwargs.get("user_id")}
         
         result = await test_handler(request)
@@ -281,10 +281,10 @@ class TestJWTAuthMiddleware:
         """Test require_auth decorator without Authorization header"""
         # Mock request without auth header
         request = Mock()
-        pytest_request.headers = {}
+        request.headers = {}
         
         @middleware.require_auth
-        async def test_handler(pytest_request, *args, **kwargs):
+        async def test_handler(request, *args, **kwargs):
             return {"success": True}
         
         result = await test_handler(request)
@@ -295,10 +295,10 @@ class TestJWTAuthMiddleware:
         """Test require_auth decorator with invalid token"""
         # Mock request with invalid token
         request = Mock()
-        pytest_request.headers = {"Authorization": "Bearer invalid.token"}
+        request.headers = {"Authorization": "Bearer invalid.token"}
         
         @middleware.require_auth
-        async def test_handler(pytest_request, *args, **kwargs):
+        async def test_handler(request, *args, **kwargs):
             return {"success": True}
         
         result = await test_handler(request)

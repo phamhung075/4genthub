@@ -6,7 +6,7 @@ NO hardcoded IDs, NO legacy code - only token-based authentication.
 
 import pytest
 from unittest.mock import Mock, patch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 
 

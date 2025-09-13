@@ -10,7 +10,7 @@ import time
 import json
 import logging
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union, Tuple
 from dataclasses import dataclass, asdict, field
@@ -548,7 +548,7 @@ class OptimizationMetricsCollector(MetricsCollector):
             "executive_summary": {
                 "total_optimizations": summary.get("optimization_performance", {}).get("total_optimizations", 0),
                 "avg_compression_achieved": summary.get("optimization_performance", {}).get("avg_compression_ratio", 0),
-                "system_health_status": "healthy" if summary.get("system_health", {}).get("health_score", {}).get("avg_value", 0) > 70 else "needs_attention",
+                "system_health_status": "healthy" if summary.get("system_health", {}) and summary.get("system_health", {}).get("health_score", {}) and summary.get("system_health", {}).get("health_score", {}).get("avg_value", 0) > 70 else "needs_attention",
                 "critical_issues": summary.get("alerts", {}).get("critical_alerts", 0)
             },
             "detailed_metrics": summary,

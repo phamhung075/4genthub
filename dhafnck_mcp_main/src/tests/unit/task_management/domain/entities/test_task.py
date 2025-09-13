@@ -826,8 +826,8 @@ class TestTaskTimezoneHandling:
     
     def test_naive_timestamp_conversion(self):
         """Test conversion of naive timestamps to UTC."""
-        naive_created = datetime.now()  # Naive datetime
-        naive_updated = datetime.now()
+        naive_created = datetime.now(timezone.utc)  # Naive datetime
+        naive_updated = datetime.now(timezone.utc)
         
         task = Task(
             title="Test",

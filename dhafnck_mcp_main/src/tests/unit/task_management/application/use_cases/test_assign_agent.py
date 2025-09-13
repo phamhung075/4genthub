@@ -88,7 +88,11 @@ class TestAssignAgentUseCase:
         assert result.error == error_message
         
         # Verify repository was called
-        mock_agent_repository.assign_agent_to_tree.assert_called_once()
+        mock_agent_repository.assign_agent_to_tree.assert_called_once_with(
+            valid_request.project_id,
+            valid_request.agent_id,
+            valid_request.git_branch_id
+        )
     
     def test_execute_project_not_found_error(self, use_case, valid_request, mock_agent_repository):
         """Test handling of ProjectNotFoundError"""
@@ -187,9 +191,9 @@ class TestAssignAgentUseCase:
         )
         
         # Assert
-        assert pytest_request.project_id == "proj-123"
-        assert pytest_request.agent_id == "agent-456"
-        assert pytest_request.git_branch_id == "branch-789"
+        assert request.project_id == "proj-123"
+        assert request.agent_id == "agent-456"
+        assert request.git_branch_id == "branch-789"
     
     def test_response_dto_success_creation(self):
         """Test AssignAgentResponse DTO creation for success"""

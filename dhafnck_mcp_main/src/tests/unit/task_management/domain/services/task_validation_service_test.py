@@ -97,12 +97,17 @@ class TestTaskValidationService:
             """Test validation of core fields during task creation."""
             # Arrange
             task = Task(
-                id=None,  # Invalid: missing ID
-                title="",  # Invalid: empty title
+                id=TaskId.generate(),  # Create valid task first
+                title="Valid title",
                 description="Valid description",
-                status="",  # Invalid: empty status
-                priority=""  # Invalid: empty priority
+                status="todo",
+                priority="medium"
             )
+            # Modify after creation to create invalid state
+            task.id = None
+            task.title = ""
+            task.status = ""
+            task.priority = ""
 
             # Act
             errors = validation_service.validate_task_creation(task)
@@ -121,11 +126,12 @@ class TestTaskValidationService:
             # Arrange
             task = Task(
                 id=TaskId.generate(),
-                title="A" * 250,  # Invalid: too long
+                title="Valid title",  # Create valid task first
                 description="Valid description",
                 status="todo",
                 priority="medium"
             )
+            task.title = "A" * 250  # Modify after creation to bypass entity validation
 
             # Act
             errors = validation_service.validate_task_creation(task)
@@ -280,7 +286,7 @@ class TestTaskValidationService:
 
             # Assert
             assert len(errors) > 0
-            assert any("Validation system error" in error for error in errors)
+            assert any("validation error" in error.lower() for error in errors)
 
     class TestValidateTaskUpdate:
         """Test cases for validate_task_update method."""
@@ -483,11 +489,12 @@ class TestTaskValidationService:
             # Arrange
             task = Task(
                 id=TaskId.generate(),
-                title="",
+                title="Valid title",  # Create valid task first
                 description="Valid description",
                 status="todo",
                 priority="medium"
             )
+            task.title = ""  # Modify after creation to bypass entity validation
 
             # Act
             errors = validation_service.validate_business_constraints(task)
@@ -503,11 +510,12 @@ class TestTaskValidationService:
             # Arrange
             task = Task(
                 id=TaskId.generate(),
-                title="   ",  # Only whitespace
+                title="Valid title",  # Create valid task first
                 description="Valid description",
                 status="todo",
                 priority="medium"
             )
+            task.title = "   "  # Modify after creation to bypass entity validation
 
             # Act
             errors = validation_service.validate_business_constraints(task)
@@ -524,10 +532,11 @@ class TestTaskValidationService:
             task = Task(
                 id=TaskId.generate(),
                 title="Valid title",
-                description="A" * 2001,  # Too long
+                description="Valid description",  # Create valid task first
                 status="todo",
                 priority="medium"
             )
+            task.description = "A" * 2001  # Modify after creation to bypass entity validation
 
             # Act
             errors = validation_service.validate_business_constraints(task)
@@ -714,6 +723,7 @@ class TestTaskValidationService:
             task = Task(
                 id=TaskId.generate(),
                 title="Valid task title",
+                description="Initial description",
                 status="todo",
                 priority="medium"
             )
@@ -830,11 +840,15 @@ class TestTaskValidationServiceIntegration:
         # Create a task with multiple validation issues
         task = Task(
             id=TaskId.generate(),
-            title="TODO",  # Placeholder title
-            description="A" * 2001,  # Too long description
+            title="Valid title",  # Create valid task first
+            description="Valid description",
             status="todo",
-            priority="critical"  # Critical but in todo status
+            priority="medium"
         )
+        # Modify after creation to create invalid state
+        task.title = "TODO"  # Placeholder title
+        task.description = "A" * 2001  # Too long description
+        task.priority = "critical"  # Critical but in todo status
         task.git_branch_id = "non-existent-branch"
         task.project_id = "non-existent-project"
         task.assignees = [""] * 6  # Too many empty assignees

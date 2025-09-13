@@ -20,6 +20,9 @@ from jose import jwt, JWTError
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
+# Set environment variable before importing to avoid errors
+os.environ.setdefault("HOOK_JWT_SECRET", "test-secret-key-for-hook-auth")
+
 from fastmcp.auth.hook_auth import (
     HookAuthValidator,
     hook_auth_validator,

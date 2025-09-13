@@ -32,28 +32,69 @@ except ImportError:
         """Mock ndarray that behaves like a list but has shape attribute"""
         def __init__(self, data):
             super().__init__(data)
-            if isinstance(data[0], list):
+            if data and isinstance(data[0], list):
                 self.shape = (len(data), len(data[0]))
             else:
-                self.shape = (len(data),)
+                self.shape = (len(data),) if data else (0,)
+
+        def astype(self, dtype):
+            """Mock astype method to support type conversion"""
+            # Just return self since we're already using the right types for mocking
+            return MockNdarray(list(self))
+
+        def reshape(self, *shape):
+            """Mock reshape method to support array reshaping"""
+            if len(shape) == 1 and isinstance(shape[0], tuple):
+                shape = shape[0]
+
+            # For simple cases, just return a new MockNdarray with the same data
+            # In a real numpy array this would actually reshape, but for mocking
+            # we just maintain the data and update the shape attribute
+            result = MockNdarray(list(self))
+            result.shape = shape
+            return result
     
+    class MockRandom:
+        """Mock numpy.random module"""
+        @staticmethod
+        def random(shape=None):
+            """Mock np.random.random function"""
+            import random as py_random
+            if shape is None:
+                return py_random.random()
+            elif isinstance(shape, int):
+                return MockNdarray([py_random.random() for _ in range(shape)])
+            elif isinstance(shape, tuple) and len(shape) == 2:
+                return MockNdarray([[py_random.random() for _ in range(shape[1])] for _ in range(shape[0])])
+            else:
+                # Handle other shape formats
+                if hasattr(shape, '__iter__'):
+                    # Flatten the shape and create appropriate structure
+                    total_size = 1
+                    for dim in shape:
+                        total_size *= dim
+                    return MockNdarray([py_random.random() for _ in range(total_size)])
+                return py_random.random()
+
     class MockNumpy:
         ndarray = MockNdarray
-        
+        random = MockRandom()
+
         @staticmethod
-        def array(values):
+        def array(values, dtype=None):
+            # Accept dtype but ignore it for the mock
             return MockNdarray(values)
-        
+
         @staticmethod
         def mean(values):
             return sum(values) / len(values) if values else 0.0
-        
+
         @staticmethod
         def zeros(shape):
             if isinstance(shape, int):
                 return MockNdarray([0.0] * shape)
             return MockNdarray([[0.0] * shape[1] for _ in range(shape[0])])
-        
+
         @staticmethod
         def ones(shape):
             if isinstance(shape, int):
@@ -71,12 +112,16 @@ except ImportError:
     class MockSentenceTransformer:
         def __init__(self, *args, **kwargs):
             pass
-        
+
         def encode(self, texts, **kwargs):
             # Return mock embeddings - list of lists with consistent dimensions
             if isinstance(texts, str):
                 return [[0.1] * 384]  # Common embedding dimension
             return [[0.1] * 384 for _ in texts]
+
+        def get_sentence_embedding_dimension(self):
+            """Return the embedding dimension for mock transformer"""
+            return 384
     
     class MockSentenceTransformers:
         SentenceTransformer = MockSentenceTransformer
@@ -266,6 +311,12 @@ class MockFastAPI:
     def include_router(self, router, **kwargs):
         """Mock implementation of include_router to match FastAPI behavior"""
         self.routers.append(router)
+
+    def get(self, path: str):
+        """Mock decorator for GET endpoints"""
+        def decorator(func):
+            return func
+        return decorator
 
 # Create fastapi module mock
 mock_fastapi = type(sys)('fastapi')

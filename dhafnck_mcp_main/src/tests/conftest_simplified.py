@@ -55,7 +55,7 @@ class IsolatedTestEnvironmentConfig:
 # =============================================
 
 @pytest.fixture(scope="function", autouse=True)
-def test_database(pytest_request):
+def test_database(request):
     """
     Unified database fixture that provides test isolation.
     
@@ -71,7 +71,7 @@ def test_database(pytest_request):
     - Provides proper cleanup after each test
     """
     # Skip database setup for unit tests
-    if "unit" in pytest_request.keywords:
+    if "unit" in request.keywords:
         print("\n⚡ Skipping database setup for unit test")
         yield
         return

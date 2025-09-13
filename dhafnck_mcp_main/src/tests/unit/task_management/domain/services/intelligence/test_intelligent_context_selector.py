@@ -21,7 +21,7 @@ from fastmcp.task_management.domain.services.intelligence.intelligent_context_se
     SelectionResult,
     SelectionMetrics
 )
-from fastmcp.task_management.domain.services.intelligence.progressive_expander import UserPreferences
+from fastmcp.task_management.domain.services.intelligence.context_prioritizer import UserPreferences
 
 
 class TestIntelligentContextSelector:

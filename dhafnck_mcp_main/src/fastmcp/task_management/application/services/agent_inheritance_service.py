@@ -42,7 +42,12 @@ class AgentInheritanceService:
             if parent_task:
                 parent_assignees = parent_task.get_inherited_assignees_for_subtasks()
                 if parent_assignees:
-                    logger.info(f"Applying agent inheritance: subtask {subtask.id} inheriting {len(parent_assignees)} assignees from parent task {parent_task.id}")
+                    try:
+                        assignee_count = len(parent_assignees)
+                        logger.info(f"Applying agent inheritance: subtask {subtask.id} inheriting {assignee_count} assignees from parent task {parent_task.id}")
+                    except (TypeError, AttributeError):
+                        # Handle cases where parent_assignees might be invalid (e.g., Mock objects in tests)
+                        logger.info(f"Applying agent inheritance: subtask {subtask.id} inheriting assignees from parent task {parent_task.id}")
                     subtask.inherit_assignees_from_parent(parent_assignees)
                 else:
                     logger.info(f"No assignees to inherit: parent task {parent_task.id} has no assignees")

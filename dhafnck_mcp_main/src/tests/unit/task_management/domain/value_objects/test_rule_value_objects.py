@@ -196,11 +196,11 @@ class TestSyncRequest:
             timestamp=1234567890.0
         )
         
-        assert pytest_request.request_id == "req_123"
-        assert pytest_request.client_id == "client_456"
-        assert pytest_request.operation == SyncOperation.PULL
-        assert pytest_request.priority == 1
-        assert pytest_request.is_high_priority is False
+        assert request.request_id == "req_123"
+        assert request.client_id == "client_456"
+        assert request.operation == SyncOperation.PULL
+        assert request.priority == 1
+        assert request.is_high_priority is False
     
     def test_sync_request_validation_empty_request_id(self):
         """Test validation rejects empty request ID"""
@@ -251,7 +251,7 @@ class TestSyncRequest:
             priority=5
         )
         
-        assert pytest_request.is_high_priority is True
+        assert request.is_high_priority is True
         
         # Test low priority
         request_low = SyncRequest(

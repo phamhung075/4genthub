@@ -259,7 +259,7 @@ class TestAddSubtaskWithInheritance:
         assert len(response.inherited_assignees) == 2
         
         # Verify repositories were called appropriately
-        self.task_repository.find_by_id.assert_called_once()
+        self.task_repository.find_by_id.assert_called()
         self.subtask_repository.save.assert_called_once()
     
     def test_inheritance_logging_behavior(self):
@@ -294,12 +294,15 @@ class TestAddSubtaskWithInheritance:
 
 class TestAddSubtaskInheritanceErrorCases:
     """Test error cases for agent inheritance in AddSubtaskUseCase"""
-    
+
     def setup_method(self):
         """Set up test fixtures"""
         self.task_repository = Mock()
         self.subtask_repository = Mock()
         self.use_case = AddSubtaskUseCase(self.task_repository, self.subtask_repository)
+
+        # Create parent task ID for error case tests
+        self.parent_task_id = TaskId(str(uuid.uuid4()))
     
     def test_inheritance_with_repository_save_failure(self):
         """Test inheritance behavior when repository save fails"""

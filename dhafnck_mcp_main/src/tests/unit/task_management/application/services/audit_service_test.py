@@ -5,7 +5,7 @@ Tests for audit trail management and compliance monitoring functionality.
 
 import pytest
 from unittest.mock import Mock, patch
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from fastmcp.task_management.application.services.audit_service import AuditService

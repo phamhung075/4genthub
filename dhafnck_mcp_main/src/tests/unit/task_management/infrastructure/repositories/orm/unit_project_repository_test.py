@@ -37,7 +37,7 @@ class TestORMProjectRepositoryInitialization:
         # Should initialize all base classes
         assert hasattr(repo, 'model_class')
         assert repo.model_class == Project
-        assert hasattr(repo, '_user_id')
+        assert hasattr(repo, 'user_id')
     
     def test_init_with_session_and_user_id(self):
         """Test repository initialization with session and user ID."""
@@ -45,7 +45,7 @@ class TestORMProjectRepositoryInitialization:
         
         repo = ORMProjectRepository(session=mock_session, user_id="test-user")
         
-        assert repo._user_id == "test-user"
+        assert repo.user_id == "test-user"
         # BaseUserScopedRepository should handle the session
     
     def test_init_inheritance_chain(self):
@@ -53,8 +53,8 @@ class TestORMProjectRepositoryInitialization:
         repo = ORMProjectRepository()
         
         # Should have methods from all mixins/base classes
-        assert hasattr(repo, '_apply_user_filter')  # BaseUserScopedRepository
-        assert hasattr(repo, '_invalidate_cache')   # CacheInvalidationMixin
+        assert hasattr(repo, 'apply_user_filter')  # BaseUserScopedRepository
+        assert hasattr(repo, 'invalidate_cache_for_entity')   # CacheInvalidationMixin
         assert hasattr(repo, 'model_class')         # BaseORMRepository
 
 

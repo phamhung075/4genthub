@@ -46,7 +46,7 @@ class CoordinationContext:
         """Get agent workload percentage"""
         return self.workload_metrics.get(agent_id, 0.0)
     
-    def is_agent_overloaded(self, agent_id: str, threshold: float = 0.8) -> bool:
+    def is_agent_overloaded(self, agent_id: str, threshold: float = 80.0) -> bool:
         """Check if agent is overloaded"""
         return self.get_agent_workload(agent_id) > threshold
 

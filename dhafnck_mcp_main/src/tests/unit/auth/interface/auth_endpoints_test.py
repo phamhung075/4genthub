@@ -303,8 +303,8 @@ class TestDataModels:
         """Test LoginRequest model validation"""
         # Valid request
         request = LoginRequest(email="test@example.com", password="password123")
-        assert pytest_request.email == "test@example.com"
-        assert pytest_request.password == "password123"
+        assert request.email == "test@example.com"
+        assert request.password == "password123"
         
         # LoginRequest accepts any string for email (no validation)
         request2 = LoginRequest(email="invalid-email", password="password123")

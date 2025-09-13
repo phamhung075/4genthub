@@ -24,7 +24,7 @@ class TestRuleMetadata:
         return RuleMetadata(
             path="/rules/auth/jwt_rules.yml",
             format=RuleFormat.YAML,
-            type=RuleType.BUSINESS,
+            type=RuleType.CORE,
             size=1024,
             modified=1640995200.0,
             checksum="abc123def456",
@@ -41,7 +41,7 @@ class TestRuleMetadata:
         return RuleMetadata(
             path="/rules/simple.yml",
             format=RuleFormat.YAML,
-            type=RuleType.VALIDATION,
+            type=RuleType.WORKFLOW,
             size=512,
             modified=1640995200.0,
             checksum="simple123",
@@ -53,7 +53,7 @@ class TestRuleMetadata:
         # Assert
         assert sample_metadata.path == "/rules/auth/jwt_rules.yml"
         assert sample_metadata.format == RuleFormat.YAML
-        assert sample_metadata.type == RuleType.BUSINESS
+        assert sample_metadata.type == RuleType.CORE
         assert sample_metadata.size == 1024
         assert sample_metadata.modified == 1640995200.0
         assert sample_metadata.checksum == "abc123def456"
@@ -68,7 +68,7 @@ class TestRuleMetadata:
         # Assert
         assert minimal_metadata.path == "/rules/simple.yml"
         assert minimal_metadata.format == RuleFormat.YAML
-        assert minimal_metadata.type == RuleType.VALIDATION
+        assert minimal_metadata.type == RuleType.WORKFLOW
         assert minimal_metadata.version == "1.0"  # Default value
         assert minimal_metadata.author == "system"  # Default value
         assert minimal_metadata.description == ""  # Default value
@@ -80,11 +80,12 @@ class TestRuleMetadata:
         metadata = RuleMetadata(
             path="/test.yml",
             format=RuleFormat.YAML,
-            type=RuleType.BUSINESS,
+            type=RuleType.CORE,
             size=100,
             modified=1640995200.0,
             checksum="test123",
             dependencies=[],
+            author="test_user",
             tags=None
         )
 
@@ -211,11 +212,12 @@ class TestRuleContent:
         return RuleMetadata(
             path="/rules/test.yml",
             format=RuleFormat.YAML,
-            type=RuleType.BUSINESS,
+            type=RuleType.CORE,
             size=512,
             modified=1640995200.0,
             checksum="test123",
-            dependencies=[]
+            dependencies=[],
+            author="test_user"
         )
 
     @pytest.fixture
@@ -254,7 +256,7 @@ class TestRuleContent:
         """Test RuleContent properties."""
         # Act & Assert
         assert sample_rule_content.rule_path == "/rules/test.yml"
-        assert sample_rule_content.rule_type == RuleType.BUSINESS
+        assert sample_rule_content.rule_type == RuleType.CORE
         assert sample_rule_content.rule_format == RuleFormat.YAML
 
     class TestSectionManagement:
@@ -602,11 +604,12 @@ class TestRuleEntitiesIntegration:
         parent_metadata = RuleMetadata(
             path="/rules/base.yml",
             format=RuleFormat.YAML,
-            type=RuleType.BUSINESS,
+            type=RuleType.CORE,
             size=512,
             modified=1640995200.0,
             checksum="parent123",
-            dependencies=[]
+            dependencies=[],
+            author="test_user"
         )
 
         parent_content = RuleContent(
@@ -621,11 +624,12 @@ class TestRuleEntitiesIntegration:
         child_metadata = RuleMetadata(
             path="/rules/child.yml",
             format=RuleFormat.YAML,
-            type=RuleType.BUSINESS,
+            type=RuleType.CORE,
             size=256,
             modified=1640995300.0,
             checksum="child123",
-            dependencies=["base.yml"]
+            dependencies=["base.yml"],
+            author="test_user"
         )
 
         child_content = RuleContent(
@@ -674,11 +678,12 @@ class TestRuleEntitiesIntegration:
             metadata = RuleMetadata(
                 path=path,
                 format=RuleFormat.YAML,
-                type=RuleType.BUSINESS,
+                type=RuleType.CORE,
                 size=len(path),
                 modified=1640995200.0,
                 checksum=f"checksum_{content_type}",
-                dependencies=[]
+                dependencies=[],
+                author="test_user"
             )
 
             rule_content = RuleContent(

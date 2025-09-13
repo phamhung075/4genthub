@@ -2,12 +2,13 @@
 
 import pytest
 from unittest.mock import Mock, MagicMock, patch, call
+from datetime import datetime, timezone
 
 from fastmcp.task_management.application.use_cases.delete_task import DeleteTaskUseCase
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.events import TaskDeleted
+from fastmcp.task_management.domain.events.task_events import TaskDeleted
 
 
 class TestDeleteTaskUseCase:
@@ -42,12 +43,12 @@ class TestDeleteTaskUseCase:
     @pytest.fixture
     def use_case(self, mock_task_repository, mock_db_session_factory, mock_logging_service):
         """Create a delete task use case instance with mocked dependencies"""
-        with patch('fastmcp.task_management.application.use_cases.delete_task.DomainServiceFactory') as mock_factory:
-            mock_factory.get_database_session_factory.return_value = mock_db_session_factory
-            mock_factory.get_logging_service.return_value = mock_logging_service
-            
-            use_case = DeleteTaskUseCase(mock_task_repository)
-            return use_case
+        use_case = DeleteTaskUseCase(
+            task_repository=mock_task_repository,
+            db_session_factory=mock_db_session_factory,
+            logging_service=mock_logging_service
+        )
+        return use_case
     
     @pytest.fixture
     def sample_task(self):
@@ -66,15 +67,15 @@ class TestDeleteTaskUseCase:
     
     def test_init(self, mock_task_repository, mock_db_session_factory, mock_logging_service):
         """Test use case initialization"""
-        with patch('fastmcp.task_management.application.use_cases.delete_task.DomainServiceFactory') as mock_factory:
-            mock_factory.get_database_session_factory.return_value = mock_db_session_factory
-            mock_factory.get_logging_service.return_value = mock_logging_service
-            
-            use_case = DeleteTaskUseCase(mock_task_repository)
-            
-            assert use_case._task_repository == mock_task_repository
-            assert use_case._db_session_factory == mock_db_session_factory
-            assert use_case._logger == mock_logging_service.get_logger.return_value
+        use_case = DeleteTaskUseCase(
+            task_repository=mock_task_repository,
+            db_session_factory=mock_db_session_factory,
+            logging_service=mock_logging_service
+        )
+
+        assert use_case._task_repository == mock_task_repository
+        assert use_case._db_session_factory == mock_db_session_factory
+        assert use_case._logger == mock_logging_service.get_logger.return_value
     
     def test_execute_with_string_id_success(self, use_case, mock_task_repository, sample_task):
         """Test successful task deletion with string ID"""
@@ -167,7 +168,8 @@ class TestDeleteTaskUseCase:
         task.id = TaskId.from_string(task_id)
         task.mark_as_deleted = Mock()
         task.get_events = Mock(return_value=[])
-        # No git_branch_id attribute
+        # Explicitly set git_branch_id to None to ensure no branch update logging
+        task.git_branch_id = None
         
         mock_task_repository.find_by_id.return_value = task
         mock_task_repository.delete.return_value = True
@@ -208,7 +210,7 @@ class TestDeleteTaskUseCase:
         task_id = "123"
         
         # Create domain events
-        task_deleted_event = TaskDeleted(task_id=sample_task.id)
+        task_deleted_event = TaskDeleted(task_id=sample_task.id, title=sample_task.title, deleted_at=datetime.now(timezone.utc))
         other_event = Mock()  # Non-TaskDeleted event
         
         sample_task.get_events.return_value = [task_deleted_event, other_event]
@@ -229,8 +231,8 @@ class TestDeleteTaskUseCase:
         
         # Create multiple TaskDeleted events
         events = [
-            TaskDeleted(task_id=sample_task.id),
-            TaskDeleted(task_id=sample_task.id),
+            TaskDeleted(task_id=sample_task.id, title=sample_task.title, deleted_at=datetime.now(timezone.utc)),
+            TaskDeleted(task_id=sample_task.id, title=sample_task.title, deleted_at=datetime.now(timezone.utc)),
             Mock()  # Different event type
         ]
         
@@ -276,7 +278,7 @@ class TestDeleteTaskUseCase:
         mock_task_repository.delete.return_value = True
         
         # Add a TaskDeleted event
-        sample_task.get_events.return_value = [TaskDeleted(task_id=sample_task.id)]
+        sample_task.get_events.return_value = [TaskDeleted(task_id=sample_task.id, title=sample_task.title, deleted_at=datetime.now(timezone.utc))]
         
         result = use_case.execute(task_id)
         

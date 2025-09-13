@@ -20,7 +20,7 @@ import subprocess
 import threading
 from pathlib import Path
 from unittest.mock import Mock, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 import requests
 
@@ -31,7 +31,7 @@ def test_data_generator():
     class TestDataGenerator:
         def __init__(self):
             self.counter = 0
-            self.base_timestamp = datetime.now()
+            self.base_timestamp = datetime.now(timezone.utc)
         
         def generate_task(self, **overrides):
             """Generate test task with consistent structure."""
@@ -87,7 +87,7 @@ def test_data_generator():
             base_input = {
                 "session_id": f"test-session-{self.counter}",
                 "source": "startup",
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "user_id": f"test-user-{self.counter}"
             }
             base_input.update(overrides)
@@ -148,8 +148,8 @@ def mock_keycloak_server():
             token_data = {
                 "token_id": token_id,
                 "client_id": client_id,
-                "issued_at": datetime.now(),
-                "expires_at": datetime.now() + timedelta(seconds=expires_in),
+                "issued_at": datetime.now(timezone.utc),
+                "expires_at": datetime.now(timezone.utc) + timedelta(seconds=expires_in),
                 "scopes": ["openid", "profile", "email"]
             }
             
@@ -169,7 +169,7 @@ def mock_keycloak_server():
             if not token_data:
                 return False
             
-            return datetime.now() < token_data["expires_at"]
+            return datetime.now(timezone.utc) < token_data["expires_at"]
         
         def get_token_info(self, token: str) -> Optional[Dict]:
             """Get token information."""
@@ -185,7 +185,7 @@ def mock_keycloak_server():
         def get_stats(self) -> Dict[str, Any]:
             """Get server statistics."""
             active_tokens = sum(1 for token_data in self.issued_tokens.values()
-                              if datetime.now() < token_data["expires_at"])
+                              if datetime.now(timezone.utc) < token_data["expires_at"])
             
             return {
                 "total_tokens_issued": self.token_counter,
@@ -219,14 +219,14 @@ def mock_mcp_server():
                     "name": "Test Project Alpha",
                     "description": "Primary test project",
                     "status": "active",
-                    "created_at": datetime.now().isoformat()
+                    "created_at": datetime.now(timezone.utc).isoformat()
                 },
                 "proj-2": {
                     "id": "proj-2", 
                     "name": "Test Project Beta",
                     "description": "Secondary test project",
                     "status": "active",
-                    "created_at": datetime.now().isoformat()
+                    "created_at": datetime.now(timezone.utc).isoformat()
                 }
             }
             
@@ -455,7 +455,7 @@ def mock_mcp_server():
                 "git_branch_id": payload.get("git_branch_id"),
                 "project_id": payload.get("project_id"),
                 "assignees": payload.get("assignees", []),
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             
             self.tasks[task_id] = task_data
@@ -475,7 +475,7 @@ def mock_mcp_server():
                 if field in payload:
                     task[field] = payload[field]
             
-            task["updated_at"] = datetime.now().isoformat()
+            task["updated_at"] = datetime.now(timezone.utc).isoformat()
             
             return {"success": True, "data": task.copy()}
         

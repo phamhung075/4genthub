@@ -199,10 +199,17 @@ class TestAITaskPlanningService:
     async def test_plan_validation(self, service, sample_planning_request):
         """Test that generated plans are valid"""
         plan = await service.create_intelligent_plan(sample_planning_request)
-        
+
         # Plan should be valid
         is_valid, errors = plan.validate_plan()
-        assert is_valid
+        if not is_valid:
+            print(f"Plan validation failed with errors: {errors}")
+            # Print more details about the plan
+            print(f"Plan has {len(plan.tasks)} tasks")
+            for task in plan.tasks:
+                print(f"Task {task.id}: agent_assignment={task.agent_assignment}")
+
+        assert is_valid, f"Plan validation failed with errors: {errors}"
         assert len(errors) == 0
     
     @pytest.mark.asyncio

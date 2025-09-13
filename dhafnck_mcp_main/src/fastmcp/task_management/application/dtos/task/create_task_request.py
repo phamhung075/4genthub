@@ -9,11 +9,11 @@ from ....domain.enums.agent_roles import AgentRole
 
 def resolve_legacy_role(assignee: str) -> Optional[str]:
     """Resolve legacy role names to current ones"""
-    # FIXED: Map legacy role names TO current AgentRole enum values
+    # Map agent names to standardized role names
     legacy_mapping = {
-        "senior_developer": "coding-agent",
-        "qa_engineer": "test-orchestrator-agent", 
-        "architect": "system-architect-agent"
+        "coding-agent": "senior_developer",
+        "test-orchestrator-agent": "qa_engineer",
+        "system-architect-agent": "architect"
     }
     return legacy_mapping.get(assignee, assignee)
 
