@@ -10,17 +10,16 @@ import GlobalContextDialog from './components/GlobalContextDialog';
 import { Header } from './components/Header';
 import ProjectDetailsDialog from './components/ProjectDetailsDialog';
 import ProjectList from './components/ProjectList';
-import { Button } from './components/ui/button';
 import ShimmerButton from './components/ui/ShimmerButton';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './components/ui/toast';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
 
 // Use lazy loading for TaskList component for better performance
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
-const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
+//const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
 function Dashboard() {
   const [selection, setSelection] = useState<{ projectId: string, branchId: string } | null>(null);
@@ -209,7 +208,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+          {/*<Route
             path="/performance"
             element={
               <ProtectedRoute>
@@ -220,7 +219,7 @@ function App() {
                 </AppLayout>
               </ProtectedRoute>
             }
-          />
+          />*/}
           
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

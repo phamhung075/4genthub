@@ -1,10 +1,10 @@
-import { Home, Key, Settings, Sun, Moon, Activity } from 'lucide-react';
+import { Home, Key, Moon, Settings, Sun } from 'lucide-react';
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 import { Brand } from './ui/Brand';
 import { MenuBar } from './ui/glow-menu';
-import { useTheme } from '../hooks/useTheme';
 import UserProfileDropdown from './UserProfileDropdown';
 
 export const Header: React.FC = () => {
@@ -28,13 +28,13 @@ export const Header: React.FC = () => {
       gradient: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)",
       iconColor: "text-blue-500",
     },
-    {
-      icon: Activity,
-      label: "Performance",
-      href: "/performance",
-      gradient: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.06) 50%, rgba(190,24,93,0) 100%)",
-      iconColor: "text-pink-500",
-    },
+    //{
+    //  icon: Activity,
+    //  label: "Performance",
+    //  href: "/performance",
+    //  gradient: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.06) 50%, rgba(190,24,93,0) 100%)",
+    //  iconColor: "text-pink-500",
+    //},
     {
       icon: Key,
       label: "Tokens",
