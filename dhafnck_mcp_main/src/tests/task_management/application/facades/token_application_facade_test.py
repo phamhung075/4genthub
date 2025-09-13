@@ -14,8 +14,10 @@ import jwt
 
 from fastmcp.task_management.application.facades.token_application_facade import TokenApplicationFacade
 from fastmcp.task_management.domain.repositories.token_repository_interface import ITokenRepository
+from fastmcp.auth.services.mcp_token_service import MCPToken
 
 
+@pytest.mark.unit
 class TestTokenApplicationFacade:
     """Test suite for TokenApplicationFacade"""
     
@@ -105,9 +107,13 @@ class TestTokenApplicationFacade:
     async def test_generate_mcp_token_from_user_success(self, facade_with_mocks):
         """Test successful MCP token generation"""
         # Mock token object
-        mock_token = Mock()
-        mock_token.token = "mcp_token_12345"
-        mock_token.expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        mock_token = MCPToken(
+            token="mcp_token_12345",
+            user_id="user123",
+            email="test@example.com",
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
+        )
+        # Add token_id as an attribute since MCPToken doesn't have it by default
         mock_token.token_id = "tok_abc123"
         
         facade_with_mocks.mcp_token_service.generate_mcp_token_from_user_id.return_value = mock_token
@@ -584,7 +590,7 @@ class TestTokenApplicationFacade:
         repo = facade._get_repository(mock_session)
         assert repo == facade._token_repository
     
-    @patch('fastmcp.task_management.application.facades.token_application_facade.TokenRepository')
+    @patch('fastmcp.task_management.infrastructure.repositories.token_repository.TokenRepository')
     def test_get_repository_creates_new(self, mock_token_repo_class, mock_session, monkeypatch):
         """Test creating new repository when none injected"""
         monkeypatch.setenv("JWT_SECRET_KEY", "test-secret")
@@ -605,6 +611,7 @@ class TestTokenApplicationFacade:
         assert facade._token_repository == mock_repo_instance
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 class TestTokenApplicationFacadeIntegration:
     """Integration tests for TokenApplicationFacade"""
@@ -619,16 +626,59 @@ class TestTokenApplicationFacadeIntegration:
         return JWTService(secret_key=secret)
     
     @pytest.fixture
-    def facade_integration(self, mock_repository, real_jwt_service, mock_mcp_token_service, monkeypatch):
+    def mock_session_integration(self):
+        """Create mock database session for integration tests"""
+        return Mock()
+    
+    @pytest.fixture
+    def mock_repository_integration(self):
+        """Create mock repository for integration tests"""
+        repo = Mock(spec=ITokenRepository)
+        # Set up async methods
+        repo.create_token = AsyncMock()
+        repo.get_token = AsyncMock()
+        repo.get_token_by_id = AsyncMock()
+        repo.get_user_tokens = AsyncMock()
+        repo.count_user_tokens = AsyncMock()
+        repo.revoke_token = AsyncMock()
+        repo.reactivate_token = AsyncMock()
+        repo.delete_token = AsyncMock()
+        repo.update_token_usage = AsyncMock()
+        return repo
+    
+    @pytest.fixture
+    def mock_mcp_token_service_integration(self):
+        """Create mock MCP token service for integration tests"""
+        service = Mock()
+        service.generate_mcp_token_from_user_id = AsyncMock()
+        service.revoke_user_tokens = AsyncMock(return_value=True)
+        service.get_token_stats = Mock(return_value={
+            "total": 10,
+            "active": 8,
+            "expired": 2
+        })
+        service.cleanup_expired_tokens = AsyncMock(return_value=3)
+        return service
+    
+    @pytest.fixture
+    def facade_integration(self, mock_repository_integration, real_jwt_service, mock_mcp_token_service_integration, monkeypatch):
         """Facade with real JWT service for integration tests"""
         monkeypatch.setenv("JWT_SECRET_KEY", "integration-test-secret")
         
-        facade = TokenApplicationFacade(token_repository=mock_repository)
-        facade.jwt_service = real_jwt_service
-        facade.mcp_token_service = mock_mcp_token_service
+        facade = TokenApplicationFacade(token_repository=mock_repository_integration)
+        # Use mock jwt service with decode_token method
+        mock_jwt = Mock()
+        mock_jwt.generate_token = real_jwt_service.generate_token
+        mock_jwt.decode_token = Mock(return_value={
+            "user_id": "user_integration",
+            "token_id": "tok_integration",
+            "scopes": ["read", "write", "admin"]
+        })
+        facade.jwt_service = mock_jwt
+        facade.mcp_token_service = mock_mcp_token_service_integration
         return facade
     
-    async def test_token_lifecycle_integration(self, facade_integration, mock_session):
+    async def test_token_lifecycle_integration(self, facade_integration, mock_session_integration):
         """Test complete token lifecycle with real JWT"""
         # Create token
         mock_created_token = Mock()
@@ -652,7 +702,7 @@ class TestTokenApplicationFacadeIntegration:
             expires_in_days=7,
             rate_limit=5000,
             metadata={"test": "integration"},
-            session=mock_session
+            session=mock_session_integration
         )
         
         assert create_result["success"] is True
@@ -661,7 +711,7 @@ class TestTokenApplicationFacadeIntegration:
         # Validate the created token
         validate_result = await facade_integration.validate_token(
             token=jwt_token,
-            session=mock_session
+            session=mock_session_integration
         )
         
         assert validate_result["success"] is True
@@ -669,7 +719,7 @@ class TestTokenApplicationFacadeIntegration:
         assert validate_result["claims"]["scopes"] == ["read", "write", "admin"]
         assert validate_result["claims"]["token_id"] == "tok_integration"
     
-    async def test_concurrent_token_operations(self, facade_integration, mock_session):
+    async def test_concurrent_token_operations(self, facade_integration, mock_session_integration):
         """Test concurrent token operations"""
         # Mock repository to handle concurrent operations
         tokens_created = []
@@ -698,7 +748,7 @@ class TestTokenApplicationFacadeIntegration:
                 expires_in_days=30,
                 rate_limit=1000,
                 metadata={"index": i},
-                session=mock_session
+                session=mock_session_integration
             )
             tasks.append(task)
         
