@@ -1,7 +1,7 @@
 """Test suite for Label Domain Entity"""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastmcp.task_management.domain.entities.label import Label
 
@@ -28,7 +28,7 @@ class TestLabelInitialization:
         name = "Feature"
         color = "#00ff00"
         description = "New feature implementation"
-        created_at = datetime.now()
+        created_at = datetime.now(timezone.utc)
         
         label = Label(
             id=label_id,
@@ -413,7 +413,7 @@ class TestLabelSerializationScenarios:
 
     def test_label_attributes_are_accessible(self):
         """Test that all label attributes are accessible"""
-        created_at = datetime.now()
+        created_at = datetime.now(timezone.utc)
         
         label = Label(
             id=123,
@@ -469,7 +469,7 @@ class TestLabelSerializationScenarios:
         label.name = "Updated Name"
         label.color = "#ff00ff"
         label.description = "Updated description"
-        label.created_at = datetime.now()
+        label.created_at = datetime.now(timezone.utc)
         
         assert label.name == "Updated Name"
         assert label.color == "#ff00ff"

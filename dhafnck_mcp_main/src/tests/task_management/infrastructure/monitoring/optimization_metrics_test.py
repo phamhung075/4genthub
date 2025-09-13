@@ -9,7 +9,7 @@ import asyncio
 import time
 import tempfile
 import statistics
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock
 from collections import defaultdict

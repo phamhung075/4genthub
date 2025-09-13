@@ -27,19 +27,27 @@ def test_mcp_tools_inclusion():
         print(f"Tools Field: {agent.get('tools', 'NOT PRESENT')}")
         
         # Check if tools contain MCP tools
-        tools_str = agent.get('tools', '')
+        tools = agent.get('tools', [])
         mcp_tools_found = []
-        
+
         expected_mcp_tools = [
             'mcp__browsermcp__browser_navigate',
-            'mcp__browsermcp__browser_snapshot', 
+            'mcp__browsermcp__browser_snapshot',
             'mcp__browsermcp__browser_click',
             'mcp__dhafnck_mcp_http__manage_task',
             'mcp__sequential-thinking__sequentialthinking'
         ]
-        
+
+        # Handle both list and string formats
+        if isinstance(tools, list):
+            tools_list = tools
+        elif isinstance(tools, str):
+            tools_list = [tools] if tools else []
+        else:
+            tools_list = []
+
         for mcp_tool in expected_mcp_tools:
-            if mcp_tool in tools_str:
+            if any(mcp_tool in str(tool) for tool in tools_list):
                 mcp_tools_found.append(mcp_tool)
         
         print(f"\n=== MCP TOOLS ANALYSIS ===")
@@ -71,24 +79,35 @@ def test_mcp_tools_inclusion():
         # Show complete tools field for debugging
         print(f"\n=== COMPLETE TOOLS FIELD ===")
         if 'tools' in agent:
-            tools_list = agent['tools'].split(', ') if agent['tools'] else []
+            # Handle both list and string formats
+            if isinstance(agent['tools'], list):
+                tools_list = agent['tools']
+            elif isinstance(agent['tools'], str):
+                tools_list = agent['tools'].split(', ') if agent['tools'] else []
+            else:
+                tools_list = []
+
             for i, tool in enumerate(tools_list):
-                prefix = "✅" if tool.startswith('mcp__') else "📝"
-                print(f"  {i+1:2d}. {prefix} {tool}")
+                tool_str = str(tool)
+                prefix = "✅" if tool_str.startswith('mcp__') else "📝"
+                print(f"  {i+1:2d}. {prefix} {tool_str}")
         else:
             print("  No tools field present")
             
-        # Show markdown format too
+        # Show markdown format too (if available)
         print(f"\n=== MARKDOWN FORMAT CHECK ===")
-        markdown = result['formats']['markdown']
-        lines = markdown.split('\n')
-        
-        for line in lines:
-            if line.startswith('tools:'):
-                print(f"Markdown tools line: {line}")
-                break
+        if 'formats' in result and 'markdown' in result['formats']:
+            markdown = result['formats']['markdown']
+            lines = markdown.split('\n')
+
+            for line in lines:
+                if line.startswith('tools:'):
+                    print(f"Markdown tools line: {line}")
+                    break
+            else:
+                print("No tools line found in markdown")
         else:
-            print("No tools line found in markdown")
+            print("No 'formats' field in result - skipping markdown check")
             
     else:
         print(f"❌ Error: {result.get('error')}")

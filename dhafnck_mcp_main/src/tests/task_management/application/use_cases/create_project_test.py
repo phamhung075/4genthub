@@ -30,7 +30,7 @@ class TestCreateProjectUseCase:
         self.mock_repository.save = AsyncMock()
         
         # Mock context creation to avoid dependency issues
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -39,10 +39,8 @@ class TestCreateProjectUseCase:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 # Test new signature: execute(None, name, description)
                 result = await self.use_case.execute(
@@ -65,7 +63,11 @@ class TestCreateProjectUseCase:
                 assert "created_at" in project_data
                 assert "updated_at" in project_data
                 assert "git_branchs" in project_data
-                assert "main" in project_data["git_branchs"]
+                # Verify at least one branch was created (should be main branch with UUID)
+                assert len(project_data["git_branchs"]) > 0
+                # Verify branch ID is a valid UUID
+                for branch_id in project_data["git_branchs"]:
+                    assert UUID(branch_id)  # Should not raise ValueError
                 
                 # Verify repository save was called
                 self.mock_repository.save.assert_called_once()
@@ -89,10 +91,8 @@ class TestCreateProjectUseCase:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 # Test legacy signature: execute(project_id, name, description)
                 result = await self.use_case.execute(
@@ -127,10 +127,8 @@ class TestCreateProjectUseCase:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 # Test old calling convention where name is passed as project_id
                 result = await self.use_case.execute("Backward Compatible Project")
@@ -166,10 +164,8 @@ class TestCreateProjectUseCase:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 result = await self.use_case.execute(None, "Project with Branch")
                 
@@ -481,10 +477,8 @@ class TestProjectEntityCreation:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 # Test with specific datetime for verification
                 with patch('fastmcp.task_management.application.use_cases.create_project.datetime') as mock_datetime:
@@ -518,10 +512,8 @@ class TestProjectEntityCreation:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 result = await self.use_case.execute(None, "Test Project")
                 
@@ -550,10 +542,8 @@ class TestProjectEntityCreation:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 # Create multiple projects to test UUID uniqueness
                 results = []
@@ -603,10 +593,8 @@ class TestErrorScenarios:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 result = await self.use_case.execute(None, "   ")
                 
@@ -629,10 +617,8 @@ class TestErrorScenarios:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 result = await self.use_case.execute(None, long_name)
                 
@@ -655,10 +641,8 @@ class TestErrorScenarios:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 result = await self.use_case.execute(None, special_name)
                 
@@ -681,10 +665,8 @@ class TestErrorScenarios:
             mock_facade.create_context.return_value = {"success": True}
             
             # Mock user authentication
-            with patch('fastmcp.task_management.application.use_cases.create_project.get_current_user_context') as mock_get_user:
-                mock_user = Mock()
-                mock_user.user_id = "test-user-123"
-                mock_get_user.return_value = mock_user
+            with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id') as mock_get_user:
+                mock_get_user.return_value = "test-user-123"
                 
                 result = await self.use_case.execute(None, unicode_name)
                 

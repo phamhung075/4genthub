@@ -1,3 +1,6 @@
+# Current Instructions (Iteration 1 - Sat Sep 13 18:26:22 CEST 2025)
+# NOTE: This context is sent ONCE per iteration, not on every chat message
+
 # Test Fix Instructions - Step by Step Process
 
 ## Objective
@@ -170,3 +173,5 @@ timeout 60 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path] --cov=[m
 - `.test_cache/test_hashes.txt` - MD5 hashes to detect file changes
 - `.test_cache/last_run.log` - Output from last test run
 - `.test_cache/stats.txt` - Test statistics
+---
+

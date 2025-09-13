@@ -8,7 +8,7 @@ import asyncio
 import json
 import logging
 from typing import Dict, List, Set, Optional, Any, Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
 from enum import Enum
 import uuid
@@ -314,9 +314,11 @@ class AgentCommunicationHub:
                     
                 except WebSocketDisconnect:
                     break
-                    
+
                 except Exception as e:
                     logger.error(f"Error handling message from {agent_id}: {e}")
+                    # Break the loop on any other exception to prevent infinite loops
+                    break
                     
         finally:
             # Ensure disconnection

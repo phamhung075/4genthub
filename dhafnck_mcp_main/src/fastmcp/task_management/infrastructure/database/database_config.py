@@ -153,16 +153,16 @@ class DatabaseConfig:
     def _get_secure_database_url(self) -> Optional[str]:
         """
         Get database URL securely from environment variables.
-        
+
         Priority:
         1. DATABASE_URL if set (for backward compatibility)
         2. Construct from individual components (more secure)
-        
+
         Returns:
             str: The database connection URL
         """
         import urllib.parse
-        
+
         # First check if DATABASE_URL is explicitly set
         database_url = os.getenv("DATABASE_URL")
         if database_url:
@@ -170,7 +170,7 @@ class DatabaseConfig:
             if ":" in database_url and "@" in database_url:
                 logger.warning("⚠️ DATABASE_URL contains credentials. Consider using individual environment variables for better security.")
             return database_url
-        
+
         # Construct from individual components (more secure approach)
         if self.database_type == "supabase":
             # For Supabase, use the SUPABASE_* variables
@@ -179,28 +179,28 @@ class DatabaseConfig:
             db_name = os.getenv("SUPABASE_DB_NAME", "postgres")
             db_user = os.getenv("SUPABASE_DB_USER", "postgres")
             db_password = os.getenv("SUPABASE_DB_PASSWORD")
-            
+
             if db_host and db_password:
                 # URL-encode the password to handle special characters
                 encoded_password = urllib.parse.quote(db_password)
                 database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}?sslmode=require"
                 logger.info("✅ Database URL constructed from secure environment variables")
                 return database_url
-        
+
         elif self.database_type == "postgresql":
             # For local PostgreSQL
             db_host = os.getenv("DATABASE_HOST", "localhost")
             db_port = os.getenv("DATABASE_PORT", "5432")
             db_name = os.getenv("DATABASE_NAME", "dhafnck_mcp")
             db_user = os.getenv("DATABASE_USER", "dhafnck_user")
-            db_password = os.getenv("DATABASE_PASSWORD")
-            
+            db_password = os.getenv("DATABASE_PASSWORD", "dev_password")
+
             if db_password:
                 encoded_password = urllib.parse.quote(db_password)
                 database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
                 logger.info("✅ Database URL constructed from secure environment variables")
                 return database_url
-        
+
         # No valid configuration found
         return None
     
@@ -208,9 +208,9 @@ class DatabaseConfig:
         """Get the appropriate database URL based on configuration"""
         if self.database_type == "sqlite":
             # SQLite for test mode only
-            from .database_source_manager import DatabaseSourceManager
-            db_manager = DatabaseSourceManager()
-            sqlite_path = db_manager.get_database_path()
+            # Use a standard test database location
+            import tempfile
+            sqlite_path = os.path.join(tempfile.gettempdir(), "dhafnck_mcp_test.db")
             logger.info(f"📦 Using SQLite database for tests: {sqlite_path}")
             return f"sqlite:///{sqlite_path}"
             

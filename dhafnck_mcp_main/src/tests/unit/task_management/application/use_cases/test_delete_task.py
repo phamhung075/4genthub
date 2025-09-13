@@ -15,7 +15,7 @@ from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.events import TaskDeleted
 from fastmcp.task_management.domain.interfaces.database_session import IDatabaseSessionFactory
 from fastmcp.task_management.domain.interfaces.logging_service import ILoggingService
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TestDeleteTaskUseCase:
@@ -68,14 +68,14 @@ class TestDeleteTaskUseCase:
         task.title = "Test Task"
         task.status = TaskStatus.TODO
         task.priority = Priority.high()
-        task.created_at = datetime.now()
-        task.updated_at = datetime.now()
+        task.created_at = datetime.now(timezone.utc)
+        task.updated_at = datetime.now(timezone.utc)
         
         # Mock domain events
         task_deleted_event = TaskDeleted(
             task_id=task.id,
             title=task.title,
-            deleted_at=datetime.now()
+            deleted_at=datetime.now(timezone.utc)
         )
         task.get_events.return_value = [task_deleted_event]
         task.mark_as_deleted.return_value = None
@@ -245,7 +245,7 @@ class TestDeleteTaskUseCase:
         task_deleted_event = TaskDeleted(
             task_id=sample_task.id,
             title=sample_task.title,
-            deleted_at=datetime.now()
+            deleted_at=datetime.now(timezone.utc)
         )
         other_event = Mock()  # Non-TaskDeleted event
         sample_task.get_events.return_value = [task_deleted_event, other_event]

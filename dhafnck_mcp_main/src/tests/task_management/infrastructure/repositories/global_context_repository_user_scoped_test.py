@@ -14,7 +14,7 @@ import uuid
 
 from fastmcp.task_management.infrastructure.repositories.global_context_repository import GlobalContextRepository
 from fastmcp.task_management.domain.entities.context import GlobalContext
-from fastmcp.task_management.infrastructure.database.models import GlobalContext as GlobalContextModel
+from fastmcp.task_management.infrastructure.database.models import GlobalContext as GlobalContextModel, GLOBAL_SINGLETON_UUID
 
 class TestGlobalContextRepository:
     """Test GlobalContextRepository class initialization and basic functionality"""
@@ -44,8 +44,10 @@ class TestGlobalContextRepository:
     def test_normalize_context_id_with_global_singleton_and_user(self):
         """Test context ID normalization for global_singleton with user"""
         repository = GlobalContextRepository(self.mock_session_factory, self.user_id)
-        
+
         # The base class should have a method to normalize context IDs
+        normalized_id = repository._normalize_context_id("global_singleton")
+
         # For global contexts, it should create user-specific IDs
         assert normalized_id != "global_singleton"
         assert normalized_id != GLOBAL_SINGLETON_UUID
@@ -271,9 +273,9 @@ class TestCreateOperation:
         # Mock existing context
         existing_model = Mock(spec=GlobalContextModel)
         self.mock_session.query.return_value.filter.return_value.first.return_value = existing_model
-        
-        entity = GlobalContext(id="global_singleton")
-        
+
+        entity = GlobalContext(id="global_singleton", organization_name="test-org")
+
         with pytest.raises(ValueError, match="Global context already exists"):
             self.repository.create(entity)
         
@@ -289,7 +291,7 @@ class TestCreateOperation:
         # Mock no existing context
         self.mock_session.get.return_value = None
         
-        entity = GlobalContext(id="global_singleton")
+        entity = GlobalContext(id="global_singleton", organization_name="test-org")
         
         repository.create(entity)
         
@@ -469,7 +471,7 @@ class TestUpdateOperation:
         self.mock_session.query.return_value.filter.return_value = self.repository.apply_user_filter.return_value
         self.repository.apply_user_filter.return_value.first.return_value = None
         
-        update_entity = GlobalContext(id="global_singleton")
+        update_entity = GlobalContext(id="global_singleton", organization_name="test-org")
         
         with pytest.raises(ValueError, match="Global context not found"):
             self.repository.update("global_singleton", update_entity)

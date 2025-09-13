@@ -5,7 +5,7 @@ and communication channels for real-time coordination.
 """
 
 from typing import Dict, List, Optional, Set, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
@@ -178,18 +178,22 @@ class AgentSession:
         """Mark task as completed"""
         if task_id in self.active_tasks:
             self.active_tasks.remove(task_id)
-            
+
         if success:
             self.completed_tasks.add(task_id)
             self.metrics["tasks_completed"] += 1
         else:
             self.failed_tasks.add(task_id)
             self.metrics["tasks_failed"] += 1
-        
+
+        # Update heartbeat first
+        self.last_heartbeat = datetime.now(timezone.utc)
+
+        # Then determine state based on active tasks
         if not self.active_tasks:
             self.state = SessionState.IDLE
-        
-        self.update_heartbeat()
+        else:
+            self.state = SessionState.BUSY
     
     def allocate_resource(
         self,
@@ -279,14 +283,14 @@ class AgentSession:
     def add_message(self, message: CoordinationMessage, is_outgoing: bool = True) -> None:
         """Add message to session history"""
         self.message_history.append(message)
-        
+
         if is_outgoing:
             self.metrics["messages_sent"] += 1
         else:
             self.metrics["messages_received"] += 1
-            
-        # Keep history size manageable
-        if len(self.message_history) > 1000:
+
+        # Keep history size manageable - trim to 500 when exceeding 500
+        if len(self.message_history) > 500:
             self.message_history = self.message_history[-500:]  # Keep last 500
     
     def get_active_channels(self) -> List[CommunicationChannel]:

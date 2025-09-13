@@ -11,14 +11,21 @@ def get_subtask_description() -> str:
 
 
 MANAGE_SUBTASK_DESCRIPTION = """
-🔧 SUBTASK MANAGEMENT SYSTEM - Hierarchical Task Decomposition with Automatic Context Updates
+# 🔧 SUBTASK MANAGEMENT SYSTEM - Hierarchical Task Decomposition with Automatic Context Updates
 
-⭐ WHAT IT DOES: Manages subtasks within parent tasks for hierarchical task breakdown and granular progress tracking. All actions automatically update parent task context and progress.
-📋 WHEN TO USE: Breaking down complex tasks, detailed workflow management, and team coordination on multi-step processes.
-🎯 CRITICAL FOR: Task decomposition, progress tracking, hierarchical project organization, and maintaining parent-subtask synchronization.
-🚀 ENHANCED FEATURES: Integrated progress tracking, automatic parent context updates, blocker management, insight propagation, and intelligent workflow hints.
+## ⭐ WHAT IT DOES:
+Manages subtasks within parent tasks for hierarchical task breakdown and granular progress tracking. All actions automatically update parent task context and progress.
 
-🤖 AI USAGE GUIDELINES:
+## 📋 WHEN TO USE:
+Breaking down complex tasks, detailed workflow management, and team coordination on multi-step processes.
+
+## 🎯 CRITICAL FOR:
+Task decomposition, progress tracking, hierarchical project organization, and maintaining parent-subtask synchronization.
+
+## 🚀 ENHANCED FEATURES:
+Integrated progress tracking, automatic parent context updates, blocker management, insight propagation, and intelligent workflow hints.
+
+### 🤖 AI USAGE GUIDELINES:
 • ALWAYS use subtasks when a task has multiple distinct steps or components
 • CREATE subtasks immediately after creating a parent task that requires multiple steps
 • UPDATE subtasks with progress_percentage as you work (maps automatically to status)
@@ -34,10 +41,10 @@ MANAGE_SUBTASK_DESCRIPTION = """
 | list     | task_id                    |                                    | List all subtasks with progress summary          |
 | complete | task_id, subtask_id, completion_summary | impact_on_parent, insights_found | Complete subtask with context update |
 
-📝 PRACTICAL EXAMPLES FOR AI:
+### 📝 PRACTICAL EXAMPLES FOR AI:
 1. Breaking down a feature implementation:
    - Parent task: "Implement user authentication" (assigned to: coding-agent, @security-auditor-agent)
-   - Subtasks (auto-inherit both agents if not specified):
+   - Subtasks: (auto-inherit both agents if not specified)
      • "Create login UI" - inherits both agents
      • "Add password validation" - inherits both agents  
      • "Implement JWT tokens" - can override with: assignees: "@security-auditor-agent"
@@ -49,7 +56,7 @@ MANAGE_SUBTASK_DESCRIPTION = """
 3. Completing with context:
    - action: "complete", task_id: "parent-id", subtask_id: "sub-id", completion_summary: "JWT implementation complete with refresh token support", impact_on_parent: "Authentication backend 75% complete"
 
-💡 ENHANCED PARAMETERS:
+### 💡 ENHANCED PARAMETERS:
 • completion_summary: Summary of what was accomplished (REQUIRED for complete action - be specific!)
 • progress_notes: Brief description of work done (use for create/update to track what you did)
 • progress_percentage: 0-100 (automatically sets status: 0=todo, 1-99=in_progress, 100=done)
@@ -57,7 +64,7 @@ MANAGE_SUBTASK_DESCRIPTION = """
 • impact_on_parent: How completing this subtask affects the parent task
 • insights_found: Important discoveries (e.g., "Found existing utility function for validation")
 
-🔄 AUTOMATIC FEATURES:
+### 🔄 AUTOMATIC FEATURES:
 • **Agent Inheritance**: Subtasks automatically inherit parent task agents when none specified
 • Parent task progress recalculation on all modifications
 • Context updates with timestamps for all actions
@@ -69,13 +76,13 @@ MANAGE_SUBTASK_DESCRIPTION = """
 • Next action suggestions with examples
 • Rule reminders for current workflow phase
 
-📊 RESPONSE ENHANCEMENTS:
+### 📊 RESPONSE ENHANCEMENTS:
 • parent_progress: Updated parent task progress after actions
 • progress_summary: Detailed breakdown for list operations
 • hint: Helpful suggestions (e.g., "All subtasks complete! Parent task ready for completion.")
 • workflow_guidance: Intelligent hints, next actions, rules, and recommendations based on current state
 
-💡 BEST PRACTICES FOR AI:
+### 💡 BEST PRACTICES FOR AI:
 • Create subtasks BEFORE starting work on a complex task
 • Update progress_percentage regularly (every 25% increment is good)
 • Always provide completion_summary when completing subtasks
@@ -83,7 +90,7 @@ MANAGE_SUBTASK_DESCRIPTION = """
 • Check parent progress with 'list' action before completing parent task
 • Use blockers field to document any impediments
 
-🛑 ERROR HANDLING:
+### 🛑 ERROR HANDLING:
 • If required fields are missing, a clear error message is returned specifying which fields are needed
 • Unknown actions return an error listing valid actions
 • Internal errors are logged and returned with a generic error message
@@ -233,7 +240,115 @@ def get_manage_subtask_description():
 
 # Backward compatibility constants
 SUBTASK_DESCRIPTION = MANAGE_SUBTASK_DESCRIPTION
-PARAMETER_DESCRIPTIONS = MANAGE_SUBTASK_PARAMETERS_DESCRIPTION
+
+# Convert MANAGE_SUBTASK_PARAMETERS_DESCRIPTION to expected format for tests
+PARAMETER_DESCRIPTIONS = {
+    "action": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["action"],
+        "type": "string",
+        "required": True
+    },
+    "task_id": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["task_id"],
+        "type": "string",
+        "required": False  # Required for all actions but marked optional at schema level
+    },
+    "subtask_id": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["subtask_id"],
+        "type": "string",
+        "required": False  # Required for specific actions only
+    },
+    "title": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["title"],
+        "type": "string",
+        "required": False
+    },
+    "description": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["description"],
+        "type": "string",
+        "required": False
+    },
+    "status": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["status"],
+        "type": "string",
+        "required": False
+    },
+    "priority": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["priority"],
+        "type": "string",
+        "required": False
+    },
+    "assignees": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["assignees"],
+        "type": "string",  # Handled as comma-separated string
+        "required": False
+    },
+    "progress_percentage": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_percentage"],
+        "type": "integer",
+        "required": False
+    },
+    "progress_notes": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_notes"],
+        "type": "string",
+        "required": False
+    },
+    "completion_summary": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_summary"],
+        "type": "string",
+        "required": False  # Required for complete action only
+    },
+    "testing_notes": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["testing_notes"],
+        "type": "string",
+        "required": False
+    },
+    "insights_found": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["insights_found"],
+        "type": "string",
+        "required": False
+    },
+    "challenges_overcome": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["challenges_overcome"],
+        "type": "string",
+        "required": False
+    },
+    "skills_learned": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["skills_learned"],
+        "type": "string",
+        "required": False
+    },
+    "next_recommendations": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["next_recommendations"],
+        "type": "string",
+        "required": False
+    },
+    "deliverables": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["deliverables"],
+        "type": "string",
+        "required": False
+    },
+    "completion_quality": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_quality"],
+        "type": "string",
+        "required": False
+    },
+    "blockers": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["blockers"],
+        "type": "string",
+        "required": False
+    },
+    "impact_on_parent": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["impact_on_parent"],
+        "type": "string",
+        "required": False
+    },
+    "user_id": {
+        "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["user_id"],
+        "type": "string",
+        "required": False
+    }
+}
 
 # Legacy parameter descriptions for backward compatibility
 MANAGE_SUBTASK_PARAMETERS = {

@@ -6,7 +6,7 @@ error handling, and model compatibility.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock, create_autospec
+from unittest.mock import Mock, MagicMock, create_autospec, AsyncMock
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -243,8 +243,8 @@ class TestTokenRepository:
         """Test successful token revocation"""
         mock_token = self.create_mock_token(is_active=True)
         
-        # Mock get_token to return the token
-        repository.get_token = Mock(return_value=mock_token)
+        # Mock get_token to return the token (async method)
+        repository.get_token = AsyncMock(return_value=mock_token)
         
         result = await repository.revoke_token('tok_12345', 'user_123')
         
@@ -255,7 +255,7 @@ class TestTokenRepository:
     @pytest.mark.asyncio
     async def test_revoke_token_not_found(self, repository, mock_session):
         """Test revoking non-existent token"""
-        repository.get_token = Mock(return_value=None)
+        repository.get_token = AsyncMock(return_value=None)
         
         result = await repository.revoke_token('tok_invalid', 'user_123')
         
@@ -266,7 +266,7 @@ class TestTokenRepository:
     async def test_revoke_token_error(self, repository, mock_session):
         """Test handling error during revocation"""
         mock_token = self.create_mock_token()
-        repository.get_token = Mock(return_value=mock_token)
+        repository.get_token = AsyncMock(return_value=mock_token)
         mock_session.commit.side_effect = SQLAlchemyError("Commit error")
         
         result = await repository.revoke_token('tok_12345', 'user_123')

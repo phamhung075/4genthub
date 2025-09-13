@@ -16,18 +16,18 @@ class TestCreateTaskRequest:
             git_branch_id="550e8400-e29b-41d4-a716-446655440000"
         )
         
-        assert pytest_request.title == "Test Task"
-        assert pytest_request.git_branch_id == "550e8400-e29b-41d4-a716-446655440000"
-        assert pytest_request.description is None
-        assert pytest_request.status is None
-        assert pytest_request.priority is None
-        assert pytest_request.details == ""
-        assert pytest_request.estimated_effort == ""
-        assert pytest_request.assignees == []
-        assert pytest_request.labels == []
-        assert pytest_request.due_date is None
-        assert pytest_request.dependencies == []
-        assert pytest_request.user_id is None
+        assert request.title == "Test Task"
+        assert request.git_branch_id == "550e8400-e29b-41d4-a716-446655440000"
+        assert request.description is None
+        assert request.status is None
+        assert request.priority is None
+        assert request.details == ""
+        assert request.estimated_effort == ""
+        assert request.assignees == []
+        assert request.labels == []
+        assert request.due_date is None
+        assert request.dependencies == []
+        assert request.user_id is None
     
     def test_create_task_request_with_all_fields(self):
         """Test creating request with all fields"""
@@ -46,18 +46,18 @@ class TestCreateTaskRequest:
             user_id="user-789"
         )
         
-        assert pytest_request.title == "Complete Task"
-        assert pytest_request.git_branch_id == "550e8400-e29b-41d4-a716-446655440000"
-        assert pytest_request.description == "A complete task description"
-        assert pytest_request.status == "todo"
-        assert pytest_request.priority == "high"
-        assert pytest_request.details == "Detailed implementation notes"
-        assert pytest_request.estimated_effort == "2 days"
-        assert pytest_request.assignees == ["@senior_developer", "@qa_engineer"]
-        assert pytest_request.labels == ["frontend", "bug"]
-        assert pytest_request.due_date == "2025-12-31T23:59:59Z"
-        assert pytest_request.dependencies == ["task-123", "task-456"]
-        assert pytest_request.user_id == "user-789"
+        assert request.title == "Complete Task"
+        assert request.git_branch_id == "550e8400-e29b-41d4-a716-446655440000"
+        assert request.description == "A complete task description"
+        assert request.status == "todo"
+        assert request.priority == "high"
+        assert request.details == "Detailed implementation notes"
+        assert request.estimated_effort == "2 days"
+        assert request.assignees == ["@senior_developer", "@qa_engineer"]
+        assert request.labels == ["frontend", "bug"]
+        assert request.due_date == "2025-12-31T23:59:59Z"
+        assert request.dependencies == ["task-123", "task-456"]
+        assert request.user_id == "user-789"
     
     def test_legacy_role_resolution(self):
         """Test legacy agent role names are resolved to current ones"""
@@ -67,9 +67,9 @@ class TestCreateTaskRequest:
             assignees=["coding-agent", "test-orchestrator-agent", "system-architect-agent"]
         )
         
-        assert "@senior_developer" in pytest_request.assignees
-        assert "@qa_engineer" in pytest_request.assignees
-        assert "@architect" in pytest_request.assignees
+        assert "@senior_developer" in request.assignees
+        assert "@qa_engineer" in request.assignees
+        assert "@architect" in request.assignees
     
     def test_assignee_prefix_handling(self):
         """Test that @ prefix is properly handled for assignees"""
@@ -79,9 +79,9 @@ class TestCreateTaskRequest:
             assignees=["senior_developer", "@qa_engineer", "custom_user"]
         )
         
-        assert "@senior_developer" in pytest_request.assignees  # Added @ prefix
-        assert "@qa_engineer" in pytest_request.assignees  # Already had @ prefix
-        assert "@custom_user" in pytest_request.assignees  # Custom user gets @ prefix
+        assert "@senior_developer" in request.assignees  # Added @ prefix
+        assert "@qa_engineer" in request.assignees  # Already had @ prefix
+        assert "@custom_user" in request.assignees  # Custom user gets @ prefix
     
     def test_empty_assignees_handling(self):
         """Test handling of empty or None assignees"""
@@ -91,8 +91,8 @@ class TestCreateTaskRequest:
             assignees=["", None, "  ", "@valid_user"]
         )
         
-        assert len(pytest_request.assignees) == 1
-        assert "@valid_user" in pytest_request.assignees
+        assert len(request.assignees) == 1
+        assert "@valid_user" in request.assignees
     
     def test_label_validation_with_common_labels(self):
         """Test that labels are validated against CommonLabel enum"""
@@ -102,10 +102,10 @@ class TestCreateTaskRequest:
             labels=["frontend", "backend", "bug", "invalid_label"]
         )
         
-        assert "frontend" in pytest_request.labels
-        assert "backend" in pytest_request.labels
-        assert "bug" in pytest_request.labels
-        assert "invalid_label" in pytest_request.labels  # Invalid labels are kept
+        assert "frontend" in request.labels
+        assert "backend" in request.labels
+        assert "bug" in request.labels
+        assert "invalid_label" in request.labels  # Invalid labels are kept
     
     def test_label_suggestions(self):
         """Test that close matches get suggested labels"""
@@ -117,7 +117,7 @@ class TestCreateTaskRequest:
         
         # CommonLabel should suggest corrections
         # The actual behavior depends on CommonLabel.suggest_labels implementation
-        assert len(pytest_request.labels) == 3
+        assert len(request.labels) == 3
     
     def test_empty_labels_handling(self):
         """Test handling of empty or None labels"""
@@ -127,8 +127,8 @@ class TestCreateTaskRequest:
             labels=[None, "", "  ", "valid_label"]
         )
         
-        assert len(pytest_request.labels) == 1
-        assert "valid_label" in pytest_request.labels
+        assert len(request.labels) == 1
+        assert "valid_label" in request.labels
     
     def test_estimated_effort_validation(self):
         """Test estimated effort validation"""
@@ -155,8 +155,8 @@ class TestCreateTaskRequest:
             git_branch_id="550e8400-e29b-41d4-a716-446655440000"
         )
         
-        assert pytest_request.dependencies == []
-        assert isinstance(pytest_request.dependencies, list)
+        assert request.dependencies == []
+        assert isinstance(request.dependencies, list)
     
     def test_dependencies_with_values(self):
         """Test dependencies with actual task IDs"""
@@ -167,8 +167,8 @@ class TestCreateTaskRequest:
             dependencies=dependencies
         )
         
-        assert pytest_request.dependencies == dependencies
-        assert len(pytest_request.dependencies) == 3
+        assert request.dependencies == dependencies
+        assert len(request.dependencies) == 3
     
     def test_dataclass_field_ordering(self):
         """Test that fields maintain correct order with defaults after required"""
@@ -178,15 +178,15 @@ class TestCreateTaskRequest:
         )
         
         # Verify all fields exist and have correct defaults
-        assert hasattr(pytest_request, 'title')
-        assert hasattr(pytest_request, 'git_branch_id')
-        assert hasattr(pytest_request, 'description')
-        assert hasattr(pytest_request, 'status')
-        assert hasattr(pytest_request, 'priority')
-        assert hasattr(pytest_request, 'details')
-        assert hasattr(pytest_request, 'estimated_effort')
-        assert hasattr(pytest_request, 'assignees')
-        assert hasattr(pytest_request, 'labels')
-        assert hasattr(pytest_request, 'due_date')
-        assert hasattr(pytest_request, 'dependencies')
-        assert hasattr(pytest_request, 'user_id')
+        assert hasattr(request, 'title')
+        assert hasattr(request, 'git_branch_id')
+        assert hasattr(request, 'description')
+        assert hasattr(request, 'status')
+        assert hasattr(request, 'priority')
+        assert hasattr(request, 'details')
+        assert hasattr(request, 'estimated_effort')
+        assert hasattr(request, 'assignees')
+        assert hasattr(request, 'labels')
+        assert hasattr(request, 'due_date')
+        assert hasattr(request, 'dependencies')
+        assert hasattr(request, 'user_id')

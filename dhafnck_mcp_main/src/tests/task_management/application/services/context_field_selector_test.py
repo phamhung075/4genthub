@@ -8,7 +8,8 @@ from typing import Dict, List, Set, Any
 
 from fastmcp.task_management.application.services.context_field_selector import (
     ContextFieldSelector,
-    FieldSet
+    FieldSet,
+    SelectionProfile
 )
 
 

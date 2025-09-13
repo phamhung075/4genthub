@@ -48,7 +48,14 @@ class TestAgentAssignmentAtCreation:
         """Test successful task creation with multiple valid assignees"""
         # Setup mocks
         mock_validate_user.return_value = "test-user"
-        mock_await.return_value = {"project_id": "test-project", "git_branch_name": "main"}
+        # Mock _await_if_coroutine to handle the async context derivation
+        def await_side_effect(coro):
+            # Check if this is the context derivation call
+            if hasattr(coro, '__name__') and '_derive_context' in str(coro):
+                return {"project_id": "test-project", "git_branch_name": "main"}
+            # For other coroutines, return a default dict
+            return {"project_id": "test-project", "git_branch_name": "main"}
+        mock_await.side_effect = await_side_effect
         
         # Mock successful task creation
         created_task = Task(
@@ -61,16 +68,15 @@ class TestAgentAssignmentAtCreation:
         mock_task_response = Mock()
         mock_task_response.success = True
         mock_task_response.task = created_task
-        
+
         with patch.object(self.task_facade._create_task_use_case, 'execute', return_value=mock_task_response):
-            with patch.object(self.task_facade, '_await_if_coroutine', return_value=None):  # Context sync
-                result = self.task_handler.create_task(
-                    facade=self.task_facade,
-                    git_branch_id="test-branch",
-                    title="Test Task",
-                    description="Test Description",
-                    assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
-                )
+            result = self.task_handler.create_task(
+                facade=self.task_facade,
+                git_branch_id="test-branch",
+                title="Test Task",
+                description="Test Description",
+                assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+            )
         
         assert result["success"] is True
         assert result["action"] == "create"

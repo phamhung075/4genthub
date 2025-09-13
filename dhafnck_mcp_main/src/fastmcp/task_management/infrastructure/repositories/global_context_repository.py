@@ -66,7 +66,47 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 raise
             finally:
                 session.close()
-    
+
+    def _normalize_context_id(self, context_id: str) -> str:
+        """
+        Normalize context ID based on user context.
+
+        For 'global_singleton':
+        - If user_id is present, create a user-specific UUID
+        - If no user_id, return the standard GLOBAL_SINGLETON_UUID
+
+        For other IDs, return as-is.
+        """
+        from fastmcp.task_management.infrastructure.database.models import GLOBAL_SINGLETON_UUID
+        import uuid
+
+        # If not global_singleton, return as-is
+        if context_id != "global_singleton":
+            return context_id
+
+        # Handle global_singleton based on user context
+        if not self.user_id:
+            # No user context, use the standard singleton UUID
+            return GLOBAL_SINGLETON_UUID
+
+        # Extract actual user ID from various formats
+        actual_user_id = None
+        if hasattr(self.user_id, 'user_id'):
+            actual_user_id = self.user_id.user_id
+        elif hasattr(self.user_id, 'id'):
+            actual_user_id = self.user_id.id
+        else:
+            actual_user_id = str(self.user_id)
+
+        # Create a deterministic UUID based on user ID
+        try:
+            # Use UUID5 with a namespace for deterministic generation
+            namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace UUID
+            return str(uuid.uuid5(namespace, f"global_singleton:{actual_user_id}"))
+        except Exception as e:
+            logger.warning(f"Failed to create user-specific UUID: {e}, falling back to standard UUID")
+            return GLOBAL_SINGLETON_UUID
+
     def create(self, entity: GlobalContext) -> GlobalContext:
         """Create a new global context for the current user with nested structure support."""
         with self.get_db_session() as session:

@@ -1,7 +1,7 @@
 """Test agent session entity"""
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 import uuid
 
@@ -401,7 +401,7 @@ class TestAgentSession:
         assert data["agent_id"] == "agent-123"
         assert data["user_id"] == "user-456"
         assert data["project_id"] == "proj-789"
-        assert data["state"] == "active"
+        assert data["state"] == "idle"
         assert data["completed_tasks_count"] == 1
         assert data["failed_tasks_count"] == 0
         assert data["health_score"] == 100.0

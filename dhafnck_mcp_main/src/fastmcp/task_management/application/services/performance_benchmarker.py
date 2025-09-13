@@ -9,8 +9,21 @@ import time
 import statistics
 import json
 import sys
-from typing import Dict, List, Any, Optional, Callable, Tuple
-from dataclasses import dataclass, field
+import asyncio
+import csv
+import io
+import random
+import tracemalloc
+import concurrent.futures
+
+# Try to import psutil, but don't fail if not available
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
+from typing import Dict, List, Any, Optional, Callable, Tuple, Union
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from contextlib import contextmanager
 from enum import Enum
@@ -31,14 +44,24 @@ class BenchmarkCategory(Enum):
 class BenchmarkResult:
     """Single benchmark result"""
     name: str
-    category: BenchmarkCategory
-    execution_time_ms: float
-    memory_usage_mb: float
-    input_size_bytes: int
-    output_size_bytes: int
-    success: bool
+    mean_time: float
+    min_time: float
+    max_time: float
+    std_dev: float
+    all_times: List[float] = field(default_factory=list)
+    category: Optional[BenchmarkCategory] = None
+    execution_time_ms: Optional[float] = None
+    memory_usage_mb: Optional[float] = None
+    input_size_bytes: Optional[int] = None
+    output_size_bytes: Optional[int] = None
+    success: Optional[bool] = True
     error_message: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    is_async: bool = False
+    cached: bool = False
+    peak_memory: Optional[float] = None
+    memory_delta: Optional[float] = None
+    confidence_interval: Optional[Tuple[float, float]] = None
     
     @property
     def compression_ratio(self) -> float:
@@ -58,14 +81,39 @@ class BenchmarkResult:
 @dataclass
 class BenchmarkSuite:
     """Complete benchmark suite results"""
-    suite_name: str
-    started_at: datetime
+    name: str = ""
+    description: str = ""
+    suite_name: Optional[str] = None
+    started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     results: List[BenchmarkResult] = field(default_factory=list)
-    
+    benchmarks: List[Dict[str, Any]] = field(default_factory=list)
+
+    def __post_init__(self):
+        """Initialize after dataclass creation"""
+        if self.suite_name and not self.name:
+            self.name = self.suite_name
+        if self.name and not self.suite_name:
+            self.suite_name = self.name
+
     def add_result(self, result: BenchmarkResult) -> None:
         """Add benchmark result"""
         self.results.append(result)
+
+    def add_benchmark(
+        self,
+        name: str,
+        func: Callable,
+        args: Tuple = (),
+        kwargs: Optional[Dict] = None
+    ) -> None:
+        """Add a benchmark to the suite"""
+        self.benchmarks.append({
+            'name': name,
+            'func': func,
+            'args': args,
+            'kwargs': kwargs or {}
+        })
     
     def get_summary(self) -> Dict[str, Any]:
         """Get summary statistics"""
@@ -106,13 +154,34 @@ class BenchmarkSuite:
         }
 
 
+@dataclass
+class PerformanceTarget:
+    """Performance target configuration"""
+    name: str
+    max_time: float
+    max_memory: Optional[float] = None
+    percentile_targets: Dict[int, float] = field(default_factory=dict)
+
+
+@dataclass
+class BenchmarkComparison:
+    """Comparison between two benchmark results"""
+    speedup: float
+    winner: str
+    statistical_significance: Optional[float] = None
+
+
 class PerformanceBenchmarker:
     """Comprehensive performance benchmarker"""
-    
-    def __init__(self):
+
+    def __init__(self, warmup_runs: int = 3, benchmark_runs: int = 10):
         """Initialize benchmarker"""
+        self.warmup_runs = warmup_runs
+        self.benchmark_runs = benchmark_runs
+        self.results: List[BenchmarkResult] = []
         self.current_suite: Optional[BenchmarkSuite] = None
         self.completed_suites: List[BenchmarkSuite] = []
+        self._cache: Dict[str, BenchmarkResult] = {}
         
     def start_suite(self, name: str) -> BenchmarkSuite:
         """Start a new benchmark suite"""
@@ -546,3 +615,554 @@ class PerformanceBenchmarker:
                 recommendations.append("Cache operations are slow - consider cache optimization")
         
         return recommendations if recommendations else ["Performance looks good - no specific recommendations"]
+
+    def benchmark(
+        self,
+        func: Optional[Callable] = None,
+        args: Tuple = (),
+        kwargs: Optional[Dict] = None,
+        name: Optional[str] = None,
+        setup: Optional[Callable] = None,
+        teardown: Optional[Callable] = None,
+        cache_key: Optional[str] = None,
+        use_cache: bool = False,
+        profile_type: Optional[str] = None
+    ) -> BenchmarkResult:
+        """Benchmark a function with warmup and multiple runs"""
+        if kwargs is None:
+            kwargs = {}
+
+        # Check cache
+        if use_cache and cache_key and cache_key in self._cache:
+            cached_result = self._cache[cache_key]
+            cached_result.cached = True
+            return cached_result
+
+        all_times = []
+
+        # Warmup runs
+        for _ in range(self.warmup_runs):
+            context = {}
+            if setup:
+                context = setup()
+
+            start = time.perf_counter()
+            if context:
+                func(context)
+            else:
+                func(*args, **kwargs)
+            end = time.perf_counter()
+
+            if teardown:
+                teardown(context)
+
+        # Actual benchmark runs
+        for _ in range(self.benchmark_runs):
+            context = {}
+            if setup:
+                context = setup()
+
+            start = time.perf_counter()
+            if context:
+                func(context)
+            else:
+                func(*args, **kwargs)
+            end = time.perf_counter()
+
+            all_times.append(end - start)
+
+            if teardown:
+                teardown(context)
+
+        # Calculate statistics
+        result = BenchmarkResult(
+            name=name or func.__name__,
+            mean_time=statistics.mean(all_times),
+            min_time=min(all_times),
+            max_time=max(all_times),
+            std_dev=statistics.stdev(all_times) if len(all_times) > 1 else 0,
+            all_times=all_times
+        )
+
+        # Store in results and cache
+        self.results.append(result)
+        if cache_key:
+            self._cache[cache_key] = result
+
+        return result
+
+    async def benchmark_async(
+        self,
+        func: Callable,
+        args: Tuple = (),
+        kwargs: Optional[Dict] = None,
+        name: Optional[str] = None
+    ) -> BenchmarkResult:
+        """Benchmark an async function"""
+        if kwargs is None:
+            kwargs = {}
+
+        all_times = []
+
+        # Warmup runs
+        for _ in range(self.warmup_runs):
+            start = time.perf_counter()
+            await func(*args, **kwargs)
+            end = time.perf_counter()
+
+        # Actual benchmark runs
+        for _ in range(self.benchmark_runs):
+            start = time.perf_counter()
+            await func(*args, **kwargs)
+            end = time.perf_counter()
+            all_times.append(end - start)
+
+        # Calculate statistics
+        result = BenchmarkResult(
+            name=name or func.__name__,
+            mean_time=statistics.mean(all_times),
+            min_time=min(all_times),
+            max_time=max(all_times),
+            std_dev=statistics.stdev(all_times) if len(all_times) > 1 else 0,
+            all_times=all_times,
+            is_async=True
+        )
+
+        self.results.append(result)
+        return result
+
+    def run_suite(self, suite: BenchmarkSuite) -> List[BenchmarkResult]:
+        """Run a benchmark suite"""
+        results = []
+        for benchmark_info in suite.benchmarks:
+            result = self.benchmark(
+                func=benchmark_info['func'],
+                name=benchmark_info['name'],
+                args=benchmark_info.get('args', ()),
+                kwargs=benchmark_info.get('kwargs', {})
+            )
+            results.append(result)
+        return results
+
+    def benchmark_memory(
+        self,
+        func: Callable,
+        args: Tuple = (),
+        kwargs: Optional[Dict] = None,
+        name: Optional[str] = None
+    ) -> BenchmarkResult:
+        """Benchmark memory usage of a function"""
+        if kwargs is None:
+            kwargs = {}
+
+        # Start memory tracking
+        tracemalloc.start()
+        memory_before = tracemalloc.get_traced_memory()[0]
+
+        # Get process memory if psutil is available
+        mem_info_before = None
+        mem_info_after = None
+        if HAS_PSUTIL:
+            process = psutil.Process()
+            mem_info_before = process.memory_info()
+
+        # Run function
+        start = time.perf_counter()
+        result_value = func(*args, **kwargs)
+        end = time.perf_counter()
+
+        # Get memory after
+        memory_after = tracemalloc.get_traced_memory()[0]
+        if HAS_PSUTIL:
+            mem_info_after = process.memory_info()
+        peak_memory = tracemalloc.get_traced_memory()[1]
+        tracemalloc.stop()
+
+        memory_delta = memory_after - memory_before
+
+        metadata = {
+            "memory_profile": {
+                "before_bytes": memory_before,
+                "after_bytes": memory_after,
+                "peak_bytes": peak_memory,
+                "delta_bytes": memory_delta
+            }
+        }
+
+        if mem_info_before and mem_info_after:
+            metadata["memory_profile"]["rss_before"] = mem_info_before.rss
+            metadata["memory_profile"]["rss_after"] = mem_info_after.rss
+
+        result = BenchmarkResult(
+            name=name or func.__name__,
+            mean_time=end - start,
+            min_time=end - start,
+            max_time=end - start,
+            std_dev=0,
+            all_times=[end - start],
+            peak_memory=peak_memory / (1024 * 1024),  # Convert to MB
+            memory_delta=memory_delta / (1024 * 1024),  # Convert to MB
+            metadata=metadata
+        )
+
+        self.results.append(result)
+        return result
+
+    def check_target(
+        self,
+        result: BenchmarkResult,
+        target: PerformanceTarget
+    ) -> bool:
+        """Check if a benchmark result meets performance targets"""
+        # Check max time
+        if result.mean_time > target.max_time:
+            return False
+
+        # Check max memory if specified
+        if target.max_memory and result.peak_memory:
+            if result.peak_memory > target.max_memory / (1024 * 1024):  # Convert to MB
+                return False
+
+        # Check percentile targets
+        if target.percentile_targets and result.all_times:
+            for percentile, max_time in target.percentile_targets.items():
+                percentile_value = statistics.quantiles(
+                    result.all_times,
+                    n=100
+                )[percentile - 1] if len(result.all_times) >= 100 else max(result.all_times)
+
+                if percentile_value > max_time:
+                    return False
+
+        return True
+
+    def compare(
+        self,
+        result1: BenchmarkResult,
+        result2: BenchmarkResult
+    ) -> BenchmarkComparison:
+        """Compare two benchmark results"""
+        speedup = result1.mean_time / result2.mean_time if result2.mean_time > 0 else float('inf')
+        winner = result2.name if speedup > 1 else result1.name
+
+        # Calculate statistical significance using t-test approximation
+        significance = None
+        if result1.all_times and result2.all_times:
+            # Simple significance check based on standard deviations
+            combined_std = (result1.std_dev + result2.std_dev) / 2
+            if combined_std > 0:
+                difference = abs(result1.mean_time - result2.mean_time)
+                significance = difference / combined_std
+
+        return BenchmarkComparison(
+            speedup=speedup,
+            winner=winner,
+            statistical_significance=significance
+        )
+
+    def profile(
+        self,
+        func: Callable,
+        args: Tuple = (),
+        kwargs: Optional[Dict] = None,
+        profile_type: str = "line"
+    ) -> Dict[str, Any]:
+        """Profile a function execution"""
+        if kwargs is None:
+            kwargs = {}
+
+        import cProfile
+        import pstats
+        from io import StringIO
+
+        profiler = cProfile.Profile()
+        profiler.enable()
+        func(*args, **kwargs)
+        profiler.disable()
+
+        # Get stats
+        stream = StringIO()
+        stats = pstats.Stats(profiler, stream=stream)
+        stats.sort_stats('cumulative')
+
+        # Extract profile data
+        profile_data = {
+            "function_calls": {},
+            "time_per_line": {},
+            "hotspots": []
+        }
+
+        # Get top functions by time
+        stats.sort_stats('time')
+        for func_info, (cc, nc, tt, ct, callers) in list(stats.stats.items())[:10]:
+            func_name = f"{func_info[0]}:{func_info[1]}:{func_info[2]}"
+            profile_data["function_calls"][func_name] = {
+                "calls": nc,
+                "total_time": tt,
+                "cumulative_time": ct
+            }
+            profile_data["hotspots"].append(func_name)
+
+        return profile_data
+
+    def detect_regression(
+        self,
+        current: BenchmarkResult,
+        historical: List[BenchmarkResult],
+        threshold: float = 0.1
+    ) -> bool:
+        """Detect performance regression"""
+        if not historical:
+            return False
+
+        # Calculate historical average
+        historical_mean = statistics.mean([r.mean_time for r in historical])
+
+        # Check if current is slower by more than threshold
+        if current.mean_time > historical_mean * (1 + threshold):
+            return True
+
+        return False
+
+    def calculate_regression_severity(
+        self,
+        current: BenchmarkResult,
+        historical: List[BenchmarkResult]
+    ) -> float:
+        """Calculate severity of regression (0-1 scale)"""
+        if not historical:
+            return 0.0
+
+        historical_mean = statistics.mean([r.mean_time for r in historical])
+        if historical_mean == 0:
+            return 0.0
+
+        # Calculate percentage slower
+        percent_slower = (current.mean_time - historical_mean) / historical_mean
+
+        # Cap at 1.0 for 100% or more slower
+        return min(1.0, max(0.0, percent_slower))
+
+    def export_results(self, format: str = "json") -> str:
+        """Export benchmark results"""
+        if format == "json":
+            data = []
+            for result in self.results:
+                data.append({
+                    "name": result.name,
+                    "mean_time": result.mean_time,
+                    "min_time": result.min_time,
+                    "max_time": result.max_time,
+                    "std_dev": result.std_dev,
+                    "is_async": result.is_async,
+                    "cached": result.cached
+                })
+            return json.dumps(data, indent=2)
+
+        elif format == "csv":
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["name", "mean_time", "min_time", "max_time", "std_dev"])
+
+            for result in self.results:
+                writer.writerow([
+                    result.name,
+                    result.mean_time,
+                    result.min_time,
+                    result.max_time,
+                    result.std_dev
+                ])
+
+            return output.getvalue()
+
+        return ""
+
+    @contextmanager
+    def measure(self, name: str):
+        """Context manager for inline benchmarking"""
+        start = time.perf_counter()
+        context = type('Context', (), {
+            'elapsed_time': 0,
+            'result_stored': False
+        })()
+
+        try:
+            yield context
+        finally:
+            end = time.perf_counter()
+            context.elapsed_time = end - start
+
+            # Store result
+            result = BenchmarkResult(
+                name=name,
+                mean_time=context.elapsed_time,
+                min_time=context.elapsed_time,
+                max_time=context.elapsed_time,
+                std_dev=0,
+                all_times=[context.elapsed_time]
+            )
+            self.results.append(result)
+            context.result_stored = True
+
+    def get_results(self, name: str) -> List[BenchmarkResult]:
+        """Get results by name"""
+        return [r for r in self.results if r.name == name]
+
+    def analyze_statistics(self, result: BenchmarkResult) -> Dict[str, Any]:
+        """Analyze statistical properties of a benchmark result"""
+        if not result.all_times:
+            return {}
+
+        times = result.all_times
+
+        # Calculate percentiles
+        percentiles = {}
+        for p in [25, 50, 75, 90, 95, 99]:
+            if len(times) >= 100:
+                percentiles[p] = statistics.quantiles(times, n=100)[p - 1]
+            else:
+                # Approximate percentile for small samples
+                idx = int(len(times) * p / 100)
+                percentiles[p] = sorted(times)[min(idx, len(times) - 1)]
+
+        # Detect outliers (using IQR method)
+        q1 = percentiles[25]
+        q3 = percentiles[75]
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        outliers = [t for t in times if t < lower_bound or t > upper_bound]
+
+        # Calculate confidence interval (95%)
+        if len(times) > 1:
+            margin = 1.96 * result.std_dev / (len(times) ** 0.5)
+            confidence_interval = (result.mean_time - margin, result.mean_time + margin)
+        else:
+            confidence_interval = (result.mean_time, result.mean_time)
+
+        return {
+            "percentiles": percentiles,
+            "outliers": outliers,
+            "confidence_interval": confidence_interval,
+            "variance": result.std_dev ** 2 if result.std_dev else 0,
+            "coefficient_of_variation": result.std_dev / result.mean_time if result.mean_time > 0 else 0
+        }
+
+    def benchmark_adaptive(
+        self,
+        func: Callable,
+        name: str,
+        min_runs: int = 10,
+        max_runs: int = 1000,
+        confidence_level: float = 0.95,
+        args: Tuple = (),
+        kwargs: Optional[Dict] = None
+    ) -> BenchmarkResult:
+        """Adaptive benchmarking that adjusts runs based on variance"""
+        if kwargs is None:
+            kwargs = {}
+
+        all_times = []
+
+        # Start with minimum runs
+        for _ in range(min_runs):
+            start = time.perf_counter()
+            func(*args, **kwargs)
+            end = time.perf_counter()
+            all_times.append(end - start)
+
+        # Continue until stable or max runs reached
+        while len(all_times) < max_runs:
+            # Calculate current statistics
+            mean = statistics.mean(all_times)
+            std = statistics.stdev(all_times) if len(all_times) > 1 else 0
+
+            # Check if variance is low enough
+            if std > 0:
+                cv = std / mean  # Coefficient of variation
+                if cv < 0.05:  # Less than 5% variation
+                    break
+
+            # Add more runs
+            for _ in range(10):
+                start = time.perf_counter()
+                func(*args, **kwargs)
+                end = time.perf_counter()
+                all_times.append(end - start)
+
+        # Calculate final statistics
+        mean = statistics.mean(all_times)
+        std = statistics.stdev(all_times) if len(all_times) > 1 else 0
+        margin = 1.96 * std / (len(all_times) ** 0.5) if std > 0 else 0
+
+        result = BenchmarkResult(
+            name=name,
+            mean_time=mean,
+            min_time=min(all_times),
+            max_time=max(all_times),
+            std_dev=std,
+            all_times=all_times,
+            confidence_interval=(mean - margin, mean + margin)
+        )
+
+        self.results.append(result)
+        return result
+
+    def generate_report(
+        self,
+        suite: Optional[BenchmarkSuite] = None,
+        include_charts: bool = False,
+        include_recommendations: bool = False
+    ) -> Dict[str, Any]:
+        """Generate comprehensive benchmark report"""
+        report = {
+            "summary": {
+                "total_benchmarks": len(self.results),
+                "mean_execution_time": statistics.mean([r.mean_time for r in self.results]) if self.results else 0,
+            },
+            "detailed_results": [
+                {
+                    "name": r.name,
+                    "mean_time": r.mean_time,
+                    "min_time": r.min_time,
+                    "max_time": r.max_time,
+                    "std_dev": r.std_dev
+                }
+                for r in self.results
+            ]
+        }
+
+        if include_charts:
+            report["charts"] = {
+                "execution_times": {
+                    "type": "bar",
+                    "data": {
+                        "labels": [r.name for r in self.results],
+                        "values": [r.mean_time for r in self.results]
+                    }
+                }
+            }
+
+        if include_recommendations:
+            report["recommendations"] = self._generate_recommendations_for_report()
+
+        return report
+
+    def _generate_recommendations_for_report(self) -> List[str]:
+        """Generate recommendations based on all results"""
+        if not self.results:
+            return ["No results to analyze"]
+
+        recommendations = []
+
+        # Find slowest operations
+        slowest = max(self.results, key=lambda r: r.mean_time)
+        if slowest.mean_time > 0.1:
+            recommendations.append(f"Optimize '{slowest.name}' - it's the slowest operation at {slowest.mean_time:.3f}s")
+
+        # Check for high variance
+        high_variance = [r for r in self.results if r.std_dev > r.mean_time * 0.5]
+        if high_variance:
+            recommendations.append(f"{len(high_variance)} operations have high variance - investigate stability")
+
+        return recommendations if recommendations else ["Performance is within acceptable ranges"]

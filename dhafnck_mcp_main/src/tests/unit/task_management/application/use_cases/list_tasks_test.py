@@ -4,7 +4,7 @@ Tests for List Tasks Use Case
 
 import pytest
 from unittest.mock import Mock, MagicMock
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastmcp.task_management.application.use_cases.list_tasks import ListTasksUseCase
 from fastmcp.task_management.application.dtos.task import (
@@ -46,8 +46,8 @@ class TestListTasksUseCase:
             subtasks=[],
             dependencies=[],
             context_id="context-123",
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
     
     def test_list_tasks_no_filters(self, use_case, mock_task_repository, sample_task):
@@ -303,8 +303,8 @@ class TestListTasksUseCase:
             git_branch_id="branch-123",
             status=TaskStatus.TODO,
             priority=Priority.high(),
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         task2 = Task(
             id=TaskId("22222222-2222-2222-2222-222222222222"),
@@ -313,8 +313,8 @@ class TestListTasksUseCase:
             git_branch_id="branch-123",
             status=TaskStatus.IN_PROGRESS,
             priority=Priority.medium(),
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         request = ListTasksRequest(git_branch_id="branch-123")

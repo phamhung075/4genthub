@@ -6,7 +6,7 @@ import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import logging
-from datetime import datetime, date
+from datetime import datetime, timezone, date
 
 from fastmcp.task_management.application.use_cases.update_task import UpdateTaskUseCase
 from fastmcp.task_management.application.dtos.task import (
@@ -60,8 +60,8 @@ class TestUpdateTaskUseCase:
         task.details = "Original details"
         task.estimated_effort = "2 hours"
         task.due_date = None
-        task.created_at = datetime.now()
-        task.updated_at = datetime.now()
+        task.created_at = datetime.now(timezone.utc)
+        task.updated_at = datetime.now(timezone.utc)
         
         # Mock domain methods
         task.update_title = Mock()

@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock, call
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Import session hook components
 import sys
@@ -54,7 +54,7 @@ class TestLogSessionStart:
         input_data = {
             "session_id": "test-session-123",
             "source": "startup",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
         log_session_start(input_data)

@@ -99,31 +99,33 @@ class FeatureExtractor:
         """Extract feature vector from a task"""
         try:
             # Tokenize text content
-            title_tokens = self._tokenize_text(task.title or "")
+            title_tokens = self._tokenize_text(getattr(task, 'title', '') or "")
+            # Safely get details attribute - it may not exist in all task objects
+            details = getattr(task, 'details', '') or ""
             description_tokens = self._tokenize_text(
-                (task.description or "") + " " + (task.details or "")
+                (getattr(task, 'description', '') or "") + " " + details
             )
-            
+
             # Extract file references
             file_references = self._extract_file_references(
-                (task.description or "") + " " + (task.details or "")
+                (getattr(task, 'description', '') or "") + " " + details
             )
-            
+
             # Extract technical entities
             technical_entities = self._extract_technical_entities(
-                (task.description or "") + " " + (task.details or "")
+                (getattr(task, 'description', '') or "") + " " + details
             )
             
             return TaskVector(
                 task_id=str(task.id),
                 title_tokens=title_tokens,
                 description_tokens=description_tokens,
-                agents=task.assignees.copy() if task.assignees else [],
-                priority=task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
-                estimated_effort=task.estimated_effort or "unknown",
+                agents=getattr(task, 'assignees', []).copy() if getattr(task, 'assignees', []) else [],
+                priority=task.priority.value if hasattr(task.priority, 'value') else str(getattr(task, 'priority', 'medium')),
+                estimated_effort=getattr(task, 'estimated_effort', None) or "unknown",
                 file_references=file_references,
                 technical_entities=technical_entities,
-                creation_time=task.created_at,
+                creation_time=getattr(task, 'created_at', datetime.now(timezone.utc)),
                 completion_time=getattr(task, 'completed_at', None)
             )
             
@@ -287,28 +289,35 @@ class PatternLearner:
         return patterns
     
     def _identify_pattern_type(
-        self, 
-        source: TaskVector, 
-        target: TaskVector, 
+        self,
+        source: TaskVector,
+        target: TaskVector,
         all_vectors: Dict[str, TaskVector],
         all_deps: List[str]
     ) -> PatternType:
         """Identify the type of pattern this dependency represents"""
-        
-        # Check temporal patterns
+
+        # Check branching patterns first (multiple dependencies)
+        if len(all_deps) > 2:
+            return PatternType.BRANCHING
+
+        # Check agent-based patterns for partial overlap (different teams with overlap)
+        if source.agents and target.agents:
+            source_agents_set = set(source.agents)
+            target_agents_set = set(target.agents)
+            if source_agents_set != target_agents_set and source_agents_set.intersection(target_agents_set):
+                return PatternType.AGENT_BASED
+
+        # Check temporal patterns (for same team or when agents don't have partial overlap)
         if source.creation_time and target.creation_time:
             if source.creation_time > target.creation_time:
                 return PatternType.SEQUENTIAL
-        
-        # Check agent-based patterns
+
+        # Check agent-based patterns for exact same agents (fallback)
         if source.agents and target.agents:
-            if set(source.agents).intersection(set(target.agents)):
+            if set(source.agents) == set(target.agents):
                 return PatternType.AGENT_BASED
-        
-        # Check branching patterns (multiple dependencies)
-        if len(all_deps) > 2:
-            return PatternType.BRANCHING
-        
+
         # Default to sequential
         return PatternType.SEQUENTIAL
     
@@ -331,7 +340,7 @@ class PatternLearner:
             
             # Calculate initial confidence based on feature richness
             confidence = self._calculate_pattern_confidence(source_features, target_features)
-            
+
             if confidence < 0.3:  # Skip very weak patterns
                 return None
             

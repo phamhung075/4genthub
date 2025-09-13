@@ -121,32 +121,24 @@ class TestResolveAgentName:
             assert resolve_agent_name(old_name) == expected
     
     def test_resolve_non_deprecated_names(self):
-        """Test that non-deprecated names are returned unchanged"""
+        """Test that non-deprecated names are standardized to kebab-case"""
         test_cases = [
-            "documentation-agent",
-            "documentation-agent",
-            "deep-research-agent",
-            "deep-research-agent",
-            "creative-ideation-agent",
-            "creative-ideation-agent",
-            "marketing-strategy-orchestrator-agent",
-            "marketing-strategy-orchestrator-agent",
-            "devops-agent",
-            "devops-agent",
-            "debugger-agent",
-            "debugger-agent",
-            "ml-specialist-agent",
-            "ml-specialist-agent",
-            "ui-specialist-agent",
-            "ui-specialist-agent",
-            "some_new_agent",
-            "some-new-agent",
-            "completely_unknown_agent",
-            "another-test-agent",
+            ("documentation-agent", "documentation-agent"),
+            ("deep-research-agent", "deep-research-agent"),
+            ("creative-ideation-agent", "creative-ideation-agent"),
+            ("marketing-strategy-orchestrator-agent", "marketing-strategy-orchestrator-agent"),
+            ("devops-agent", "devops-agent"),
+            ("debugger-agent", "debugger-agent"),
+            ("ml-specialist-agent", "ml-specialist-agent"),
+            ("ui-specialist-agent", "ui-specialist-agent"),
+            ("some_new_agent", "some-new-agent"),  # Underscore converted to hyphen
+            ("some-new-agent", "some-new-agent"),
+            ("completely_unknown_agent", "completely-unknown-agent"),  # Underscore converted to hyphen
+            ("another-test-agent", "another-test-agent"),
         ]
-        
-        for name in test_cases:
-            assert resolve_agent_name(name) == name
+
+        for input_name, expected_output in test_cases:
+            assert resolve_agent_name(input_name) == expected_output
     
     def test_resolve_mixed_format_names(self):
         """Test resolving names that have mixed underscore/hyphen formats"""

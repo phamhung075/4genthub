@@ -1,7 +1,7 @@
 """Test agent coordination service"""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -154,7 +154,7 @@ class TestAgentCoordinationService:
             assigned_by="manager",
             responsibilities=["Implement feature"],
             estimated_hours=8.0,
-            due_date=datetime.now()
+            due_date=datetime.now(timezone.utc)
         )
         
         # Verify assignment
@@ -247,7 +247,7 @@ class TestAgentCoordinationService:
             from_agent_id="agent1",
             to_agent_id="agent2",
             task_id="task123",
-            initiated_at=datetime.now(),
+            initiated_at=datetime.now(timezone.utc),
             work_summary="Test",
             completed_items=[],
             remaining_items=[]
@@ -286,7 +286,7 @@ class TestAgentCoordinationService:
             from_agent_id="agent1",
             to_agent_id="agent2",
             task_id="task123",
-            initiated_at=datetime.now(),
+            initiated_at=datetime.now(timezone.utc),
             work_summary="Test",
             completed_items=[],
             remaining_items=[]
@@ -402,7 +402,7 @@ class TestAgentCoordinationService:
             task_id="task1",
             assigned_agent_id=mock_agent.id,
             assigned_by_agent_id="manager",
-            assigned_at=datetime.now(),
+            assigned_at=datetime.now(timezone.utc),
             role="developer"
         )
         service.work_assignments["assign1"] = assignment
