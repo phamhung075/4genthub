@@ -7,7 +7,7 @@ import os
 import logging
 import json
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 import httpx
 import jwt
@@ -414,7 +414,7 @@ class KeycloakMCPAuth:
         # Generate MCP token
         import secrets
         import hashlib
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
         mcp_token = f"mcp_{secrets.token_urlsafe(32)}"
         token_hash = hashlib.sha256(mcp_token.encode()).hexdigest()

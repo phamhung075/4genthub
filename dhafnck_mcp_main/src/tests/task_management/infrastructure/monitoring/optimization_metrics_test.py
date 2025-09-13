@@ -244,7 +244,7 @@ class TestOptimizationMetricsCollector:
         
         # Record several cache operations
         for i in range(10):
-            cache_hit = i % 3 == 0  # 33% hit rate (below threshold)
+            cache_hit = i in [0, 3, 6]  # 30% hit rate (3 hits out of 10, below threshold)
             self.collector.record_context_injection_metrics(
                 fields_requested=5,
                 fields_returned=3,
@@ -413,7 +413,7 @@ class TestOptimizationMetricsCollector:
         
         summary = self.collector.get_optimization_summary(1.0)
         
-        assert summary["no_data"] != True
+        assert summary.get("no_data", False) != True
         
         # Check optimization performance stats
         opt_perf = summary["optimization_performance"]

@@ -56,8 +56,8 @@ class TestCoordinationContext:
         assert not context.is_agent_overloaded("agent2")
         
         # Custom threshold
-        assert context.is_agent_overloaded("agent2", threshold=0.6)
-        assert not context.is_agent_overloaded("agent2", threshold=0.9)
+        assert context.is_agent_overloaded("agent2", threshold=60.0)
+        assert not context.is_agent_overloaded("agent2", threshold=90.0)
 
 
 class TestAgentCoordinationService:
@@ -70,7 +70,11 @@ class TestAgentCoordinationService:
         agent_repo = AsyncMock()
         event_bus = AsyncMock()
         coordination_repo = AsyncMock()
-        
+
+        # Configure with_user to return repository objects, not coroutines
+        task_repo.with_user = Mock(return_value=AsyncMock())
+        agent_repo.with_user = Mock(return_value=AsyncMock())
+
         return task_repo, agent_repo, event_bus, coordination_repo
 
     @pytest.fixture
@@ -120,6 +124,8 @@ class TestAgentCoordinationService:
         """Test getting user-scoped repository"""
         # Repository without user support
         simple_repo = Mock()
+        del simple_repo.with_user  # Remove the with_user attribute to simulate no user support
+        del simple_repo.user_id    # Remove the user_id attribute to simulate no user support
         assert service._get_user_scoped_repository(simple_repo) == simple_repo
         
         # Repository with with_user method
@@ -141,10 +147,13 @@ class TestAgentCoordinationService:
     @pytest.mark.asyncio
     async def test_assign_agent_to_task_success(self, service, mock_task, mock_agent):
         """Test successful agent assignment"""
-        # Setup mocks
-        service.task_repository.get.return_value = mock_task
-        service.agent_repository.get.return_value = mock_agent
-        service.agent_repository.save = AsyncMock()
+        # Setup mocks - the user-scoped repositories are handled by fixture
+        user_scoped_task_repo = service.task_repository.with_user.return_value
+        user_scoped_task_repo.get.return_value = mock_task
+
+        user_scoped_agent_repo = service.agent_repository.with_user.return_value
+        user_scoped_agent_repo.get.return_value = mock_agent
+        user_scoped_agent_repo.save = AsyncMock()
         
         # Assign agent
         assignment = await service.assign_agent_to_task(
@@ -179,7 +188,9 @@ class TestAgentCoordinationService:
     @pytest.mark.asyncio
     async def test_assign_agent_to_task_task_not_found(self, service):
         """Test assignment when task not found"""
-        service.task_repository.get.return_value = None
+        # Mock user-scoped repository to return None
+        user_scoped_task_repo = service.task_repository.with_user.return_value
+        user_scoped_task_repo.get.return_value = None
         
         with pytest.raises(AgentCoordinationException) as exc:
             await service.assign_agent_to_task(
@@ -193,9 +204,15 @@ class TestAgentCoordinationService:
     @pytest.mark.asyncio
     async def test_assign_agent_to_task_agent_not_available(self, service, mock_task, mock_agent):
         """Test assignment when agent not available"""
-        service.task_repository.get.return_value = mock_task
+        # Setup user-scoped repositories
+        user_scoped_task_repo = service.task_repository.with_user.return_value
+        user_scoped_task_repo.get.return_value = mock_task
+
+        user_scoped_agent_repo = service.agent_repository.with_user.return_value
+        user_scoped_agent_repo.get.return_value = mock_agent
+
+        # Configure agent as not available
         mock_agent.is_available.return_value = False
-        service.agent_repository.get.return_value = mock_agent
         
         with pytest.raises(AgentCoordinationException) as exc:
             await service.assign_agent_to_task(
@@ -314,7 +331,7 @@ class TestAgentCoordinationService:
             conflict_type=ConflictType.RESOURCE_CONTENTION,
             involved_agents=["agent1", "agent2"],
             description="Both agents working on same file",
-            resolution_strategy=ResolutionStrategy.PRIORITY_BASED
+            resolution_strategy=ResolutionStrategy.ESCALATE
         )
         
         # Verify conflict created

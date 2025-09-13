@@ -222,16 +222,26 @@ def test_no_import_warnings():
 def test_module_reload_safety():
     """Test that modules can be safely reloaded"""
     import importlib
-    
+    import sys
+
     # Should be able to reload without errors
     try:
-        import fastmcp.auth.services.mcp_token_service
-        importlib.reload(fastmcp.auth.services.mcp_token_service)
-        
-        # Service should still be accessible
-        from fastmcp.auth.services.mcp_token_service import mcp_token_service
+        # First, import the module properly
+        from fastmcp.auth.services import mcp_token_service as service_module
+
+        # Reload the parent services module
+        import fastmcp.auth.services
+        importlib.reload(fastmcp.auth.services)
+
+        # Service should still be accessible after reload
+        from fastmcp.auth.services import mcp_token_service
         assert mcp_token_service is not None
-        
+
+        # Also test that the service instance is still a proper MCPTokenService
+        # After reload, MCPTokenService is available from the reloaded parent module
+        from fastmcp.auth.services import MCPTokenService
+        assert isinstance(mcp_token_service, MCPTokenService)
+
     except Exception as e:
         pytest.fail(f"Module reload failed: {e}")
 

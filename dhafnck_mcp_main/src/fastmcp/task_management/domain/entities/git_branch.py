@@ -20,6 +20,7 @@ class GitBranch:
     description: str
     project_id: str
     created_at: datetime
+    git_branch_name: Optional[str] = None  # The actual git branch name (e.g., "feature/auth")
     updated_at: datetime = field(default_factory=datetime.now)
     
     # Task hierarchy

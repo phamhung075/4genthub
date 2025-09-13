@@ -134,8 +134,8 @@ class Task:
         if len(self.title) > 200:
             raise ValueError("Task title cannot exceed 200 characters")
         
-        if len(self.description) > 1000:
-            raise ValueError("Task description cannot exceed 1000 characters")
+        if len(self.description) > 2000:
+            raise ValueError("Task description cannot exceed 2000 characters")
         
         # Note: Assignee validation is handled at the application layer during task creation
         # Domain entities can be created with empty assignees during intermediate operations

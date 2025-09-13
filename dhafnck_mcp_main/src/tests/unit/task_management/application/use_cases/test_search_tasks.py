@@ -212,8 +212,8 @@ class TestSearchTasksUseCase:
         """Test SearchTasksRequest DTO creation"""
         # Test with all parameters
         request = SearchTasksRequest(query="test query", limit=15)
-        assert pytest_request.query == "test query"
-        assert pytest_request.limit == 15
+        assert request.query == "test query"
+        assert request.limit == 15
         
         # Test with only query
         request_minimal = SearchTasksRequest(query="minimal")

@@ -74,7 +74,7 @@ class TestGetTaskUseCase:
         task.title = "Test Task"
         task.description = "Test description"
         task.git_branch_id = "branch-456"
-        task.status = TaskStatus.TODO
+        task.status = TaskStatus.todo()
         task.priority = Priority.high()
         task.assignees = ["user-1", "user-2"]
         task.labels = ["bug", "urgent"]

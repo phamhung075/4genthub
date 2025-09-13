@@ -94,7 +94,7 @@ class Project:
         """Create a new task tree/branch within the project (legacy method)"""
         # Check if branch name already exists in any git branch
         for git_branch in self.git_branchs.values():
-            if git_branch.name == git_branch_name:
+            if git_branch.git_branch_name == git_branch_name:
                 raise ValueError(f"Git branch {git_branch_name} already exists")
         
         # Generate unique ID for the git branch following clean relationship chain
@@ -106,6 +106,7 @@ class Project:
             name=name,
             description=description,
             project_id=self.id,
+            git_branch_name=git_branch_name,
             created_at=datetime.now(timezone.utc)
         )
         

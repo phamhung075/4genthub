@@ -538,10 +538,10 @@ class TestTemplateRenderRequestEntity:
             variables={}
         )
         
-        assert pytest_request.task_context is None
-        assert pytest_request.output_path is None
-        assert pytest_request.cache_strategy == "default"
-        assert pytest_request.force_regenerate is False
+        assert request.task_context is None
+        assert request.output_path is None
+        assert request.cache_strategy == "default"
+        assert request.force_regenerate is False
     
     def test_template_render_request_to_dict_success(self, render_request):
         """Test converting TemplateRenderRequest to dictionary"""

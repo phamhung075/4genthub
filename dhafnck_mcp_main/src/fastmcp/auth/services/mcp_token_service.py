@@ -45,6 +45,7 @@ class MCPTokenService:
     
     def __init__(self):
         """Initialize the MCP token service."""
+        self._tokens: Dict[str, MCPToken] = {}
         logger.info("MCP Token Service initialized (database storage)")
     
     async def generate_mcp_token_from_user_id(

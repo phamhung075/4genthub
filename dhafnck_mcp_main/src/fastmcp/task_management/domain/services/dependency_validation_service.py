@@ -158,21 +158,30 @@ class DependencyValidationService:
     def _find_dependency_across_states(self, dependency_id: str) -> Optional[Task]:
         """
         Find a dependency task across all states (active, completed, archived).
-        
+
         Args:
             dependency_id: ID of the dependency task
-            
+
         Returns:
             Task if found, None otherwise
         """
-        # Try across contexts if the repository supports it
-        if hasattr(self._task_repository, 'find_by_id_across_contexts'):
-            try:
-                task_id = TaskId.from_string(dependency_id)
-                return self._task_repository.find_by_id_across_contexts(task_id)
-            except Exception as e:
-                logger.debug(f"Could not find task {dependency_id} across contexts: {e}")
-        
+        try:
+            task_id = TaskId.from_string(dependency_id) if isinstance(dependency_id, str) else dependency_id
+
+            # Try across contexts if the repository supports it
+            if hasattr(self._task_repository, 'find_by_id_across_contexts'):
+                task = self._task_repository.find_by_id_across_contexts(task_id)
+                if task:
+                    return task
+
+            # Fallback to regular find_by_id
+            task = self._task_repository.find_by_id(task_id)
+            if task:
+                return task
+
+        except Exception as e:
+            logger.debug(f"Could not find task {dependency_id}: {e}")
+
         return None
     
     def _check_circular_dependencies(self, task: Task, all_tasks: List[Task]) -> Optional[List[str]]:
@@ -326,14 +335,15 @@ class DependencyValidationService:
             logger.error(f"Error getting dependency chain status for {task_id}: {e}")
             return {"error": f"Analysis failed: {str(e)}"}
     
+
     def _get_dependency_info(self, dependency_id: str, task_map: Dict[str, Task]) -> Dict[str, Any]:
         """
         Get detailed information about a single dependency.
-        
+
         Args:
             dependency_id: ID of the dependency
             task_map: Map of existing tasks
-            
+
         Returns:
             Dictionary with dependency information
         """

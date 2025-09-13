@@ -6,16 +6,10 @@ Application layer service for managing audit trails and compliance monitoring.
 import logging
 import uuid
 from typing import Dict, Any, List, Union, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
-# Removed compliance_enums import - functionality simplified
-from enum import Enum
-
-class ComplianceLevel(Enum):
-    """Simplified compliance levels for audit service"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+# Import compliance enums from proper location
+from ...domain.enums.compliance_enums import ComplianceLevel
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +67,7 @@ class AuditService:
                 compliance_level_value = "low"
         
         audit_entry = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "operation": operation,
             "compliance_level": compliance_level_value,
             "success": result.get("success", False),

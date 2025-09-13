@@ -33,8 +33,8 @@ class ContextFieldSelector:
     
     # Define field sets for each entity type
     TASK_FIELD_SETS = {
-        FieldSet.MINIMAL: ["id", "title", "status"],
-        FieldSet.SUMMARY: ["id", "title", "status", "priority", "assignees"],
+        FieldSet.MINIMAL: ["id", "title", "status", "priority"],
+        FieldSet.SUMMARY: ["id", "title", "description", "status", "priority", "assignees", "labels"],
         FieldSet.DETAIL: [
             "id", "title", "description", "status", "priority", 
             "assignees", "labels", "estimated_effort", "progress_percentage"

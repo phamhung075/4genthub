@@ -123,7 +123,19 @@ class AITaskPlanningService:
         
         # Step 9: Calculate confidence score based on analysis quality
         plan.confidence_score = self._calculate_confidence_score(plan, analyzed_requirements, insights)
-        
+
+        # Step 10: Sort execution phases in the correct order
+        phase_order = [
+            ExecutionPhase.PLANNING,
+            ExecutionPhase.ARCHITECTURE,
+            ExecutionPhase.IMPLEMENTATION,
+            ExecutionPhase.TESTING,
+            ExecutionPhase.REVIEW,
+            ExecutionPhase.DEPLOYMENT,
+            ExecutionPhase.MONITORING
+        ]
+        plan.execution_phases = [phase for phase in phase_order if phase in plan.execution_phases]
+
         return plan
     
     async def _generate_tasks_from_requirements(self, plan: TaskPlan, analyzed_requirements: List[AnalyzedRequirement], 
@@ -301,33 +313,54 @@ class AITaskPlanningService:
             for current_task in current_tasks:
                 for next_task in next_tasks:
                     # Add dependency if they're related (same parent or similar context)
+                    # Note: _tasks_are_related already checks for parent-child relationships
                     if self._tasks_are_related(current_task, next_task):
                         plan.add_dependency(next_task.id, current_task.id)
         
         # Parent-child dependencies
+        # Track parent-child relationships to avoid creating dependencies that would cause cycles
+        parent_child_map = {}
         for task in plan.tasks:
             if task.parent_task_id:
                 parent = plan.get_task_by_id(task.parent_task_id)
                 if parent:
-                    # Parent tasks depend on all their subtasks
-                    plan.add_dependency(task.id, parent.id, "start_to_start")
+                    if parent.id not in parent_child_map:
+                        parent_child_map[parent.id] = []
+                    parent_child_map[parent.id].append(task.id)
+
+        # Add parent-child dependencies
+        for parent_id, child_ids in parent_child_map.items():
+            for child_id in child_ids:
+                # Check if there's already a dependency between them (from phase dependencies)
+                existing_dep = any(
+                    (dep.dependent_task_id == parent_id and dep.prerequisite_task_id == child_id) or
+                    (dep.dependent_task_id == child_id and dep.prerequisite_task_id == parent_id)
+                    for dep in plan.dependencies
+                )
+                if not existing_dep:
+                    # Parent depends on child completion (parent finishes when child finishes)
+                    plan.add_dependency(parent_id, child_id, "finish_to_finish")
     
     def _tasks_are_related(self, task1: PlannedTask, task2: PlannedTask) -> bool:
         """Check if two tasks are related and should have dependencies"""
-        
+
+        # Don't relate tasks if one is the parent of the other (avoids cycles)
+        if task1.id == task2.parent_task_id or task2.id == task1.parent_task_id:
+            return False
+
         # Same parent
         if task1.parent_task_id == task2.parent_task_id and task1.parent_task_id:
             return True
-        
+
         # Same file references
         if set(task1.file_references).intersection(set(task2.file_references)):
             return True
-        
-        # Similar titles (basic heuristic)
+
+        # Similar titles (basic heuristic - reduced threshold to avoid over-connection)
         common_words = set(task1.title.lower().split()).intersection(set(task2.title.lower().split()))
-        if len(common_words) > 2:
+        if len(common_words) > 3:  # Increased threshold from 2 to 3
             return True
-        
+
         return False
     
     async def _fix_plan_issues(self, plan: TaskPlan, validation_errors: List[str]):
@@ -362,11 +395,15 @@ class AITaskPlanningService:
         confidence_factors.append(assignment_ratio)
         
         # Requirement analysis quality
-        avg_effort = sum(ar.estimated_effort_hours for ar in analyzed_requirements) / len(analyzed_requirements)
-        if 1 <= avg_effort <= 8:  # Reasonable effort range
-            confidence_factors.append(0.8)
+        if analyzed_requirements:
+            avg_effort = sum(ar.estimated_effort_hours for ar in analyzed_requirements) / len(analyzed_requirements)
+            if 1 <= avg_effort <= 8:  # Reasonable effort range
+                confidence_factors.append(0.8)
+            else:
+                confidence_factors.append(0.6)
         else:
-            confidence_factors.append(0.6)
+            # No requirements to analyze, lower confidence
+            confidence_factors.append(0.3)
         
         # Dependency reasonableness
         dep_ratio = len(plan.dependencies) / len(plan.tasks) if plan.tasks else 0

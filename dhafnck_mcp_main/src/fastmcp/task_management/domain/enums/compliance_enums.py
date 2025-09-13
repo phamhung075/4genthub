@@ -14,6 +14,10 @@ class ComplianceLevel(Enum):
     STANDARD = "standard"
     STRICT = "strict"
     ENTERPRISE = "enterprise"
+    # Backward compatibility aliases
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 class ValidationResult(Enum):

@@ -1,0 +1,99 @@
+
+🧪 Starting DhafnckMCP Test Suite
+🛡️  Test data isolation enabled
+🧹 Automatic cleanup configured
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests
+configfile: pytest.ini
+plugins: postgresql-7.0.2, cov-6.2.1, anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_no_dependencies 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_task_not_found 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_with_valid_dependencies 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_with_missing_dependency 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_with_blocked_dependency 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_with_cancelled_dependency 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_circular_dependency 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_dependency_chain_exception_handling 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_get_dependency_chain_status_success 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_get_dependency_chain_status_task_not_found 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_find_dependency_across_states_with_extended_repository 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_find_dependency_across_states_not_found 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_check_circular_dependencies_complex_chain 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_check_circular_dependencies_no_cycle 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_check_orphaned_dependencies 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_can_task_proceed_all_dependencies_satisfied 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_can_task_proceed_has_incomplete_dependencies 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_can_task_proceed_missing_dependencies 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_can_task_proceed_no_dependencies 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_get_dependency_info_found_task 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_get_dependency_info_missing_task 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_single_dependency_all_cases 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationService::test_validate_single_dependency_missing_task 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationServiceIntegration::test_complex_dependency_chain_validation 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationServiceIntegration::test_mixed_dependency_statuses_validation 
+⚡ Skipping database setup for unit test
+PASSED
+src/tests/unit/task_management/domain/services/test_dependency_validation_service.py::TestDependencyValidationServiceIntegration::test_dependency_chain_status_comprehensive 
+⚡ Skipping database setup for unit test
+PASSED
+🧹 Performing final test data cleanup...
+🧹 Final cleanup completed:
+   - 0 test data files removed
+   - 0 temporary directories removed
+✅ Test environment is clean
+
+
+============================== 26 passed in 0.20s ==============================

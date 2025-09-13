@@ -81,10 +81,10 @@ class TestAgentApplicationFacadePattern:
             try:
                 # Create request
                 request = Mock()
-                pytest_request.project_id = project_id
-                pytest_request.agent_id = agent_id
-                pytest_request.name = name
-                pytest_request.call_agent = call_agent
+                request.project_id = project_id
+                request.agent_id = agent_id
+                request.name = name
+                request.call_agent = call_agent
                 
                 # Execute use case
                 response = mock_use_case.execute(request)
@@ -145,9 +145,9 @@ class TestAgentApplicationFacadePattern:
             try:
                 # Create request
                 request = Mock()
-                pytest_request.project_id = project_id
-                pytest_request.agent_id = agent_id
-                pytest_request.git_branch_id = git_branch_id
+                request.project_id = project_id
+                request.agent_id = agent_id
+                request.git_branch_id = git_branch_id
                 
                 # Execute use case
                 response = mock_use_case.execute(request)
@@ -206,7 +206,7 @@ class TestAgentApplicationFacadePattern:
             try:
                 # Create request
                 request = Mock()
-                pytest_request.project_id = project_id
+                request.project_id = project_id
                 
                 # Execute use case
                 response = mock_use_case.execute(request)
@@ -445,8 +445,8 @@ class TestAgentFacadeBehavior:
         def get_agent(project_id, agent_id):
             try:
                 request = Mock()
-                pytest_request.project_id = project_id
-                pytest_request.agent_id = agent_id
+                request.project_id = project_id
+                request.agent_id = agent_id
                 
                 response = mock_get_use_case.execute(request)
                 

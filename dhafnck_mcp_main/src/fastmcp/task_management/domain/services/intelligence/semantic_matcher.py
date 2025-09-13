@@ -344,7 +344,21 @@ class SemanticMatcher:
         
         # Generate query embedding
         query_embedding = self.generate_embedding(query)
-        query_vector = query_embedding.reshape(1, -1).astype('float32')
+
+        # Handle both numpy arrays and lists
+        if HAS_NUMPY and hasattr(query_embedding, 'reshape'):
+            query_vector = query_embedding.reshape(1, -1).astype('float32')
+        else:
+            # Convert list to proper format for FAISS
+            if isinstance(query_embedding, list):
+                if HAS_NUMPY:
+                    query_vector = np.array([query_embedding], dtype='float32')
+                else:
+                    # If no numpy and no FAISS, this shouldn't be reachable
+                    # but provide fallback just in case
+                    query_vector = [query_embedding]
+            else:
+                query_vector = query_embedding
         
         # Search with FAISS
         similarity_scores, indices = self.faiss_index.search(query_vector, top_k)

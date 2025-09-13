@@ -166,7 +166,7 @@ class TestAgentCapabilityManagement:
         capability = AgentCapability.FRONTEND_DEVELOPMENT
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.add_capability(capability)
@@ -195,7 +195,7 @@ class TestAgentCapabilityManagement:
         assert capability in self.agent.capabilities
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.remove_capability(capability)
@@ -364,7 +364,7 @@ class TestAgentTaskAssignment:
         task_id = "task_123"
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.start_task(task_id)
@@ -415,7 +415,7 @@ class TestAgentTaskAssignment:
         initial_success_rate = self.agent.success_rate
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.complete_task(task_id, success=True)
@@ -474,7 +474,7 @@ class TestAgentProjectAndTreeAssignment:
         project_id = "project_123"
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.assign_to_project(project_id)
@@ -498,7 +498,7 @@ class TestAgentProjectAndTreeAssignment:
         git_branch_name = "feature/auth-system"
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.assign_to_tree(git_branch_name)
@@ -528,7 +528,7 @@ class TestAgentStatusManagement:
     def test_pause_work(self):
         """Test pausing agent work"""
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.pause_work()
@@ -542,7 +542,7 @@ class TestAgentStatusManagement:
         assert self.agent.status == AgentStatus.PAUSED
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.resume_work()
@@ -563,7 +563,7 @@ class TestAgentStatusManagement:
     def test_go_offline(self):
         """Test setting agent offline"""
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.go_offline()
@@ -577,7 +577,7 @@ class TestAgentStatusManagement:
         assert self.agent.status == AgentStatus.OFFLINE
         
         with patch('fastmcp.task_management.domain.entities.agent.datetime') as mock_datetime:
-            mock_now = datetime.now()
+            mock_now = datetime.now(timezone.utc)
             mock_datetime.now.return_value = mock_now
             
             self.agent.go_online()

@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, AsyncMock
 from typing import Optional, Dict, Any
 
 from fastmcp.task_management.domain.services.context_derivation_service import ContextDerivationService
@@ -36,6 +36,10 @@ class TestContextDerivationService:
         """Setup test data before each test"""
         self.mock_task_repository = Mock(spec=TaskRepository)
         self.mock_git_branch_repository = Mock(spec=GitBranchRepository)
+
+        # Make repository methods async
+        self.mock_task_repository.find_by_id = AsyncMock()
+        self.mock_git_branch_repository.find_by_id = AsyncMock()
         
         self.service = ContextDerivationService(
             task_repository=self.mock_task_repository,
@@ -47,7 +51,7 @@ class TestContextDerivationService:
             title="Test Task",
             description="Test description",
             id=TaskId.from_string("88888888-8888-8888-8888-888888888888"),
-            status=TaskStatus.from_string("todo"),
+            status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="test-branch-id",
             created_at=datetime.now(timezone.utc),
@@ -62,81 +66,86 @@ class TestContextDerivationService:
             project_user_id="test-user"
         )
 
-    def test_derive_context_from_task_with_valid_git_branch(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_task_with_valid_git_branch(self):
         """Test context derivation from task with valid git branch"""
         # Arrange
         self.mock_task_repository.find_by_id.return_value = self.test_task
         self.mock_git_branch_repository.find_by_id.return_value = self.test_git_branch
-        
+
         # Act
-        context = self.service.derive_context_from_task("test-task-id", "default-user")
-        
+        context = await self.service.derive_context_from_task("test-task-id", "default-user")
+
         # Assert
         assert context["project_id"] == "test-project-id"
         assert context["git_branch_name"] == "feature/test-branch"
         assert context["user_id"] == "test-user"
-        
+
         # Verify repository calls
         self.mock_task_repository.find_by_id.assert_called_once()
         self.mock_git_branch_repository.find_by_id.assert_called_once_with("test-branch-id")
 
-    def test_derive_context_from_task_without_git_branch_id(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_task_without_git_branch_id(self):
         """Test context derivation from task without git_branch_id"""
         # Arrange
         task_without_branch = Task(
             title="Task Without Branch",
             description="Test description",
             id=TaskId.from_string("99999999-9999-9999-9999-999999999999"),
-            status=TaskStatus.from_string("todo"),
+            status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id=None,  # No branch ID
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
-        
-        self.mock_task_repository.find_by_id.return_value = task_without_branch
-        
+
+        self.mock_task_repository.find_by_id = AsyncMock(return_value=task_without_branch)
+
         # Act
-        context = self.service.derive_context_from_task("no-branch-task", "default-user")
-        
+        context = await self.service.derive_context_from_task("no-branch-task", "default-user")
+
         # Assert - Should return default context
         assert context["project_id"] == "default_project"
         assert context["git_branch_name"] == "main"
         assert context["user_id"] == "default-user"
 
-    def test_derive_context_from_task_not_found(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_task_not_found(self):
         """Test context derivation when task is not found"""
         # Arrange
         self.mock_task_repository.find_by_id.return_value = None
-        
+
         # Act
-        context = self.service.derive_context_from_task("missing-task", "default-user")
+        context = await self.service.derive_context_from_task("missing-task", "default-user")
         
         # Assert - Should return default context
         assert context["project_id"] == "default_project"
         assert context["git_branch_name"] == "main"
         assert context["user_id"] == "default-user"
 
-    def test_derive_context_from_task_repository_exception(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_task_repository_exception(self):
         """Test context derivation when repository throws exception"""
         # Arrange
         self.mock_task_repository.find_by_id.side_effect = Exception("Database error")
-        
+
         # Act
-        context = self.service.derive_context_from_task("error-task", "default-user")
+        context = await self.service.derive_context_from_task("error-task", "default-user")
         
         # Assert - Should return default context gracefully
         assert context["project_id"] == "default_project"
         assert context["git_branch_name"] == "main"
         assert context["user_id"] == "default-user"
 
-    def test_derive_context_from_git_branch_success(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_git_branch_success(self):
         """Test successful context derivation from git branch"""
         # Arrange
         self.mock_git_branch_repository.find_by_id.return_value = self.test_git_branch
         
         # Act
-        context = self.service.derive_context_from_git_branch("test-branch-id", "fallback-user")
+        context = await self.service.derive_context_from_git_branch("test-branch-id", "fallback-user")
         
         # Assert
         assert context["project_id"] == "test-project-id"
@@ -145,7 +154,8 @@ class TestContextDerivationService:
         
         self.mock_git_branch_repository.find_by_id.assert_called_once_with("test-branch-id")
 
-    def test_derive_context_from_git_branch_no_project_user(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_git_branch_no_project_user(self):
         """Test context derivation from git branch without project user"""
         # Arrange
         branch_without_project_user = MockGitBranch(
@@ -158,47 +168,50 @@ class TestContextDerivationService:
         self.mock_git_branch_repository.find_by_id.return_value = branch_without_project_user
         
         # Act
-        context = self.service.derive_context_from_git_branch("no-user-branch", "fallback-user")
+        context = await self.service.derive_context_from_git_branch("no-user-branch", "fallback-user")
         
         # Assert
         assert context["project_id"] == "project-id"
         assert context["git_branch_name"] == "feature/no-user"
         assert context["user_id"] == "fallback-user"  # Should use fallback
 
-    def test_derive_context_from_git_branch_not_found(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_git_branch_not_found(self):
         """Test context derivation when git branch is not found"""
         # Arrange
         self.mock_git_branch_repository.find_by_id.return_value = None
         
         # Act
-        context = self.service.derive_context_from_git_branch("missing-branch", "fallback-user")
+        context = await self.service.derive_context_from_git_branch("missing-branch", "fallback-user")
         
         # Assert - Should return default context
         assert context["project_id"] == "default_project"
         assert context["git_branch_name"] == "main"
         assert context["user_id"] == "fallback-user"
 
-    def test_derive_context_from_git_branch_repository_exception(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_from_git_branch_repository_exception(self):
         """Test context derivation when git branch repository throws exception"""
         # Arrange
         self.mock_git_branch_repository.find_by_id.side_effect = Exception("Database error")
         
         # Act
-        context = self.service.derive_context_from_git_branch("error-branch", "fallback-user")
+        context = await self.service.derive_context_from_git_branch("error-branch", "fallback-user")
         
         # Assert - Should return default context gracefully
         assert context["project_id"] == "default_project"
         assert context["git_branch_name"] == "main"
         assert context["user_id"] == "fallback-user"
 
-    def test_derive_context_hierarchy_complete(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_hierarchy_complete(self):
         """Test deriving complete context hierarchy with all parameters"""
         # Arrange
         self.mock_task_repository.find_by_id.return_value = self.test_task
         self.mock_git_branch_repository.find_by_id.return_value = self.test_git_branch
         
         # Act
-        hierarchy = self.service.derive_context_hierarchy(
+        hierarchy = await self.service.derive_context_hierarchy(
             task_id="test-task-id",
             git_branch_id="test-branch-id",
             project_id="explicit-project-id",
@@ -225,14 +238,15 @@ class TestContextDerivationService:
         assert hierarchy["task"]["project_id"] == "test-project-id"
         assert hierarchy["task"]["git_branch_name"] == "feature/test-branch"
 
-    def test_derive_context_hierarchy_with_propagation(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_hierarchy_with_propagation(self):
         """Test context hierarchy with propagation from lower to higher levels"""
         # Arrange
         self.mock_task_repository.find_by_id.return_value = self.test_task
         self.mock_git_branch_repository.find_by_id.return_value = self.test_git_branch
         
         # Act - Only provide task_id, let others propagate
-        hierarchy = self.service.derive_context_hierarchy(
+        hierarchy = await self.service.derive_context_hierarchy(
             task_id="test-task-id",
             user_id="hierarchy-user"
         )
@@ -249,10 +263,11 @@ class TestContextDerivationService:
         assert hierarchy["task"]["project_id"] == "test-project-id"
         assert hierarchy["task"]["git_branch_name"] == "feature/test-branch"
 
-    def test_derive_context_hierarchy_minimal(self):
+    @pytest.mark.asyncio
+    async def test_derive_context_hierarchy_minimal(self):
         """Test context hierarchy with minimal input"""
         # Act
-        hierarchy = self.service.derive_context_hierarchy(user_id="minimal-user")
+        hierarchy = await self.service.derive_context_hierarchy(user_id="minimal-user")
         
         # Assert
         assert hierarchy["global"]["user_id"] == "minimal-user"
@@ -350,19 +365,20 @@ class TestContextDerivationService:
         # Assert
         assert level == "branch"
 
-    def test_service_without_repositories(self):
+    @pytest.mark.asyncio
+    async def test_service_without_repositories(self):
         """Test service functionality without repositories (basic operations)"""
         # Arrange
         service_no_repos = ContextDerivationService()
-        
+
         # Act & Assert - Should work with default fallbacks
-        context = service_no_repos.derive_context_from_task("any-task", "test-user")
+        context = await service_no_repos.derive_context_from_task("any-task", "test-user")
         assert context["project_id"] == "default_project"
-        
-        context = service_no_repos.derive_context_from_git_branch("any-branch", "test-user")
+
+        context = await service_no_repos.derive_context_from_git_branch("any-branch", "test-user")
         assert context["project_id"] == "default_project"
-        
-        hierarchy = service_no_repos.derive_context_hierarchy(user_id="test-user")
+
+        hierarchy = await service_no_repos.derive_context_hierarchy(user_id="test-user")
         assert hierarchy["global"]["user_id"] == "test-user"
         
         level = service_no_repos.determine_context_level(task_id="task-123")
@@ -374,15 +390,16 @@ class TestContextDerivationServiceIntegration:
 
     def setup_method(self):
         """Setup integration test environment"""
-        self.mock_task_repository = Mock(spec=TaskRepository)
-        self.mock_git_branch_repository = Mock(spec=GitBranchRepository)
+        self.mock_task_repository = AsyncMock(spec=TaskRepository)
+        self.mock_git_branch_repository = AsyncMock(spec=GitBranchRepository)
         
         self.service = ContextDerivationService(
             task_repository=self.mock_task_repository,
             git_branch_repository=self.mock_git_branch_repository
         )
 
-    def test_complete_context_derivation_chain(self):
+    @pytest.mark.asyncio
+    async def test_complete_context_derivation_chain(self):
         """Test complete context derivation chain from task to project"""
         # Arrange: Create a realistic scenario
         project_user = "project-owner"
@@ -392,7 +409,7 @@ class TestContextDerivationServiceIntegration:
             title="Feature Implementation",
             description="Implement authentication feature",
             id=TaskId.from_string("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            status=TaskStatus.from_string("in_progress"),
+            status=TaskStatus.in_progress(),
             priority=Priority.from_string("high"),
             git_branch_id="auth-branch",
             created_at=datetime.now(timezone.utc),
@@ -407,12 +424,12 @@ class TestContextDerivationServiceIntegration:
             project_user_id=project_user
         )
         
-        # Mock repository responses
-        self.mock_task_repository.find_by_id.return_value = task
-        self.mock_git_branch_repository.find_by_id.return_value = git_branch
+        # Mock repository responses with proper async return
+        self.mock_task_repository.find_by_id = AsyncMock(return_value=task)
+        self.mock_git_branch_repository.find_by_id = AsyncMock(return_value=git_branch)
         
         # Act: Derive context from task
-        context = self.service.derive_context_from_task("auth-task", "fallback-user")
+        context = await self.service.derive_context_from_task("auth-task", "fallback-user")
         
         # Assert: Should derive complete context chain
         assert context["project_id"] == "auth-project"
@@ -423,14 +440,15 @@ class TestContextDerivationServiceIntegration:
         self.mock_task_repository.find_by_id.assert_called_once()
         self.mock_git_branch_repository.find_by_id.assert_called_once_with("auth-branch")
 
-    def test_context_hierarchy_complex_inheritance(self):
+    @pytest.mark.asyncio
+    async def test_context_hierarchy_complex_inheritance(self):
         """Test complex context hierarchy with inheritance and overrides"""
         # Arrange
         task_with_branch = Task(
             title="Complex Task",
             description="Task with complex context",
             id=TaskId.from_string("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-            status=TaskStatus.from_string("todo"),
+            status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="complex-branch",
             created_at=datetime.now(timezone.utc),
@@ -444,11 +462,11 @@ class TestContextDerivationServiceIntegration:
             project_user_id="branch-user"
         )
         
-        self.mock_task_repository.find_by_id.return_value = task_with_branch
-        self.mock_git_branch_repository.find_by_id.return_value = complex_branch
+        self.mock_task_repository.find_by_id = AsyncMock(return_value=task_with_branch)
+        self.mock_git_branch_repository.find_by_id = AsyncMock(return_value=complex_branch)
         
         # Act: Derive hierarchy with explicit overrides
-        hierarchy = self.service.derive_context_hierarchy(
+        hierarchy = await self.service.derive_context_hierarchy(
             task_id="complex-task",
             git_branch_id="explicit-branch",  # Different from task's branch
             project_id="explicit-project",   # Different from derived project
@@ -467,14 +485,15 @@ class TestContextDerivationServiceIntegration:
         assert hierarchy["task"]["project_id"] == "derived-project"
         assert hierarchy["task"]["git_branch_name"] == "feature/complex"
 
-    def test_context_derivation_with_partial_failures(self):
+    @pytest.mark.asyncio
+    async def test_context_derivation_with_partial_failures(self):
         """Test context derivation with partial repository failures"""
         # Arrange: Task exists but git branch lookup fails
         partial_task = Task(
             title="Partial Task",
             description="Task with failing branch lookup",
             id=TaskId.from_string("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-            status=TaskStatus.from_string("todo"),
+            status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="failing-branch",
             created_at=datetime.now(timezone.utc),
@@ -485,7 +504,7 @@ class TestContextDerivationServiceIntegration:
         self.mock_git_branch_repository.find_by_id.side_effect = Exception("Branch lookup failed")
         
         # Act
-        context = self.service.derive_context_from_task("partial-task", "fallback-user")
+        context = await self.service.derive_context_from_task("partial-task", "fallback-user")
         
         # Assert: Should gracefully fallback to defaults
         assert context["project_id"] == "default_project"
@@ -515,7 +534,8 @@ class TestContextDerivationServiceIntegration:
             # Assert
             assert level == expected_level, f"Failed for task:{task_id}, branch:{branch_id}, project:{project_id}"
 
-    def test_business_rules_enforcement(self):
+    @pytest.mark.asyncio
+    async def test_business_rules_enforcement(self):
         """Test enforcement of context derivation business rules"""
         # Business Rule: Tasks inherit context from their git branch
         # Business Rule: If task has no git branch, use default context
@@ -526,7 +546,7 @@ class TestContextDerivationServiceIntegration:
             title="Task with Branch",
             description="Should inherit from branch",
             id=TaskId.from_string("dddddddd-dddd-dddd-dddd-dddddddddddd"),
-            status=TaskStatus.from_string("todo"),
+            status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id="inherit-branch",
             created_at=datetime.now(timezone.utc),
@@ -540,10 +560,10 @@ class TestContextDerivationServiceIntegration:
             project_user_id="inherit-user"
         )
         
-        self.mock_task_repository.find_by_id.return_value = task_with_branch
-        self.mock_git_branch_repository.find_by_id.return_value = inherit_branch
+        self.mock_task_repository.find_by_id = AsyncMock(return_value=task_with_branch)
+        self.mock_git_branch_repository.find_by_id = AsyncMock(return_value=inherit_branch)
         
-        context = self.service.derive_context_from_task("inherit-task")
+        context = await self.service.derive_context_from_task("inherit-task")
         
         # Should inherit from branch
         assert context["project_id"] == "inherit-project"
@@ -554,16 +574,16 @@ class TestContextDerivationServiceIntegration:
             title="Task without Branch",
             description="Should use defaults",
             id=TaskId.from_string("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-            status=TaskStatus.from_string("todo"),
+            status=TaskStatus.todo(),
             priority=Priority.from_string("medium"),
             git_branch_id=None,  # No branch
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
         
-        self.mock_task_repository.find_by_id.return_value = task_without_branch
+        self.mock_task_repository.find_by_id = AsyncMock(return_value=task_without_branch)
         
-        context = self.service.derive_context_from_task("default-task", "test-user")
+        context = await self.service.derive_context_from_task("default-task", "test-user")
         
         # Should use defaults
         assert context["project_id"] == "default_project"

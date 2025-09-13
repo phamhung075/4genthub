@@ -4,7 +4,7 @@ Tests for Project Repository ORM implementation
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -49,8 +49,8 @@ class TestProjectRepository:
             name="Test Project",
             description="A test project",
             user_id="user-123",
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         # Add related objects
         project.git_branches = [

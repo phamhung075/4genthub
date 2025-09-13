@@ -9,7 +9,7 @@ import pytest
 import os
 import uuid
 from unittest.mock import Mock, MagicMock, AsyncMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 from starlette.datastructures import Headers, QueryParams, URL
@@ -34,13 +34,13 @@ class TestDualAuthMiddleware:
     def mock_request(self):
         """Create a mock request with common attributes."""
         request = Mock(spec=Request)
-        pytest_request.url = Mock()
-        pytest_request.url.path = "/api/v2/test"
-        pytest_request.method = "GET"
-        pytest_request.headers = Headers({})
-        pytest_request.cookies = {}
-        pytest_request.query_params = QueryParams()
-        pytest_request.state = Mock()
+        request.url = Mock()
+        request.url.path = "/api/v2/test"
+        request.method = "GET"
+        request.headers = Headers({})
+        request.cookies = {}
+        request.query_params = QueryParams()
+        request.state = Mock()
         return request
     
     @pytest.fixture
@@ -232,8 +232,8 @@ class TestDualAuthMiddleware:
         with patch.object(middleware.token_validator, 'validate_token') as mock_validate:
             mock_token_info = Mock()
             mock_token_info.user_id = 'user_mcp_123'
-            mock_token_info.created_at = datetime.now()
-            mock_token_info.expires_at = datetime.now() + timedelta(hours=1)
+            mock_token_info.created_at = datetime.now(timezone.utc)
+            mock_token_info.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
             mock_validate.return_value = mock_token_info
             
             result = await middleware._authenticate_request(mock_request, 'mcp')

@@ -286,9 +286,7 @@
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/test_dependency_validation_service.py:51a1871c36a007f280e08af1817f0374
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/task_validation_service_test.py:fe4a2e35087b28cd7a67450c7709b8dc
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/task_progress_service_test.py:f321f9e8efbbe5a92970a2f04ccdbbd6
-/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/test_context_derivation_service.py:b62c4680c4680cdd460bec9de533989a
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/test_task_priority_service.py:347cba1d87e54b63cdeb91fc612d30a3
-/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/test_task_state_transition_service.py:b8f44145f3b126876e8076528d0f7da0
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/infrastructure/repositories/orm/unit_project_repository_test.py:1c8b46820d5cf29678d918744462d3e8
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/infrastructure/repositories/orm/subtask_repository_test.py:a68daf92986c847e6f58a757f5dcec28
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/infrastructure/repositories/orm/unit_task_repository_test.py:d45ac24240614238d30bc4a859e69645
@@ -366,3 +364,8 @@
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/infrastructure/repositories/orm/test_git_branch_repository_comprehensive.py:ae46c3d4ac81a7eaf4020454f1efdebd
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/infrastructure/repositories/base_orm_repository_test.py:d13720ad3ee076e2dc7129756b9bbc10
 /home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/server/auth/providers/jwt_bearer_test.py:05179d46077d11dbc1e8f9d9b1b6a203
+/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/test_completion_summary_manual.py:b1489802691b6d718f7fbc26e940c53b
+/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/intelligence/test_intelligent_context_selector.py:c3e0a8e203d6eb43551347279419aeae
+/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/interface/ddd_compliant_mcp_tools_test.py:0fe40ea17c2243f8d0c0a40f59b4f4de
+/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/test_context_derivation_service.py:e031c9a4ecb46b80c6a5ecf1c7600549
+/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/unit/task_management/domain/services/test_task_state_transition_service.py:d3d977489ce644ccb628afa35827546d

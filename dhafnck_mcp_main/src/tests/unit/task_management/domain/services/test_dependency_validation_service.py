@@ -312,14 +312,17 @@ class TestDependencyValidationService:
         """Test finding dependencies when not found anywhere"""
         # Arrange
         dependency_id = "truly-1"
-        
+
         # Mock repository without extended method
         if hasattr(self.mock_repository, 'find_by_id_across_contexts'):
             delattr(self.mock_repository, 'find_by_id_across_contexts')
-        
+
+        # Mock find_by_id to return None
+        self.mock_repository.find_by_id.return_value = None
+
         # Act
         found_task = self.service._find_dependency_across_states(dependency_id)
-        
+
         # Assert
         assert found_task is None
 
@@ -642,7 +645,7 @@ class TestDependencyValidationServiceIntegration:
         stats = status["chain_statistics"]
         assert stats["total_dependencies"] == 3
         assert stats["completed_dependencies"] == 1
-        assert stats["completion_percentage"] == pytest.approx(33.33, rel=1e-2)
+        assert abs(stats["completion_percentage"] - 33.33) < 0.1
         assert status["can_proceed"] is False
 
     def _create_test_task(self, task_id: str, title: str, status: str = "todo", 

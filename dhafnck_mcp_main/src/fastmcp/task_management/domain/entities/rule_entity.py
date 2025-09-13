@@ -22,7 +22,7 @@ class RuleMetadata:
     modified: float
     checksum: str
     dependencies: List[str]
-    author: str
+    author: str = "system"
     version: str = "1.0"
     description: str = ""
     tags: List[str] = field(default_factory=list)
