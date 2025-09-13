@@ -1,5 +1,49 @@
 # Test Suite Changelog
 
+## [2025-09-13] - MCP Token Service Tests and Token Application Facade Updates
+
+### Added
+- Created comprehensive test suite for MCP Token Service (`src/tests/auth/services/mcp_token_service_test.py`)
+  - 22 unit tests covering all MCP token operations
+  - Tests for token generation, validation, revocation, cleanup, and statistics
+  - Integration tests for complete token lifecycle and multi-user scenarios
+  - Marked all tests with `@pytest.mark.unit` to bypass database initialization
+  - Fixed token length assertion to match actual token format (68 chars)
+  
+### Changed
+- Updated Token Application Facade tests to match new code implementation
+  - Fixed import to include `MCPToken` from `mcp_token_service` module
+  - Updated mock token object creation to use proper `MCPToken` class
+  - Fixed JWT service mock to include `decode_token` method for integration tests
+  - Corrected all session parameter references from `mock_session_integration` to `mock_session`
+  - Added missing fixtures for integration test class
+  - Fixed patch path for TokenRepository import
+
+### Fixed
+- Resolved database I/O errors in tests by adding `@pytest.mark.unit` decorator
+- Fixed fixture dependency issues in integration tests
+- Corrected parameter naming inconsistencies between test methods and fixtures
+- Fixed mock JWT service to properly support decode_token method
+- Resolved all 34 failing tests - all tests now passing
+
+### Technical Details
+- **MCP Token Service Tests**:
+  - Tests use proper `MCPToken` dataclass from service module
+  - All tests mock database interactions with `patch('fastmcp.auth.services.mcp_token_service.get_session')`
+  - Token format is "mcp_" + 64 hex characters (total 68 chars)
+  - Tests include comprehensive edge cases: expired tokens, inactive tokens, concurrent operations
+  
+- **Token Application Facade Tests**:
+  - Fixed JWT service mock to support both `generate_token` and `decode_token` methods
+  - Added proper fixtures hierarchy for integration tests: `mock_repository_integration`, `mock_mcp_token_service_integration`, `mock_session_integration`
+  - Fixed incorrect patch path for TokenRepository from facade module to infrastructure module
+
+### Impact
+- **Tests Added**: 22 new tests for MCP Token Service
+- **Tests Fixed**: 34 tests in Token Application Facade
+- **Total Tests Passing**: 56 tests (22 + 34)
+- **Pass Rate**: 100% for both test suites
+
 ## [2025-09-06] - Unit Test Fixes Iteration 28
 
 ### Fixed - Application Layer Tests

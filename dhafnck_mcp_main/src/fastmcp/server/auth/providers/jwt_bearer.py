@@ -130,14 +130,10 @@ class JWTBearerAuthProvider(BearerAuthProvider):
                 mcp_scopes.append("mcp:read")
             
             return AccessToken(
+                token=token,
                 client_id=user_id,
                 scopes=mcp_scopes,
-                expires_at=payload.get("exp"),
-                metadata={
-                    "token_type": "user_token",
-                    "email": email,
-                    "roles": roles
-                }
+                expires_at=payload.get("exp")
             )
             
         except Exception:

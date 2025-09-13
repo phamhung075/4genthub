@@ -137,6 +137,7 @@ class TestJWTBearerAuthProvider:
             
             # Mock backend response
             expected_token = AccessToken(
+                token="test-jwt-token",
                 client_id="test-client",
                 scopes=["mcp:read"],
                 expires_at=int(time.time()) + 3600
@@ -157,6 +158,7 @@ class TestJWTBearerAuthProvider:
             
             # Mock backend response
             expected_token = AccessToken(
+                token="test-jwt-token",
                 client_id="test-client",
                 scopes=["mcp:write"],
                 expires_at=int(time.time()) + 3600
@@ -181,8 +183,6 @@ class TestJWTBearerAuthProvider:
         assert "mcp:access" in result.scopes
         assert "mcp:write" in result.scopes
         assert "mcp:read" in result.scopes
-        assert result.metadata["email"] == "user@example.com"
-        assert result.metadata["roles"] == ["developer"]
     
     @pytest.mark.asyncio
     async def test_validate_user_token_admin_scopes(self, valid_user_token_payload):
@@ -427,6 +427,7 @@ class TestJWTBearerAuthProvider:
             
             # Token should be validated without database check
             expected_token = AccessToken(
+                token="test-token",
                 client_id="test-client",
                 scopes=["mcp:read"]
             )
