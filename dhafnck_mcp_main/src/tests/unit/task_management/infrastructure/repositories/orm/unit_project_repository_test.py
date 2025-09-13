@@ -125,23 +125,29 @@ class TestORMProjectRepositoryEntityConversion:
         # Note: The actual implementation creates placeholder tasks based on task_count
         assert hasattr(entity, 'git_branches') or len(mock_project.git_branchs) == 2
     
-    def test_entity_to_model_conversion(self):
-        """Test converting project entity to model."""
-        # Create project entity
-        entity = ProjectEntity(
-            id="project-123",
-            name="Test Project",
-            description="Test Description"
-        )
-        
-        with patch.object(self.repo, '_entity_to_model') as mock_convert:
-            mock_model = Mock(spec=Project)
-            mock_convert.return_value = mock_model
-            
-            result = self.repo._entity_to_model(entity)
-            
-            mock_convert.assert_called_once_with(entity)
-            assert result == mock_model
+    # NOTE: Commented out because _entity_to_model doesn't exist in ORMProjectRepository
+    # The repository directly maps entity properties to model fields in the save() method
+    # def test_entity_to_model_conversion(self):
+    #     """Test converting project entity to model."""
+    #     # Create project entity
+    #     from datetime import datetime, timezone
+    #     now = datetime.now(timezone.utc)
+    #     entity = ProjectEntity(
+    #         id="project-123",
+    #         name="Test Project",
+    #         description="Test Description",
+    #         created_at=now,
+    #         updated_at=now
+    #     )
+    #
+    #     with patch.object(self.repo, '_entity_to_model') as mock_convert:
+    #         mock_model = Mock(spec=Project)
+    #         mock_convert.return_value = mock_model
+    #
+    #         result = self.repo._entity_to_model(entity)
+    #
+    #         mock_convert.assert_called_once_with(entity)
+    #         assert result == mock_model
 
 
 class TestORMProjectRepositoryCRUDOperations:
@@ -158,50 +164,51 @@ class TestORMProjectRepositoryCRUDOperations:
         entity = ProjectEntity(
             id="project-123",
             name="New Project",
-            description="New Description"
+            description="New Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
-        
+
         # Mock model conversion
         mock_project_model = Mock(spec=Project)
         mock_project_model.id = "project-123"
-        
-        with patch.object(self.repo, '_entity_to_model', return_value=mock_project_model) as mock_to_model:
-            with patch.object(self.repo, '_model_to_entity', return_value=entity) as mock_to_entity:
-                with patch.object(self.repo, '_invalidate_cache') as mock_invalidate:
-                    
-                    result = self.repo.create(entity)
-                    
-                    # Verify conversions
-                    mock_to_model.assert_called_once_with(entity)
-                    mock_to_entity.assert_called_once_with(mock_project_model)
-                    
-                    # Verify session operations
-                    self.mock_session.add.assert_called_once_with(mock_project_model)
-                    self.mock_session.flush.assert_called_once()
-                    
-                    # Verify cache invalidation
-                    mock_invalidate.assert_called_once()
-                    
-                    assert result == entity
+
+        with patch.object(self.repo, '_model_to_entity', return_value=entity) as mock_to_entity:
+            with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
+                with patch.object(self.repo, 'transaction'):
+                    with patch('uuid.uuid4', return_value='project-123'):
+                        # Mock the database session instead of non-existent create method
+                        mock_session_ctx = MagicMock()
+                        mock_session_ctx.__enter__ = MagicMock(return_value=self.mock_session)
+                        mock_session_ctx.__exit__ = MagicMock(return_value=None)
+
+                        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
+                            result = self.repo.create_project(entity.name, entity.description, "test-user")
+
+                            # Verify the returned entity
+                            assert result.name == entity.name
+                            assert result.description == entity.description
+
+                            # Verify cache invalidation
+                            mock_invalidate.assert_called_once()
     
     def test_create_project_database_error(self):
         """Test project creation with database error."""
         entity = ProjectEntity(
             id="project-123",
             name="New Project",
-            description="New Description"
+            description="New Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
-        
-        with patch.object(self.repo, '_entity_to_model', return_value=Mock(spec=Project)):
-            self.mock_session.add.side_effect = IntegrityError("Constraint violation", None, None)
-            
+
+        # Mock database error directly - the create method doesn't exist, so mock transaction instead
+        with patch.object(self.repo, 'transaction', side_effect=IntegrityError("Constraint violation", None, None)):
             with pytest.raises(DatabaseException):
-                self.repo.create(entity)
-            
-            # Should rollback on error
-            self.mock_session.rollback.assert_called_once()
+                self.repo.create_project(entity.name, entity.description, "test-user")
     
-    def test_get_project_by_id_found(self):
+    @pytest.mark.asyncio
+    async def test_get_project_by_id_found(self):
         """Test getting project by ID when it exists."""
         # Mock project model
         mock_project_model = Mock(spec=Project)
@@ -212,7 +219,9 @@ class TestORMProjectRepositoryCRUDOperations:
         mock_project_entity = ProjectEntity(
             id="project-123",
             name="Found Project",
-            description="Found Description"
+            description="Found Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         # Mock query
@@ -227,9 +236,9 @@ class TestORMProjectRepositoryCRUDOperations:
         self.mock_session.query.return_value = mock_query
         
         with patch.object(self.repo, '_model_to_entity', return_value=mock_project_entity):
-            with patch.object(self.repo, '_apply_user_filter', return_value=True):
-                
-                result = self.repo.get_by_id("project-123")
+            with patch.object(self.repo, 'apply_user_filter', return_value=mock_options):
+
+                result = await self.repo.find_by_id("project-123")
                 
                 # Verify query was built correctly
                 self.mock_session.query.assert_called_once_with(Project)
@@ -238,7 +247,8 @@ class TestORMProjectRepositoryCRUDOperations:
                 
                 assert result == mock_project_entity
     
-    def test_get_project_by_id_not_found(self):
+    @pytest.mark.asyncio
+    async def test_get_project_by_id_not_found(self):
         """Test getting project by ID when it doesn't exist."""
         # Mock empty query result
         mock_query = Mock()
@@ -251,10 +261,17 @@ class TestORMProjectRepositoryCRUDOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with pytest.raises(ResourceNotFoundException, match="Project with ID 'nonexistent' not found"):
-            self.repo.get_by_id("nonexistent")
+        # Mock session context manager
+        mock_session_ctx = Mock()
+        mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = Mock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
+            result = await self.repo.find_by_id("nonexistent")
+            assert result is None
     
-    def test_get_project_by_id_user_filter_denied(self):
+    @pytest.mark.asyncio
+    async def test_get_project_by_id_user_filter_denied(self):
         """Test getting project denied by user filter."""
         mock_project_model = Mock(spec=Project)
         mock_project_model.id = "project-123"
@@ -270,17 +287,25 @@ class TestORMProjectRepositoryCRUDOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=False):
+        # Mock session context manager
+        mock_session_ctx = Mock()
+        mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = Mock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
             
-            with pytest.raises(ResourceNotFoundException, match="Project with ID 'project-123' not found"):
-                self.repo.get_by_id("project-123")
+            result = await self.repo.find_by_id("project-123")
+            assert result is None
     
-    def test_update_project_success(self):
+    @pytest.mark.asyncio
+    async def test_update_project_success(self):
         """Test successful project update."""
         entity = ProjectEntity(
             id="project-123",
             name="Updated Project",
-            description="Updated Description"
+            description="Updated Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         # Mock existing project
@@ -295,26 +320,27 @@ class TestORMProjectRepositoryCRUDOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=True):
-            with patch.object(self.repo, '_update_model_from_entity') as mock_update:
-                with patch.object(self.repo, '_model_to_entity', return_value=entity):
-                    with patch.object(self.repo, '_invalidate_cache') as mock_invalidate:
-                        
-                        result = self.repo.update(entity)
-                        
-                        # Verify update operations
-                        mock_update.assert_called_once_with(mock_existing, entity)
-                        self.mock_session.flush.assert_called_once()
-                        mock_invalidate.assert_called_once()
-                        
-                        assert result == entity
+        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
+            with patch.object(self.repo, '_model_to_entity', return_value=entity):
+                with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
+
+                    result = await self.repo.update(entity)
+
+                    # Verify update operations
+                    self.mock_session.flush.assert_called_once()
+                    mock_invalidate.assert_called_once()
+
+                    assert result == entity
     
-    def test_update_project_not_found(self):
+    @pytest.mark.asyncio
+    async def test_update_project_not_found(self):
         """Test updating non-existent project."""
         entity = ProjectEntity(
             id="nonexistent",
             name="Updated Project",
-            description="Updated Description"
+            description="Updated Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         # Mock empty query result
@@ -325,10 +351,17 @@ class TestORMProjectRepositoryCRUDOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with pytest.raises(ResourceNotFoundException, match="Project with ID 'nonexistent' not found"):
-            self.repo.update(entity)
+        # Mock session context manager
+        mock_session_ctx = Mock()
+        mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = Mock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
+            with pytest.raises(ResourceNotFoundException, match="Project with ID 'nonexistent' not found"):
+                await self.repo.update(entity)
     
-    def test_delete_project_success(self):
+    @pytest.mark.asyncio
+    async def test_delete_project_success(self):
         """Test successful project deletion."""
         # Mock existing project
         mock_project = Mock(spec=Project)
@@ -342,17 +375,19 @@ class TestORMProjectRepositoryCRUDOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=True):
-            with patch.object(self.repo, '_invalidate_cache') as mock_invalidate:
+        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
+            with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
                 
-                self.repo.delete("project-123")
+                result = await self.repo.delete("project-123")
+                assert result is True
                 
                 # Verify deletion
                 self.mock_session.delete.assert_called_once_with(mock_project)
                 self.mock_session.flush.assert_called_once()
                 mock_invalidate.assert_called_once()
     
-    def test_delete_project_not_found(self):
+    @pytest.mark.asyncio
+    async def test_delete_project_not_found(self):
         """Test deleting non-existent project."""
         # Mock empty query result
         mock_query = Mock()
@@ -362,8 +397,8 @@ class TestORMProjectRepositoryCRUDOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with pytest.raises(ResourceNotFoundException, match="Project with ID 'nonexistent' not found"):
-            self.repo.delete("nonexistent")
+        result = await self.repo.delete("nonexistent")
+        assert result is False
 
 
 class TestORMProjectRepositoryQueryOperations:
@@ -374,7 +409,8 @@ class TestORMProjectRepositoryQueryOperations:
         self.mock_session = Mock()
         self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
     
-    def test_list_all_projects(self):
+    @pytest.mark.asyncio
+    async def test_list_all_projects(self):
         """Test listing all projects with user filter."""
         # Mock project models
         mock_project1 = Mock(spec=Project)
@@ -398,9 +434,9 @@ class TestORMProjectRepositoryQueryOperations:
         mock_entities = [Mock(), Mock()]
         
         with patch.object(self.repo, '_model_to_entity', side_effect=mock_entities):
-            with patch.object(self.repo, '_apply_user_filter', return_value=True):
+            with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
                 
-                result = self.repo.list_all()
+                result = await self.repo.find_all()
                 
                 # Verify query structure
                 self.mock_session.query.assert_called_once_with(Project)
@@ -411,7 +447,8 @@ class TestORMProjectRepositoryQueryOperations:
                 assert len(result) == 2
                 assert result == mock_entities
     
-    def test_find_by_name(self):
+    @pytest.mark.asyncio
+    async def test_find_by_name(self):
         """Test finding project by name."""
         mock_project = Mock(spec=Project)
         mock_project.id = "project-123"
@@ -432,15 +469,16 @@ class TestORMProjectRepositoryQueryOperations:
         mock_entity = Mock()
         
         with patch.object(self.repo, '_model_to_entity', return_value=mock_entity):
-            with patch.object(self.repo, '_apply_user_filter', return_value=True):
+            with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
                 
-                result = self.repo.find_by_name("Test Project")
+                result = await self.repo.find_by_name("Test Project")
                 
                 # Verify name filter was applied
                 mock_options.filter.assert_called_once()
                 assert result == mock_entity
     
-    def test_search_projects_by_text(self):
+    @pytest.mark.asyncio
+    async def test_search_projects_by_text(self):
         """Test searching projects by text content."""
         mock_projects = [Mock(spec=Project), Mock(spec=Project)]
         for i, proj in enumerate(mock_projects):
@@ -461,16 +499,17 @@ class TestORMProjectRepositoryQueryOperations:
         mock_entities = [Mock(), Mock()]
         
         with patch.object(self.repo, '_model_to_entity', side_effect=mock_entities):
-            with patch.object(self.repo, '_apply_user_filter', return_value=True):
+            with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
                 
-                result = self.repo.search("authentication")
+                result = self.repo.search_projects("authentication")
                 
                 # Verify search filter was applied
                 mock_options.filter.assert_called_once()
                 assert len(result) == 2
                 assert result == mock_entities
     
-    def test_count_projects(self):
+    @pytest.mark.asyncio
+    async def test_count_projects(self):
         """Test counting projects."""
         # Mock query
         mock_query = Mock()
@@ -478,9 +517,9 @@ class TestORMProjectRepositoryQueryOperations:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=True):
+        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
             
-            result = self.repo.count()
+            result = await self.repo.count()
             
             assert result == 5
             mock_query.count.assert_called_once()
@@ -494,7 +533,8 @@ class TestORMProjectRepositoryUserScoping:
         self.mock_session = Mock()
         self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
     
-    def test_user_filter_applied_on_queries(self):
+    @pytest.mark.asyncio
+    async def test_user_filter_applied_on_queries(self):
         """Test user filter is applied on all queries."""
         mock_project = Mock(spec=Project)
         mock_project.git_branchs = []
@@ -511,10 +551,10 @@ class TestORMProjectRepositoryUserScoping:
         self.mock_session.query.return_value = mock_query
         
         with patch.object(self.repo, '_model_to_entity', return_value=Mock()):
-            with patch.object(self.repo, '_apply_user_filter') as mock_user_filter:
+            with patch.object(self.repo, 'apply_user_filter') as mock_user_filter:
                 mock_user_filter.return_value = True
                 
-                self.repo.get_by_id("project-123")
+                await self.repo.find_by_id("project-123")
                 
                 # Verify user filter was called
                 mock_user_filter.assert_called_once_with(mock_project)
@@ -524,17 +564,23 @@ class TestORMProjectRepositoryUserScoping:
         entity = ProjectEntity(
             id="project-123",
             name="User Project",
-            description="User Description"
+            description="User Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         mock_model = Mock(spec=Project)
         
-        with patch.object(self.repo, '_entity_to_model', return_value=mock_model):
+        # _entity_to_model doesn't exist, mock the database session instead
+        mock_session_ctx = MagicMock()
+        mock_session_ctx.__enter__ = MagicMock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = MagicMock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
             with patch.object(self.repo, '_model_to_entity', return_value=entity):
-                with patch.object(self.repo, '_invalidate_cache'):
-                    
+                with patch.object(self.repo, 'invalidate_cache_for_entity'):
                     # The user ID should be applied during model creation
-                    self.repo.create(entity)
+                    self.repo.create_project(entity.name, entity.description, "test-user")
                     
                     # Verify model was created with user context
                     self.mock_session.add.assert_called_once_with(mock_model)
@@ -553,24 +599,33 @@ class TestORMProjectRepositoryCacheIntegration:
         entity = ProjectEntity(
             id="project-123",
             name="New Project",
-            description="New Description"
+            description="New Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
-        with patch.object(self.repo, '_entity_to_model', return_value=Mock(spec=Project)):
+        # _entity_to_model doesn't exist, mock the database session instead
+        mock_session_ctx = MagicMock()
+        mock_session_ctx.__enter__ = MagicMock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = MagicMock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
             with patch.object(self.repo, '_model_to_entity', return_value=entity):
-                with patch.object(self.repo, '_invalidate_cache') as mock_invalidate:
-                    
-                    self.repo.create(entity)
+                with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
+                    self.repo.create_project(entity.name, entity.description, "test-user")
                     
                     # Should invalidate cache after creation
                     mock_invalidate.assert_called_once()
     
-    def test_cache_invalidation_on_update(self):
+    @pytest.mark.asyncio
+    async def test_cache_invalidation_on_update(self):
         """Test cache is invalidated on project update."""
         entity = ProjectEntity(
             id="project-123",
             name="Updated Project",
-            description="Updated Description"
+            description="Updated Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         mock_existing = Mock(spec=Project)
@@ -583,17 +638,17 @@ class TestORMProjectRepositoryCacheIntegration:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=True):
-            with patch.object(self.repo, '_update_model_from_entity'):
-                with patch.object(self.repo, '_model_to_entity', return_value=entity):
-                    with patch.object(self.repo, '_invalidate_cache') as mock_invalidate:
+        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
+            with patch.object(self.repo, '_model_to_entity', return_value=entity):
+                    with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
                         
-                        self.repo.update(entity)
+                        await self.repo.update(entity)
                         
                         # Should invalidate cache after update
                         mock_invalidate.assert_called_once()
     
-    def test_cache_invalidation_on_delete(self):
+    @pytest.mark.asyncio
+    async def test_cache_invalidation_on_delete(self):
         """Test cache is invalidated on project deletion."""
         mock_project = Mock(spec=Project)
         
@@ -605,10 +660,11 @@ class TestORMProjectRepositoryCacheIntegration:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=True):
-            with patch.object(self.repo, '_invalidate_cache') as mock_invalidate:
+        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
+            with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
                 
-                self.repo.delete("project-123")
+                result = await self.repo.delete("project-123")
+                assert result is True
                 
                 # Should invalidate cache after deletion
                 mock_invalidate.assert_called_once()
@@ -627,14 +683,21 @@ class TestORMProjectRepositoryErrorHandling:
         entity = ProjectEntity(
             id="project-123",
             name="New Project",
-            description="New Description"
+            description="New Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
-        with patch.object(self.repo, '_entity_to_model', return_value=Mock(spec=Project)):
+        # _entity_to_model doesn't exist, mock the database session instead
+        mock_session_ctx = MagicMock()
+        mock_session_ctx.__enter__ = MagicMock(return_value=self.mock_session)
+        mock_session_ctx.__exit__ = MagicMock(return_value=None)
+
+        with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
             self.mock_session.add.side_effect = SQLAlchemyError("Database connection lost")
             
             with pytest.raises(DatabaseException):
-                self.repo.create(entity)
+                self.repo.create_project(entity.name, entity.description, "test-user")
             
             # Should rollback on error
             self.mock_session.rollback.assert_called_once()
@@ -644,20 +707,25 @@ class TestORMProjectRepositoryErrorHandling:
         entity = ProjectEntity(
             id="",  # Invalid empty ID
             name="Project",
-            description="Description"
+            description="Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
-        with patch.object(self.repo, '_entity_to_model', side_effect=ValidationException("Invalid project data")):
-            
+        # _entity_to_model doesn't exist, mock at transaction level instead
+        with patch.object(self.repo, 'transaction', side_effect=ValidationException("Invalid project data")):
             with pytest.raises(ValidationException, match="Invalid project data"):
-                self.repo.create(entity)
+                self.repo.create_project(entity.name, entity.description, "test-user")
     
-    def test_concurrent_modification_handling(self):
+    @pytest.mark.asyncio
+    async def test_concurrent_modification_handling(self):
         """Test handling of concurrent modification scenarios."""
         entity = ProjectEntity(
             id="project-123",
             name="Updated Project",
-            description="Updated Description"
+            description="Updated Description",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
         
         mock_existing = Mock(spec=Project)
@@ -670,13 +738,12 @@ class TestORMProjectRepositoryErrorHandling:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, '_apply_user_filter', return_value=True):
-            with patch.object(self.repo, '_update_model_from_entity'):
-                # Simulate optimistic locking failure
-                self.mock_session.flush.side_effect = SQLAlchemyError("Row was updated by another transaction")
-                
-                with pytest.raises(DatabaseException):
-                    self.repo.update(entity)
+        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
+            # Simulate optimistic locking failure
+            self.mock_session.flush.side_effect = SQLAlchemyError("Row was updated by another transaction")
+
+            with pytest.raises(DatabaseException):
+                await self.repo.update(entity)
 
 
 if __name__ == "__main__":

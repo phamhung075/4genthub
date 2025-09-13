@@ -398,7 +398,8 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                 
                 user_id = validate_user_id(user_id, "Project creation")
                 
-                project = self.create(
+                # Create new project model instance
+                project = Project(
                     id=project_id,
                     name=name,
                     description=description,
@@ -406,6 +407,11 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     status="active",
                     metadata={}
                 )
+
+                # Add to session
+                with self.get_db_session() as session:
+                    session.add(project)
+                    session.commit()
                 
                 # Invalidate cache after create
                 self.invalidate_cache_for_entity(
