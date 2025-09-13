@@ -18,6 +18,8 @@ import logging
 import sys
 import os
 from typing import Dict, Any
+from unittest.mock import patch, MagicMock
+from contextvars import ContextVar
 
 # Add the project path to sys.path
 project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -50,100 +52,120 @@ class TestMCPAuthenticationFixes:
     @pytest.mark.asyncio
     async def test_task_creation_authentication_fixed(self):
         """Test that task creation now works with proper user authentication"""
-        # First create a project and branch for testing
-        project_controller = self.mcp_tools._project_controller
-        
-        # Create project
-        project_result = await project_controller.manage_project(
-            action="create",
-            name="test-auth-project",
-            description="Project for authentication testing",
-            user_id=self.test_user_uuid
-        )
-        assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
-        self.created_project_id = project_result['data']['project']['id']
-        
-        # Create branch
-        git_branch_controller = self.mcp_tools._git_branch_controller
-        branch_result = await git_branch_controller.manage_git_branch(
-            action="create",
-            project_id=self.created_project_id,
-            git_branch_name="test-auth-branch",
-            git_branch_description="Branch for authentication testing",
-            user_id=self.test_user_uuid
-        )
-        assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
-        self.created_branch_id = branch_result['data']['git_branch']['id']
-        
-        # Now test task creation with authentication
-        task_controller = self.mcp_tools._task_controller
-        
-        test_params = {
-            "action": "create",
-            "git_branch_id": self.created_branch_id,
-            "title": "Authentication Test Task",
-            "description": "Testing that user authentication now works correctly",
-            "user_id": self.test_user_uuid
+        # Mock the authentication context to simulate an authenticated request
+        mock_auth_info = {
+            'user_id': self.test_user_uuid,
+            'email': 'test@example.com',
+            'sub': self.test_user_uuid,
+            'realm_roles': ['admin', 'user'],
+            'resource_access': {}
         }
-        
-        result = await task_controller.manage_task(**test_params)
-        
-        # Should succeed now (was failing before)
-        assert result.get('success') is True, f"Task creation failed: {result.get('error', 'Unknown error')}"
-        assert result.get('data', {}).get('task', {}).get('title') == "Authentication Test Task"
-        
-        # Store task ID for cleanup
-        self.created_task_id = result['data']['task']['id']
-        
-        logger.info("✅ Task creation authentication fix verified")
+
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info):
+            # First create a project and branch for testing
+            project_controller = self.mcp_tools._project_controller
+
+            # Create project
+            project_result = await project_controller.manage_project(
+                action="create",
+                name="test-auth-project",
+                description="Project for authentication testing",
+                user_id=self.test_user_uuid
+            )
+            assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
+            self.created_project_id = project_result['data']['project']['id']
+
+            # Create branch
+            git_branch_controller = self.mcp_tools._git_branch_controller
+            branch_result = await git_branch_controller.manage_git_branch(
+                action="create",
+                project_id=self.created_project_id,
+                git_branch_name="test-auth-branch",
+                git_branch_description="Branch for authentication testing",
+                user_id=self.test_user_uuid
+            )
+            assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
+            self.created_branch_id = branch_result['data']['git_branch']['id']
+
+            # Now test task creation with authentication
+            task_controller = self.mcp_tools._task_controller
+
+            test_params = {
+                "action": "create",
+                "git_branch_id": self.created_branch_id,
+                "title": "Authentication Test Task",
+                "description": "Testing that user authentication now works correctly",
+                "user_id": self.test_user_uuid
+            }
+
+            result = await task_controller.manage_task(**test_params)
+
+            # Should succeed now (was failing before)
+            assert result.get('success') is True, f"Task creation failed: {result.get('error', 'Unknown error')}"
+            assert result.get('data', {}).get('task', {}).get('title') == "Authentication Test Task"
+
+            # Store task ID for cleanup
+            self.created_task_id = result['data']['task']['id']
+
+            logger.info("✅ Task creation authentication fix verified")
 
     @pytest.mark.asyncio
     async def test_git_branch_operations_work(self):
         """Test git branch operations with proper authentication"""
-        # First create a project for testing
-        project_controller = self.mcp_tools._project_controller
-        
-        project_result = await project_controller.manage_project(
-            action="create",
-            name="test-branch-ops-project",
-            description="Project for branch operations testing",
-            user_id=self.test_user_uuid
-        )
-        assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
-        project_id = project_result['data']['project']['id']
-        
-        # Create a branch
-        git_branch_controller = self.mcp_tools._git_branch_controller
-        branch_result = await git_branch_controller.manage_git_branch(
-            action="create",
-            project_id=project_id,
-            git_branch_name="test-branch-ops",
-            git_branch_description="Branch for operations testing",
-            user_id=self.test_user_uuid
-        )
-        assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
-        branch_id = branch_result['data']['git_branch']['id']
-        
-        # Test listing git branches
-        list_params = {
-            "action": "list",
-            "project_id": project_id,
-            "user_id": self.test_user_uuid
+        # Mock the authentication context to simulate an authenticated request
+        mock_auth_info = {
+            'user_id': self.test_user_uuid,
+            'email': 'test@example.com',
+            'sub': self.test_user_uuid,
+            'realm_roles': ['admin', 'user'],
+            'resource_access': {}
         }
-        
-        result = await git_branch_controller.manage_git_branch(**list_params)
-        
-        # Should succeed and contain the created branch
-        assert result.get('success') is True, f"Git branch list failed: {result.get('error', 'Unknown error')}"
-        
-        branches = result.get('data', {}).get('git_branchs', [])
-        assert len(branches) > 0, "No branches returned"
-        
-        # Verify our test branch is present
-        branch_ids = [branch['id'] for branch in branches]
-        assert branch_id in branch_ids, f"Expected branch {branch_id} not found"
-        
-        logger.info("✅ Git branch operations working correctly")
+
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info):
+            # First create a project for testing
+            project_controller = self.mcp_tools._project_controller
+
+            project_result = await project_controller.manage_project(
+                action="create",
+                name="test-branch-ops-project",
+                description="Project for branch operations testing",
+                user_id=self.test_user_uuid
+            )
+            assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
+            project_id = project_result['data']['project']['id']
+
+            # Create a branch
+            git_branch_controller = self.mcp_tools._git_branch_controller
+            branch_result = await git_branch_controller.manage_git_branch(
+                action="create",
+                project_id=project_id,
+                git_branch_name="test-branch-ops",
+                git_branch_description="Branch for operations testing",
+                user_id=self.test_user_uuid
+            )
+            assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
+            branch_id = branch_result['data']['git_branch']['id']
+
+            # Test listing git branches
+            list_params = {
+                "action": "list",
+                "project_id": project_id,
+                "user_id": self.test_user_uuid
+            }
+
+            result = await git_branch_controller.manage_git_branch(**list_params)
+
+            # Should succeed and contain the created branch
+            assert result.get('success') is True, f"Git branch list failed: {result.get('error', 'Unknown error')}"
+
+            branches = result.get('data', {}).get('git_branchs', [])
+            assert len(branches) > 0, "No branches returned"
+
+            # Verify our test branch is present
+            branch_ids = [branch['id'] for branch in branches]
+            assert branch_id in branch_ids, f"Expected branch {branch_id} not found"
+
+            logger.info("✅ Git branch operations working correctly")
 
     @pytest.mark.asyncio
     async def test_context_management_authentication(self):

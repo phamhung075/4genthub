@@ -36,21 +36,29 @@ _keycloak_jwks_client = None
 def get_keycloak_jwks_client():
     """Get or create JWKS client for Keycloak token validation."""
     global _keycloak_jwks_client
-    if _keycloak_jwks_client is None and KEYCLOAK_URL:
+
+    # Get current value of KEYCLOAK_URL (not the one cached at module import)
+    keycloak_url = os.getenv("KEYCLOAK_URL")
+    keycloak_realm = os.getenv("KEYCLOAK_REALM", "mcp")
+
+    if not keycloak_url:
+        return None
+
+    if _keycloak_jwks_client is None:
         from jwt import PyJWKClient
         import ssl
         import urllib.request
-        
+
         # Create SSL context that doesn't verify certificates (for self-signed certs)
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
-        
+
         # Create custom URL opener with unverified SSL
         opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl_context))
         urllib.request.install_opener(opener)
-        
-        jwks_url = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs"
+
+        jwks_url = f"{keycloak_url}/realms/{keycloak_realm}/protocol/openid-connect/certs"
         logger.info(f"Fetching JWKS from: {jwks_url}")
         _keycloak_jwks_client = PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
     return _keycloak_jwks_client

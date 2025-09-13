@@ -59,21 +59,20 @@ class TestTaskMCPControllerIntegration:
     def controller(self, mock_task_facade_factory):
         """Create TaskMCPController instance for testing."""
         factory, _ = mock_task_facade_factory
-        return TaskMCPController(facade_factory=factory)
+        return TaskMCPController(facade_service_or_factory=factory)
 
     def test_controller_initialization_with_services(self, mock_task_facade_factory):
         """Test controller initializes correctly with all services."""
         factory, _ = mock_task_facade_factory
         
-        # TaskMCPController constructor changed - now takes facade_factory and optionally context_facade_factory and workflow_hint_enhancer
+        # TaskMCPController constructor changed - now takes facade_service_or_factory and optionally workflow_hint_enhancer
         controller = TaskMCPController(
-            facade_factory=factory,
-            context_facade_factory=None,
+            facade_service_or_factory=factory,
             workflow_hint_enhancer=None
         )
         
         # Verify initialization with updated attributes
-        assert controller._facade_factory == factory
+        assert controller._task_facade_factory == factory
         assert controller._enforcement_service is not None
         assert controller._progressive_enforcement is not None
         assert controller._response_enrichment is not None
@@ -136,18 +135,21 @@ class TestTaskMCPControllerIntegration:
         """Test complete authentication flow integration."""
         factory, mock_facade = mock_task_facade_factory
         mock_get_auth_user_id.return_value = "test-user-123"
-        
+
         git_branch_id = "550e8400-e29b-41d4-a716-446655440000"
-        
-        # Call _get_facade_for_request with proper parameters
-        facade = controller._get_facade_for_request(
-            task_id=None,
-            git_branch_id=git_branch_id,
-            user_id="test-user-123"
-        )
-        
-        # Facade should be created from the factory
-        factory.create_task_facade.assert_called()
+
+        # Mock the facade service to return our mock facade
+        with patch.object(controller._facade_service, 'get_task_facade', return_value=mock_facade) as mock_get_facade:
+            # Call _get_facade_for_request with proper parameters
+            facade = controller._get_facade_for_request(
+                task_id=None,
+                git_branch_id=git_branch_id,
+                user_id="test-user-123"
+            )
+
+            # Facade should be created from the facade service
+            mock_get_facade.assert_called_with(project_id=None, git_branch_id=git_branch_id, user_id="test-user-123")
+            assert facade == mock_facade
 
     def test_authentication_error_scenarios(self, controller):
         """Test various authentication error scenarios."""

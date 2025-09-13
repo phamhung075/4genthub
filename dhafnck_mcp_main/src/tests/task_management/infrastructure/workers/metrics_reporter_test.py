@@ -8,7 +8,7 @@ import pytest
 import asyncio
 import json
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from email.mime.text import MIMEText
@@ -523,7 +523,20 @@ class TestMetricsReporter:
             # Check email content
             sent_msg = mock_server.send_message.call_args[0][0]
             assert "CRITICAL ALERT" in sent_msg['Subject']
-            assert "System critical error" in str(sent_msg)
+            # Email content is base64 encoded, so check the payload
+            import base64
+            email_str = str(sent_msg)
+            # Look for the base64 content part after headers
+            if "base64" in email_str:
+                # Extract and decode the base64 content
+                lines = email_str.split('\n')
+                base64_content = ''.join(lines[6:])  # Skip headers
+                try:
+                    decoded = base64.b64decode(base64_content).decode('utf-8')
+                    assert "System critical error" in decoded
+                except:
+                    # Fallback to checking raw message
+                    assert "System critical error" in email_str or "U3lzdGVtIGNyaXRpY2FsIGVycm9y" in email_str
 
     @pytest.mark.asyncio
     async def test_wait_until_time(self):

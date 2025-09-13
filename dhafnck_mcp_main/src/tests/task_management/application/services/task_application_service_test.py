@@ -111,34 +111,53 @@ class TestTaskApplicationService:
         assert service._context_service is None
         assert service._user_id is None
 
-    def test_get_user_scoped_repository_with_with_user_method(self, mock_task_repository, user_id):
+    def test_get_user_scoped_repository_with_with_user_method(self, user_id):
         """Test _get_user_scoped_repository when repository supports with_user method."""
+        # Create a mock repository that has with_user method
+        mock_task_repository = Mock()
         mock_scoped_repo = Mock()
-        mock_task_repository.with_user.return_value = mock_scoped_repo
-        
+        mock_task_repository.with_user = Mock(return_value=mock_scoped_repo)
+
         service = TaskApplicationService(mock_task_repository, user_id=user_id)
+
+        # The constructor calls _get_user_scoped_repository 7 times for use cases
+        # So with_user should have been called 7 times already
+        assert mock_task_repository.with_user.call_count == 7
+
+        # Now call it directly and verify it returns the scoped repo
         result = service._get_user_scoped_repository()
-        
         assert result == mock_scoped_repo
-        mock_task_repository.with_user.assert_called_once_with(user_id)
+
+        # Should now have been called 8 times total
+        assert mock_task_repository.with_user.call_count == 8
+        mock_task_repository.with_user.assert_called_with(user_id)
 
     def test_get_user_scoped_repository_with_user_id_property(self, user_id):
         """Test _get_user_scoped_repository when repository has user_id property."""
         mock_task_repository = Mock()
         mock_task_repository.user_id = "different-user"
         mock_task_repository.session = Mock()
-        
-        service = TaskApplicationService(mock_task_repository, user_id=user_id)
-        
-        # Mock the repository class constructor
+
+        # Need to ensure 'with_user' doesn't exist for this test path
+        if hasattr(mock_task_repository, 'with_user'):
+            delattr(mock_task_repository, 'with_user')
+
+        # Mock the repository class constructor as it will be called during initialization
         mock_repo_class = Mock()
         mock_new_repo = Mock()
+        mock_new_repo.with_user = Mock(return_value=mock_new_repo)  # For chaining
         mock_repo_class.return_value = mock_new_repo
-        
+
         with patch('builtins.type', return_value=mock_repo_class):
+            service = TaskApplicationService(mock_task_repository, user_id=user_id)
+
+            # The constructor should have called type() to create new repositories 7 times
+            assert mock_repo_class.call_count == 7
+            mock_repo_class.assert_called_with(mock_task_repository.session, user_id=user_id)
+
+            # Now calling _get_user_scoped_repository directly should use the same logic
             result = service._get_user_scoped_repository()
-            
-            mock_repo_class.assert_called_once_with(mock_task_repository.session, user_id=user_id)
+            assert mock_repo_class.call_count == 8
             assert result == mock_new_repo
 
     def test_get_user_scoped_repository_fallback(self, mock_task_repository, user_id):
@@ -166,6 +185,7 @@ class TestTaskApplicationService:
         assert new_service._task_repository == mock_task_repository
         assert new_service._context_service == mock_context_service
 
+    @pytest.mark.asyncio
     async def test_create_task_success(self, mock_task_repository, mock_context_service, user_id, mock_task_entity, sample_task_data):
         """Test successful task creation with context creation."""
         service = TaskApplicationService(
@@ -188,6 +208,7 @@ class TestTaskApplicationService:
         service._create_task_use_case.execute.assert_called_once_with(request)
         service._hierarchical_context_service.create_context.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_create_task_without_success_flag(self, mock_task_repository, mock_context_service, user_id, sample_task_data):
         """Test task creation when response doesn't have success flag."""
         service = TaskApplicationService(
@@ -195,20 +216,24 @@ class TestTaskApplicationService:
             context_service=mock_context_service,
             user_id=user_id
         )
-        
+
         # Arrange
         request = CreateTaskRequest(**sample_task_data)
-        response = Mock()  # Response without success attribute
-        
+        response = Mock(spec=[])  # Response without success or task attributes
+
         service._create_task_use_case.execute.return_value = response
-        
+
+        # Reset the mock before the test
+        service._hierarchical_context_service.create_context.reset_mock()
+
         # Act
         result = await service.create_task(request)
-        
+
         # Assert
         assert result == response
         service._hierarchical_context_service.create_context.assert_not_called()
 
+    @pytest.mark.asyncio
     async def test_get_task_success(self, mock_task_repository, mock_context_service, user_id):
         """Test successful task retrieval."""
         service = TaskApplicationService(
@@ -216,10 +241,25 @@ class TestTaskApplicationService:
             context_service=mock_context_service,
             user_id=user_id
         )
-        
+
         # Arrange
         task_id = "test-task-123"
-        expected_response = TaskResponse(id=task_id)
+        expected_response = TaskResponse(
+            id=task_id,
+            title="Test Task",
+            description="Test Description",
+            status="todo",
+            priority="medium",
+            details="Test details",
+            estimated_effort="2 hours",
+            assignees=["user1"],
+            labels=["test"],
+            dependencies=[],
+            subtasks=[],
+            due_date=None,
+            created_at=None,
+            updated_at=None
+        )
         service._get_task_use_case.execute = AsyncMock(return_value=expected_response)
         
         # Act
@@ -239,6 +279,7 @@ class TestTaskApplicationService:
             include_context=True
         )
 
+    @pytest.mark.asyncio
     async def test_get_task_not_found(self, mock_task_repository, mock_context_service, user_id):
         """Test task retrieval when task not found."""
         service = TaskApplicationService(
@@ -257,6 +298,7 @@ class TestTaskApplicationService:
         # Assert
         assert result is None
 
+    @pytest.mark.asyncio
     async def test_update_task_success(self, mock_task_repository, mock_context_service, user_id, mock_task_entity, sample_task_data):
         """Test successful task update with context update."""
         service = TaskApplicationService(
@@ -282,6 +324,7 @@ class TestTaskApplicationService:
         service._update_task_use_case.execute.assert_called_once_with(request)
         service._hierarchical_context_service.update_context.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_update_task_without_success_flag(self, mock_task_repository, mock_context_service, user_id):
         """Test task update when response doesn't have success flag."""
         service = TaskApplicationService(
@@ -289,20 +332,24 @@ class TestTaskApplicationService:
             context_service=mock_context_service,
             user_id=user_id
         )
-        
+
         # Arrange
         request = UpdateTaskRequest(task_id="test-id", title="Test")
-        response = Mock()  # Response without success attribute
-        
+        response = Mock(spec=[])  # Response without success or task attributes
+
         service._update_task_use_case.execute.return_value = response
-        
+
+        # Reset the mock before the test
+        service._hierarchical_context_service.update_context.reset_mock()
+
         # Act
         result = await service.update_task(request)
-        
+
         # Assert
         assert result == response
         service._hierarchical_context_service.update_context.assert_not_called()
 
+    @pytest.mark.asyncio
     async def test_list_tasks(self, mock_task_repository, mock_context_service, user_id):
         """Test task listing."""
         service = TaskApplicationService(
@@ -313,7 +360,7 @@ class TestTaskApplicationService:
         
         # Arrange
         request = ListTasksRequest(status="todo")
-        expected_response = TaskListResponse(tasks=[])
+        expected_response = TaskListResponse(tasks=[], count=0)
         service._list_tasks_use_case.execute = AsyncMock(return_value=expected_response)
         
         # Act
@@ -323,6 +370,7 @@ class TestTaskApplicationService:
         assert result == expected_response
         service._list_tasks_use_case.execute.assert_called_once_with(request)
 
+    @pytest.mark.asyncio
     async def test_search_tasks(self, mock_task_repository, mock_context_service, user_id):
         """Test task searching."""
         service = TaskApplicationService(
@@ -333,7 +381,7 @@ class TestTaskApplicationService:
         
         # Arrange
         request = SearchTasksRequest(query="test query")
-        expected_response = TaskListResponse(tasks=[])
+        expected_response = TaskListResponse(tasks=[], count=0)
         service._search_tasks_use_case.execute = AsyncMock(return_value=expected_response)
         
         # Act
@@ -343,6 +391,7 @@ class TestTaskApplicationService:
         assert result == expected_response
         service._search_tasks_use_case.execute.assert_called_once_with(request)
 
+    @pytest.mark.asyncio
     async def test_delete_task_success(self, mock_task_repository, mock_context_service, user_id):
         """Test successful task deletion with context cleanup."""
         service = TaskApplicationService(
@@ -364,6 +413,7 @@ class TestTaskApplicationService:
         service._delete_task_use_case.execute.assert_called_once_with(task_id)
         service._hierarchical_context_service.delete_context.assert_called_once_with("task", task_id)
 
+    @pytest.mark.asyncio
     async def test_delete_task_failure(self, mock_task_repository, mock_context_service, user_id):
         """Test task deletion failure without context cleanup."""
         service = TaskApplicationService(
@@ -376,15 +426,20 @@ class TestTaskApplicationService:
         task_id = "test-task-123"
         user_id = "test-user"
         service._delete_task_use_case.execute.return_value = False
-        
+
+        # Reset mocks before test
+        service._hierarchical_context_service.delete_context.reset_mock()
+        service._delete_task_use_case.execute.reset_mock()
+
         # Act
         result = await service.delete_task(task_id, user_id)
-        
+
         # Assert
         assert result is False
         service._delete_task_use_case.execute.assert_called_once_with(task_id)
         service._hierarchical_context_service.delete_context.assert_not_called()
 
+    @pytest.mark.asyncio
     async def test_complete_task(self, mock_task_repository, mock_context_service, user_id):
         """Test task completion."""
         service = TaskApplicationService(
@@ -405,6 +460,7 @@ class TestTaskApplicationService:
         assert result == expected_result
         service._complete_task_use_case.execute.assert_called_once_with(task_id)
 
+    @pytest.mark.asyncio
     async def test_get_all_tasks(self, mock_task_repository, mock_context_service, user_id):
         """Test getting all tasks."""
         service = TaskApplicationService(
@@ -414,7 +470,7 @@ class TestTaskApplicationService:
         )
         
         # Arrange
-        expected_response = TaskListResponse(tasks=[])
+        expected_response = TaskListResponse(tasks=[], count=0)
         service._list_tasks_use_case.execute = AsyncMock(return_value=expected_response)
         
         # Act
@@ -426,6 +482,7 @@ class TestTaskApplicationService:
         call_args = service._list_tasks_use_case.execute.call_args[0][0]
         assert isinstance(call_args, ListTasksRequest)
 
+    @pytest.mark.asyncio
     async def test_get_tasks_by_status(self, mock_task_repository, mock_context_service, user_id):
         """Test getting tasks by status."""
         service = TaskApplicationService(
@@ -436,7 +493,7 @@ class TestTaskApplicationService:
         
         # Arrange
         status = "in_progress"
-        expected_response = TaskListResponse(tasks=[])
+        expected_response = TaskListResponse(tasks=[], count=0)
         service._list_tasks_use_case.execute = AsyncMock(return_value=expected_response)
         
         # Act
@@ -449,6 +506,7 @@ class TestTaskApplicationService:
         assert isinstance(call_args, ListTasksRequest)
         assert call_args.status == status
 
+    @pytest.mark.asyncio
     async def test_get_tasks_by_assignee(self, mock_task_repository, mock_context_service, user_id):
         """Test getting tasks by assignee."""
         service = TaskApplicationService(
@@ -459,7 +517,7 @@ class TestTaskApplicationService:
         
         # Arrange
         assignee = "test-user"
-        expected_response = TaskListResponse(tasks=[])
+        expected_response = TaskListResponse(tasks=[], count=0)
         service._list_tasks_use_case.execute = AsyncMock(return_value=expected_response)
         
         # Act
@@ -489,6 +547,7 @@ class TestTaskApplicationService:
         assert service._delete_task_use_case is not None
         assert service._complete_task_use_case is not None
 
+    @pytest.mark.asyncio
     async def test_create_task_with_entity_without_value_attributes(self, mock_task_repository, mock_context_service, user_id, sample_task_data):
         """Test task creation when entity attributes don't have .value property."""
         service = TaskApplicationService(
@@ -522,6 +581,7 @@ class TestTaskApplicationService:
         assert result == response
         service._hierarchical_context_service.create_context.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_edge_cases_and_error_handling(self, mock_task_repository, mock_context_service, user_id):
         """Test various edge cases and error handling scenarios."""
         service = TaskApplicationService(
@@ -542,7 +602,10 @@ class TestTaskApplicationService:
         # Create response with None task
         response = CreateTaskResponse(success=True, task=None)
         service._create_task_use_case.execute.return_value = response
-        
+
+        # Reset mock before test
+        service._hierarchical_context_service.create_context.reset_mock()
+
         # Should not crash and not call context creation
         result = await service.create_task(request)
         assert result == response

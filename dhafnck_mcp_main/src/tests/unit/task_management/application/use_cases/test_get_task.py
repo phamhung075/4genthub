@@ -6,7 +6,7 @@ import pytest
 import asyncio
 from unittest.mock import Mock, MagicMock, AsyncMock, patch
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastmcp.task_management.application.use_cases.get_task import GetTaskUseCase
 from fastmcp.task_management.application.dtos.task import TaskResponse
@@ -79,8 +79,8 @@ class TestGetTaskUseCase:
         task.assignees = ["user-1", "user-2"]
         task.labels = ["bug", "urgent"]
         task.context_id = "context-123"
-        task.created_at = datetime.now()
-        task.updated_at = datetime.now()
+        task.created_at = datetime.now(timezone.utc)
+        task.updated_at = datetime.now(timezone.utc)
         task.to_dict.return_value = {
             "id": str(task.id),
             "title": task.title,

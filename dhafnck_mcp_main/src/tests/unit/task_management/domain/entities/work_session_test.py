@@ -4,7 +4,7 @@ Tests all methods, state transitions, edge cases, and business rules.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
 
 from fastmcp.task_management.domain.entities.work_session import (
@@ -24,7 +24,7 @@ class TestWorkSessionEntity:
             'agent_id': 'agent1',
             'task_id': 'task1',
             'git_branch_name': 'feature/test-branch',
-            'started_at': datetime.now()
+            'started_at': datetime.now(timezone.utc)
         }
     
     @pytest.fixture
@@ -518,7 +518,7 @@ class TestWorkSessionBusinessRules:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
     
     def test_session_state_transitions_valid(self, work_session):
@@ -638,7 +638,7 @@ class TestWorkSessionEdgeCases:
             agent_id='',
             task_id='',
             git_branch_name='',
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         assert session.id == ''
@@ -653,7 +653,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
             max_duration=timedelta(days=365)  # Very long duration
         )
         
@@ -666,7 +666,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
             session_notes="Initial notes"
         )
         
@@ -685,7 +685,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         # Add many progress updates
@@ -703,7 +703,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent1',
             task_id='task1',
             git_branch_name='main',
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         # Lock many resources
@@ -723,7 +723,7 @@ class TestWorkSessionEdgeCases:
             agent_id='agent_μ',
             task_id='task_∑',
             git_branch_name='feature/测试-branch',
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.add_progress_update("test_💻", "Message with émojis and ñ characters")

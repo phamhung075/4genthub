@@ -612,14 +612,28 @@
       "path": "_obsolete_docs"
     },
     "_workplace/workers/fix_tests_loop": {
-      "count": 1,
+      "count": 3,
       "files": [
         {
-          "hash": "6ee775557225fafb96517b1bbdba9141",
-          "modified": "2025-09-13T10:04:31.386603",
+          "hash": "1f57b374e9e7c39b4566b60c470c5236",
+          "modified": "2025-09-13T18:10:40.446990",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 2799
+          "size": 6397
+        },
+        {
+          "hash": "732f784c7a53756057c0635597b9cbe7",
+          "modified": "2025-09-13T17:33:52.658786",
+          "name": "fix-1by1-results.md",
+          "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
+          "size": 134104
+        },
+        {
+          "hash": "6ef1628a655518961b2f3bf8f9830a84",
+          "modified": "2025-09-13T17:33:52.583488",
+          "name": "fix-1by1-context.md",
+          "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
+          "size": 38281
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -2217,8 +2231,15 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 37,
+      "count": 65,
       "files": [
+        {
+          "hash": "c33d5cba65214ce6d2bc680ec3ce428a",
+          "modified": "2025-09-13T17:25:42.583524",
+          "name": "test-fix-progress-iteration32-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration32-2025-09-13.md",
+          "size": 3240
+        },
         {
           "hash": "f5a4c5c6666ac6598cc9394c579deacb",
           "modified": "2025-09-12T10:59:00.318084",
@@ -2234,11 +2255,25 @@
           "size": 11583
         },
         {
+          "hash": "3cc43944882e47712a476b933d0f038d",
+          "modified": "2025-09-13T14:46:46.924991",
+          "name": "test-fix-progress-iteration15-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration15-2025-09-13.md",
+          "size": 1776
+        },
+        {
           "hash": "0ef46f9b3850782261b4b27b93b04fef",
           "modified": "2025-09-11T20:29:09.398773",
           "name": "mcp-auto-injection-test-suite.md",
           "path": "testing-qa/mcp-auto-injection-test-suite.md",
           "size": 13792
+        },
+        {
+          "hash": "02af7453ca08c2aba0a9a38595412d6d",
+          "modified": "2025-09-13T13:50:21.696860",
+          "name": "test-fix-progress-iteration10-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration10-2025-09-13.md",
+          "size": 2261
         },
         {
           "hash": "374553ed6321a1599f6043b833432275",
@@ -2255,6 +2290,27 @@
           "size": 12660
         },
         {
+          "hash": "aa73748527a29f9df72a9496898f92eb",
+          "modified": "2025-09-13T15:11:45.388136",
+          "name": "test-fix-progress-iteration18-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration18-2025-09-13.md",
+          "size": 3164
+        },
+        {
+          "hash": "5a3f7163a989938f121fb94d523d7ff6",
+          "modified": "2025-09-13T14:30:02.367440",
+          "name": "test-fix-progress-iteration13-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration13-2025-09-13.md",
+          "size": 4492
+        },
+        {
+          "hash": "7370a9530475da8ad25d7cc9eb10c29b",
+          "modified": "2025-09-13T17:02:56.284086",
+          "name": "test-fix-progress-iteration30-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration30-2025-09-13.md",
+          "size": 3955
+        },
+        {
           "hash": "4d386e08457a5a2855498d3ce0168e14",
           "modified": "2025-09-08T03:38:01.462224",
           "name": "testing.md",
@@ -2269,6 +2325,13 @@
           "size": 5552
         },
         {
+          "hash": "70636ca55e058e00899c087cd98cff86",
+          "modified": "2025-09-13T17:13:52.230021",
+          "name": "test-fix-progress-iteration31-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration31-2025-09-13.md",
+          "size": 2591
+        },
+        {
           "hash": "f84ea0ff502042887067568b4ada4829",
           "modified": "2025-09-10T01:44:55.090092",
           "name": "configuration-cleanup-strategy.md",
@@ -2276,11 +2339,32 @@
           "size": 17900
         },
         {
+          "hash": "b4004eba66ecbfef6b9411e28ae843dd",
+          "modified": "2025-09-13T16:06:56.155825",
+          "name": "test-fix-progress-iteration25-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration25-2025-09-13.md",
+          "size": 3789
+        },
+        {
+          "hash": "1c39007377c5cb7e85593e4c6bc0b2fb",
+          "modified": "2025-09-13T14:05:37.969718",
+          "name": "test-fix-progress-iteration11-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration11-2025-09-13.md",
+          "size": 4246
+        },
+        {
           "hash": "9a8db966566bfe2c64a8880f7f19f463",
           "modified": "2025-09-09T22:39:53.947502",
           "name": "README.md",
           "path": "testing-qa/README.md",
           "size": 7909
+        },
+        {
+          "hash": "f5171053f23e37f85435b5655b0c0261",
+          "modified": "2025-09-13T14:38:38.677378",
+          "name": "test-fix-progress-iteration14-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration14-2025-09-13.md",
+          "size": 1888
         },
         {
           "hash": "68b18ec5b7b92f8cac7e46843dd27d5e",
@@ -2311,11 +2395,25 @@
           "size": 6599
         },
         {
+          "hash": "fba925d1e28191ead266d192082516b3",
+          "modified": "2025-09-13T14:55:20.092199",
+          "name": "test-fix-progress-iteration16-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration16-2025-09-13.md",
+          "size": 1792
+        },
+        {
           "hash": "a146528436e4963a071f0f3340300fe3",
           "modified": "2025-09-05T11:37:52.736324",
           "name": "mcp-subtask-persistence-critical-failure-2025-09-05.md",
           "path": "testing-qa/mcp-subtask-persistence-critical-failure-2025-09-05.md",
           "size": 5628
+        },
+        {
+          "hash": "af7a222b95b8f171e8beb19cdf8af1df",
+          "modified": "2025-09-13T13:06:10.883765",
+          "name": "test-fix-progress-session9-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-session9-2025-09-13.md",
+          "size": 1769
         },
         {
           "hash": "c1fb1e3dbd8a288d8a69c5ed5f6d9310",
@@ -2339,6 +2437,13 @@
           "size": 5905
         },
         {
+          "hash": "0fefe9d1e019cef6dd54ca7ee93480bd",
+          "modified": "2025-09-13T10:29:20.385855",
+          "name": "test-fix-progress-session2-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-session2-2025-09-13.md",
+          "size": 2127
+        },
+        {
           "hash": "decea03d6d2fc55b880b38cd9e40d591",
           "modified": "2025-09-08T03:40:58.558388",
           "name": "MCP_TESTING_REPORT.md",
@@ -2346,11 +2451,60 @@
           "size": 10426
         },
         {
+          "hash": "55080f5d8ac508074350eeffe29d2986",
+          "modified": "2025-09-13T16:18:42.971245",
+          "name": "test-fix-progress-iteration26-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration26-2025-09-13.md",
+          "size": 1534
+        },
+        {
           "hash": "daa20d03e14ee0d9509a41a44b349b5a",
           "modified": "2025-09-08T03:45:07.814076",
           "name": "POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
           "path": "testing-qa/POSTGRESQL_TEST_MIGRATION_SUMMARY.md",
           "size": 14550
+        },
+        {
+          "hash": "060e552410cc7dad506e92a8c5ef0e6d",
+          "modified": "2025-09-13T17:33:00.372752",
+          "name": "test-fix-progress-iteration33-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration33-2025-09-13.md",
+          "size": 2031
+        },
+        {
+          "hash": "28bb1dcd421129b08af3d8ce174c9ede",
+          "modified": "2025-09-13T15:53:24.578910",
+          "name": "test-fix-progress-iteration23-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration23-2025-09-13.md",
+          "size": 2286
+        },
+        {
+          "hash": "dfa4e9b97f7de8e8c1b21a9740a53472",
+          "modified": "2025-09-13T10:59:21.616607",
+          "name": "test-fix-progress-session4-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-session4-2025-09-13.md",
+          "size": 2612
+        },
+        {
+          "hash": "ae1bb275f69cd4c8c9b11a4eeaeb5a8e",
+          "modified": "2025-09-13T10:16:51.246152",
+          "name": "test-fix-progress-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-2025-09-13.md",
+          "size": 2357
+        },
+        {
+          "hash": "d9e682d281f37092f3828f57cc366f1a",
+          "modified": "2025-09-13T16:34:32.464655",
+          "name": "test-fix-progress-iteration27-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration27-2025-09-13.md",
+          "size": 2582
+        },
+        {
+          "hash": "df3d781be209f91262a75c11cb853601",
+          "modified": "2025-09-13T11:30:50.224257",
+          "name": "test-fix-progress-session5-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-session5-2025-09-13.md",
+          "size": 4385
         },
         {
           "hash": "6c7a1b70361af52884b60eb445767671",
@@ -2365,6 +2519,20 @@
           "name": "session-hook-performance-tests.md",
           "path": "testing-qa/session-hook-performance-tests.md",
           "size": 11103
+        },
+        {
+          "hash": "f383beb48a570181f56f6b7d0652a9eb",
+          "modified": "2025-09-13T15:18:53.030735",
+          "name": "test-fix-progress-iteration19-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration19-2025-09-13.md",
+          "size": 2016
+        },
+        {
+          "hash": "3d59f10cab043d89f214a8218bb91e3c",
+          "modified": "2025-09-13T15:05:00.120404",
+          "name": "test-fix-progress-iteration17-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration17-2025-09-13.md",
+          "size": 3551
         },
         {
           "hash": "e3f55058a9e0cea12d55d1e2fd15fea3",
@@ -2402,11 +2570,25 @@
           "size": 20706
         },
         {
+          "hash": "a4dd22dc207efdbe5c93538a1d3c9ad2",
+          "modified": "2025-09-13T16:40:08.728132",
+          "name": "test-fix-progress-iteration28-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration28-2025-09-13.md",
+          "size": 3714
+        },
+        {
           "hash": "8062a17ca07c621bd5c4499e8579e11d",
           "modified": "2025-09-08T03:38:44.583029",
           "name": "test-results-and-issues.md",
           "path": "testing-qa/test-results-and-issues.md",
           "size": 7910
+        },
+        {
+          "hash": "f1fed0133e0edf0f25cd293b2a104242",
+          "modified": "2025-09-13T10:41:53.224507",
+          "name": "test-fix-progress-session3-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-session3-2025-09-13.md",
+          "size": 1512
         },
         {
           "hash": "e0df008dd6fc4a6e60b98536abeb7cd1",
@@ -2435,6 +2617,20 @@
           "name": "mcp-test-results-iteration4-2025-09-05.md",
           "path": "testing-qa/mcp-test-results-iteration4-2025-09-05.md",
           "size": 5559
+        },
+        {
+          "hash": "f300d112579d88dc7c0be9009da62c1d",
+          "modified": "2025-09-13T15:25:13.061048",
+          "name": "test-fix-progress-iteration20-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration20-2025-09-13.md",
+          "size": 1900
+        },
+        {
+          "hash": "25168aa6ca93690297f1a50ed2b25cbe",
+          "modified": "2025-09-13T16:01:00.661449",
+          "name": "test-fix-progress-iteration24-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration24-2025-09-13.md",
+          "size": 2962
         },
         {
           "hash": "e831ba8767727623b85fcac9d2e4c8cd",
@@ -2472,11 +2668,25 @@
           "size": 9640
         },
         {
+          "hash": "f3a3735121ad852f1cab9b9aa9fe3410",
+          "modified": "2025-09-13T14:16:02.227635",
+          "name": "test-fix-progress-iteration12-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration12-2025-09-13.md",
+          "size": 3371
+        },
+        {
           "hash": "7dbe5608ebbcca033bfca1c41e3c5546",
           "modified": "2025-09-12T10:59:00.318084",
           "name": "task-management-crud-test-results-2025-09-09.md",
           "path": "testing-qa/task-management-crud-test-results-2025-09-09.md",
           "size": 8526
+        },
+        {
+          "hash": "2419f02f12606c56856bfe316d745219",
+          "modified": "2025-09-13T16:54:36.674223",
+          "name": "test-fix-progress-iteration29-2025-09-13.md",
+          "path": "testing-qa/test-fix-progress-iteration29-2025-09-13.md",
+          "size": 2761
         }
       ],
       "path": "testing-qa"
@@ -2690,7 +2900,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-13T10:04:31.555546",
+  "generated_at": "2025-09-13T18:10:40.563780",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2761,6 +2971,8 @@
       "workers": {
         "fix_tests_loop": {
           "files": [
+            "fix-1by1-context.md",
+            "fix-1by1-results.md",
             "fix-1by1.md"
           ]
         }
@@ -3091,6 +3303,34 @@
         "task-creation-request-2025-09-09.md",
         "task-management-crud-test-results-2025-09-09.md",
         "test-cleanup-report-2025-09-12.md",
+        "test-fix-progress-2025-09-13.md",
+        "test-fix-progress-iteration10-2025-09-13.md",
+        "test-fix-progress-iteration11-2025-09-13.md",
+        "test-fix-progress-iteration12-2025-09-13.md",
+        "test-fix-progress-iteration13-2025-09-13.md",
+        "test-fix-progress-iteration14-2025-09-13.md",
+        "test-fix-progress-iteration15-2025-09-13.md",
+        "test-fix-progress-iteration16-2025-09-13.md",
+        "test-fix-progress-iteration17-2025-09-13.md",
+        "test-fix-progress-iteration18-2025-09-13.md",
+        "test-fix-progress-iteration19-2025-09-13.md",
+        "test-fix-progress-iteration20-2025-09-13.md",
+        "test-fix-progress-iteration23-2025-09-13.md",
+        "test-fix-progress-iteration24-2025-09-13.md",
+        "test-fix-progress-iteration25-2025-09-13.md",
+        "test-fix-progress-iteration26-2025-09-13.md",
+        "test-fix-progress-iteration27-2025-09-13.md",
+        "test-fix-progress-iteration28-2025-09-13.md",
+        "test-fix-progress-iteration29-2025-09-13.md",
+        "test-fix-progress-iteration30-2025-09-13.md",
+        "test-fix-progress-iteration31-2025-09-13.md",
+        "test-fix-progress-iteration32-2025-09-13.md",
+        "test-fix-progress-iteration33-2025-09-13.md",
+        "test-fix-progress-session2-2025-09-13.md",
+        "test-fix-progress-session3-2025-09-13.md",
+        "test-fix-progress-session4-2025-09-13.md",
+        "test-fix-progress-session5-2025-09-13.md",
+        "test-fix-progress-session9-2025-09-13.md",
         "test-modernization-guide.md",
         "test-results-and-issues.md",
         "test-suite-repair-results-2025-09-12.md",
@@ -3131,5 +3371,5 @@
     }
   },
   "total_directories": 29,
-  "total_files": 331
+  "total_files": 361
 }

@@ -85,7 +85,7 @@ class TestTaskMCPController:
     def controller(self, mock_facade_service, mock_workflow_hint_enhancer):
         """Create controller instance with mocked dependencies"""
         return TaskMCPController(
-            facade_service=mock_facade_service,
+            facade_service_or_factory=mock_facade_service,
             workflow_hint_enhancer=mock_workflow_hint_enhancer
         )
 
@@ -106,10 +106,10 @@ class TestTaskMCPController:
     def test_controller_initialization(self, mock_facade_service, mock_workflow_hint_enhancer):
         """Test controller initializes correctly with dependencies"""
         controller = TaskMCPController(
-            facade_service=mock_facade_service,
+            facade_service_or_factory=mock_facade_service,
             workflow_hint_enhancer=mock_workflow_hint_enhancer
         )
-        
+
         assert controller._facade_service == mock_facade_service
         assert controller._workflow_hint_enhancer == mock_workflow_hint_enhancer
         assert isinstance(controller._response_formatter, StandardResponseFormatter)

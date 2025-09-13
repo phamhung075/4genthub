@@ -17,7 +17,7 @@ This module tests the context request DTO classes including:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import fields, is_dataclass
 
 from fastmcp.task_management.application.dtos.context.context_request import (
@@ -41,7 +41,7 @@ class TestCreateContextRequest:
     
     def test_create_context_request_creation(self):
         """Test creating a CreateContextRequest instance"""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         request = CreateContextRequest(
             task_id="task-123",
             title="Test Context",

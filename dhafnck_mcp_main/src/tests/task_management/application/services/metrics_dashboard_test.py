@@ -11,7 +11,11 @@ from fastmcp.task_management.application.services.metrics_dashboard import (
     MetricsDashboard,
     MetricType,
     MetricPoint,
-    Metric
+    Metric,
+    DashboardWidget,
+    AggregationType,
+    TimeRange,
+    MetricAlert
 )
 
 

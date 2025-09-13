@@ -3,70 +3,70 @@
     "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__call_agent",
     "from_action": "default",
-    "created_at": "2025-09-13T06:20:15.399984",
+    "created_at": "2025-09-13T18:05:43.541530",
     "displayed": true
   },
   {
     "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__call_agent",
     "from_action": "default",
-    "created_at": "2025-09-13T06:44:09.020286",
+    "created_at": "2025-09-13T18:11:48.719175",
     "displayed": true
   },
   {
     "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__call_agent",
     "from_action": "default",
-    "created_at": "2025-09-13T07:24:17.216099",
+    "created_at": "2025-09-13T18:26:40.577355",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
-    "from_action": "default",
-    "created_at": "2025-09-13T07:58:40.051354",
+    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n\ud83d\udca1 SUGGESTION: Create subtasks for better tracking\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "create",
+    "created_at": "2025-09-13T18:27:12.121693",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
-    "from_action": "default",
-    "created_at": "2025-09-13T08:05:02.912062",
+    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n\ud83d\udca1 SUGGESTION: Create subtasks for better tracking\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "create",
+    "created_at": "2025-09-13T18:27:44.119014",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83e\udd16 DEBUGGER-AGENT LOADED: Follow agent's specialized workflow\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__call_agent",
     "from_action": "default",
-    "created_at": "2025-09-13T09:02:20.330725",
+    "created_at": "2025-09-13T18:27:59.984540",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
-    "from_action": "default",
-    "created_at": "2025-09-13T09:19:58.110117",
+    "message": "<system-reminder>\n\ud83d\udca1 GET COMPLETE - REMINDERS:\n\ud83d\udccb REVIEW: Check task status and plan next actions\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "get",
+    "created_at": "2025-09-13T18:28:08.910978",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
-    "from_action": "default",
-    "created_at": "2025-09-13T09:25:35.476415",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "update",
+    "created_at": "2025-09-13T18:28:17.542274",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
-    "from_action": "default",
-    "created_at": "2025-09-13T09:37:57.252918",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "update",
+    "created_at": "2025-09-13T18:28:30.236498",
     "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__call_agent",
-    "from_action": "default",
-    "created_at": "2025-09-13T09:41:45.749064",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "update",
+    "created_at": "2025-09-13T18:34:36.574425",
     "displayed": true
   }
 ]
