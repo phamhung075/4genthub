@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 # Add project root to Python path
-project_root = Path(__file__).resolve().parent / "dhafnck_mcp_main/src"
+project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from fastmcp.task_management.application.use_cases.call_agent import call_agent

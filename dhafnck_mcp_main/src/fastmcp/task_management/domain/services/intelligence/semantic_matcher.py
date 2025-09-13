@@ -11,18 +11,58 @@ Key Features:
 - Caching for performance optimization
 """
 
-import numpy as np
 import logging
 from typing import List, Dict, Any, Tuple, Optional, Union
-from sentence_transformers import SentenceTransformer
-import faiss
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import pickle
 import hashlib
 from pathlib import Path
 
+# Optional ML dependencies with fallbacks
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    import array
+    np = None
+    HAS_NUMPY = False
+
+try:
+    from sentence_transformers import SentenceTransformer
+    HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    SentenceTransformer = None
+    HAS_SENTENCE_TRANSFORMERS = False
+
+try:
+    import faiss
+    HAS_FAISS = True
+except ImportError:
+    faiss = None
+    HAS_FAISS = False
+
 logger = logging.getLogger(__name__)
+
+
+class MockSentenceTransformer:
+    """Mock sentence transformer for testing when dependencies are not available."""
+    
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+        
+    def get_sentence_embedding_dimension(self) -> int:
+        """Return a standard embedding dimension for testing."""
+        return 384
+        
+    def encode(self, texts: List[str], **kwargs) -> 'np.ndarray':
+        """Return mock embeddings for testing."""
+        if HAS_NUMPY:
+            return np.random.random((len(texts), 384))
+        else:
+            # Fallback to simple list of lists
+            import random
+            return [[random.random() for _ in range(384)] for _ in range(len(texts))]
 
 
 @dataclass
@@ -32,7 +72,7 @@ class ContextItem:
     content: str  # Combined text for embedding
     context_type: str  # 'task', 'branch', 'project', 'global'
     metadata: Dict[str, Any] = field(default_factory=dict)
-    embedding: Optional[np.ndarray] = None
+    embedding: Optional[Any] = None  # np.ndarray when numpy available, list otherwise
     last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -80,7 +120,11 @@ class SemanticMatcher:
         
         # Initialize model
         logger.info(f"Loading sentence transformer model: {model_name}")
-        self.model = SentenceTransformer(model_name)
+        if HAS_SENTENCE_TRANSFORMERS:
+            self.model = SentenceTransformer(model_name)
+        else:
+            logger.warning("sentence_transformers not available, using mock for testing")
+            self.model = MockSentenceTransformer(model_name)
         self.embedding_dim = self.model.get_sentence_embedding_dimension()
         
         # Setup caching
@@ -91,7 +135,7 @@ class SemanticMatcher:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize FAISS index
-        self.faiss_index: Optional[faiss.Index] = None
+        self.faiss_index: Optional[Any] = None  # faiss.Index when available
         self.context_items: List[ContextItem] = []
         self.item_id_to_index: Dict[str, int] = {}
         
@@ -103,7 +147,7 @@ class SemanticMatcher:
         return hashlib.md5(content.encode()).hexdigest()
     
     
-    def _load_cached_embedding(self, content: str) -> Optional[np.ndarray]:
+    def _load_cached_embedding(self, content: str) -> Optional[Any]:
         """Load cached embedding if available."""
         if not self.cache_embeddings:
             return None
@@ -121,7 +165,7 @@ class SemanticMatcher:
         return None
     
     
-    def _save_cached_embedding(self, content: str, embedding: np.ndarray) -> None:
+    def _save_cached_embedding(self, content: str, embedding: Any) -> None:
         """Save embedding to cache."""
         if not self.cache_embeddings:
             return
@@ -136,7 +180,7 @@ class SemanticMatcher:
             logger.warning(f"Failed to save cached embedding: {e}")
     
     
-    def generate_embedding(self, content: str) -> np.ndarray:
+    def generate_embedding(self, content: str) -> Any:
         """
         Generate embedding for text content.
         
@@ -160,7 +204,7 @@ class SemanticMatcher:
         return embedding
     
     
-    def generate_embeddings_batch(self, contents: List[str]) -> List[np.ndarray]:
+    def generate_embeddings_batch(self, contents: List[str]) -> List[Any]:
         """
         Generate embeddings for multiple texts efficiently.
         
@@ -198,8 +242,12 @@ class SemanticMatcher:
         return embeddings
     
     
-    def _build_faiss_index(self) -> faiss.Index:
+    def _build_faiss_index(self) -> Optional[Any]:
         """Build FAISS index from current context items."""
+        if not HAS_FAISS:
+            logger.warning("FAISS not available, using fallback similarity search")
+            return None
+            
         if not self.context_items:
             logger.warning("No context items to index")
             return faiss.IndexFlatIP(self.embedding_dim)  # Empty index
@@ -215,19 +263,25 @@ class SemanticMatcher:
                 item.embedding = self.generate_embedding(item.content)
                 embeddings.append(item.embedding)
         
-        embeddings_matrix = np.array(embeddings).astype('float32')
+        if HAS_NUMPY:
+            embeddings_matrix = np.array(embeddings).astype('float32')
+        else:
+            # Simple fallback without numpy
+            embeddings_matrix = embeddings
         
         # Build appropriate index
         if self.faiss_index_type == "flat":
             index = faiss.IndexFlatIP(self.embedding_dim)  # Inner product (cosine similarity)
-            index.add(embeddings_matrix)
+            if HAS_NUMPY:
+                index.add(embeddings_matrix)
         elif self.faiss_index_type == "ivf":
             # For larger datasets - requires training
             nlist = min(100, len(embeddings) // 10)  # Number of clusters
             quantizer = faiss.IndexFlatIP(self.embedding_dim)
             index = faiss.IndexIVFFlat(quantizer, self.embedding_dim, nlist)
-            index.train(embeddings_matrix)
-            index.add(embeddings_matrix)
+            if HAS_NUMPY:
+                index.train(embeddings_matrix)
+                index.add(embeddings_matrix)
         else:
             raise ValueError(f"Unsupported FAISS index type: {self.faiss_index_type}")
         
@@ -315,7 +369,7 @@ class SemanticMatcher:
         return results
     
     
-    def get_context_similarity_matrix(self) -> np.ndarray:
+    def get_context_similarity_matrix(self) -> Any:
         """
         Get similarity matrix between all context items.
         

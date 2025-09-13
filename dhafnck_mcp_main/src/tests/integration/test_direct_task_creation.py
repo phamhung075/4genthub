@@ -5,8 +5,11 @@ Test direct task creation through the facade
 
 import sys
 import asyncio
-sys.path.append('/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src')
+import pytest
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+@pytest.mark.asyncio
 async def test_direct_task_creation():
     """Test task creation directly through the facade"""
     
@@ -25,10 +28,10 @@ async def test_direct_task_creation():
     )
     
     print(f"Request created successfully!")
-    print(f"Title: {pytest_request.title}")
-    print(f"Assignees: {pytest_request.assignees}")
-    print(f"Assignees type: {type(pytest_request.assignees)}")
-    print(f"Assignees length: {len(pytest_request.assignees)}")
+    print(f"Title: {request.title}")
+    print(f"Assignees: {request.assignees}")
+    print(f"Assignees type: {type(request.assignees)}")
+    print(f"Assignees length: {len(request.assignees)}")
     
     # Test task entity creation
     print("\n=== Testing Task Entity Creation ===")
@@ -37,9 +40,9 @@ async def test_direct_task_creation():
     
     try:
         task = Task(
-            title=pytest_request.title,
-            description=pytest_request.description,
-            assignees=pytest_request.assignees  # Use the processed assignees from DTO
+            title=request.title,
+            description=request.description,
+            assignees=request.assignees  # Use the processed assignees from DTO
         )
         print(f"Task created successfully!")
         print(f"Task assignees: {task.assignees}")

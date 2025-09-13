@@ -29,6 +29,10 @@ class ProjectCRUDHandler:
                 description=description
             )
             
+            # Check if facade returned an error response
+            if isinstance(result, dict) and result.get("success") is False:
+                return result  # Pass through facade error response directly
+            
             return self._response_formatter.create_success_response(
                 operation="create",
                 data=result,
@@ -59,6 +63,10 @@ class ProjectCRUDHandler:
             else:
                 raise ValueError("Either project_id or name must be provided")
             
+            # Check if facade returned an error response
+            if isinstance(result, dict) and result.get("success") is False:
+                return result  # Pass through facade error response directly
+            
             # Include project context
             if result and isinstance(result, dict):
                 result = self._include_project_context(result)
@@ -87,10 +95,14 @@ class ProjectCRUDHandler:
         try:
             result = await facade.list_projects()
             
+            # Check if facade returned an error response
+            if isinstance(result, dict) and result.get("success") is False:
+                return result  # Pass through facade error response directly
+            
             return self._response_formatter.create_success_response(
                 operation="list",
                 data=result,
-                metadata={"project_count": len(result.get('projects', []))}
+                metadata={"project_count": len(result.get('data', {}).get('projects', []))}
             )
             
         except Exception as e:
@@ -112,6 +124,10 @@ class ProjectCRUDHandler:
                 name=name,
                 description=description
             )
+            
+            # Check if facade returned an error response
+            if isinstance(result, dict) and result.get("success") is False:
+                return result  # Pass through facade error response directly
             
             return self._response_formatter.create_success_response(
                 operation="update",
@@ -137,6 +153,10 @@ class ProjectCRUDHandler:
         
         try:
             result = await facade.delete_project(project_id=project_id, force=force)
+            
+            # Check if facade returned an error response
+            if isinstance(result, dict) and result.get("success") is False:
+                return result  # Pass through facade error response directly
             
             return self._response_formatter.create_success_response(
                 operation="delete",

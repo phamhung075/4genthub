@@ -6,8 +6,11 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/integration/test_selective_field_queries.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/integration/test_assignees_fix.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/integration/agent_assignment_flow_test.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/integration/test_direct_task_creation.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/integration/test_manual_task_creation.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/integration/task_management/test_subtask_user_id_fix.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/integration/task_management/test_critical_fixes_verification.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/integration/task_management/interface/git_branch_filtering_integration_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/integration/task_management/interface/git_branch_zero_tasks_deletion_integration_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/auth/keycloak_integration_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/auth/hook_auth_test.py:MISSING
@@ -26,6 +29,7 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/connection_management/test_secure_health_check.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/connection_management/interface/controllers/connection_mcp_controller_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/ai_task_planning/test_ai_planning_init.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/ai_task_planning/application/services/ai_planning_service_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/ai_task_planning/application/test_application_init.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/ai_task_planning/domain/entities/planning_request_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/ai_task_planning/domain/entities/task_plan_test.py:MISSING
@@ -36,6 +40,7 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/ai_task_planning/interface/test_interface_init.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/assignees_validation_fix_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/comprehensive_agent_management_test.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/factories/subtask_facade_factory_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/use_cases/agent_mappings_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/use_cases/delete_task_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/use_cases/ai_task_creation_use_case_test.py:MISSING
@@ -44,6 +49,7 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/use_cases/context_templates_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/services/agent_coordination_service_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/services/context_template_manager_test.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/services/context_cache_optimizer_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/services/hint_optimizer_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/services/workflow_hints_simplifier_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/task_management/application/services/dependency_management_engine_test.py:MISSING
@@ -134,6 +140,7 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/connection_management/domain/value_objects/server_status_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/connection_management/domain/value_objects/status_update_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/test_agent_name_resolution.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/agent_inheritance_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/mcp_auto_injection/test_session_hooks.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/services/test_context_field_selector.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/services/test_context_template_manager.py:MISSING
@@ -194,6 +201,7 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/work_session_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/project_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/test_project.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/rule_entity_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/git_branch_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/test_context.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/test_task.py:MISSING
@@ -207,7 +215,9 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/test_agent_inheritance.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/entities/test_global_context_nested_structure.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/test_dependency_validation_service.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/task_validation_service_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/test_rule_composition_service.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/task_progress_service_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/test_context_derivation_service.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/test_task_priority_service.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/services/test_task_state_transition_service.py:MISSING
@@ -224,6 +234,8 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/domain/constants_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/interface/controllers/task_user_id_parameter_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/interface/controllers/task_git_branch_filtering_test.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/interface/controllers/project_mcp_controller_test.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/interface/controllers/unit_task_mcp_controller_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/interface/controllers/git_branch_zero_tasks_deletion_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/interface/utils/parameter_validation_fix_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/base_user_scoped_repository_test.py:MISSING
@@ -236,6 +248,7 @@
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/orm/unit_project_repository_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/orm/test_git_branch_repository_comprehensive.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/orm/test_comprehensive_branch_cascade_deletion.py:MISSING
+/home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/orm/subtask_repository_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/orm/unit_task_repository_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/repositories/base_orm_repository_test.py:MISSING
 /home/daihungpham/__projects__/agentic-project/src/tests/unit/task_management/infrastructure/migrations/run_migration_005_test.py:MISSING

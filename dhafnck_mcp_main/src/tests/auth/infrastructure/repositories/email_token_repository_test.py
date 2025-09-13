@@ -241,7 +241,13 @@ class TestEmailTokenRepository:
         
         # Verify custom timestamp was used
         retrieved = repository.get_token(sample_token.token)
-        assert retrieved.used_at == used_time
+        # SQLite stores datetime without timezone, so compare as naive datetimes
+        if retrieved.used_at.tzinfo is None and used_time.tzinfo is not None:
+            # Convert timezone-aware datetime to naive for comparison
+            expected_used_time = used_time.replace(tzinfo=None)
+            assert retrieved.used_at == expected_used_time
+        else:
+            assert retrieved.used_at == used_time
     
     def test_mark_token_used_failure(self, repository, sample_token):
         """Test marking token as used with database error"""
@@ -577,6 +583,15 @@ class TestGlobalRepository:
 
 class TestEdgeCases:
     """Test edge cases and error conditions"""
+    
+    @pytest.fixture
+    def temp_db(self):
+        """Create temporary database for testing"""
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_file.close()
+        db_url = f"sqlite:///{temp_file.name}"
+        yield db_url
+        os.unlink(temp_file.name)
     
     @pytest.fixture
     def repository(self, temp_db):

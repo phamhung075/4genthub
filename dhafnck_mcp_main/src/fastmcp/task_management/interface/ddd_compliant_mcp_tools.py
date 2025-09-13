@@ -106,12 +106,12 @@ class DDDCompliantMCPTools:
         
         # Initialize controllers with facade service
         self._task_controller = TaskMCPController(
-            facade_service=self._facade_service,
+            facade_service_or_factory=self._facade_service,
             workflow_hint_enhancer=None
         )
         
         self._subtask_controller = SubtaskMCPController(
-            facade_service=self._facade_service,
+            facade_service_or_factory=self._facade_service,
             task_facade=None,  # Will be set if Vision System is enabled
             context_facade=None,  # Will be set if Vision System is enabled
             task_repository_factory=self._task_repository_factory

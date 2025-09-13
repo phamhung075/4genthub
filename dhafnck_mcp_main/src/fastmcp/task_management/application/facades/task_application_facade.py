@@ -73,6 +73,8 @@ class TaskApplicationFacade:
         try:
             from ...domain.interfaces.repository_factory import IContextRepository
             from ...domain.interfaces.database_session import IDatabaseSessionFactory
+            from ...infrastructure.database.database_config import get_db_config
+            from ...infrastructure.repositories.task_context_repository import TaskContextRepository
             db_config = get_db_config()
             task_context_repository = TaskContextRepository(db_config.SessionLocal)
         except Exception as e:

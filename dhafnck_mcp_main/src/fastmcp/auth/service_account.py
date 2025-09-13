@@ -11,7 +11,7 @@ import asyncio
 import json
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 import httpx
 import jwt

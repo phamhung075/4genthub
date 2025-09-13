@@ -7,13 +7,12 @@ workload, and performance metrics across the system.
 import asyncio
 import logging
 from typing import Dict, List, Optional, Set, Any, Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 import json
 
 from ...domain.entities.agent_session import AgentSession, SessionState
-from ...domain.value_objects.agents import AgentStatus
 from ...domain.value_objects.coordination import AgentCommunication
 from ...domain.events.agent_events import AgentStatusBroadcast
 from ...infrastructure.event_bus import EventBus
@@ -189,7 +188,7 @@ class RealTimeStatusTracker:
     async def update_agent_status(
         self,
         agent_id: str,
-        status: AgentStatus,
+        status: SessionState,
         current_task_id: Optional[str] = None,
         current_activity: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
@@ -203,12 +202,7 @@ class RealTimeStatusTracker:
         session = self.active_sessions[session_id]
         
         # Update session state based on status
-        if status == AgentStatus.IDLE:
-            session.state = SessionState.IDLE
-        elif status == AgentStatus.BUSY:
-            session.state = SessionState.BUSY
-        elif status == AgentStatus.UNAVAILABLE:
-            session.state = SessionState.DISCONNECTED
+        session.state = status
         
         # Update activity
         if current_task_id:

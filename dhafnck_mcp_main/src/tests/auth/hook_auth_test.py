@@ -328,7 +328,7 @@ class TestTokenCreation:
         token = create_hook_token()
         
         # Decode and verify
-        payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM])
+        payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM], audience="mcp-server")
         
         assert payload["sub"] == "hook-user"
         assert payload["type"] == "api_token"
@@ -355,14 +355,14 @@ class TestTokenCreation:
         """Test creating token with custom user ID"""
         token = create_hook_token(user_id="custom-hook-123")
         
-        payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM])
+        payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM], audience="mcp-server")
         assert payload["sub"] == "custom-hook-123"
     
     def test_create_hook_token_custom_expiry(self):
         """Test creating token with custom expiry"""
         token = create_hook_token(expires_in_days=7)
         
-        payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM])
+        payload = jwt.decode(token, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM], audience="mcp-server")
         
         # Check expiry is approximately 7 days from now
         exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
@@ -377,8 +377,8 @@ class TestTokenCreation:
         token1 = create_hook_token()
         token2 = create_hook_token()
         
-        payload1 = jwt.decode(token1, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM])
-        payload2 = jwt.decode(token2, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM])
+        payload1 = jwt.decode(token1, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM], audience="mcp-server")
+        payload2 = jwt.decode(token2, HOOK_JWT_SECRET, algorithms=[HOOK_JWT_ALGORITHM], audience="mcp-server")
         
         assert payload1["jti"] != payload2["jti"]
         assert payload1["jti"].startswith("hook_")

@@ -10,7 +10,16 @@ from typing import Optional
 from sqlalchemy import create_engine, Engine
 from dotenv import load_dotenv
 
-from .002_create_email_tokens_table import run_migration, rollback_migration
+from . import __init__
+import importlib.util
+
+# Import the migration file dynamically to handle numeric prefix
+migration_file = os.path.join(os.path.dirname(__file__), "002_create_email_tokens_table.py")
+spec = importlib.util.spec_from_file_location("email_tokens_migration", migration_file)
+email_tokens_migration = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(email_tokens_migration)
+run_migration = email_tokens_migration.run_migration
+rollback_migration = email_tokens_migration.rollback_migration
 
 load_dotenv()
 logger = logging.getLogger(__name__)

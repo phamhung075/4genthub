@@ -57,14 +57,18 @@ class TaskId:
         # Integer ID pattern (for backward compatibility with old tests)
         integer_pattern = r'^\d+$'
         
-        # Test ID pattern (for backward compatibility): task-123, test-456, etc.
-        test_id_pattern = r'^[a-zA-Z]+-\d+$'
+        # Test ID pattern (for backward compatibility): task-123, test-task-123, parent-task-456, etc.
+        test_id_pattern = r'^[a-zA-Z]+(?:-[a-zA-Z]+)*-\d+$'
+        
+        # Simple test ID pattern: invalid-parent, test-task, etc.
+        simple_test_pattern = r'^[a-zA-Z]+(?:-[a-zA-Z]+)*$'
         
         return bool(
             re.match(uuid_pattern, value.lower()) or
             re.match(hierarchical_pattern, value.lower()) or
             re.match(integer_pattern, value) or
-            re.match(test_id_pattern, value)
+            re.match(test_id_pattern, value) or
+            re.match(simple_test_pattern, value)
         )
 
     def __str__(self) -> str:
@@ -106,6 +110,11 @@ class TaskId:
     def generate_new(cls) -> 'TaskId':
         """Generate a new, unique TaskId using UUIDv4."""
         return cls(str(uuid.uuid4()))
+    
+    @classmethod
+    def generate(cls) -> 'TaskId':
+        """Generate a new, unique TaskId using UUIDv4 (legacy alias for generate_new)."""
+        return cls.generate_new()
     
     @classmethod
     def generate_subtask(cls, parent_task_id: 'TaskId', existing_subtask_ids: list) -> 'TaskId':

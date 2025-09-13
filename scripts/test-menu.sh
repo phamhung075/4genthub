@@ -270,12 +270,12 @@ run_smart_tests() {
             if echo "$line" | grep -q "PASSED"; then
                 local test_name=$(echo "$line" | sed -n 's/.*\(src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
-                    echo "PASSED:${PROJECT_ROOT}/${test_name}" >> "$temp_results"
+                    echo "PASSED:${PROJECT_ROOT}/dhafnck_mcp_main/${test_name}" >> "$temp_results"
                 fi
             elif echo "$line" | grep -q "FAILED"; then
                 local test_name=$(echo "$line" | sed -n 's/.*\(src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
-                    echo "FAILED:${PROJECT_ROOT}/${test_name}" >> "$temp_results"
+                    echo "FAILED:${PROJECT_ROOT}/dhafnck_mcp_main/${test_name}" >> "$temp_results"
                 fi
             fi
             echo "$line"

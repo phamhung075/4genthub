@@ -117,7 +117,7 @@ class PlannedTask:
         # Different phases can often run in parallel
         parallel_phases = {
             (ExecutionPhase.ARCHITECTURE, ExecutionPhase.PLANNING),
-            (ExecutionPhase.IMPLEMENTATION, ExecutionPhase.DOCUMENTATION),
+            (ExecutionPhase.IMPLEMENTATION, ExecutionPhase.DEPLOYMENT),
             (ExecutionPhase.TESTING, ExecutionPhase.REVIEW)
         }
         

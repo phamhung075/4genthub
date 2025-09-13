@@ -41,13 +41,8 @@ class TestGitBranchFilteringIntegration:
         self.project_id = str(uuid.uuid4())
         self.user_id = "test-user-integration"
         
-        # Get real facade via factory singleton with required dependencies
-        task_repo_factory = TaskRepositoryFactory()
-        subtask_repo_factory = SubtaskRepositoryFactory()
-        self.facade_factory = TaskFacadeFactory.get_instance(
-            repository_factory=task_repo_factory,
-            subtask_repository_factory=subtask_repo_factory
-        )
+        # Get real facade via factory singleton (DDD compliant)
+        self.facade_factory = TaskFacadeFactory.get_instance()
         self.facade = self.facade_factory.create_task_facade(user_id=self.user_id)
         
         # Create project and git branches first

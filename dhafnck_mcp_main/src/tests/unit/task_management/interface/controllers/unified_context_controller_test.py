@@ -10,7 +10,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 import json
 from typing import Dict, Any
 
-from fastmcp.task_management.interface.mcp_controllers.unified_context_controller import UnifiedContextMCPController
+from fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller import UnifiedContextMCPController
 from fastmcp.task_management.application.facades.unified_context_facade import UnifiedContextFacade
 from fastmcp.task_management.application.services.facade_service import FacadeService
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
@@ -109,8 +109,8 @@ class TestUnifiedContextMCPController:
         
         # Verify response structure (now uses StandardResponseFormatter)
         assert result["success"] is True
-        assert result["status"] == "success"
         assert "data" in result
+        assert "meta" in result
         # The data field contains the context directly
         assert result["data"]["id"] == "task-123"
         assert result["data"]["level"] == "task"
@@ -343,8 +343,8 @@ class TestUnifiedContextMCPController:
         )
         
         assert result["success"] is True
-        assert result["status"] == "success"
         assert "data" in result
+        assert "meta" in result
         assert "contexts" in result["data"]
         assert len(result["data"]["contexts"]) == 2
     
@@ -363,8 +363,8 @@ class TestUnifiedContextMCPController:
         )
         
         assert result["success"] is False
-        assert result["status"] == "failure"
         assert "error" in result
+        assert "meta" in result
         assert "Unknown action: invalid_action" in result["error"]["message"]
         assert "Valid actions:" in result["error"]["message"]
     
@@ -413,11 +413,9 @@ class TestUnifiedContextMCPController:
         )
         
         assert result["success"] is False
-        assert result["status"] == "failure"
         assert "error" in result
+        assert "meta" in result
         assert "Invalid JSON string" in result["error"]["message"]
-        assert "metadata" in result
-        assert "suggestions" in result["metadata"]
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
     def test_manage_context_boolean_parameter_coercion(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
@@ -488,8 +486,8 @@ class TestUnifiedContextMCPController:
         )
         
         assert result["success"] is False
-        assert result["status"] == "failure"
         assert "error" in result
+        assert "meta" in result
         assert "Invalid context data" in result["error"]["message"]
         assert result["error"]["code"] == "VALIDATION_ERROR"
     

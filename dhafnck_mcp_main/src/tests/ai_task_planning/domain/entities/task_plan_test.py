@@ -211,7 +211,7 @@ class TestPlannedTask:
             title="Documentation Task",
             description="Write docs",
             task_type=TaskType.DOCUMENTATION,
-            phase=ExecutionPhase.DOCUMENTATION,
+            phase=ExecutionPhase.DEPLOYMENT,
             agent_assignment=AgentAssignment("doc-agent")
         )
         

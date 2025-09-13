@@ -22,6 +22,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - `context_notifications_test.py`: Tests for WebSocket real-time notifications and subscription management (30+ test cases)
 
 ### Fixed
+- **Test Path Generation in Test Runner Scripts**: Fixed incorrect test paths in test cache files
+  - Modified `scripts/test-menu.sh` to generate correct paths with `dhafnck_mcp_main/` prefix
+  - Fixed path construction in lines 273 and 278 to use `${PROJECT_ROOT}/dhafnck_mcp_main/${test_name}`
+  - Addresses root cause of failed tests not running due to incorrect path references
+  - Test cache files (`failed_tests.txt`, `passed_tests.txt`) now store correct absolute paths
 - **Test File Import Errors**: Fixed 24 failing test files with missing module imports
   - Created missing `performance_suite.py` module with complete base classes
   - Fixed `conftest_simplified.py` by removing non-existent imports and adding timezone support

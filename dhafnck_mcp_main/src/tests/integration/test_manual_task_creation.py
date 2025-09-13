@@ -5,8 +5,11 @@ Test manual task creation with direct calls
 
 import sys
 import asyncio
-sys.path.append('/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src')
+import pytest
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+@pytest.mark.asyncio
 async def test_manual_task_creation():
     """Test task creation manually"""
     
@@ -37,7 +40,7 @@ async def test_manual_task_creation():
         estimated_effort="2 hours"
     )
     
-    print(f"DTO assignees after processing: {pytest_request.assignees}")
+    print(f"DTO assignees after processing: {request.assignees}")
     
     # Step 3: Test Task entity creation
     from fastmcp.task_management.domain.entities.task import Task

@@ -160,7 +160,7 @@ class ContextOperationHandler:
         if "context" in facade_response:
             logger.info(f"DEBUG: facade_response has context with keys: {facade_response['context'].keys() if isinstance(facade_response['context'], dict) else 'not a dict'}")
         
-        return StandardResponseFormatter.format_context_response(
+        return self._response_formatter.format_context_response(
             facade_response,
             operation=operation,
             standardize_field_names=True

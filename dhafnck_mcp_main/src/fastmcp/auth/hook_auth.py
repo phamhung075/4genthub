@@ -10,10 +10,10 @@ import os
 import json
 import logging
 from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -67,12 +67,15 @@ class HookAuthValidator:
                     # Check expiration
                     if "exp" in payload:
                         exp_timestamp = payload["exp"]
-                        if datetime.now().timestamp() > exp_timestamp:
+                        if datetime.now(timezone.utc).timestamp() > exp_timestamp:
                             raise HTTPException(status_code=401, detail="Token expired")
                     
                     self.logger.info(f"Hook token validated successfully: {payload.get('sub', 'unknown')}")
                     return payload
                     
+                except ExpiredSignatureError as e:
+                    self.logger.warning(f"Hook token expired: {e}")
+                    raise HTTPException(status_code=401, detail="Token expired")
                 except JWTError as e:
                     self.logger.warning(f"Hook token validation failed: {e}")
                     # Token structure is correct but signature invalid
@@ -87,6 +90,9 @@ class HookAuthValidator:
         except JWTError as e:
             self.logger.error(f"Token decode error: {e}")
             raise HTTPException(status_code=401, detail="Invalid token format")
+        except HTTPException:
+            # Re-raise HTTPExceptions from inner blocks
+            raise
         except Exception as e:
             self.logger.error(f"Unexpected auth error: {e}")
             raise HTTPException(status_code=500, detail="Authentication error")
@@ -195,7 +201,7 @@ def create_hook_token(user_id: str = "hook-user", expires_in_days: int = 30) -> 
         "aud": "mcp-server",
         "iat": now.timestamp(),
         "exp": expire.timestamp(),
-        "jti": f"hook_{int(now.timestamp())}",
+        "jti": f"hook_{int(now.timestamp() * 1000000)}",  # Use microseconds for uniqueness
         "scopes": [
             "mcp-api",
             "tasks:read",
