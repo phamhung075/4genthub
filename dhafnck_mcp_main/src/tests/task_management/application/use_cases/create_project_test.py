@@ -81,8 +81,8 @@ class TestCreateProjectUseCase:
         """Test creating project with legacy signature (explicit ID)"""
         project_id = "explicit-project-123"
         
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -117,8 +117,8 @@ class TestCreateProjectUseCase:
     @pytest.mark.asyncio
     async def test_create_project_backward_compatibility(self):
         """Test backward compatibility for old calling convention"""
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -154,8 +154,8 @@ class TestCreateProjectUseCase:
     @pytest.mark.asyncio
     async def test_create_project_with_main_branch(self):
         """Test that project creates default main branch"""
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -502,8 +502,8 @@ class TestProjectEntityCreation:
     @pytest.mark.asyncio
     async def test_project_git_branch_creation(self):
         """Test that main git branch is created correctly"""
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -532,8 +532,8 @@ class TestProjectEntityCreation:
     @pytest.mark.asyncio
     async def test_uuid_generation_validation(self):
         """Test that generated UUIDs are valid"""
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -583,8 +583,8 @@ class TestErrorScenarios:
     @pytest.mark.asyncio
     async def test_whitespace_only_project_name(self):
         """Test handling of whitespace-only project name"""
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -607,8 +607,8 @@ class TestErrorScenarios:
         """Test handling of very long project names"""
         long_name = "A" * 1000
         
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -631,8 +631,8 @@ class TestErrorScenarios:
         """Test handling of special characters in project name"""
         special_name = "Test Project!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
         
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -655,8 +655,8 @@ class TestErrorScenarios:
         """Test handling of Unicode characters in project name"""
         unicode_name = "Test Project 测试项目 プロジェクト مشروع"
         
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory
@@ -757,8 +757,8 @@ class TestIntegrationScenarios:
         
         self.mock_repository.save = AsyncMock(side_effect=delayed_save)
         
-        # Mock context creation
-        with patch('fastmcp.task_management.application.use_cases.create_project.UnifiedContextFacadeFactory') as mock_factory_class:
+        # Mock context creation - use correct import path since it's imported locally in the function
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class:
             mock_factory = Mock()
             mock_facade = Mock()
             mock_factory_class.return_value = mock_factory

@@ -94,24 +94,25 @@ class TestUniversalUserAuthentication:
         }
         
         with patch.dict(os.environ, {"KEYCLOAK_URL": "https://keycloak.example.com"}):
-            with patch('jwt.decode') as mock_decode:
-                # First call returns unverified payload
-                mock_decode.return_value = keycloak_payload
-                
-                with patch('fastmcp.auth.keycloak_dependencies.validate_keycloak_token') as mock_validate:
-                    mock_user = User(
-                        id="keycloak-user-123",
-                        email="user@keycloak.com",
-                        username="kcuser",
-                        password_hash="keycloak-authenticated"
-                    )
-                    mock_validate.return_value = mock_user
-                    
-                    user = await get_current_user_universal(mock_credentials)
-                    
-                    assert user.id == "keycloak-user-123"
-                    assert user.email == "user@keycloak.com"
-                    mock_validate.assert_called_once_with("test.jwt.token")
+            with patch('fastmcp.auth.keycloak_dependencies.KEYCLOAK_URL', "https://keycloak.example.com"):
+                with patch('jwt.decode') as mock_decode:
+                    # First call returns unverified payload
+                    mock_decode.return_value = keycloak_payload
+
+                    with patch('fastmcp.auth.keycloak_dependencies.validate_keycloak_token') as mock_validate:
+                        mock_user = User(
+                            id="keycloak-user-123",
+                            email="user@keycloak.com",
+                            username="kcuser",
+                            password_hash="keycloak-authenticated"
+                        )
+                        mock_validate.return_value = mock_user
+
+                        user = await get_current_user_universal(mock_credentials)
+
+                        assert user.id == "keycloak-user-123"
+                        assert user.email == "user@keycloak.com"
+                        mock_validate.assert_called_once_with("test.jwt.token")
     
     @pytest.mark.asyncio
     async def test_get_current_user_local_token(self, mock_credentials):

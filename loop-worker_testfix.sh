@@ -225,12 +225,70 @@ while :; do
         echo ""
         echo "---"
         echo ""
-        
+
         # Include previous results if available (but only send once per iteration)
         if [[ $ITERATION -gt 1 ]] && [[ -f "${CONTEXT_FILE}.results" ]]; then
             echo "# Previous Analysis Results (from prior iterations)"
             echo ""
-            cat "${CONTEXT_FILE}.results"
+
+            # Extract last 3 files with full content and others as relative paths
+            echo "## Context Strategy: Last 3 files with full content, others as relative paths"
+            echo ""
+
+            # Create temp file to process the results
+            TEMP_RESULTS=$(mktemp)
+            cat "${CONTEXT_FILE}.results" > "$TEMP_RESULTS"
+
+            # Extract file paths from results (looking for test file patterns)
+            echo "### File References:"
+            echo ""
+
+            # Find all test file references in the results
+            grep -oE "(dhafnck_mcp_main/src/tests/[^[:space:]]+\.py|tests/[^[:space:]]+\.py)" "$TEMP_RESULTS" | sort -u > /tmp/test_files_list.txt 2>/dev/null || true
+
+            # Count total files found
+            TOTAL_FILES=$(wc -l < /tmp/test_files_list.txt 2>/dev/null || echo "0")
+
+            if [[ $TOTAL_FILES -gt 3 ]]; then
+                echo "#### Files to include by path only (${TOTAL_FILES} total, showing paths for all except last 3):"
+                echo ""
+
+                # Show all files except last 3 as paths only
+                head -n $((TOTAL_FILES - 3)) /tmp/test_files_list.txt | while read -r file; do
+                    echo "- \`$file\`"
+                done
+                echo ""
+
+                echo "#### Last 3 files with detailed context:"
+                echo ""
+
+                # Get the last 3 files
+                tail -n 3 /tmp/test_files_list.txt > /tmp/last_3_files.txt
+
+                # Include full content for last 3 files from the results
+                LAST_3_FILES=$(tail -n 3 /tmp/test_files_list.txt)
+                for file in $LAST_3_FILES; do
+                    echo "##### File: \`$file\`"
+                    # Extract content related to this file from results
+                    grep -A 10 -B 2 "$file" "$TEMP_RESULTS" | head -50 || true
+                    echo ""
+                done
+
+            else
+                echo "#### All ${TOTAL_FILES} files with context:"
+                echo ""
+                # If 3 or fewer files, include all with full context
+                cat "${CONTEXT_FILE}.results"
+            fi
+
+            # Clean up temp files
+            rm -f "$TEMP_RESULTS" /tmp/test_files_list.txt /tmp/last_3_files.txt 2>/dev/null || true
+
+            echo ""
+            echo "### Summary of Previous Analysis:"
+            echo ""
+            # Include just a summary of the last iteration's key findings
+            tail -50 "${CONTEXT_FILE}.results" | grep -E "(PASSED|FAILED|ERROR|Success|Fixed|Issue)" | head -20 || echo "No specific test results found in previous iteration"
         fi
     } > "$CONTEXT_FILE"
     

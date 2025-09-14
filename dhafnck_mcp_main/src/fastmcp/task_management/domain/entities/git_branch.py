@@ -57,19 +57,8 @@ class GitBranch:
         """Add a child task under a parent task"""
         if parent_task_id in self.all_tasks:
             parent = self.all_tasks[parent_task_id]
-            # Convert Task object to dictionary for add_subtask
-            subtask_dict = {
-                "id": child_task.id.value,
-                "title": child_task.title,
-                "description": child_task.description,
-                "status": child_task.status.value if hasattr(child_task.status, 'value') else str(child_task.status),
-                "priority": child_task.priority.value if hasattr(child_task.priority, 'value') else str(child_task.priority),
-                "assignee": getattr(child_task, 'assignee', None),
-                "estimated_effort": getattr(child_task, 'estimated_effort', None),
-                "created_at": child_task.created_at.isoformat() if hasattr(child_task, 'created_at') else None,
-                "updated_at": child_task.updated_at.isoformat() if hasattr(child_task, 'updated_at') else None
-            }
-            parent.add_subtask(subtask_dict)
+            # Add subtask ID to parent task's subtasks list
+            parent.add_subtask(child_task.id.value)
             self.all_tasks[child_task.id.value] = child_task
             self.updated_at = datetime.now()
         else:
@@ -89,12 +78,12 @@ class GitBranch:
         # Remove from parent's children if it has a parent
         for potential_parent in self.all_tasks.values():
             if hasattr(potential_parent, 'subtasks') and task_id in potential_parent.subtasks:
-                del potential_parent.subtasks[task_id]
-        
+                potential_parent.subtasks.remove(task_id)
+
         # Remove all children recursively
         children_to_remove = []
         if hasattr(task, 'subtasks'):
-            children_to_remove = list(task.subtasks.keys())
+            children_to_remove = list(task.subtasks)
         
         for child_id in children_to_remove:
             self.remove_task(child_id)
@@ -173,7 +162,7 @@ class GitBranch:
             priority_counts[priority_key] = priority_counts.get(priority_key, 0) + 1
         
         return {
-            "tree_name": self.name,
+            "tree_name": self.description,
             "total_tasks": self.get_task_count(),
             "completed_tasks": self.get_completed_task_count(),
             "progress_percentage": self.get_progress_percentage(),

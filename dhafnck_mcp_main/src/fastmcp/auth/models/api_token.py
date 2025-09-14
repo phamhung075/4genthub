@@ -4,7 +4,7 @@ Database model for API tokens.
 
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, ARRAY
 from sqlalchemy.orm import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -29,7 +29,7 @@ class ApiToken(Base):
     scopes = Column(ARRAY(String), nullable=False, default=list)
     
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     last_used_at = Column(DateTime, nullable=True)
     

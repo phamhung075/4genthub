@@ -9,7 +9,7 @@ import os
 import logging
 import httpx
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from fastapi import HTTPException, Request, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -28,7 +28,7 @@ class MCPKeycloakAuth:
         """Initialize MCP Keycloak authentication"""
         self.keycloak_provider = KeycloakAuthProvider()
         self.mcp_auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"
-        self.required_roles = ["mcp-user", "mcp-tools"]  # Required roles for MCP access
+        self.required_roles = ["mcp-user", "mcp-tools", "mcp-developer", "mcp-admin", "admin"]  # Required roles for MCP access
         self.jwks_cache = None
         self.jwks_cache_time = None
 
@@ -156,6 +156,21 @@ class MCPKeycloakAuth:
         # Remove duplicates
         return list(set(permissions))
 
+    def _merge_tool_permissions(self, target: Dict[str, List[str]], source: Dict[str, List[str]]) -> None:
+        """
+        Merge tool permissions by combining lists instead of overwriting them
+
+        Args:
+            target: Target dictionary to merge into
+            source: Source dictionary to merge from
+        """
+        for category, tools in source.items():
+            if category in target:
+                # Merge lists, avoiding duplicates
+                target[category] = list(set(target[category] + tools))
+            else:
+                target[category] = tools[:]
+
     def _get_allowed_tools(self, roles: List[str]) -> Dict[str, List[str]]:
         """
         Get list of allowed MCP tools based on roles
@@ -174,7 +189,7 @@ class MCPKeycloakAuth:
         allowed_tools = {}
 
         if "mcp-developer" in roles:
-            allowed_tools.update({
+            self._merge_tool_permissions(allowed_tools, {
                 "project": ["manage_project", "manage_git_branch"],
                 "task": ["manage_task", "manage_subtask"],
                 "context": ["manage_context"],
@@ -183,14 +198,14 @@ class MCPKeycloakAuth:
             })
 
         if "mcp-tools" in roles:
-            allowed_tools.update({
+            self._merge_tool_permissions(allowed_tools, {
                 "task": ["manage_task", "search_task"],
                 "context": ["manage_context"],
                 "agent": ["call_agent"]
             })
 
         if "mcp-user" in roles:
-            allowed_tools.update({
+            self._merge_tool_permissions(allowed_tools, {
                 "task": ["search_task"],
                 "context": ["get_context"]
             })

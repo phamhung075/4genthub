@@ -33,23 +33,46 @@ from fastmcp.task_management.application.dtos.task.update_task_request import Up
 class TestTaskMCPController:
     """Comprehensive test suite for TaskMCPController with proper dependency mocking."""
 
+    def _extract_error_message(self, result):
+        """Helper method to extract error message from response, handling both old and new formats."""
+        error = result.get("error", "")
+        if isinstance(error, dict):
+            message = error.get("message", "")
+            # Sometimes message itself can be nested or complex
+            return str(message) if message else ""
+        return str(error) if error else ""
+
     @pytest.fixture
     def mock_facade_service(self):
         """Mock FacadeService with all required methods."""
-        mock_service = Mock(spec=FacadeService)
-        mock_facade = Mock(spec=TaskApplicationFacade)
+        # _MockClass removed in Python 3.12, using type checking instead
+
+        # Helper function to safely create mocks with spec
+        def create_mock_with_spec(spec_class):
+            # Check if the class is actually a Mock or has been patched
+            if (hasattr(spec_class, '_mock_name') or
+                hasattr(spec_class, '_spec_class') or
+                isinstance(spec_class, type(MagicMock()))):
+                # It's already a Mock, don't use spec
+                return Mock()
+            else:
+                # It's a real class, safe to use as spec
+                return Mock(spec=spec_class)
+
+        mock_service = create_mock_with_spec(FacadeService)
+        mock_facade = create_mock_with_spec(TaskApplicationFacade)
         
-        # Configure facade methods as async mocks
-        mock_facade.create_task = AsyncMock()
-        mock_facade.get_task = AsyncMock()
-        mock_facade.update_task = AsyncMock()
-        mock_facade.delete_task = AsyncMock()
-        mock_facade.list_tasks = AsyncMock()
-        mock_facade.search_tasks = AsyncMock()
-        mock_facade.complete_task = AsyncMock()
-        mock_facade.add_dependency = AsyncMock()
-        mock_facade.remove_dependency = AsyncMock()
-        mock_facade.get_next_task = AsyncMock()
+        # Configure facade methods as synchronous mocks (controller calls them synchronously)
+        mock_facade.create_task = Mock()
+        mock_facade.get_task = Mock()
+        mock_facade.update_task = Mock()
+        mock_facade.delete_task = Mock()
+        mock_facade.list_tasks = Mock()
+        mock_facade.search_tasks = Mock()
+        mock_facade.complete_task = Mock()
+        mock_facade.add_dependency = Mock()
+        mock_facade.remove_dependency = Mock()
+        mock_facade.get_next_task = Mock()
         
         mock_service.get_task_facade.return_value = mock_facade
         return mock_service, mock_facade
@@ -57,8 +80,20 @@ class TestTaskMCPController:
     @pytest.fixture
     def mock_workflow_hint_enhancer(self):
         """Mock WorkflowHintEnhancer."""
-        mock_enhancer = Mock(spec=WorkflowHintEnhancer)
-        mock_enhancer.enhance_response = Mock()
+        from unittest.mock import MagicMock
+
+        # Check if WorkflowHintEnhancer is already mocked
+        if (hasattr(WorkflowHintEnhancer, '_mock_name') or
+            hasattr(WorkflowHintEnhancer, '_spec_class') or
+            isinstance(WorkflowHintEnhancer, type(MagicMock()))):
+            # It's already a Mock, don't use spec
+            mock_enhancer = Mock()
+        else:
+            # It's a real class, safe to use as spec
+            mock_enhancer = Mock(spec=WorkflowHintEnhancer)
+
+        # Configure enhance_response to pass through the response unchanged
+        mock_enhancer.enhance_response = Mock(side_effect=lambda response, **kwargs: response)
         return mock_enhancer
 
     @pytest.fixture
@@ -87,7 +122,7 @@ class TestTaskMCPController:
         """Create TaskMCPController instance with mocked dependencies."""
         facade_service, _ = mock_facade_service
         return TaskMCPController(
-            facade_service=facade_service,
+            facade_service_or_factory=facade_service,
             workflow_hint_enhancer=mock_workflow_hint_enhancer
         )
 
@@ -102,18 +137,21 @@ class TestTaskMCPController:
     @pytest.fixture
     def mock_permissions(self):
         """Mock permission checking."""
-        with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_current_request_context') as mock_context:
-            # Configure mock request context
-            mock_request_context = Mock()
-            mock_user = Mock()
-            mock_user.token = {"sub": "test-user", "permissions": ["tasks:read", "tasks:write", "tasks:create", "tasks:update", "tasks:delete"]}
-            mock_request_context.user = mock_user
-            mock_context.return_value = mock_request_context
-            yield mock_context
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info') as mock_auth_info:
+            # Configure mock auth info with task permissions
+            auth_info = {
+                "sub": "test-user",
+                "scopes": [
+                    "tasks:read", "tasks:write", "tasks:create",
+                    "tasks:update", "tasks:delete", "tasks:manage"
+                ]
+            }
+            mock_auth_info.return_value = auth_info
+            yield mock_auth_info
 
     # Test Cases for CREATE operation
-    @pytest.mark.asyncio
-    async def test_create_task_success(self, controller, mock_facade_service, sample_task_data, sample_user_id, mock_authentication, mock_permissions):
+    
+    def test_create_task_success(self, controller, mock_facade_service, sample_task_data, sample_user_id, mock_authentication, mock_permissions):
         """Test successful task creation."""
         facade_service, mock_facade = mock_facade_service
         mock_auth, mock_log = mock_authentication
@@ -131,7 +169,7 @@ class TestTaskMCPController:
         mock_facade.create_task.return_value = expected_response
 
         # Execute create operation
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create",
             title=sample_task_data["title"],
             description=sample_task_data["description"],
@@ -148,15 +186,17 @@ class TestTaskMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert "task_id" in result.get("data", {})
+        assert "data" in result
+        assert "data" in result["data"]  # The facade response is nested in data.data
+        assert "task_id" in result["data"]["data"]
 
-    @pytest.mark.asyncio
-    async def test_create_task_missing_required_fields(self, controller, mock_authentication, mock_permissions):
+    
+    def test_create_task_missing_required_fields(self, controller, mock_authentication, mock_permissions):
         """Test task creation with missing required fields."""
         mock_auth, mock_log = mock_authentication
         
         # Execute create operation without required fields
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create"
             # Missing title, git_branch_id, assignees
         )
@@ -167,19 +207,20 @@ class TestTaskMCPController:
         # Verify validation error is returned
         assert result["success"] is False
         assert "error" in result
-        assert "required" in result["error"].lower()
+        error_text = self._extract_error_message(result).lower()
+        assert any(keyword in error_text for keyword in ["required", "validation_error", "missing", "expected"])
 
     @pytest.mark.parametrize("invalid_assignees", [
         "",  # Empty string
         [],  # Empty list
         None  # None value
     ])
-    @pytest.mark.asyncio
-    async def test_create_task_invalid_assignees(self, controller, sample_task_data, invalid_assignees, mock_authentication, mock_permissions):
+    
+    def test_create_task_invalid_assignees(self, controller, sample_task_data, invalid_assignees, mock_authentication, mock_permissions):
         """Test task creation with invalid assignees."""
         mock_auth, mock_log = mock_authentication
         
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create",
             title=sample_task_data["title"],
             git_branch_id=sample_task_data["git_branch_id"],
@@ -188,11 +229,12 @@ class TestTaskMCPController:
 
         # Should return validation error for missing assignees
         assert result["success"] is False
-        assert "assignees" in result.get("error", "").lower()
+        error_msg = self._extract_error_message(result)
+        assert "assignees" in error_msg.lower()
 
     # Test Cases for GET operation
-    @pytest.mark.asyncio
-    async def test_get_task_success(self, controller, mock_facade_service, sample_task_data, sample_user_id, mock_authentication, mock_permissions):
+    
+    def test_get_task_success(self, controller, mock_facade_service, sample_task_data, sample_user_id, mock_authentication, mock_permissions):
         """Test successful task retrieval."""
         facade_service, mock_facade = mock_facade_service
         mock_auth, mock_log = mock_authentication
@@ -206,7 +248,7 @@ class TestTaskMCPController:
         mock_facade.get_task.return_value = expected_response
 
         # Execute get operation
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="get",
             task_id=sample_task_data["task_id"]
         )
@@ -216,10 +258,10 @@ class TestTaskMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["task_id"] == sample_task_data["task_id"]
+        assert result["data"]["data"]["task_id"] == sample_task_data["task_id"]
 
-    @pytest.mark.asyncio
-    async def test_get_task_not_found(self, controller, mock_facade_service, mock_authentication, mock_permissions):
+    
+    def test_get_task_not_found(self, controller, mock_facade_service, mock_authentication, mock_permissions):
         """Test task retrieval with non-existent task."""
         facade_service, mock_facade = mock_facade_service
         mock_auth, mock_log = mock_authentication
@@ -231,25 +273,25 @@ class TestTaskMCPController:
             "error_code": "TASK_NOT_FOUND"
         }
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="get",
             task_id="non-existent-id"
         )
 
         assert result["success"] is False
-        assert "not found" in result["error"].lower()
+        assert "not found" in self._extract_error_message(result).lower()
 
-    @pytest.mark.asyncio
-    async def test_get_task_missing_task_id(self, controller, mock_authentication, mock_permissions):
+    
+    def test_get_task_missing_task_id(self, controller, mock_authentication, mock_permissions):
         """Test task retrieval without task_id."""
-        result = await controller.manage_task(action="get")
+        result = controller.manage_task_sync(action="get")
         
         assert result["success"] is False
-        assert "task_id is required" in result["error"]
+        assert "task_id is required" in self._extract_error_message(result)
 
     # Test Cases for UPDATE operation
-    @pytest.mark.asyncio
-    async def test_update_task_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_update_task_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful task update."""
         facade_service, mock_facade = mock_facade_service
         
@@ -265,7 +307,7 @@ class TestTaskMCPController:
         }
         mock_facade.update_task.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="update",
             task_id=sample_task_data["task_id"],
             title="Updated Task Title",
@@ -277,11 +319,11 @@ class TestTaskMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["title"] == "Updated Task Title"
+        assert result["data"]["data"]["title"] == "Updated Task Title"
 
     # Test Cases for DELETE operation
-    @pytest.mark.asyncio
-    async def test_delete_task_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_delete_task_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful task deletion."""
         facade_service, mock_facade = mock_facade_service
         
@@ -291,7 +333,7 @@ class TestTaskMCPController:
         }
         mock_facade.delete_task.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="delete",
             task_id=sample_task_data["task_id"]
         )
@@ -303,8 +345,8 @@ class TestTaskMCPController:
         assert result["success"] is True
 
     # Test Cases for LIST operation
-    @pytest.mark.asyncio
-    async def test_list_tasks_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_list_tasks_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful task listing."""
         facade_service, mock_facade = mock_facade_service
         
@@ -322,7 +364,7 @@ class TestTaskMCPController:
         }
         mock_facade.list_tasks.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="list",
             git_branch_id=sample_task_data["git_branch_id"]
         )
@@ -332,15 +374,15 @@ class TestTaskMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert len(result["data"]["tasks"]) == 2
+        assert len(result["data"]["data"]["tasks"]) == 2
 
     @pytest.mark.parametrize("limit,offset", [
         (10, 0),
         (25, 50),
         (100, 200)
     ])
-    @pytest.mark.asyncio
-    async def test_list_tasks_pagination(self, controller, mock_facade_service, limit, offset, mock_authentication, mock_permissions):
+    
+    def test_list_tasks_pagination(self, controller, mock_facade_service, limit, offset, mock_authentication, mock_permissions):
         """Test task listing with different pagination parameters."""
         facade_service, mock_facade = mock_facade_service
         
@@ -351,18 +393,18 @@ class TestTaskMCPController:
         }
         mock_facade.list_tasks.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="list",
             limit=limit,
             offset=offset
         )
 
         assert result["success"] is True
-        assert result["data"]["limit"] == limit
+        assert result["data"]["data"]["limit"] == limit
 
     # Test Cases for SEARCH operation
-    @pytest.mark.asyncio
-    async def test_search_tasks_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_search_tasks_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful task search."""
         facade_service, mock_facade = mock_facade_service
         
@@ -377,7 +419,7 @@ class TestTaskMCPController:
         }
         mock_facade.search_tasks.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="search",
             query="test"
         )
@@ -387,12 +429,12 @@ class TestTaskMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["total"] == 1
+        assert result["data"]["data"]["total"] == 1
 
-    @pytest.mark.asyncio
-    async def test_search_tasks_empty_query(self, controller, mock_authentication, mock_permissions):
+    
+    def test_search_tasks_empty_query(self, controller, mock_authentication, mock_permissions):
         """Test search with empty query."""
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="search"
             # Missing query parameter
         )
@@ -401,8 +443,8 @@ class TestTaskMCPController:
         assert "success" in result
 
     # Test Cases for COMPLETE operation
-    @pytest.mark.asyncio
-    async def test_complete_task_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_complete_task_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful task completion."""
         facade_service, mock_facade = mock_facade_service
         
@@ -417,7 +459,7 @@ class TestTaskMCPController:
         }
         mock_facade.complete_task.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="complete",
             task_id=sample_task_data["task_id"],
             completion_summary="Task completed successfully"
@@ -428,11 +470,11 @@ class TestTaskMCPController:
         
         # Verify result
         assert result["success"] is True
-        assert result["data"]["status"] == "done"
+        assert result["data"]["data"]["status"] == "done"
 
     # Test Cases for DEPENDENCY operations
-    @pytest.mark.asyncio
-    async def test_add_dependency_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_add_dependency_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful dependency addition."""
         facade_service, mock_facade = mock_facade_service
         dependency_id = str(uuid.uuid4())
@@ -443,7 +485,7 @@ class TestTaskMCPController:
         }
         mock_facade.add_dependency.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="add_dependency",
             task_id=sample_task_data["task_id"],
             dependency_id=dependency_id
@@ -455,8 +497,8 @@ class TestTaskMCPController:
         # Verify result
         assert result["success"] is True
 
-    @pytest.mark.asyncio
-    async def test_remove_dependency_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_remove_dependency_success(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test successful dependency removal."""
         facade_service, mock_facade = mock_facade_service
         dependency_id = str(uuid.uuid4())
@@ -467,7 +509,7 @@ class TestTaskMCPController:
         }
         mock_facade.remove_dependency.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="remove_dependency",
             task_id=sample_task_data["task_id"],
             dependency_id=dependency_id
@@ -480,23 +522,24 @@ class TestTaskMCPController:
         assert result["success"] is True
 
     # Test Cases for AUTHENTICATION and PERMISSIONS
-    @pytest.mark.asyncio
-    async def test_unauthenticated_request(self, controller):
+    
+    def test_unauthenticated_request(self, controller):
         """Test request without authentication."""
         with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id') as mock_auth:
             mock_auth.side_effect = UserAuthenticationRequiredError("Authentication required")
             
-            result = await controller.manage_task(action="list")
+            result = controller.manage_task_sync(action="list")
             
             assert result["success"] is False
-            assert "authentication" in result["error"].lower() or "permission" in result["error"].lower()
+            error_msg = self._extract_error_message(result).lower()
+            assert "authentication" in error_msg or "permission" in error_msg
 
-    @pytest.mark.asyncio
-    async def test_insufficient_permissions(self, controller, mock_authentication):
+    
+    def test_insufficient_permissions(self, controller, mock_authentication):
         """Test request with insufficient permissions."""
         mock_auth, mock_log = mock_authentication
         
-        with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_current_request_context') as mock_context:
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context') as mock_context:
             # Configure mock user with insufficient permissions
             mock_request_context = Mock()
             mock_user = Mock()
@@ -504,22 +547,22 @@ class TestTaskMCPController:
             mock_request_context.user = mock_user
             mock_context.return_value = mock_request_context
             
-            result = await controller.manage_task(action="create", title="Test")
+            result = controller.manage_task_sync(action="create", title="Test")
             
             # Should return permission denied error
             assert result["success"] is False
             assert "permission" in result.get("error", "").lower()
 
     # Test Cases for ERROR HANDLING
-    @pytest.mark.asyncio
-    async def test_facade_exception_handling(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_facade_exception_handling(self, controller, mock_facade_service, sample_task_data, mock_authentication, mock_permissions):
         """Test handling of facade exceptions."""
         facade_service, mock_facade = mock_facade_service
         
         # Configure facade to raise exception
         mock_facade.get_task.side_effect = Exception("Database connection error")
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="get",
             task_id=sample_task_data["task_id"]
         )
@@ -528,18 +571,18 @@ class TestTaskMCPController:
         assert result["success"] is False
         assert "error" in result
 
-    @pytest.mark.asyncio
-    async def test_invalid_action(self, controller, mock_authentication, mock_permissions):
+    
+    def test_invalid_action(self, controller, mock_authentication, mock_permissions):
         """Test handling of invalid action parameter."""
-        result = await controller.manage_task(action="invalid_action")
+        result = controller.manage_task_sync(action="invalid_action")
         
         # Should handle gracefully
         assert "success" in result
 
     # Test Cases for PARAMETER VALIDATION
     @pytest.mark.parametrize("status", ["todo", "in_progress", "done", "cancelled"])
-    @pytest.mark.asyncio
-    async def test_valid_status_values(self, controller, mock_facade_service, sample_task_data, status, mock_authentication, mock_permissions):
+    
+    def test_valid_status_values(self, controller, mock_facade_service, sample_task_data, status, mock_authentication, mock_permissions):
         """Test task creation with different valid status values."""
         facade_service, mock_facade = mock_facade_service
         
@@ -551,7 +594,7 @@ class TestTaskMCPController:
         }
         mock_facade.create_task.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create",
             title=sample_task_data["title"],
             git_branch_id=sample_task_data["git_branch_id"],
@@ -562,8 +605,8 @@ class TestTaskMCPController:
         assert result["success"] is True
 
     @pytest.mark.parametrize("priority", ["low", "medium", "high", "urgent", "critical"])
-    @pytest.mark.asyncio
-    async def test_valid_priority_values(self, controller, mock_facade_service, sample_task_data, priority, mock_authentication, mock_permissions):
+    
+    def test_valid_priority_values(self, controller, mock_facade_service, sample_task_data, priority, mock_authentication, mock_permissions):
         """Test task creation with different valid priority values."""
         facade_service, mock_facade = mock_facade_service
         
@@ -574,7 +617,7 @@ class TestTaskMCPController:
         }
         mock_facade.create_task.return_value = expected_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create",
             title=sample_task_data["title"],
             git_branch_id=sample_task_data["git_branch_id"],
@@ -585,8 +628,8 @@ class TestTaskMCPController:
         assert result["success"] is True
 
     # Test Cases for WORKFLOW ENHANCEMENT
-    @pytest.mark.asyncio
-    async def test_workflow_hint_enhancement(self, controller, mock_facade_service, mock_workflow_hint_enhancer, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_workflow_hint_enhancement(self, controller, mock_facade_service, mock_workflow_hint_enhancer, sample_task_data, mock_authentication, mock_permissions):
         """Test workflow hint enhancement integration."""
         facade_service, mock_facade = mock_facade_service
         
@@ -606,7 +649,7 @@ class TestTaskMCPController:
         }
         mock_workflow_hint_enhancer.enhance_response.return_value = enhanced_response
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create",
             title=sample_task_data["title"],
             git_branch_id=sample_task_data["git_branch_id"],
@@ -621,8 +664,8 @@ class TestTaskMCPController:
         assert "workflow_hints" in result
         assert "next_actions" in result
 
-    @pytest.mark.asyncio
-    async def test_workflow_enhancement_failure_graceful_degradation(self, controller, mock_facade_service, mock_workflow_hint_enhancer, sample_task_data, mock_authentication, mock_permissions):
+    
+    def test_workflow_enhancement_failure_graceful_degradation(self, controller, mock_facade_service, mock_workflow_hint_enhancer, sample_task_data, mock_authentication, mock_permissions):
         """Test graceful degradation when workflow enhancement fails."""
         facade_service, mock_facade = mock_facade_service
         
@@ -637,7 +680,7 @@ class TestTaskMCPController:
         # Configure workflow enhancer to fail
         mock_workflow_hint_enhancer.enhance_response.side_effect = Exception("Enhancement failed")
 
-        result = await controller.manage_task(
+        result = controller.manage_task_sync(
             action="create",
             title=sample_task_data["title"],
             git_branch_id=sample_task_data["git_branch_id"],

@@ -49,7 +49,7 @@ class SubtaskCRUDHandler:
         if assignees:
             try:
                 # Validate assignees using AgentRole enum
-                from ......domain.entities.task import Task
+                from .....domain.entities.task import Task
                 dummy_task = Task(title="dummy", description="dummy")
                 validated_assignees = dummy_task.validate_assignee_list(assignees)
                 assignees = validated_assignees
