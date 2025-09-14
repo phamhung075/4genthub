@@ -58,7 +58,7 @@ Set these BUILD ARGUMENTS in CapRover's App Config → Environmental Variables f
 # CRITICAL: Frontend uses VITE_API_URL not VITE_BACKEND_URL
 VITE_API_URL=${YOUR_BACKEND_URL}
 VITE_BACKEND_URL=${YOUR_BACKEND_URL}
-VITE_ENVIRONMENT=production
+VITE_ENV=production
 # NO Keycloak configuration needed - backend handles all auth
 ```
 

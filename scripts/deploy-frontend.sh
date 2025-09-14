@@ -78,14 +78,14 @@ if [ "$SKIP_BUILD" != "true" ]; then
     
     # Create production environment file
     cat > .env.production << EOF
-VITE_BACKEND_URL=$BACKEND_URL
+VITE_API_URL=$BACKEND_URL
 VITE_KEYCLOAK_URL=${KEYCLOAK_URL:-https://keycloak.92.5.226.7.nip.io}
 VITE_KEYCLOAK_REALM=${KEYCLOAK_REALM:-mcp}
 VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-mcp-backend}
 NODE_ENV=production
 VITE_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 VITE_BUILD_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-VITE_ENVIRONMENT=$ENVIRONMENT
+VITE_ENV=$ENVIRONMENT
 EOF
     
     print_status "Created frontend environment configuration"

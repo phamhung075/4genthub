@@ -772,8 +772,8 @@ export function TokenManagement() {
                   serverName: "DhafnckMCP",
                   protocol: "HTTP",
                   version: "2.1.0",
-                  host: (import.meta as any).env?.VITE_BACKEND_URL?.replace(/^https?:\/\//, '').replace(/:\d+$/, '') || 'localhost',
-                  port: parseInt((import.meta as any).env?.VITE_BACKEND_URL?.match(/:(\d+)$/)?.[1] || '8000'),
+                  host: (import.meta as any).env?.VITE_API_URL?.replace(/^https?:\/\//, '').replace(/:\d+$/, '') || 'localhost',
+                  port: parseInt((import.meta as any).env?.VITE_API_URL?.match(/:(\d+)$/)?.[1] || '8000'),
                   authentication: "JWT Bearer",
                   capabilities: selectedScopes,
                   token: generatedToken || undefined,
@@ -792,7 +792,7 @@ export function TokenManagement() {
                       onClick={() => {
                         const config = {
                           type: "http",
-                          url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
+                          url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
                           headers: {
                             Accept: "application/json, text/event-stream",
                             Authorization: `Bearer ${generatedToken}`
@@ -875,7 +875,7 @@ export function TokenManagement() {
                 onClick={() => {
                   const config = {
                     type: "http", 
-                    url: `${(import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000'}/mcp`,
+                    url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
                     headers: {
                       Accept: "application/json, text/event-stream",
                       Authorization: `Bearer ${generatedToken}`
