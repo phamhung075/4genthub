@@ -23,13 +23,28 @@ from fastmcp.task_management.domain.exceptions.authentication_exceptions import 
 )
 
 
+def create_mock_with_spec(spec_class):
+    """Safely create a Mock with spec, handling already-mocked classes."""
+    from unittest.mock import _MockClass
+
+    # Check if the class is actually a Mock or has been patched
+    if (hasattr(spec_class, '_mock_name') or
+        hasattr(spec_class, '_spec_class') or
+        isinstance(spec_class, (_MockClass, type(MagicMock)))):
+        # It's already a Mock, don't use spec
+        return Mock()
+    else:
+        # It's a real class, safe to use as spec
+        return Mock(spec=spec_class)
+
+
 class TestAgentMCPController:
     """Test cases for AgentMCPController."""
     
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_facade_service = Mock(spec=FacadeService)
-        self.mock_facade = Mock(spec=AgentApplicationFacade)
+        self.mock_facade_service = create_mock_with_spec(FacadeService)
+        self.mock_facade = create_mock_with_spec(AgentApplicationFacade)
         self.mock_facade_service.get_agent_facade.return_value = self.mock_facade
         
         # Mock workflow guidance
@@ -527,8 +542,8 @@ class TestAgentMCPControllerIntegration:
     
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_facade_service = Mock(spec=FacadeService)
-        self.mock_facade = Mock(spec=AgentApplicationFacade)
+        self.mock_facade_service = create_mock_with_spec(FacadeService)
+        self.mock_facade = create_mock_with_spec(AgentApplicationFacade)
         self.mock_facade_service.get_agent_facade.return_value = self.mock_facade
         
         with patch('fastmcp.task_management.interface.mcp_controllers.agent_mcp_controller.agent_mcp_controller.AgentWorkflowFactory'):

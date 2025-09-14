@@ -11,6 +11,21 @@ from fastmcp.task_management.domain.services.task_progress_service import (
 )
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
+
+
+def create_mock_with_spec(spec_class):
+    """Safely create a Mock with spec, handling already-mocked classes."""
+    from unittest.mock import _MockClass, MagicMock
+
+    # Check if the class is actually a Mock or has been patched
+    if (hasattr(spec_class, '_mock_name') or
+        hasattr(spec_class, '_spec_class') or
+        isinstance(spec_class, (_MockClass, type(MagicMock)))):
+        # It's already a Mock, don't use spec
+        return Mock()
+    else:
+        # It's a real class, safe to use as spec
+        return Mock(spec=spec_class)
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
@@ -22,7 +37,7 @@ class TestTaskProgressService:
     @pytest.fixture
     def mock_subtask_repository(self) -> Mock:
         """Mock subtask repository for testing."""
-        return Mock(spec=SubtaskRepositoryProtocol)
+        return create_mock_with_spec(SubtaskRepositoryProtocol)
 
     @pytest.fixture
     def progress_service(self) -> TaskProgressService:
@@ -676,7 +691,7 @@ class TestTaskProgressServiceIntegration:
     def test_complex_project_progress_calculation(self):
         """Test progress calculation for a complex project scenario."""
         # Arrange
-        mock_repo = Mock(spec=SubtaskRepositoryProtocol)
+        mock_repo = create_mock_with_spec(SubtaskRepositoryProtocol)
         service = TaskProgressService(subtask_repository=mock_repo)
 
         # Main task: "Implement user authentication system"
@@ -736,7 +751,7 @@ class TestTaskProgressServiceIntegration:
     def test_project_completion_workflow(self):
         """Test the complete workflow of a project from start to finish."""
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-        mock_repo = Mock(spec=SubtaskRepositoryProtocol)
+        mock_repo = create_mock_with_spec(SubtaskRepositoryProtocol)
         service = TaskProgressService(subtask_repository=mock_repo)
 
         task = Task(

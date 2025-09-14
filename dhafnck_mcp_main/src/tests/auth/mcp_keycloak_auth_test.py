@@ -43,7 +43,7 @@ class TestMCPKeycloakAuth:
             with patch('fastmcp.auth.mcp_keycloak_auth.KeycloakAuthProvider'):
                 auth = MCPKeycloakAuth()
                 assert auth.mcp_auth_enabled is True
-                assert auth.required_roles == ["mcp-user", "mcp-tools"]
+                assert auth.required_roles == ["mcp-user", "mcp-tools", "mcp-developer", "mcp-admin", "admin"]
     
     def test_initialization_disabled(self):
         """Test initialization with auth disabled"""

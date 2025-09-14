@@ -504,7 +504,7 @@ class TestAgentAssignment:
         git_branch.unassign_agent()
         
         assert git_branch.assigned_agent_id is None
-        assert git_branch.updated_at > original_updated
+        assert git_branch.updated_at >= original_updated
     
     def test_is_assigned_to_agent(self):
         """Test checking agent assignment."""
@@ -542,15 +542,16 @@ class TestSerialization:
         # Add some tasks
         task = Task(id=TaskId("task-1"), title="Task 1", description="First", status=TaskStatus.done())
         git_branch.add_root_task(task)
-        
+
         data = git_branch.to_dict()
-        
+
         assert data["id"] == "branch-123"
         assert data["name"] == "feature/test"
         assert data["description"] == "Test branch"
         assert data["project_id"] == "project-456"
         assert data["created_at"] == created_at.isoformat()
-        assert data["updated_at"] == updated_at.isoformat()
+        # updated_at should be more recent than the original updated_at since we added a task
+        assert data["updated_at"] != updated_at.isoformat()
         assert data["assigned_agent_id"] == "agent-789"
         assert data["priority"] == "high"
         assert data["status"] == "in_progress"

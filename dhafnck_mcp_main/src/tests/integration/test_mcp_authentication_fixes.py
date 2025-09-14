@@ -66,7 +66,7 @@ class TestMCPAuthenticationFixes:
             project_controller = self.mcp_tools._project_controller
 
             # Create project
-            project_result = await project_controller.manage_project(
+            project_result = project_controller.manage_project(
                 action="create",
                 name="test-auth-project",
                 description="Project for authentication testing",
@@ -77,7 +77,7 @@ class TestMCPAuthenticationFixes:
 
             # Create branch
             git_branch_controller = self.mcp_tools._git_branch_controller
-            branch_result = await git_branch_controller.manage_git_branch(
+            branch_result = git_branch_controller.manage_git_branch(
                 action="create",
                 project_id=self.created_project_id,
                 git_branch_name="test-auth-branch",
@@ -95,6 +95,7 @@ class TestMCPAuthenticationFixes:
                 "git_branch_id": self.created_branch_id,
                 "title": "Authentication Test Task",
                 "description": "Testing that user authentication now works correctly",
+                "assignees": "coding-agent",
                 "user_id": self.test_user_uuid
             }
 
@@ -125,7 +126,7 @@ class TestMCPAuthenticationFixes:
             # First create a project for testing
             project_controller = self.mcp_tools._project_controller
 
-            project_result = await project_controller.manage_project(
+            project_result = project_controller.manage_project(
                 action="create",
                 name="test-branch-ops-project",
                 description="Project for branch operations testing",
@@ -136,7 +137,7 @@ class TestMCPAuthenticationFixes:
 
             # Create a branch
             git_branch_controller = self.mcp_tools._git_branch_controller
-            branch_result = await git_branch_controller.manage_git_branch(
+            branch_result = git_branch_controller.manage_git_branch(
                 action="create",
                 project_id=project_id,
                 git_branch_name="test-branch-ops",
@@ -153,7 +154,7 @@ class TestMCPAuthenticationFixes:
                 "user_id": self.test_user_uuid
             }
 
-            result = await git_branch_controller.manage_git_branch(**list_params)
+            result = git_branch_controller.manage_git_branch(**list_params)
 
             # Should succeed and contain the created branch
             assert result.get('success') is True, f"Git branch list failed: {result.get('error', 'Unknown error')}"
@@ -183,7 +184,7 @@ class TestMCPAuthenticationFixes:
             }
         }
         
-        result = await context_controller.manage_context(**context_params)
+        result = context_controller.manage_context(**context_params)
         
         # Should succeed now (was failing with "Repository must be scoped to a user")
         if result.get('success'):
@@ -199,7 +200,7 @@ class TestMCPAuthenticationFixes:
         # 1. Create project
         project_controller = self.mcp_tools._project_controller
         
-        project_result = await project_controller.manage_project(
+        project_result = project_controller.manage_project(
             action="create",
             name="test-workflow-project",
             description="Project for workflow testing",
@@ -212,7 +213,7 @@ class TestMCPAuthenticationFixes:
         # 2. Create branch
         git_branch_controller = self.mcp_tools._git_branch_controller
         
-        branch_result = await git_branch_controller.manage_git_branch(
+        branch_result = git_branch_controller.manage_git_branch(
             action="create",
             project_id=project_id,
             git_branch_name="test-workflow-branch",
@@ -231,6 +232,7 @@ class TestMCPAuthenticationFixes:
             git_branch_id=branch_id,
             title="Integration Test Task",
             description="Testing full workflow integration",
+            assignees="coding-agent",
             user_id=self.test_user_uuid
         )
         
@@ -241,7 +243,7 @@ class TestMCPAuthenticationFixes:
         # 4. Try to create task context (may still have issues)
         context_controller = self.mcp_tools._context_controller
         
-        context_result = await context_controller.manage_context(
+        context_result = context_controller.manage_context(
             action="create",
             level="task",
             context_id=created_task_id,
@@ -267,7 +269,7 @@ class TestMCPAuthenticationFixes:
         # First create a project and branch for this test
         project_controller = self.mcp_tools._project_controller
         
-        project_result = await project_controller.manage_project(
+        project_result = project_controller.manage_project(
             action="create",
             name="test-auth-error-project",
             description="Project for auth error testing",
@@ -278,7 +280,7 @@ class TestMCPAuthenticationFixes:
         
         # Create branch
         git_branch_controller = self.mcp_tools._git_branch_controller
-        branch_result = await git_branch_controller.manage_git_branch(
+        branch_result = git_branch_controller.manage_git_branch(
             action="create",
             project_id=project_id,
             git_branch_name="test-auth-error-branch",

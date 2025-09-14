@@ -38,6 +38,15 @@ class TestTaskMCPControllerComplete:
     - Workflow enhancement integration
     """
 
+    def _extract_error_message(self, result):
+        """Helper method to extract error message from response, handling both old and new formats."""
+        error = result.get("error", "")
+        if isinstance(error, dict):
+            message = error.get("message", "")
+            # Sometimes message itself can be nested or complex
+            return str(message) if message else ""
+        return str(error) if error else ""
+
     def _assert_success_response(self, result, expected_data_keys=None):
         """Helper method to assert successful response structure."""
         assert result["success"] is True
@@ -62,7 +71,7 @@ class TestTaskMCPControllerComplete:
         assert "error" in result
         
         if expected_error_content:
-            assert expected_error_content.lower() in result["error"].lower()
+            assert expected_error_content.lower() in self._extract_error_message(result).lower()
         
         return result
 
@@ -93,10 +102,23 @@ class TestTaskMCPControllerComplete:
     def mock_facade_service(self):
         """Mock FacadeService with all required methods."""
         # Create the facade service mock
-        facade_service_mock = Mock(spec=FacadeService)
-        
+        # Safely create mock avoiding spec errors if class is already mocked
+        # Helper function to safely create mocks with spec
+        def create_mock_with_spec(spec_class):
+            # Check if the class is actually a Mock or has been patched
+            if (hasattr(spec_class, '_mock_name') or
+                hasattr(spec_class, '_spec_class') or
+                isinstance(spec_class, type(MagicMock()))):
+                # It's already a Mock, don't use spec
+                return Mock()
+            else:
+                # It's a real class, safe to use as spec
+                return Mock(spec=spec_class)
+
+        facade_service_mock = create_mock_with_spec(FacadeService)
+
         # Create the task facade mock with all methods
-        task_facade_mock = Mock(spec=TaskApplicationFacade)
+        task_facade_mock = create_mock_with_spec(TaskApplicationFacade)
         
         # Configure facade methods as regular Mock (not AsyncMock) 
         # because the handlers call them synchronously
@@ -119,7 +141,12 @@ class TestTaskMCPControllerComplete:
     @pytest.fixture
     def mock_workflow_enhancer(self):
         """Mock WorkflowHintEnhancer."""
-        enhancer_mock = Mock(spec=WorkflowHintEnhancer)
+        if (hasattr(WorkflowHintEnhancer, '_mock_name') or
+            hasattr(WorkflowHintEnhancer, '_spec_class') or
+            isinstance(WorkflowHintEnhancer, type(MagicMock()))):
+            enhancer_mock = Mock()
+        else:
+            enhancer_mock = Mock(spec=WorkflowHintEnhancer)
         # Configure enhance_response to pass through the response unchanged by default
         enhancer_mock.enhance_response = Mock(side_effect=lambda response, **kwargs: response)
         return enhancer_mock
@@ -129,7 +156,7 @@ class TestTaskMCPControllerComplete:
         """Create TaskMCPController instance with mocked dependencies."""
         facade_service_mock, _ = mock_facade_service
         return TaskMCPController(
-            facade_service=facade_service_mock,
+            facade_service_or_factory=facade_service_mock,
             workflow_hint_enhancer=mock_workflow_enhancer
         )
 
@@ -312,7 +339,7 @@ class TestTaskMCPControllerComplete:
         result = await controller.manage_task(action="get")
         
         assert result["success"] is False
-        assert "task_id is required" in result["error"]
+        assert "task_id is required" in self._extract_error_message(result)
 
     # === UPDATE Operation Tests ===
     
@@ -596,7 +623,7 @@ class TestTaskMCPControllerComplete:
         )
         
         assert result["success"] is False
-        assert "dependency_id" in result["error"]
+        assert "dependency_id" in self._extract_error_message(result)
 
     @pytest.mark.asyncio
     async def test_remove_dependency_success(self, controller, mock_facade_service, sample_task_data, mock_auth, mock_perms):
@@ -673,7 +700,7 @@ class TestTaskMCPControllerComplete:
             )
             
             assert result["success"] is False
-            assert "permission" in result["error"].lower()
+            assert "permission" in self._extract_error_message(result).lower()
 
     # === ERROR HANDLING Tests ===
     

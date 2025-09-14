@@ -219,10 +219,13 @@ class TestServiceAccountAuth:
     
     def test_jwks_client_creation(self, auth_instance):
         """Test JWKS client lazy initialization"""
-        with patch('jwt.PyJWKClient') as mock_jwks_class:
+        with patch('fastmcp.auth.service_account.PyJWKClient') as mock_jwks_class:
             mock_client = Mock()
             mock_jwks_class.return_value = mock_client
-            
+
+            # Reset the instance's client to None to test lazy initialization
+            auth_instance._jwks_client = None
+
             # First access creates client
             client1 = auth_instance.jwks_client
             assert client1 == mock_client
@@ -231,8 +234,8 @@ class TestServiceAccountAuth:
                 cache_keys=True,
                 lifespan=3600
             )
-            
-            # Second access returns same client
+
+            # Second access returns same client (no additional calls)
             client2 = auth_instance.jwks_client
             assert client2 == mock_client
             assert mock_jwks_class.call_count == 1
@@ -362,76 +365,85 @@ class TestServiceAccountAuth:
     async def test_validate_token_valid(self, auth_instance):
         """Test successful token validation"""
         token = "valid.jwt.token"
-        
-        with patch.object(auth_instance, 'jwks_client') as mock_jwks:
-            mock_signing_key = Mock(key="test-key")
-            mock_jwks.get_signing_key_from_jwt.return_value = mock_signing_key
-            
-            with patch('jwt.decode') as mock_decode:
-                mock_decode.return_value = {
-                    "sub": "service-account",
-                    "azp": "service-client",
-                    "typ": "Bearer",
-                    "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
-                }
-                
-                result = await auth_instance.validate_token(token)
-                
-                assert result is not None
-                assert result["azp"] == "service-client"
-                
-                mock_decode.assert_called_once_with(
-                    token,
-                    "test-key",
-                    algorithms=["RS256"],
-                    audience="service-client",
-                    issuer="https://keycloak.example.com/realms/test-realm"
-                )
+
+        # Mock the JWKS client directly
+        mock_jwks = Mock()
+        mock_signing_key = Mock(key="test-key")
+        mock_jwks.get_signing_key_from_jwt.return_value = mock_signing_key
+        auth_instance._jwks_client = mock_jwks
+
+        with patch('fastmcp.auth.service_account.jwt.decode') as mock_decode:
+            mock_decode.return_value = {
+                "sub": "service-account",
+                "azp": "service-client",
+                "typ": "Bearer",
+                "exp": (datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()
+            }
+
+            result = await auth_instance.validate_token(token)
+
+            assert result is not None
+            assert result["azp"] == "service-client"
+
+            mock_decode.assert_called_once_with(
+                token,
+                "test-key",
+                algorithms=["RS256"],
+                audience="service-client",
+                issuer="https://keycloak.example.com/realms/test-realm"
+            )
     
     @pytest.mark.asyncio
     async def test_validate_token_wrong_type(self, auth_instance):
         """Test token validation with wrong token type"""
-        with patch.object(auth_instance, 'jwks_client') as mock_jwks:
-            mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="key")
-            
-            with patch('jwt.decode') as mock_decode:
-                mock_decode.return_value = {
-                    "typ": "ID",  # Not a Bearer token
-                    "azp": "service-client"
-                }
-                
-                result = await auth_instance.validate_token("token")
-                
-                assert result is None
+        # Mock the JWKS client directly
+        mock_jwks = Mock()
+        mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="key")
+        auth_instance._jwks_client = mock_jwks
+
+        with patch('fastmcp.auth.service_account.jwt.decode') as mock_decode:
+            mock_decode.return_value = {
+                "typ": "ID",  # Not a Bearer token
+                "azp": "service-client"
+            }
+
+            result = await auth_instance.validate_token("token")
+
+            assert result is None
     
     @pytest.mark.asyncio
     async def test_validate_token_wrong_client(self, auth_instance):
         """Test token validation with wrong client"""
-        with patch.object(auth_instance, 'jwks_client') as mock_jwks:
-            mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="key")
-            
-            with patch('jwt.decode') as mock_decode:
-                mock_decode.return_value = {
-                    "typ": "Bearer",
-                    "azp": "different-client"  # Wrong client
-                }
-                
-                result = await auth_instance.validate_token("token")
-                
-                assert result is None
+        # Mock the JWKS client directly
+        mock_jwks = Mock()
+        mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="key")
+        auth_instance._jwks_client = mock_jwks
+
+        with patch('fastmcp.auth.service_account.jwt.decode') as mock_decode:
+            mock_decode.return_value = {
+                "typ": "Bearer",
+                "azp": "different-client"  # Wrong client
+            }
+
+            result = await auth_instance.validate_token("token")
+
+            assert result is None
     
     @pytest.mark.asyncio
     async def test_validate_token_expired(self, auth_instance):
         """Test token validation with expired token"""
-        with patch.object(auth_instance, 'jwks_client') as mock_jwks:
-            mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="key")
-            
-            with patch('jwt.decode') as mock_decode:
-                mock_decode.side_effect = jwt.ExpiredSignatureError("Token expired")
-                
-                result = await auth_instance.validate_token("expired.token")
-                
-                assert result is None
+        # Mock the JWKS client directly
+        mock_jwks = Mock()
+        mock_jwks.get_signing_key_from_jwt.return_value = Mock(key="key")
+        auth_instance._jwks_client = mock_jwks
+
+        with patch('fastmcp.auth.service_account.jwt.decode') as mock_decode:
+            from jwt import ExpiredSignatureError
+            mock_decode.side_effect = ExpiredSignatureError("Token expired")
+
+            result = await auth_instance.validate_token("expired.token")
+
+            assert result is None
     
     @pytest.mark.asyncio
     async def test_get_service_info_success(self, auth_instance):
@@ -592,14 +604,15 @@ class TestServiceAccountAuth:
     @pytest.mark.asyncio
     async def test_rate_limiting(self, auth_instance):
         """Test rate limiting between requests"""
-        # Make first request
-        auth_instance._last_request_time = 0
-        start_time = asyncio.get_event_loop().time()
-        
+        import time
+        # Simulate a recent request to trigger rate limiting
+        auth_instance._last_request_time = time.time()
+        start_time = time.time()
+
         await auth_instance._rate_limit()
-        
+
         # Should have waited
-        elapsed = asyncio.get_event_loop().time() - start_time
+        elapsed = time.time() - start_time
         assert elapsed >= auth_instance._min_request_interval - 0.1  # Allow small variance
 
 

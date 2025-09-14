@@ -156,12 +156,29 @@ def sample_subtask_data(sample_subtask_id, sample_task_id, current_timestamp):
 @pytest.fixture
 def mock_facade_service():
     """Mock FacadeService with all facade types."""
-    mock_service = Mock(spec=FacadeService)
-    
-    # Create mock facades
-    task_facade = Mock(spec=TaskApplicationFacade)
-    project_facade = Mock(spec=ProjectApplicationFacade)
-    git_branch_facade = Mock(spec=GitBranchApplicationFacade)
+    # More robust check for Mock objects - check the type, not isinstance
+    # because isinstance won't work properly with Mock classes
+    from unittest.mock import MagicMock, _MockClass
+
+    # Helper function to safely create mocks with spec
+    def create_mock_with_spec(spec_class):
+        # Check if the class is actually a Mock or has been patched
+        if (hasattr(spec_class, '_mock_name') or
+            hasattr(spec_class, '_spec_class') or
+            isinstance(spec_class, (_MockClass, type(MagicMock)))):
+            # It's already a Mock, don't use spec
+            return Mock()
+        else:
+            # It's a real class, safe to use as spec
+            return Mock(spec=spec_class)
+
+    # Create the main service mock
+    mock_service = create_mock_with_spec(FacadeService)
+
+    # Create mock facades using the helper function
+    task_facade = create_mock_with_spec(TaskApplicationFacade)
+    project_facade = create_mock_with_spec(ProjectApplicationFacade)
+    git_branch_facade = create_mock_with_spec(GitBranchApplicationFacade)
     
     # Configure all facade methods as async mocks
     # Task facade methods

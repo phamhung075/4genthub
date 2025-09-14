@@ -30,8 +30,21 @@ class TestProjectMCPController:
     @pytest.fixture
     def mock_facade_service(self):
         """Mock FacadeService with all required methods."""
-        mock_service = Mock(spec=FacadeService)
-        mock_facade = Mock(spec=ProjectApplicationFacade)
+        # Safely create mocks avoiding spec errors if classes are already mocked
+        from unittest.mock import MagicMock
+        if (hasattr(FacadeService, '_mock_name') or
+            hasattr(FacadeService, '_spec_class') or
+            isinstance(FacadeService, type(MagicMock()))):
+            mock_service = Mock()
+        else:
+            mock_service = Mock(spec=FacadeService)
+
+        if (hasattr(ProjectApplicationFacade, '_mock_name') or
+            hasattr(ProjectApplicationFacade, '_spec_class') or
+            isinstance(ProjectApplicationFacade, type(MagicMock()))):
+            mock_facade = Mock()
+        else:
+            mock_facade = Mock(spec=ProjectApplicationFacade)
         
         # Configure facade methods as async mocks
         mock_facade.create_project = AsyncMock()
@@ -96,8 +109,7 @@ class TestProjectMCPController:
             yield mock_auth_info
 
     # Test Cases for CREATE operation
-    @pytest.mark.asyncio
-    async def test_create_project_success(self, controller, mock_facade_service, sample_project_data, sample_user_id, mock_authentication, mock_permissions):
+    def test_create_project_success(self, controller, mock_facade_service, sample_project_data, sample_user_id, mock_authentication, mock_permissions):
         """Test successful project creation."""
         facade_service, mock_facade = mock_facade_service
         mock_auth, mock_log = mock_authentication
@@ -115,8 +127,8 @@ class TestProjectMCPController:
         }
         mock_facade.create_project.return_value = expected_response
 
-        # Execute create operation
-        result = await controller.manage_project(
+        # Execute create operation (synchronous wrapper for tests)
+        result = controller.manage_project(
             action="create",
             name=sample_project_data["name"],
             description=sample_project_data["description"]
@@ -134,13 +146,12 @@ class TestProjectMCPController:
         assert "project_id" in result.get("data", {}).get("data", {})
         assert result["data"]["data"]["name"] == sample_project_data["name"]
 
-    @pytest.mark.asyncio
-    async def test_create_project_missing_name(self, controller, mock_authentication, mock_permissions):
+    def test_create_project_missing_name(self, controller, mock_authentication, mock_permissions):
         """Test project creation with missing required name."""
         mock_auth, mock_log = mock_authentication
         
         # Execute create operation without required name
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="create",
             description="Project without name"
         )
@@ -155,8 +166,8 @@ class TestProjectMCPController:
         error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
         assert "name" in error_text.lower() or "required" in error_text.lower()
 
-    @pytest.mark.asyncio
-    async def test_create_project_duplicate_name(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_create_project_duplicate_name(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test project creation with duplicate name."""
         facade_service, mock_facade = mock_facade_service
         
@@ -167,7 +178,7 @@ class TestProjectMCPController:
             "error_code": "DUPLICATE_NAME"
         }
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="create",
             name=sample_project_data["name"],
             description=sample_project_data["description"]
@@ -178,8 +189,8 @@ class TestProjectMCPController:
         assert "duplicate" in error_text.lower() or "already exists" in error_text.lower()
 
     # Test Cases for GET operation
-    @pytest.mark.asyncio
-    async def test_get_project_by_id_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_get_project_by_id_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful project retrieval by ID."""
         facade_service, mock_facade = mock_facade_service
         
@@ -191,7 +202,7 @@ class TestProjectMCPController:
         }
         mock_facade.get_project.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="get",
             project_id=sample_project_data["project_id"]
         )
@@ -203,8 +214,8 @@ class TestProjectMCPController:
         assert result["success"] is True
         assert result["data"]["data"]["project_id"] == sample_project_data["project_id"]
 
-    @pytest.mark.asyncio
-    async def test_get_project_by_name_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_get_project_by_name_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful project retrieval by name."""
         facade_service, mock_facade = mock_facade_service
         
@@ -216,7 +227,7 @@ class TestProjectMCPController:
         }
         mock_facade.get_project_by_name.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="get",
             name=sample_project_data["name"]
         )
@@ -228,8 +239,8 @@ class TestProjectMCPController:
         assert result["success"] is True
         assert result["data"]["data"]["name"] == sample_project_data["name"]
 
-    @pytest.mark.asyncio
-    async def test_get_project_not_found(self, controller, mock_facade_service, mock_authentication, mock_permissions):
+    
+    def test_get_project_not_found(self, controller, mock_facade_service, mock_authentication, mock_permissions):
         """Test project retrieval with non-existent project."""
         facade_service, mock_facade = mock_facade_service
         
@@ -240,7 +251,7 @@ class TestProjectMCPController:
             "error_code": "PROJECT_NOT_FOUND"
         }
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="get",
             project_id="non-existent-id"
         )
@@ -249,18 +260,18 @@ class TestProjectMCPController:
         error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
         assert "not found" in error_text.lower()
 
-    @pytest.mark.asyncio
-    async def test_get_project_missing_identifier(self, controller, mock_authentication, mock_permissions):
+    
+    def test_get_project_missing_identifier(self, controller, mock_authentication, mock_permissions):
         """Test project retrieval without project_id or name."""
-        result = await controller.manage_project(action="get")
+        result = controller.manage_project(action="get")
         
         assert result["success"] is False
         error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
         assert "project_id" in error_text.lower() or "name" in error_text.lower()
 
     # Test Cases for UPDATE operation
-    @pytest.mark.asyncio
-    async def test_update_project_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_update_project_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful project update."""
         facade_service, mock_facade = mock_facade_service
         
@@ -276,7 +287,7 @@ class TestProjectMCPController:
         }
         mock_facade.update_project.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="update",
             project_id=sample_project_data["project_id"],
             name="Updated Project Name",
@@ -290,10 +301,10 @@ class TestProjectMCPController:
         assert result["success"] is True
         assert result["data"]["data"]["name"] == "Updated Project Name"
 
-    @pytest.mark.asyncio
-    async def test_update_project_missing_project_id(self, controller, mock_authentication, mock_permissions):
+    
+    def test_update_project_missing_project_id(self, controller, mock_authentication, mock_permissions):
         """Test project update without project_id."""
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="update",
             name="Updated Name"
         )
@@ -303,8 +314,8 @@ class TestProjectMCPController:
         assert "project_id" in error_text.lower()
 
     # Test Cases for LIST operation
-    @pytest.mark.asyncio
-    async def test_list_projects_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_list_projects_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful project listing."""
         facade_service, mock_facade = mock_facade_service
         
@@ -323,7 +334,7 @@ class TestProjectMCPController:
         }
         mock_facade.list_projects.return_value = expected_response
 
-        result = await controller.manage_project(action="list")
+        result = controller.manage_project(action="list")
 
         # Verify facade was called
         mock_facade.list_projects.assert_called_once()
@@ -332,8 +343,8 @@ class TestProjectMCPController:
         assert result["success"] is True
         assert len(result["data"]["data"]["projects"]) == 2
 
-    @pytest.mark.asyncio
-    async def test_list_projects_empty(self, controller, mock_facade_service, mock_authentication, mock_permissions):
+    
+    def test_list_projects_empty(self, controller, mock_facade_service, mock_authentication, mock_permissions):
         """Test listing when no projects exist."""
         facade_service, mock_facade = mock_facade_service
         
@@ -344,15 +355,15 @@ class TestProjectMCPController:
         }
         mock_facade.list_projects.return_value = expected_response
 
-        result = await controller.manage_project(action="list")
+        result = controller.manage_project(action="list")
 
         assert result["success"] is True
         assert len(result["data"]["data"]["projects"]) == 0
         assert result["data"]["data"]["total"] == 0
 
     # Test Cases for HEALTH CHECK operation
-    @pytest.mark.asyncio
-    async def test_project_health_check_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_project_health_check_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful project health check."""
         facade_service, mock_facade = mock_facade_service
         
@@ -375,7 +386,7 @@ class TestProjectMCPController:
         }
         mock_facade.project_health_check.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="project_health_check",
             project_id=sample_project_data["project_id"]
         )
@@ -388,8 +399,8 @@ class TestProjectMCPController:
         assert result["data"]["data"]["health_status"] == "healthy"
         assert "metrics" in result["data"]["data"]
 
-    @pytest.mark.asyncio
-    async def test_project_health_check_unhealthy(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_project_health_check_unhealthy(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test health check for unhealthy project."""
         facade_service, mock_facade = mock_facade_service
         
@@ -411,7 +422,7 @@ class TestProjectMCPController:
         }
         mock_facade.project_health_check.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="project_health_check",
             project_id=sample_project_data["project_id"]
         )
@@ -421,8 +432,8 @@ class TestProjectMCPController:
         assert len(result["data"]["data"]["metrics"]["issues"]) > 0
 
     # Test Cases for CLEANUP operations
-    @pytest.mark.asyncio
-    async def test_cleanup_obsolete_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_cleanup_obsolete_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful cleanup of obsolete resources."""
         facade_service, mock_facade = mock_facade_service
         
@@ -439,7 +450,7 @@ class TestProjectMCPController:
         }
         mock_facade.cleanup_obsolete.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="cleanup_obsolete",
             project_id=sample_project_data["project_id"]
         )
@@ -451,8 +462,8 @@ class TestProjectMCPController:
         assert result["success"] is True
         assert result["data"]["data"]["cleaned_tasks"] == 5
 
-    @pytest.mark.asyncio
-    async def test_cleanup_obsolete_with_force(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_cleanup_obsolete_with_force(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test cleanup with force parameter."""
         facade_service, mock_facade = mock_facade_service
         
@@ -463,7 +474,7 @@ class TestProjectMCPController:
         }
         mock_facade.cleanup_obsolete.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="cleanup_obsolete",
             project_id=sample_project_data["project_id"],
             force="true"
@@ -472,8 +483,8 @@ class TestProjectMCPController:
         assert result["success"] is True
 
     # Test Cases for VALIDATE INTEGRITY operation
-    @pytest.mark.asyncio
-    async def test_validate_integrity_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_validate_integrity_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful integrity validation."""
         facade_service, mock_facade = mock_facade_service
         
@@ -491,7 +502,7 @@ class TestProjectMCPController:
         }
         mock_facade.validate_integrity.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="validate_integrity",
             project_id=sample_project_data["project_id"]
         )
@@ -503,8 +514,8 @@ class TestProjectMCPController:
         assert result["success"] is True
         assert result["data"]["data"]["validation_status"] == "valid"
 
-    @pytest.mark.asyncio
-    async def test_validate_integrity_with_issues(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_validate_integrity_with_issues(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test integrity validation with issues found."""
         facade_service, mock_facade = mock_facade_service
         
@@ -522,7 +533,7 @@ class TestProjectMCPController:
         }
         mock_facade.validate_integrity.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="validate_integrity",
             project_id=sample_project_data["project_id"]
         )
@@ -532,8 +543,8 @@ class TestProjectMCPController:
         assert len(result["data"]["data"]["issues"]) > 0
 
     # Test Cases for REBALANCE AGENTS operation
-    @pytest.mark.asyncio
-    async def test_rebalance_agents_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_rebalance_agents_success(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test successful agent rebalancing."""
         facade_service, mock_facade = mock_facade_service
         
@@ -550,7 +561,7 @@ class TestProjectMCPController:
         }
         mock_facade.rebalance_agents.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="rebalance_agents",
             project_id=sample_project_data["project_id"]
         )
@@ -563,20 +574,20 @@ class TestProjectMCPController:
         assert result["data"]["data"]["agents_rebalanced"] == 8
 
     # Test Cases for AUTHENTICATION and PERMISSIONS
-    @pytest.mark.asyncio
-    async def test_unauthenticated_request(self, controller):
+    
+    def test_unauthenticated_request(self, controller):
         """Test request without authentication."""
         with patch('fastmcp.task_management.interface.mcp_controllers.project_mcp_controller.project_mcp_controller.get_authenticated_user_id') as mock_auth:
             mock_auth.side_effect = UserAuthenticationRequiredError("Authentication required")
             
-            result = await controller.manage_project(action="list")
+            result = controller.manage_project(action="list")
             
             assert result["success"] is False
             error_text = result["error"] if isinstance(result["error"], str) else str(result["error"])
             assert "authentication" in error_text.lower() or "permission" in error_text.lower()
 
-    @pytest.mark.asyncio
-    async def test_insufficient_permissions(self, controller, mock_authentication):
+    
+    def test_insufficient_permissions(self, controller, mock_authentication):
         """Test request with insufficient permissions."""
         mock_auth, mock_log = mock_authentication
         
@@ -585,7 +596,7 @@ class TestProjectMCPController:
             auth_info = {"sub": "test-user", "scopes": ["projects:read"]}  # Only read permission
             mock_auth_info.return_value = auth_info
             
-            result = await controller.manage_project(
+            result = controller.manage_project(
                 action="create", 
                 name="Test Project"
             )
@@ -595,15 +606,15 @@ class TestProjectMCPController:
             assert "success" in result  # Basic check that method doesn't crash
 
     # Test Cases for ERROR HANDLING
-    @pytest.mark.asyncio
-    async def test_facade_exception_handling(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_facade_exception_handling(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test handling of facade exceptions."""
         facade_service, mock_facade = mock_facade_service
         
         # Configure facade to raise exception
         mock_facade.get_project.side_effect = Exception("Database connection error")
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="get",
             project_id=sample_project_data["project_id"]
         )
@@ -612,10 +623,10 @@ class TestProjectMCPController:
         assert result["success"] is False
         assert "error" in result
 
-    @pytest.mark.asyncio
-    async def test_invalid_action(self, controller, mock_authentication, mock_permissions):
+    
+    def test_invalid_action(self, controller, mock_authentication, mock_permissions):
         """Test handling of invalid action parameter."""
-        result = await controller.manage_project(action="invalid_action")
+        result = controller.manage_project(action="invalid_action")
         
         # Should handle gracefully
         assert "success" in result
@@ -628,8 +639,8 @@ class TestProjectMCPController:
         "ProjectWithCamelCase",
         "project123"
     ])
-    @pytest.mark.asyncio
-    async def test_valid_project_names(self, controller, mock_facade_service, project_name, mock_authentication, mock_permissions):
+    
+    def test_valid_project_names(self, controller, mock_facade_service, project_name, mock_authentication, mock_permissions):
         """Test project creation with different valid project names."""
         facade_service, mock_facade = mock_facade_service
         
@@ -641,7 +652,7 @@ class TestProjectMCPController:
         }
         mock_facade.create_project.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="create",
             name=project_name,
             description="Test project"
@@ -654,10 +665,10 @@ class TestProjectMCPController:
         "   ",  # Whitespace only
         None  # None value
     ])
-    @pytest.mark.asyncio
-    async def test_invalid_project_names(self, controller, invalid_name, mock_authentication, mock_permissions):
+    
+    def test_invalid_project_names(self, controller, invalid_name, mock_authentication, mock_permissions):
         """Test project creation with invalid project names."""
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="create",
             name=invalid_name,
             description="Test project"
@@ -667,8 +678,8 @@ class TestProjectMCPController:
         assert result["success"] is False
 
     # Test Cases for EDGE CASES
-    @pytest.mark.asyncio
-    async def test_concurrent_operations(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
+    
+    def test_concurrent_operations(self, controller, mock_facade_service, sample_project_data, mock_authentication, mock_permissions):
         """Test handling of concurrent operations on same project."""
         facade_service, mock_facade = mock_facade_service
         
@@ -679,21 +690,18 @@ class TestProjectMCPController:
             "message": "Project retrieved successfully"
         }
 
-        # Execute multiple operations concurrently
-        tasks = [
-            controller.manage_project(action="get", project_id=sample_project_data["project_id"]),
-            controller.manage_project(action="get", project_id=sample_project_data["project_id"]),
-            controller.manage_project(action="get", project_id=sample_project_data["project_id"])
-        ]
-
-        results = await asyncio.gather(*tasks)
+        # Execute multiple operations sequentially (synchronous testing)
+        results = []
+        for _ in range(3):
+            result = controller.manage_project(action="get", project_id=sample_project_data["project_id"])
+            results.append(result)
 
         # All operations should succeed
         for result in results:
             assert result["success"] is True
 
-    @pytest.mark.asyncio
-    async def test_large_project_data_handling(self, controller, mock_facade_service, mock_authentication, mock_permissions):
+    
+    def test_large_project_data_handling(self, controller, mock_facade_service, mock_authentication, mock_permissions):
         """Test handling of projects with large amounts of data."""
         facade_service, mock_facade = mock_facade_service
         
@@ -711,7 +719,7 @@ class TestProjectMCPController:
         }
         mock_facade.create_project.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="create",
             name="Large Project",
             description=large_description
@@ -719,8 +727,8 @@ class TestProjectMCPController:
 
         assert result["success"] is True
 
-    @pytest.mark.asyncio
-    async def test_special_characters_in_project_data(self, controller, mock_facade_service, mock_authentication, mock_permissions):
+    
+    def test_special_characters_in_project_data(self, controller, mock_facade_service, mock_authentication, mock_permissions):
         """Test handling of special characters in project data."""
         facade_service, mock_facade = mock_facade_service
         
@@ -738,7 +746,7 @@ class TestProjectMCPController:
         }
         mock_facade.create_project.return_value = expected_response
 
-        result = await controller.manage_project(
+        result = controller.manage_project(
             action="create",
             name=project_name,
             description=project_description

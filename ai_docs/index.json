@@ -622,18 +622,18 @@
           "size": 8969
         },
         {
-          "hash": "e623f02f30fb7f4e2428934ba5b6d52a",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "19ec401ebb864aaf960cfb6d1e384f28",
+          "modified": "2025-09-14T08:31:22.130983",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 128351
+          "size": 145781
         },
         {
-          "hash": "c05bd8f20b5bb4dcddb1204faf17955b",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "dfaa6d8bfb710c867c49966d810bd316",
+          "modified": "2025-09-14T08:31:22.098819",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 45295
+          "size": 49529
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -2231,7 +2231,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 52,
+      "count": 60,
       "files": [
         {
           "hash": "f5a4c5c6666ac6598cc9394c579deacb",
@@ -2255,6 +2255,20 @@
           "size": 13792
         },
         {
+          "hash": "bac5af084f92734390d65a52a3caffa4",
+          "modified": "2025-09-14T06:13:51.685063",
+          "name": "iteration-32-test-cache-cleanup.md",
+          "path": "testing-qa/iteration-32-test-cache-cleanup.md",
+          "size": 3802
+        },
+        {
+          "hash": "c2d05b6ddce1fdc77fc2fc473022539b",
+          "modified": "2025-09-14T06:21:58.473415",
+          "name": "iteration-33-timezone-cache-fixes.md",
+          "path": "testing-qa/iteration-33-timezone-cache-fixes.md",
+          "size": 2740
+        },
+        {
           "hash": "374553ed6321a1599f6043b833432275",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "mcp-test-results-2025-09-05.md",
@@ -2262,11 +2276,32 @@
           "size": 8733
         },
         {
+          "hash": "e4eb0f266afbaf1e5ecbbcf7750fa772",
+          "modified": "2025-09-14T08:47:26.843356",
+          "name": "iteration-44-breakthrough.md",
+          "path": "testing-qa/iteration-44-breakthrough.md",
+          "size": 4864
+        },
+        {
           "hash": "c00a39731a473330080bc0333a99af0e",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "mcp-tools-test-issues.md",
           "path": "testing-qa/mcp-tools-test-issues.md",
           "size": 12660
+        },
+        {
+          "hash": "31c405d0d9ba44421e5a0fb712295afa",
+          "modified": "2025-09-14T07:58:44.830599",
+          "name": "iteration-40-mock-spec-fix.md",
+          "path": "testing-qa/iteration-40-mock-spec-fix.md",
+          "size": 5214
+        },
+        {
+          "hash": "9b2f587b0f96ad996d8d2a00cfb2393b",
+          "modified": "2025-09-14T08:08:43.264428",
+          "name": "iteration-42-test-status-summary.md",
+          "path": "testing-qa/iteration-42-test-status-summary.md",
+          "size": 5406
         },
         {
           "hash": "4d386e08457a5a2855498d3ce0168e14",
@@ -2344,6 +2379,13 @@
           "name": "mcp-test-results-iteration10-2025-09-05.md",
           "path": "testing-qa/mcp-test-results-iteration10-2025-09-05.md",
           "size": 12817
+        },
+        {
+          "hash": "114cf94da443c7fa2b243152b42b1a1e",
+          "modified": "2025-09-14T08:09:41.403118",
+          "name": "iteration-42-action-plan.md",
+          "path": "testing-qa/iteration-42-action-plan.md",
+          "size": 7021
         },
         {
           "hash": "d6897bf1d3449b56cfa4a2e718351e6e",
@@ -2577,6 +2619,13 @@
           "size": 13126
         },
         {
+          "hash": "b5c7702faf7b16aca187da5d78174ebb",
+          "modified": "2025-09-14T07:48:03.553881",
+          "name": "iteration-39-mock-spec-fix.md",
+          "path": "testing-qa/iteration-39-mock-spec-fix.md",
+          "size": 4263
+        },
+        {
           "hash": "deeafc5964988cbf2e6273f500149914",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "mcp-iteration-8-test-success-2025-09-05.md",
@@ -2596,6 +2645,13 @@
           "name": "task-management-crud-test-results-2025-09-09.md",
           "path": "testing-qa/task-management-crud-test-results-2025-09-09.md",
           "size": 8526
+        },
+        {
+          "hash": "dda43069ca1c6b16c30630e8bbcc8e56",
+          "modified": "2025-09-14T07:05:03.628914",
+          "name": "iteration-36-agent-assignment-tests.md",
+          "path": "testing-qa/iteration-36-agent-assignment-tests.md",
+          "size": 3171
         }
       ],
       "path": "testing-qa"
@@ -2809,7 +2865,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T05:16:34.792828",
+  "generated_at": "2025-09-14T08:47:27.063286",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3190,6 +3246,14 @@
         "context_resolution_tests_summary.md",
         "documentation-quality-prevention-strategy.md",
         "iteration-32-summary.md",
+        "iteration-32-test-cache-cleanup.md",
+        "iteration-33-timezone-cache-fixes.md",
+        "iteration-36-agent-assignment-tests.md",
+        "iteration-39-mock-spec-fix.md",
+        "iteration-40-mock-spec-fix.md",
+        "iteration-42-action-plan.md",
+        "iteration-42-test-status-summary.md",
+        "iteration-44-breakthrough.md",
         "iteration-53-summary.md",
         "iteration-54-summary.md",
         "iteration-55-summary.md",
@@ -3267,5 +3331,5 @@
     }
   },
   "total_directories": 29,
-  "total_files": 348
+  "total_files": 356
 }

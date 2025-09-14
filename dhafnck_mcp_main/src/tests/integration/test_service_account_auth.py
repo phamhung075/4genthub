@@ -38,6 +38,7 @@ class TestServiceAccountAuth:
         """Setup for each test method"""
         self.auth = ServiceAccountAuth(TEST_CONFIG)
 
+    @pytest.mark.asyncio
     async def teardown_method(self):
         """Cleanup after each test method"""
         await self.auth.close()
@@ -298,9 +299,12 @@ class TestServiceAccountAuth:
             "access_token": "context-token",
             "expires_in": 300
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_response):
-            async with ServiceAccountAuth(TEST_CONFIG) as auth:
+
+        # Create a new auth instance for context manager test
+        test_auth = ServiceAccountAuth(TEST_CONFIG)
+
+        with patch.object(test_auth.client, 'post', return_value=mock_response):
+            async with test_auth as auth:
                 assert auth._current_token is not None
                 assert auth._current_token.access_token == "context-token"
 
@@ -435,6 +439,7 @@ class TestRealKeycloakIntegration:
         
         self.auth = ServiceAccountAuth()
 
+    @pytest.mark.asyncio
     async def teardown_method(self):
         """Cleanup after integration tests"""
         if hasattr(self, 'auth'):
