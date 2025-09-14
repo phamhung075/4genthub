@@ -10,8 +10,8 @@ WORKDIR /build
 # Copy package files (explicitly include package-lock.json)
 COPY dhafnck-frontend/package.json dhafnck-frontend/package-lock.json ./
 
-# Install dependencies (production only)
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci
 
 # Copy source code
 COPY dhafnck-frontend/ .
