@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **Token Generation Endpoint 404 Error in Production** (2025-09-14):
+  - Fixed incorrect log message in `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
+    - Changed from `/api/v2/tokens` to `/api/auth/tokens` to match actual router configuration
+  - Verified backend server configuration:
+    - Confirmed server runs on port 8000 (configured in `mcp_http_server.py`)
+    - Router correctly configured with prefix `/api/auth/tokens` and `/generate` endpoint
+  - Production deployment notes:
+    - Ensure latest code is deployed to production server at `api.92.5.226.7.nip.io`
+    - Backend should expose `/api/auth/tokens/generate` endpoint on port 8000
 - **Supabase Import Error** (2025-09-14):
   - Fixed conditional loading of Supabase auth endpoints based on AUTH_PROVIDER environment variable
   - Supabase routes are now only loaded when AUTH_PROVIDER=supabase
