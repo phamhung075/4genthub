@@ -4,6 +4,20 @@ All notable changes to the DhafnckMCP AI Agent Orchestration Platform.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [Semantic](https://semver.org/spec/v2.0.0.html)
 
+## [2025-09-14] - CORS Configuration Fix
+
+### Fixed
+- **mcp_http_server.py**: Updated CORS configuration to read from environment variables
+  - Changed hardcoded CORS origins to read from `CORS_ORIGINS` environment variable
+  - Added support for comma-separated list of origins
+  - Maintains backward compatibility with default values ["http://localhost:3800", "http://localhost:3000"]
+  - Added logging to show which CORS origins are being used
+- **api_server.py**: Updated CORS configuration to read from environment variables
+  - Applied same fix as mcp_http_server.py for consistency
+  - Reads from `CORS_ORIGINS` environment variable
+  - Supports comma-separated origins with proper parsing
+  - Falls back to default values if environment variable not set
+
 ## [2025-09-13] - Test Suite Update - Iteration 59
 
 ### Fixed - Iteration 59 (2025-09-13 23:15)
