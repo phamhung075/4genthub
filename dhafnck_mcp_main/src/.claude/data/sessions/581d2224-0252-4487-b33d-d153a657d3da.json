@@ -1,0 +1,8 @@
+{
+  "session_id": "581d2224-0252-4487-b33d-d153a657d3da",
+  "prompts": [
+    "you must remove code not correct because it make \n  wrong, remove by add .backup to name file",
+    "continue",
+    "why you not use dhafnck_mcp_main/src/fastmcp/server/mcp_entry_point.py same as menu r ?"
+  ]
+}

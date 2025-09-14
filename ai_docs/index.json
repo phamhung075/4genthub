@@ -1316,11 +1316,18 @@
       "path": "core-architecture"
     },
     "deployment": {
-      "count": 1,
+      "count": 2,
       "files": [
         {
+          "hash": "8125a41e2c03914778b81d8090f22b8c",
+          "modified": "2025-09-14T21:05:12.554032",
+          "name": "environment-variables-guide.md",
+          "path": "deployment/environment-variables-guide.md",
+          "size": 5476
+        },
+        {
           "hash": "b49acdeedec5e948ece11728c6a756e9",
-          "modified": "2025-09-14T20:50:21.057724",
+          "modified": "2025-09-14T21:03:08.947390",
           "name": "frontend-environment-configuration.md",
           "path": "deployment/frontend-environment-configuration.md",
           "size": 3929
@@ -1875,7 +1882,7 @@
       "files": [
         {
           "hash": "c62f03b4f4ceb0bf85588798c40c4500",
-          "modified": "2025-09-14T21:01:39.810112",
+          "modified": "2025-09-14T21:03:08.947390",
           "name": "CAPROVER_DEPLOYMENT_FIX.md",
           "path": "operations/CAPROVER_DEPLOYMENT_FIX.md",
           "size": 5451
@@ -1959,7 +1966,7 @@
         },
         {
           "hash": "8e30cb089bdae03d8d74632711ba6c7e",
-          "modified": "2025-09-14T21:01:51.726315",
+          "modified": "2025-09-14T21:03:08.947390",
           "name": "CAPROVER_ENV_VARIABLES.md",
           "path": "operations/CAPROVER_ENV_VARIABLES.md",
           "size": 4002
@@ -2576,7 +2583,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T21:01:52.054361",
+  "generated_at": "2025-09-14T21:05:12.883218",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2785,6 +2792,7 @@
     },
     "deployment": {
       "files": [
+        "environment-variables-guide.md",
         "frontend-environment-configuration.md"
       ]
     },
@@ -3007,5 +3015,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 313
+  "total_files": 314
 }
