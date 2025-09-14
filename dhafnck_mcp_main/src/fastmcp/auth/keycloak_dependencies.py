@@ -98,7 +98,11 @@ async def get_current_user_universal(
 async def validate_keycloak_token(token: str) -> User:
     """Validate a Keycloak JWT token."""
     try:
-        if AUTH_PROVIDER != "keycloak" or not KEYCLOAK_URL:
+        # Read current environment values to support testing with patch.dict
+        auth_provider = os.getenv("AUTH_PROVIDER", "keycloak")
+        keycloak_url = os.getenv("KEYCLOAK_URL")
+
+        if auth_provider != "keycloak" or not keycloak_url:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Keycloak not configured"
@@ -173,6 +177,9 @@ async def validate_keycloak_token(token: str) -> User:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {str(e)}"
         )
+    except HTTPException:
+        # Re-raise HTTPExceptions (like configuration errors) as-is
+        raise
     except Exception as e:
         logger.error(f"Keycloak token validation error: {e}")
         raise HTTPException(
@@ -183,7 +190,9 @@ async def validate_keycloak_token(token: str) -> User:
 
 def validate_local_token(token: str) -> User:
     """Validate a locally-generated JWT token."""
-    if not JWT_SECRET_KEY:
+    # Read current environment value to support testing with patch.dict
+    jwt_secret = os.getenv("JWT_SECRET_KEY")
+    if not jwt_secret:
         logger.error("JWT_SECRET_KEY not configured")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -193,8 +202,8 @@ def validate_local_token(token: str) -> User:
     try:
         # Decode the local JWT token with clock skew tolerance
         payload = jwt.decode(
-            token, 
-            JWT_SECRET_KEY, 
+            token,
+            jwt_secret,
             algorithms=[JWT_ALGORITHM],
             leeway=30  # Allow 30 seconds of clock skew
         )
@@ -222,7 +231,7 @@ def validate_local_token(token: str) -> User:
         # Create User object
         user = User(
             id=user_id,
-            email=email or f"{user_id}@local",
+            email=email or f"{user_id}@local.dev",
             username=payload.get("username") or email or user_id,
             password_hash="local-jwt-authenticated"
         )

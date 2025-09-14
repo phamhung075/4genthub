@@ -104,25 +104,29 @@ class PlannedTask:
     def can_run_in_parallel(self, other_task: 'PlannedTask') -> bool:
         """Check if this task can run in parallel with another task"""
         # Same agent can't work on both tasks simultaneously
-        if (self.agent_assignment and other_task.agent_assignment and 
+        if (self.agent_assignment and other_task.agent_assignment and
             self.agent_assignment.primary_agent == other_task.agent_assignment.primary_agent):
             return False
-        
+
         # Check for file conflicts
         self_files = set(self.file_references)
         other_files = set(other_task.file_references)
         if self_files.intersection(other_files):
             return False
-            
-        # Different phases can often run in parallel
-        parallel_phases = {
-            (ExecutionPhase.ARCHITECTURE, ExecutionPhase.PLANNING),
-            (ExecutionPhase.IMPLEMENTATION, ExecutionPhase.DEPLOYMENT),
-            (ExecutionPhase.TESTING, ExecutionPhase.REVIEW)
+
+        # Tasks can run in parallel if they don't conflict on agent or files
+        # Additional phase restrictions for certain incompatible phases
+        incompatible_phases = {
+            (ExecutionPhase.PLANNING, ExecutionPhase.IMPLEMENTATION),
+            (ExecutionPhase.ARCHITECTURE, ExecutionPhase.TESTING),
         }
-        
+
         phase_pair = (self.phase, other_task.phase)
-        return phase_pair in parallel_phases or phase_pair[::-1] in parallel_phases
+        if phase_pair in incompatible_phases or phase_pair[::-1] in incompatible_phases:
+            return False
+
+        # If no conflicts, tasks can run in parallel
+        return True
     
     def to_mcp_task_request(self) -> Dict[str, Any]:
         """Convert to MCP task creation request format"""

@@ -117,13 +117,17 @@ DEPRECATED_AGENT_MAPPINGS = {
 def resolve_agent_name(agent_name: str) -> str:
     """
     Resolve agent name to standard kebab-case format.
-    
+
     Args:
         agent_name: The agent name to resolve (can be @prefixed, underscore, or kebab-case)
-        
+
     Returns:
         The standard kebab-case agent name
     """
+    # Handle empty string
+    if not agent_name:
+        return ""
+
     # Direct lookup first (handles @, underscore, and kebab variations)
     if agent_name in DEPRECATED_AGENT_MAPPINGS:
         return DEPRECATED_AGENT_MAPPINGS[agent_name]
@@ -157,15 +161,29 @@ def resolve_agent_name(agent_name: str) -> str:
 def is_deprecated_agent(agent_name: str) -> bool:
     """
     Check if an agent name is deprecated.
-    
+
     Args:
         agent_name: The agent name to check
-        
+
     Returns:
-        True if the agent is deprecated
+        True if the agent is deprecated (maps to a different name)
     """
-    normalized = agent_name.replace('-', '_')
-    hyphenated = agent_name.replace('_', '-')
-    
-    return (normalized in DEPRECATED_AGENT_MAPPINGS or 
-            hyphenated in DEPRECATED_AGENT_MAPPINGS)
+    # Strip @ prefix if present
+    clean_name = agent_name.lstrip('@')
+
+    # Check if the name is in the mappings
+    if clean_name in DEPRECATED_AGENT_MAPPINGS:
+        # It's deprecated only if it maps to a different name
+        return DEPRECATED_AGENT_MAPPINGS[clean_name] != clean_name
+
+    # Check underscore version
+    normalized = clean_name.replace('-', '_')
+    if normalized in DEPRECATED_AGENT_MAPPINGS:
+        return DEPRECATED_AGENT_MAPPINGS[normalized] != normalized
+
+    # Check hyphenated version
+    hyphenated = clean_name.replace('_', '-')
+    if hyphenated in DEPRECATED_AGENT_MAPPINGS:
+        return DEPRECATED_AGENT_MAPPINGS[hyphenated] != hyphenated
+
+    return False

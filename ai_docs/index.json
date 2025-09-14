@@ -622,18 +622,18 @@
           "size": 8969
         },
         {
-          "hash": "19ec401ebb864aaf960cfb6d1e384f28",
-          "modified": "2025-09-14T08:31:22.130983",
+          "hash": "656cd8da6571185fe3521308950a2aa7",
+          "modified": "2025-09-14T09:28:29.088666",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 145781
+          "size": 29574
         },
         {
-          "hash": "dfaa6d8bfb710c867c49966d810bd316",
-          "modified": "2025-09-14T08:31:22.098819",
+          "hash": "73913155f0d5cc230ad1fb301bc3ac68",
+          "modified": "2025-09-14T09:28:29.057010",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 49529
+          "size": 43961
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -2231,7 +2231,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 60,
+      "count": 61,
       "files": [
         {
           "hash": "f5a4c5c6666ac6598cc9394c579deacb",
@@ -2295,6 +2295,13 @@
           "name": "iteration-40-mock-spec-fix.md",
           "path": "testing-qa/iteration-40-mock-spec-fix.md",
           "size": 5214
+        },
+        {
+          "hash": "aca1e67540ec799f897bf1d9a7a1e060",
+          "modified": "2025-09-14T09:45:45.987985",
+          "name": "iteration-33-summary.md",
+          "path": "testing-qa/iteration-33-summary.md",
+          "size": 3040
         },
         {
           "hash": "9b2f587b0f96ad996d8d2a00cfb2393b",
@@ -2514,11 +2521,11 @@
           "size": 20177
         },
         {
-          "hash": "58bd5e5a8eb84289a8294887a03d8f01",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "ce550a2b10e2b1bb4b7cb3cb23478929",
+          "modified": "2025-09-14T09:27:58.503741",
           "name": "iteration-32-summary.md",
           "path": "testing-qa/iteration-32-summary.md",
-          "size": 3669
+          "size": 3998
         },
         {
           "hash": "2c3e910cdc0ed772e7fd7c05f1a36f1a",
@@ -2865,7 +2872,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T08:47:27.063286",
+  "generated_at": "2025-09-14T09:45:46.220658",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3247,6 +3254,7 @@
         "documentation-quality-prevention-strategy.md",
         "iteration-32-summary.md",
         "iteration-32-test-cache-cleanup.md",
+        "iteration-33-summary.md",
         "iteration-33-timezone-cache-fixes.md",
         "iteration-36-agent-assignment-tests.md",
         "iteration-39-mock-spec-fix.md",
@@ -3331,5 +3339,5 @@
     }
   },
   "total_directories": 29,
-  "total_files": 356
+  "total_files": 357
 }
