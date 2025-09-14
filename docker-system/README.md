@@ -101,7 +101,7 @@ FEATURE_REQUEST_LOGGING=true
 
 # Environment  
 ENV=production
-APP_ENV=production
+ENV=production
 APP_DEBUG=false
 APP_LOG_LEVEL=INFO
 ```

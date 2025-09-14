@@ -66,7 +66,7 @@ services:
       DATABASE_HOST: postgres
       # Ensure production settings
       ENV: production
-      APP_ENV: production
+      ENV: production
       NODE_ENV: production
     ports:
       - "${MCP_PORT:-8001}:8001"

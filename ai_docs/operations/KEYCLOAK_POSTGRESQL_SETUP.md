@@ -45,7 +45,7 @@ Create or update your `.env` file with the following configuration:
 # =============================================================================
 ENV=production
 NODE_ENV=production
-APP_ENV=production
+ENV=production
 
 # =============================================================================
 # POSTGRESQL DATABASE (Docker Container)

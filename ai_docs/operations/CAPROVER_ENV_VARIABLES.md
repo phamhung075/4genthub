@@ -20,7 +20,7 @@ DATABASE_PASSWORD=your-db-password
 DATABASE_PORT=5432
 
 # Application Settings
-APP_ENV=production
+ENV=production
 APP_DEBUG=false
 APP_LOG_LEVEL=INFO
 ENV=production

@@ -71,7 +71,7 @@ python test-mcp-keycloak-auth.py
 ```env
 # Environment
 ENV=production
-APP_ENV=production
+ENV=production
 APP_DEBUG=false
 
 # PostgreSQL Docker
