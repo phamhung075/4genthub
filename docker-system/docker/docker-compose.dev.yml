@@ -2,17 +2,18 @@
 # Uses .env.dev for environment variables
 # Includes validation and error handling
 
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: dhafnck-postgres
+    env_file:
+      - ../../.env.dev
     environment:
       POSTGRES_DB: ${DATABASE_NAME:-dhafnck_mcp}
       POSTGRES_USER: ${DATABASE_USER:-dhafnck_user}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-dev_password}
+      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
       - "${DATABASE_PORT:-5432}:5432"
     volumes:
@@ -41,21 +42,23 @@ services:
       - pgadmin-data:/var/lib/pgadmin
     networks:
       - dhafnck-network
-    depends_on:
-      - postgres
     restart: unless-stopped
 
   # Backend API
   backend:
     build:
-      context: ..
+      context: ../..
       dockerfile: docker-system/docker/Dockerfile.backend.dev
     container_name: dhafnck-backend
     env_file:
-      - ../.env.dev
+      - ../../.env.dev
     environment:
       # Override to use container network
       DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_NAME: ${DATABASE_NAME:-dhafnck_mcp}
+      DATABASE_USER: ${DATABASE_USER:-dhafnck_user}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-dev_password}
       DATABASE_URL: postgresql://${DATABASE_USER:-dhafnck_user}:${DATABASE_PASSWORD:-dev_password}@postgres:${DATABASE_PORT:-5432}/${DATABASE_NAME:-dhafnck_mcp}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
       APP_ENV: ${APP_ENV:-development}
@@ -79,11 +82,11 @@ services:
   # Frontend
   frontend:
     build:
-      context: ..
+      context: ../..
       dockerfile: docker-system/docker/Dockerfile.frontend.dev
     container_name: dhafnck-frontend
     env_file:
-      - ../.env.dev
+      - ../../.env.dev
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
       VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8000}
@@ -113,5 +116,5 @@ volumes:
 
 networks:
   dhafnck-network:
-    driver: bridge
+    external: true
     name: dhafnck-network

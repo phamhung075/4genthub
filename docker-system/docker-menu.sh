@@ -9,6 +9,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="${SCRIPT_DIR}/docker"
 PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
 
+# ALWAYS load .env.dev file at startup for consistency
+ENV_DEV_FILE="${PROJECT_ROOT}/.env.dev"
+if [[ -f "$ENV_DEV_FILE" ]]; then
+    set -a
+    source <(grep -v '^#' "$ENV_DEV_FILE" | grep -v '^$' | sed 's/\r$//')
+    set +a
+    echo -e "${GREEN}✅ Loaded configuration from .env.dev${RESET}"
+else
+    echo -e "${YELLOW}⚠️ Warning: .env.dev not found, using defaults${RESET}"
+fi
+
 # Check and stop conflicting containers on required ports
 check_and_free_ports() {
     echo -e "${YELLOW}🔍 Checking for port conflicts...${RESET}"
@@ -261,13 +272,14 @@ show_header() {
 show_main_menu() {
     echo -e "${MAGENTA}${BOLD}Build Configurations${RESET}"
     echo "────────────────────────────────────────────────"
-    echo "  1) 🐘 PostgreSQL Local (Backend + Frontend)"
+    echo "  1) 🚀 Backend + Frontend Only (requires DB running)"
     echo "  2) ☁️  Supabase Cloud (No Redis)"
     echo "  3) ☁️🔴 Supabase Cloud + Redis (Full Stack)"
     echo ""
     echo -e "${GREEN}${BOLD}Database Management${RESET}"
     echo "────────────────────────────────────────────────"
-    echo "  C) 🎛️  PostgreSQL with pgAdmin UI (Full Stack)"
+    echo "  B) 🗄️  Database Only (PostgreSQL standalone)"
+    echo "  C) 🎛️  pgAdmin UI Only (requires DB running)"
     echo ""
     echo -e "${CYAN}${BOLD}💻 Development Mode (Non-Docker)${RESET}"
     echo "────────────────────────────────────────────────"
@@ -293,66 +305,50 @@ show_main_menu() {
 
 # Build and start PostgreSQL Local configuration with Development Dockerfiles
 start_postgresql_local() {
-    echo -e "${GREEN}🐘 Starting PostgreSQL Local with Development Environment...${RESET}"
-    echo -e "${YELLOW}Using development Dockerfiles with .env.dev configuration${RESET}"
-    
-    # Load .env.dev file if it exists
-    local env_dev_file="${PROJECT_ROOT}/.env.dev"
-    if [[ -f "$env_dev_file" ]]; then
-        echo -e "${GREEN}✅ Loading development configuration from .env.dev${RESET}"
-        set -a
-        source <(grep -v '^#' "$env_dev_file" | grep -v '^$' | sed 's/\r$//')
-        set +a
-    else
-        echo -e "${YELLOW}⚠️  .env.dev file not found, using default development values${RESET}"
-    fi
+    echo -e "${GREEN}🚀 Building and Starting Backend + Frontend Only...${RESET}"
+    echo -e "${YELLOW}Note: PostgreSQL should be running separately (use option B first)${RESET}"
+    echo -e "${CYAN}Using credentials from .env.dev${RESET}"
     
     cd "$DOCKER_DIR"
-    
+
     set_build_optimization
     check_and_free_ports
-    
-    # Stop any existing containers
-    echo -e "${YELLOW}Stopping existing containers...${RESET}"
-    docker stop dhafnck-postgres dhafnck-backend dhafnck-frontend 2>/dev/null || true
-    docker rm dhafnck-postgres dhafnck-backend dhafnck-frontend 2>/dev/null || true
-    
+
+    # Check if PostgreSQL is running
+    if ! docker ps | grep -q dhafnck-postgres; then
+        echo -e "${RED}⚠️  PostgreSQL is not running!${RESET}"
+        echo -e "${YELLOW}Please run option B first to start the database.${RESET}"
+        return 1
+    fi
+
+    # Stop any existing backend/frontend containers only
+    echo -e "${YELLOW}Stopping existing backend/frontend containers...${RESET}"
+    docker stop dhafnck-backend dhafnck-frontend 2>/dev/null || true
+    docker rm dhafnck-backend dhafnck-frontend 2>/dev/null || true
+
     # Create network if it doesn't exist
     docker network create dhafnck-network 2>/dev/null || true
-    
-    # Start PostgreSQL
-    echo -e "${CYAN}Starting PostgreSQL database for development...${RESET}"
-    docker run -d \
-        --name dhafnck-postgres \
-        --network dhafnck-network \
-        -e POSTGRES_DB=${DATABASE_NAME:-dhafnck_mcp} \
-        -e POSTGRES_USER=${DATABASE_USER:-dhafnck_user} \
-        -e POSTGRES_PASSWORD=${DATABASE_PASSWORD:-dev_password} \
-        -p ${DATABASE_PORT:-5432}:5432 \
-        -v postgres-data:/var/lib/postgresql/data \
-        postgres:15-alpine
-    
-    # Wait for PostgreSQL to be ready
-    echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${RESET}"
-    sleep 5
-    
-    # Use docker-compose.dev.yml for complete development stack
-    echo -e "${CYAN}Using docker-compose.dev.yml for development environment...${RESET}"
-    
+
+    # Use backend-frontend only docker-compose file
+    echo -e "${CYAN}Using docker-compose.backend-frontend.yml for backend and frontend only...${RESET}"
+
     # Validate environment before building
     if ! validate_env_variables; then
         echo -e "${RED}❌ Please fix environment configuration errors before continuing${RESET}"
         return 1
     fi
-    
-    echo -e "${CYAN}Building development containers...${RESET}"
-    docker-compose --env-file "${env_dev_file}" -f docker-compose.dev.yml build --no-cache || {
+
+    echo -e "${CYAN}Building backend and frontend containers in parallel...${RESET}"
+    echo -e "${YELLOW}This will be faster as both containers build simultaneously${RESET}"
+
+    # Always use .env.dev for consistency
+    docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml build --parallel --no-cache || {
         echo -e "${RED}❌ Build failed. Check error messages above${RESET}"
         return 1
     }
-    
-    echo -e "${CYAN}Starting development services...${RESET}"
-    docker-compose --env-file "${env_dev_file}" -f docker-compose.dev.yml up -d || {
+
+    echo -e "${CYAN}Starting backend and frontend services...${RESET}"
+    docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml up -d || {
         echo -e "${RED}❌ Failed to start services. Check error messages above${RESET}"
         return 1
     }
@@ -368,10 +364,62 @@ start_postgresql_local() {
     docker ps --filter "name=dhafnck" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 }
 
-# Build and start PostgreSQL with pgAdmin UI (Option C - Database only)
+# Start Database Only (Option B - PostgreSQL standalone)
+start_database_only() {
+    echo -e "${GREEN}🗄️  Starting PostgreSQL Database Only (Standalone)...${RESET}"
+    echo -e "${CYAN}Using credentials from .env.dev:${RESET}"
+    echo "  Database: ${DATABASE_NAME}"
+    echo "  User: ${DATABASE_USER}"
+    echo "  Port: ${DATABASE_PORT}"
+
+    # Ensure network exists
+    docker network create dhafnck-network 2>/dev/null || true
+
+    # Stop any existing postgres container
+    echo -e "${YELLOW}Stopping existing database container if any...${RESET}"
+    docker stop dhafnck-postgres 2>/dev/null || true
+    docker rm dhafnck-postgres 2>/dev/null || true
+
+    # Change to docker directory
+    cd "$DOCKER_DIR"
+
+    # Start PostgreSQL only (no build required)
+    echo -e "${CYAN}Starting PostgreSQL database...${RESET}"
+    docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.db-only.yml up -d postgres
+
+    # Wait for database to be ready
+    echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${RESET}"
+    for i in {1..30}; do
+        if docker exec dhafnck-postgres pg_isready -U ${DATABASE_USER:-dhafnck_user} >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ PostgreSQL is ready!${RESET}"
+            break
+        fi
+        echo -n "."
+        sleep 1
+    done
+
+    echo ""
+    echo -e "${GREEN}✅ Database started successfully!${RESET}"
+    echo "PostgreSQL: localhost:${DATABASE_PORT}"
+    echo "Database: ${DATABASE_NAME}"
+    echo "User: ${DATABASE_USER}"
+    echo ""
+    echo -e "${YELLOW}To connect: psql -h localhost -p ${DATABASE_PORT} -U ${DATABASE_USER} -d ${DATABASE_NAME}${RESET}"
+    echo -e "${CYAN}Using credentials from .env.dev${RESET}"
+}
+
+# Start pgAdmin UI Only (Option C)
 start_postgresql_with_ui() {
-    echo -e "${GREEN}🎛️  Starting PostgreSQL with pgAdmin UI (Database Only)...${RESET}"
-    
+    echo -e "${GREEN}🎛️  Starting pgAdmin UI Only...${RESET}"
+    echo -e "${YELLOW}Note: PostgreSQL must be running (use option B first)${RESET}"
+
+    # Check if PostgreSQL is running
+    if ! docker ps | grep -q dhafnck-postgres; then
+        echo -e "${RED}⚠️  PostgreSQL is not running!${RESET}"
+        echo -e "${YELLOW}Please run option B first to start the database.${RESET}"
+        return 1
+    fi
+
     # Check pgAdmin port
     local pgadmin_port=5050
     local pgadmin_containers=$(docker ps -q --filter "publish=${pgadmin_port}" 2>/dev/null)
@@ -380,50 +428,22 @@ start_postgresql_with_ui() {
         docker stop $pgadmin_containers
     fi
     
-    # Stop any existing containers
-    echo -e "${YELLOW}Stopping existing database containers...${RESET}"
-    docker stop dhafnck-postgres dhafnck-pgadmin 2>/dev/null || true
-    docker rm dhafnck-postgres dhafnck-pgadmin 2>/dev/null || true
-    
-    # Create network if it doesn't exist
+    # Stop any existing pgAdmin container
+    echo -e "${YELLOW}Stopping existing pgAdmin container...${RESET}"
+    docker stop dhafnck-pgadmin 2>/dev/null || true
+    docker rm dhafnck-pgadmin 2>/dev/null || true
+
+    # Network should already exist from PostgreSQL
     docker network create dhafnck-network 2>/dev/null || true
-    
-    # Start PostgreSQL
-    echo -e "${CYAN}Starting PostgreSQL database...${RESET}"
-    docker run -d \
-        --name dhafnck-postgres \
-        --network dhafnck-network \
-        -e POSTGRES_DB=dhafnck_mcp \
-        -e POSTGRES_USER=dhafnck_user \
-        -e POSTGRES_PASSWORD=dev_password \
-        -p 5432:5432 \
-        -v postgres-data:/var/lib/postgresql/data \
-        postgres:15-alpine
-    
-    # Wait for PostgreSQL to be ready
-    echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${RESET}"
-    sleep 5
-    
-    # Start pgAdmin
+
+    # Change to docker directory
+    cd "$DOCKER_DIR"
+
+    # Start pgAdmin only (with profile to include it)
     echo -e "${CYAN}Starting pgAdmin UI...${RESET}"
-    docker run -d \
-        --name dhafnck-pgadmin \
-        --network dhafnck-network \
-        -e PGADMIN_DEFAULT_EMAIL=admin@example.com \
-        -e PGADMIN_DEFAULT_PASSWORD=admin123 \
-        -e PGADMIN_CONFIG_SERVER_MODE='False' \
-        -e PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED='False' \
-        -p 5050:80 \
-        -v pgadmin-data:/var/lib/pgadmin \
-        dpage/pgadmin4:latest
+    docker-compose -f docker-compose.db-only.yml --profile with-pgadmin up -d pgadmin
     
-    echo -e "${GREEN}✅ Database services started!${RESET}"
-    echo ""
-    echo -e "${CYAN}${BOLD}🐘 PostgreSQL Database:${RESET}"
-    echo "  Host: localhost:${DATABASE_PORT:-5432}"
-    echo "  Database: dhafnck_mcp"
-    echo "  Username: dhafnck_user"
-    echo "  Password: dev_password"
+    echo -e "${GREEN}✅ pgAdmin UI started!${RESET}"
     echo ""
     echo -e "${CYAN}${BOLD}🎛️  pgAdmin UI: http://localhost:5050${RESET}"
     echo -e "${YELLOW}Login Credentials:${RESET}"
@@ -433,13 +453,11 @@ start_postgresql_with_ui() {
     echo -e "${MAGENTA}📋 To Connect PostgreSQL in pgAdmin:${RESET}"
     echo "  1. Add New Server"
     echo "  2. Use connection details:"
-    echo "     Host: dhafnck-postgres (or host.docker.internal)"
+    echo "     Host: dhafnck-postgres"
     echo "     Port: 5432"
-    echo "     Database: dhafnck_mcp"
-    echo "     Username: dhafnck_user"
-    echo "     Password: dev_password"
-    
-    show_service_status "../docker-compose.yml"
+    echo "     Database: ${DATABASE_NAME:-dhafnck_mcp}"
+    echo "     Username: ${DATABASE_USER:-dhafnck_user}"
+    echo "     Password: ${DATABASE_PASSWORD:-dev_password}"
 }
 
 # Build and start Supabase Cloud configuration
@@ -495,10 +513,10 @@ start_supabase_cloud() {
     clean_existing_builds
     
     echo -e "${CYAN}🔨 Building with --no-cache (this ensures latest code changes)...${RESET}"
-    DATABASE_TYPE=supabase docker-compose --env-file ../../.env.dev -f ../docker-compose.yml build --no-cache
-    
+    DATABASE_TYPE=supabase docker-compose --env-file ../../.env.dev -f docker-compose.yml build --no-cache
+
     echo -e "${CYAN}🚀 Starting services...${RESET}"
-    DATABASE_TYPE=supabase docker-compose --env-file ../../.env.dev -f ../docker-compose.yml up -d
+    DATABASE_TYPE=supabase docker-compose --env-file ../../.env.dev -f docker-compose.yml up -d
     
     # Wait for services to be ready
     echo -e "${YELLOW}⏳ Waiting for services to start (10 seconds)...${RESET}"
@@ -522,7 +540,7 @@ start_supabase_cloud() {
     echo "  - Check logs: docker logs dhafnck-backend --tail 50"
     echo "  - Verify connection: docker exec dhafnck-backend env | grep SUPABASE"
     
-    show_service_status "../docker-compose.yml"
+    show_service_status "docker-compose.yml"
 }
 
 
@@ -536,10 +554,10 @@ start_redis_supabase() {
     clean_existing_builds
     
     echo "Building with --no-cache..."
-    DATABASE_TYPE=supabase ENABLE_REDIS=true docker-compose --env-file ../../.env.dev -f ../docker-compose.yml --profile redis build --no-cache
-    
+    DATABASE_TYPE=supabase ENABLE_REDIS=true docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis build --no-cache
+
     echo "Starting services..."
-    DATABASE_TYPE=supabase ENABLE_REDIS=true docker-compose --env-file ../../.env.dev -f ../docker-compose.yml --profile redis up -d
+    DATABASE_TYPE=supabase ENABLE_REDIS=true docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis up -d
     
     echo -e "${GREEN}✅ Services started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
@@ -547,7 +565,7 @@ start_redis_supabase() {
     echo "Database: Supabase Cloud"
     echo "Redis: localhost:6379"
     
-    show_service_status "../docker-compose.yml"
+    show_service_status "docker-compose.yml"
 }
 
 # Show service status
@@ -575,7 +593,7 @@ stop_all_services() {
     # Stop Docker services
     cd "$DOCKER_DIR"
     echo "Stopping Docker services..."
-    docker-compose --env-file ../../.env.dev -f ../docker-compose.yml down 2>/dev/null || true
+    docker-compose --env-file ../../.env.dev -f docker-compose.yml down 2>/dev/null || true
     
     echo -e "${GREEN}✅ All services stopped${RESET}"
 }
@@ -1302,6 +1320,7 @@ main() {
             1) start_postgresql_local ;;
             2) start_supabase_cloud ;;
             3) start_redis_supabase ;;
+            [Bb]) start_database_only ;;
             [Cc]) start_postgresql_with_ui ;;
             [Dd]) start_dev_mode ;;
             [Rr]) restart_dev_mode ;;

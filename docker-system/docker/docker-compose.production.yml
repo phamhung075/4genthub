@@ -1,4 +1,6 @@
-version: '3.8'
+# Production Docker Compose Configuration
+# Loads environment from .env file (or from CapRover environment)
+# Uses production Dockerfiles for optimized builds
 
 services:
   # PostgreSQL Database (Local Docker)
@@ -6,6 +8,8 @@ services:
     image: postgres:15-alpine
     container_name: ${POSTGRES_CONTAINER_NAME:-dhafnck-postgres-prod}
     restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-../../.env}
     environment:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -51,12 +55,12 @@ services:
   # MCP Backend Server
   mcp-backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.backend.production
     container_name: dhafnck-mcp-backend
     restart: unless-stopped
     env_file:
-      - ${ENV_FILE:-.env.production}
+      - ${ENV_FILE:-../../.env}
     environment:
       # Override database host for container networking
       DATABASE_HOST: postgres
@@ -89,16 +93,19 @@ services:
   # Frontend (optional - if running in Docker)
   frontend:
     build:
-      context: ./dhafnck-frontend
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.frontend.production
     container_name: dhafnck-frontend
     restart: unless-stopped
     profiles: ["with-frontend"]  # Only start when explicitly requested
+    env_file:
+      - ${ENV_FILE:-../../.env}
     environment:
-      REACT_APP_API_URL: http://localhost:8001
-      REACT_APP_KEYCLOAK_URL: ${KEYCLOAK_URL}
-      REACT_APP_KEYCLOAK_REALM: ${KEYCLOAK_REALM}
-      REACT_APP_KEYCLOAK_CLIENT_ID: mcp-frontend
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8001}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend}
       NODE_ENV: production
     ports:
       - "${FRONTEND_PORT:-3800}:3800"
@@ -166,11 +173,8 @@ services:
 
 networks:
   dhafnck_network:
-    name: ${DOCKER_NETWORK:-dhafnck_prod_network}
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+    external: true
+    name: dhafnck-network
 
 volumes:
   postgres_data:

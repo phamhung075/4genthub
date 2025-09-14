@@ -1,6 +1,4 @@
 # Auto-generated optimized configuration for low-resource PCs
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -93,4 +91,5 @@ volumes:
 
 networks:
   default:
+    external: true
     name: dhafnck-network
