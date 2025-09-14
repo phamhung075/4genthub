@@ -1,7 +1,10 @@
 # Test Fix Instructions - Step by Step Process
 
 ## Objective
-Fix all failing tests systematically by addressing root causes, not just symptoms.
+Fix all failing tests systematically by addressing root causes based on **LATEST CODE VERSION**, not obsolete test expectations.
+
+## 🚨 CRITICAL RULE: CODE OVER TESTS
+**ALWAYS fix tests to match the current implementation - NEVER modify working code to match outdated tests!**
 
 ## Step-by-Step Process
 
@@ -26,18 +29,24 @@ Fix all failing tests systematically by addressing root causes, not just symptom
    # Or direct pytest if needed for more control
    timeout 20 bash -c "cd dhafnck_mcp_main && python -m pytest [test_file_path]::[test_name] -xvs --tb=long"
    ```
-2. Analyze the error message carefully
+2. **EXAMINE THE ACTUAL IMPLEMENTATION FIRST** - Read the current code, not the test expectations
 3. Identify the root cause (not just the symptom):
-   - Import errors → Find missing module/class
-   - Assertion errors → Understand expected vs actual behavior
-   - Type errors → Check data types and interfaces
-   - Dependency errors → Verify all dependencies exist
+   - Import errors → Find missing module/class in CURRENT codebase
+   - Assertion errors → Check if test expects OBSOLETE behavior
+   - Type errors → Verify current data types and interfaces
+   - Method errors → Check if methods exist in CURRENT implementation
+   - Dependency errors → Verify all dependencies in LATEST code
 
-### Step 3: Fix the Root Cause
-1. Navigate to the source of the problem (not just the test file)
-2. Apply the fix to the SOURCE CODE, not the test
-3. If test is outdated, update test to match current implementation
-4. Document what was changed and why
+### Step 3: Fix the Root Cause (ALWAYS FAVOR CURRENT CODE)
+1. **FIRST**: Check the CURRENT implementation to understand how it actually works
+2. **DECISION MATRIX**:
+   - If test expects OBSOLETE behavior → **UPDATE TEST** to match current implementation
+   - If test fails due to missing methods → Check if methods were renamed/moved in current code
+   - If imports fail → Update imports to match current module structure
+   - If assertions fail → Verify test data matches current API/data structures
+   - **ONLY fix source code if there's an actual bug, NOT if test is outdated**
+3. **PRIORITY**: Current working code > Obsolete test expectations
+4. Document what was changed and why (code fix vs test update)
 
 ### Step 4: Verify the Fix
 1. Re-run the specific test to confirm it passes using test-menu.sh:
@@ -74,19 +83,25 @@ Fix all failing tests systematically by addressing root causes, not just symptom
 ## Important Guidelines
 
 ### DO:
-- Fix the actual source code that causes test failures
-- Address root causes in the implementation
-- Update tests only if they're testing deprecated behavior
+- **EXAMINE CURRENT CODE FIRST** - Always check the latest implementation before fixing
+- **UPDATE TESTS** when they expect obsolete/removed functionality
+- **FIX IMPORTS** to match current module structure and naming
+- **ALIGN TEST DATA** with current API specifications and data formats
+- **VERIFY METHOD NAMES** match current implementation (not old test assumptions)
+- **ADDRESS ROOT CAUSES** based on current codebase, not historical expectations
 - Run each test in isolation first
 - Verify fixes don't break other tests
-- Keep detailed logs of each fix
+- Keep detailed logs of each fix (noting whether code or test was updated)
 
 ### DON'T:
-- Just modify tests to make them pass
-- Apply quick patches without understanding the issue
+- **NEVER modify working code to satisfy outdated tests**
+- **NEVER add missing methods just because tests expect them** (check if they were renamed/moved)
+- **NEVER downgrade current implementation** to match old test patterns
+- Apply quick patches without understanding current implementation
 - Skip verification steps
 - Fix multiple tests simultaneously
 - Ignore related test failures
+- Assume test expectations are always correct
 
 ## Current Status
 - Total failing tests: Check `.test_cache/failed_tests.txt`
@@ -170,3 +185,26 @@ timeout 60 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path] --cov=[m
 - `.test_cache/test_hashes.txt` - MD5 hashes to detect file changes
 - `.test_cache/last_run.log` - Output from last test run
 - `.test_cache/stats.txt` - Test statistics
+
+## 📅 Code Version Priority Rules
+
+### When Tests Fail Due to Code Changes:
+1. **Check git history**: When was the failing functionality last modified?
+2. **Examine current implementation**: What does the code actually do now?
+3. **Update tests accordingly**: Align test expectations with current reality
+4. **Document changes**: Note in fix logs whether issue was outdated test vs actual bug
+
+### Common Patterns to Look For:
+- **Method renames**: Tests calling `old_method()` but code has `new_method()`
+- **Parameter changes**: Tests passing old parameter formats
+- **Import paths**: Tests importing from old module locations
+- **Data structure changes**: Tests expecting old JSON/dict formats
+- **API changes**: Tests expecting old response formats
+- **Removed features**: Tests for functionality that was intentionally removed
+
+### Red Flags (Indicates Outdated Tests):
+- Tests importing non-existent modules
+- Tests calling methods that don't exist in current code
+- Tests expecting data formats that current code doesn't produce
+- Tests mocking methods that were removed/renamed
+- Tests with hardcoded values that don't match current defaults
