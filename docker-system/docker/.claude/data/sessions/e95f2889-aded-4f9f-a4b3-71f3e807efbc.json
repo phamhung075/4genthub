@@ -1,0 +1,8 @@
+{
+  "session_id": "e95f2889-aded-4f9f-a4b3-71f3e807efbc",
+  "prompts": [
+    "on env.dev\npassword is \nDATABASE_HOST=localhost\nDATABASE_NAME=postgresdb\nDATABASE_USER=postgres\nDATABASE_PASSWORD=...\ni want you use DATABASE_PASSWORD for all things",
+    ".env.example update",
+    "print on terminal i copy pass"
+  ]
+}

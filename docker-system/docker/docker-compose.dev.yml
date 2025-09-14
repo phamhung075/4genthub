@@ -10,18 +10,18 @@ services:
     env_file:
       - ../../.env.dev
     environment:
-      POSTGRES_DB: ${DATABASE_NAME:-dhafnck_mcp}
-      POSTGRES_USER: ${DATABASE_USER:-dhafnck_user}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-dev_password}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_HOST_AUTH_METHOD: md5
     ports:
-      - "${DATABASE_PORT:-5432}:5432"
+      - "${DATABASE_PORT}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - dhafnck-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-dhafnck_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,20 +53,24 @@ services:
     env_file:
       - ../../.env.dev
     environment:
+      # Authentication
+      AUTH_ENABLED: ${AUTH_ENABLED}
+      AUTH_PROVIDER: ${AUTH_PROVIDER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       # Override to use container network
       DATABASE_HOST: postgres
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      DATABASE_NAME: ${DATABASE_NAME:-dhafnck_mcp}
-      DATABASE_USER: ${DATABASE_USER:-dhafnck_user}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-dev_password}
-      DATABASE_URL: postgresql://${DATABASE_USER:-dhafnck_user}:${DATABASE_PASSWORD:-dev_password}@postgres:${DATABASE_PORT:-5432}/${DATABASE_NAME:-dhafnck_mcp}
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
-      APP_ENV: ${APP_ENV:-development}
-      APP_DEBUG: ${APP_DEBUG:-true}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:${DATABASE_PORT}/${DATABASE_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: ${APP_DEBUG}
       FASTMCP_HOST: 0.0.0.0
-      FASTMCP_PORT: ${FASTMCP_PORT:-8000}
+      FASTMCP_PORT: ${FASTMCP_PORT}
     ports:
-      - "${FASTMCP_PORT:-8000}:8000"
+      - "${FASTMCP_PORT}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,7 +78,7 @@ services:
       - dhafnck-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${FASTMCP_PORT:-8000}/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${FASTMCP_PORT}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -88,15 +92,15 @@ services:
     env_file:
       - ../../.env.dev
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
-      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8000}
+      VITE_API_URL: ${VITE_API_URL}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
       VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
       VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
       VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
-      VITE_ENVIRONMENT: ${VITE_ENVIRONMENT:-development}
-      NODE_ENV: ${NODE_ENV:-development}
+      VITE_ENVIRONMENT: ${VITE_ENVIRONMENT}
+      NODE_ENV: ${NODE_ENV}
     ports:
-      - "${FRONTEND_PORT:-3800}:3800"
+      - "${FRONTEND_PORT}:3800"
     depends_on:
       - backend
     networks:

@@ -56,11 +56,19 @@ mcp_auth = None
 mcp_tools = None
 
 try:
+    # Initialize database first
+    from fastmcp.task_management.infrastructure.database.db_initializer import initialize_database_on_startup
+    logger.info("Checking database status...")
+    if initialize_database_on_startup():
+        logger.info("✅ Database initialized successfully")
+    else:
+        logger.error("❌ Database initialization failed - continuing with limited functionality")
+
     # Initialize Keycloak authentication
     from fastmcp.auth.mcp_keycloak_auth import mcp_auth as keycloak_auth
     mcp_auth = keycloak_auth
     logger.info("Keycloak authentication initialized successfully")
-    
+
     # Initialize MCP tools
     from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
     mcp_tools = DDDCompliantMCPTools()
