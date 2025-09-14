@@ -58,7 +58,6 @@ if [ ! -f .env.production ]; then
 # Environment
 ENV=production
 NODE_ENV=production
-APP_ENV=production
 APP_DEBUG=false
 APP_LOG_LEVEL=INFO
 

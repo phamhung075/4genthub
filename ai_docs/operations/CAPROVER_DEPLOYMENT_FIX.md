@@ -53,7 +53,7 @@ MCP_HOST=0.0.0.0
 MCP_PORT=8001
 
 # Other settings
-APP_ENV=production
+ENV=production
 APP_DEBUG=false
 PYTHONUNBUFFERED=1
 ```

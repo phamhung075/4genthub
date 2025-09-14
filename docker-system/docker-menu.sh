@@ -868,7 +868,7 @@ services:
     environment:
       - DATABASE_TYPE=postgresql
       - DATABASE_URL=postgresql://dhafnck_user:dev_password@postgres:5432/dhafnck_mcp
-      - APP_ENV=production
+      - ENV=production
       - APP_DEBUG=false
       - APP_LOG_LEVEL=WARNING
       - PYTHONOPTIMIZE=1
@@ -1091,7 +1091,7 @@ start_dev_mode() {
     echo -e "${GREEN}Starting FastAPI backend with hot reload...${RESET}"
     # Use Supabase database for development to access existing projects
     export DATABASE_TYPE=supabase
-    export APP_ENV=development
+    export ENV=development
     export APP_DEBUG=true
     export PYTHONDONTWRITEBYTECODE=1
     export PYTHONPATH="${PWD}/src:${PYTHONPATH:-}"

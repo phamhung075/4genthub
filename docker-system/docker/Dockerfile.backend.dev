@@ -41,9 +41,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Development environment defaults (will be overridden by .env.dev)
 ENV APP_DEBUG=true
-ENV APP_ENV=development
-ENV APP_LOG_LEVEL=DEBUG
 ENV ENV=development
+ENV APP_LOG_LEVEL=DEBUG
 
 # Database settings for local PostgreSQL (matching .env.dev)
 ENV DATABASE_TYPE=postgresql
@@ -124,7 +123,7 @@ echo ""
 echo "Configuration Summary:"
 echo "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"
 echo "  Database Name: ${DATABASE_NAME}"
-echo "  Environment: ${APP_ENV:-development}"
+echo "  Environment: ${ENV:-development}"
 echo "  Debug Mode: ${APP_DEBUG:-false}"
 echo "  Server Port: ${FASTMCP_PORT} (REST API + MCP Protocol)"
 echo "================================================"

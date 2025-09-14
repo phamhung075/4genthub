@@ -59,9 +59,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Production environment defaults
 ENV APP_DEBUG=false
-ENV APP_ENV=production
-ENV APP_LOG_LEVEL=INFO
 ENV ENV=production
+ENV APP_LOG_LEVEL=INFO
 
 # Security settings
 ENV PYTHONHASHSEED=random
@@ -131,7 +130,7 @@ fi
 
 echo ""
 echo "Configuration:"
-echo "  Environment: ${APP_ENV}"
+echo "  Environment: ${ENV}"
 echo "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"
 echo "  Server Port: ${FASTMCP_PORT}"
 echo "  Auth Enabled: ${AUTH_ENABLED:-true}"

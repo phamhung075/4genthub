@@ -316,7 +316,6 @@ class PostgreSQLKeycloakConfigurator:
 # Environment
 ENV=production
 NODE_ENV=production
-APP_ENV=production
 
 # PostgreSQL Database (Docker)
 DATABASE_TYPE=postgresql

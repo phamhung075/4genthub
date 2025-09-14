@@ -310,7 +310,7 @@ JWT_SECRET_KEY=your-secret-key
 
 # Development
 FASTMCP_LOG_LEVEL=DEBUG|INFO|WARNING|ERROR
-APP_ENV=development|production
+ENV=development|production
 ```
 
 ### 4. Hot Reload Capabilities
