@@ -28,18 +28,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 - **Docker Production Build Issues**:
+- **Production Docker SSL and Log Level Issues**:
+  - Fixed: `DATABASE_SSL_MODE=require` changed to `disable` for CapRover PostgreSQL compatibility
+  - Fixed: Log level case conversion in entrypoint script to handle uppercase `APP_LOG_LEVEL=INFO`
+  - Updated: `.env.sample` with comprehensive SSL configuration documentation
+  - Files modified:
+    - `docker-system/docker/Dockerfile.backend.production` (lines 36, 47, 133)
+    - `.env.sample` (lines 29, 96, 102-108)
   - Fixed: `docker-system/docker/Dockerfile.backend.production`
-  - Issue 1: `/opt/venv/bin/uv: not found` error during CapRover deployment
-    - Solution: Use `uv pip install --system --python /opt/venv/bin/python` instead of `/opt/venv/bin/uv pip install`
-  - Issue 2: `exec format error` when running container
-    - Solution: Replaced heredoc script generation with `printf` for guaranteed Unix line endings
-    - Added explicit platform targeting with `--platform` flags
-    - Removed problematic script validation that was causing build failures
-  - Issue 3: Build-args warning - multiple build arguments not consumed
-    - Solution: Added comprehensive `ARG` declarations for all CapRover environment variables
-    - Added proper ARG to ENV conversion for runtime availability
-    - Included CapRover-specific variables like `CAPROVER_GIT_COMMIT_SHA`
-  - Impact: Enables successful production Docker builds and execution on CapRover and multi-arch platforms
+    - Issue 1: `/opt/venv/bin/uv: not found` error during CapRover deployment
+      - Solution: Use `uv pip install --system --python /opt/venv/bin/python` instead of `/opt/venv/bin/uv pip install`
+    - Issue 2: `exec format error` when running container
+      - Solution: Replaced heredoc script generation with `printf` for guaranteed Unix line endings
+      - Added explicit platform targeting with `--platform` flags
+      - Removed problematic script validation that was causing build failures
+    - Issue 3: Build-args warning - multiple build arguments not consumed
+      - Solution: Added comprehensive `ARG` declarations for all CapRover environment variables
+      - Added proper ARG to ENV conversion for runtime availability
+      - Included CapRover-specific variables like `CAPROVER_GIT_COMMIT_SHA`
+    - Impact: Enables successful production Docker builds and execution on CapRover and multi-arch platforms
+  - Fixed: `docker-system/docker/Dockerfile.frontend.production`
+    - Applied same CapRover compatibility improvements as backend
+    - Added comprehensive build arguments for frontend environment variables
+    - Implemented printf-based script generation for clean Unix line endings
+    - Added platform support for multi-architecture builds
+    - Enhanced nginx configuration with runtime environment variable substitution
+    - Impact: Ensures consistent production Docker deployment across backend and frontend services
 - **Database Configuration Security Enhancement**:
   - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
   - Prioritized individual environment variables (DATABASE_HOST, DATABASE_USER, etc.) over DATABASE_URL
