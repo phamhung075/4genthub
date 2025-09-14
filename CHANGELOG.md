@@ -6,7 +6,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **Environment Variables Documentation** (2025-09-14):
+  - Created comprehensive guide at `ai_docs/deployment/environment-variables-guide.md`
+  - Clarified the distinction between ENV (backend), NODE_ENV (build), and VITE_ENV (frontend runtime)
+  - Added detailed comments in `.env.sample` explaining each environment variable's purpose
+  - Documented best practices for using each variable in different deployment scenarios
+
 ### Fixed
+- **Token Generation Endpoint Missing in Production** (2025-09-14):
+  - Fixed 404 error for `/api/auth/tokens/generate` endpoint
+  - Added missing import for token management routes in `dhafnck_mcp_main/src/mcp_http_server.py`
+  - Routes are now properly registered at `/api/auth/tokens` with database storage support
+  - No fallback - using database version only per global rules
 - **Standardized Frontend Environment Variables** (2025-09-14):
   - Changed `VITE_ENVIRONMENT` to `VITE_ENV` for consistency across all files:
     - Updated `scripts/deploy-frontend.sh`
