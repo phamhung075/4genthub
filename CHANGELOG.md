@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **Docker Build and Dependency Issues** (2025-09-14):
+  - Fixed numpy version conflict: Updated from `numpy==2.0.2` to `numpy==1.26.4` in `dhafnck_mcp_main/requirements.txt` to satisfy faiss-cpu<2.0 constraint
+  - Fixed ASGI app not found error: Changed Dockerfile commands from `fastmcp.server:app` to `mcp_http_server:app` in production and development Dockerfiles
+  - Fixed missing python-jose module: Added `python-jose[cryptography]>=3.5.0` to `dhafnck_mcp_main/pyproject.toml`
+  - Fixed pip not found error: Updated Docker build to use `uv pip` commands consistently instead of direct pip
+  - Created compatibility layer in `dhafnck_mcp_main/src/fastmcp/server/app.py` to expose FastAPI app
+  - Fixed CORS configuration: Set universal access (`*`) for MCP endpoints to allow Claude Code access from any origin
+    - Updated: `dhafnck_mcp_main/src/mcp_http_server.py`
+    - Updated: `dhafnck_mcp_main/src/fastmcp/auth/api_server.py`
+    - Updated: `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
+
 ### Added
 - **Comprehensive Docker SSL/Log Level Testing and Documentation**:
   - Created: `dhafnck_mcp_main/src/tests/unit/test_env_validation.py`
