@@ -20,7 +20,7 @@ ENV VITE_BACKEND_URL=http://localhost:8000
 ENV VITE_KEYCLOAK_URL=https://your-keycloak-server.com
 ENV VITE_KEYCLOAK_REALM=your-realm
 ENV VITE_KEYCLOAK_CLIENT_ID=your-client-id
-ENV VITE_ENVIRONMENT=development
+ENV VITE_ENV=development
 ENV VITE_BUILD_TIME=development
 ENV VITE_BUILD_SHA=development
 
@@ -90,7 +90,7 @@ echo ""
 echo "Configuration Summary:"
 echo "  Backend URL: ${VITE_BACKEND_URL}"
 echo "  API URL: ${VITE_API_URL}"
-echo "  Environment: ${VITE_ENVIRONMENT:-development}"
+echo "  Environment: ${VITE_ENV:-development}"
 echo "  Keycloak URL: ${VITE_KEYCLOAK_URL:-Not configured}"
 echo "  Keycloak Realm: ${VITE_KEYCLOAK_REALM:-Not configured}"
 echo "  Keycloak Client: ${VITE_KEYCLOAK_CLIENT_ID:-Not configured}"

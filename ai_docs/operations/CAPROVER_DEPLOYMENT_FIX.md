@@ -70,7 +70,7 @@ PYTHONUNBUFFERED=1
 # CRITICAL: Frontend uses VITE_API_URL, not VITE_BACKEND_URL
 VITE_API_URL=https://dhafnck-mcp-backend.92.5.226.7.nip.io
 VITE_BACKEND_URL=https://dhafnck-mcp-backend.92.5.226.7.nip.io
-VITE_ENVIRONMENT=production
+VITE_ENV=production
 
 # Keycloak (if backend handles auth, these might not be needed)
 VITE_KEYCLOAK_URL=https://your-keycloak-server.com

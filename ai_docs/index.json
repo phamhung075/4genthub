@@ -1874,11 +1874,11 @@
       "count": 20,
       "files": [
         {
-          "hash": "91c1bcbebcf896ba8cf8fb9777d7cb98",
-          "modified": "2025-09-14T11:01:31.814708",
+          "hash": "c62f03b4f4ceb0bf85588798c40c4500",
+          "modified": "2025-09-14T21:01:39.810112",
           "name": "CAPROVER_DEPLOYMENT_FIX.md",
           "path": "operations/CAPROVER_DEPLOYMENT_FIX.md",
-          "size": 5459
+          "size": 5451
         },
         {
           "hash": "362e6bab03b727adaa5b5ef15538a6dd",
@@ -1958,11 +1958,11 @@
           "size": 13699
         },
         {
-          "hash": "8888d748b133ac268acbf03c70f60707",
-          "modified": "2025-09-14T11:01:31.814708",
+          "hash": "8e30cb089bdae03d8d74632711ba6c7e",
+          "modified": "2025-09-14T21:01:51.726315",
           "name": "CAPROVER_ENV_VARIABLES.md",
           "path": "operations/CAPROVER_ENV_VARIABLES.md",
-          "size": 4010
+          "size": 4002
         },
         {
           "hash": "7158c08d1105e3cf2f9f201ee8c3ffb9",
@@ -2576,7 +2576,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T20:50:21.391466",
+  "generated_at": "2025-09-14T21:01:52.054361",
   "structure": {
     "_absolute_docs": {
       "files": [

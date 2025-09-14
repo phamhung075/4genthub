@@ -7,6 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **Standardized Frontend Environment Variables** (2025-09-14):
+  - Changed `VITE_ENVIRONMENT` to `VITE_ENV` for consistency across all files:
+    - Updated `scripts/deploy-frontend.sh`
+    - Updated `migration-scripts/consolidate-env.sh`
+    - Updated `docker-system/docker/Dockerfile.frontend.production`
+    - Updated `docker-system/docker/Dockerfile.frontend.dev`
+    - Updated `docker-system/docker/docker-compose.backend-frontend.yml`
+    - Updated `docker-system/docker/docker-compose.dev.yml`
+    - Updated `ai_docs/operations/CAPROVER_DEPLOYMENT_FIX.md`
+    - Updated `ai_docs/operations/CAPROVER_ENV_VARIABLES.md`
+- **Standardized Frontend API URL Environment Variable** (2025-09-14):
+  - Changed all references from `VITE_BACKEND_URL` to `VITE_API_URL` for consistency:
+    - Updated `dhafnck-frontend/src/pages/TokenManagement.tsx`
+    - Updated `scripts/deploy-frontend.sh`
+    - Updated `.env.sample` to mark VITE_BACKEND_URL as deprecated
+  - Created TypeScript type definitions in `dhafnck-frontend/src/vite-env.d.ts` for proper environment variable typing
+  - Fixed all TypeScript errors related to `import.meta.env` usage
 - **Frontend Environment Variable Configuration** (2025-09-14):
   - Created centralized environment configuration in `dhafnck-frontend/src/config/environment.ts`
   - Updated all services to use centralized configuration instead of hardcoded URLs:
