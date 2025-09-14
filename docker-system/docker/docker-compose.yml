@@ -71,11 +71,11 @@ services:
 
       # MCP Server
       MCP_HOST: 0.0.0.0
-      MCP_PORT: 8001
+      MCP_PORT: 8000
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
 
       # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3800,http://localhost:8001}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3800,http://localhost:8000}
       CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
 
       # Features
@@ -90,7 +90,7 @@ services:
       - ./data:/data
       - mcp_logs:/var/log/dhafnck-mcp
     ports:
-      - "8001:8001"
+      - "8000:8000"
     networks:
       - dhafnck_network
     depends_on:

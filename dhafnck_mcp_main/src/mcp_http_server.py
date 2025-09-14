@@ -78,7 +78,14 @@ try:
     from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
     mcp_tools = DDDCompliantMCPTools()
     logger.info("MCP tools initialized successfully")
-    
+
+    # Include authentication routes
+    from fastmcp.auth.interface.auth_endpoints import router as auth_router
+    from fastmcp.auth.api.supabase_endpoints import router as supabase_router
+    app.include_router(auth_router)  # Auth endpoints at /api/auth/
+    app.include_router(supabase_router)  # Supabase endpoints at /api/supabase/
+    logger.info("✅ Authentication routes enabled at /api/auth/ and /api/supabase/")
+
     # Include performance metrics routes
     # Temporarily disabled due to import error with get_authenticated_user
     # from fastmcp.server.routes.performance_metrics_routes import router as performance_router
@@ -323,7 +330,8 @@ async def list_tools(
 # Note: Agent routes including /call are now handled in fastmcp/server/routes/agent_routes.py
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    # Use FASTMCP_PORT for consistency with Docker configuration
+    port = int(os.environ.get("FASTMCP_PORT", os.environ.get("PORT", 8000)))
     auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() == "true"
     
     logger.info(f"Starting MCP HTTP Server on port {port}")
