@@ -17,6 +17,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Updated: `dhafnck_mcp_main/src/mcp_http_server.py`
     - Updated: `dhafnck_mcp_main/src/fastmcp/auth/api_server.py`
     - Updated: `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
+  - Fixed missing auth endpoints: Added auth router to main MCP server to serve `/api/auth/` endpoints
+    - Updated: `dhafnck_mcp_main/src/mcp_http_server.py` - Added auth_router and supabase_router includes
+  - Fixed port configuration: Unified all services to run on port 8000
+    - Updated: `docker-system/docker/docker-compose.yml` - Changed MCP_PORT from 8001 to 8000
+    - Updated: `docker-system/docker/docker-compose.yml` - Changed port mapping from 8001:8001 to 8000:8000
+    - Updated: `dhafnck_mcp_main/src/mcp_http_server.py` - Made server use FASTMCP_PORT environment variable
 
 ### Added
 - **Comprehensive Docker SSL/Log Level Testing and Documentation**:
