@@ -18,11 +18,11 @@
 !.env.example
 !.env.*.example
 !**/.env.example
-
+!.env.sample
 # Keycloak sensitive configuration
 .env.keycloak
 !.env.keycloak.example
-
+!.env.claude
 # =============================================================================
 # 🚨 SECURITY: PREVENT SECRET LEAKS
 # =============================================================================
