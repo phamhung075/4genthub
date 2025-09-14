@@ -7,6 +7,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **Comprehensive Docker SSL/Log Level Testing and Documentation**:
+  - Created: `dhafnck_mcp_main/src/tests/unit/test_env_validation.py`
+    - 31 comprehensive test cases for DATABASE_SSL_MODE parsing (disable/require/prefer/allow/verify-full/verify-ca)
+    - APP_LOG_LEVEL case conversion validation (INFO→info, DEBUG→debug, etc.)
+    - Docker entrypoint script environment validation with shell script testing
+    - CapRover vs managed PostgreSQL deployment scenario testing
+    - Production vs development SSL configuration difference validation
+    - Error handling for invalid SSL modes and missing variables
+    - JWT secret length validation testing
+  - Created: `dhafnck_mcp_main/src/tests/integration/test_docker_config.py`
+    - Integration tests for CapRover PostgreSQL connection with SSL disabled
+    - Managed PostgreSQL connection testing with SSL required (AWS RDS, Google Cloud SQL, Azure)
+    - Supabase SSL enforcement testing (automatic SSL regardless of setting)
+    - Uvicorn startup validation with log level case conversion
+    - End-to-end Docker Compose integration testing for different deployment scenarios
+    - Error scenario testing for missing environment variables and weak JWT secrets
+  - Created: `ai_docs/operations/docker-deployment-guide.md`
+    - Complete SSL configuration guide for all deployment types with decision matrix
+    - Step-by-step CapRover vs managed PostgreSQL setup instructions
+    - Environment variable validation and log level conversion details
+    - Docker Compose configurations for different deployment scenarios
+    - Pre-deployment validation scripts and comprehensive troubleshooting
+  - Created: `ai_docs/troubleshooting-guides/production-deployment-issues.md`
+    - Comprehensive troubleshooting for SSL connection issues by deployment type
+    - Environment variable problem resolution with diagnostic commands
+    - Log level configuration debugging and validation
+    - Database connection troubleshooting for CapRover, managed PostgreSQL, and Supabase
+    - Emergency recovery procedures and rollback steps
+  - Enhanced: `.env.sample` with detailed SSL and log level documentation
+    - SSL mode decision matrix with deployment-specific guidance
+    - Log level configuration with automatic case conversion explanation
+    - Complete troubleshooting section with common issues and solutions
+    - Quick reference for CapRover, managed PostgreSQL, and Supabase deployments
 - **Production Docker Configuration**:
   - Created: `docker-system/docker/Dockerfile.backend.production`
     - Multi-stage build with security hardening
