@@ -23,7 +23,7 @@ COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/
 # Install dependencies in a virtual environment
 WORKDIR /build/dhafnck_mcp_main
 RUN uv venv /opt/venv
-RUN /opt/venv/bin/uv pip install --no-cache .
+RUN uv pip install --system --python /opt/venv/bin/python --no-cache .
 
 # Stage 2: Production Runtime
 FROM python:3.11-slim
