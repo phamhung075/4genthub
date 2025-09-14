@@ -1,181 +1,180 @@
-# Multi-stage build for production
+# Production Backend Dockerfile for DhafnckMCP
+# Multi-stage build optimized for production deployment
+# Features: Security hardening, minimal image size, optimized layers
+
+# Stage 1: Builder
 FROM python:3.11-slim as builder
 
-# Build arguments from CapRover environment variables
-ARG APP_DEBUG
-ARG APP_ENV
-ARG APP_LOG_LEVEL
-ARG AUTH_ENABLED
-ARG AUTH_PROVIDER
-ARG CAPROVER_GIT_COMMIT_SHA
-ARG CORS_ALLOW_CREDENTIALS
-ARG CORS_ORIGINS
-ARG DATABASE_HOST
-ARG DATABASE_NAME
-ARG DATABASE_PASSWORD
-ARG DATABASE_PORT
-ARG DATABASE_SSL_MODE
-ARG DATABASE_TYPE
-ARG DATABASE_URL
-ARG DATABASE_USER
-ARG ENV
-ARG FASTMCP_PORT
-ARG FEATURE_AUTO_COMPACT
-ARG FEATURE_HIERARCHICAL_CONTEXT
-ARG FEATURE_MULTI_AGENT
-ARG FEATURE_RATE_LIMITING
-ARG FEATURE_REQUEST_LOGGING
-ARG FEATURE_VISION_SYSTEM
-ARG FRONTEND_PORT
-ARG KEYCLOAK_CLIENT_ID
-ARG KEYCLOAK_CLIENT_SECRET
-ARG KEYCLOAK_PUBLIC_KEY_CACHE_TTL
-ARG KEYCLOAK_REALM
-ARG KEYCLOAK_SSL_VERIFY
-ARG KEYCLOAK_TOKEN_CACHE_TTL
-ARG KEYCLOAK_URL
-ARG KEYCLOAK_VERIFY_TOKEN_AUDIENCE
-ARG MCP_HOST
-ARG JWT_SECRET_KEY
-ARG PYTHONDONTWRITEBYTECODE
-ARG PYTHONUNBUFFERED
-
-WORKDIR /app</anG>
+WORKDIR /build
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    curl \
+    git \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN pip install uv
+# Install uv for fast dependency management
+RUN pip install --no-cache-dir uv
 
-# Copy dependency files to /app for better Docker caching
-COPY dhafnck_mcp_main/pyproject.toml ./
-COPY dhafnck_mcp_main/uv.lock ./
-COPY dhafnck_mcp_main/README.md ./
+# Copy dependency files
+COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md ./dhafnck_mcp_main/
 
-# Copy source code 
-COPY dhafnck_mcp_main/ ./dhafnck_mcp_main/
+# Install dependencies in a virtual environment
+WORKDIR /build/dhafnck_mcp_main
+RUN uv venv /opt/venv
+RUN /opt/venv/bin/uv pip install --no-cache .
 
-# Production stage
-FROM python:3.11-slim as runtime
+# Stage 2: Production Runtime
+FROM python:3.11-slim
 
-# Re-declare build arguments for runtime stage
-ARG APP_DEBUG
-ARG APP_ENV
-ARG APP_LOG_LEVEL
-ARG AUTH_ENABLED
-ARG AUTH_PROVIDER
-ARG CORS_ALLOW_CREDENTIALS
-ARG CORS_ORIGINS
-ARG DATABASE_HOST
-ARG DATABASE_NAME
-ARG DATABASE_PASSWORD
-ARG DATABASE_PORT
-ARG DATABASE_SSL_MODE
-ARG DATABASE_TYPE
-ARG DATABASE_URL
-ARG DATABASE_USER
-ARG ENV
-ARG FASTMCP_PORT
-ARG FEATURE_AUTO_COMPACT
-ARG FEATURE_HIERARCHICAL_CONTEXT
-ARG FEATURE_MULTI_AGENT
-ARG FEATURE_RATE_LIMITING
-ARG FEATURE_REQUEST_LOGGING
-ARG FEATURE_VISION_SYSTEM
-ARG FRONTEND_PORT
-ARG KEYCLOAK_CLIENT_ID
-ARG KEYCLOAK_CLIENT_SECRET
-ARG KEYCLOAK_PUBLIC_KEY_CACHE_TTL
-ARG KEYCLOAK_REALM
-ARG KEYCLOAK_SSL_VERIFY
-ARG KEYCLOAK_TOKEN_CACHE_TTL
-ARG KEYCLOAK_URL
-ARG KEYCLOAK_VERIFY_TOKEN_AUDIENCE
-ARG MCP_HOST
-ARG JWT_SECRET_KEY
-ARG PYTHONDONTWRITEBYTECODE
-ARG PYTHONUNBUFFERED
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
-    libpq5 \
+    libpq-dev \
+    postgresql-client \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Install uv for dependency management
-RUN pip install uv
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-# Copy application code and dependencies
-COPY dhafnck_mcp_main/ ./dhafnck_mcp_main/
-COPY dhafnck_mcp_main/pyproject.toml ./
+# Copy application code
+COPY --chown=appuser:appuser dhafnck_mcp_main/ ./dhafnck_mcp_main/
 
-# Install Python dependencies directly in system (production only)
-RUN cd dhafnck_mcp_main && uv pip install --system .
+# Create necessary directories with proper permissions
+RUN mkdir -p /data /data/logs /data/resources /app/.cache \
+    && chown -R appuser:appuser /data /app/.cache
 
-# Copy optional directories with error handling
-RUN mkdir -p ./agent-library ./configuration && \
-    cp -r dhafnck_mcp_main/agent-library/* ./agent-library/ 2>/dev/null || echo "No agent-library found" && \
-    cp -r dhafnck_mcp_main/configuration/* ./configuration/ 2>/dev/null || echo "No configuration found"
-
-# Create necessary directories
-RUN mkdir -p /var/log/dhafnck-mcp /app/data
-
-# Set environment path (using system Python, no venv)
-ENV PATH="/usr/local/bin:$PATH"
-
-# Set Python environment
+# Set Python environment for production
+ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONPATH="/app/dhafnck_mcp_main/src:/app:$PYTHONPATH"
-ENV PYTHONUNBUFFERED=${PYTHONUNBUFFERED:-1}
-ENV PYTHONDONTWRITEBYTECODE=${PYTHONDONTWRITEBYTECODE:-1}
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Set application environment variables from build args
-ENV APP_DEBUG=${APP_DEBUG:-false}
-ENV APP_ENV=${APP_ENV:-production}
-ENV APP_LOG_LEVEL=${APP_LOG_LEVEL:-INFO}
-ENV AUTH_ENABLED=${AUTH_ENABLED:-true}
-ENV AUTH_PROVIDER=${AUTH_PROVIDER}
-ENV CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
-ENV CORS_ORIGINS=${CORS_ORIGINS}
-ENV DATABASE_HOST=${DATABASE_HOST}
-ENV DATABASE_NAME=${DATABASE_NAME}
-ENV DATABASE_PASSWORD=${DATABASE_PASSWORD}
-ENV DATABASE_PORT=${DATABASE_PORT:-5432}
-ENV DATABASE_SSL_MODE=${DATABASE_SSL_MODE:-prefer}
-ENV DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
-ENV DATABASE_URL=${DATABASE_URL}
-ENV DATABASE_USER=${DATABASE_USER}
-ENV ENV=${ENV:-production}
-ENV FASTMCP_PORT=${FASTMCP_PORT:-8000}
-ENV FEATURE_AUTO_COMPACT=${FEATURE_AUTO_COMPACT:-true}
-ENV FEATURE_HIERARCHICAL_CONTEXT=${FEATURE_HIERARCHICAL_CONTEXT:-true}
-ENV FEATURE_MULTI_AGENT=${FEATURE_MULTI_AGENT:-true}
-ENV FEATURE_RATE_LIMITING=${FEATURE_RATE_LIMITING:-true}
-ENV FEATURE_REQUEST_LOGGING=${FEATURE_REQUEST_LOGGING:-true}
-ENV FEATURE_VISION_SYSTEM=${FEATURE_VISION_SYSTEM:-true}
-ENV FRONTEND_PORT=${FRONTEND_PORT:-3800}
-ENV KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-ENV KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-ENV KEYCLOAK_PUBLIC_KEY_CACHE_TTL=${KEYCLOAK_PUBLIC_KEY_CACHE_TTL:-3600}
-ENV KEYCLOAK_REALM=${KEYCLOAK_REALM}
-ENV KEYCLOAK_SSL_VERIFY=${KEYCLOAK_SSL_VERIFY:-true}
-ENV KEYCLOAK_TOKEN_CACHE_TTL=${KEYCLOAK_TOKEN_CACHE_TTL:-300}
-ENV KEYCLOAK_URL=${KEYCLOAK_URL}
-ENV KEYCLOAK_VERIFY_TOKEN_AUDIENCE=${KEYCLOAK_VERIFY_TOKEN_AUDIENCE:-true}
-ENV MCP_HOST=${MCP_HOST:-0.0.0.0}
-ENV JWT_SECRET_KEY=${JWT_SECRET_KEY}
+# Production environment defaults
+ENV APP_DEBUG=false
+ENV APP_ENV=production
+ENV APP_LOG_LEVEL=INFO
+ENV ENV=production
 
-# Health check - use FASTMCP_PORT environment variable
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${FASTMCP_PORT:-8000}/health || exit 1
+# Security settings
+ENV PYTHONHASHSEED=random
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Expose port
+# Create production entrypoint script
+RUN cat <<'EOF' > /app/docker-entrypoint.sh
+#!/bin/sh
+set -e
+
+echo "Starting DhafnckMCP Production Server..."
+echo "================================================"
+
+# Validate required environment variables
+REQUIRED_VARS="DATABASE_TYPE DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD FASTMCP_PORT JWT_SECRET_KEY"
+MISSING_VARS=""
+
+for VAR in $REQUIRED_VARS; do
+    eval VALUE=\$$VAR
+    if [ -z "$VALUE" ]; then
+        MISSING_VARS="$MISSING_VARS $VAR"
+        echo "❌ Missing required variable: $VAR"
+    fi
+done
+
+if [ -n "$MISSING_VARS" ]; then
+    echo ""
+    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"
+    echo "Please ensure all production environment variables are set"
+    exit 1
+fi
+
+# Security check for JWT secret
+if [ ${#JWT_SECRET_KEY} -lt 32 ]; then
+    echo "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"
+    exit 1
+fi
+
+# Validate database connection
+echo "Validating database connection..."
+RETRIES=10
+while [ $RETRIES -gt 0 ]; do
+    if pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} 2>/dev/null; then
+        echo "✅ Database connection verified"
+        break
+    fi
+    echo "  Waiting for database... ($RETRIES retries left)"
+    RETRIES=$((RETRIES - 1))
+    sleep 3
+done
+
+if [ $RETRIES -eq 0 ]; then
+    echo "❌ ERROR: Database connection failed"
+    exit 1
+fi
+
+# Run database migrations if enabled
+if [ "${AUTO_MIGRATE:-false}" = "true" ]; then
+    echo "Running database migrations..."
+    cd /app/dhafnck_mcp_main
+    python scripts/init_database.py || {
+        echo "❌ ERROR: Database migration failed"
+        exit 1
+    }
+fi
+
+echo ""
+echo "Configuration:"
+echo "  Environment: ${APP_ENV}"
+echo "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"
+echo "  Server Port: ${FASTMCP_PORT}"
+echo "  Auth Enabled: ${AUTH_ENABLED:-true}"
+echo "  Rate Limiting: ${FEATURE_RATE_LIMITING:-true}"
+echo "================================================"
+
+# Start the production server with optimized settings
+echo ""
+echo "🚀 Starting FastMCP production server..."
+cd /app/dhafnck_mcp_main
+
+# Use gunicorn or uvicorn for production
+if command -v gunicorn >/dev/null 2>&1; then
+    exec gunicorn fastmcp.server:app \
+        --bind 0.0.0.0:${FASTMCP_PORT} \
+        --workers ${WORKERS:-4} \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --timeout ${WORKER_TIMEOUT:-120} \
+        --keep-alive ${KEEP_ALIVE:-5} \
+        --max-requests ${MAX_REQUESTS:-1000} \
+        --max-requests-jitter ${MAX_REQUESTS_JITTER:-50} \
+        --access-logfile - \
+        --error-logfile - \
+        --log-level ${APP_LOG_LEVEL:-info}
+else
+    exec python -m uvicorn fastmcp.server:app \
+        --host 0.0.0.0 \
+        --port ${FASTMCP_PORT} \
+        --workers ${WORKERS:-1} \
+        --loop uvloop \
+        --log-level ${APP_LOG_LEVEL:-info}
+fi
+EOF
+
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Switch to non-root user
+USER appuser
+
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "-m", "fastmcp.server"]
+# Production health check with tighter constraints
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:${FASTMCP_PORT:-8000}/health || exit 1
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
