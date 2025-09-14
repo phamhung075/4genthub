@@ -6,10 +6,12 @@ services:
     image: postgres:15-alpine
     container_name: dhafnck-postgres
     restart: unless-stopped
+    env_file:
+      - ../../.env.dev  # Load environment variables from .env.dev
     environment:
-      POSTGRES_DB: ${DATABASE_NAME:-dhafnck_mcp_prod}
-      POSTGRES_USER: ${DATABASE_USER:-dhafnck_user}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -19,7 +21,7 @@ services:
     networks:
       - dhafnck_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-dhafnck_user} -d ${DATABASE_NAME:-dhafnck_mcp_prod}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,6 +35,8 @@ services:
       dockerfile: docker-system/docker/Dockerfile.backend
     container_name: dhafnck-mcp-server
     restart: unless-stopped
+    env_file:
+      - ../../.env.dev  # Load environment variables from .env.dev
     environment:
       # Environment
       ENV: ${ENV:-production}
@@ -44,11 +48,13 @@ services:
       DATABASE_TYPE: postgresql
       DATABASE_HOST: postgres  # Use service name for internal Docker network
       DATABASE_PORT: 5432
-      DATABASE_NAME: ${DATABASE_NAME:-dhafnck_mcp_prod}
-      DATABASE_USER: ${DATABASE_USER:-dhafnck_user}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-prefer}
-      DATABASE_URL: postgresql://${DATABASE_USER:-dhafnck_user}:${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}@postgres:5432/${DATABASE_NAME:-dhafnck_mcp_prod}?sslmode=${DATABASE_SSL_MODE:-prefer}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}?sslmode=${DATABASE_SSL_MODE:-prefer}
+      # Auto-initialize database on startup
+      AUTO_MIGRATE: "true"
 
       # Keycloak Authentication
       AUTH_ENABLED: ${AUTH_ENABLED:-true}

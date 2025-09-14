@@ -38,10 +38,24 @@ class ProjectManagementService:
             project_repo: Optional project repository (for testing/dependency injection)
             user_id: User context for user-scoped project management
         """
-        # Use provided repository or get default SQLite repository
+        # Use provided repository or get default repository
         self._project_repo = project_repo or GlobalRepositoryManager.get_default()
         self._user_id = user_id  # Store user context
-        logger.info("ProjectManagementService initialized with SQLite repository")
+
+        # Determine repository type for logging
+        repo_type = "unknown"
+        if self._project_repo:
+            repo_class_name = self._project_repo.__class__.__name__
+            if "ORM" in repo_class_name:
+                repo_type = "PostgreSQL/ORM"
+            elif "SQLite" in repo_class_name:
+                repo_type = "SQLite"
+            elif "Mock" in repo_class_name:
+                repo_type = "Mock"
+            else:
+                repo_type = repo_class_name
+
+        logger.info(f"ProjectManagementService initialized with {repo_type} repository")
 
     def _get_user_scoped_repository(self) -> ProjectRepository:
         """Get a user-scoped version of the repository if it supports user context."""

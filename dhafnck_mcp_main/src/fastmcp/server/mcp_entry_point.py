@@ -621,21 +621,42 @@ def create_dhafnck_mcp_server() -> FastMCP:
         register_manage_connection_tool(server)
         logger.info("Legacy connection management tools registered")
     
+    # Initialize database on startup
+    async def initialize_database():
+        """Initialize and verify database on server startup"""
+        try:
+            from fastmcp.task_management.infrastructure.database.db_initializer import initialize_database_on_startup
+            logger.info("Checking database status...")
+
+            # Initialize database (creates tables if missing)
+            if initialize_database_on_startup():
+                logger.info("✅ Database initialized successfully")
+            else:
+                logger.error("❌ Database initialization failed")
+                # Continue anyway - server might work with limited functionality
+
+        except Exception as e:
+            logger.error(f"Failed to initialize database: {e}")
+            # Continue anyway - server might work with limited functionality
+
     # Initialize connection manager and status broadcaster
     async def initialize_connection_manager():
         """Initialize the connection manager and status broadcaster on server startup"""
         try:
+            # Initialize database first
+            await initialize_database()
+
             # Initialize connection manager
             connection_manager = await get_connection_manager()
             await connection_manager.handle_server_restart()
             logger.info("Connection manager initialized and restart handled")
-            
+
             # Initialize status broadcaster
             from .connection_status_broadcaster import get_status_broadcaster
             status_broadcaster = await get_status_broadcaster(connection_manager)
             await status_broadcaster.broadcast_server_restart()
             logger.info("Status broadcaster initialized and server restart broadcasted")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize connection manager and status broadcaster: {e}")
     

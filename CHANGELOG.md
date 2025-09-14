@@ -4,7 +4,41 @@ All notable changes to the DhafnckMCP AI Agent Orchestration Platform.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [Semantic](https://semver.org/spec/v2.0.0.html)
 
-## [2025-09-14] - CORS Configuration Fix
+## [Unreleased]
+
+### Fixed
+- **Authentication**: Created missing `unified_auth.py` module to properly handle authentication delegation
+  - Fixed import error in token management routes (`token_mgmt_routes.py`)
+  - Ensured consistent user ID extraction from both Keycloak and local JWT tokens
+  - Token generation now correctly uses authenticated user's ID from the "sub" claim
+  - Unified authentication flow across Keycloak, Supabase, and local JWT providers
+
+### Added
+- **Unified Auth Module**: New `/src/fastmcp/auth/interface/unified_auth.py` module
+  - Central authentication interface for all providers
+  - Automatic delegation to appropriate auth provider based on configuration
+  - Consistent user identity extraction across all authentication methods
+  - Support for optional authentication and role-based access control
+
+## [2025-09-14] - CORS Configuration Fix & Database Auto-Initialization
+
+### Summary
+Fixed database initialization issues by ensuring automatic table creation on server startup. The system now automatically creates missing database tables when Docker containers start, requiring no manual intervention from users.
+
+### Root Cause Analysis
+The database initialization was failing because:
+1. The `init_database.py` script wasn't actually initializing tables
+2. Password mismatch between PostgreSQL container and backend configuration
+3. Database initialization wasn't properly integrated into Docker startup
+
+### Solution Implemented
+Created a comprehensive database initialization system that:
+- Automatically detects missing tables and creates them
+- Handles both PostgreSQL and SQLite databases
+- Provides detailed logging and error recovery
+- Works seamlessly with Docker containers
+
+## [2025-09-14] - CORS Configuration Fix & Database Auto-Initialization
 
 ### Fixed
 - **mcp_http_server.py**: Updated CORS configuration to read from environment variables
@@ -17,6 +51,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Reads from `CORS_ORIGINS` environment variable
   - Supports comma-separated origins with proper parsing
   - Falls back to default values if environment variable not set
+
+### Added
+- **db_initializer.py**: Created automatic database initialization system
+  - Automatically checks database status on server startup
+  - Creates missing tables if they don't exist
+  - Verifies table structure against SQLAlchemy models
+  - Supports both PostgreSQL and SQLite databases
+  - Provides detailed logging of initialization process
+  - Includes reset functionality for development
+- **mcp_entry_point.py**: Added database initialization on startup
+  - Calls database initializer before starting server
+  - Ensures database is ready before accepting requests
+  - Continues with limited functionality if initialization fails
+- **mcp_http_server.py**: Added database initialization on startup
+  - Initializes database before loading authentication and tools
+  - Provides clear logging of database status
+  - Gracefully handles initialization failures
 
 ## [2025-09-13] - Test Suite Update - Iteration 59
 
@@ -522,6 +573,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Fixed test: test_token_extraction.py can now import TokenExtractionService
 
 ## [Unreleased]
+
+### Fixed
+- Fixed Docker compose files to properly load AUTH_ENABLED environment variable from .env.dev
+  - Updated `docker-system/docker/docker-compose.backend-frontend.yml` to include AUTH_ENABLED, AUTH_PROVIDER, and JWT_SECRET_KEY
+  - Updated `docker-system/docker/docker-compose.dev.yml` to include authentication environment variables
+  - This ensures authentication settings are properly passed to the backend container
+- Fixed docker-menu.sh script error "GREEN: unbound variable"
+  - Added color variable definitions (RED, GREEN, YELLOW, BLUE, CYAN, RESET, BOLD) at the beginning of the script
+  - Color variables are now defined before first use in line 27
+- Fixed authentication bypass when AUTH_ENABLED=false
+  - Modified `dhafnck_mcp_main/src/fastmcp/auth/interface/fastapi_auth.py` to respect AUTH_ENABLED environment variable
+  - When AUTH_ENABLED=false, returns a default development user (f0de4c5d-2a97-4324-abcd-9dae3922761e)
+  - Changed HTTPBearer to not auto-error when no token is provided (auto_error=False)
+  - Made credentials optional in get_current_user and get_current_active_user functions
 
 ### Fixed - Current Session (2025-09-13 20:35) - Test Orchestrator Agent
 - **test_optimization_integration.py**: Fixed all 9 failing tests with 4 specific fixes
