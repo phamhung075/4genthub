@@ -1320,7 +1320,7 @@
       "files": [
         {
           "hash": "8125a41e2c03914778b81d8090f22b8c",
-          "modified": "2025-09-14T21:05:12.554032",
+          "modified": "2025-09-14T21:37:17.212434",
           "name": "environment-variables-guide.md",
           "path": "deployment/environment-variables-guide.md",
           "size": 5476
@@ -1878,7 +1878,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 20,
+      "count": 21,
       "files": [
         {
           "hash": "c62f03b4f4ceb0bf85588798c40c4500",
@@ -1963,6 +1963,13 @@
           "name": "performance-optimization-guide.md",
           "path": "operations/performance-optimization-guide.md",
           "size": 13699
+        },
+        {
+          "hash": "3d5d5dd381717a4a9fb6b80e0754c9d8",
+          "modified": "2025-09-14T23:29:36.586990",
+          "name": "deploy-mixed-content-fix.md",
+          "path": "operations/deploy-mixed-content-fix.md",
+          "size": 2429
         },
         {
           "hash": "8e30cb089bdae03d8d74632711ba6c7e",
@@ -2583,7 +2590,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T21:05:12.883218",
+  "generated_at": "2025-09-14T23:29:36.920656",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2909,6 +2916,7 @@
         "cloud-storage-solutions.md",
         "complete-database-reset-guide.md",
         "database-configuration-guide.md",
+        "deploy-mixed-content-fix.md",
         "deployment-summary.md",
         "disaster-recovery-procedures.md",
         "docker-deployment-guide.md",
@@ -3015,5 +3023,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 314
+  "total_files": 315
 }

@@ -4,9 +4,23 @@
  * Ensures no hardcoded values in production
  */
 
+// Helper to get runtime environment variable if available, fallback to build-time
+function getEnvVar(key: string, defaultValue: string = ''): string {
+  // Check runtime config first (injected by Docker at startup)
+  if (typeof window !== 'undefined' && (window as any)._env_ && (window as any)._env_[key]) {
+    const value = (window as any)._env_[key];
+    // Ignore placeholder values
+    if (!value.startsWith('__') && !value.endsWith('__')) {
+      return value;
+    }
+  }
+  // Fallback to build-time environment variable
+  return (import.meta.env[key] || defaultValue) as string;
+}
+
 // API Configuration
 // Automatically upgrade to HTTPS if the page is served over HTTPS to avoid mixed content errors
-const configuredApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const configuredApiUrl = getEnvVar('VITE_API_URL', 'http://localhost:8000');
 export const API_BASE_URL = (() => {
   // If we're running on HTTPS and the API URL is HTTP, upgrade it to HTTPS
   if (typeof window !== 'undefined' &&
@@ -18,16 +32,21 @@ export const API_BASE_URL = (() => {
 })();
 
 // Environment
-export const ENVIRONMENT = import.meta.env.VITE_ENV || 'development';
+export const ENVIRONMENT = getEnvVar('VITE_ENV', 'development');
 export const IS_PRODUCTION = ENVIRONMENT === 'production';
 export const IS_DEVELOPMENT = ENVIRONMENT === 'development';
 export const IS_STAGING = ENVIRONMENT === 'staging';
 
 // Debug Configuration
-export const DEBUG_MODE = import.meta.env.VITE_DEBUG === 'true';
+export const DEBUG_MODE = getEnvVar('VITE_DEBUG', 'false') === 'true';
 
 // Application Configuration
-export const APP_NAME = import.meta.env.VITE_APP_NAME || 'DhafnckMCP';
+export const APP_NAME = getEnvVar('VITE_APP_NAME', 'DhafnckMCP');
+
+// Keycloak Configuration
+export const KEYCLOAK_URL = getEnvVar('VITE_KEYCLOAK_URL', '');
+export const KEYCLOAK_REALM = getEnvVar('VITE_KEYCLOAK_REALM', '');
+export const KEYCLOAK_CLIENT_ID = getEnvVar('VITE_KEYCLOAK_CLIENT_ID', '');
 
 // Validate configuration in production
 if (IS_PRODUCTION) {
