@@ -89,7 +89,9 @@ const refreshTokenAndRetry = async (): Promise<void> => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     },
+    credentials: 'include', // Include cookies for CORS
     body: JSON.stringify({ refresh_token }),
   });
 

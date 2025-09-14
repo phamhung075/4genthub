@@ -7,6 +7,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **Supabase Import Error** (2025-09-14):
+  - Fixed conditional loading of Supabase auth endpoints based on AUTH_PROVIDER environment variable
+  - Supabase routes are now only loaded when AUTH_PROVIDER=supabase
+  - Updated `dhafnck_mcp_main/src/mcp_http_server.py` to conditionally import Supabase router
+  - This fixes the "Missing Supabase credentials" error when using Keycloak authentication
+- **Frontend API Headers for CORS** (2025-09-14):
+  - Updated frontend fetch calls to include proper CORS headers:
+    - Added `'Accept': 'application/json'` header to all auth API calls
+    - Added `credentials: 'include'` for cookie handling in CORS requests
+    - Updated files:
+      - `dhafnck-frontend/src/contexts/AuthContext.tsx` - login, signup, and refresh endpoints
+      - `dhafnck-frontend/src/services/apiV2.ts` - refresh token endpoint
 - **Docker Build and Dependency Issues** (2025-09-14):
   - Fixed numpy version conflict: Updated from `numpy==2.0.2` to `numpy==1.26.4` in `dhafnck_mcp_main/requirements.txt` to satisfy faiss-cpu<2.0 constraint
   - Fixed ASGI app not found error: Changed Dockerfile commands from `fastmcp.server:app` to `mcp_http_server:app` in production and development Dockerfiles

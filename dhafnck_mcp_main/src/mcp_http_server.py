@@ -81,10 +81,17 @@ try:
 
     # Include authentication routes
     from fastmcp.auth.interface.auth_endpoints import router as auth_router
-    from fastmcp.auth.api.supabase_endpoints import router as supabase_router
     app.include_router(auth_router)  # Auth endpoints at /api/auth/
-    app.include_router(supabase_router)  # Supabase endpoints at /api/supabase/
-    logger.info("✅ Authentication routes enabled at /api/auth/ and /api/supabase/")
+    logger.info("✅ Authentication routes enabled at /api/auth/")
+
+    # Only include Supabase routes if using Supabase auth provider
+    auth_provider = os.getenv("AUTH_PROVIDER", "keycloak").lower()
+    if auth_provider == "supabase":
+        from fastmcp.auth.api.supabase_endpoints import router as supabase_router
+        app.include_router(supabase_router)  # Supabase endpoints at /api/supabase/
+        logger.info("✅ Supabase routes enabled at /api/supabase/")
+    else:
+        logger.info(f"Using {auth_provider} auth provider, Supabase routes not loaded")
 
     # Include performance metrics routes
     # Temporarily disabled due to import error with get_authenticated_user
