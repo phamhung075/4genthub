@@ -159,7 +159,7 @@ fi
 echo ""
 echo "🚀 Starting FastMCP server on port ${FASTMCP_PORT}..."
 cd /app/dhafnck_mcp_main
-exec python -m fastmcp.server --host 0.0.0.0 --port ${FASTMCP_PORT}
+exec python -m uvicorn mcp_http_server:app --host 0.0.0.0 --port ${FASTMCP_PORT} --reload
 EOF
 
 RUN chmod +x /app/docker-entrypoint.sh
