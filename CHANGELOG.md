@@ -27,11 +27,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Clear deployment notes and checklists
 
 ### Fixed
-- **Docker Production Build Issue**:
+- **Docker Production Build Issues**:
   - Fixed: `docker-system/docker/Dockerfile.backend.production`
-  - Issue: `/opt/venv/bin/uv: not found` error during CapRover deployment
-  - Solution: Use `uv pip install --system --python /opt/venv/bin/python` instead of `/opt/venv/bin/uv pip install`
-  - Impact: Enables successful production Docker builds on CapRover and other platforms
+  - Issue 1: `/opt/venv/bin/uv: not found` error during CapRover deployment
+    - Solution: Use `uv pip install --system --python /opt/venv/bin/python` instead of `/opt/venv/bin/uv pip install`
+  - Issue 2: `exec format error` when running container
+    - Solution: Added proper line ending handling and platform architecture support
+    - Added explicit platform targeting with `--platform` flags
+    - Ensured Unix line endings in entrypoint script
+  - Impact: Enables successful production Docker builds and execution on CapRover and multi-arch platforms
 - **Database Configuration Security Enhancement**:
   - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
   - Prioritized individual environment variables (DATABASE_HOST, DATABASE_USER, etc.) over DATABASE_URL
