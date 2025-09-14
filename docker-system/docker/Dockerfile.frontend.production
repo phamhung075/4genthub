@@ -7,8 +7,8 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} node:20-alpine as builder
 
 WORKDIR /build
 
-# Copy package files
-COPY dhafnck-frontend/package*.json ./
+# Copy package files (explicitly include package-lock.json)
+COPY dhafnck-frontend/package.json dhafnck-frontend/package-lock.json ./
 
 # Install dependencies (production only)
 RUN npm ci --only=production
