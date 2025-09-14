@@ -760,28 +760,16 @@ def main():
             # Get log level from environment
             server_log_level = os.environ.get("FASTMCP_LOG_LEVEL", "INFO").upper()
             
-            # Get CORS origins from environment variable
-            cors_origins_str = os.environ.get("CORS_ORIGINS", "")
-            
-            # MCP server uses token-based authentication for security
-            # CORS can be open since tokens validate access
-            if cors_origins_str:
-                # Parse comma-separated CORS origins
-                cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
-                
-                # Check if wildcard is requested for MCP access
-                if "*" in cors_origins:
-                    logger.info("✅ CORS wildcard (*) enabled - MCP server accepts requests from any origin")
-                    logger.info("Security is handled by token-based authentication")
-                    cors_origins = ["*"]
-                else:
-                    logger.info(f"CORS origins configured: {cors_origins}")
-            else:
-                # Default: Allow all origins since we use token authentication
-                # The MCP server validates tokens, not origins
-                cors_origins = ["*"]
-                logger.info("✅ CORS open to all origins (default) - Security via token authentication")
-                logger.info("MCP tokens generated from frontend provide access control")
+            # Use CORS factory for consistent configuration
+            from fastmcp.config.cors_factory import cors_factory
+
+            # Get CORS origins using factory (handles wildcard properly)
+            # Factory ensures no wildcard when credentials are used
+            cors_origins = cors_factory.get_allowed_origins()
+
+            # Log the CORS configuration
+            logger.info(f"CORS origins configured via factory: {cors_origins}")
+            logger.info("Security is handled by token-based authentication")
             
             # For streamable-http transport, pass the middleware stack
             # Authentication is handled by the FastMCP server's built-in auth parameter
