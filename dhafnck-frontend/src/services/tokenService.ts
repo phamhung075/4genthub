@@ -1,11 +1,10 @@
 import { authenticatedFetch } from '../hooks/useAuthenticatedFetch';
+import { API_BASE_URL, DEBUG_MODE } from '../config/environment';
 
-// Ensure we always have the backend URL
-const API_BASE_URL = (typeof import.meta.env !== 'undefined' && import.meta.env.VITE_API_URL) 
-  ? import.meta.env.VITE_API_URL 
-  : 'http://localhost:8000';
-
-console.log('TokenService - API_BASE_URL:', API_BASE_URL);
+// Log API URL only in debug mode
+if (DEBUG_MODE) {
+  console.log('TokenService - API_BASE_URL:', API_BASE_URL);
+}
 
 interface GenerateTokenRequest {
   name: string;

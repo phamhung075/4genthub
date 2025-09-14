@@ -1,15 +1,14 @@
 // Lazy loading API - Direct V2 API usage (no backward compatibility)
 // Provides lightweight endpoints for improved performance
 
-import { 
-  taskApiV2, 
-  projectApiV2, 
-  subtaskApiV2, 
-  branchApiV2 
+import {
+  taskApiV2,
+  projectApiV2,
+  subtaskApiV2,
+  branchApiV2
 } from './services/apiV2';
 import Cookies from 'js-cookie';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { API_BASE_URL } from './config/environment';
 
 // --- Lazy Loading Interfaces ---
 export interface TaskSummary {

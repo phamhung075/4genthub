@@ -616,7 +616,7 @@
       "files": [
         {
           "hash": "7df1eb4da60ef5733a3fbf68d709a058",
-          "modified": "2025-09-14T13:27:23.154355",
+          "modified": "2025-09-14T13:35:46.048951",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
           "size": 13425
@@ -1314,6 +1314,19 @@
         }
       ],
       "path": "core-architecture"
+    },
+    "deployment": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "b49acdeedec5e948ece11728c6a756e9",
+          "modified": "2025-09-14T20:50:21.057724",
+          "name": "frontend-environment-configuration.md",
+          "path": "deployment/frontend-environment-configuration.md",
+          "size": 3929
+        }
+      ],
+      "path": "deployment"
     },
     "development-guides": {
       "count": 49,
@@ -2563,7 +2576,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T13:27:23.485980",
+  "generated_at": "2025-09-14T20:50:21.391466",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2768,6 +2781,11 @@
         "session-type-detection.md",
         "sub-agent-instructions.md",
         "system-architecture-overview.md"
+      ]
+    },
+    "deployment": {
+      "files": [
+        "frontend-environment-configuration.md"
       ]
     },
     "development-guides": {
@@ -2988,6 +3006,6 @@
       ]
     }
   },
-  "total_directories": 30,
-  "total_files": 312
+  "total_directories": 31,
+  "total_files": 313
 }
