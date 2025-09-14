@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **Database Configuration Security Enhancement**:
+  - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
+  - Prioritized individual environment variables (DATABASE_HOST, DATABASE_USER, etc.) over DATABASE_URL
+  - DATABASE_URL is now deprecated and only used for backward compatibility
+  - Added clearer warning message to guide users toward secure configuration
+  - Added DATABASE_SSL_MODE support for PostgreSQL connections
+  - Impact: Eliminates security warning about embedded credentials in DATABASE_URL
+
 ## [2025-09-14] - Iteration 35
 
 ### Fixed
