@@ -64,7 +64,7 @@ yarn-error.log*
 lerna-debug.log*
 .npm
 .yarn-integrity
-package-lock.json
+# package-lock.json should be committed for reproducible builds
 
 # Build outputs
 dist/
