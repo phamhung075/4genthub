@@ -31,6 +31,7 @@ dependencies = [
     # Authentication dependencies
     "bcrypt>=4.1.0", # Password hashing
     "PyJWT>=2.8.0", # JWT token management
+    "python-jose[cryptography]>=3.5.0", # JWT with cryptography support for Keycloak
     "fastapi>=0.115.12",
     "uvicorn>=0.34.3",
     "python-multipart>=0.0.20",

@@ -20,11 +20,12 @@ RUN apt-get update && apt-get install -y \
 RUN pip install uv
 
 # Copy dependency files first for better caching
-COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md ./dhafnck_mcp_main/
+COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md dhafnck_mcp_main/requirements.txt ./dhafnck_mcp_main/
 
 # Install dependencies with editable mode for development
 WORKDIR /app/dhafnck_mcp_main
-RUN uv pip install --system -e .
+RUN uv pip install --system -e . && \
+    pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /app
 
