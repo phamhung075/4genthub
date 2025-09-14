@@ -14,6 +14,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Documented best practices for using each variable in different deployment scenarios
 
 ### Fixed
+- **Runtime Environment Variable Configuration for Frontend** (2025-09-14):
+  - Fixed issue where CapRover environment variables were not being used at runtime
+  - Problem: Vite bakes environment variables at build time, not runtime
+  - Solution: Implemented runtime injection of environment variables
+  - Changes made:
+    - Created `dhafnck-frontend/public/env-config.js` for runtime configuration
+    - Updated `dhafnck-frontend/index.html` to load runtime config
+    - Modified `dhafnck-frontend/src/config/environment.ts` to use runtime values when available
+    - Updated Docker entrypoint in `Dockerfile.frontend.production` to inject variables at container startup
+  - Now environment variables set in CapRover are properly used without rebuilding
 - **Mixed Content Error in Production** (2025-09-14):
   - Fixed browser blocking HTTP API calls from HTTPS-served frontend
   - Modified `dhafnck-frontend/src/config/environment.ts` to automatically upgrade HTTP URLs to HTTPS when page is served over HTTPS
