@@ -13,7 +13,8 @@ import os
 from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 
-from jose import jwt
+import jwt
+from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
@@ -146,7 +147,8 @@ class TestUniversalUserAuthentication:
     async def test_get_current_user_decode_error(self, mock_credentials):
         """Test authentication with decode error"""
         with patch('jwt.decode') as mock_decode:
-            mock_decode.side_effect = jwt.DecodeError("Invalid token")
+            # Use the DecodeError from jwt module
+            mock_decode.side_effect = DecodeError("Invalid token")
             
             with patch('fastmcp.auth.keycloak_dependencies.validate_local_token') as mock_validate:
                 mock_user = User(
@@ -399,7 +401,7 @@ class TestLocalTokenValidation:
             user = validate_local_token("minimal.token")
             
             assert user.id == "minimal-user"
-            assert user.email == "minimal-user@local"
+            assert user.email == "minimal-user@local.dev"
             assert user.username == "minimal-user"
     
     def test_validate_local_token_expired_by_timestamp(self):

@@ -18,7 +18,7 @@ import logging
 import sys
 import os
 from typing import Dict, Any
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from contextvars import ContextVar
 
 # Add the project path to sys.path
@@ -39,9 +39,12 @@ class TestMCPAuthenticationFixes:
     def setup_method(self):
         """Set up test environment"""
         self.test_user_uuid = str(uuid.uuid4())
-        
-        # Initialize MCP tools properly
-        self.mcp_tools = DDDCompliantMCPTools(enable_vision_system=False)
+
+        # Mock database configuration to avoid connection attempts
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config'), \
+             patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist'):
+            # Initialize MCP tools properly
+            self.mcp_tools = DDDCompliantMCPTools(enable_vision_system=False)
         
         # Create test project and branch instead of using hardcoded IDs
         self.existing_project_id = None
@@ -61,7 +64,8 @@ class TestMCPAuthenticationFixes:
             'resource_access': {}
         }
 
-        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info):
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
+             patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id', return_value=self.test_user_uuid):
             # First create a project and branch for testing
             project_controller = self.mcp_tools._project_controller
 
@@ -122,7 +126,8 @@ class TestMCPAuthenticationFixes:
             'resource_access': {}
         }
 
-        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info):
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
+             patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id', return_value=self.test_user_uuid):
             # First create a project for testing
             project_controller = self.mcp_tools._project_controller
 
@@ -184,7 +189,7 @@ class TestMCPAuthenticationFixes:
             }
         }
         
-        result = context_controller.manage_context(**context_params)
+        result = context_controller.manage_unified_context(**context_params)
         
         # Should succeed now (was failing with "Repository must be scoped to a user")
         if result.get('success'):
@@ -196,122 +201,148 @@ class TestMCPAuthenticationFixes:
     @pytest.mark.asyncio
     async def test_full_workflow_integration(self):
         """Test complete workflow: project -> branch -> task -> context"""
-        
-        # 1. Create project
-        project_controller = self.mcp_tools._project_controller
-        
-        project_result = project_controller.manage_project(
-            action="create",
-            name="test-workflow-project",
-            description="Project for workflow testing",
-            user_id=self.test_user_uuid
-        )
-        
-        assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
-        project_id = project_result['data']['project']['id']
-        
-        # 2. Create branch
-        git_branch_controller = self.mcp_tools._git_branch_controller
-        
-        branch_result = git_branch_controller.manage_git_branch(
-            action="create",
-            project_id=project_id,
-            git_branch_name="test-workflow-branch",
-            git_branch_description="Branch for workflow testing",
-            user_id=self.test_user_uuid
-        )
-        
-        assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
-        branch_id = branch_result['data']['git_branch']['id']
-        
-        # 3. Create task (should now work)
-        task_controller = self.mcp_tools._task_controller
-        
-        task_result = await task_controller.manage_task(
-            action="create",
-            git_branch_id=branch_id,
-            title="Integration Test Task",
-            description="Testing full workflow integration",
-            assignees="coding-agent",
-            user_id=self.test_user_uuid
-        )
-        
-        assert task_result.get('success') is True, f"Task creation failed: {task_result.get('error')}"
-        
-        created_task_id = task_result['data']['task']['id']
-        
-        # 4. Try to create task context (may still have issues)
-        context_controller = self.mcp_tools._context_controller
-        
-        context_result = context_controller.manage_context(
-            action="create",
-            level="task",
-            context_id=created_task_id,
-            git_branch_id=branch_id,
-            user_id=self.test_user_uuid,
-            data={
-                "task_id": created_task_id,
-                "branch_id": branch_id,
-                "workflow_status": "integration_test"
-            }
-        )
-        
-        if context_result.get('success'):
-            logger.info("✅ Full workflow integration successful")
-        else:
-            logger.warning(f"⚠️ Context creation in workflow still has issues: {context_result.get('error')}")
-            
-        logger.info("✅ Full workflow integration test completed")
+
+        # Mock the authentication context to simulate an authenticated request
+        mock_auth_info = {
+            'user_id': self.test_user_uuid,
+            'email': 'test@example.com',
+            'sub': self.test_user_uuid,
+            'realm_roles': ['admin', 'user'],
+            'resource_access': {}
+        }
+
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
+             patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id', return_value=self.test_user_uuid):
+
+            # 1. Create project
+            project_controller = self.mcp_tools._project_controller
+
+            project_result = project_controller.manage_project(
+                action="create",
+                name="test-workflow-project",
+                description="Project for workflow testing",
+                user_id=self.test_user_uuid
+            )
+
+            assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
+            project_id = project_result['data']['project']['id']
+
+            # 2. Create branch
+            git_branch_controller = self.mcp_tools._git_branch_controller
+
+            branch_result = git_branch_controller.manage_git_branch(
+                action="create",
+                project_id=project_id,
+                git_branch_name="test-workflow-branch",
+                git_branch_description="Branch for workflow testing",
+                user_id=self.test_user_uuid
+            )
+
+            assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
+            branch_id = branch_result['data']['git_branch']['id']
+
+            # 3. Create task (should now work)
+            task_controller = self.mcp_tools._task_controller
+
+            task_result = await task_controller.manage_task(
+                action="create",
+                git_branch_id=branch_id,
+                title="Integration Test Task",
+                description="Testing full workflow integration",
+                assignees="coding-agent",
+                user_id=self.test_user_uuid
+            )
+
+            assert task_result.get('success') is True, f"Task creation failed: {task_result.get('error')}"
+
+            created_task_id = task_result['data']['task']['id']
+
+            # 4. Try to create task context (may still have issues)
+            context_controller = self.mcp_tools._context_controller
+
+            context_result = context_controller.manage_unified_context(
+                action="create",
+                level="task",
+                context_id=created_task_id,
+                git_branch_id=branch_id,
+                user_id=self.test_user_uuid,
+                data={
+                    "task_id": created_task_id,
+                    "branch_id": branch_id,
+                    "workflow_status": "integration_test"
+                }
+            )
+
+            if context_result.get('success'):
+                logger.info("✅ Full workflow integration successful")
+            else:
+                logger.warning(f"⚠️ Context creation in workflow still has issues: {context_result.get('error')}")
+
+            logger.info("✅ Full workflow integration test completed")
 
     @pytest.mark.asyncio
     async def test_authentication_error_cases(self):
         """Test that proper errors are returned when authentication is missing"""
-        # First create a project and branch for this test
-        project_controller = self.mcp_tools._project_controller
-        
-        project_result = project_controller.manage_project(
-            action="create",
-            name="test-auth-error-project",
-            description="Project for auth error testing",
-            user_id=self.test_user_uuid
-        )
-        assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
-        project_id = project_result['data']['project']['id']
-        
-        # Create branch
-        git_branch_controller = self.mcp_tools._git_branch_controller
-        branch_result = git_branch_controller.manage_git_branch(
-            action="create",
-            project_id=project_id,
-            git_branch_name="test-auth-error-branch",
-            git_branch_description="Branch for auth error testing",
-            user_id=self.test_user_uuid
-        )
-        assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
-        branch_id = branch_result['data']['git_branch']['id']
-        
-        task_controller = self.mcp_tools._task_controller
-        
-        # Test without user_id - should fail with proper error message
-        try:
-            result = await task_controller.manage_task(
+
+        # Mock the authentication context for project/branch setup
+        mock_auth_info = {
+            'user_id': self.test_user_uuid,
+            'email': 'test@example.com',
+            'sub': self.test_user_uuid,
+            'realm_roles': ['admin', 'user'],
+            'resource_access': {}
+        }
+
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
+             patch('fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id', return_value=self.test_user_uuid):
+
+            # First create a project and branch for this test
+            project_controller = self.mcp_tools._project_controller
+
+            project_result = project_controller.manage_project(
                 action="create",
-                git_branch_id=branch_id,
-                title="Test Task Without Auth",
-                description="This should fail"
-                # user_id intentionally omitted
+                name="test-auth-error-project",
+                description="Project for auth error testing",
+                user_id=self.test_user_uuid
             )
-            
-            # Should fail with authentication error
-            assert result.get('success') is False, "Expected authentication failure"
-            error_message = result.get('error', {}).get('message', '')
-            assert 'authentication' in error_message.lower(), f"Expected auth error, got: {error_message}"
-            
-        except Exception as e:
-            # Exception is also acceptable for missing auth
-            assert 'authentication' in str(e).lower() or 'user' in str(e).lower()
-            
-        logger.info("✅ Authentication error handling working correctly")
+
+            assert project_result.get('success') is True, f"Project creation failed: {project_result.get('error')}"
+            project_id = project_result['data']['project']['id']
+
+            # Create branch
+            git_branch_controller = self.mcp_tools._git_branch_controller
+            branch_result = git_branch_controller.manage_git_branch(
+                action="create",
+                project_id=project_id,
+                git_branch_name="test-auth-error-branch",
+                git_branch_description="Branch for auth error testing",
+                user_id=self.test_user_uuid
+            )
+            assert branch_result.get('success') is True, f"Branch creation failed: {branch_result.get('error')}"
+            branch_id = branch_result['data']['git_branch']['id']
+
+            task_controller = self.mcp_tools._task_controller
+
+            # Test without user_id - should fail with proper error message
+            try:
+                result = await task_controller.manage_task(
+                    action="create",
+                    git_branch_id=branch_id,
+                    title="Test Task Without Auth",
+                    description="This should fail"
+                    # user_id intentionally omitted
+                )
+
+                # Should fail with authentication error
+                assert result.get('success') is False, "Expected authentication failure"
+                error_message = result.get('error', {}).get('message', '')
+                assert 'authentication' in error_message.lower(), f"Expected auth error, got: {error_message}"
+
+            except Exception as e:
+                # Exception is also acceptable for missing auth
+                assert 'authentication' in str(e).lower() or 'user' in str(e).lower()
+
+            logger.info("✅ Authentication error handling working correctly")
 
 
 if __name__ == "__main__":

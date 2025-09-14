@@ -127,7 +127,7 @@ markers = [
     "migration: Migration tests",
     "performance: Performance tests",
     "integration: Integration tests (database required)",
-    "e2e: End-to-end tests", 
+    "e2e: End-to-end tests",
     "slow: Tests that take more than 2 seconds",
     "fast: Tests that take less than 0.1 seconds",
     "vision: Vision System tests",
@@ -139,6 +139,7 @@ markers = [
     "memory: Memory usage tests",
     "stress: Stress tests",
     "load: Load tests",
+    "timeout: Tests with timeout restrictions",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
