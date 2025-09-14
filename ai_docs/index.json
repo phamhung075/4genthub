@@ -2334,7 +2334,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 27,
+      "count": 28,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2419,6 +2419,13 @@
           "name": "subtask-persistence-debugging-guide.md",
           "path": "troubleshooting-guides/subtask-persistence-debugging-guide.md",
           "size": 6436
+        },
+        {
+          "hash": "6a4498ef5d0dbbee75306a5a49d80b8c",
+          "modified": "2025-09-14T11:40:17.224514",
+          "name": "production-deployment-issues.md",
+          "path": "troubleshooting-guides/production-deployment-issues.md",
+          "size": 20440
         },
         {
           "hash": "708bf5e5432e3857503a5133100c658e",
@@ -2529,7 +2536,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T11:37:50.920210",
+  "generated_at": "2025-09-14T11:40:17.498542",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2933,6 +2940,7 @@
         "mcp-hint-system-resolved-issues.md",
         "memory-leak-diagnosis-report.md",
         "orchestrator-bypass-analysis.md",
+        "production-deployment-issues.md",
         "subtask-persistence-debugging-guide.md",
         "task-context-completion-summary-fixes.md",
         "task-list-git-branch-filtering-fix.md",
@@ -2947,5 +2955,5 @@
     }
   },
   "total_directories": 29,
-  "total_files": 308
+  "total_files": 309
 }

@@ -55,7 +55,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Implemented printf-based script generation for clean Unix line endings
     - Added platform support for multi-architecture builds
     - Enhanced nginx configuration with runtime environment variable substitution
-    - Impact: Ensures consistent production Docker deployment across backend and frontend services
+    - **Docker Build Speed Optimization**: Reduced layers by combining RUN commands
+      - Combined curl installation + nginx config cleanup: 2 layers → 1 layer
+      - Combined startup script creation + chmod: 2 layers → 1 layer
+    - Impact: Ensures consistent production Docker deployment with faster builds
 - **Database Configuration Security Enhancement**:
   - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
   - Prioritized individual environment variables (DATABASE_HOST, DATABASE_USER, etc.) over DATABASE_URL
