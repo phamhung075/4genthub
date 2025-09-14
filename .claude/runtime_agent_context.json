@@ -1,6 +1,6 @@
 {
-  "current_agent": "test-orchestrator-agent",
-  "timestamp": "2025-09-14T11:28:36.687423",
+  "current_agent": "debugger-agent",
+  "timestamp": "2025-09-14T11:51:48.124503",
   "context_data": {},
   "session_type": "runtime_switched"
 }
