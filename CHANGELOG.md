@@ -35,6 +35,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
     - Solution: Replaced heredoc script generation with `printf` for guaranteed Unix line endings
     - Added explicit platform targeting with `--platform` flags
     - Removed problematic script validation that was causing build failures
+  - Issue 3: Build-args warning - multiple build arguments not consumed
+    - Solution: Added comprehensive `ARG` declarations for all CapRover environment variables
+    - Added proper ARG to ENV conversion for runtime availability
+    - Included CapRover-specific variables like `CAPROVER_GIT_COMMIT_SHA`
   - Impact: Enables successful production Docker builds and execution on CapRover and multi-arch platforms
 - **Database Configuration Security Enhancement**:
   - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
