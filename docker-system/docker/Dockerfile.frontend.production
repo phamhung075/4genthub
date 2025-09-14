@@ -1,81 +1,196 @@
-# Multi-stage build for React frontend
-FROM node:20-alpine AS builder
+# Production Frontend Dockerfile for DhafnckMCP
+# Multi-stage build optimized for production deployment
+# Features: Minimal image size, optimized assets, security hardening
 
-WORKDIR /app
+# Stage 1: Builder
+FROM node:20-alpine as builder
 
-# Build arguments - MUST be passed during docker build
-ARG VITE_BACKEND_URL
+WORKDIR /build
+
+# Copy package files
+COPY dhafnck-frontend/package*.json ./
+
+# Install dependencies (production only)
+RUN npm ci --only=production
+
+# Copy source code
+COPY dhafnck-frontend/ .
+
+# Set build-time environment variables
 ARG VITE_API_URL
+ARG VITE_BACKEND_URL
 ARG VITE_KEYCLOAK_URL
 ARG VITE_KEYCLOAK_REALM
 ARG VITE_KEYCLOAK_CLIENT_ID
 ARG VITE_ENVIRONMENT=production
-ARG BUILD_DATE
-ARG VCS_REF
+ARG VITE_BUILD_TIME
+ARG VITE_BUILD_SHA
 
-# Set environment variables for Vite build (CRITICAL!)
-ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
-ENV VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL}
-ENV VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM}
-ENV VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID}
-ENV VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
-ENV VITE_BUILD_TIME=${BUILD_DATE}
-ENV VITE_BUILD_SHA=${VCS_REF}
+# Build the application with production optimizations
+RUN npm run build
 
-# Copy package files from frontend directory
-COPY dhafnck-frontend/package*.json ./
-
-# Install dependencies - use ci for faster, reproducible builds
-RUN npm ci || npm install
-
-# Copy frontend source code
-COPY dhafnck-frontend/ .
-
-# Build the application with environment variables
-RUN echo "Building with VITE_API_URL=${VITE_API_URL}" && \
-    echo "Building with VITE_BACKEND_URL=${VITE_BACKEND_URL}" && \
-    npm run build
-
-# Production stage with nginx
+# Stage 2: Production Runtime with Nginx
 FROM nginx:alpine
 
 # Install curl for health checks
 RUN apk add --no-cache curl
 
-# Create custom nginx configuration for SPA
-RUN echo 'server { \
-    listen 80; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    \
-    # Handle SPA routing \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    \
-    # Security headers \
-    add_header X-Frame-Options "SAMEORIGIN" always; \
-    add_header X-Content-Type-Options "nosniff" always; \
-    add_header X-XSS-Protection "1; mode=block" always; \
-    \
-    # Compression \
-    gzip on; \
-    gzip_types text/plain text/css text/javascript application/javascript application/json; \
-    gzip_min_length 1000; \
-}' > /etc/nginx/conf.d/default.conf
+# Remove default nginx config
+RUN rm -rf /etc/nginx/conf.d/*
 
-# Copy built application from builder stage (Vite outputs to 'build' directory)
-COPY --from=builder /app/build /usr/share/nginx/html
+# Create nginx config for SPA with security headers
+RUN cat <<'EOF' > /etc/nginx/conf.d/default.conf
+server {
+    listen 3800;
+    listen [::]:3800;
+    server_name _;
 
-# Create health check endpoint
-RUN echo "healthy" > /usr/share/nginx/html/health
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ${VITE_API_URL} ${VITE_BACKEND_URL} ${VITE_KEYCLOAK_URL};" always;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json application/font-woff application/font-woff2;
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Don't cache HTML (for updates)
+    location ~* \.(html)$ {
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # SPA routing - serve index.html for all routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API proxy (optional - if backend is on different host)
+    location /api/ {
+        proxy_pass ${VITE_BACKEND_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Disable access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+}
+EOF
+
+# Create startup script for runtime configuration
+RUN cat <<'EOF' > /docker-entrypoint.sh
+#!/bin/sh
+set -e
+
+echo "Starting DhafnckMCP Frontend Production Server..."
+echo "================================================"
+
+# Validate required environment variables
+REQUIRED_VARS="VITE_API_URL VITE_BACKEND_URL"
+MISSING_VARS=""
+
+for VAR in $REQUIRED_VARS; do
+    eval VALUE=\$$VAR
+    if [ -z "$VALUE" ]; then
+        MISSING_VARS="$MISSING_VARS $VAR"
+        echo "❌ Missing required variable: $VAR"
+    else
+        echo "✅ $VAR configured"
+    fi
+done
+
+if [ -n "$MISSING_VARS" ]; then
+    echo ""
+    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"
+    exit 1
+fi
+
+# Validate Keycloak configuration
+if [ -n "$VITE_KEYCLOAK_URL" ] && [ -n "$VITE_KEYCLOAK_REALM" ] && [ -n "$VITE_KEYCLOAK_CLIENT_ID" ]; then
+    echo "✅ Keycloak authentication configured"
+else
+    echo "⚠️  WARNING: Keycloak not fully configured - authentication may not work"
+fi
+
+echo ""
+echo "Configuration Summary:"
+echo "  Backend URL: ${VITE_BACKEND_URL}"
+echo "  API URL: ${VITE_API_URL}"
+echo "  Environment: production"
+echo "  Port: 3800"
+echo "================================================"
+
+# Replace environment variables in nginx config
+envsubst '${VITE_API_URL} ${VITE_BACKEND_URL} ${VITE_KEYCLOAK_URL}' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp
+mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf
+
+# Create runtime config file for the app (if needed)
+cat > /usr/share/nginx/html/config.json <<EOL
+{
+  "apiUrl": "${VITE_API_URL}",
+  "backendUrl": "${VITE_BACKEND_URL}",
+  "keycloakUrl": "${VITE_KEYCLOAK_URL}",
+  "keycloakRealm": "${VITE_KEYCLOAK_REALM}",
+  "keycloakClientId": "${VITE_KEYCLOAK_CLIENT_ID}",
+  "environment": "production"
+}
+EOL
+
+echo ""
+echo "🚀 Starting nginx server on port 3800..."
+exec nginx -g 'daemon off;'
+EOF
+
+RUN chmod +x /docker-entrypoint.sh
+
+# Copy built application from builder
+COPY --from=builder /build/build /usr/share/nginx/html
+
+# Create non-root user for nginx
+RUN addgroup -g 1001 -S nginx-group && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx-group -g nginx nginx-user && \
+    chown -R nginx-user:nginx-group /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d
+
+# Use non-root user
+USER nginx-user
+
+EXPOSE 3800
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3800/health || exit 1
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
