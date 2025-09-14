@@ -615,11 +615,11 @@
       "count": 3,
       "files": [
         {
-          "hash": "3d8b73da2c403882353f65961a2c4a56",
-          "modified": "2025-09-14T10:13:30.121900",
+          "hash": "7df1eb4da60ef5733a3fbf68d709a058",
+          "modified": "2025-09-14T13:27:23.154355",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 8969
+          "size": 13425
         },
         {
           "hash": "472c2d8db6e2d54e397b76778eebb5f8",
@@ -959,21 +959,21 @@
       "files": [
         {
           "hash": "9adf40c28d1c8c7f34b460cd2ba4bc43",
-          "modified": "2025-09-14T12:10:38.398944",
+          "modified": "2025-09-14T12:24:20.211712",
           "name": "architecture-overview.md",
           "path": "claude-hooks-docker/architecture-overview.md",
           "size": 19518
         },
         {
           "hash": "131308306ec5ea025e79aa02b2b1404f",
-          "modified": "2025-09-14T12:15:07.996056",
+          "modified": "2025-09-14T12:24:20.211712",
           "name": "docker-configuration.md",
           "path": "claude-hooks-docker/docker-configuration.md",
           "size": 26110
         },
         {
           "hash": "fc280d7f73d9867627afb67fa7efd59b",
-          "modified": "2025-09-14T12:13:08.123231",
+          "modified": "2025-09-14T12:24:20.211712",
           "name": "technical-implementation.md",
           "path": "claude-hooks-docker/technical-implementation.md",
           "size": 40003
@@ -2563,7 +2563,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T12:15:08.409117",
+  "generated_at": "2025-09-14T13:27:23.485980",
   "structure": {
     "_absolute_docs": {
       "files": [
