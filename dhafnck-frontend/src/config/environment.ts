@@ -5,7 +5,17 @@
  */
 
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Automatically upgrade to HTTPS if the page is served over HTTPS to avoid mixed content errors
+const configuredApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = (() => {
+  // If we're running on HTTPS and the API URL is HTTP, upgrade it to HTTPS
+  if (typeof window !== 'undefined' &&
+      window.location.protocol === 'https:' &&
+      configuredApiUrl.startsWith('http://')) {
+    return configuredApiUrl.replace('http://', 'https://');
+  }
+  return configuredApiUrl;
+})();
 
 // Environment
 export const ENVIRONMENT = import.meta.env.VITE_ENV || 'development';
@@ -39,8 +49,15 @@ if (IS_DEVELOPMENT || DEBUG_MODE) {
     API_BASE_URL,
     ENVIRONMENT,
     DEBUG_MODE,
-    APP_NAME
+    APP_NAME,
+    configuredApiUrl: configuredApiUrl,
+    wasUpgraded: configuredApiUrl !== API_BASE_URL
   });
+
+  // Log if URL was auto-upgraded to HTTPS
+  if (configuredApiUrl !== API_BASE_URL) {
+    console.log('API URL auto-upgraded from HTTP to HTTPS for mixed content security');
+  }
 }
 
 // Export configuration object for easy access
