@@ -198,8 +198,8 @@ compose_file_args() {
         return
     fi
     
-    # Use the unified docker-compose.yml
-    local args="-f ${SCRIPT_DIR}/docker-compose.yml"
+    # Use the unified docker-compose.yml from docker subdirectory
+    local args="-f ${SCRIPT_DIR}/docker/docker-compose.yml"
     
     # Set up profiles based on configuration
     local profiles=""
