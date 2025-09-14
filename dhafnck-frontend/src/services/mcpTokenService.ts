@@ -1,8 +1,7 @@
 // MCP Token Service - Generate and manage tokens for MCP requests
 import Cookies from 'js-cookie';
 import { taskApiV2 } from './apiV2';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE_URL } from '../config/environment';
 
 interface MCPToken {
   success: boolean;

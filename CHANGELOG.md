@@ -7,6 +7,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **Frontend Environment Variable Configuration** (2025-09-14):
+  - Created centralized environment configuration in `dhafnck-frontend/src/config/environment.ts`
+  - Updated all services to use centralized configuration instead of hardcoded URLs:
+    - `dhafnck-frontend/src/services/tokenService.ts`
+    - `dhafnck-frontend/src/services/apiV2.ts`
+    - `dhafnck-frontend/src/services/mcpTokenService.ts`
+    - `dhafnck-frontend/src/contexts/AuthContext.tsx`
+    - `dhafnck-frontend/src/api-lazy.ts`
+  - Created CapRover deployment script at `scripts/deployment/caprover-env-setup.sh`
+  - Updated `.env.sample` with proper frontend environment variables
+  - Created documentation at `ai_docs/deployment/frontend-environment-configuration.md`
+  - Ensures no hardcoded API addresses in production - all configuration via environment variables
 - **Token Generation Endpoint 404 Error in Production** (2025-09-14):
   - Fixed incorrect log message in `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
     - Changed from `/api/v2/tokens` to `/api/auth/tokens` to match actual router configuration
