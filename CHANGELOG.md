@@ -14,6 +14,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Documented best practices for using each variable in different deployment scenarios
 
 ### Fixed
+- **Mixed Content Error in Production** (2025-09-14):
+  - Fixed browser blocking HTTP API calls from HTTPS-served frontend
+  - Modified `dhafnck-frontend/src/config/environment.ts` to automatically upgrade HTTP URLs to HTTPS when page is served over HTTPS
+  - Added detection for `window.location.protocol` to determine if upgrade is needed
+  - Added debug logging to track when auto-upgrade occurs
+  - Ensures API calls work correctly in production environments with HTTPS
 - **Token Generation Endpoint Missing in Production** (2025-09-14):
   - Fixed 404 error for `/api/auth/tokens/generate` endpoint
   - Added missing import for token management routes in `dhafnck_mcp_main/src/mcp_http_server.py`
