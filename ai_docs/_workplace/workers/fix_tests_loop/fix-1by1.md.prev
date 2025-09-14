@@ -1,10 +1,57 @@
 # Test Fix Instructions - Step by Step Process
 
+## ⚠️ GOLDEN RULE: NEVER BREAK WORKING CODE
+**Before ANY change, ask yourself: "Am I about to break working production code to satisfy an obsolete test?"**
+
 ## Objective
 Fix all failing tests systematically by addressing root causes based on **LATEST CODE VERSION**, not obsolete test expectations.
 
 ## 🚨 CRITICAL RULE: CODE OVER TESTS
 **ALWAYS fix tests to match the current implementation - NEVER modify working code to match outdated tests!**
+
+## 🔍 MANDATORY OBSOLESCENCE CHECK BEFORE ANY CHANGES
+
+### Before Fixing ANY Test, You MUST Determine:
+1. **Is the test obsolete?** (expecting old behavior that was intentionally changed)
+2. **Is the code obsolete?** (legacy code that should be removed/updated)
+3. **Which is the source of truth?** (current working production code vs test expectations)
+
+### Decision Matrix:
+| Scenario | Test Status | Code Status | Action | Priority |
+|----------|------------|-------------|---------|----------|
+| Test expects removed feature | OBSOLETE | CURRENT | Update/Remove test | HIGH |
+| Test uses old API format | OBSOLETE | CURRENT | Update test to match new API | HIGH |
+| Test imports old modules | OBSOLETE | CURRENT | Fix test imports | HIGH |
+| Code has actual bug | CURRENT | BROKEN | Fix the code bug | HIGH |
+| Code is deprecated | CURRENT | OBSOLETE | Consider removing both | MEDIUM |
+| Both work but mismatch | UNCLEAR | UNCLEAR | Check git history & docs | LOW |
+
+### How to Determine Obsolescence:
+1. **Check Git History**:
+   ```bash
+   # See when the code was last modified
+   git log -p --follow [source_file_path]
+
+   # See when the test was last modified
+   git log -p --follow [test_file_path]
+
+   # Compare dates - newer code usually means test is obsolete
+   ```
+
+2. **Check Documentation**:
+   - Look in `ai_docs/` for current API specs
+   - Check CHANGELOG.md for breaking changes
+   - Review migration guides if they exist
+
+3. **Check Production Usage**:
+   - Is the code actively used in production?
+   - Are there other tests that pass with this code?
+   - Would changing the code break other components?
+
+4. **Check Dependencies**:
+   - What depends on this code?
+   - Would changing it cause cascade failures?
+   - Is it part of a public API?
 
 ## Step-by-Step Process
 
@@ -38,15 +85,43 @@ Fix all failing tests systematically by addressing root causes based on **LATEST
    - Dependency errors → Verify all dependencies in LATEST code
 
 ### Step 3: Fix the Root Cause (ALWAYS FAVOR CURRENT CODE)
+
+#### 🛡️ PROTECTION CHECKLIST (Run Through BEFORE Any Change):
+- [ ] Have I checked if the current code is working in production?
+- [ ] Have I verified this isn't just an outdated test expectation?
+- [ ] Have I checked git history to see which changed more recently?
+- [ ] Have I looked for other passing tests that use the same code?
+- [ ] Am I about to modify code that other components depend on?
+
+#### DECISION FLOWCHART:
+```
+Test Fails
+    ↓
+Is code working in production/other tests?
+    ├─ YES → Test is OBSOLETE → UPDATE TEST
+    └─ NO → Check further
+              ↓
+         Was code recently changed intentionally?
+              ├─ YES → Test is OBSOLETE → UPDATE TEST
+              └─ NO → Check further
+                        ↓
+                   Is this a real bug?
+                        ├─ YES → FIX CODE (rare case)
+                        └─ NO/UNSURE → UPDATE TEST (safe default)
+```
+
+#### IMPLEMENTATION RULES:
 1. **FIRST**: Check the CURRENT implementation to understand how it actually works
-2. **DECISION MATRIX**:
-   - If test expects OBSOLETE behavior → **UPDATE TEST** to match current implementation
-   - If test fails due to missing methods → Check if methods were renamed/moved in current code
-   - If imports fail → Update imports to match current module structure
-   - If assertions fail → Verify test data matches current API/data structures
-   - **ONLY fix source code if there's an actual bug, NOT if test is outdated**
-3. **PRIORITY**: Current working code > Obsolete test expectations
-4. Document what was changed and why (code fix vs test update)
+2. **SECOND**: Run the obsolescence check from Step 2
+3. **DECISION MATRIX**:
+   - Test expects OBSOLETE behavior → **UPDATE TEST** to match current implementation ✅
+   - Test fails due to missing methods → Check if renamed/moved → **UPDATE TEST** ✅
+   - Imports fail → Update imports to match current module structure → **UPDATE TEST** ✅
+   - Assertions fail → Verify test data matches current API → **UPDATE TEST** ✅
+   - **ONLY fix source code if**: There's a confirmed bug AND no other code depends on current behavior ⚠️
+4. **DEFAULT ACTION**: When in doubt → **UPDATE THE TEST, NOT THE CODE**
+5. **PRIORITY**: Current working code > Obsolete test expectations
+6. Document what was changed and why (code fix vs test update)
 
 ### Step 4: Verify the Fix
 1. Re-run the specific test to confirm it passes using test-menu.sh:
@@ -79,6 +154,39 @@ Fix all failing tests systematically by addressing root causes based on **LATEST
    - Fix applied
    - Verification status
 2. Return to Step 1 with the next failing test
+
+## 🚫 COMMON MISTAKES THAT BREAK PRODUCTION
+
+### NEVER DO THESE (They Break Working Code):
+1. **Adding a method just because a test expects it** - The method was likely renamed/moved
+2. **Changing return types to match test assertions** - Tests should match current API
+3. **Reverting recent code changes to pass old tests** - Tests need updating instead
+4. **Modifying database schemas to match test fixtures** - Update test fixtures instead
+5. **Changing API endpoints because tests use old URLs** - Update test URLs
+6. **Adding deprecated parameters back** - Remove them from tests
+7. **Downgrading library versions to match test mocks** - Update test mocks
+
+### Real Examples of What NOT to Do:
+```python
+# ❌ WRONG: Test expects old method name
+# DON'T add this to working code:
+def get_user_by_id(self, id):  # Old method name
+    return self.get_user(id)    # Just to satisfy test
+
+# ✅ RIGHT: Update the test instead
+# Change test from: user = service.get_user_by_id(123)
+# To: user = service.get_user(123)  # Match current implementation
+```
+
+```python
+# ❌ WRONG: Test expects old response format
+# DON'T change working API:
+return {"data": result, "status": "ok"}  # Old format for test
+
+# ✅ RIGHT: Update test expectation
+# Change test from: assert response["status"] == "ok"
+# To: assert response["success"] == True  # Match current API
+```
 
 ## Important Guidelines
 
