@@ -109,7 +109,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        credentials: 'include', // Include cookies for CORS
         body: JSON.stringify({ email, password }),
       });
 
@@ -155,7 +157,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        credentials: 'include', // Include cookies for CORS
         body: JSON.stringify({ 
           email, 
           password,
@@ -222,7 +226,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        credentials: 'include', // Include cookies for CORS
         body: JSON.stringify({ refresh_token }),
       });
 
