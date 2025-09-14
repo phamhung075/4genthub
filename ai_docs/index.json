@@ -954,6 +954,33 @@
       ],
       "path": "claude-code"
     },
+    "claude-hooks-docker": {
+      "count": 3,
+      "files": [
+        {
+          "hash": "9adf40c28d1c8c7f34b460cd2ba4bc43",
+          "modified": "2025-09-14T12:10:38.398944",
+          "name": "architecture-overview.md",
+          "path": "claude-hooks-docker/architecture-overview.md",
+          "size": 19518
+        },
+        {
+          "hash": "131308306ec5ea025e79aa02b2b1404f",
+          "modified": "2025-09-14T12:15:07.996056",
+          "name": "docker-configuration.md",
+          "path": "claude-hooks-docker/docker-configuration.md",
+          "size": 26110
+        },
+        {
+          "hash": "fc280d7f73d9867627afb67fa7efd59b",
+          "modified": "2025-09-14T12:13:08.123231",
+          "name": "technical-implementation.md",
+          "path": "claude-hooks-docker/technical-implementation.md",
+          "size": 40003
+        }
+      ],
+      "path": "claude-hooks-docker"
+    },
     "context-system": {
       "count": 21,
       "files": [
@@ -1961,7 +1988,7 @@
         },
         {
           "hash": "26014032146edb41e21a1e6ba9d5375a",
-          "modified": "2025-09-14T11:37:50.644197",
+          "modified": "2025-09-14T11:41:52.524557",
           "name": "docker-deployment-guide.md",
           "path": "operations/docker-deployment-guide.md",
           "size": 16726
@@ -2422,7 +2449,7 @@
         },
         {
           "hash": "6a4498ef5d0dbbee75306a5a49d80b8c",
-          "modified": "2025-09-14T11:40:17.224514",
+          "modified": "2025-09-14T11:41:52.524557",
           "name": "production-deployment-issues.md",
           "path": "troubleshooting-guides/production-deployment-issues.md",
           "size": 20440
@@ -2536,7 +2563,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-14T11:40:17.498542",
+  "generated_at": "2025-09-14T12:15:08.409117",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2680,6 +2707,13 @@
     "claude-code": {
       "files": [
         "hooks-reference.md"
+      ]
+    },
+    "claude-hooks-docker": {
+      "files": [
+        "architecture-overview.md",
+        "docker-configuration.md",
+        "technical-implementation.md"
       ]
     },
     "context-system": {
@@ -2954,6 +2988,6 @@
       ]
     }
   },
-  "total_directories": 29,
-  "total_files": 309
+  "total_directories": 30,
+  "total_files": 312
 }

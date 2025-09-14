@@ -201,6 +201,7 @@ def create_base_app(
     if cors_origins is None:
         # Default to wildcard since we use token authentication
         # MCP server validates tokens, not origins
+        # This allows Claude Code to access from any origin
         cors_origins = ["*"]
     
     middleware.append(
@@ -242,7 +243,8 @@ def create_http_server_factory(
         Tuple of (server_routes, server_middleware, required_scopes)
     """
     if cors_origins is None:
-        cors_origins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:3800"]
+        # Use wildcard for MCP endpoints to allow Claude Code access from anywhere
+        cors_origins = ["*"]
     
     # Initialize base components
     server_routes: list[BaseRoute] = []
@@ -452,7 +454,7 @@ class MCPHeaderValidationMiddleware:
     """
     def __init__(self, app, cors_origins: list[str] | None = None):
         self.app = app
-        self.cors_origins = cors_origins or ["http://localhost:3000", "http://localhost:3800"]
+        self.cors_origins = cors_origins or ["*"]
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -826,7 +828,7 @@ def create_streamable_http_app(
 
     # Always add MCPHeaderValidationMiddleware as one of the outermost middleware
     if cors_origins is None:
-        cors_origins = ["http://localhost:3000", "http://localhost:3800"]
+        cors_origins = ["*"]  # Allow all origins for MCP
     server_middleware.append(Middleware(MCPHeaderValidationMiddleware, cors_origins=cors_origins))
 
     app = create_base_app(
