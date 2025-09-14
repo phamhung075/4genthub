@@ -35,9 +35,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Files modified:
     - `docker-system/docker/Dockerfile.backend.production` (lines 36, 47, 133)
     - `.env.sample` (lines 29, 96, 102-108)
+- **Docker Production Build Issues**:
   - Fixed: `docker-system/docker/Dockerfile.backend.production`
-    - Issue 1: `/opt/venv/bin/uv: not found` error during CapRover deployment
-      - Solution: Use `uv pip install --system --python /opt/venv/bin/python` instead of `/opt/venv/bin/uv pip install`
+    - Issue 1: `/opt/venv/bin/pip: not found` error during CapRover deployment
+      - Root cause: `uv venv` doesn't install pip by default in virtual environment
+      - Solution: Use `uv pip install --python /opt/venv/bin/python` instead of `/opt/venv/bin/pip install`
     - Issue 2: `exec format error` when running container
       - Solution: Replaced heredoc script generation with `printf` for guaranteed Unix line endings
       - Added explicit platform targeting with `--platform` flags

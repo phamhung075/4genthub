@@ -1,26 +1,5 @@
 [
   {
-    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "update",
-    "created_at": "2025-09-14T11:29:08.758130",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-14T11:29:16.527440",
-    "displayed": true
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-14T11:29:19.355039",
-    "displayed": true
-  },
-  {
     "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n\ud83d\udca1 SUGGESTION: Create subtasks for better tracking\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
     "from_action": "create",
@@ -67,6 +46,27 @@
     "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
     "from_action": "update",
     "created_at": "2025-09-14T11:30:59.782712",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2714\ufe0f SUBTASK COMPLETED - NEXT:\n\ud83d\udca1 GREAT: Insights documented for future reference\n\ud83d\udd04 CHECK: Review if parent task needs updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "complete",
+    "created_at": "2025-09-14T11:36:10.950788",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2714\ufe0f SUBTASK COMPLETED - NEXT:\n\ud83d\udca1 GREAT: Insights documented for future reference\n\ud83d\udd04 CHECK: Review if parent task needs updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "complete",
+    "created_at": "2025-09-14T11:36:22.370790",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83d\udca1 UPDATE COMPLETE - REMINDERS:\n\ud83d\udcc8 PROGRESS: 20% complete - keep updating\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
+    "from_action": "update",
+    "created_at": "2025-09-14T11:36:29.659473",
     "displayed": true
   }
 ]
