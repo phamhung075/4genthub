@@ -155,24 +155,34 @@ class DatabaseConfig:
         Get database URL securely from environment variables.
 
         Priority:
-        1. DATABASE_URL if set (for backward compatibility)
-        2. Construct from individual components (more secure)
+        1. Construct from individual components (RECOMMENDED - more secure)
+        2. DATABASE_URL if set (deprecated - for backward compatibility only)
 
         Returns:
             str: The database connection URL
         """
         import urllib.parse
 
-        # First check if DATABASE_URL is explicitly set
-        database_url = os.getenv("DATABASE_URL")
-        if database_url:
-            # Log warning if it contains plaintext password
-            if ":" in database_url and "@" in database_url:
-                logger.warning("⚠️ DATABASE_URL contains credentials. Consider using individual environment variables for better security.")
-            return database_url
+        # PRIORITY 1: Try to construct from individual components (RECOMMENDED)
+        if self.database_type == "postgresql":
+            # For local PostgreSQL - use individual DATABASE_* variables
+            db_host = os.getenv("DATABASE_HOST")
+            db_port = os.getenv("DATABASE_PORT", "5432")
+            db_name = os.getenv("DATABASE_NAME", "dhafnck_mcp")
+            db_user = os.getenv("DATABASE_USER", "postgres")
+            db_password = os.getenv("DATABASE_PASSWORD")
+            ssl_mode = os.getenv("DATABASE_SSL_MODE", "prefer")
 
-        # Construct from individual components (more secure approach)
-        if self.database_type == "supabase":
+            # Check if we have the required components
+            if db_host and db_user and db_password:
+                encoded_password = urllib.parse.quote(db_password)
+                database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+                if ssl_mode and ssl_mode != "disable":
+                    database_url += f"?sslmode={ssl_mode}"
+                logger.info("✅ PostgreSQL URL constructed from individual secure environment variables")
+                return database_url
+
+        elif self.database_type == "supabase":
             # For Supabase, use the SUPABASE_* variables
             db_host = os.getenv("SUPABASE_DB_HOST")
             db_port = os.getenv("SUPABASE_DB_PORT", "5432")
@@ -184,22 +194,23 @@ class DatabaseConfig:
                 # URL-encode the password to handle special characters
                 encoded_password = urllib.parse.quote(db_password)
                 database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}?sslmode=require"
-                logger.info("✅ Database URL constructed from secure environment variables")
+                logger.info("✅ Supabase URL constructed from individual secure environment variables")
                 return database_url
 
-        elif self.database_type == "postgresql":
-            # For local PostgreSQL
-            db_host = os.getenv("DATABASE_HOST", "localhost")
-            db_port = os.getenv("DATABASE_PORT", "5432")
-            db_name = os.getenv("DATABASE_NAME", "dhafnck_mcp")
-            db_user = os.getenv("DATABASE_USER", "dhafnck_user")
-            db_password = os.getenv("DATABASE_PASSWORD", "dev_password")
-
-            if db_password:
-                encoded_password = urllib.parse.quote(db_password)
-                database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
-                logger.info("✅ Database URL constructed from secure environment variables")
-                return database_url
+        # PRIORITY 2: Fall back to DATABASE_URL only if individual components are not available
+        # This is deprecated and only for backward compatibility
+        database_url = os.getenv("DATABASE_URL")
+        if database_url:
+            # Log warning to encourage migration to individual variables
+            if ":" in database_url and "@" in database_url:
+                logger.warning(
+                    "⚠️ DATABASE_URL contains embedded credentials (deprecated).\n"
+                    "   Please migrate to individual environment variables for better security:\n"
+                    "   - DATABASE_HOST, DATABASE_PORT, DATABASE_NAME\n"
+                    "   - DATABASE_USER, DATABASE_PASSWORD, DATABASE_SSL_MODE\n"
+                    "   See .env.sample for the recommended configuration."
+                )
+            return database_url
 
         # No valid configuration found
         return None
