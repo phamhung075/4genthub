@@ -50,12 +50,16 @@ app = FastAPI(
 cors_origins_str = os.environ.get("CORS_ORIGINS", "")
 if cors_origins_str:
     # Parse comma-separated CORS origins from environment
-    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+    # Special handling for wildcard
+    if cors_origins_str.strip() == "*":
+        cors_origins = ["*"]
+    else:
+        cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
     logger.info(f"CORS origins configured from environment: {cors_origins}")
 else:
-    # Default origins if not specified in environment
-    cors_origins = ["http://localhost:3800", "http://localhost:3000"]
-    logger.info(f"Using default CORS origins: {cors_origins}")
+    # Default to wildcard for API access from any origin
+    cors_origins = ["*"]
+    logger.info(f"Using wildcard CORS for universal access")
 
 # Configure CORS
 app.add_middleware(

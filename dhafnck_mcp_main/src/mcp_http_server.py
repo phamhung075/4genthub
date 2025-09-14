@@ -34,20 +34,25 @@ app = FastAPI(
 cors_origins_str = os.environ.get("CORS_ORIGINS", "")
 if cors_origins_str:
     # Parse comma-separated CORS origins from environment
-    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+    # Special handling for wildcard
+    if cors_origins_str.strip() == "*":
+        cors_origins = ["*"]
+    else:
+        cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
     logger.info(f"CORS origins configured from environment: {cors_origins}")
 else:
-    # Default origins if not specified in environment
-    cors_origins = ["http://localhost:3800", "http://localhost:3000"]
-    logger.info(f"Using default CORS origins: {cors_origins}")
+    # For MCP endpoints, allow all origins since Claude Code needs access from anywhere
+    cors_origins = ["*"]  # Allow all origins for MCP compatibility
+    logger.info(f"Using wildcard CORS for MCP compatibility")
 
-# Add CORS middleware
+# Add CORS middleware - Allow all origins for MCP endpoints
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=cors_origins,  # Wildcard for MCP/Claude Code access
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],  # Expose all headers for MCP protocol
 )
 
 # Initialize authentication and MCP tools

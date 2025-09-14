@@ -1507,7 +1507,7 @@ class FastMCP(Generic[LifespanResultT]):
             auth=self.auth,
             debug=self._deprecated_settings.debug,
             middleware=middleware,
-            cors_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3800"],  # Add common dev origins
+            cors_origins=["*"],  # Allow all origins for MCP/Claude Code compatibility
         )
 
     def streamable_http_app(
@@ -1615,7 +1615,7 @@ class FastMCP(Generic[LifespanResultT]):
                 ),
                 debug=self._deprecated_settings.debug,
                 middleware=middleware,
-                cors_origins=cors_origins or ["http://localhost:3000", "http://localhost:3001", "http://localhost:3800"],  # Use passed origins or default
+                cors_origins=cors_origins or ["*"],  # Use passed origins or wildcard for MCP
             )
         elif transport == "sse":
             return create_sse_app(
@@ -1625,7 +1625,7 @@ class FastMCP(Generic[LifespanResultT]):
                 auth=self.auth,
                 debug=self._deprecated_settings.debug,
                 middleware=middleware,
-                cors_origins=cors_origins or ["http://localhost:3000", "http://localhost:3001", "http://localhost:3800"],  # Use passed origins or default
+                cors_origins=cors_origins or ["*"],  # Use passed origins or wildcard for MCP
             )
 
     async def run_streamable_http_async(
