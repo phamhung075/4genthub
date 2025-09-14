@@ -19,12 +19,13 @@ RUN apt-get update && apt-get install -y \
     && pip install --no-cache-dir uv
 
 # Copy dependency files
-COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md ./dhafnck_mcp_main/
+COPY dhafnck_mcp_main/pyproject.toml dhafnck_mcp_main/uv.lock* dhafnck_mcp_main/README.md dhafnck_mcp_main/requirements.txt ./dhafnck_mcp_main/
 
 # Install dependencies in a virtual environment (single layer)
 WORKDIR /build/dhafnck_mcp_main
 RUN uv venv /opt/venv && \
-    uv pip install --python /opt/venv/bin/python --no-cache .
+    uv pip install --python /opt/venv/bin/python --no-cache . && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Production Runtime
 FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.11-slim
