@@ -3,7 +3,7 @@
 # Features: Security hardening, minimal image size, optimized layers
 
 # Stage 1: Builder
-FROM python:3.11-slim as builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} python:3.11-slim as builder
 
 WORKDIR /build
 
@@ -26,7 +26,7 @@ RUN uv venv /opt/venv
 RUN uv pip install --system --python /opt/venv/bin/python --no-cache .
 
 # Stage 2: Production Runtime
-FROM python:3.11-slim
+FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.11-slim
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -67,8 +67,8 @@ ENV PYTHONHASHSEED=random
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Create production entrypoint script
-RUN cat <<'EOF' > /app/docker-entrypoint.sh
+# Create production entrypoint script with proper line endings
+RUN cat <<'EOF' > /app/docker-entrypoint.sh && sed -i 's/\r$//' /app/docker-entrypoint.sh
 #!/bin/sh
 set -e
 
@@ -165,7 +165,10 @@ else
 fi
 EOF
 
-RUN chmod +x /app/docker-entrypoint.sh
+# Set proper permissions and ensure Unix line endings
+RUN chmod +x /app/docker-entrypoint.sh && \
+    # Verify the script is properly formatted
+    head -1 /app/docker-entrypoint.sh | grep -q "#!/bin/sh"
 
 # Switch to non-root user
 USER appuser
