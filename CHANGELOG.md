@@ -32,9 +32,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Issue 1: `/opt/venv/bin/uv: not found` error during CapRover deployment
     - Solution: Use `uv pip install --system --python /opt/venv/bin/python` instead of `/opt/venv/bin/uv pip install`
   - Issue 2: `exec format error` when running container
-    - Solution: Added proper line ending handling and platform architecture support
+    - Solution: Replaced heredoc script generation with `printf` for guaranteed Unix line endings
     - Added explicit platform targeting with `--platform` flags
-    - Ensured Unix line endings in entrypoint script
+    - Removed problematic script validation that was causing build failures
   - Impact: Enables successful production Docker builds and execution on CapRover and multi-arch platforms
 - **Database Configuration Security Enhancement**:
   - Modified: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
