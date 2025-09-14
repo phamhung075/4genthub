@@ -357,7 +357,7 @@ def create_sse_app(
         try:
             from .routes.token_mgmt_routes_db import router as token_management_router
             v2_app.include_router(token_management_router)
-            logger.info("API token management routes registered at /api/v2/tokens (PostgreSQL storage)")
+            logger.info("API token management routes registered at /api/auth/tokens (PostgreSQL storage)")
         except ImportError:
             # Fall back to in-memory storage if DB version not available
             try:
