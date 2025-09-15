@@ -353,19 +353,13 @@ def create_sse_app(
         except ImportError as mcp_token_e:
             logger.warning(f"Could not import MCP token routes: {mcp_token_e}")
         
-        # Add API token management routes for frontend (with PostgreSQL storage)
+        # Add API token management routes at /api/v2/tokens
         try:
-            from .routes.token_mgmt_routes_db import router as token_management_router
-            v2_app.include_router(token_management_router)
-            logger.info("API token management routes registered at /api/auth/tokens (PostgreSQL storage)")
-        except ImportError:
-            # Fall back to in-memory storage if DB version not available
-            try:
-                from .routes.token_mgmt_routes import router as token_management_router
-                v2_app.include_router(token_management_router)
-                logger.warning("Using in-memory token storage (fallback mode)")
-            except ImportError as token_mgmt_e:
-                logger.warning(f"Could not import token management routes: {token_mgmt_e}")
+            from .routes.token_router import router as token_router
+            v2_app.include_router(token_router)
+            logger.info("API token management routes registered at /api/v2/tokens")
+        except ImportError as token_mgmt_e:
+            logger.warning(f"Could not import new token router: {token_mgmt_e}")
         
         # Mount the FastAPI app as a sub-application
         server_routes.append(Mount("/", app=v2_app))
@@ -623,19 +617,13 @@ def create_streamable_http_app(
         v2_app.include_router(subtask_router)
         
         # Add API token management routes for frontend (with PostgreSQL storage) FIRST
-        # This must come before general auth endpoints to avoid routing conflicts
+        # Add API token management routes at /api/v2/tokens
         try:
-            from .routes.token_mgmt_routes_db import router as token_management_router
-            v2_app.include_router(token_management_router)
-            logger.info("API token management routes registered at /api/auth/tokens")
-        except ImportError:
-            # Fall back to in-memory storage if DB version not available
-            try:
-                from .routes.token_mgmt_routes import router as token_management_router
-                v2_app.include_router(token_management_router)
-                logger.warning("Using in-memory token storage (fallback mode)")
-            except ImportError as token_mgmt_e:
-                logger.warning(f"Could not import token management routes: {token_mgmt_e}")
+            from .routes.token_router import router as token_router
+            v2_app.include_router(token_router)
+            logger.info("API token management routes registered at /api/v2/tokens")
+        except ImportError as token_mgmt_e:
+            logger.warning(f"Could not import new token router: {token_mgmt_e}")
         
         # Add authentication endpoints for frontend (after token routes to avoid conflicts)
         try:
