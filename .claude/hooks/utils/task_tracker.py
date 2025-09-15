@@ -230,46 +230,33 @@ class TaskTracker:
                 # If we can't read it, it's probably corrupted
                 file.unlink()
 
-    def format_for_status_line(self, max_length: int = 50, show_warning: bool = True) -> str:
-        """Format task information for status line display."""
+    def format_task_summary(self) -> str:
+        """Format task summary for display in hints."""
         summary = self.get_task_summary()
 
         if summary['total'] == 0:
-            if show_warning:
-                # Show clear warning for master-orchestrator
-                return "⚠️ NO MCP TASK! Must call manage_task(action='create') first!"
-            return ""
+            return "No active tasks"
 
-        parts = []
+        lines = []
+        lines.append(f"Total Active Tasks: {summary['total']}")
 
         # Show current task if exists
         if summary['current_task']:
-            title = summary['current_task']['title']
-            if len(title) > 30:
-                title = title[:27] + "..."
-            parts.append(f"🔄 {title}")
+            lines.append(f"Current: {summary['current_task']['title']}")
 
-        # Show counts
-        counts = []
+        # Show status counts
+        status_parts = []
         if summary['status_counts']['in_progress'] > 0:
-            counts.append(f"{summary['status_counts']['in_progress']}▶")
+            status_parts.append(f"In Progress: {summary['status_counts']['in_progress']}")
         if summary['status_counts']['pending'] > 0:
-            counts.append(f"{summary['status_counts']['pending']}⏸")
+            status_parts.append(f"Pending: {summary['status_counts']['pending']}")
         if summary['status_counts']['blocked'] > 0:
-            counts.append(f"{summary['status_counts']['blocked']}⚠")
+            status_parts.append(f"BLOCKED: {summary['status_counts']['blocked']}")
 
-        if counts:
-            parts.append(f"[{' '.join(counts)}]")
+        if status_parts:
+            lines.append(" | ".join(status_parts))
 
-        # Alert if blocked tasks
-        if summary['has_blocked']:
-            parts.append("⚠️ BLOCKED")
-
-        result = " ".join(parts)
-        if len(result) > max_length:
-            result = result[:max_length-3] + "..."
-
-        return result
+        return "\n".join(lines)
 
 
 # Singleton instance management
@@ -318,13 +305,13 @@ if __name__ == "__main__":
     summary = tracker.get_task_summary()
     print(f"Task Summary: {json.dumps(summary, indent=2)}")
 
-    # Format for status line
-    status = tracker.format_for_status_line()
-    print(f"Status Line: {status}")
+    # Format task summary
+    status = tracker.format_task_summary()
+    print(f"Task Summary:\n{status}")
 
     # Complete a task
     tracker.complete_task("test-1")
 
     # Check again
-    status = tracker.format_for_status_line()
-    print(f"After completion: {status}")
+    status = tracker.format_task_summary()
+    print(f"\nAfter completion:\n{status}")

@@ -46,29 +46,29 @@ except ImportError:
     inject_context_sync = None
     CONTEXT_INJECTION_ENABLED = False
 
-# Import MCP task validator for lifecycle hints
+# Import the new hint analyzer system
 try:
-    from utils.mcp_task_validator import inject_mcp_hints
-    MCP_VALIDATION_ENABLED = True
+    from utils.hint_analyzer import analyze_and_hint
+    HINT_ANALYZER_ENABLED = True
 except ImportError:
-    inject_mcp_hints = None
-    MCP_VALIDATION_ENABLED = False
+    analyze_and_hint = None
+    HINT_ANALYZER_ENABLED = False
 
-# Import MCP hint matrix for comprehensive validation
+# Import role enforcer for tool permission checking
 try:
-    from utils.mcp_hint_matrix import inject_matrix_hints
-    MCP_MATRIX_ENABLED = True
+    from utils.role_enforcer import check_tool_permission
+    ROLE_ENFORCER_ENABLED = True
 except ImportError:
-    inject_matrix_hints = None
-    MCP_MATRIX_ENABLED = False
+    check_tool_permission = None
+    ROLE_ENFORCER_ENABLED = False
 
-# Import hint bridge to display pending hints from post_tool_use
+# Import MCP task interceptor for tracking agent changes
 try:
-    from utils.hint_bridge import get_pending_hints
-    HINT_BRIDGE_ENABLED = True
+    from utils.mcp_task_interceptor import get_mcp_interceptor
+    MCP_INTERCEPTOR_ENABLED = True
 except ImportError:
-    get_pending_hints = None
-    HINT_BRIDGE_ENABLED = False
+    get_mcp_interceptor = None
+    MCP_INTERCEPTOR_ENABLED = False
 
 def load_allowed_root_files():
     """
@@ -495,20 +495,39 @@ def main():
         
         tool_name = input_data.get('tool_name', '')
         tool_input = input_data.get('tool_input', {})
-        
-        # HINT BRIDGE: Display any pending hints from previous operations
-        if HINT_BRIDGE_ENABLED and get_pending_hints:
+
+        # Get session ID if available
+        session_id = input_data.get('session_id', None)
+
+        # MCP INTERCEPTOR: Track call_agent operations to update active agent
+        if MCP_INTERCEPTOR_ENABLED and get_mcp_interceptor:
             try:
-                pending_hints = get_pending_hints()
-                if pending_hints:
-                    # Display hints that were generated after the last tool use
-                    print(pending_hints, file=sys.stderr)
+                interceptor = get_mcp_interceptor()
+                interceptor.intercept_task_operation(tool_name, tool_input, session_id)
+            except Exception:
+                pass  # Don't fail the hook if interception fails
+
+        # ROLE ENFORCER: Check if current agent is allowed to use this tool
+        if ROLE_ENFORCER_ENABLED and check_tool_permission:
+            try:
+                allowed, message = check_tool_permission(tool_name, tool_input, session_id)
+                if not allowed:
+                    # Block tool usage with role violation message
+                    print(message, file=sys.stderr)
+                    sys.exit(2)
+            except Exception:
+                pass  # Don't fail the hook if role enforcement fails
+
+        # HINT ANALYZER: Analyze tool usage and provide contextual hints
+        if HINT_ANALYZER_ENABLED and analyze_and_hint:
+            try:
+                # Analyze and get pre-tool hints
+                hints = analyze_and_hint(tool_name, tool_input, session_id, phase='pre')
+                if hints:
+                    # Display hints to guide the AI agent
+                    print(hints, file=sys.stderr)
             except Exception:
                 pass  # Don't block on hint display errors
-        
-        # NOTE: MCP hints moved to post_tool_use.py for better timing
-        # Pre-tool validation focuses on blocking dangerous operations
-        # Post-tool hints provide reminders about what to do next
         
         # CONTEXT INJECTION: Inject relevant context for MCP tools
         if CONTEXT_INJECTION_ENABLED and inject_context_sync and tool_name.startswith('mcp__'):

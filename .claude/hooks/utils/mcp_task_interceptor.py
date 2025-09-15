@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 MCP Task Interceptor
-Automatically tracks MCP task operations in the status line
+Automatically tracks MCP task operations and agent state changes
 """
 
 import json
@@ -12,6 +12,8 @@ from datetime import datetime
 
 # Import task tracker
 from .task_tracker import track_task_from_mcp
+# Import agent state manager
+from .agent_state_manager import set_current_agent
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,10 @@ class MCPTaskInterceptor:
         Returns:
             True if operation was tracked, False otherwise
         """
+        # Check if this is a call_agent operation
+        if tool_name == "mcp__dhafnck_mcp_http__call_agent":
+            return self._handle_call_agent(parameters, session_id)
+
         # Check if this is a task management operation
         if tool_name not in ["mcp__dhafnck_mcp_http__manage_task", "manage_task"]:
             return False
@@ -131,6 +137,35 @@ class MCPTaskInterceptor:
         """Generate a unique task ID if not provided."""
         import uuid
         return str(uuid.uuid4())[:8]
+
+    def _handle_call_agent(self, parameters: Dict[str, Any], session_id: str) -> bool:
+        """
+        Handle call_agent operation to update active agent.
+
+        Args:
+            parameters: Parameters passed to call_agent
+            session_id: Current session ID
+
+        Returns:
+            True if agent state was updated, False otherwise
+        """
+        try:
+            # Extract agent name from parameters
+            agent_name = parameters.get('name_agent', '')
+            if not agent_name:
+                # Try alternative parameter names
+                agent_name = parameters.get('agent_name', parameters.get('agent', ''))
+
+            if agent_name and session_id:
+                # Update the current agent state
+                set_current_agent(session_id, agent_name)
+                logger.info(f"Updated active agent to: {agent_name}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Error handling call_agent: {e}")
+
+        return False
 
     def intercept_from_response(self, tool_name: str, response: Any,
                                original_params: Dict[str, Any], session_id: str = None) -> bool:

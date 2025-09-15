@@ -6,6 +6,65 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added - Iteration 99 (2025-09-16)
+#### Dynamic Tool Enforcement System v2.0
+- **Comprehensive documentation update for Dynamic Tool Enforcement**:
+  - Added complete section documenting the revolutionary change from static to dynamic tool permissions in `CLAUDE.md`
+  - Tools are now determined ONLY by the `tools` array returned from `call_agent` responses
+  - Old YAML config files are obsolete - all permissions come from agent responses
+  - Added detailed examples showing how different agent types get different tool sets
+  - Master orchestrator: Task delegation tools but no direct file editing
+  - Coding agents: File editing tools but no Task delegation
+  - Documentation agents: Content creation tools but no system commands
+- **Enhanced documentation with real-world blocking scenarios**:
+  - Violation examples with clear error messages
+  - Agent role clarity through tool restrictions
+  - Best practices for respecting tool boundaries
+- **Updated enterprise workflow documentation**:
+  - Added tool discipline as the 2nd pillar of professional success
+  - Updated checklist to include tool permission awareness
+  - Enhanced FAQ with dynamic tool enforcement questions
+  - Updated professional mantra to include tool respect
+
+### Changed - Iteration 98 (2025-09-15)
+#### Task Tracking Moved from Status Line to Hint System
+- **Refactored task tracking to display via hint system instead of status line**:
+  - Created `.claude/hooks/config/__hint_message__config.yaml` - General configuration for hint system
+  - Task status now displays every 5 tool calls (configurable)
+  - Removed task tracking code from `.claude/status_lines/status_line.py`
+  - Updated `.claude/hooks/utils/hint_analyzer.py` to handle task status display
+  - Modified `.claude/hooks/utils/task_tracker.py` - Removed status line formatting, added general summary format
+- **Configuration features**:
+  - `task_status_interval`: Configure how often to show task status (default: 5 tool calls)
+  - `show_no_task_warning`: Enable/disable warning for master-orchestrator without tasks
+  - Customizable task summary format with placeholders
+  - Separate warning messages for different task states (no tasks, blocked, stale)
+- **Benefits**:
+  - Cleaner status line focused on essential info (model, directory, git, agent)
+  - Task information appears contextually when needed
+  - Reduces visual clutter while maintaining task awareness
+  - Configurable display frequency prevents information overload
+- **Impact**: Task tracking is now less intrusive but still visible at regular intervals
+
+### Added - Iteration 97 (2025-09-15)
+#### Comprehensive Hint System for Tool Usage
+- **Created intelligent hint and message system for AI workflow guidance**:
+  - Added `.claude/hooks/config/__hint_message__pre_tool_use.yaml` - Pre-execution hints configuration
+  - Added `.claude/hooks/config/__hint_message__post_tool_use.yaml` - Post-execution hints configuration
+  - Created `.claude/hooks/utils/hint_analyzer.py` - Analyzes tool usage patterns and provides contextual hints
+- **Features implemented**:
+  - Tool-specific hints for correct usage patterns
+  - Workflow validation (e.g., create MCP task before delegation)
+  - Error recovery guidance
+  - Success pattern recognition
+  - Dynamic condition evaluation based on context
+  - Session-aware hint generation
+- **Integration**:
+  - Updated `pre_tool_use.py` to use hint analyzer instead of obsolete imports
+  - Removed unused imports: `mcp_task_validator`, `mcp_hint_matrix`, `hint_bridge`
+  - Clean ASCII characters used instead of special Unicode symbols
+- **Impact**: AI agents now receive contextual guidance for proper workflow execution, preventing common mistakes
+
 ### Fixed - Iteration 96 (2025-09-15)
 #### Hook Configuration File Location Update
 - **Moved configuration files to organized location**:
