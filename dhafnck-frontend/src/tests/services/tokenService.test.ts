@@ -1,19 +1,26 @@
 import { tokenService } from '../../services/tokenService';
 import { authenticatedFetch } from '../../hooks/useAuthenticatedFetch';
+import { API_BASE_URL } from '../../config/environment';
+import { vi } from 'vitest';
 
 // Mock the authenticated fetch function
-jest.mock('../../hooks/useAuthenticatedFetch', () => ({
-  authenticatedFetch: jest.fn(),
+vi.mock('../../hooks/useAuthenticatedFetch', () => ({
+  authenticatedFetch: vi.fn(),
 }));
 
-const mockAuthenticatedFetch = jest.mocked(authenticatedFetch);
+const mockAuthenticatedFetch = vi.mocked(authenticatedFetch);
 
 describe('tokenService', () => {
-  const API_BASE_URL = 'http://localhost:8000';
   const baseUrl = `${API_BASE_URL}/api/v2/tokens`;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
+    // Mock console.log to avoid noise in tests
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('listTokens', () => {
@@ -29,14 +36,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(mockTokensResponse),
+        json: vi.fn().mockResolvedValue(mockTokensResponse),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.listTokens();
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(baseUrl, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens`, {
         method: 'GET',
       });
       expect(result).toEqual(mockTokensResponse);
@@ -47,7 +54,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(emptyResponse),
+        json: vi.fn().mockResolvedValue(emptyResponse),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -61,7 +68,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 500,
-        json: jest.fn().mockResolvedValue({ message: 'Server error' }),
+        json: vi.fn().mockResolvedValue({ message: 'Server error' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -81,14 +88,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(mockToken),
+        json: vi.fn().mockResolvedValue(mockToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.getTokenDetails('123');
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${baseUrl}/123`, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/123`, {
         method: 'GET',
       });
       expect(result).toEqual(mockToken);
@@ -98,7 +105,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 404,
-        json: jest.fn().mockResolvedValue({ message: 'Token not found' }),
+        json: vi.fn().mockResolvedValue({ message: 'Token not found' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -131,14 +138,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(createdToken),
+        json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.generateToken(newTokenData);
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(baseUrl, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +159,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 400,
-        json: jest.fn().mockResolvedValue({ message: 'Validation failed' }),
+        json: vi.fn().mockResolvedValue({ message: 'Validation failed' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -179,14 +186,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(updatedToken),
+        json: vi.fn().mockResolvedValue(updatedToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.updateTokenScopes('123', newScopes);
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${baseUrl}/123/scopes`, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/123/scopes`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +207,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 403,
-        json: jest.fn().mockResolvedValue({ message: 'Forbidden' }),
+        json: vi.fn().mockResolvedValue({ message: 'Forbidden' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -214,14 +221,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ success: true }),
+        json: vi.fn().mockResolvedValue({ success: true }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await tokenService.revokeToken('123');
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${baseUrl}/123`, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/123`, {
         method: 'DELETE',
       });
     });
@@ -230,7 +237,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 500,
-        json: jest.fn().mockResolvedValue({ message: 'Revocation failed' }),
+        json: vi.fn().mockResolvedValue({ message: 'Revocation failed' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -255,14 +262,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(rotatedToken),
+        json: vi.fn().mockResolvedValue(rotatedToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.rotateToken('123');
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${baseUrl}/123/rotate`, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/123/rotate`, {
         method: 'POST',
       });
       expect(result).toEqual({ data: rotatedToken });
@@ -273,7 +280,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 400,
-        json: jest.fn().mockResolvedValue({ message: 'Rotation failed' }),
+        json: vi.fn().mockResolvedValue({ message: 'Rotation failed' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -293,20 +300,20 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(validationResult),
+        json: vi.fn().mockResolvedValue(validationResult),
       } as unknown as Response;
       
       // Mock fetch directly for validateToken as it doesn't use authenticatedFetch
-      global.fetch = jest.fn().mockResolvedValue(mockResponse);
+      global.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const result = await tokenService.validateToken('test-token-value');
 
       expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/validate`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-token-value',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
+        body: 'token=test-token-value',
       });
       expect(result).toEqual(validationResult);
     });
@@ -315,10 +322,10 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 401,
-        json: jest.fn().mockResolvedValue({ error: 'Invalid token' }),
+        json: vi.fn().mockResolvedValue({ error: 'Invalid token' }),
       } as unknown as Response;
       
-      global.fetch = jest.fn().mockResolvedValue(mockResponse);
+      global.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const result = await tokenService.validateToken('invalid-token');
 
@@ -342,14 +349,14 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(stats),
+        json: vi.fn().mockResolvedValue(stats),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.getTokenUsageStats('123');
 
-      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${baseUrl}/123/usage`, {
+      expect(mockAuthenticatedFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v2/tokens/123/usage`, {
         method: 'GET',
       });
       expect(result).toEqual(stats);
@@ -359,7 +366,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 404,
-        json: jest.fn().mockResolvedValue({ message: 'Stats not found' }),
+        json: vi.fn().mockResolvedValue({ message: 'Stats not found' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -373,7 +380,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 500,
-        json: jest.fn().mockRejectedValue(new Error('Invalid JSON')),
+        json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -385,7 +392,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 401,
-        json: jest.fn().mockResolvedValue({ error: 'Unauthorized' }),
+        json: vi.fn().mockResolvedValue({ error: 'Unauthorized' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -397,7 +404,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 403,
-        json: jest.fn().mockResolvedValue({ message: 'Forbidden' }),
+        json: vi.fn().mockResolvedValue({ message: 'Forbidden' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -413,7 +420,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 500,
-        json: jest.fn().mockResolvedValue({ message: 'Internal Server Error' }),
+        json: vi.fn().mockResolvedValue({ message: 'Internal Server Error' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -427,7 +434,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 400,
-        json: jest.fn().mockResolvedValue({ message: 'Name is required' }),
+        json: vi.fn().mockResolvedValue({ message: 'Name is required' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -462,7 +469,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(createdToken),
+        json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -493,7 +500,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(createdToken),
+        json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -507,7 +514,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: false,
         status: 400,
-        json: jest.fn().mockResolvedValue({ message: 'Rate limit must be positive' }),
+        json: vi.fn().mockResolvedValue({ message: 'Rate limit must be positive' }),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
@@ -543,7 +550,7 @@ describe('tokenService', () => {
       const mockResponse = {
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue(createdToken),
+        json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
       
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);

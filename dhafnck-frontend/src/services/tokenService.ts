@@ -32,7 +32,7 @@ interface TokenListResponse {
 }
 
 class TokenService {
-  private baseUrl = `${API_BASE_URL}/api/auth/tokens`;
+  private baseUrl = `${API_BASE_URL}/api/v2/tokens`;
 
   constructor() {
     console.log('TokenService initialized with baseUrl:', this.baseUrl);
@@ -148,12 +148,12 @@ class TokenService {
 
   // Validate a token (useful for testing)
   async validateToken(token: string): Promise<{ valid: boolean; scopes?: string[]; user_id?: string }> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/tokens/validate/${encodeURIComponent(token)}`, {
-      method: 'GET',
+    const response = await fetch(`${API_BASE_URL}/api/v2/tokens/validate`, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
+      body: `token=${encodeURIComponent(token)}`,
     });
 
     if (!response.ok) {
