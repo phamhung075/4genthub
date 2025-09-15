@@ -6,6 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 90 (2025-09-15)
+#### CORS Middleware Ordering Fix
+- **Fixed CORS policy errors blocking frontend API access**:
+  - Reordered middleware stack: CORS must be first (outermost) to handle preflight requests
+  - Correct order: CORS → TrustedHost → HTTPS → RequestContext
+  - Removed duplicate RequestContextMiddleware registration
+  - Added `expose_headers=["*"]` to CORS configuration for better frontend access
+- **Root cause**: HTTPS middleware was running before CORS, preventing CORS headers from being added
+- **Files Modified**:
+  - `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
+- **Impact**: Frontend can now successfully make API calls without CORS blocking
+
 ### Fixed - Iteration 89 (2025-09-15)
 #### Frontend Runtime Environment Variable Injection Fix
 - **Fixed frontend deployment using old API endpoints on CapRover**:
