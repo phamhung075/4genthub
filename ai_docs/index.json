@@ -616,21 +616,21 @@
       "files": [
         {
           "hash": "7df1eb4da60ef5733a3fbf68d709a058",
-          "modified": "2025-09-14T13:35:46.048951",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
           "size": 13425
         },
         {
           "hash": "fda71b772513f96a5541fac5889fd22d",
-          "modified": "2025-09-15T10:28:59.910878",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
           "size": 13602
         },
         {
           "hash": "9538c2ff05fe3ba8cb9cc7aecd383754",
-          "modified": "2025-09-15T10:28:59.910878",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
           "size": 13576
@@ -1320,14 +1320,14 @@
       "files": [
         {
           "hash": "8125a41e2c03914778b81d8090f22b8c",
-          "modified": "2025-09-14T21:37:17.212434",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "environment-variables-guide.md",
           "path": "deployment/environment-variables-guide.md",
           "size": 5476
         },
         {
           "hash": "b49acdeedec5e948ece11728c6a756e9",
-          "modified": "2025-09-14T21:03:08.947390",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "frontend-environment-configuration.md",
           "path": "deployment/frontend-environment-configuration.md",
           "size": 3929
@@ -1878,11 +1878,11 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 23,
+      "count": 24,
       "files": [
         {
           "hash": "c62f03b4f4ceb0bf85588798c40c4500",
-          "modified": "2025-09-14T21:03:08.947390",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "CAPROVER_DEPLOYMENT_FIX.md",
           "path": "operations/CAPROVER_DEPLOYMENT_FIX.md",
           "size": 5451
@@ -1938,7 +1938,7 @@
         },
         {
           "hash": "fb5714c95244a66211ec9c65fc71521c",
-          "modified": "2025-09-15T10:28:59.910878",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "QUICK_DEPLOY_CAPROVER.md",
           "path": "operations/QUICK_DEPLOY_CAPROVER.md",
           "size": 2894
@@ -1966,7 +1966,7 @@
         },
         {
           "hash": "3641c47900042115ae50d06e5406086a",
-          "modified": "2025-09-15T10:28:59.914912",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "runtime-env-configuration-fix.md",
           "path": "operations/runtime-env-configuration-fix.md",
           "size": 4321
@@ -1979,15 +1979,22 @@
           "size": 13699
         },
         {
+          "hash": "a2675170b7840b9ca7d36f0b888317c0",
+          "modified": "2025-09-15T19:00:44.877505",
+          "name": "fix-mcp-cors-configuration.md",
+          "path": "operations/fix-mcp-cors-configuration.md",
+          "size": 2901
+        },
+        {
           "hash": "3d5d5dd381717a4a9fb6b80e0754c9d8",
-          "modified": "2025-09-15T10:28:59.914912",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "deploy-mixed-content-fix.md",
           "path": "operations/deploy-mixed-content-fix.md",
           "size": 2429
         },
         {
           "hash": "8e30cb089bdae03d8d74632711ba6c7e",
-          "modified": "2025-09-14T21:03:08.947390",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "CAPROVER_ENV_VARIABLES.md",
           "path": "operations/CAPROVER_ENV_VARIABLES.md",
           "size": 4002
@@ -2310,21 +2317,21 @@
       "files": [
         {
           "hash": "e7c6b05b00c115bab233b81c9682fbf6",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-suite-status-iteration-45-final.md",
           "path": "testing-qa/test-suite-status-iteration-45-final.md",
           "size": 5142
         },
         {
           "hash": "f19bef6b8ee29aefaafa6ce3e1a8fd60",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-suite-perfect-status-2025-09-15.md",
           "path": "testing-qa/test-suite-perfect-status-2025-09-15.md",
           "size": 4893
         },
         {
           "hash": "68db4610cbae5274e6900e46015bda42",
-          "modified": "2025-09-15T10:29:07.829764",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-suite-success-report-iteration-35.md",
           "path": "testing-qa/test-suite-success-report-iteration-35.md",
           "size": 4527
@@ -2366,7 +2373,7 @@
         },
         {
           "hash": "e9c0876128454644e18e4ab4340b724b",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-fix-iteration-44-summary.md",
           "path": "testing-qa/test-fix-iteration-44-summary.md",
           "size": 3754
@@ -2387,14 +2394,14 @@
         },
         {
           "hash": "2b8deadd09d5a345bf447f5db3863fd3",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-fix-iteration-53-summary.md",
           "path": "testing-qa/test-fix-iteration-53-summary.md",
           "size": 2107
         },
         {
           "hash": "6a663fd39dd509f115995044feb62e60",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "test-fix-iteration-40-summary.md",
           "path": "testing-qa/test-fix-iteration-40-summary.md",
           "size": 3468
@@ -2408,21 +2415,21 @@
         },
         {
           "hash": "8110b47ea305c5a4b860570d646e8328",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "test-fix-iteration-33-summary.md",
           "path": "testing-qa/test-fix-iteration-33-summary.md",
           "size": 2294
         },
         {
           "hash": "d6e6617f289bc130cf4fa05c7134ea2a",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-fix-iteration-43-summary.md",
           "path": "testing-qa/test-fix-iteration-43-summary.md",
           "size": 3475
         },
         {
           "hash": "0aacee7b2dbcda2d767f5231533e7e98",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-status-review-iteration-68.md",
           "path": "testing-qa/test-status-review-iteration-68.md",
           "size": 3007
@@ -2436,7 +2443,7 @@
         },
         {
           "hash": "4eca870d67b236529dd1af1bf70fb7c5",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.664407",
           "name": "test-fix-iteration-32-summary.md",
           "path": "testing-qa/test-fix-iteration-32-summary.md",
           "size": 3178
@@ -2450,14 +2457,14 @@
         },
         {
           "hash": "14cb9917a5791324e1871e69d5615008",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-suite-status-2025-09-15.md",
           "path": "testing-qa/test-suite-status-2025-09-15.md",
           "size": 2275
         },
         {
           "hash": "e23d4e09493a28ae4ae8a6e3d97e5945",
-          "modified": "2025-09-15T10:29:07.829764",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-suite-success-report-2025-09-15.md",
           "path": "testing-qa/test-suite-success-report-2025-09-15.md",
           "size": 1399
@@ -2471,14 +2478,14 @@
         },
         {
           "hash": "57f3c1a73f8333ed998854316f508e1b",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-fix-iteration-42-summary.md",
           "path": "testing-qa/test-fix-iteration-42-summary.md",
           "size": 3081
         },
         {
           "hash": "e4606060656af31b58e4b0f4b9545dab",
-          "modified": "2025-09-15T10:29:07.825795",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "test-suite-perfect-status-iteration-55.md",
           "path": "testing-qa/test-suite-perfect-status-iteration-55.md",
           "size": 1358
@@ -2658,7 +2665,7 @@
         },
         {
           "hash": "5439e76737a629874d2d86b90fbfc7fb",
-          "modified": "2025-09-15T10:51:17.993393",
+          "modified": "2025-09-15T18:30:09.668240",
           "name": "task-delegation-fix.md",
           "path": "troubleshooting-guides/task-delegation-fix.md",
           "size": 6020
@@ -2709,7 +2716,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-15T10:51:18.479463",
+  "generated_at": "2025-09-15T19:00:45.239901",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3041,6 +3048,7 @@
         "disaster-recovery-procedures.md",
         "docker-deployment-guide.md",
         "environment-setup.md",
+        "fix-mcp-cors-configuration.md",
         "index.md",
         "mcp-registration-system.md",
         "mcp-response-optimization-recommendations.md",
@@ -3159,5 +3167,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 332
+  "total_files": 333
 }
