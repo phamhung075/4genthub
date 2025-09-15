@@ -28,29 +28,17 @@ class CORSFactory:
             # Parse comma-separated origins
             origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
 
-            # Security check: If wildcard is requested, log warning
+            # Allow wildcard for MCP endpoints - required for Claude Code integration
             if "*" in origins:
-                logger.warning("Wildcard (*) CORS requested but not recommended with credentials")
-                # For development, allow specific localhost origins instead
-                origins = [
-                    "http://localhost:3800",
-                    "http://localhost:3000",
-                    "http://127.0.0.1:3800",
-                    "http://127.0.0.1:3000"
-                ]
-                logger.info(f"Using safe localhost origins instead: {origins}")
+                logger.info("Wildcard (*) CORS enabled for MCP/Claude Code compatibility")
+                return ["*"]
 
             logger.info(f"CORS origins configured: {origins}")
             return origins
         else:
-            # Default to common development origins
-            default_origins = [
-                "http://localhost:3800",
-                "http://localhost:3000",
-                "http://127.0.0.1:3800",
-                "http://127.0.0.1:3000"
-            ]
-            logger.info(f"Using default CORS origins: {default_origins}")
+            # Default to wildcard for MCP compatibility
+            default_origins = ["*"]
+            logger.info(f"Using default CORS origins: {default_origins} (for MCP compatibility)")
             return default_origins
 
     @staticmethod
