@@ -136,6 +136,7 @@ echo ""
 echo "   PORT = 8000"
 echo "   FASTMCP_PORT = 8000"
 echo "   CORS_ORIGINS = *"
+echo "   ALLOWED_HOSTS = api.92.5.226.7.nip.io,localhost"
 echo "   DATABASE_URL = <your-database-url>"
 echo "   JWT_SECRET_KEY = <your-jwt-secret>"
 echo "   KEYCLOAK_URL = <your-keycloak-url>"
@@ -157,6 +158,7 @@ VITE_APP_NAME=DhafnckMCP
 PORT=8000
 FASTMCP_PORT=8000
 CORS_ORIGINS=*
+ALLOWED_HOSTS=api.92.5.226.7.nip.io,localhost
 # Add your database and auth configuration
 
 ## API Endpoints
