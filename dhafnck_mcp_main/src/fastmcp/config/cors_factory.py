@@ -74,7 +74,7 @@ class CORSFactory:
             max_age=600,  # Cache preflight requests for 10 minutes
         )
 
-        logger.info(f"CORS configured for {len(origins)} origins with credentials={allow_credentials}")
+        logger.info(f"CORS configured for origins={origins} with credentials={allow_credentials}")
 
     @staticmethod
     def get_cors_config() -> dict:
