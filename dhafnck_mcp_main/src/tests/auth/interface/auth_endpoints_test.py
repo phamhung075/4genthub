@@ -877,14 +877,19 @@ class TestRefreshTokenEndpoint:
         assert "Authentication service unavailable" in response.json()["detail"]
     
     @patch.dict(os.environ, {"AUTH_PROVIDER": "test"})
-    def test_refresh_token_not_implemented(self, client):
-        """Test refresh in test mode (not implemented)"""
+    def test_refresh_token_test_mode(self, client):
+        """Test refresh in test mode"""
         # Act
-        response = client.post("/api/auth/refresh?refresh_token=test-token")
+        response = client.post("/api/auth/refresh", json={"refresh_token": "test-token"})
         
         # Assert
-        assert response.status_code == 501
-        assert "Token refresh not implemented" in response.json()["detail"]
+        assert response.status_code == 200
+        data = response.json()
+        assert "test-refreshed-token" in data["access_token"]
+        assert data["refresh_token"] == "test-token"
+        assert data["expires_in"] == 3600
+        assert data["user_id"] == "test-user-001"
+        assert data["email"] == "test@example.com"
 
 
 class TestLogoutEndpoint:
