@@ -63,7 +63,7 @@ class TokenListResponse(BaseModel):
 
 # Create router
 router = APIRouter(
-    prefix="/tokens",
+    prefix="/api/v2/tokens",
     tags=["tokens"],
     responses={404: {"description": "Not found"}},
 )
@@ -117,6 +117,16 @@ async def create_token(
 ):
     """Generate a new API token for the authenticated user"""
     # Delegate to handler which uses controller
+    return await generate_token_handler(request, current_user, db)
+
+@router.post("/generate", response_model=TokenResponse)
+async def generate_token(
+    request: TokenCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate a new API token for the authenticated user (frontend compatibility endpoint)"""
+    # Delegate to handler which uses controller (same as create_token)
     return await generate_token_handler(request, current_user, db)
 
 @router.get("/", response_model=TokenListResponse)

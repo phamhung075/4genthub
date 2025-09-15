@@ -352,8 +352,14 @@ def create_sse_app(
             logger.info("MCP token management routes registered at /api/v2/mcp-tokens")
         except ImportError as mcp_token_e:
             logger.warning(f"Could not import MCP token routes: {mcp_token_e}")
-        
-        # Token management routes are now handled by /api/v2/tokens router
+
+        # Add main token management routes
+        try:
+            from .routes.token_router import router as token_router
+            v2_app.include_router(token_router)
+            logger.info("Token management routes registered at /api/v2/tokens")
+        except ImportError as token_e:
+            logger.warning(f"Could not import token routes: {token_e}")
         
         # Mount the FastAPI app as a sub-application
         server_routes.append(Mount("/", app=v2_app))
@@ -635,7 +641,15 @@ def create_streamable_http_app(
             logger.info("MCP token management routes registered at /api/v2/mcp-tokens")
         except ImportError as mcp_token_e:
             logger.warning(f"Could not import MCP token routes: {mcp_token_e}")
-        
+
+        # Add main token management routes
+        try:
+            from .routes.token_router import router as token_router
+            v2_app.include_router(token_router)
+            logger.info("Token management routes registered at /api/v2/tokens")
+        except ImportError as token_e:
+            logger.warning(f"Could not import token routes: {token_e}")
+
         # Add simplified MCP registration endpoints directly to FastAPI app
         import uuid
         import time
