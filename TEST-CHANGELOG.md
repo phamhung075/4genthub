@@ -1,6 +1,61 @@
 # TEST-CHANGELOG
 
-## [Current Status] - 2025-09-14
+## [Current Status] - 2025-09-15
+
+### Test Creation and Updates - Session 44 (Iteration 36)
+
+#### 📊 **SESSION 44 - TEST CREATION AND SYNC**
+
+**Focus**: Creating missing test files and updating stale tests
+**Date**: 2025-09-15
+
+### Fixed
+- Updated `auth_endpoints_test.py` to match actual test mode behavior in refresh token endpoint
+  - Changed test to expect successful response with test token instead of 501 error
+  - Added proper assertions for test mode token refresh functionality
+- Enhanced `app_factory_test.py` with correct import paths and test assertions
+  - Fixed CORS factory test mocking to match actual implementation
+  - Updated token router import path from `token_mgmt_routes_db` to `token_router`
+  - Enhanced health endpoint test to match actual response structure
+  - Added comprehensive endpoint checks for root endpoint test
+- Added comprehensive test coverage for `http_server_test.py`
+  - Added proper import handling with availability checks
+  - Added skipif decorators for tests requiring Starlette/HTTP server components
+  - Enhanced test structure to handle optional dependencies gracefully
+  - Updated tests to match actual HTTP server component implementations 
+**Status**: ✅ TESTS CREATED AND UPDATED
+
+**Test Files Created**:
+1. ✅ **dhafnck_mcp_main/src/tests/server/app_factory_test.py**:
+   - Comprehensive test suite for AppFactory class
+   - Tests for default and custom parameters
+   - Route registration and error handling tests
+   - CORS configuration and middleware setup tests
+   - Health and root endpoint tests
+   - Integration tests for complete app creation
+   - Error scenario tests for invalid configurations
+
+2. ✅ **dhafnck_mcp_main/src/tests/server/http_server_test.py**:
+   - Complete test suite for HTTP server components
+   - StarletteWithLifespan class tests
+   - HTTP request context management tests
+   - Keycloak middleware integration tests
+   - CORS middleware functionality tests
+   - Sub-application mounting tests
+   - Error handling tests (404, 405, 500)
+   - Application lifespan management tests
+   - Middleware stack configuration tests
+
+**Test Files Updated**:
+1. ✅ **dhafnck-frontend/src/tests/services/tokenService.test.ts**:
+   - Fixed API endpoint URLs to match new implementation
+   - Updated from `/api/auth/tokens` to `/api/v2/tokens`
+   - Fixed validateToken test method from GET to POST
+   - Added proper console.log mocking
+   - Enhanced error handling and edge case tests
+   - Updated all test expectations to match current behavior
+
+## [Previous Status] - 2025-09-14
 
 ### Test Fix Progress - Session 43 (Iteration 35)
 

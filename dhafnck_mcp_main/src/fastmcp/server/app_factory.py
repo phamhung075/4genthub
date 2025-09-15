@@ -121,6 +121,10 @@ class AppFactory:
             app.include_router(auth_router)
             logger.info("✅ Auth routes registered at /api/auth")
 
+            # Register token management routes at /api/v2/tokens
+            from fastmcp.server.routes.token_router import router as token_router
+            app.include_router(token_router)
+            logger.info("✅ Token management routes registered at /api/v2/tokens")
             # Token management routes are now handled by /api/v2/tokens router
 
             # Register API v2 routes

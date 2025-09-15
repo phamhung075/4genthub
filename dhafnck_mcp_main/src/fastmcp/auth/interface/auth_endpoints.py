@@ -1288,5 +1288,3 @@ async def validate_password(password: str):
 
 # ==================== TOKEN MANAGEMENT ENDPOINTS ====================
 # All token management has been moved to dedicated router at /api/v2/tokens
-# This prevents routing conflicts and maintains clean separation of concerns
-logger.info("Token management is handled by dedicated token router at /api/v2/tokens")
