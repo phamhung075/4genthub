@@ -166,7 +166,7 @@ Backend URL: $API_URL
 ## Verification
 1. Check frontend console for API URL: console.log(import.meta.env.VITE_API_URL)
 2. Verify API calls in Network tab point to: $API_URL
-3. Test token generation: POST $API_URL/api/auth/tokens/generate
+3. Test token generation: POST $API_URL/api/v2/tokens
 EOF
 
 echo -e "${GREEN}✅ Configuration saved to: $CONFIG_FILE${NC}"
