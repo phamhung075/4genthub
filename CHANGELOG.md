@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 91 (2025-09-15)
+#### Frontend Deployment Cache Issue Resolution
+- **Forced complete rebuild to fix cached old endpoints**:
+  - Bumped version to 2.0.4 in package.json
+  - Added version tag to Dockerfile to invalidate Docker cache
+  - This ensures CapRover rebuilds with correct `/api/v2/tokens` endpoints
+- **API Endpoint Structure Clarification**:
+  - Authentication: `/api/auth/` (login, register, refresh) - CORRECT, unchanged
+  - Token Management: `/api/v2/tokens/` (list, generate, revoke) - NEW endpoint
+  - All other V2 APIs: `/api/v2/[resource]/` (projects, tasks, branches, etc.)
+- **Files Modified**:
+  - `dhafnck-frontend/package.json` (version bump to 2.0.4)
+  - `docker-system/docker/Dockerfile.frontend.production` (cache invalidation)
+  - `dhafnck-frontend/src/services/tokenService.ts` (comment update)
+
 ### Fixed - Iteration 90 (2025-09-15)
 #### CORS Middleware Ordering Fix
 - **Fixed CORS policy errors blocking frontend API access**:

@@ -1,11 +1,17 @@
 import { tokenService } from '../../services/tokenService';
 import { authenticatedFetch } from '../../hooks/useAuthenticatedFetch';
-import { API_BASE_URL } from '../../config/environment';
+import { API_BASE_URL, DEBUG_MODE } from '../../config/environment';
 import { vi } from 'vitest';
 
 // Mock the authenticated fetch function
 vi.mock('../../hooks/useAuthenticatedFetch', () => ({
   authenticatedFetch: vi.fn(),
+}));
+
+// Mock the environment config
+vi.mock('../../config/environment', () => ({
+  API_BASE_URL: 'http://localhost:8000',
+  DEBUG_MODE: false, // Set to false to avoid console logs in tests
 }));
 
 const mockAuthenticatedFetch = vi.mocked(authenticatedFetch);
@@ -15,12 +21,27 @@ describe('tokenService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock console.log to avoid noise in tests
+    // Mock console methods to avoid noise in tests
     vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('initialization', () => {
+    it('logs initialization with correct baseUrl', () => {
+      // The tokenService is already instantiated when the module loads
+      // We can verify the console.log was called during module import
+      expect(console.log).toHaveBeenCalledWith('TokenService initialized with baseUrl:', baseUrl);
+    });
+
+    it('uses correct v2 API endpoint', () => {
+      // Verify the service is using the v2 API endpoint as per Version 2.0.4
+      expect(baseUrl).toBe(`${API_BASE_URL}/api/v2/tokens`);
+      expect(baseUrl).not.toContain('/api/auth/tokens');
+    });
   });
 
   describe('listTokens', () => {
@@ -47,6 +68,11 @@ describe('tokenService', () => {
         method: 'GET',
       });
       expect(result).toEqual(mockTokensResponse);
+      
+      // Verify console.log calls
+      expect(console.log).toHaveBeenCalledWith('Fetching tokens from:', baseUrl);
+      expect(console.log).toHaveBeenCalledWith('Response status:', 200);
+      expect(console.log).toHaveBeenCalledWith('Token list response:', mockTokensResponse);
     });
 
     it('handles empty token list', async () => {
@@ -64,7 +90,7 @@ describe('tokenService', () => {
       expect(result).toEqual(emptyResponse);
     });
 
-    it('handles fetch error', async () => {
+    it('handles fetch error with message field', async () => {
       const mockResponse = {
         ok: false,
         status: 500,
@@ -74,6 +100,20 @@ describe('tokenService', () => {
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.listTokens()).rejects.toThrow('Server error');
+      expect(console.error).toHaveBeenCalledWith('Token fetch error:', { message: 'Server error' });
+    });
+
+    it('handles fetch error with error field', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 400,
+        json: vi.fn().mockResolvedValue({ error: 'Bad request' }),
+      } as unknown as Response;
+      
+      mockAuthenticatedFetch.mockResolvedValue(mockResponse);
+
+      await expect(tokenService.listTokens()).rejects.toThrow('Bad request');
+      expect(console.error).toHaveBeenCalledWith('Token fetch error:', { error: 'Bad request' });
     });
   });
 
@@ -153,6 +193,9 @@ describe('tokenService', () => {
         body: JSON.stringify(newTokenData),
       });
       expect(result).toEqual({ data: createdToken });
+      
+      // Verify console.log call
+      expect(console.log).toHaveBeenCalledWith('TokenService.generateToken - calling:', `${baseUrl}/generate`);
     });
 
     it('handles validation error', async () => {
