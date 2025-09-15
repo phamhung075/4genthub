@@ -22,16 +22,17 @@ class ContextValidator:
                                     git_branch_id: Optional[str] = None,
                                     include_context: Optional[bool] = None) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """Validate context requirements for operations."""
-        
-        # For operations that require context, validate context parameters
-        context_required_operations = {"create", "update", "complete"}
-        
-        if operation in context_required_operations:
+
+        # Only create and next operations require git_branch_id
+        # get, update, complete operations already have task context with git_branch_id stored
+        git_branch_required_operations = {"create", "next"}
+
+        if operation in git_branch_required_operations:
             if not git_branch_id:
                 return False, self._create_context_error(
-                    "git_branch_id", 
-                    "Context operations require git_branch_id",
-                    "Include git_branch_id to enable context management"
+                    "git_branch_id",
+                    f"{operation.capitalize()} operation requires git_branch_id",
+                    "Include git_branch_id to specify the branch context"
                 )
         
         # Validate context inclusion requests
@@ -87,9 +88,11 @@ class ContextValidator:
     
     def _create_context_error(self, field: str, message: str, hint: str) -> Dict[str, Any]:
         """Create standardized context validation error."""
-        return self._response_formatter.create_error_response(
-            operation="validate_context",
-            error=f"Context validation failed: {message}",
-            error_code=ErrorCodes.VALIDATION_ERROR,
-            metadata={"field": field, "hint": hint}
-        )
+        # Use the standard error method instead of non-existent create_error_response
+        return {
+            "status": "error",
+            "error": f"Context validation failed: {message}",
+            "error_code": "VALIDATION_ERROR",
+            "operation": "validate_context",
+            "metadata": {"field": field, "hint": hint}
+        }

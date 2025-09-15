@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 87 (2025-09-15)
+#### Task git_branch_id Validation Fix
+- **Fixed git_branch_id requirement for task operations**:
+  - Updated ContextValidator to only require git_branch_id for "create" and "next" operations
+  - Removed unnecessary git_branch_id requirement from "update", "complete", "get" operations
+  - Added specific validation for "next" operation to require git_branch_id
+  - Fixed ContextValidator error response format (removed non-existent create_error_response method)
+  - Updated parameter description to reflect correct requirements
+- **Rationale**: Tasks already have their git_branch_id stored after creation, no need to require it for updates
+- **Files Modified**:
+  - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/validators/context_validator.py`
+  - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py`
+- **Test Results**: All validation tests pass - correct git_branch_id requirements enforced
+
 ### Fixed - Iteration 86 (2025-09-15)
 #### API Route Cleanup and Mixed Content Fix
 - **Fixed Mixed Content Error by removing old API routes**:
