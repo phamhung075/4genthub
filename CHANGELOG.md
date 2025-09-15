@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 92 (2025-09-15)
+#### Token Route Conflict Resolution
+- **Removed conflicting old token route files**:
+  - Deleted unused route files that were using old `/api/auth/tokens` prefix
+  - Removed: `token_mgmt_routes.py`, `token_mgmt_routes_db.py`, `mcp_token_routes.py`, `token_router.py.backup`
+  - Kept only `token_router.py` which correctly uses `/api/v2/tokens` prefix
+  - This resolves 404 errors on cloud deployment where old routes were potentially being loaded
+- **Impact**: Ensures only the correct `/api/v2/tokens` endpoints are registered
+
 ### Fixed - Iteration 91 (2025-09-15)
 #### Frontend Deployment Cache Issue Resolution
 - **Forced complete rebuild to fix cached old endpoints**:
