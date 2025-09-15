@@ -192,7 +192,7 @@ class TaskMCPController(ContextPropagationMixin):
         async def manage_task(
             action: Annotated[str, Field(description=params["action"]["description"])],
             task_id: Annotated[str, Field(description="[OPTIONAL] " + params["task_id"]["description"])] = None,
-            git_branch_id: Annotated[str, Field(description="[REQUIRED for 'create', 'update' and 'next' actions] " + params["git_branch_id"]["description"])] = None,
+            git_branch_id: Annotated[str, Field(description="[REQUIRED for 'create' and 'next' actions] " + params["git_branch_id"]["description"])] = None,
             title: Annotated[str, Field(description="[OPTIONAL] " + params["title"]["description"])] = None,
             description: Annotated[str, Field(description="[OPTIONAL] " + params["description"]["description"])] = None,
             status: Annotated[str, Field(description="[OPTIONAL] " + params["status"]["description"])] = None,
@@ -501,6 +501,16 @@ class TaskMCPController(ContextPropagationMixin):
                     operation=action,
                     error="dependency_id is required for dependency operations",
                     error_code="VALIDATION_ERROR"
+                )
+            return True, None
+        elif action == "next":
+            # For next action, git_branch_id is required
+            if not kwargs.get('git_branch_id'):
+                return False, self._response_formatter.create_error_response(
+                    operation="next",
+                    error="git_branch_id is required for next action",
+                    error_code="VALIDATION_ERROR",
+                    metadata={"hint": "Use 'next' action to get recommended tasks for a specific branch"}
                 )
             return True, None
         else:
