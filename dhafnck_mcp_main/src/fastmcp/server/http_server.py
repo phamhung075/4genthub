@@ -20,6 +20,7 @@ from starlette.responses import Response
 from starlette.routing import BaseRoute, Mount, Route
 from starlette.types import Lifespan, Receive, Scope, Send
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from fastmcp.server.auth.auth import OAuthProvider
 from fastmcp.utilities.logging import get_logger
@@ -138,6 +139,35 @@ class RequestContextMiddleware:
             await self.app(scope, receive, send)
 
 
+class HTTPSRedirectMiddleware:
+    """
+    Middleware to handle HTTPS redirection and proper scheme detection
+    when running behind a reverse proxy (like CapRover).
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            # Check for X-Forwarded-Proto header to detect HTTPS
+            headers = dict(scope.get("headers", []))
+            x_forwarded_proto = headers.get(b"x-forwarded-proto", b"").decode()
+
+            if x_forwarded_proto:
+                # Update the scheme based on the proxy header
+                scope["scheme"] = x_forwarded_proto
+                logger.debug(f"Detected scheme from X-Forwarded-Proto: {x_forwarded_proto}")
+
+            # Also check for X-Forwarded-Host if needed
+            x_forwarded_host = headers.get(b"x-forwarded-host", b"").decode()
+            if x_forwarded_host:
+                scope["server"] = (x_forwarded_host, scope["server"][1])
+                logger.debug(f"Updated host from X-Forwarded-Host: {x_forwarded_host}")
+
+        await self.app(scope, receive, send)
+
+
 def setup_auth_middleware_and_routes(
     auth: OAuthProvider,
 ) -> tuple[list[Middleware], list[BaseRoute], list[str]]:
@@ -197,13 +227,29 @@ def create_base_app(
     # Middleware executes in reverse order, so insert at beginning to run first
     middleware.insert(0, Middleware(RequestContextMiddleware))
     
+    # Add HTTPS middleware FIRST (before CORS) to properly detect scheme
+    middleware.insert(0, Middleware(HTTPSRedirectMiddleware))
+
+    # Add TrustedHostMiddleware for production environments
+    # This helps prevent host header attacks
+    allowed_hosts = os.environ.get("ALLOWED_HOSTS", "").split(",")
+    if allowed_hosts and allowed_hosts[0]:  # Only add if configured
+        middleware.insert(
+            0,
+            Middleware(
+                TrustedHostMiddleware,
+                allowed_hosts=allowed_hosts,
+            )
+        )
+        logger.info(f"TrustedHostMiddleware configured with hosts: {allowed_hosts}")
+
     # Add CORS middleware - token auth provides security, so CORS can be open
     if cors_origins is None:
         # Default to wildcard since we use token authentication
         # MCP server validates tokens, not origins
         # This allows Claude Code to access from any origin
         cors_origins = ["*"]
-    
+
     middleware.append(
         Middleware(
             CORSMiddleware,
