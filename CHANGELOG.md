@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 88 (2025-09-15)
+#### Backend HTTPS Middleware for Mixed Content Fix
+- **Added HTTPS middleware to properly detect scheme behind reverse proxy**:
+  - Created HTTPSRedirectMiddleware to check X-Forwarded-Proto header
+  - Properly detects HTTPS when running behind CapRover/nginx proxy
+  - Updates request scheme based on proxy headers
+  - Added TrustedHostMiddleware for production security (configurable via ALLOWED_HOSTS env)
+- **Fixes Mixed Content errors**: Backend now correctly identifies HTTPS requests
+- **Files Modified**:
+  - `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
+- **How it works**:
+  - Middleware checks X-Forwarded-Proto header from reverse proxy
+  - Updates request scheme to match actual protocol (https)
+  - Prevents HTTP redirect chains that cause Mixed Content errors
+
 ### Fixed - Iteration 87 (2025-09-15)
 #### Task git_branch_id Validation Fix
 - **Fixed git_branch_id requirement for task operations**:
