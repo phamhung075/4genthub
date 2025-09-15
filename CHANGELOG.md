@@ -6,6 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 89 (2025-09-15)
+#### Frontend Runtime Environment Variable Injection Fix
+- **Fixed frontend deployment using old API endpoints on CapRover**:
+  - Modified `docker-system/docker/Dockerfile.frontend.production` to use placeholder values (`__RUNTIME_INJECTED__`) during build
+  - Updated `dhafnck-frontend/src/config/environment.ts` to properly handle runtime configuration via `env-config.js`
+  - Frontend now relies entirely on runtime-injected values instead of build-time compilation
+  - This resolves the issue where deployed frontend was calling old `/api/auth/tokens` endpoint
+- **Root cause**: Vite was compiling API URLs into JavaScript at build time based on Docker build arguments
+- **Solution**: Use placeholders during build, inject actual values at container runtime
+- **Files Modified**:
+  - `docker-system/docker/Dockerfile.frontend.production`
+  - `dhafnck-frontend/src/config/environment.ts`
+- **Impact**: Frontend on CapRover will now always use the correct API URL from environment variables
+
 ### Fixed - Iteration 88 (2025-09-15)
 #### Backend HTTPS Middleware for Mixed Content Fix
 - **Added HTTPS middleware to properly detect scheme behind reverse proxy**:
