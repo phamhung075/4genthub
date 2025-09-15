@@ -1,6 +1,6 @@
 {
   "name": "dhafnck-mcp-frontend",
-  "version": "2.0.2-dev",
+  "version": "2.0.3-dev",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",
