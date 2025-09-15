@@ -1,11 +1,4 @@
 {
   "schemaVersion": 2,
-  "dockerfilePath": "./docker-system/docker/Dockerfile.backend.production",
-  "env": {
-    "FORWARDED_ALLOW_IPS": "*",
-    "SECURE_PROXY_SSL_HEADER": "X-Forwarded-Proto,https",
-    "USE_X_FORWARDED_HOST": "true",
-    "USE_X_FORWARDED_PORT": "true",
-    "USE_X_FORWARDED_PROTO": "true"
-  }
+  "dockerfilePath": "./docker-system/docker/Dockerfile.backend.production"
 }
