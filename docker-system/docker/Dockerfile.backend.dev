@@ -156,11 +156,11 @@ if [ "${AUTO_MIGRATE:-true}" = "true" ]; then
     python scripts/init_database.py || echo "Database initialization skipped or already done"
 fi
 
-# Start the application without hot-reload (not needed in Docker)
+# Start the application with the same entry point as dev mode
 echo ""
 echo "🚀 Starting FastMCP server on port ${FASTMCP_PORT}..."
 cd /app/dhafnck_mcp_main
-exec python -m uvicorn mcp_http_server:app --host 0.0.0.0 --port ${FASTMCP_PORT} --reload
+exec python -m fastmcp.server.mcp_entry_point
 EOF
 
 RUN chmod +x /app/docker-entrypoint.sh
