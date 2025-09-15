@@ -1,0 +1,6 @@
+{
+  "session_id": "a5ffe812-6350-4a76-80e8-2c8785f82a0c",
+  "prompts": [
+    "tokens:1 Mixed Content: The page at 'https://webapp.92.5.226.7.nip.io/tokens' was loaded over HTTPS, but requested an insecure resource 'http://api.92.5.226.7.nip.io/api/auth/tokens/'. This request has been blocked; the content must be served over HTTPS.Understand this error\nindex-ClY9jGs1.js:534 Error fetching tokens: TypeError: Failed to fetch\n    at fetchCallImpl (main.js?attr=v9iw29o_D5aW0dN2i-zZ3WbWTtbPyfV2XQdWfNBsPJiFuKRcMFyG-1MEKhr4rwDHYl_ZJWQBTaCzPY6LFwwXew:3433:21)\n    at fetch (main.js?attr=v9iw29o_D5aW0dN2i-zZ3WbWTtbPyfV2XQdWfNBsPJiFuKRcMFyG-1MEKhr4rwDHYl_ZJWQBTaCzPY6LFwwXew:3439:60)\n    at Ws (index-ClY9jGs1.js:534:52532)\n    at mU.listTokens (index-ClY9jGs1.js:534:53348)\n    at N (index-ClY9jGs1.js:534:61509)\n    at index-ClY9jGs1.js:534:61407\n    at yl (index-ClY9jGs1.js:48:83844)\n    at gv (index-ClY9jGs1.js:48:98584)\n    at Pr (index-ClY9jGs1.js:48:98468)\n    at gv (index-ClY9jGs1.js:48:98564)"
+  ]
+}
