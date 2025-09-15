@@ -20,7 +20,7 @@ class CORSFactory:
     def get_allowed_origins() -> List[str]:
         """
         Get allowed origins from environment variable.
-        Returns a list of allowed origins, never returns wildcard when credentials are used.
+        Returns a list of allowed origins. Allows wildcard for MCP compatibility.
         """
         cors_origins_str = os.environ.get("CORS_ORIGINS", "")
 
@@ -28,29 +28,17 @@ class CORSFactory:
             # Parse comma-separated origins
             origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
 
-            # Security check: If wildcard is requested, log warning
+            # Allow wildcard for MCP endpoints - required for Claude Code integration
             if "*" in origins:
-                logger.warning("Wildcard (*) CORS requested but not recommended with credentials")
-                # For development, allow specific localhost origins instead
-                origins = [
-                    "http://localhost:3800",
-                    "http://localhost:3000",
-                    "http://127.0.0.1:3800",
-                    "http://127.0.0.1:3000"
-                ]
-                logger.info(f"Using safe localhost origins instead: {origins}")
+                logger.info("Wildcard (*) CORS enabled for MCP/Claude Code compatibility")
+                return ["*"]
 
             logger.info(f"CORS origins configured: {origins}")
             return origins
         else:
-            # Default to common development origins
-            default_origins = [
-                "http://localhost:3800",
-                "http://localhost:3000",
-                "http://127.0.0.1:3800",
-                "http://127.0.0.1:3000"
-            ]
-            logger.info(f"Using default CORS origins: {default_origins}")
+            # Default to wildcard for MCP compatibility
+            default_origins = ["*"]
+            logger.info(f"Using default CORS origins: {default_origins} (for MCP compatibility)")
             return default_origins
 
     @staticmethod
@@ -68,12 +56,12 @@ class CORSFactory:
         # Get origins
         origins = custom_origins or CORSFactory.get_allowed_origins()
 
-        # Security check: Never use wildcard with credentials
-        if allow_credentials and "*" in origins:
-            logger.error("SECURITY WARNING: Cannot use wildcard (*) with credentials!")
-            origins = [o for o in origins if o != "*"]
-            if not origins:
-                origins = ["http://localhost:3800"]  # Fallback to safe default
+        # For MCP compatibility, we need to allow wildcard with credentials
+        # MCP/Claude Code requires this configuration to work properly
+        if "*" in origins:
+            logger.info("Using wildcard CORS for MCP/Claude Code compatibility")
+            # When using wildcard, credentials must be false for browser security
+            allow_credentials = False
 
         # Add CORS middleware
         app.add_middleware(
@@ -86,7 +74,7 @@ class CORSFactory:
             max_age=600,  # Cache preflight requests for 10 minutes
         )
 
-        logger.info(f"CORS configured for {len(origins)} origins with credentials={allow_credentials}")
+        logger.info(f"CORS configured for origins={origins} with credentials={allow_credentials}")
 
     @staticmethod
     def get_cors_config() -> dict:

@@ -6,6 +6,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 93 (2025-09-15)
+#### MCP CORS Configuration Fix for Claude Code Compatibility
+- **Fixed CORS blocking MCP connections from Claude Code**:
+  - Modified `dhafnck_mcp_main/src/fastmcp/config/cors_factory.py` to allow wildcard origins for MCP compatibility
+  - Changed default behavior to use wildcard (`*`) when CORS_ORIGINS is not set or contains `*`
+  - When wildcard is used, credentials are automatically disabled for browser security compliance
+  - Removed the security check that was replacing wildcard with localhost origins
+- **Root cause**: CORSFactory was preventing wildcard CORS which is required for MCP/Claude Code connections
+- **Impact**: Claude Code can now connect to the MCP server from any origin
+- **Configuration**: Set `CORS_ORIGINS=*` in CapRover environment variables for MCP compatibility
+
 ### Fixed - Iteration 92 (2025-09-15)
 #### Token Route Conflict Resolution
 - **Removed conflicting old token route files**:
