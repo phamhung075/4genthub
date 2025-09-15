@@ -185,15 +185,12 @@ def setup_auth_middleware_and_routes(
 
     # Create the adapter to bridge OAuthProvider to TokenVerifier for Keycloak
     token_verifier = TokenVerifierAdapter(auth)
-    
+
     # Using Keycloak JWT authentication
     middleware = []
-    
-    # Add Keycloak context middleware to extract user_id from JWT tokens
-    if KEYCLOAK_MIDDLEWARE_AVAILABLE:
-        middleware.append(Middleware(RequestContextMiddleware))
-        logger.info("Added Keycloak RequestContextMiddleware for authentication context propagation")
-    else:
+
+    # Note: RequestContextMiddleware is now added in create_base_app to avoid duplicates
+    if not KEYCLOAK_MIDDLEWARE_AVAILABLE:
         logger.warning("Keycloak RequestContextMiddleware not available - MCP tools will not have user context")
 
     required_scopes = getattr(auth, 'required_scopes', None) or []
@@ -218,24 +215,40 @@ def create_base_app(
         middleware: List of middleware to include in the app
         debug: Whether to enable debug mode
         lifespan: Optional lifespan manager for the app
-        cors_origins: List of allowed CORS origins, defaults to ["http://localhost:3000"]
+        cors_origins: List of allowed CORS origins, defaults to ["*"]
 
     Returns:
         A Starlette application
     """
-    # Add RequestContextMiddleware as the FIRST middleware
-    # Middleware executes in reverse order, so insert at beginning to run first
-    middleware.insert(0, Middleware(RequestContextMiddleware))
-    
-    # Add HTTPS middleware FIRST (before CORS) to properly detect scheme
-    middleware.insert(0, Middleware(HTTPSRedirectMiddleware))
+    # IMPORTANT: Middleware order matters in Starlette!
+    # Middleware added first (index 0) runs on the OUTER layer
+    # The request passes through middleware in the order they're added
+    # The response passes through in REVERSE order
 
-    # Add TrustedHostMiddleware for production environments
-    # This helps prevent host header attacks
+    # Build middleware list in correct order
+    final_middleware = []
+
+    # 1. CORS must be FIRST (outermost) to handle preflight requests
+    # This ensures CORS headers are added to ALL responses
+    if cors_origins is None:
+        # Default to wildcard since we use token authentication
+        cors_origins = ["*"]
+
+    final_middleware.append(
+        Middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+            expose_headers=["*"],  # Added to expose all headers to frontend
+        )
+    )
+
+    # 2. TrustedHostMiddleware (if configured)
     allowed_hosts = os.environ.get("ALLOWED_HOSTS", "").split(",")
     if allowed_hosts and allowed_hosts[0]:  # Only add if configured
-        middleware.insert(
-            0,
+        final_middleware.append(
             Middleware(
                 TrustedHostMiddleware,
                 allowed_hosts=allowed_hosts,
@@ -243,25 +256,24 @@ def create_base_app(
         )
         logger.info(f"TrustedHostMiddleware configured with hosts: {allowed_hosts}")
 
-    # Add CORS middleware - token auth provides security, so CORS can be open
-    if cors_origins is None:
-        # Default to wildcard since we use token authentication
-        # MCP server validates tokens, not origins
-        # This allows Claude Code to access from any origin
-        cors_origins = ["*"]
+    # 3. HTTPS detection middleware
+    final_middleware.append(Middleware(HTTPSRedirectMiddleware))
 
-    middleware.append(
-        Middleware(
-            CORSMiddleware,
-            allow_origins=cors_origins,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+    # 4. RequestContextMiddleware (if not already in middleware list)
+    # Check if it's already in the middleware list to avoid duplicates
+    has_request_context = any(
+        isinstance(m, Middleware) and m.cls == RequestContextMiddleware
+        for m in middleware
     )
+    if not has_request_context:
+        final_middleware.append(Middleware(RequestContextMiddleware))
+
+    # 5. Add any custom middleware passed in
+    final_middleware.extend(middleware)
+
     return StarletteWithLifespan(
         routes=routes,
-        middleware=middleware,
+        middleware=final_middleware,  # Use the correctly ordered middleware list
         debug=debug,
         lifespan=lifespan,
     )
