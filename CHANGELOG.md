@@ -15,13 +15,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Removed disabled/commented token route code from `auth_endpoints.py`
   - Removed old token management router imports from `app_factory.py` and `http_server.py`
   - Updated deployment scripts to reference new token endpoints
+- **Fixed API Endpoint Mismatch (404 → Working)**:
+  - **Problem**: Frontend called `/api/v2/tokens/generate`, backend only had `/api/v2/tokens/`
+  - **Solution**: Added `/generate` endpoint to `token_router.py` for frontend compatibility
+  - **Fix**: Updated `http_server.py` to properly register token router at both SSE and streamable HTTP apps
+  - **Result**: Token generation now works - 404 errors resolved, proper 403 auth challenge returned
 - **Root Cause**: Frontend was calling non-existent old routes causing Mixed Content redirect chains
-- **Resolution**: All token operations now use single, consistent `/api/v2/tokens` router
+- **Resolution**: All token operations now use single, consistent `/api/v2/tokens` router with complete endpoint coverage
 - **Files Modified**:
   - `dhafnck-frontend/src/services/tokenService.ts`
   - `dhafnck_mcp_main/src/fastmcp/auth/interface/auth_endpoints.py`
   - `dhafnck_mcp_main/src/fastmcp/server/app_factory.py`
   - `dhafnck_mcp_main/src/fastmcp/server/http_server.py`
+  - `dhafnck_mcp_main/src/fastmcp/server/routes/token_router.py`
   - `scripts/deployment/caprover-env-setup.sh`
 
 ### Fixed - Iteration 85 (2025-09-15)

@@ -4,6 +4,10 @@ scope: global
 - Only uses environment variables and remove any hardcoded secrets
 - No backward, no legacy, no compatibility code
 - debug addressing the root cause, do not fixing symptoms only
+- The system must clean, working state with:
+  1. Single source of truth routes
+  2. Proper DDD compliance 
+  3. Clean codebase with legacy code removed
 ---
 # DhafnckMCP Agent System - CLAUDE AS MASTER ORCHESTRATOR
 

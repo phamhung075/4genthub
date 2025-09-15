@@ -136,16 +136,77 @@ def get_agent_for_task(task_type: str) -> Optional[str]:
     return delegator.get_agent_by_specialization(task_type)
 
 
+def call_direct_agent(agent_name: str) -> str:
+    """
+    Generate the direct agent calling command.
+
+    Args:
+        agent_name: Name of agent to call (without @ prefix)
+
+    Returns:
+        The MCP command string to call the agent directly
+    """
+    # Remove @ prefix if present
+    clean_name = agent_name.replace('@', '').replace('-agent', '') + '-agent'
+    if clean_name not in AgentDelegator.AVAILABLE_AGENTS:
+        available = ', '.join(AgentDelegator.AVAILABLE_AGENTS)
+        return f"❌ ERROR: '{clean_name}' not found. Available: {available}"
+
+    return f"mcp__dhafnck_mcp_http__call_agent('{clean_name}')"
+
+
+def quick_agent_help(task_description: str) -> str:
+    """
+    Get agent recommendation and calling command for a task.
+
+    Args:
+        task_description: Description of what needs to be done
+
+    Returns:
+        Recommended agent and calling command
+    """
+    task_lower = task_description.lower()
+
+    # Enhanced task type detection
+    if any(word in task_lower for word in ['debug', 'fix', 'error', 'bug', 'crash', 'fail']):
+        agent = 'debugger-agent'
+    elif any(word in task_lower for word in ['code', 'implement', 'build', 'create', 'develop']):
+        agent = 'coding-agent'
+    elif any(word in task_lower for word in ['test', 'qa', 'verify', 'validate']):
+        agent = 'test-orchestrator-agent'
+    elif any(word in task_lower for word in ['security', 'audit', 'vulnerability', 'secure']):
+        agent = 'security-auditor-agent'
+    elif any(word in task_lower for word in ['ui', 'frontend', 'interface', 'design']):
+        agent = 'ui-specialist-agent'
+    elif any(word in task_lower for word in ['deploy', 'infrastructure', 'devops', 'ci/cd']):
+        agent = 'devops-agent'
+    elif any(word in task_lower for word in ['document', 'docs', 'guide', 'readme']):
+        agent = 'documentation-agent'
+    elif any(word in task_lower for word in ['research', 'analyze', 'investigate']):
+        agent = 'deep-research-agent'
+    else:
+        agent = 'master-orchestrator-agent'
+
+    command = call_direct_agent(agent)
+    return f"💡 Recommended: {agent}\n📞 Command: {command}"
+
+
 def print_delegation_guide():
-    """Print usage guide for agent delegation."""
+    """Print comprehensive usage guide for agent delegation."""
     print("🤖 AGENT DELEGATION GUIDE")
     print("=" * 50)
     print()
     print("❌ BROKEN: Task tool always calls master-orchestrator-agent")
     print("   Task(subagent_type='coding-agent', prompt='Fix bug')")
+    print("   → Routes through master-orchestrator first")
     print()
     print("✅ WORKING: Direct agent calling")
     print("   mcp__dhafnck_mcp_http__call_agent('debugger-agent')")
+    print("   → Calls agent directly, bypasses master-orchestrator")
+    print()
+    print("🔄 COMPARISON:")
+    print("   Task(subagent_type='X') → master-orchestrator → agent X")
+    print("   call_agent('X')        → agent X directly")
     print()
     print("📋 AVAILABLE AGENTS:")
     delegator = AgentDelegator()
@@ -154,12 +215,25 @@ def print_delegation_guide():
     print()
     print("🎯 QUICK REFERENCE:")
     print("   • Debug/Fix bugs → debugger-agent")
-    print("   • Write code → coding-agent") 
+    print("   • Write code → coding-agent")
     print("   • Testing → test-orchestrator-agent")
     print("   • Security → security-auditor-agent")
     print("   • Documentation → documentation-agent")
     print("   • UI/Frontend → ui-specialist-agent")
     print("   • DevOps → devops-agent")
+    print()
+    print("📝 USAGE EXAMPLES:")
+    print("   # Direct debugging:")
+    print("   mcp__dhafnck_mcp_http__call_agent('debugger-agent')")
+    print()
+    print("   # Direct coding:")
+    print("   mcp__dhafnck_mcp_http__call_agent('coding-agent')")
+    print()
+    print("   # Direct testing:")
+    print("   mcp__dhafnck_mcp_http__call_agent('test-orchestrator-agent')")
+    print()
+    print("⚠️  IMPORTANT: Load agent capabilities first, then work directly")
+    print("   The call_agent response contains full system_prompt and tools")
 
 
 if __name__ == "__main__":
