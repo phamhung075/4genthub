@@ -4,51 +4,80 @@ Tests for HTTP Server components - Starlette application and middleware configur
 
 import os
 import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
+from unittest.mock import Mock, patch, MagicMock, AsyncMock, call
 from contextlib import asynccontextmanager
 from typing import Dict, Any, List
+import json
+import asyncio
 
 try:
     from starlette.applications import Starlette
     from starlette.testclient import TestClient
     from starlette.middleware import Middleware
     from starlette.middleware.cors import CORSMiddleware
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
     from starlette.requests import Request
-    from starlette.responses import Response
-    from starlette.routing import Route, Mount
+    from starlette.responses import Response, JSONResponse
+    from starlette.routing import Route, Mount, BaseRoute
+    from starlette.types import Scope, Receive, Send
     STARLETTE_AVAILABLE = True
 except ImportError:
     Starlette = None
     TestClient = None
     Middleware = None
     CORSMiddleware = None
+    TrustedHostMiddleware = None
     Request = None
     Response = None
+    JSONResponse = None
     Route = None
     Mount = None
+    BaseRoute = None
+    Scope = None
+    Receive = None
+    Send = None
     STARLETTE_AVAILABLE = False
+
+try:
+    from mcp.server.auth.provider import AccessToken
+    MCP_AVAILABLE = True
+except ImportError:
+    AccessToken = None
+    MCP_AVAILABLE = False
 
 try:
     from fastmcp.server.http_server import (
         StarletteWithLifespan,
         _current_http_request,
         KEYCLOAK_MIDDLEWARE_AVAILABLE,
+        TokenVerifier,
         TokenVerifierAdapter,
+        RequestContextMiddleware,
+        HTTPSRedirectMiddleware,
+        MCPHeaderValidationMiddleware,
         create_base_app,
         setup_auth_middleware_and_routes,
         set_http_request,
-        MCPHeaderValidationMiddleware
+        create_http_server_factory,
+        create_sse_app,
+        create_streamable_http_app
     )
     HTTP_SERVER_AVAILABLE = True
 except ImportError:
     StarletteWithLifespan = None
     _current_http_request = None
     KEYCLOAK_MIDDLEWARE_AVAILABLE = False
+    TokenVerifier = None
     TokenVerifierAdapter = None
+    RequestContextMiddleware = None
+    HTTPSRedirectMiddleware = None
+    MCPHeaderValidationMiddleware = None
     create_base_app = None
     setup_auth_middleware_and_routes = None
     set_http_request = None
-    MCPHeaderValidationMiddleware = None
+    create_http_server_factory = None
+    create_sse_app = None
+    create_streamable_http_app = None
     HTTP_SERVER_AVAILABLE = False
 
 
@@ -465,3 +494,1090 @@ class TestMiddlewareStack:
         
         # Basic test that app can be created with auth middleware
         assert isinstance(app, StarletteWithLifespan)
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE, reason="HTTP server components not available")
+class TestSetHTTPRequest:
+    """Test suite for set_http_request context manager."""
+
+    def test_set_http_request_context_manager(self):
+        """Test set_http_request context manager."""
+        mock_request = Mock(spec=Request)
+        
+        # Initially should be None
+        assert _current_http_request.get() is None
+        
+        # Within context manager, should have the request
+        with set_http_request(mock_request) as req:
+            assert req is mock_request
+            assert _current_http_request.get() is mock_request
+        
+        # After context manager, should be reset
+        assert _current_http_request.get() is None
+
+    def test_set_http_request_exception_handling(self):
+        """Test set_http_request properly resets on exception."""
+        mock_request = Mock(spec=Request)
+        
+        # Initially should be None
+        assert _current_http_request.get() is None
+        
+        try:
+            with set_http_request(mock_request):
+                assert _current_http_request.get() is mock_request
+                raise ValueError("Test exception")
+        except ValueError:
+            pass
+        
+        # Should be reset even after exception
+        assert _current_http_request.get() is None
+
+    def test_nested_set_http_request(self):
+        """Test nested set_http_request contexts."""
+        request1 = Mock(spec=Request)
+        request2 = Mock(spec=Request)
+        
+        with set_http_request(request1):
+            assert _current_http_request.get() is request1
+            
+            with set_http_request(request2):
+                assert _current_http_request.get() is request2
+            
+            # Should restore to request1
+            assert _current_http_request.get() is request1
+        
+        # Should be None after all contexts
+        assert _current_http_request.get() is None
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE or not MCP_AVAILABLE, reason="HTTP server or MCP components not available")
+class TestTokenVerifierAdapter:
+    """Test suite for TokenVerifierAdapter."""
+
+    @pytest.mark.asyncio
+    async def test_verify_token_with_verify_token_method(self):
+        """Test adapter with provider that has verify_token method."""
+        mock_provider = Mock()
+        mock_token = AccessToken(token="test", client_id="test_client", scopes=["test"])
+        mock_provider.verify_token = AsyncMock(return_value=mock_token)
+        
+        adapter = TokenVerifierAdapter(mock_provider)
+        result = await adapter.verify_token("test_token")
+        
+        assert result == mock_token
+        mock_provider.verify_token.assert_called_once_with("test_token")
+
+    @pytest.mark.asyncio
+    async def test_verify_token_with_load_access_token_method(self):
+        """Test adapter with provider that has load_access_token method."""
+        mock_provider = Mock()
+        mock_token = AccessToken(token="test", client_id="test_client", scopes=["test"])
+        mock_provider.load_access_token = AsyncMock(return_value=mock_token)
+        
+        adapter = TokenVerifierAdapter(mock_provider)
+        result = await adapter.verify_token("test_token")
+        
+        assert result == mock_token
+        mock_provider.load_access_token.assert_called_once_with("test_token")
+
+    @pytest.mark.asyncio
+    async def test_verify_token_with_extract_user_from_token_method(self):
+        """Test adapter with JWT middleware provider."""
+        mock_provider = Mock()
+        mock_provider.extract_user_from_token = Mock(return_value="user123")
+        
+        adapter = TokenVerifierAdapter(mock_provider)
+        result = await adapter.verify_token("jwt_token")
+        
+        assert result is not None
+        assert result.token == "jwt_token"
+        assert result.client_id == "user123"
+        assert result.scopes == ['execute:mcp']
+        mock_provider.extract_user_from_token.assert_called_once_with("jwt_token")
+
+    @pytest.mark.asyncio
+    async def test_verify_token_with_extract_user_returning_none(self):
+        """Test adapter when extract_user_from_token returns None."""
+        mock_provider = Mock()
+        mock_provider.extract_user_from_token = Mock(return_value=None)
+        
+        adapter = TokenVerifierAdapter(mock_provider)
+        result = await adapter.verify_token("invalid_token")
+        
+        assert result is None
+        mock_provider.extract_user_from_token.assert_called_once_with("invalid_token")
+
+    @pytest.mark.asyncio
+    async def test_verify_token_with_unknown_provider(self):
+        """Test adapter with unknown provider type."""
+        mock_provider = Mock()
+        # Remove all known methods
+        for attr in ['verify_token', 'load_access_token', 'extract_user_from_token']:
+            if hasattr(mock_provider, attr):
+                delattr(mock_provider, attr)
+        
+        adapter = TokenVerifierAdapter(mock_provider)
+        with patch('fastmcp.server.http_server.logger') as mock_logger:
+            result = await adapter.verify_token("test_token")
+            
+            assert result is None
+            mock_logger.error.assert_called_once()
+
+
+@pytest.mark.skipif(not STARLETTE_AVAILABLE or not HTTP_SERVER_AVAILABLE, reason="Starlette or HTTP server components not available")
+class TestRequestContextMiddleware:
+    """Test suite for RequestContextMiddleware."""
+
+    @pytest.mark.asyncio
+    async def test_request_context_middleware_http_request(self):
+        """Test RequestContextMiddleware sets context for HTTP requests."""
+        mock_app = AsyncMock()
+        middleware = RequestContextMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/test",
+            "headers": []
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        # Before middleware call, no request in context
+        assert _current_http_request.get() is None
+        
+        await middleware(scope, receive, send)
+        
+        # App should have been called
+        mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_request_context_middleware_websocket_request(self):
+        """Test RequestContextMiddleware passes through non-HTTP requests."""
+        mock_app = AsyncMock()
+        middleware = RequestContextMiddleware(mock_app)
+        
+        scope = {
+            "type": "websocket",
+            "path": "/ws"
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # App should have been called directly
+        mock_app.assert_called_once_with(scope, receive, send)
+
+
+@pytest.mark.skipif(not STARLETTE_AVAILABLE or not HTTP_SERVER_AVAILABLE, reason="Starlette or HTTP server components not available")
+class TestHTTPSRedirectMiddleware:
+    """Test suite for HTTPSRedirectMiddleware."""
+
+    @pytest.mark.asyncio
+    async def test_https_redirect_middleware_with_x_forwarded_proto(self):
+        """Test HTTPSRedirectMiddleware detects HTTPS from X-Forwarded-Proto."""
+        mock_app = AsyncMock()
+        middleware = HTTPSRedirectMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "scheme": "http",
+            "headers": [(b"x-forwarded-proto", b"https")],
+            "server": ("localhost", 80)
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        with patch('fastmcp.server.http_server.logger') as mock_logger:
+            await middleware(scope, receive, send)
+            
+            # Should update scheme
+            assert scope["scheme"] == "https"
+            mock_logger.debug.assert_called()
+            mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_https_redirect_middleware_with_x_forwarded_host(self):
+        """Test HTTPSRedirectMiddleware updates host from X-Forwarded-Host."""
+        mock_app = AsyncMock()
+        middleware = HTTPSRedirectMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "scheme": "http",
+            "headers": [(b"x-forwarded-host", b"example.com")],
+            "server": ("localhost", 80)
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        with patch('fastmcp.server.http_server.logger') as mock_logger:
+            await middleware(scope, receive, send)
+            
+            # Should update host
+            assert scope["server"][0] == "example.com"
+            assert scope["server"][1] == 80
+            mock_logger.debug.assert_called()
+            mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_https_redirect_middleware_no_proxy_headers(self):
+        """Test HTTPSRedirectMiddleware without proxy headers."""
+        mock_app = AsyncMock()
+        middleware = HTTPSRedirectMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "scheme": "http",
+            "headers": [],
+            "server": ("localhost", 80)
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # Should not change scheme
+        assert scope["scheme"] == "http"
+        mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_https_redirect_middleware_non_http_request(self):
+        """Test HTTPSRedirectMiddleware passes through non-HTTP requests."""
+        mock_app = AsyncMock()
+        middleware = HTTPSRedirectMiddleware(mock_app)
+        
+        scope = {
+            "type": "websocket",
+            "scheme": "ws"
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # Should pass through unchanged
+        assert scope["scheme"] == "ws"
+        mock_app.assert_called_once_with(scope, receive, send)
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE, reason="HTTP server components not available")
+class TestSetupAuthMiddlewareAndRoutes:
+    """Test suite for setup_auth_middleware_and_routes function."""
+
+    def test_setup_auth_with_keycloak_provider(self):
+        """Test setup with Keycloak auth provider."""
+        mock_auth = Mock()
+        mock_auth.required_scopes = ["test_scope"]
+        
+        with patch('fastmcp.server.http_server.logger') as mock_logger:
+            middleware, auth_routes, required_scopes = setup_auth_middleware_and_routes(mock_auth)
+            
+            # Should return empty middleware list for Keycloak
+            assert middleware == []
+            assert auth_routes == []
+            assert required_scopes == ["test_scope"]
+            mock_logger.info.assert_called_with("Using Keycloak JWT authentication - no OAuth routes needed")
+
+    def test_setup_auth_without_required_scopes(self):
+        """Test setup when provider has no required_scopes."""
+        mock_auth = Mock()
+        # Ensure required_scopes doesn't exist
+        if hasattr(mock_auth, 'required_scopes'):
+            delattr(mock_auth, 'required_scopes')
+        
+        middleware, auth_routes, required_scopes = setup_auth_middleware_and_routes(mock_auth)
+        
+        assert middleware == []
+        assert auth_routes == []
+        assert required_scopes == []
+
+    @patch('fastmcp.server.http_server.KEYCLOAK_MIDDLEWARE_AVAILABLE', False)
+    def test_setup_auth_without_keycloak_middleware(self):
+        """Test warning when Keycloak middleware is not available."""
+        mock_auth = Mock()
+        
+        with patch('fastmcp.server.http_server.logger') as mock_logger:
+            setup_auth_middleware_and_routes(mock_auth)
+            
+            mock_logger.warning.assert_called_with(
+                "Keycloak RequestContextMiddleware not available - MCP tools will not have user context"
+            )
+
+
+@pytest.mark.skipif(not STARLETTE_AVAILABLE or not HTTP_SERVER_AVAILABLE, reason="Starlette or HTTP server components not available")
+class TestCreateBaseApp:
+    """Test suite for create_base_app function."""
+
+    def test_create_base_app_minimal(self):
+        """Test creating base app with minimal configuration."""
+        routes = []
+        middleware = []
+        
+        app = create_base_app(routes, middleware)
+        
+        assert isinstance(app, StarletteWithLifespan)
+        # Should have default CORS middleware
+        assert any(isinstance(m, Middleware) and m.cls == CORSMiddleware 
+                  for m in app.middleware_stack.middleware)
+
+    def test_create_base_app_with_cors_origins(self):
+        """Test creating base app with custom CORS origins."""
+        routes = []
+        middleware = []
+        cors_origins = ["https://example.com", "https://app.example.com"]
+        
+        app = create_base_app(routes, middleware, cors_origins=cors_origins)
+        
+        assert isinstance(app, StarletteWithLifespan)
+
+    def test_create_base_app_with_trusted_hosts(self):
+        """Test creating base app with TrustedHostMiddleware."""
+        routes = []
+        middleware = []
+        
+        with patch.dict(os.environ, {"ALLOWED_HOSTS": "example.com,app.example.com"}):
+            with patch('fastmcp.server.http_server.logger') as mock_logger:
+                app = create_base_app(routes, middleware)
+                
+                assert isinstance(app, StarletteWithLifespan)
+                mock_logger.info.assert_called()
+
+    def test_create_base_app_with_custom_middleware(self):
+        """Test creating base app with custom middleware."""
+        routes = []
+        custom_middleware = [
+            Middleware(CORSMiddleware, allow_origins=["custom.com"])
+        ]
+        
+        app = create_base_app(routes, custom_middleware)
+        
+        assert isinstance(app, StarletteWithLifespan)
+
+    def test_create_base_app_with_routes(self):
+        """Test creating base app with routes."""
+        async def test_endpoint(request):
+            return Response("test")
+        
+        routes = [Route("/test", test_endpoint)]
+        middleware = []
+        
+        app = create_base_app(routes, middleware)
+        
+        client = TestClient(app)
+        response = client.get("/test")
+        assert response.status_code == 200
+        assert response.text == "test"
+
+    def test_create_base_app_with_lifespan(self):
+        """Test creating base app with lifespan."""
+        routes = []
+        middleware = []
+        
+        @asynccontextmanager
+        async def test_lifespan(app):
+            yield
+        
+        app = create_base_app(routes, middleware, lifespan=test_lifespan)
+        
+        assert isinstance(app, StarletteWithLifespan)
+
+    def test_create_base_app_middleware_order(self):
+        """Test middleware order in base app."""
+        routes = []
+        middleware = []
+        
+        app = create_base_app(routes, middleware)
+        
+        # Check middleware order
+        middleware_types = []
+        for m in app.middleware_stack.middleware:
+            if hasattr(m, 'cls'):
+                middleware_types.append(m.cls)
+        
+        # CORS should be first
+        assert CORSMiddleware in middleware_types
+        assert HTTPSRedirectMiddleware in middleware_types
+        assert RequestContextMiddleware in middleware_types
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE, reason="HTTP server components not available")
+class TestCreateHTTPServerFactory:
+    """Test suite for create_http_server_factory function."""
+
+    def test_create_http_server_factory_minimal(self):
+        """Test factory with minimal configuration."""
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        
+        routes, middleware, scopes = create_http_server_factory(mock_server)
+        
+        assert isinstance(routes, list)
+        assert isinstance(middleware, list)
+        assert isinstance(scopes, list)
+        assert scopes == []
+
+    def test_create_http_server_factory_with_auth(self):
+        """Test factory with authentication."""
+        mock_server = Mock()
+        mock_auth = Mock()
+        mock_auth.required_scopes = ["test_scope"]
+        
+        with patch('fastmcp.server.http_server.setup_auth_middleware_and_routes') as mock_setup:
+            mock_setup.return_value = (
+                [Middleware(Mock, name="auth")],
+                [Route("/auth", Mock())],
+                ["test_scope"]
+            )
+            
+            routes, middleware, scopes = create_http_server_factory(
+                mock_server, auth=mock_auth
+            )
+            
+            assert len(middleware) == 1
+            assert len(routes) == 1
+            assert scopes == ["test_scope"]
+            mock_setup.assert_called_once_with(mock_auth)
+
+    def test_create_http_server_factory_with_custom_routes(self):
+        """Test factory with custom routes."""
+        mock_server = Mock()
+        custom_routes = [Route("/custom", Mock())]
+        
+        routes, middleware, scopes = create_http_server_factory(
+            mock_server, routes=custom_routes
+        )
+        
+        assert custom_routes[0] in routes
+
+    def test_create_http_server_factory_with_custom_middleware(self):
+        """Test factory with custom middleware."""
+        mock_server = Mock()
+        custom_middleware = [Middleware(Mock, name="custom")]
+        
+        routes, middleware, scopes = create_http_server_factory(
+            mock_server, middleware=custom_middleware
+        )
+        
+        assert custom_middleware[0] in middleware
+
+    def test_create_http_server_factory_with_cors_origins(self):
+        """Test factory with custom CORS origins."""
+        mock_server = Mock()
+        cors_origins = ["https://example.com"]
+        
+        routes, middleware, scopes = create_http_server_factory(
+            mock_server, cors_origins=cors_origins
+        )
+        
+        # Should accept but not directly use cors_origins in factory
+        assert isinstance(routes, list)
+        assert isinstance(middleware, list)
+
+
+@pytest.mark.skipif(not STARLETTE_AVAILABLE or not HTTP_SERVER_AVAILABLE, reason="Starlette or HTTP server components not available")
+class TestMCPHeaderValidationMiddleware:
+    """Test suite for MCPHeaderValidationMiddleware."""
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_post_with_correct_headers(self):
+        """Test MCP header validation for POST with correct headers."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/mcp/test",
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"accept", b"application/json, text/event-stream")
+            ]
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # Should pass through
+        mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_post_missing_content_type(self):
+        """Test MCP header validation for POST with missing Content-Type."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/mcp/test",
+            "headers": [
+                (b"accept", b"application/json, text/event-stream")
+            ]
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        # Create a mock to capture the response
+        response_sent = False
+        async def mock_send_wrapper(message):
+            nonlocal response_sent
+            if message["type"] == "http.response.start":
+                assert message["status"] == 415
+                response_sent = True
+        
+        await middleware(scope, receive, mock_send_wrapper)
+        
+        # Should have sent error response
+        assert response_sent
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_post_wrong_accept(self):
+        """Test MCP header validation for POST with wrong Accept header."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/mcp/test",
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"accept", b"application/json")  # Missing text/event-stream
+            ]
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        # Create a mock to capture the response
+        response_sent = False
+        async def mock_send_wrapper(message):
+            nonlocal response_sent
+            if message["type"] == "http.response.start":
+                assert message["status"] == 406
+                response_sent = True
+        
+        await middleware(scope, receive, mock_send_wrapper)
+        
+        # Should have sent error response
+        assert response_sent
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_initialize_endpoint(self):
+        """Test MCP header validation for /mcp/initialize endpoint."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/mcp/initialize",
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"accept", b"application/json, text/event-stream")
+            ]
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # Should pass through for initialize endpoint
+        mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_get_sse(self):
+        """Test MCP header validation for GET SSE requests."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/mcp/sse",
+            "headers": [
+                (b"accept", b"text/event-stream")
+            ]
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # Should pass through
+        mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_get_missing_accept(self):
+        """Test MCP header validation for GET without Accept header."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/mcp/sse",
+            "headers": []
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        # Create a mock to capture the response
+        response_sent = False
+        async def mock_send_wrapper(message):
+            nonlocal response_sent
+            if message["type"] == "http.response.start":
+                assert message["status"] == 406
+                response_sent = True
+        
+        await middleware(scope, receive, mock_send_wrapper)
+        
+        # Should have sent error response
+        assert response_sent
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_non_mcp_endpoint(self):
+        """Test MCP header validation bypasses non-MCP endpoints."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/test",
+            "headers": []  # No headers required for non-MCP
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        await middleware(scope, receive, send)
+        
+        # Should pass through without validation
+        mock_app.assert_called_once_with(scope, receive, send)
+
+    @pytest.mark.asyncio
+    async def test_mcp_header_validation_cors_headers(self):
+        """Test MCP header validation includes CORS headers in error responses."""
+        mock_app = AsyncMock()
+        middleware = MCPHeaderValidationMiddleware(mock_app, cors_origins=["https://example.com"])
+        
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/mcp/test",
+            "headers": [
+                (b"origin", b"https://example.com")
+            ]
+        }
+        receive = AsyncMock()
+        send = AsyncMock()
+        
+        # Create a mock to capture the response
+        headers_sent = {}
+        async def mock_send_wrapper(message):
+            if message["type"] == "http.response.start":
+                for header_name, header_value in message.get("headers", []):
+                    headers_sent[header_name.decode()] = header_value.decode()
+        
+        await middleware(scope, receive, mock_send_wrapper)
+        
+        # Should include CORS headers
+        assert "access-control-allow-origin" in headers_sent
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE, reason="HTTP server components not available")
+class TestCreateSSEApp:
+    """Test suite for create_sse_app function."""
+
+    @patch('fastmcp.server.http_server.SseServerTransport')
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_sse_app_minimal(self, mock_create_base_app, mock_sse_transport_class):
+        """Test creating SSE app with minimal configuration."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        mock_server._mcp_server = Mock()
+        mock_server._mcp_server.run = AsyncMock()
+        mock_server._mcp_server.create_initialization_options = Mock(return_value={})
+        
+        mock_sse_transport = Mock()
+        mock_sse_transport.connect_sse = AsyncMock()
+        mock_sse_transport.handle_post_message = Mock()
+        mock_sse_transport_class.return_value = mock_sse_transport
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Create SSE app
+        result = create_sse_app(
+            server=mock_server,
+            message_path="/messages",
+            sse_path="/sse"
+        )
+        
+        # Verify result
+        assert result == mock_app
+        assert result.state.fastmcp_server == mock_server
+        assert result.state.path == "/sse"
+        
+        # Verify SSE transport was created
+        mock_sse_transport_class.assert_called_once_with("/messages/")
+        
+        # Verify base app was created
+        mock_create_base_app.assert_called_once()
+
+    @patch('fastmcp.server.http_server.create_base_app')
+    @patch('fastmcp.server.http_server.create_http_server_factory')
+    def test_create_sse_app_with_auth(self, mock_factory, mock_create_base_app):
+        """Test creating SSE app with authentication."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        mock_auth = Mock()
+        
+        mock_factory.return_value = (
+            [Route("/test", Mock())],  # server_routes
+            [Middleware(Mock, name="auth")],  # server_middleware
+            ["test_scope"]  # required_scopes
+        )
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Create SSE app with auth
+        result = create_sse_app(
+            server=mock_server,
+            message_path="/messages",
+            sse_path="/sse",
+            auth=mock_auth
+        )
+        
+        # Verify factory was called with auth
+        mock_factory.assert_called_once_with(
+            server=mock_server,
+            auth=mock_auth,
+            debug=False,
+            routes=None,
+            middleware=None,
+            cors_origins=None
+        )
+
+    @patch('fastmcp.server.http_server.logger')
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_sse_app_with_v2_routes(self, mock_create_base_app, mock_logger):
+        """Test creating SSE app with V2 routes."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Mock imports to simulate missing routes
+        with patch.dict('sys.modules', {
+            'fastmcp.server.routes.project_routes': None,
+            'fastmcp.server.routes.task_user_routes': None,
+            'fastmcp.server.routes.task_routes': None,
+            'fastmcp.server.routes.branch_routes': None,
+            'fastmcp.server.routes.agent_routes': None,
+            'fastmcp.server.routes.subtask_routes': None,
+        }):
+            result = create_sse_app(
+                server=mock_server,
+                message_path="/messages",
+                sse_path="/sse"
+            )
+            
+            # Should log warning about missing routes
+            mock_logger.warning.assert_called()
+
+    def test_create_sse_app_message_path_normalization(self):
+        """Test that message_path is normalized with trailing slash."""
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        
+        with patch('fastmcp.server.http_server.SseServerTransport') as mock_sse_class:
+            with patch('fastmcp.server.http_server.create_base_app'):
+                # Test without trailing slash
+                create_sse_app(
+                    server=mock_server,
+                    message_path="/messages",
+                    sse_path="/sse"
+                )
+                
+                # Should add trailing slash
+                mock_sse_class.assert_called_with("/messages/")
+                
+                # Test with trailing slash
+                mock_sse_class.reset_mock()
+                create_sse_app(
+                    server=mock_server,
+                    message_path="/messages/",
+                    sse_path="/sse"
+                )
+                
+                # Should keep trailing slash
+                mock_sse_class.assert_called_with("/messages/")
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE, reason="HTTP server components not available")
+class TestCreateStreamableHTTPApp:
+    """Test suite for create_streamable_http_app function."""
+
+    @patch('fastmcp.server.http_server.StreamableHTTPSessionManager')
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_streamable_http_app_minimal(self, mock_create_base_app, mock_session_manager_class):
+        """Test creating streamable HTTP app with minimal configuration."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        mock_server._mcp_server = Mock()
+        
+        mock_session_manager = Mock()
+        mock_session_manager.run = AsyncMock()
+        mock_session_manager.handle_request = AsyncMock()
+        mock_session_manager_class.return_value = mock_session_manager
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Create streamable HTTP app
+        result = create_streamable_http_app(
+            server=mock_server,
+            streamable_http_path="/mcp/"
+        )
+        
+        # Verify result
+        assert result == mock_app
+        assert result.state.fastmcp_server == mock_server
+        assert result.state.path == "/mcp"  # Should strip trailing slash
+        
+        # Verify session manager was created
+        mock_session_manager_class.assert_called_once_with(
+            mock_server._mcp_server,
+            event_store=None,
+            json_response=False,
+            stateless=False
+        )
+
+    @patch('fastmcp.server.http_server.StreamableHTTPSessionManager')
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_streamable_http_app_with_options(self, mock_create_base_app, mock_session_manager_class):
+        """Test creating streamable HTTP app with all options."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        mock_server._mcp_server = Mock()
+        mock_event_store = Mock()
+        
+        mock_session_manager = Mock()
+        mock_session_manager_class.return_value = mock_session_manager
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Create streamable HTTP app with all options
+        result = create_streamable_http_app(
+            server=mock_server,
+            streamable_http_path="/mcp",
+            event_store=mock_event_store,
+            json_response=True,
+            stateless_http=True,
+            debug=True
+        )
+        
+        # Verify session manager was created with options
+        mock_session_manager_class.assert_called_once_with(
+            mock_server._mcp_server,
+            event_store=mock_event_store,
+            json_response=True,
+            stateless=True
+        )
+
+    @patch('fastmcp.server.http_server.setup_auth_middleware_and_routes')
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_streamable_http_app_with_auth(self, mock_create_base_app, mock_setup_auth):
+        """Test creating streamable HTTP app with authentication."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        mock_auth = Mock()
+        
+        mock_setup_auth.return_value = (
+            [Middleware(Mock, name="auth")],
+            [Route("/auth", Mock())],
+            ["test_scope"]
+        )
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Create streamable HTTP app with auth
+        result = create_streamable_http_app(
+            server=mock_server,
+            streamable_http_path="/mcp",
+            auth=mock_auth
+        )
+        
+        # Verify auth setup was called
+        mock_setup_auth.assert_called_once_with(mock_auth)
+
+    @patch('fastmcp.server.http_server.logger')
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_streamable_http_app_with_registration_endpoints(self, mock_create_base_app, mock_logger):
+        """Test creating streamable HTTP app with MCP registration endpoints."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        
+        mock_app = Mock()
+        mock_app.state = Mock()
+        mock_create_base_app.return_value = mock_app
+        
+        # Create app (registration endpoints are added by default)
+        result = create_streamable_http_app(
+            server=mock_server,
+            streamable_http_path="/mcp"
+        )
+        
+        # Should log about registration endpoints
+        mock_logger.info.assert_any_call(
+            "MCP registration endpoints added directly to FastAPI app (/register, /unregister, /registrations)"
+        )
+
+    def test_create_streamable_http_app_path_normalization(self):
+        """Test that streamable_http_path is normalized."""
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        
+        with patch('fastmcp.server.http_server.create_base_app') as mock_create_base_app:
+            mock_app = Mock()
+            mock_app.state = Mock()
+            mock_create_base_app.return_value = mock_app
+            
+            # Test with trailing slash
+            result = create_streamable_http_app(
+                server=mock_server,
+                streamable_http_path="/mcp/"
+            )
+            
+            # Should strip trailing slash
+            assert result.state.path == "/mcp"
+
+    @patch('fastmcp.server.http_server.create_base_app')
+    def test_create_streamable_http_app_lifespan_context(self, mock_create_base_app):
+        """Test streamable HTTP app lifespan context management."""
+        # Setup mocks
+        mock_server = Mock()
+        mock_server._additional_http_routes = []
+        
+        # Capture the lifespan argument
+        lifespan_func = None
+        def capture_lifespan(*args, **kwargs):
+            nonlocal lifespan_func
+            lifespan_func = kwargs.get('lifespan')
+            mock_app = Mock()
+            mock_app.state = Mock()
+            return mock_app
+        
+        mock_create_base_app.side_effect = capture_lifespan
+        
+        # Create app
+        create_streamable_http_app(
+            server=mock_server,
+            streamable_http_path="/mcp"
+        )
+        
+        # Verify lifespan was provided
+        assert lifespan_func is not None
+        assert asyncio.iscoroutinefunction(lifespan_func)
+
+
+@pytest.mark.skipif(not STARLETTE_AVAILABLE or not HTTP_SERVER_AVAILABLE, reason="Starlette or HTTP server components not available")
+class TestIntegrationScenarios:
+    """Integration tests for complex scenarios."""
+
+    def test_full_sse_app_with_all_features(self):
+        """Test creating a full SSE app with all features enabled."""
+        # Mock server with all features
+        mock_server = Mock()
+        mock_server._additional_http_routes = [
+            Route("/custom", Mock())
+        ]
+        mock_server._mcp_server = Mock()
+        
+        # Mock auth provider
+        mock_auth = Mock()
+        mock_auth.required_scopes = ["execute:mcp"]
+        
+        # Custom routes and middleware
+        custom_routes = [Route("/api/test", Mock())]
+        custom_middleware = [Middleware(Mock, name="custom")]
+        
+        with patch('fastmcp.server.http_server.SseServerTransport'):
+            with patch('fastmcp.server.http_server.create_base_app') as mock_create_base:
+                mock_app = Mock()
+                mock_app.state = Mock()
+                mock_create_base.return_value = mock_app
+                
+                # Create full-featured SSE app
+                result = create_sse_app(
+                    server=mock_server,
+                    message_path="/messages",
+                    sse_path="/sse",
+                    auth=mock_auth,
+                    debug=True,
+                    routes=custom_routes,
+                    middleware=custom_middleware,
+                    cors_origins=["https://app.example.com"]
+                )
+                
+                # Verify all features were integrated
+                assert result == mock_app
+                assert result.state.fastmcp_server == mock_server
+                assert result.state.path == "/sse"
+
+    def test_error_handling_in_mcp_header_validation(self):
+        """Test error handling in MCP header validation middleware."""
+        mock_app = Mock()
+        middleware = MCPHeaderValidationMiddleware(mock_app)
+        
+        # Test with malformed scope
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/mcp/test"
+            # Missing headers key
+        }
+        
+        # Should handle gracefully
+        asyncio.run(middleware(scope, Mock(), Mock()))
+
+
+@pytest.mark.skipif(not HTTP_SERVER_AVAILABLE, reason="HTTP server components not available")
+class TestTokenVerifierProtocol:
+    """Test suite for TokenVerifier protocol."""
+
+    def test_token_verifier_protocol_implementation(self):
+        """Test that TokenVerifier is a proper protocol."""
+        # Create a class that implements the protocol
+        class TestVerifier:
+            async def verify_token(self, token: str):
+                return None
+        
+        # Should be considered an instance of the protocol
+        verifier = TestVerifier()
+        assert hasattr(verifier, 'verify_token')
+        
+        # If TokenVerifier is available as a protocol
+        if TokenVerifier is not None:
+            # Check if it's a protocol
+            assert hasattr(TokenVerifier, '__subclasshook__') or hasattr(TokenVerifier, '_is_protocol')

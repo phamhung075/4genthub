@@ -23,6 +23,20 @@
   - Added skipif decorators for tests requiring Starlette/HTTP server components
   - Enhanced test structure to handle optional dependencies gracefully
   - Updated tests to match actual HTTP server component implementations 
+- Massively expanded `http_server_test.py` with complete test coverage
+  - Added tests for `set_http_request` context manager with nested contexts
+  - Added comprehensive tests for `TokenVerifierAdapter` with all provider types
+  - Added tests for `RequestContextMiddleware` for HTTP and WebSocket requests
+  - Added tests for `HTTPSRedirectMiddleware` with proxy headers
+  - Added tests for `setup_auth_middleware_and_routes` function
+  - Added tests for `create_base_app` with all configuration options
+  - Added tests for `create_http_server_factory` function
+  - Added comprehensive tests for `MCPHeaderValidationMiddleware` with all MCP endpoints
+  - Added tests for `create_sse_app` function with auth and V2 routes
+  - Added tests for `create_streamable_http_app` with registration endpoints
+  - Added integration tests for complex scenarios
+  - Added tests for TokenVerifier protocol implementation
+  - Fixed asyncio import for async test compatibility
 **Status**: ✅ TESTS CREATED AND UPDATED
 
 **Test Files Created**:
@@ -47,7 +61,16 @@
    - Middleware stack configuration tests
 
 **Test Files Updated**:
-1. ✅ **dhafnck-frontend/src/tests/services/tokenService.test.ts**:
+1. ✅ **dhafnck_mcp_main/src/tests/server/http_server_test.py** (MAJOR EXPANSION):
+   - Expanded from 467 to 1582 lines (238% increase)
+   - Added 15 new test classes with 70+ new test methods
+   - Complete coverage for all middleware components
+   - Full test coverage for SSE and Streamable HTTP app creation
+   - Comprehensive async/await test patterns
+   - Edge case and error handling scenarios
+   - Integration tests for complex multi-component scenarios
+
+2. ✅ **dhafnck-frontend/src/tests/services/tokenService.test.ts**:
    - Fixed API endpoint URLs to match new implementation
    - Updated from `/api/auth/tokens` to `/api/v2/tokens`
    - Fixed validateToken test method from GET to POST

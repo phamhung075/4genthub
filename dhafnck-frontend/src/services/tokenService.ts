@@ -33,6 +33,7 @@ interface TokenListResponse {
 
 class TokenService {
   // Updated 2025-09-15: Using /api/v2/tokens endpoint (not /api/auth/tokens)
+  // Version 2.0.4 - Force complete rebuild
   private baseUrl = `${API_BASE_URL}/api/v2/tokens`;
 
   constructor() {
