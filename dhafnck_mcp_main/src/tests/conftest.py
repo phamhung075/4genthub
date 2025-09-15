@@ -567,10 +567,26 @@ class MockWebSocket:
 class MockWebSocketDisconnect(Exception):
     pass
 
+class MockAppState:
+    """Mock app state object for FastAPI state management"""
+    def __init__(self):
+        self.mcp_auth = None
+        self.mcp_tools = None
+        self.security = None
+
 class MockFastAPI:
     def __init__(self, *args, **kwargs):
         self.middleware_stack = []
         self.routers = []
+        self.state = MockAppState()
+        
+        # Extract and set title, description, version from kwargs
+        self.title = kwargs.get('title', 'Test App')
+        self.description = kwargs.get('description', 'Test Description')
+        self.version = kwargs.get('version', '1.0.0')
+        self.docs_url = kwargs.get('docs_url', '/docs')
+        self.redoc_url = kwargs.get('redoc_url', '/redoc')
+        self.openapi_url = kwargs.get('openapi_url', '/openapi.json')
     
     def add_middleware(self, middleware, **kwargs):
         self.middleware_stack.append(middleware)
@@ -581,6 +597,12 @@ class MockFastAPI:
 
     def get(self, path: str):
         """Mock decorator for GET endpoints"""
+        def decorator(func):
+            return func
+        return decorator
+        
+    def post(self, path: str):
+        """Mock decorator for POST endpoints"""
         def decorator(func):
             return func
         return decorator
@@ -606,9 +628,20 @@ mock_fastapi.security = mock_fastapi_security
 mock_fastapi.testclient = type(sys)('fastapi.testclient')
 mock_fastapi.testclient.TestClient = MockFastAPIClient
 
+# Add middleware module for CORS support
+class MockCORSMiddleware:
+    def __init__(self, *args, **kwargs):
+        self.config = kwargs
+
+mock_fastapi.middleware = type(sys)('fastapi.middleware')
+mock_fastapi.middleware.cors = type(sys)('fastapi.middleware.cors')
+mock_fastapi.middleware.cors.CORSMiddleware = MockCORSMiddleware
+
 sys.modules['fastapi'] = mock_fastapi
 sys.modules['fastapi.responses'] = mock_fastapi.responses
 sys.modules['fastapi.testclient'] = mock_fastapi.testclient
+sys.modules['fastapi.middleware'] = mock_fastapi.middleware
+sys.modules['fastapi.middleware.cors'] = mock_fastapi.middleware.cors
 
 # Ensure src directory is on sys.path for fastmcp imports
 src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
