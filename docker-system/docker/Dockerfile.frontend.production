@@ -1,4 +1,4 @@
-# Cache bust: 1757945163
+# Cache bust: 1757949765
 # Production Frontend Dockerfile for DhafnckMCP
 # Multi-stage build optimized for production deployment
 # Features: Minimal image size, optimized assets, security hardening
