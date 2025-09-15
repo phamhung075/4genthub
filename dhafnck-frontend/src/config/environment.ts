@@ -9,13 +9,22 @@ function getEnvVar(key: string, defaultValue: string = ''): string {
   // Check runtime config first (injected by Docker at startup)
   if (typeof window !== 'undefined' && (window as any)._env_ && (window as any)._env_[key]) {
     const value = (window as any)._env_[key];
-    // Ignore placeholder values
+    // Ignore placeholder values and use runtime value if valid
     if (!value.startsWith('__') && !value.endsWith('__')) {
       return value;
     }
   }
-  // Fallback to build-time environment variable
-  return (import.meta.env[key] || defaultValue) as string;
+
+  // Check build-time environment variable
+  const buildTimeValue = import.meta.env[key] as string;
+
+  // If build-time value is a placeholder, use default
+  if (buildTimeValue && !buildTimeValue.startsWith('__') && !buildTimeValue.endsWith('__')) {
+    return buildTimeValue;
+  }
+
+  // Return default value if neither runtime nor valid build-time value exists
+  return defaultValue;
 }
 
 // API Configuration
