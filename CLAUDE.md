@@ -35,6 +35,56 @@ scope: global
 - **No Assumptions** - Check MCP tasks for requirements, don't imagine them
 - **No Shortcuts** - Follow the complete workflow every time
 
+## ⚠️ STATUS LINE WARNINGS - MANDATORY RESPONSE REQUIRED!
+
+**CRITICAL: The status line shows warnings that REQUIRE IMMEDIATE ACTION:**
+
+### 🔴 Task Creation Warning for Master-Orchestrator:
+When you see: **`⚠️ NO MCP TASK! Must call manage_task(action='create') first!`** in yellow
+
+**WHAT THIS MEANS:**
+- You are master-orchestrator-agent
+- You have ZERO active MCP tasks
+- You are about to delegate work WITHOUT proper tracking
+
+**MANDATORY ACTION - DO THIS IMMEDIATELY:**
+```python
+# STOP! Create MCP task FIRST before any delegation:
+task = mcp__dhafnck_mcp_http__manage_task(
+    action="create",
+    title="[Specific task title]",
+    assignees="[agent-name]",
+    details="[Full context and requirements]"
+)
+task_id = task["task"]["id"]
+
+# ONLY THEN delegate with task_id:
+Task(subagent_type="[agent-name]", prompt=f"task_id: {task_id}")
+```
+
+**NEVER DO THIS (will trigger warning):**
+```python
+# ❌ WRONG - No MCP task created, warning will appear!
+Task(subagent_type="coding-agent", prompt="implement feature")
+```
+
+### 📊 Task Status Indicators in Status Line:
+- **`🔄 Implementing auth system`** - Shows current active task title
+- **`[2▶ 3⏸ 1⚠]`** - Real-time counts:
+  - `2▶` = 2 tasks in-progress
+  - `3⏸` = 3 tasks pending
+  - `1⚠` = 1 task blocked (needs attention!)
+- **`⚠️ BLOCKED`** - Critical alert: Tasks need unblocking
+
+### 🚨 MANDATORY WARNING RESPONSE PROTOCOL:
+1. **SEE WARNING** → Status line shows yellow warning text
+2. **STOP CURRENT ACTION** → Do NOT proceed with delegation
+3. **CREATE MCP TASK** → Call manage_task(action='create') IMMEDIATELY
+4. **VERIFY** → Check status line no longer shows warning
+5. **PROCEED** → Now safe to delegate with task_id
+
+**ENFORCEMENT RULE**: If warning visible → MUST create MCP task → No exceptions!
+
 ## 🚨 ABSOLUTE FIRST PRIORITY - CLOCK IN TO WORK! 🚨
 
 **Like any employee starting their shift, you MUST clock in:**

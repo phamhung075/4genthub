@@ -332,7 +332,10 @@ class GlobalContext(Base):
     
     # Nested structure support (v2.0) - New field for organized categorization
     nested_structure: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)  # Modern nested structure
-    
+
+    # Unified context API compatibility - data field for generic context operations
+    data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)  # Generic data field for unified context API
+
     # User isolation - required by database migration
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     

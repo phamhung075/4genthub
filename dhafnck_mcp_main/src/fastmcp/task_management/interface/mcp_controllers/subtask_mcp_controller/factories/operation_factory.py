@@ -82,7 +82,18 @@ class SubtaskOperationFactory:
     def _handle_crud_operation(self, operation: str, facade, **kwargs) -> Dict[str, Any]:
         """Handle CRUD operations with automatic progress tracking."""
         handler = self._crud_handler
-        
+
+        # Handle string-to-list conversion for assignees parameter (same logic as task controller)
+        if 'assignees' in kwargs and kwargs['assignees'] is not None and isinstance(kwargs['assignees'], str):
+            assignees = kwargs['assignees']
+            if ',' in assignees:
+                # Comma-separated assignees - convert to list
+                kwargs['assignees'] = [a.strip() for a in assignees.split(',') if a.strip()]
+            else:
+                # Single assignee - convert to list
+                kwargs['assignees'] = [assignees.strip()] if assignees.strip() else []
+            logger.info(f"Converted assignees string to list: {kwargs['assignees']}")
+
         # Filter out authentication parameters that shouldn't be passed to CRUD handlers
         # Following DDD: authentication is handled at interface layer, not passed to domain
         # For each operation, only pass the parameters that the specific method accepts
@@ -105,7 +116,7 @@ class SubtaskOperationFactory:
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
         elif operation == 'update':
             # update_subtask only accepts specific parameters
-            allowed_params = {'task_id', 'subtask_id', 'title', 'description', 'status', 
+            allowed_params = {'task_id', 'subtask_id', 'title', 'description', 'status',
                             'priority', 'assignees', 'progress_percentage', 'progress_notes'}
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
         elif operation in ['delete', 'complete']:

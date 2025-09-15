@@ -48,7 +48,3 @@ setup.cfg
 # License
 LICENSE
 LICENSE.md
-
-# This configuration file
-.allowed_root_files
-.valid_test_paths

@@ -81,7 +81,7 @@ class Config:
     
     def _load_allowed_root_files(self):
         """Load allowed root files from configuration."""
-        config_file = self.project_root / '.allowed_root_files'
+        config_file = self.project_root / '.claude' / 'hooks' / 'config' / '__claude_hook__allowed_root_files'
         
         # Default allowed files
         defaults = [
@@ -105,7 +105,7 @@ class Config:
     
     def _load_valid_test_paths(self):
         """Load valid test paths from configuration."""
-        config_file = self.project_root / '.valid_test_paths'
+        config_file = self.project_root / '.claude' / 'hooks' / 'config' / '__claude_hook__valid_test_paths'
         
         # Default test paths
         defaults = [
