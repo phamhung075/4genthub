@@ -157,6 +157,8 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 delegation_rules=delegation_rules,
                 # Nested structure (v2.0)
                 nested_structure=nested_structure_dict,
+                # Unified context API compatibility - store complete data
+                data=entity.global_settings or {},
                 # Required fields
                 user_id=self.user_id,
                 created_at=datetime.now(timezone.utc),
@@ -299,7 +301,10 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             
             # CRITICAL: Update the nested structure field (this was missing!)
             db_model.nested_structure = nested_structure_dict
-            
+
+            # Update unified context API data field
+            db_model.data = entity.global_settings or {}
+
             db_model.updated_at = datetime.now(timezone.utc)
             
             # Log access for audit
@@ -461,7 +466,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 global_settings["_schema_version"] = nested_structure_dict["_schema_version"]
             if "_custom_categories" in nested_structure_dict:
                 global_settings["_custom_categories"] = nested_structure_dict["_custom_categories"]
-                
+
         else:
             # Build global_settings from flat structure (backward compatibility)
             global_settings = {
@@ -500,7 +505,40 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 # Map global_preferences to user_preferences for frontend compatibility
                 global_settings["user_preferences"] = global_preferences
                 global_settings["global_preferences"] = global_preferences
-        
+
+        # Check for unified context API data field as primary source
+        # This ensures data is preserved and prioritized for unified context operations
+        data_field = getattr(db_model, "data", None)
+        if data_field and isinstance(data_field, dict) and data_field:
+            # Check if global_settings only contains empty or default values
+            has_meaningful_data = False
+            for key, value in global_settings.items():
+                if value and key not in ["version", "_schema_version", "_custom_categories"]:
+                    if isinstance(value, dict) and value != {}:
+                        has_meaningful_data = True
+                        break
+                    elif isinstance(value, list) and value != []:
+                        has_meaningful_data = True
+                        break
+                    elif value and not isinstance(value, (dict, list)):
+                        has_meaningful_data = True
+                        break
+
+            if not has_meaningful_data:
+                # Use data field as primary source when nested structure is empty
+                logger.info(f"Using data field as primary source for global context {db_model.id}")
+                global_settings = data_field.copy()
+            else:
+                # Merge data field into global_settings, prioritizing data field values
+                logger.info(f"Merging data field with existing structure for global context {db_model.id}")
+                for key, value in data_field.items():
+                    # Always prefer data field values over empty nested structure values
+                    if key not in global_settings or not global_settings[key] or global_settings[key] == {}:
+                        global_settings[key] = value
+                    elif isinstance(value, dict) and isinstance(global_settings.get(key), dict):
+                        # Deep merge dictionaries, preferring data field content
+                        global_settings[key].update(value)
+
         # Build metadata with nested structure information
         metadata = {
             "created_at": db_model.created_at.isoformat() if db_model.created_at else None,

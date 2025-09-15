@@ -23,6 +23,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).parent.parent / "hooks"))
 from utils.env_loader import get_ai_data_path, get_ai_docs_path
 from utils.agent_state_manager import get_current_agent
+from utils.task_tracker import get_task_tracker
 
 
 def log_status_line(input_data, status_line_output):
@@ -123,19 +124,34 @@ def generate_status_line(input_data):
     session_id = input_data.get('session_id', '')
     current_agent = get_current_agent(session_id) if session_id else 'master-orchestrator-agent'
     parts.append(f"\033[92m🎯 Active: {current_agent}\033[0m")  # Green text showing active role
-    
+
+    # Task tracking - Show active tasks or warning for orchestrator
+    try:
+        tracker = get_task_tracker(session_id)
+        # Only show warning if current agent is master-orchestrator
+        show_warning = (current_agent == 'master-orchestrator-agent')
+        task_status = tracker.format_for_status_line(max_length=40, show_warning=show_warning)
+        if task_status:
+            # Use yellow for warnings, cyan for normal task status
+            if "No tasks!" in task_status:
+                parts.append(f"\033[93m{task_status}\033[0m")  # Yellow warning
+            else:
+                parts.append(f"\033[96m{task_status}\033[0m")  # Cyan for tasks
+    except Exception:
+        pass
+
     # Paths - always show for AI memory
     try:
         ai_data = get_ai_data_path()
         ai_docs = get_ai_docs_path()
-        
+
         # Always show paths to help AI remember where things are
         paths = []
         if ai_data:
             paths.append(f"📊 {ai_data.name}")
         if ai_docs:
             paths.append(f"📚 {ai_docs.name}")
-        
+
         if paths:
             parts.append(f"\033[95m{' '.join(paths)}\033[0m")
     except Exception:

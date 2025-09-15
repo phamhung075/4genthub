@@ -2313,7 +2313,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 25,
+      "count": 26,
       "files": [
         {
           "hash": "e7c6b05b00c115bab233b81c9682fbf6",
@@ -2461,6 +2461,13 @@
           "name": "test-suite-status-2025-09-15.md",
           "path": "testing-qa/test-suite-status-2025-09-15.md",
           "size": 2275
+        },
+        {
+          "hash": "4b93f3a24990a3bf2218b560052d0594",
+          "modified": "2025-09-15T23:01:42.586580",
+          "name": "mcp-tools-test-report.md",
+          "path": "testing-qa/mcp-tools-test-report.md",
+          "size": 4209
         },
         {
           "hash": "e23d4e09493a28ae4ae8a6e3d97e5945",
@@ -2716,7 +2723,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-15T19:00:45.239901",
+  "generated_at": "2025-09-15T23:01:43.066011",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3115,6 +3122,7 @@
         "iteration-55-summary.md",
         "iteration-56-summary.md",
         "iteration-58-summary.md",
+        "mcp-tools-test-report.md",
         "test-fix-iteration-32-summary.md",
         "test-fix-iteration-33-summary.md",
         "test-fix-iteration-40-summary.md",
@@ -3167,5 +3175,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 333
+  "total_files": 334
 }

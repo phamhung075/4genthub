@@ -6,6 +6,73 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 96 (2025-09-15)
+#### Hook Configuration File Location Update
+- **Moved configuration files to organized location**:
+  - Configuration files relocated from project root to `.claude/hooks/config/` directory
+  - Files moved: `__claude_hook__allowed_root_files`, `__claude_hook__valid_test_paths`, `__claude_hook__hint_message.yaml`
+- **Updated hooks to load from new path**:
+  - `.claude/hooks/pre_tool_use.py`: Updated `load_allowed_root_files()` to read from `.claude/hooks/config/__claude_hook__allowed_root_files`
+  - `.claude/hooks/pre_tool_use.py`: Updated `load_valid_test_paths()` to read from `.claude/hooks/config/__claude_hook__valid_test_paths`
+  - `.claude/hooks/core_clean_arch/config.py`: Updated both configuration loading methods to use new path
+- **Testing**: Verified all configuration files load correctly from `.claude/hooks/config/` directory
+- **Impact**: Better organization - configuration files now properly stored within hooks directory structure instead of project root
+
+### Added - Iteration 95 (2025-09-15)
+#### Dynamic Task Tracking in Status Line
+- **Added comprehensive task tracking system for Claude Code status line**:
+  - Created `.claude/hooks/utils/task_tracker.py` - Task tracking module with session management
+  - Created `.claude/hooks/utils/mcp_task_interceptor.py` - Automatic MCP task operation interceptor
+  - Data stored in `.claude/data/task_tracking/` directory (correct location, not in hooks/data)
+  - Features implemented:
+    - Real-time task tracking per session with automatic 24-hour cleanup
+    - Shows current in-progress task title and task counts in status line
+    - Automatically removes completed tasks from display
+    - Archives completed tasks for history (keeps last 100)
+    - Color-coded status indicators: in-progress (▶), pending (⏸), blocked (⚠)
+    - Clear actionable warning: "⚠️ NO MCP TASK! Must call manage_task(action='create') first!"
+- **Enhanced status line display**:
+  - Modified `.claude/status_lines/status_line.py` to integrate task tracking
+  - Shows active tasks with counts and current task title in cyan
+  - Displays warning in yellow when master-orchestrator has no tasks
+  - Only shows warning for master-orchestrator agent, not for sub-agents
+- **Updated CLAUDE.md instructions**:
+  - Added mandatory warning response protocol with explicit code examples
+  - Clear "STOP and CREATE TASK" instructions when warning appears
+  - Step-by-step enforcement rules to prevent delegation without MCP tasks
+- **Impact**: AI agents now have clear, actionable reminder to create MCP tasks before delegating work, preventing forgotten task completions
+
+### Fixed - Iteration 94 (2025-09-15)
+#### Context Data Persistence Issue Resolution
+- **Fixed critical context data field persistence bug in GlobalContext model**:
+  - Root cause: GlobalContext database model was missing the `data` field that exists in other context models (ProjectContext, BranchContext)
+  - This caused context data to be lost during unified context API operations where complex JSON data wasn't being stored or returned properly
+  - Impact: Context inheritance between hierarchy levels (global → project → branch → task) was broken for complex data structures
+- **Comprehensive solution implemented**:
+  - Added `data` field to GlobalContext database model (Line 337 in models.py): `Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)`
+  - Enhanced repository logic in `global_context_repository.py`: Updated create/update methods to populate both data and nested_structure fields
+  - Implemented intelligent data prioritization: data field → nested_structure → flat structure with merge capabilities
+  - Added database migration: `006_add_data_field_to_global_contexts.sql` with rollback support
+- **Files Modified**:
+  - `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/models.py`
+  - `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/global_context_repository.py`
+  - Migration files: `006_add_data_field_to_global_contexts.sql`, `run_migration_006_add_data_field.py`
+- **Testing**: Comprehensive test suite created verifying data round-trip persistence (1357 chars → 2001 chars with merging), fallback logic, and backward compatibility
+- **Impact**: Unified context API now works correctly with GlobalContext, complex JSON data preservation guaranteed, context inheritance restored
+
+### Fixed - Iteration 93 (2025-09-15)
+#### Subtask Assignees Validation Bug
+- **Fixed string-to-list conversion for subtask assignees parameter**:
+  - Root cause: Subtask controller was missing string-to-list conversion logic that exists in task controller
+  - When `assignees='test-orchestrator-agent'` was passed as string, it wasn't being converted to list `['test-orchestrator-agent']`
+  - This caused validation to fail with error: "Invalid assignees: ['t', 'e', 's', 't', ...]. Valid assignees must be from AgentRole enum."
+  - Added proper string-to-list conversion in `operation_factory.py` for both single and comma-separated assignees
+  - Now supports: `assignees='test-orchestrator-agent'` and `assignees='coding-agent, test-orchestrator-agent'`
+- **Files Modified**:
+  - `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/factories/operation_factory.py`
+- **Testing**: Added verification test to ensure string-to-list conversion works correctly
+- **Impact**: Subtask creation with assignees string parameter now works as expected
+
 ### Fixed - Iteration 92 (2025-09-15)
 #### Token Route Conflict Resolution
 - **Removed conflicting old token route files**:

@@ -72,15 +72,15 @@ except ImportError:
 
 def load_allowed_root_files():
     """
-    Load allowed root files from .allowed_root_files config file.
+    Load allowed root files from .claude/hooks/config/__claude_hook__allowed_root_files config file.
     Falls back to default list if file doesn't exist.
-    
+
     Returns:
         list: List of filenames that are allowed in the project root.
               These names should be unique across the entire project.
     """
     project_root = Path.cwd()
-    allowed_files_path = project_root / '.allowed_root_files'
+    allowed_files_path = project_root / '.claude' / 'hooks' / 'config' / '__claude_hook__allowed_root_files'
     
     # Default allowed files - only essential config and documentation files
     # These files should ONLY exist in the project root, nowhere else
@@ -90,8 +90,8 @@ def load_allowed_root_files():
         'package.json', 'package-lock.json', 'requirements.txt',
         'pyproject.toml', 'poetry.lock', 'Pipfile', 'Pipfile.lock',
         'docker-compose.yml', 'Dockerfile', '.dockerignore',
-        'Makefile', 'setup.py', 'setup.cfg', '.allowed_root_files',
-        '.valid_test_paths'
+        'Makefile', 'setup.py', 'setup.cfg', '__claude_hook__allowed_root_files',
+        '__claude_hook__valid_test_paths', '__claude_hook__hint_message.yaml'
     ]
     
     if allowed_files_path.exists():
@@ -105,9 +105,9 @@ def load_allowed_root_files():
                     if line and not line.startswith('#'):
                         allowed_files.append(line)
                 
-                # Always include .allowed_root_files itself
-                if '.allowed_root_files' not in allowed_files:
-                    allowed_files.append('.allowed_root_files')
+                # Always include __claude_hook__allowed_root_files itself
+                if '__claude_hook__allowed_root_files' not in allowed_files:
+                    allowed_files.append('__claude_hook__allowed_root_files')
                 
                 return allowed_files if allowed_files else default_allowed
         except Exception:
@@ -117,14 +117,14 @@ def load_allowed_root_files():
 
 def load_valid_test_paths():
     """
-    Load valid test paths from .valid_test_paths config file.
+    Load valid test paths from .claude/hooks/config/__claude_hook__valid_test_paths config file.
     Falls back to default list if file doesn't exist.
-    
+
     Returns:
         list: List of directory paths where test files are allowed.
     """
     project_root = Path.cwd()
-    test_paths_file = project_root / '.valid_test_paths'
+    test_paths_file = project_root / '.claude' / 'hooks' / 'config' / '__claude_hook__valid_test_paths'
     
     # Default test paths
     default_paths = [
@@ -323,8 +323,8 @@ def is_prohibited_file_creation(tool_name, tool_input):
     
     Validation rules:
     1. NO folders can be created in project root by AI
-    2. Only files listed in .allowed_root_files can be created in root
-    3. Files with names from .allowed_root_files cannot exist in subfolders (unique names)
+    2. Only files listed in __claude_hook__allowed_root_files can be created in root
+    3. Files with names from __claude_hook__allowed_root_files cannot exist in subfolders (unique names)
     4. ai_docs folder can only exist in project root
     5. 'docs' folders are prohibited - must use 'ai_docs' instead
     6. ALL .md files must be in ai_docs folder (except root allowed ones)
