@@ -315,7 +315,7 @@ def load_development_context(source):
     # Note: Runtime agent switching will provide specialized context when agents are called
     context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
     context_parts.append("")
-    context_parts.append("🎯 **You are the MASTER ORCHESTRATOR** - coordinate and delegate work to specialized agents.")
+    context_parts.append("🎯 **You are the MASTER ORCHESTRATOR** - coordinate and delegate work to specialized agents, you have no permission to work directly on tasks.")
     context_parts.append("")
     
     # Add timestamp and session info

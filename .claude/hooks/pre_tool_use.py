@@ -26,6 +26,8 @@ from pathlib import Path
 # Import the AI_DATA path loader for logging
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.env_loader import get_ai_data_path, is_claude_edit_enabled
+# Import centralized messages
+from config.messages import get_error_message, get_warning_message, get_info_message
 try:
     from utils.docs_indexer import check_documentation_requirement
 except ImportError:
@@ -552,74 +554,59 @@ def main():
             file_path = tool_input.get('file_path', '')
             if file_path and '.claude' in file_path:
                 if not is_claude_edit_enabled():
-                    print("BLOCKED: Editing .claude files is disabled", file=sys.stderr)
-                    print("Set ENABLE_CLAUDE_EDIT=true in .env.claude to allow editing", file=sys.stderr)
+                    print(get_error_message("claude_edit_disabled"), file=sys.stderr)
                     sys.exit(2)
         
         # VALIDATION STEP 1: Check for .env file access (security protection)
         env_check = is_env_file_access(tool_name, tool_input)
         if env_check == 'subfolder_env':
-            print("BLOCKED: .env* files must be created in project root only", file=sys.stderr)
-            print("Place environment files in the project root directory", file=sys.stderr)
+            print(get_error_message("env_file_subfolder"), file=sys.stderr)
             sys.exit(2)
         elif env_check:
-            print("BLOCKED: Access to .env* files containing sensitive data is prohibited", file=sys.stderr)
-            print("Use .env.sample for template files instead", file=sys.stderr)
+            print(get_error_message("env_file_access"), file=sys.stderr)
             sys.exit(2)
         
         # VALIDATION STEP 2: Check for prohibited file/folder creation
         creation_check = is_prohibited_file_creation(tool_name, tool_input)
         if creation_check == 'root_file':
-            print("BLOCKED: Creating files in project root is restricted", file=sys.stderr)
-            print("Place files in appropriate subdirectories (e.g., ai_docs/, src/, tests/)", file=sys.stderr)
+            print(get_error_message("root_file_creation"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'root_folder':
-            print("BLOCKED: Creating folders in project root is not allowed", file=sys.stderr)
-            print("All folders should already exist. Use existing folders like ai_docs/, dhafnck_mcp_main/, etc.", file=sys.stderr)
+            print(get_error_message("root_folder_creation"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'unique_root_file':
-            print("BLOCKED: This filename is reserved for project root only", file=sys.stderr)
-            print("Files like README.md, CHANGELOG.md, etc. must be unique to the root directory", file=sys.stderr)
+            # Get the file name for the error message
+            file_path = tool_input.get('file_path', '')
+            file_name = Path(file_path).name if file_path else 'file'
+            print(get_error_message("unique_root_file", file=file_name), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'subfolder_ai_docs':
-            print("BLOCKED: ai_docs folder must exist only in project root", file=sys.stderr)
-            print("Use the root ai_docs/ folder for all documentation", file=sys.stderr)
+            print(get_error_message("subfolder_ai_docs"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'docs_folder':
-            print("BLOCKED: Use 'ai_docs' folder instead of 'docs'", file=sys.stderr)
-            print("All documentation should go in ai_docs/ folder", file=sys.stderr)
+            print(get_error_message("docs_folder"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'md_not_in_ai_docs':
             file_path = tool_input.get('file_path', '')
-            print(f"BLOCKED: Markdown file '{file_path}' must be in ai_docs/ folder", file=sys.stderr)
-            print("SUGGESTION: Move to ai_docs/ folder (e.g., ai_docs/your_file.md)", file=sys.stderr)
-            print("EXCEPTION: Only README.md, CHANGELOG.md, CLAUDE.md allowed in root", file=sys.stderr)
+            print(get_error_message("md_not_in_ai_docs"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'test_wrong_location':
             file_path = tool_input.get('file_path', '')
             valid_paths = load_valid_test_paths()
-            print(f"BLOCKED: Test file '{file_path}' in wrong location", file=sys.stderr)
-            print(f"ALLOWED LOCATIONS: {', '.join(valid_paths)}", file=sys.stderr)
-            print("SUGGESTION: Move test file to one of the allowed test directories", file=sys.stderr)
+            print(get_error_message("test_wrong_location"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'venv_wrong_location':
-            print("BLOCKED: Virtual environment must be in dhafnck_mcp_main/.venv", file=sys.stderr)
-            print("Only one .venv is allowed at: dhafnck_mcp_main/.venv", file=sys.stderr)
+            print(get_error_message("venv_wrong_location"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'logs_not_in_root':
-            print("BLOCKED: 'logs' folder must be in project root only", file=sys.stderr)
-            print("Use the root logs/ folder for all log files", file=sys.stderr)
+            print(get_error_message("logs_not_in_root"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'sh_not_in_scripts':
-            print("BLOCKED: Shell scripts (.sh) must be in scripts/ folder", file=sys.stderr)
-            print("Create shell scripts in: scripts/ or docker-system/ folders", file=sys.stderr)
+            print(get_error_message("sh_not_in_scripts"), file=sys.stderr)
             sys.exit(2)
         elif creation_check == 'invalid_ai_docs_folder_name':
             file_path = tool_input.get('file_path', '')
-            print(f"BLOCKED: Invalid folder name in ai_docs: '{file_path}'", file=sys.stderr)
-            print("REQUIRED: Use kebab-case pattern (lowercase-with-dashes)", file=sys.stderr)
-            print("VALID: 'api-integration', 'test-results', 'setup-guides'", file=sys.stderr)
-            print("INVALID: 'API_Integration', 'Test Results', 'SetupGuides', 'setup123'", file=sys.stderr)
+            print(get_error_message("invalid_ai_docs_folder"), file=sys.stderr)
             sys.exit(2)
         
         # VALIDATION STEP 3: Check documentation enforcement for files with existing docs
@@ -630,15 +617,8 @@ def main():
                 should_block, doc_path, is_folder = check_documentation_enforcement(file_path)
                 
                 if should_block:
-                    if is_folder:
-                        print(f"BLOCKED: Folder has documentation that must be updated first", file=sys.stderr)
-                        print(f"Documentation: {doc_path}", file=sys.stderr)
-                        print(f"Please update the folder documentation before modifying files in: {file_path}", file=sys.stderr)
-                    else:
-                        print(f"BLOCKED: File has documentation that must be updated", file=sys.stderr)
-                        print(f"Documentation: {doc_path}", file=sys.stderr)
-                        print(f"Please update the documentation before modifying: {file_path}", file=sys.stderr)
-                    print("HINT: Documentation exists, indicating this is an important file/folder", file=sys.stderr)
+                    doc_type = 'folder' if is_folder else 'file'
+                    print(get_error_message("documentation_required", type=doc_type, doc_path=doc_path), file=sys.stderr)
                     sys.exit(2)
                 else:
                     # Add to session if not blocking
@@ -659,7 +639,7 @@ def main():
             
             # Block rm -rf commands with comprehensive pattern matching
             if is_dangerous_rm_command(command):
-                print("BLOCKED: Dangerous rm command detected and prevented", file=sys.stderr)
+                print(get_error_message("dangerous_rm"), file=sys.stderr)
                 sys.exit(2)
         
         # CONTEXT INJECTION: Inject relevant context if system supports it
@@ -706,7 +686,7 @@ def main():
                 # Context injection failure should not block tool execution
                 # Log the error but continue with tool execution
                 error_msg = f"Context injection failed: {str(e)}"
-                print(f"WARNING: {error_msg}", file=sys.stderr)
+                print(get_warning_message("context_injection_error", error=str(e)), file=sys.stderr)
                 
                 # Log the error
                 log_dir = get_ai_data_path()

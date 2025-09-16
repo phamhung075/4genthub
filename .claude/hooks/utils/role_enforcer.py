@@ -10,6 +10,11 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 import fnmatch
+import sys
+
+# Add parent directory to import messages
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from config.messages import get_info_message
 
 # Import agent state manager
 try:
@@ -184,14 +189,14 @@ class RoleEnforcer:
         if warning_key in warnings:
             return warnings[warning_key]
 
-        # Default messages
-        if violation_type == "blocked":
-            return f"[ROLE VIOLATION] {role} is not allowed to use {tool_name}!"
-        elif violation_type == "not_allowed":
+        # Default messages using centralized config
+        if violation_type == "blocked" or violation_type == "not_allowed":
             allowed_tools = role_def.get("allowed_tools", [])
-            return f"[ROLE VIOLATION] {role} can only use: {', '.join(allowed_tools)}"
+            violation_msg = get_info_message("role_violation", tool=tool_name, agent=role)
+            tools_msg = get_info_message("available_tools", tools=", ".join(allowed_tools))
+            return f"{violation_msg}\n{tools_msg}"
 
-        return f"[ROLE VIOLATION] {role} cannot perform this action!"
+        return get_info_message("role_violation", tool=tool_name, agent=role)
 
     def _log_tool_usage(self, role: str, tool_name: str, allowed: bool):
         """Log tool usage for analysis."""

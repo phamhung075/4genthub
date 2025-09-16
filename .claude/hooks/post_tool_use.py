@@ -22,6 +22,8 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.env_loader import get_ai_data_path
 from utils.docs_indexer import update_index, check_documentation_requirement, move_to_obsolete
+# Import centralized messages
+from config.messages import get_warning_message, get_info_message, get_system_prompt
 
 # Import the new context update system
 try:
@@ -198,7 +200,7 @@ def main():
                     context_instructions = switch_to_agent(agent_name)
                     print(f"\n<system-reminder>\n{context_instructions}\n</system-reminder>\n", file=sys.stderr)
                 except Exception as e:
-                    print(f"Warning: Agent context switch failed: {e}", file=sys.stderr)
+                    print(get_warning_message("context_switch_failed", error=e), file=sys.stderr)
         
         # Get paths
         log_dir = get_ai_data_path()
@@ -241,8 +243,7 @@ def main():
                     # Emit warning if documentation is missing or outdated
                     if not has_doc or needs_update:
                         action = "create" if not has_doc else "update"
-                        print(f"📝 Documentation needed: Please {action} {doc_path}", file=sys.stderr)
-                        print(f"   for file: {modified_path}", file=sys.stderr)
+                        print(get_warning_message("documentation_needed", action=action, doc_path=doc_path, file_path=modified_path), file=sys.stderr)
                 except:
                     pass  # Don't block on documentation check errors
         
@@ -287,7 +288,7 @@ def main():
                 # Context update failure should not block hook execution
                 # Log the error but continue normally
                 error_msg = f"Context update failed: {str(e)}"
-                print(f"WARNING: {error_msg}", file=sys.stderr)
+                print(get_warning_message("context_injection_error", error=str(e)), file=sys.stderr)
                 
                 # Log the error
                 log_dir = get_ai_data_path()
