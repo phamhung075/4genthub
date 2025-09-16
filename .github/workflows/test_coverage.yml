@@ -1,0 +1,247 @@
+name: Test Coverage and CI
+# Part of subtask: 4fabc4f5-5750-4790-8055-68b443c7aafc
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+  COVERAGE_THRESHOLD: 80
+
+jobs:
+  test-matrix:
+    name: Test Suite (${{ matrix.test-type }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: ['unit', 'integration', 'e2e']
+        include:
+          - test-type: unit
+            coverage: true
+            fast: true
+          - test-type: integration
+            coverage: false
+            fast: false
+          - test-type: e2e
+            coverage: false
+            fast: false
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_USER: testuser
+          POSTGRES_DB: dhafnck_mcp_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better coverage analysis
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Cache test dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-test-${{ hashFiles('dhafnck_mcp_main/src/tests/hooks/requirements-test.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-test-
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client libpq-dev
+
+    - name: Install Python dependencies
+      working-directory: dhafnck_mcp_main
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r src/tests/hooks/requirements-test.txt
+
+    - name: Setup test environment
+      working-directory: dhafnck_mcp_main
+      run: |
+        # Create test environment file
+        cat > .env.test << EOF
+        TESTING=true
+        FASTMCP_TEST_MODE=1
+        DATABASE_URL=postgresql://testuser:testpass@localhost:5432/dhafnck_mcp_test
+        REDIS_URL=redis://localhost:6379/0
+        LOG_LEVEL=WARNING
+        DISABLE_AUTH=true
+        EOF
+
+        # Create reports directory
+        mkdir -p test_reports
+
+    - name: Run database migrations
+      working-directory: dhafnck_mcp_main
+      run: |
+        export PYTHONPATH="$(pwd)/src"
+        export $(cat .env.test | grep -v '^#' | xargs)
+        python -c "
+        import sys
+        sys.path.append('src')
+        from fastmcp.task_management.infrastructure.database.database_setup import setup_database
+        setup_database()
+        "
+
+    - name: Run ${{ matrix.test-type }} tests
+      working-directory: dhafnck_mcp_main
+      run: |
+        chmod +x scripts/run_tests_enhanced.sh
+        scripts/run_tests_enhanced.sh --type ${{ matrix.test-type }} --ci ${{ matrix.coverage && '--coverage-threshold 80' || '--quick' }}
+
+    - name: Upload coverage to Codecov (unit tests only)
+      if: matrix.test-type == 'unit'
+      uses: codecov/codecov-action@v3
+      with:
+        file: dhafnck_mcp_main/coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.test-type }}
+        path: |
+          dhafnck_mcp_main/test_reports/
+          dhafnck_mcp_main/htmlcov/
+
+    - name: Generate test summary
+      if: always()
+      working-directory: dhafnck_mcp_main
+      run: |
+        echo "## Test Results (${{ matrix.test-type }})" >> $GITHUB_STEP_SUMMARY
+
+        if [ -f "test_reports/coverage.json" ]; then
+          COVERAGE=$(python -c "
+          import json
+          try:
+              with open('test_reports/coverage.json') as f:
+                  data = json.load(f)
+              print(f\"{data['totals']['percent_covered']:.1f}%\")
+          except:
+              print('N/A')
+          ")
+          echo "- **Coverage**: $COVERAGE" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        if [ -f "test_reports/${{ matrix.test-type }}_tests.xml" ]; then
+          echo "- **Report**: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: test-matrix
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      working-directory: dhafnck_mcp_main
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r src/tests/hooks/requirements-test.txt
+
+    - name: Run performance tests
+      working-directory: dhafnck_mcp_main
+      run: |
+        chmod +x scripts/run_tests_enhanced.sh
+        scripts/run_tests_enhanced.sh --type performance --ci
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: dhafnck_mcp_main/test_reports/
+
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: test-matrix
+    if: always()
+
+    steps:
+    - name: Download all test artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Combine coverage reports
+      run: |
+        echo "## 📊 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+
+        # Find coverage reports
+        find . -name "coverage.json" -exec cat {} \; | head -1 | jq -r '"- **Total Coverage**: " + (.totals.percent_covered | tostring) + "%"' >> $GITHUB_STEP_SUMMARY || echo "- **Total Coverage**: Not available" >> $GITHUB_STEP_SUMMARY
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Results by Type" >> $GITHUB_STEP_SUMMARY
+
+        for type in unit integration e2e; do
+          if [ -d "test-results-$type" ]; then
+            echo "- ✅ **$type tests**: Completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **$type tests**: Failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Bandit security scan
+      run: |
+        pip install bandit[toml]
+        bandit -r dhafnck_mcp_main/src -f json -o security_report.json || true
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-report
+        path: security_report.json

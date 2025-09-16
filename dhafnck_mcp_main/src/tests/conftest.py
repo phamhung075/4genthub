@@ -23,6 +23,13 @@ os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing-only-do-not-use-in-p
 os.environ['JWT_AUDIENCE'] = 'test-audience'
 os.environ['JWT_ISSUER'] = 'test-issuer'
 
+# Set Keycloak environment variables for auth tests
+os.environ['AUTH_ENABLED'] = 'false'  # Disable auth by default in tests
+os.environ['KEYCLOAK_URL'] = 'http://localhost:8080'
+os.environ['KEYCLOAK_REALM'] = 'dhafnck'
+os.environ['KEYCLOAK_CLIENT_ID'] = 'mcp-client'
+os.environ['KEYCLOAK_CLIENT_SECRET'] = 'test-secret'
+
 # Mock numpy globally for tests when not available
 try:
     import numpy

@@ -70,14 +70,14 @@ class AgentStateManager:
     
     def _load_state(self) -> dict:
         """Load agent state from persistent storage."""
-        if not self.state_file.exists():
-            return {}
-        
         try:
+            if not self.state_file.exists():
+                return {}
+
             with open(self.state_file, 'r') as f:
                 return json.load(f)
-        except (json.JSONDecodeError, ValueError, IOError):
-            # Return empty state if file is corrupted or unreadable
+        except (json.JSONDecodeError, ValueError, IOError, PermissionError, OSError):
+            # Return empty state if file is corrupted, unreadable, or permission denied
             return {}
     
     def _save_state(self, state_data: dict) -> None:
@@ -85,10 +85,10 @@ class AgentStateManager:
         try:
             # Ensure directory exists
             self.state_file.parent.mkdir(parents=True, exist_ok=True)
-            
+
             with open(self.state_file, 'w') as f:
                 json.dump(state_data, f, indent=2)
-        except IOError:
+        except (IOError, PermissionError, OSError):
             # Fail silently - don't block operations if we can't save state
             pass
 
@@ -160,7 +160,9 @@ def update_agent_state_from_call_agent(session_id: str, tool_input: dict) -> Non
     """Update agent state when call_agent tool is executed."""
     agent_name = tool_input.get('name_agent', '')
     if agent_name and session_id:
-        set_current_agent(session_id, agent_name)
+        # Create a new manager instance to pick up any patched paths in tests
+        manager = AgentStateManager()
+        manager.set_current_agent(session_id, agent_name)
 
 
 if __name__ == '__main__':

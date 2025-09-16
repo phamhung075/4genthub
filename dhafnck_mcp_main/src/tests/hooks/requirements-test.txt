@@ -1,0 +1,23 @@
+# Test dependencies for session and state management tests
+# Part of subtask: a160a5a8-e058-4594-8521-1a14121d2b6c
+
+# Core testing framework
+pytest>=7.0.0
+pytest-timeout>=2.1.0
+pytest-mock>=3.10.0
+
+# Time mocking for session timeout testing
+freezegun>=1.2.0
+
+# Additional testing utilities
+coverage>=7.0.0
+pytest-cov>=4.0.0
+
+# For concurrent testing simulation
+pytest-xdist>=3.0.0
+
+# Memory profiling for performance tests
+psutil>=5.9.0
+
+# YAML support for role configuration testing
+PyYAML>=6.0
