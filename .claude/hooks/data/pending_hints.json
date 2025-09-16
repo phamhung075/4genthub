@@ -1,72 +1,72 @@
 [
   {
-    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83c\udfaf ORCHESTRATOR LOADED: You can now coordinate all work\n\ud83d\udccb START: List existing tasks or create new ones\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "create",
+    "created_at": "2025-09-16T12:31:54.853660",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83e\udd16 AGENT LOADED - READY:\n\ud83e\udd16 CODING-AGENT LOADED: Follow agent's specialized workflow\n\u26a0\ufe0f REMEMBER: This was a one-time load - don't call again this session\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__call_agent",
     "from_action": "default",
-    "created_at": "2025-09-16T02:16:01.916317",
-    "displayed": false
+    "created_at": "2025-09-16T12:32:07.126334",
+    "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udca1 GET COMPLETE - REMINDERS:\n\ud83d\udccb REVIEW: Check task status and plan next actions\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:21:31.456877",
-    "displayed": false
+    "from_action": "get",
+    "created_at": "2025-09-16T12:32:15.014392",
+    "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:21:40.307850",
-    "displayed": false
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:21:47.081249",
-    "displayed": false
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:22:08.224751",
-    "displayed": false
+    "from_action": "update",
+    "created_at": "2025-09-16T12:32:27.067857",
+    "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83d\udccc SUBTASK CREATED - TIPS:\n\ud83d\udca1 INFO: Subtask inherited parent's assignees\n\ud83d\udcca TIP: Use progress_percentage in updates for auto status\n</system-reminder>",
-    "from_tool": "mcp__dhafnck_mcp_http__manage_subtask",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:22:23.231464",
-    "displayed": false
-  },
-  {
-    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n</system-reminder>",
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:22:46.169427",
-    "displayed": false
+    "from_action": "complete",
+    "created_at": "2025-09-16T12:32:39.062145",
+    "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:23:14.549200",
-    "displayed": false
+    "from_action": "update",
+    "created_at": "2025-09-16T12:33:04.683433",
+    "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83d\udccb TASK CREATED - NEXT STEPS:\n\u2705 NEXT STEP: Delegate to agent using Task tool with task_id only\n</system-reminder>",
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "create",
-    "created_at": "2025-09-16T02:23:38.802471",
-    "displayed": false
+    "from_action": "complete",
+    "created_at": "2025-09-16T12:33:24.239980",
+    "displayed": true
   },
   {
-    "message": "<system-reminder>\n\ud83d\udca1 LIST COMPLETE - REMINDERS:\n\ud83d\udccb REVIEW: Check task status and plan next actions\n</system-reminder>",
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
     "from_tool": "mcp__dhafnck_mcp_http__manage_task",
-    "from_action": "list",
-    "created_at": "2025-09-16T02:23:56.045925",
+    "from_action": "update",
+    "created_at": "2025-09-16T12:38:32.669152",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\ud83d\udcca TASK UPDATED - REMINDERS:\n\u23f0 REMINDER: Continue updating every 25% progress\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "update",
+    "created_at": "2025-09-16T12:42:17.636521",
+    "displayed": true
+  },
+  {
+    "message": "<system-reminder>\n\u2705 TASK COMPLETED - FOLLOW-UP:\n\ud83d\udcbe NEXT: Update context with learnings from this task\n\ud83c\udfaf CONTINUE: Use 'next' action to find next task to work on\n</system-reminder>",
+    "from_tool": "mcp__dhafnck_mcp_http__manage_task",
+    "from_action": "complete",
+    "created_at": "2025-09-16T12:44:00.344515",
     "displayed": false
   }
 ]

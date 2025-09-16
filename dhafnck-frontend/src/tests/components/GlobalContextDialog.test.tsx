@@ -70,6 +70,7 @@ vi.mock('lucide-react', () => ({
   Code: () => <span>Code Icon</span>,
   Shield: () => <span>Shield Icon</span>,
   FileText: () => <span>FileText Icon</span>,
+  AlertCircle: () => <span>AlertCircle Icon</span>,
 }));
 
 describe('GlobalContextDialog', () => {
@@ -190,9 +191,9 @@ describe('GlobalContextDialog', () => {
     const editButton = screen.getByRole('button', { name: /Edit/i });
     fireEvent.click(editButton);
 
-    // Should see Edit tab
+    // Should see Edit tab with raw JSON editor
     await waitFor(() => {
-      expect(screen.getByText('Edit Mode')).toBeInTheDocument();
+      expect(screen.getByText('Raw JSON Editor')).toBeInTheDocument();
     });
   });
 
@@ -221,13 +222,13 @@ describe('GlobalContextDialog', () => {
 
     // Should see edit mode elements
     await waitFor(() => {
-      expect(screen.getByText('Edit Mode')).toBeInTheDocument();
+      expect(screen.getByText('Raw JSON Editor')).toBeInTheDocument();
       expect(screen.getByText('Save All')).toBeInTheDocument();
       expect(screen.getByText('Cancel')).toBeInTheDocument();
     });
   });
 
-  it('shows coming soon message in edit mode', async () => {
+  it('shows raw JSON editor in edit mode', async () => {
     const mockContext = {
       user_preferences: {},
       ai_agent_settings: { preferred_agents: [] },
@@ -250,9 +251,98 @@ describe('GlobalContextDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Edit/i }));
 
-    // Should see coming soon message
+    // Should see raw JSON editor
     await waitFor(() => {
-      expect(screen.getByText(/Direct JSON editing is coming soon/)).toBeInTheDocument();
+      expect(screen.getByText(/Raw JSON Editor/)).toBeInTheDocument();
+      expect(screen.getByTestId('textarea')).toBeInTheDocument();
+      expect(screen.getByText('Format JSON')).toBeInTheDocument();
+    });
+  });
+
+  it('allows editing raw JSON and validates on save', async () => {
+    const mockContext = {
+      user_preferences: { theme: 'dark' },
+      ai_agent_settings: { preferred_agents: [] },
+      version: '1.0.0'
+    };
+
+    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+    (api.updateGlobalContext as any).mockResolvedValue({ success: true });
+
+    render(
+      <GlobalContextDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onClose={mockOnClose}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Edit/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Edit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('textarea')).toBeInTheDocument();
+    });
+
+    // Edit the JSON
+    const textarea = screen.getByTestId('textarea');
+    fireEvent.change(textarea, { target: { value: '{"test": "value"}' } });
+
+    expect(textarea).toHaveValue('{"test": "value"}');
+
+    // Save should work with valid JSON
+    const saveButton = screen.getByText('Save All');
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(api.updateGlobalContext).toHaveBeenCalledWith(expect.objectContaining({
+        test: 'value',
+        last_updated: expect.any(String)
+      }));
+    });
+  });
+
+  it('shows validation error for invalid JSON', async () => {
+    const mockContext = {
+      user_preferences: {},
+      ai_agent_settings: { preferred_agents: [] },
+      version: '1.0.0'
+    };
+
+    (api.getGlobalContext as any).mockResolvedValue(mockContext);
+
+    render(
+      <GlobalContextDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onClose={mockOnClose}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Edit/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Edit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('textarea')).toBeInTheDocument();
+    });
+
+    // Enter invalid JSON
+    const textarea = screen.getByTestId('textarea');
+    fireEvent.change(textarea, { target: { value: '{"invalid": json}' } });
+
+    // Try to save
+    const saveButton = screen.getByText('Save All');
+    fireEvent.click(saveButton);
+
+    // Should show validation error
+    await waitFor(() => {
+      expect(screen.getByText('JSON Validation Error')).toBeInTheDocument();
     });
   });
 
@@ -318,7 +408,7 @@ describe('GlobalContextDialog', () => {
 
     // Should exit edit mode
     await waitFor(() => {
-      expect(screen.queryByText('Edit Mode')).not.toBeInTheDocument();
+      expect(screen.queryByText('Raw JSON Editor')).not.toBeInTheDocument();
       expect(screen.getByText('View')).toBeInTheDocument();
     });
   });

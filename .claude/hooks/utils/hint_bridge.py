@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any
+from .config_factory import get_hint_message
 
 class HintBridge:
     """Bridge to pass hints between post and pre tool hooks."""
@@ -66,8 +67,13 @@ class HintBridge:
         if len(pending) == 1:
             return pending[0]['message']
         else:
-            # Combine multiple hints
-            combined = "<system-reminder>\n📌 PENDING REMINDERS FROM PREVIOUS ACTIONS:\n"
+            # Combine multiple hints using configuration
+            try:
+                header = get_hint_message('pending_reminders_header')
+            except:
+                header = "📌 PENDING REMINDERS FROM PREVIOUS ACTIONS:"
+
+            combined = f"<system-reminder>\n{header}\n"
             for hint in pending:
                 # Extract just the content without the wrapper
                 msg = hint['message']

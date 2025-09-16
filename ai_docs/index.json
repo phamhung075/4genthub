@@ -2072,7 +2072,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 9,
+      "count": 10,
       "files": [
         {
           "hash": "217883a94794946cb82933003f0af904",
@@ -2122,6 +2122,13 @@
           "name": "test-cleanup-report-2025-09-12.md",
           "path": "reports-status/test-cleanup-report-2025-09-12.md",
           "size": 2674
+        },
+        {
+          "hash": "5ad175ccb8d4d88d417bbd51d82948af",
+          "modified": "2025-09-16T12:09:27.599866",
+          "name": "changelog-summary.md",
+          "path": "reports-status/changelog-summary.md",
+          "size": 3948
         },
         {
           "hash": "62b622bf2e8bde41441e844240bd602d",
@@ -2723,7 +2730,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-15T23:01:43.066011",
+  "generated_at": "2025-09-16T12:09:27.844999",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3075,6 +3082,7 @@
     "reports-status": {
       "files": [
         "ai-task-planning-system-complete-2025-09-12.md",
+        "changelog-summary.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
         "test-cleanup-report-2025-09-12.md",
@@ -3175,5 +3183,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 334
+  "total_files": 335
 }

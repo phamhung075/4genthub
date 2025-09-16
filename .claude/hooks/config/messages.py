@@ -1,11 +1,27 @@
 """
-Centralized messages configuration for Claude hooks.
-All user-facing messages, errors, warnings, and hints are defined here.
+DEPRECATED: Legacy messages configuration for Claude hooks.
+This file is now a backwards compatibility wrapper.
+
+USE utils.config_factory instead for all new code.
 """
 
 from typing import Dict, Any
+import warnings
 
-# Error messages
+# Import from new ConfigFactory for backwards compatibility
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'utils'))
+from config_factory import get_error_message as _get_error_message, get_warning_message as _get_warning_message, get_info_message as _get_info_message
+
+# Issue deprecation warning
+warnings.warn(
+    "config.messages is deprecated. Use utils.config_factory instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Legacy error messages for backwards compatibility
 ERROR_MESSAGES = {
     # File system protection errors
     "claude_edit_disabled": {
@@ -117,99 +133,37 @@ Context size: {context_size} bytes
 """
 }
 
-# Function to get formatted error message
+# Backwards compatibility functions using ConfigFactory
 def get_error_message(error_key: str, **kwargs) -> str:
     """
-    Get a formatted error message with optional parameters.
-
-    Args:
-        error_key: Key identifying the error type
-        **kwargs: Parameters to format into the message
-
-    Returns:
-        Formatted error message string
+    DEPRECATED: Get a formatted error message. Use utils.config_factory instead.
     """
-    if error_key not in ERROR_MESSAGES:
-        return f"Unknown error: {error_key}"
+    return _get_error_message(error_key, **kwargs)
 
-    error_config = ERROR_MESSAGES[error_key]
-    message = error_config["message"].format(**kwargs) if kwargs else error_config["message"]
-
-    # Build complete error message with hint
-    result = [message]
-
-    if "hint" in error_config:
-        hint = error_config["hint"].format(**kwargs) if kwargs else error_config["hint"]
-        result.append(hint)
-
-    if "examples" in error_config:
-        result.append("Examples: " + ", ".join(error_config["examples"]))
-
-    if "valid_examples" in error_config:
-        result.append("Valid: " + ", ".join(error_config["valid_examples"]))
-
-    if "invalid_examples" in error_config:
-        result.append("Invalid: " + ", ".join(error_config["invalid_examples"]))
-
-    if "valid_paths" in error_config:
-        result.append("Valid paths: " + ", ".join(error_config["valid_paths"]))
-
-    if "action" in error_config:
-        action = error_config["action"].format(**kwargs) if kwargs else error_config["action"]
-        result.append(action)
-
-    return "\n".join(result)
-
-# Function to get formatted warning message
 def get_warning_message(warning_key: str, **kwargs) -> str:
     """
-    Get a formatted warning message with optional parameters.
-
-    Args:
-        warning_key: Key identifying the warning type
-        **kwargs: Parameters to format into the message
-
-    Returns:
-        Formatted warning message string
+    DEPRECATED: Get a formatted warning message. Use utils.config_factory instead.
     """
-    if warning_key not in WARNING_MESSAGES:
-        return f"Unknown warning: {warning_key}"
+    return _get_warning_message(warning_key, **kwargs)
 
-    message = WARNING_MESSAGES[warning_key]
-    return message.format(**kwargs) if kwargs else message
-
-# Function to get formatted info message
 def get_info_message(info_key: str, **kwargs) -> str:
     """
-    Get a formatted info message with optional parameters.
-
-    Args:
-        info_key: Key identifying the info type
-        **kwargs: Parameters to format into the message
-
-    Returns:
-        Formatted info message string
+    DEPRECATED: Get a formatted info message. Use utils.config_factory instead.
     """
-    if info_key not in INFO_MESSAGES:
-        return f"Unknown info: {info_key}"
+    return _get_info_message(info_key, **kwargs)
 
-    message = INFO_MESSAGES[info_key]
-    return message.format(**kwargs) if kwargs else message
-
-# Function to get system prompt
 def get_system_prompt(prompt_key: str, **kwargs) -> str:
     """
-    Get a formatted system prompt with optional parameters.
-
-    Args:
-        prompt_key: Key identifying the prompt type
-        **kwargs: Parameters to format into the prompt
-
-    Returns:
-        Formatted system prompt string
+    DEPRECATED: Get a system prompt. Use utils.config_factory instead.
     """
-    if prompt_key not in SYSTEM_PROMPTS:
-        return f"Unknown prompt: {prompt_key}"
-
-    prompt = SYSTEM_PROMPTS[prompt_key]
-    return prompt.format(**kwargs) if kwargs else prompt
+    # For backwards compatibility, try to get from ConfigFactory
+    try:
+        from config_factory import get_config_factory
+        factory = get_config_factory()
+        return factory.format_message('info', prompt_key, **kwargs)
+    except:
+        # Fallback to legacy behavior
+        if prompt_key not in SYSTEM_PROMPTS:
+            return f"Unknown prompt: {prompt_key}"
+        prompt = SYSTEM_PROMPTS[prompt_key]
+        return prompt.format(**kwargs) if kwargs else prompt

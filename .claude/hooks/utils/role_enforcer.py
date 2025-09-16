@@ -14,7 +14,7 @@ import sys
 
 # Add parent directory to import messages
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from config.messages import get_info_message
+from .config_factory import get_info_message
 
 # Import agent state manager
 try:
