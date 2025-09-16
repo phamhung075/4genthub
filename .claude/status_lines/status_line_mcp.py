@@ -467,16 +467,6 @@ def generate_status_line(input_data):
         # Error/Disconnected - Red
         parts.append(f"\033[91m🔗 MCP: {mcp_status}\033[0m")
 
-    # Last prompt display - should be at the end
-    if session_data:
-        prompts = session_data.get('prompts', [])
-        if prompts and len(prompts) > 0:
-            # Get the most recent prompt
-            last_prompt = prompts[-1] if isinstance(prompts, list) else str(prompts)
-            if last_prompt:
-                prompt_icon = get_prompt_icon(last_prompt)
-                truncated_prompt = truncate_prompt(last_prompt, 75)
-                parts.append(f"\033[96m{prompt_icon} {truncated_prompt}\033[0m")  # Cyan for prompt
 
     # Get current agent from session state for consistent display
     current_agent = get_current_agent(session_id) if session_id else 'master-orchestrator-agent'
@@ -490,6 +480,18 @@ def generate_status_line(input_data):
     if agent_role and agent_role != 'Assistant':
         # Show dynamic agent role format: [Agent] [Role]
         parts.append(f"\033[94m[Agent] [{agent_role}]\033[0m")  # Blue text for agent role
+
+        # Last prompt display - should be at the end
+    if session_data:
+        prompts = session_data.get('prompts', [])
+        if prompts and len(prompts) > 0:
+            # Get the most recent prompt
+            last_prompt = prompts[-1] if isinstance(prompts, list) else str(prompts)
+            if last_prompt:
+                prompt_icon = get_prompt_icon(last_prompt)
+                truncated_prompt = truncate_prompt(last_prompt, 75)
+                parts.append(f"\033[96m{prompt_icon} {truncated_prompt}\033[0m")  # Cyan for prompt
+
     # Join with separator (using bullet separator for cleaner look)
     status_line = " • ".join(parts)
 
