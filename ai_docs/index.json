@@ -2103,6 +2103,13 @@
           "size": 3108
         },
         {
+          "hash": "e576d4df1117aeb4759388022d38a028",
+          "modified": "2025-09-16T15:07:24.835948",
+          "name": "git-jwt-cleanup-report-20250916.md",
+          "path": "reports-status/git-jwt-cleanup-report-20250916.md",
+          "size": 3091
+        },
+        {
           "hash": "15a1d64655b2f13244465a5bc85aebe2",
           "modified": "2025-09-13T23:31:32.158985",
           "name": "uat-comprehensive-report-2025-09-12.md",
@@ -2122,13 +2129,6 @@
           "name": "test-cleanup-report-2025-09-12.md",
           "path": "reports-status/test-cleanup-report-2025-09-12.md",
           "size": 2674
-        },
-        {
-          "hash": "5ad175ccb8d4d88d417bbd51d82948af",
-          "modified": "2025-09-16T12:09:27.599866",
-          "name": "changelog-summary.md",
-          "path": "reports-status/changelog-summary.md",
-          "size": 3948
         },
         {
           "hash": "62b622bf2e8bde41441e844240bd602d",
@@ -2730,7 +2730,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-16T12:09:27.844999",
+  "generated_at": "2025-09-16T15:07:25.043037",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3082,9 +3082,9 @@
     "reports-status": {
       "files": [
         "ai-task-planning-system-complete-2025-09-12.md",
-        "changelog-summary.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
+        "git-jwt-cleanup-report-20250916.md",
         "test-cleanup-report-2025-09-12.md",
         "test-error-resolution-final.md",
         "test-fixes-final-status.md",

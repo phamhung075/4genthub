@@ -69,7 +69,35 @@ def get_mcp_connection_status():
     # Configuration
     cache_duration = int(os.getenv("MCP_STATUS_CACHE_DURATION", "45"))  # seconds
     connection_timeout = float(os.getenv("MCP_CONNECTION_TIMEOUT", "2.0"))  # seconds
-    server_url = os.getenv("MCP_SERVER_URL", "http://localhost:8000")
+
+    # Try to get server URL from .mcp.json first
+    server_url = "http://localhost:8000"  # default fallback
+    try:
+        project_root = Path.cwd()
+        mcp_json_path = project_root / ".mcp.json"
+
+        if not mcp_json_path.exists():
+            # Try parent directories up to 3 levels
+            for _ in range(3):
+                project_root = project_root.parent
+                mcp_json_path = project_root / ".mcp.json"
+                if mcp_json_path.exists():
+                    break
+
+        if mcp_json_path.exists():
+            with open(mcp_json_path, 'r') as f:
+                mcp_config = json.load(f)
+
+            # Extract URL from dhafnck_mcp_http configuration
+            dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
+            configured_url = dhafnck_config.get("url", "")
+            if configured_url:
+                server_url = configured_url
+    except Exception:
+        pass  # Fall back to environment variable or default
+
+    # Override with environment variable if set
+    server_url = os.getenv("MCP_SERVER_URL", server_url)
 
     # Cache file location
     cache_file = Path("logs") / "mcp_connection_cache.json"
@@ -130,11 +158,20 @@ def _test_mcp_connection(server_url, timeout):
             "User-Agent": "Status-Line-MCP-Check/1.0"
         })
 
+        # Determine base URL for health check
+        # If the URL ends with /mcp, use the base URL for /health
+        # Otherwise append /health to the URL
+        if server_url.endswith('/mcp'):
+            base_url = server_url[:-4]  # Remove '/mcp' suffix
+            health_url = f"{base_url}/health"
+        else:
+            health_url = f"{server_url}/health"
+
         # First try health endpoint (fast and reliable)
         start_time = time.time()
 
         response = session.get(
-            f"{server_url}/health",
+            health_url,
             timeout=timeout
         )
 
