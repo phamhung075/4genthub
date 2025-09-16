@@ -182,10 +182,23 @@ def main():
             # AGENT STATE TRACKING: Update agent state for status line display
             if AGENT_STATE_TRACKING_ENABLED and agent_name:
                 try:
-                    # Get session_id from context (this might come from various places)
-                    session_id = input_data.get('session_id', '')
+                    # Get session_id from context (try multiple sources)
+                    session_id = (
+                        input_data.get('session_id', '') or
+                        input_data.get('context', {}).get('session_id', '') or
+                        input_data.get('metadata', {}).get('session_id', '') or
+                        'default_session'  # Fallback for when session_id is not available
+                    )
+
                     if session_id:
                         update_agent_state_from_call_agent(session_id, tool_input)
+
+                        # Log successful agent state update
+                        log_dir = get_ai_data_path()
+                        agent_log_path = log_dir / 'agent_state_updates.log'
+                        with open(agent_log_path, 'a') as f:
+                            f.write(f"{datetime.now().isoformat()} - Agent state updated: {session_id} -> {agent_name}\n")
+
                 except Exception as e:
                     # Log error but don't block
                     log_dir = get_ai_data_path()

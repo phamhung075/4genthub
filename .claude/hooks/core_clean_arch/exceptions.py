@@ -31,3 +31,8 @@ class ProcessingError(HookException):
 class HintGenerationError(HookException):
     """Raised when hint generation fails."""
     pass
+
+
+class MCPAuthenticationError(HookException):
+    """Raised when MCP authentication fails."""
+    pass
