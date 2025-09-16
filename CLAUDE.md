@@ -8,6 +8,13 @@ scope: global
   1. Single source of truth routes
   2. Proper DDD compliance 
   3. Clean codebase with legacy code removed
+
+Environment Variables
+- All configuration values must come from environment variables—no hardcoded values allowed.
+- If any required environment variable is missing, the system must raise an error.
+- Shared repository configuration logic is centralized in utils.py to follow DRY principles.
+- The backend automatically loads environment settings from .env.dev in development mode.
+- The codebase is kept clean by removing test and debug scripts less important  from main script folders.
 ---
 # DhafnckMCP Agent System - CLAUDE AS MASTER ORCHESTRATOR
 

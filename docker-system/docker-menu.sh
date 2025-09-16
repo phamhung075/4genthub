@@ -1100,7 +1100,22 @@ start_dev_mode() {
     # Ensure we're not in test mode
     unset PYTEST_CURRENT_TEST
     unset TEST_MODE
-    
+
+    # Load environment variables from .env.dev
+    if [[ -f "${PROJECT_ROOT}/.env.dev" ]]; then
+        echo -e "${YELLOW}📄 Loading environment from .env.dev...${RESET}"
+        # Export all variables from .env.dev
+        set -a
+        source "${PROJECT_ROOT}/.env.dev"
+        set +a
+        echo -e "${GREEN}✅ Environment loaded from .env.dev${RESET}"
+        echo "  DATABASE_TYPE: ${DATABASE_TYPE:-NOT SET}"
+        echo "  DATABASE_HOST: ${DATABASE_HOST:-NOT SET}"
+        echo "  DATABASE_NAME: ${DATABASE_NAME:-NOT SET}"
+    else
+        echo -e "${RED}⚠️ Warning: .env.dev not found${RESET}"
+    fi
+
     # Run the same entry point as Docker for consistency
     echo -e "${CYAN}Using MCP entry point (same as Docker)...${RESET}"
     cd src
