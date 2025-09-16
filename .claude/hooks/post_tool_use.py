@@ -145,8 +145,7 @@ class HintGenerator(Component):
 
         try:
             # Import hint generator dynamically
-            from utils.mcp_post_action_hints import generate_post_action_hints
-            from utils.hint_bridge import store_hint
+            from utils.unified_hint_system import generate_post_action_hints, store_hint_for_later as store_hint
 
             hints = generate_post_action_hints(tool_name, tool_input, tool_result)
 
@@ -295,13 +294,12 @@ class PostToolUseHook:
         output_parts = []
         if tool_name.startswith('mcp__dhafnck_mcp_http') and tool_result:
             try:
-                from utils.mcp_hint_matrix import MCPHintMatrix
-                matrix = MCPHintMatrix()
+                from utils.unified_hint_system import get_hint_system
+                hint_system = get_hint_system()
                 # Generate post-action contextual hints based on result
-                if hasattr(matrix, 'get_post_action_hints'):
-                    hints = matrix.get_post_action_hints(tool_name, tool_input, tool_result)
-                    if hints:
-                        output_parts.append(hints)
+                hints = hint_system.generate_post_action_hints(tool_name, tool_input, tool_result)
+                if hints:
+                    output_parts.append(hints)
             except Exception as e:
                 self.logger.log('error', f'MCP post-action hint matrix failed: {e}')
 

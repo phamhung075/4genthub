@@ -325,11 +325,11 @@ class HintProcessor(Processor):
 
         try:
             # Get pending hints from post_tool_use
-            from utils.hint_bridge import get_pending_hints
+            from utils.unified_hint_system import get_hint_system
 
-            if get_pending_hints:
-                pending_hints = get_pending_hints()
-                if pending_hints:
+            hint_system = get_hint_system()
+            pending_hints = hint_system.hint_bridge.retrieve_hints()
+            if pending_hints:
                     hint_output.append("📋 Previous Action Insights:")
                     hint_output.append(pending_hints)
                     hint_output.append("")
@@ -339,13 +339,12 @@ class HintProcessor(Processor):
 
         try:
             # Generate new hints
-            from utils.hint_analyzer import analyze_and_hint
-
-            if analyze_and_hint:
-                new_hints = analyze_and_hint(tool_name, tool_input)
-                if new_hints:
+            # Using unified hint system instead of separate analyzer
+            hint_system = get_hint_system()
+            new_hints = hint_system.generate_pre_action_hints(tool_name, tool_input)
+            if new_hints:
                     hint_output.append("💡 Workflow Guidance:")
-                    hint_output.append(new_hints)
+                    hint_output.extend(new_hints)
 
         except Exception:
             pass
@@ -451,8 +450,9 @@ class PreToolUseHook:
         output_parts = []
         if tool_name.startswith('mcp__dhafnck_mcp_http'):
             try:
-                from utils.mcp_hint_matrix_factory import inject_matrix_hints
-                hints = inject_matrix_hints(tool_name, tool_input)
+                # Using unified hint system instead of matrix factory
+                hint_system = get_hint_system()
+                hints = hint_system.generate_pre_action_hints(tool_name, tool_input)
                 if hints:
                     output_parts.append(hints)
             except Exception as e:

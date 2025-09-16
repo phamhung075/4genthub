@@ -23,7 +23,7 @@ import logging
 import io
 
 # Add hooks directory to path for testing
-hooks_path = Path(__file__).parent.parent.parent.parent / '.claude' / 'hooks'
+hooks_path = Path(__file__).parent.parent.parent.parent.parent / '.claude' / 'hooks'
 sys.path.insert(0, str(hooks_path))
 
 
@@ -302,14 +302,14 @@ class TestProcessorComponents:
 class TestComponentFactory:
     """Test suite for ComponentFactory."""
 
-    def test_create_logger(self, temp_dir):
+    def test_create_logger(self, tmp_path):
         """Test ComponentFactory.create_logger."""
         from pre_tool_use import ComponentFactory, FileLogger
 
-        logger = ComponentFactory.create_logger(temp_dir, 'factory_test')
+        logger = ComponentFactory.create_logger(tmp_path, 'factory_test')
 
         assert isinstance(logger, FileLogger)
-        assert logger.log_dir == temp_dir
+        assert logger.log_dir == tmp_path
         assert logger.log_name == 'factory_test'
 
     def test_create_validators(self):

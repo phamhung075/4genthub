@@ -1816,49 +1816,14 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 31,
+      "count": 8,
       "files": [
         {
-          "hash": "e7c6b05b00c115bab233b81c9682fbf6",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-suite-status-iteration-45-final.md",
-          "path": "testing-qa/test-suite-status-iteration-45-final.md",
-          "size": 5142
-        },
-        {
-          "hash": "f19bef6b8ee29aefaafa6ce3e1a8fd60",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-suite-perfect-status-2025-09-15.md",
-          "path": "testing-qa/test-suite-perfect-status-2025-09-15.md",
-          "size": 4893
-        },
-        {
-          "hash": "b7fc1ba52f798c287bec254d7e2273a5",
-          "modified": "2025-09-16T16:43:45.276209",
-          "name": "test-execution-summary-2025-09-16.md",
-          "path": "testing-qa/test-execution-summary-2025-09-16.md",
-          "size": 5643
-        },
-        {
-          "hash": "1dd42607e82374b839a53e815ef5c182",
-          "modified": "2025-09-16T16:51:03.670707",
-          "name": "test-fix-iteration-36.md",
-          "path": "testing-qa/test-fix-iteration-36.md",
-          "size": 1530
-        },
-        {
-          "hash": "6642e841c4d6f0d40460f4715ca12f9e",
-          "modified": "2025-09-16T16:41:08.088494",
-          "name": "test-fix-strategy-2025-09-16.md",
-          "path": "testing-qa/test-fix-strategy-2025-09-16.md",
-          "size": 4869
-        },
-        {
-          "hash": "68db4610cbae5274e6900e46015bda42",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-suite-success-report-iteration-35.md",
-          "path": "testing-qa/test-suite-success-report-iteration-35.md",
-          "size": 4527
+          "hash": "1ab1eabc6919aaf6d105b43bc7a8d748",
+          "modified": "2025-09-16T21:06:58.759232",
+          "name": "hook-testing-techniques.md",
+          "path": "testing-qa/hook-testing-techniques.md",
+          "size": 16277
         },
         {
           "hash": "4d386e08457a5a2855498d3ce0168e14",
@@ -1868,46 +1833,11 @@
           "size": 7876
         },
         {
-          "hash": "9ae2ffdbeb3e416de001ac953b4e35ba",
-          "modified": "2025-09-13T23:31:32.162844",
-          "name": "iteration-56-summary.md",
-          "path": "testing-qa/iteration-56-summary.md",
-          "size": 3017
-        },
-        {
           "hash": "f84ea0ff502042887067568b4ada4829",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "configuration-cleanup-strategy.md",
           "path": "testing-qa/configuration-cleanup-strategy.md",
           "size": 17900
-        },
-        {
-          "hash": "c7cfccaa444136bd618a17304deadd75",
-          "modified": "2025-09-13T23:31:32.162844",
-          "name": "iteration-54-summary.md",
-          "path": "testing-qa/iteration-54-summary.md",
-          "size": 1902
-        },
-        {
-          "hash": "9a8db966566bfe2c64a8880f7f19f463",
-          "modified": "2025-09-13T23:31:32.162844",
-          "name": "README.md",
-          "path": "testing-qa/README.md",
-          "size": 7909
-        },
-        {
-          "hash": "d15c88af7f209bda90cb6dab0a65cb6e",
-          "modified": "2025-09-16T16:39:40.955356",
-          "name": "test-execution-analysis-2025-09-16.md",
-          "path": "testing-qa/test-execution-analysis-2025-09-16.md",
-          "size": 4442
-        },
-        {
-          "hash": "e9c0876128454644e18e4ab4340b724b",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-fix-iteration-44-summary.md",
-          "path": "testing-qa/test-fix-iteration-44-summary.md",
-          "size": 3754
         },
         {
           "hash": "68b18ec5b7b92f8cac7e46843dd27d5e",
@@ -1917,55 +1847,6 @@
           "size": 15889
         },
         {
-          "hash": "1ef95cb62160b964225ff9498dafe7a3",
-          "modified": "2025-09-13T23:31:32.162844",
-          "name": "iteration-55-summary.md",
-          "path": "testing-qa/iteration-55-summary.md",
-          "size": 2048
-        },
-        {
-          "hash": "2b8deadd09d5a345bf447f5db3863fd3",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-fix-iteration-53-summary.md",
-          "path": "testing-qa/test-fix-iteration-53-summary.md",
-          "size": 2107
-        },
-        {
-          "hash": "6a663fd39dd509f115995044feb62e60",
-          "modified": "2025-09-15T18:30:09.664407",
-          "name": "test-fix-iteration-40-summary.md",
-          "path": "testing-qa/test-fix-iteration-40-summary.md",
-          "size": 3468
-        },
-        {
-          "hash": "af31164fa8d6986d8dc64b6244f94022",
-          "modified": "2025-09-13T23:31:32.162844",
-          "name": "iteration-58-summary.md",
-          "path": "testing-qa/iteration-58-summary.md",
-          "size": 2510
-        },
-        {
-          "hash": "8110b47ea305c5a4b860570d646e8328",
-          "modified": "2025-09-15T18:30:09.664407",
-          "name": "test-fix-iteration-33-summary.md",
-          "path": "testing-qa/test-fix-iteration-33-summary.md",
-          "size": 2294
-        },
-        {
-          "hash": "d6e6617f289bc130cf4fa05c7134ea2a",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-fix-iteration-43-summary.md",
-          "path": "testing-qa/test-fix-iteration-43-summary.md",
-          "size": 3475
-        },
-        {
-          "hash": "0aacee7b2dbcda2d767f5231533e7e98",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-status-review-iteration-68.md",
-          "path": "testing-qa/test-status-review-iteration-68.md",
-          "size": 3007
-        },
-        {
           "hash": "b81aae68a7f9663ca9d3db5239614fc9",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "documentation-quality-prevention-strategy.md",
@@ -1973,11 +1854,11 @@
           "size": 20177
         },
         {
-          "hash": "4eca870d67b236529dd1af1bf70fb7c5",
-          "modified": "2025-09-15T18:30:09.664407",
-          "name": "test-fix-iteration-32-summary.md",
-          "path": "testing-qa/test-fix-iteration-32-summary.md",
-          "size": 3178
+          "hash": "a479d2820089f544a14eccf1a5996c95",
+          "modified": "2025-09-16T21:05:17.058731",
+          "name": "hook-system-architecture.md",
+          "path": "testing-qa/hook-system-architecture.md",
+          "size": 17549
         },
         {
           "hash": "cc166b5f351e1fa79b7f37211348d724",
@@ -1987,53 +1868,11 @@
           "size": 20706
         },
         {
-          "hash": "14cb9917a5791324e1871e69d5615008",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-suite-status-2025-09-15.md",
-          "path": "testing-qa/test-suite-status-2025-09-15.md",
-          "size": 2275
-        },
-        {
-          "hash": "4b93f3a24990a3bf2218b560052d0594",
-          "modified": "2025-09-15T23:01:42.586580",
-          "name": "mcp-tools-test-report.md",
-          "path": "testing-qa/mcp-tools-test-report.md",
-          "size": 4209
-        },
-        {
-          "hash": "e23d4e09493a28ae4ae8a6e3d97e5945",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-suite-success-report-2025-09-15.md",
-          "path": "testing-qa/test-suite-success-report-2025-09-15.md",
-          "size": 1399
-        },
-        {
           "hash": "9a755e64b63cda7d63a570054a5359e3",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "comprehensive-mcp-tools-test-suite.md",
           "path": "testing-qa/comprehensive-mcp-tools-test-suite.md",
           "size": 9842
-        },
-        {
-          "hash": "57f3c1a73f8333ed998854316f508e1b",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-fix-iteration-42-summary.md",
-          "path": "testing-qa/test-fix-iteration-42-summary.md",
-          "size": 3081
-        },
-        {
-          "hash": "e4606060656af31b58e4b0f4b9545dab",
-          "modified": "2025-09-15T18:30:09.668240",
-          "name": "test-suite-perfect-status-iteration-55.md",
-          "path": "testing-qa/test-suite-perfect-status-iteration-55.md",
-          "size": 1358
-        },
-        {
-          "hash": "c3cbddfe24dba847e96e359e0993189d",
-          "modified": "2025-09-16T17:15:21.532089",
-          "name": "hook-system-testing-report.md",
-          "path": "testing-qa/hook-system-testing-report.md",
-          "size": 7083
         }
       ],
       "path": "testing-qa"
@@ -2261,7 +2100,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-16T17:52:09.945919",
+  "generated_at": "2025-09-16T21:06:58.876799",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2605,36 +2444,13 @@
         ]
       },
       "files": [
-        "README.md",
         "comprehensive-mcp-tools-test-suite.md",
         "configuration-cleanup-strategy.md",
         "context_resolution_tdd_tests.md",
         "context_resolution_tests_summary.md",
         "documentation-quality-prevention-strategy.md",
-        "hook-system-testing-report.md",
-        "iteration-54-summary.md",
-        "iteration-55-summary.md",
-        "iteration-56-summary.md",
-        "iteration-58-summary.md",
-        "mcp-tools-test-report.md",
-        "test-execution-analysis-2025-09-16.md",
-        "test-execution-summary-2025-09-16.md",
-        "test-fix-iteration-32-summary.md",
-        "test-fix-iteration-33-summary.md",
-        "test-fix-iteration-36.md",
-        "test-fix-iteration-40-summary.md",
-        "test-fix-iteration-42-summary.md",
-        "test-fix-iteration-43-summary.md",
-        "test-fix-iteration-44-summary.md",
-        "test-fix-iteration-53-summary.md",
-        "test-fix-strategy-2025-09-16.md",
-        "test-status-review-iteration-68.md",
-        "test-suite-perfect-status-2025-09-15.md",
-        "test-suite-perfect-status-iteration-55.md",
-        "test-suite-status-2025-09-15.md",
-        "test-suite-status-iteration-45-final.md",
-        "test-suite-success-report-2025-09-15.md",
-        "test-suite-success-report-iteration-35.md",
+        "hook-system-architecture.md",
+        "hook-testing-techniques.md",
         "testing.md"
       ]
     },
@@ -2673,5 +2489,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 297
+  "total_files": 274
 }
