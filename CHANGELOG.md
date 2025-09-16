@@ -6,6 +6,45 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 101 (2025-09-16)
+#### CLAUDE.md System Instructions Corrected
+- **Removed references to non-existent MCP tools**:
+  - Removed all `mcp__dhafnck_mcp_http__*` tool references that don't exist in current system
+  - These tools were causing confusion as they're not available in the current implementation
+- **Simplified and corrected agent system documentation**:
+  - Replaced complex MCP task management instructions with actual available tools
+  - Updated to reflect that Task tool is the primary way to launch specialized agents
+  - Removed "clock in" metaphor that referenced non-existent call_agent function
+- **Updated system setup instructions**:
+  - Added clear Docker setup steps using docker-menu.sh
+  - Documented actual available tools and their purposes
+  - Provided working examples using Task tool for agent delegation
+- **Restructured documentation for clarity**:
+  - Organized into clear sections: Overview, Tools, Agents, Setup, Workflow
+  - Added practical examples that work with current system
+  - Included troubleshooting steps for common issues
+- **Files modified**:
+  - `/home/daihungpham/__projects__/agentic-project/CLAUDE.md` - Complete rewrite to match actual system
+
+### Added - Iteration 100 (2025-09-16)
+#### Centralized Messages Configuration for Hooks
+- **Created centralized messages configuration system**:
+  - Added `.claude/hooks/config/messages.py` with all user-facing messages
+  - Organized messages into categories: ERROR_MESSAGES, WARNING_MESSAGES, INFO_MESSAGES, SYSTEM_PROMPTS
+  - Implemented functions: get_error_message(), get_warning_message(), get_info_message(), get_system_prompt()
+  - Support for parameterized messages with keyword arguments
+  - Consistent formatting with hints, examples, and valid/invalid patterns
+- **Refactored hook files to use centralized messages**:
+  - Updated `.claude/hooks/pre_tool_use.py` - Replaced all hardcoded error messages
+  - Updated `.claude/hooks/post_tool_use.py` - Replaced warning and info messages
+  - Updated `.claude/hooks/utils/role_enforcer.py` - Replaced role violation messages
+- **Benefits**:
+  - Single source of truth for all user-facing messages
+  - Easier to maintain and update message content
+  - Consistent message formatting across all hooks
+  - Better support for internationalization in the future
+  - Reduced code duplication in hook files
+
 ### Added - Iteration 99 (2025-09-16)
 #### Dynamic Tool Enforcement System v2.0
 - **Comprehensive documentation update for Dynamic Tool Enforcement**:
