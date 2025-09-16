@@ -76,6 +76,10 @@ dangerous_rm:
   message: "BLOCKED: Dangerous rm -rf command detected"
   hint: "This command could delete critical system files. Use specific paths and verify before deletion"
 
+dangerous_rm_blocked:
+  message: "BLOCKED: Dangerous rm command that could delete critical files"
+  hint: "The rm command with -rf flags can delete important files. Be specific with paths and verify targets before deletion"
+
 documentation_required:
   message: "BLOCKED: Documentation update required"
   hint: "This {type} has existing documentation that must be updated before modification"

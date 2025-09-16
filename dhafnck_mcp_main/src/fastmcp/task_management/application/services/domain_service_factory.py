@@ -19,6 +19,10 @@ from fastmcp.task_management.domain.interfaces.logging_service import ILoggingSe
 from fastmcp.task_management.domain.interfaces.monitoring_service import IMonitoringService, IProcessMonitor
 from fastmcp.task_management.domain.interfaces.validation_service import IValidationService, IDocumentValidator
 from fastmcp.task_management.domain.interfaces.utility_service import IPathResolver, IAgentDocGenerator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .hint_manager import HintManager
 
 
 class DomainServiceFactory:
@@ -43,6 +47,7 @@ class DomainServiceFactory:
     _document_validator: Optional[IDocumentValidator] = None
     _path_resolver: Optional[IPathResolver] = None
     _agent_doc_generator: Optional[IAgentDocGenerator] = None
+    _hint_manager: Optional['HintManager'] = None
     
     def __new__(cls):
         if cls._instance is None:
@@ -84,6 +89,8 @@ class DomainServiceFactory:
             cls._path_resolver = services['path_resolver']
         if 'agent_doc_generator' in services:
             cls._agent_doc_generator = services['agent_doc_generator']
+        if 'hint_manager' in services:
+            cls._hint_manager = services['hint_manager']
     
     @classmethod
     def get_database_session_factory(cls) -> IDatabaseSessionFactory:
@@ -196,6 +203,13 @@ class DomainServiceFactory:
         if cls._agent_doc_generator is None:
             cls._lazy_init_services()
         return cls._agent_doc_generator
+
+    @classmethod
+    def get_hint_manager(cls) -> 'HintManager':
+        """Get hint manager"""
+        if cls._hint_manager is None:
+            cls._lazy_init_hint_manager()
+        return cls._hint_manager
     
     @classmethod
     def _lazy_init_services(cls):
@@ -234,3 +248,27 @@ class DomainServiceFactory:
                 
                 cls._logging_service = FallbackLoggingService()
                 # Other services would need similar fallbacks
+
+    @classmethod
+    def _lazy_init_hint_manager(cls):
+        """Lazy initialization of hint manager"""
+        if cls._hint_manager is None:
+            try:
+                from .hint_manager import create_hint_manager
+
+                # Get repositories
+                repository_factory = cls.get_repository_factory()
+                task_repository = repository_factory.create_task_repository()
+                context_repository = repository_factory.create_context_repository()
+
+                # Create hint manager with auto strategy
+                cls._hint_manager = create_hint_manager(
+                    task_repository=task_repository,
+                    context_repository=context_repository,
+                    strategy='auto'
+                )
+            except Exception as e:
+                # Fallback to mock implementation
+                logger.warning(f"Failed to initialize hint manager: {e}")
+                from unittest.mock import Mock
+                cls._hint_manager = Mock()

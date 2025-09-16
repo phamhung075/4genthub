@@ -1,0 +1,22 @@
+total 148
+drwxr-xr-x 4 daihungpham daihungpham  4096 Sep 16 16:20 .
+drwxr-xr-x 9 daihungpham daihungpham  4096 Sep 16 16:19 ..
+drwxr-xr-x 3 daihungpham daihungpham  4096 Sep 16 16:20 config
+-rwxr-xr-x 1 daihungpham daihungpham  3378 Sep 16 16:19 deploy_clean_hooks.py
+-rw-r--r-- 1 daihungpham daihungpham     0 Sep 16 16:20 manifest.txt
+-rwxr-xr-x 1 daihungpham daihungpham  6020 Sep 16 16:19 migrate_data.py
+-rwxr-xr-x 1 daihungpham daihungpham  4095 Sep 16 16:19 notification.py
+-rwxr-xr-x 1 daihungpham daihungpham 15289 Sep 16 16:19 post_tool_use.py
+-rw-r--r-- 1 daihungpham daihungpham 11231 Sep 16 16:19 post_tool_use_refactored.py
+-rwxr-xr-x 1 daihungpham daihungpham  4030 Sep 16 16:19 pre_compact.py
+-rwxr-xr-x 1 daihungpham daihungpham 34612 Sep 16 16:19 pre_tool_use.py
+-rwxr-xr-x 1 daihungpham daihungpham 23170 Sep 16 16:19 session_start.py
+-rwxr-xr-x 1 daihungpham daihungpham  7505 Sep 16 16:19 stop.py
+-rwxr-xr-x 1 daihungpham daihungpham  4992 Sep 16 16:19 subagent_stop.py
+-rw-r--r-- 1 daihungpham daihungpham  6507 Sep 16 16:19 user_prompt_submit.py
+drwxr-xr-x 5 daihungpham daihungpham  4096 Sep 16 16:19 utils
+
+
+=== Utils Directory Contents ===
+23
+ Python files in utils

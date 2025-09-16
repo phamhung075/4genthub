@@ -40,17 +40,28 @@ class TestMCPAuthenticationFixes:
         """Set up test environment"""
         self.test_user_uuid = str(uuid.uuid4())
 
-        # Mock database configuration to avoid connection attempts
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config'), \
-             patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist'):
-            # Initialize MCP tools properly
-            self.mcp_tools = DDDCompliantMCPTools(enable_vision_system=False)
-        
+        # Create patchers that will be used in each test method
+        self.db_config_patcher = patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
+        self.ai_columns_patcher = patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
+
+        # Start patches
+        self.db_config_patcher.start()
+        self.ai_columns_patcher.start()
+
+        # Initialize MCP tools properly with patches active
+        self.mcp_tools = DDDCompliantMCPTools(enable_vision_system=False)
+
         # Create test project and branch instead of using hardcoded IDs
         self.existing_project_id = None
         self.existing_branch_id = None
         self.created_project_id = None
         self.created_branch_id = None
+
+    def teardown_method(self):
+        """Clean up after test"""
+        # Stop patches
+        self.db_config_patcher.stop()
+        self.ai_columns_patcher.stop()
         
     @pytest.mark.asyncio
     async def test_task_creation_authentication_fixed(self):
@@ -189,7 +200,7 @@ class TestMCPAuthenticationFixes:
             }
         }
         
-        result = context_controller.manage_unified_context(**context_params)
+        result = context_controller.manage_context(**context_params)
         
         # Should succeed now (was failing with "Repository must be scoped to a user")
         if result.get('success'):
@@ -260,7 +271,7 @@ class TestMCPAuthenticationFixes:
             # 4. Try to create task context (may still have issues)
             context_controller = self.mcp_tools._context_controller
 
-            context_result = context_controller.manage_unified_context(
+            context_result = context_controller.manage_context(
                 action="create",
                 level="task",
                 context_id=created_task_id,
