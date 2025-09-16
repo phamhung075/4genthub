@@ -7,7 +7,7 @@ using JWT authentication and user-scoped repositories.
 
 import logging
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 
 from ...auth.interface.fastapi_auth import get_db
@@ -29,8 +29,8 @@ project_controller = ProjectAPIController()
 
 @router.post("/", response_model=dict)
 async def create_project(
-    name: str,
-    description: str = "",
+    name: str = Form(...),
+    description: str = Form(""),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -153,8 +153,8 @@ async def get_project(
 @router.put("/{project_id}", response_model=dict)
 async def update_project(
     project_id: str,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

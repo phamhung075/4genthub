@@ -74,8 +74,14 @@ class TemplateRepositoryFactory:
         """
         # Check environment variables for proper repository selection
         env = os.getenv('ENVIRONMENT', 'production')
-        db_type = os.getenv('DATABASE_TYPE', 'supabase')
+        db_type = os.getenv('DATABASE_TYPE')
         redis_enabled = os.getenv('REDIS_ENABLED', 'false').lower() == 'true'
+
+        if not db_type:
+            raise ValueError(
+                "DATABASE_TYPE environment variable is not set. "
+                "Please set DATABASE_TYPE to 'postgresql', 'sqlite', or 'supabase'"
+            )
         
         # For test environment, use mock if available
         if env == 'test':

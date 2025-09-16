@@ -18,6 +18,18 @@ from typing import Optional, List, Dict, Any
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import sys
+import os
+from pathlib import Path
+
+# Add the hooks directory to the path for importing
+hooks_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(hooks_dir))
+
+# Define exception locally since core_clean_arch was removed
+class MCPAuthenticationError(Exception):
+    """MCP Authentication error."""
+    pass
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -31,20 +43,19 @@ class TokenManager:
         self.token = None
         self.token_expiry = None
         self.refresh_before = int(os.getenv("TOKEN_REFRESH_BEFORE_EXPIRY", "60"))
-        self.keycloak_config = {
-            "url": os.getenv("KEYCLOAK_URL", "http://localhost:8080"),
-            "realm": os.getenv("KEYCLOAK_REALM", "dhafnck"),
-            "client_id": os.getenv("KEYCLOAK_CLIENT_ID", "claude-hooks"),
-            "client_secret": os.getenv("KEYCLOAK_CLIENT_SECRET")
-        }
     
-    def get_valid_token(self) -> Optional[str]:
-        """Get a valid JWT token, refreshing if needed."""
-        
+    def get_valid_token(self) -> str:
+        """Get a valid JWT token from .mcp.json file."""
+
         # Check if token needs refresh
         if self._should_refresh():
             self._refresh_token()
-        
+
+        if not self.token:
+            raise MCPAuthenticationError(
+                "No .mcp.json token found. Ensure Claude Code is properly configured with MCP server authentication."
+            )
+
         return self.token
     
     def _should_refresh(self) -> bool:
@@ -62,7 +73,7 @@ class TokenManager:
         if self._load_cached_token():
             return
         
-        # Get new token from Keycloak
+        # Get new token from .mcp.json
         self._request_new_token()
     
     def _load_cached_token(self) -> bool:
@@ -85,9 +96,9 @@ class TokenManager:
         return False
     
     def _request_new_token(self) -> bool:
-        """Request new token from Keycloak or use .mcp.json token as fallback."""
-        
-        # First try to use token from .mcp.json file
+        """Get token from .mcp.json file only."""
+
+        # Try to use token from .mcp.json file
         mcp_token = self._get_mcp_json_token()
         if mcp_token:
             logger.info("Using token from .mcp.json file")
@@ -96,36 +107,9 @@ class TokenManager:
             self.token_expiry = datetime.now() + timedelta(days=30)
             self._cache_token()
             return True
-        
-        # Fallback to Keycloak authentication
-        if not self.keycloak_config["client_secret"]:
-            logger.warning("No Keycloak client secret configured and no .mcp.json token found")
-            return False
-        
-        try:
-            response = requests.post(
-                f"{self.keycloak_config['url']}/auth/realms/{self.keycloak_config['realm']}/protocol/openid-connect/token",
-                data={
-                    "grant_type": "client_credentials",
-                    "client_id": self.keycloak_config["client_id"],
-                    "client_secret": self.keycloak_config["client_secret"]
-                },
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                token_data = response.json()
-                self.token = token_data["access_token"]
-                expires_in = token_data.get("expires_in", 3600)
-                self.token_expiry = datetime.now() + timedelta(seconds=expires_in)
-                
-                # Cache token
-                self._cache_token()
-                return True
-            else:
-                logger.error(f"Token request failed: {response.status_code}")
-        except Exception as e:
-            logger.error(f"Failed to get token: {e}")
+
+        # No token found
+        logger.error("No .mcp.json token found")
         return False
     
     def _get_mcp_json_token(self) -> Optional[str]:
@@ -216,14 +200,16 @@ class MCPHTTPClient:
         })
     
     def authenticate(self) -> bool:
-        """Authenticate with Keycloak and get JWT token."""
-        token = self.token_manager.get_valid_token()
-        if token:
+        """Authenticate with .mcp.json token."""
+        try:
+            token = self.token_manager.get_valid_token()
             self.session.headers.update({
                 "Authorization": f"Bearer {token}"
             })
             return True
-        return False
+        except MCPAuthenticationError as e:
+            logger.error(f"Authentication failed: {e}")
+            return False
     
     def query_pending_tasks(self, limit: int = 5, user_id: Optional[str] = None) -> Optional[List[Dict]]:
         """Query MCP server for pending tasks via MCP protocol over HTTP."""

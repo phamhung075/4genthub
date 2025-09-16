@@ -9,9 +9,15 @@ supporting both local PostgreSQL and cloud Supabase deployments.
 from pathlib import Path
 try:
     from dotenv import load_dotenv
-    # Try to load .env from project root
-    env_path = Path(__file__).parent.parent.parent.parent.parent.parent / ".env"
-    if env_path.exists():
+    project_root = Path(__file__).parent.parent.parent.parent.parent.parent
+
+    # Try to load .env.dev first in development, then .env
+    env_dev_path = project_root / ".env.dev"
+    env_path = project_root / ".env"
+
+    if env_dev_path.exists():
+        load_dotenv(env_dev_path, override=True)
+    elif env_path.exists():
         load_dotenv(env_path, override=True)
     else:
         load_dotenv(override=True)
@@ -97,75 +103,73 @@ class DatabaseConfig:
         # Skip initialization if already done (singleton pattern)
         if self._initialized:
             return
-            
+
         # Prevent re-entrant initialization
         if hasattr(self, '_initializing') and self._initializing:
             return
-        
+
         self._initializing = True
         try:
+            # Check if we're in test mode
+            import sys
+            is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
+
+            # Default to PostgreSQL, but allow SQLite for tests
             self.database_type = os.getenv("DATABASE_TYPE", "postgresql").lower()
-            logger.info(f"DATABASE_TYPE from environment: {self.database_type}")
-            self.database_url = self._get_secure_database_url()
+
+            # Validate database type
+            if self.database_type == "sqlite":
+                if not is_test_mode:
+                    raise ValueError(
+                        "SQLite is only allowed for test execution.\n"
+                        "Use DATABASE_TYPE=postgresql or supabase for development/production."
+                    )
+                logger.info("📦 SQLite mode for test execution")
+                self.database_url = None  # Will be set in _get_database_url
+
+            elif self.database_type in ["postgresql", "supabase"]:
+                # Get database URL from environment variables
+                self.database_url = self._get_secure_database_url()
+                if not self.database_url:
+                    raise ValueError(
+                        f"Database configuration missing for {self.database_type}.\n"
+                        "Required environment variables:\n"
+                        f"{'DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD' if self.database_type == 'postgresql' else 'SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD'}"
+                    )
+            else:
+                raise ValueError(
+                    f"Invalid DATABASE_TYPE: {self.database_type}\n"
+                    "Supported types: 'postgresql', 'supabase', or 'sqlite' (tests only)"
+                )
+
+            logger.info(f"Database type: {self.database_type}")
             self.engine: Optional[Engine] = None
             self.SessionLocal: Optional[sessionmaker] = None
+
+            if self.database_type == "supabase":
+                logger.info("🎯 SUPABASE DATABASE SELECTED - Excellent choice for cloud-native applications!")
+            elif self.database_type == "postgresql":
+                logger.info("✅ POSTGRESQL DATABASE SELECTED - Great choice for production workloads!")
+
+            # Initialize database connection
+            self._initialize_database()
+
+            # Mark as initialized for singleton pattern
+            DatabaseConfig._initialized = True
         finally:
             self._initializing = False
-        
-        # Check if we're in test mode
-        import sys
-        is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
-        
-        # Validate database type
-        if self.database_type == "sqlite":
-            if not is_test_mode:
-                # SQLite not allowed in production
-                raise ValueError(
-                    "Database configuration error:\n"
-                    "PostgreSQL is required for production.\n"
-                    "REQUIRED ACTION: Set DATABASE_TYPE=postgresql (local) or supabase (cloud) in your environment.\n"
-                    "Configure your database connection parameters."
-                )
-            else:
-                # SQLite allowed for tests only
-                logger.info("📦 Using SQLite for test execution (test mode detected)")
-        
-        # Only allow PostgreSQL/Supabase/SQLite(test only)
-        elif self.database_type not in ["postgresql", "supabase"]:
-            logger.error(f"❌ INVALID DATABASE_TYPE: {self.database_type}")
-            raise ValueError(
-                f"❌ UNSUPPORTED DATABASE_TYPE: {self.database_type}\n"
-                "✅ ONLY SUPPORTED: 'postgresql' (local) or 'supabase' (cloud)\n"
-                "🎯 Set DATABASE_TYPE=postgresql for local development"
-            )
-        
-        if self.database_type == "supabase":
-            logger.info("🎯 SUPABASE DATABASE SELECTED - Excellent choice for cloud-native applications!")
-        elif self.database_type == "postgresql":
-            logger.info("✅ POSTGRESQL DATABASE SELECTED - Great choice for production workloads!")
-        
-        # Initialize database connection
-        self._initialize_database()
-        
-        # Mark as initialized for singleton pattern
-        DatabaseConfig._initialized = True
     
     def _get_secure_database_url(self) -> Optional[str]:
         """
-        Get database URL securely from environment variables.
-
-        Priority:
-        1. Construct from individual components (RECOMMENDED - more secure)
-        2. DATABASE_URL if set (deprecated - for backward compatibility only)
+        Get database URL from individual environment variables.
 
         Returns:
-            str: The database connection URL
+            str: The database connection URL or None if not configured
         """
         import urllib.parse
 
-        # PRIORITY 1: Try to construct from individual components (RECOMMENDED)
         if self.database_type == "postgresql":
-            # For local PostgreSQL - use individual DATABASE_* variables
+            # PostgreSQL - use individual DATABASE_* variables
             db_host = os.getenv("DATABASE_HOST")
             db_port = os.getenv("DATABASE_PORT", "5432")
             db_name = os.getenv("DATABASE_NAME", "dhafnck_mcp")
@@ -173,58 +177,46 @@ class DatabaseConfig:
             db_password = os.getenv("DATABASE_PASSWORD")
             ssl_mode = os.getenv("DATABASE_SSL_MODE", "prefer")
 
-            # Check if we have the required components
-            if db_host and db_user and db_password:
-                encoded_password = urllib.parse.quote(db_password)
-                database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
-                if ssl_mode and ssl_mode != "disable":
-                    database_url += f"?sslmode={ssl_mode}"
-                logger.info("✅ PostgreSQL URL constructed from individual secure environment variables")
-                return database_url
+            # Require all necessary components
+            if not (db_host and db_user and db_password):
+                logger.error("PostgreSQL configuration incomplete. Required: DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD")
+                return None
+
+            encoded_password = urllib.parse.quote(db_password)
+            database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+            if ssl_mode and ssl_mode != "disable":
+                database_url += f"?sslmode={ssl_mode}"
+            logger.info("✅ PostgreSQL URL constructed from environment variables")
+            return database_url
 
         elif self.database_type == "supabase":
-            # For Supabase, use the SUPABASE_* variables
+            # Supabase - use SUPABASE_* variables
             db_host = os.getenv("SUPABASE_DB_HOST")
             db_port = os.getenv("SUPABASE_DB_PORT", "5432")
             db_name = os.getenv("SUPABASE_DB_NAME", "postgres")
             db_user = os.getenv("SUPABASE_DB_USER", "postgres")
             db_password = os.getenv("SUPABASE_DB_PASSWORD")
 
-            if db_host and db_password:
-                # URL-encode the password to handle special characters
-                encoded_password = urllib.parse.quote(db_password)
-                database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}?sslmode=require"
-                logger.info("✅ Supabase URL constructed from individual secure environment variables")
-                return database_url
+            if not (db_host and db_password):
+                logger.error("Supabase configuration incomplete. Required: SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD")
+                return None
 
-        # PRIORITY 2: Fall back to DATABASE_URL only if individual components are not available
-        # This is deprecated and only for backward compatibility
-        database_url = os.getenv("DATABASE_URL")
-        if database_url:
-            # Log warning to encourage migration to individual variables
-            if ":" in database_url and "@" in database_url:
-                logger.warning(
-                    "⚠️ DATABASE_URL contains embedded credentials (deprecated).\n"
-                    "   Please migrate to individual environment variables for better security:\n"
-                    "   - DATABASE_HOST, DATABASE_PORT, DATABASE_NAME\n"
-                    "   - DATABASE_USER, DATABASE_PASSWORD, DATABASE_SSL_MODE\n"
-                    "   See .env.sample for the recommended configuration."
-                )
+            encoded_password = urllib.parse.quote(db_password)
+            database_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}?sslmode=require"
+            logger.info("✅ Supabase URL constructed from environment variables")
             return database_url
 
-        # No valid configuration found
         return None
     
     def _get_database_url(self) -> str:
         """Get the appropriate database URL based on configuration"""
         if self.database_type == "sqlite":
             # SQLite for test mode only
-            # Use a standard test database location
             import tempfile
             sqlite_path = os.path.join(tempfile.gettempdir(), "dhafnck_mcp_test.db")
             logger.info(f"📦 Using SQLite database for tests: {sqlite_path}")
             return f"sqlite:///{sqlite_path}"
-            
+
         elif self.database_type == "supabase":
             # Use Supabase configuration (PostgreSQL cloud)
             logger.info("🎯 Using Supabase PostgreSQL database (cloud-native)")
@@ -245,23 +237,13 @@ class DatabaseConfig:
             logger.info(f"✅ Supabase connection established: {supabase_config.database_url[:50]}...")
             return supabase_config.database_url
             
-        elif self.database_type == "postgresql" and self.database_url:
-            # Use PostgreSQL with provided URL
-            logger.info("✅ Using PostgreSQL database with provided URL")
+        elif self.database_type == "postgresql":
+            # Use PostgreSQL with constructed URL
+            logger.info("✅ Using PostgreSQL database")
             return self.database_url
         else:
-            # NO FALLBACK ALLOWED - FORCE PROPER CONFIGURATION
-            raise ValueError(
-                "DATABASE CONFIGURATION ERROR!\n"
-                f"Current DATABASE_TYPE: {self.database_type}\n"
-                f"Current DATABASE_URL: {'SET' if self.database_url else 'NOT SET'}\n\n"
-                "✅ REQUIRED ACTIONS:\n"
-                "1. Set DATABASE_TYPE=supabase (recommended)\n"
-                "2. Configure Supabase environment variables in .env\n"
-                "3. OR set DATABASE_TYPE=postgresql with valid DATABASE_URL\n\n"
-                "PostgreSQL is required for this system.\n"
-                "🎯 Use Supabase for the best experience!"
-            )
+            # This should never happen due to validation in __init__
+            raise ValueError(f"Unsupported database type: {self.database_type}")
     
     def _create_engine(self, database_url: str) -> Engine:
         """Create SQLAlchemy engine for database connection"""
@@ -275,7 +257,7 @@ class DatabaseConfig:
                 poolclass=pool.StaticPool,  # Use StaticPool for SQLite in tests
                 connect_args={"check_same_thread": False}  # Allow multi-threaded access for tests
             )
-            
+
             # Configure SQLite for better test performance
             @event.listens_for(engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -284,16 +266,13 @@ class DatabaseConfig:
                 cursor.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging for better concurrency
                 cursor.execute("PRAGMA synchronous=NORMAL")  # Faster writes for tests
                 cursor.close()
-            
+
             logger.info("✅ SQLite engine created for tests")
             return engine
-            
+
         elif not database_url.startswith("postgresql"):
             raise ValueError(
-                f"INVALID DATABASE URL!\n"
-                f"URL must start with 'postgresql://' or 'sqlite:///' but got: {database_url[:20]}...\n"
-                "✅ PostgreSQL/Supabase for production, SQLite for tests only!\n"
-                "PostgreSQL is required for production."
+                f"Invalid database URL. Expected PostgreSQL or SQLite URL but got: {database_url[:20]}..."
             )
         
         # PostgreSQL/Supabase configuration optimized for cloud
@@ -356,26 +335,25 @@ class DatabaseConfig:
     def _test_connection(self, database_url: str):
         """Test database connection with retry logic"""
         with self.engine.connect() as conn:
-            if database_url and database_url.startswith("sqlite"):
+            if database_url.startswith("sqlite"):
                 # SQLite test query
                 result = conn.execute(text("SELECT sqlite_version()"))
                 version = result.scalar()
                 logger.info(f"📦 Connected to SQLite: {version}")
                 DatabaseConfig._connection_info = f"SQLite {version}"
             else:
-                # PostgreSQL/Supabase test query
+                # PostgreSQL test query
                 result = conn.execute(text("SELECT version()"))
                 version = result.scalar()
-                logger.info(f"🎯 Connected to PostgreSQL: {version}")
-                
+                logger.info(f"✅ Connected to PostgreSQL: {version}")
+
                 # Check if this is Supabase
                 if database_url and "supabase" in database_url.lower():
                     result = conn.execute(text("SELECT current_database()"))
                     db_name = result.scalar()
-                    logger.info(f"🚀 SUPABASE CONNECTION SUCCESSFUL! Database: {db_name}")
+                    logger.info(f"🚀 Supabase connection successful! Database: {db_name}")
                     DatabaseConfig._connection_info = f"Supabase PostgreSQL - Database: {db_name}"
                 else:
-                    logger.info("✅ PostgreSQL connection established")
                     DatabaseConfig._connection_info = f"PostgreSQL {version}"
     
     def _initialize_database(self):

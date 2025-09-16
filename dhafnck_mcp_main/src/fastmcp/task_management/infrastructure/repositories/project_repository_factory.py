@@ -99,8 +99,14 @@ class ProjectRepositoryFactory:
         """Get default repository type from environment"""
         # Check environment variables properly
         env = os.getenv('ENVIRONMENT', 'production')
-        db_type = os.getenv('DATABASE_TYPE', 'supabase')
-        
+        db_type = os.getenv('DATABASE_TYPE')
+
+        if not db_type:
+            raise ValueError(
+                "DATABASE_TYPE environment variable is not set. "
+                "Please set DATABASE_TYPE to 'postgresql', 'sqlite', or 'supabase'"
+            )
+
         logger.debug(f"[ProjectRepositoryFactory] Environment: {env}, Database Type: {db_type}")
         
         # Test environment - use mock

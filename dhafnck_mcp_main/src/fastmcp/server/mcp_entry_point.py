@@ -14,12 +14,19 @@ import json
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-# Load environment variables from .env file FIRST
+# Load environment variables from .env.dev or .env file FIRST
 try:
     from dotenv import load_dotenv
-    # Load from the parent directory where .env is located
-    env_path = Path(__file__).parent.parent.parent.parent.parent / ".env"
-    if env_path.exists():
+    # Load from the parent directory where .env/.env.dev is located
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    env_dev_path = project_root / ".env.dev"
+    env_path = project_root / ".env"
+
+    # Try .env.dev first, then .env
+    if env_dev_path.exists():
+        load_dotenv(env_dev_path, override=True)
+        print(f"✅ Loaded environment variables from {env_dev_path}")
+    elif env_path.exists():
         load_dotenv(env_path)
         print(f"✅ Loaded environment variables from {env_path}")
     else:
@@ -41,7 +48,7 @@ except Exception as e:
 
 # Import the FastMCP server class directly (avoid circular import)
 from fastmcp.server.server import FastMCP
-from fastmcp.utilities.logging import configure_logging
+from fastmcp.utilities.logging import configure_logging, setup_comprehensive_logging
 
 # Import authentication system
 from fastmcp.auth import AuthMiddleware, TokenValidator, TokenValidationError, RateLimitError
@@ -225,24 +232,40 @@ class DebugLoggingMiddleware:
 
 def create_dhafnck_mcp_server() -> FastMCP:
     """Create and configure the DhafnckMCP server with all consolidated tools."""
-    
-    # Configure logging with enhanced debug capabilities
+
+    # Configure comprehensive logging with environment detection
     log_level = os.environ.get("FASTMCP_LOG_LEVEL", "INFO")
-    configure_logging(level=log_level)
-    
-    # Configure root logger to catch all logs
-    root_logger = logging.getLogger()
-    root_logger.setLevel(getattr(logging, log_level))
-    
-    # Add handler to root logger if it doesn't have one
-    if not root_logger.handlers:
-        root_handler = logging.StreamHandler(sys.stderr)
-        root_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-        root_handler.setFormatter(root_formatter)
-        root_logger.addHandler(root_handler)
-    
+    enable_file_logging = os.environ.get("ENABLE_FILE_LOGGING", "true").lower() == "true"
+
+    # Use enhanced logging configuration
+    setup_comprehensive_logging(
+        log_level=log_level,
+        app_name="DhafnckMCP",
+        enable_file_logging=enable_file_logging
+    )
+
+    # Get logger after configuration
+    logger = logging.getLogger(__name__)
+
+    # Log environment and logging configuration info
+    try:
+        from fastmcp.utilities.logging import get_logging_info
+        from fastmcp.utilities.environment import get_environment_info
+
+        env_info = get_environment_info()
+        logger.info(f"Environment detected: {env_info['environment_type']}")
+        logger.info(f"Log directory: {env_info['log_directory']}")
+        logger.info(f"Log directory writable: {env_info['log_directory_writable']}")
+
+        if enable_file_logging:
+            logger.info(f"File logging enabled at level: {log_level}")
+        else:
+            logger.warning("File logging disabled by configuration")
+
+    except Exception as e:
+        logger.warning(f"Failed to get logging info: {e}")
+        logger.info(f"Log level: {log_level}, File logging: {enable_file_logging}")
+
     # Create additional debug logger for HTTP requests
     debug_logger = logging.getLogger("dhafnck.debug.http")
     # Prevent propagation to root logger to avoid duplicate logs
@@ -256,11 +279,8 @@ def create_dhafnck_mcp_server() -> FastMCP:
     debug_handler.setFormatter(debug_formatter)
     debug_logger.addHandler(debug_handler)
     debug_logger.setLevel(logging.DEBUG)
-    
-    logger = logging.getLogger(__name__)
-    
+
     logger.info("Initializing DhafnckMCP server with consolidated tools and authentication...")
-    logger.info(f"Log level: {log_level}")
     
     # Initialize database before server startup
     try:
