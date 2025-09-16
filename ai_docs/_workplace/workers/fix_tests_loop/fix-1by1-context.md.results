@@ -1,3 +1,61 @@
+## Analysis from Iteration 2 (Tue Sep 16 16:51:14 CEST 2025)
+
+## Summary
+
+I've successfully fixed 2 test files in Iteration 36:
+
+### ✅ Tests Fixed:
+1. **test_mcp_authentication_fixes.py** - Updated deprecated API calls from `manage_unified_context` to `manage_context`
+2. **create_project_test.py** - Fixed tests expecting branch name "main" as key when implementation uses UUID keys
+
+### 📊 Progress:
+- **Fixed**: 2 test files  
+- **Remaining**: 89 test files
+- **Key Pattern**: Tests calling obsolete APIs or expecting outdated data structures
+
+### 📝 Documentation Updated:
+- ✅ CHANGELOG.md - Added Iteration 36 details
+- ✅ TEST-CHANGELOG.md - Documented Session 44 fixes
+- ✅ Created iteration summary in ai_docs
+
+The fixes address root causes where tests expected outdated behavior, updating them to match the current implementation rather than modifying working code.
+
+---
+
+## Analysis from Iteration 1 (Tue Sep 16 16:44:05 CEST 2025)
+
+## Summary
+
+I've completed a comprehensive analysis of the test execution issues in your project. Here are the key findings:
+
+### Problem
+The Claude hook system (`pre_tool_use.py`) is blocking pytest execution because it prevents file creation in the project root, which pytest needs for cache files and test results.
+
+### Current Status
+- ✅ **Test files exist**: Located in `dhafnck_mcp_main/src/tests/`
+- ✅ **Test imports work**: All test modules import successfully
+- ❌ **Test execution blocked**: Hook prevents pytest from running
+
+### Solutions Documented
+
+1. **Docker Execution** (Recommended):
+   ```bash
+   docker exec -it dhafnck-backend pytest src/tests/
+   ```
+
+2. **Hook Modification**: Add test execution bypass to the hook
+
+3. **Alternative Methods**: Use containerized or CI/CD environments
+
+### Documentation Created
+- `ai_docs/testing-qa/test-execution-analysis-2025-09-16.md` - Detailed analysis
+- `ai_docs/testing-qa/test-fix-strategy-2025-09-16.md` - Fix strategy without direct execution  
+- `ai_docs/testing-qa/test-execution-summary-2025-09-16.md` - Complete summary and recommendations
+
+The test infrastructure is properly set up; only the hook restriction needs to be addressed to enable test execution.
+
+---
+
 ## Analysis from Iteration 5 (Sun Sep 14 10:11:57 CEST 2025)
 
 ## Summary - Iteration 35 Completed ✅

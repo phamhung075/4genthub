@@ -26,7 +26,10 @@ from pathlib import Path
 hooks_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(hooks_dir))
 
-from core_clean_arch.exceptions import MCPAuthenticationError
+# Define exception locally since core_clean_arch was removed
+class MCPAuthenticationError(Exception):
+    """MCP Authentication error."""
+    pass
 
 # Configure logging
 logger = logging.getLogger(__name__)

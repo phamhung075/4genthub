@@ -174,12 +174,15 @@ class TestCreateProjectUseCase:
                 
                 # Verify main branch was created
                 assert "git_branchs" in project_data
-                assert "main" in project_data["git_branchs"]
-                
+                assert len(project_data["git_branchs"]) > 0
+
                 # Verify the saved project has the branch
                 saved_project = self.mock_repository.save.call_args[0][0]
-                assert "main" in saved_project.git_branchs
-                main_branch = saved_project.git_branchs["main"]
+                assert len(saved_project.git_branchs) > 0
+
+                # Get the main branch (should be the only one)
+                branch_id = list(saved_project.git_branchs.keys())[0]
+                main_branch = saved_project.git_branchs[branch_id]
                 assert main_branch.name == "main"
                 assert main_branch.description == "Main task tree for the project"
     
@@ -520,9 +523,11 @@ class TestProjectEntityCreation:
                 # Verify saved project has main branch
                 saved_project = self.mock_repository.save.call_args[0][0]
                 
-                assert "main" in saved_project.git_branchs
-                main_branch = saved_project.git_branchs["main"]
-                
+                assert len(saved_project.git_branchs) > 0
+                # Get the main branch (should be the only one)
+                branch_id = list(saved_project.git_branchs.keys())[0]
+                main_branch = saved_project.git_branchs[branch_id]
+
                 # Verify main branch properties
                 assert main_branch.git_branch_name == "main"
                 assert main_branch.name == "main"
@@ -719,7 +724,7 @@ class TestIntegrationScenarios:
             assert project_data["id"] == "integration-project-123"
             assert project_data["name"] == "Integration Test Project"
             assert project_data["description"] == "Full integration test"
-            assert "main" in project_data["git_branchs"]
+            assert len(project_data["git_branchs"]) > 0  # main branch was created with UUID
             
             # Verify repository save
             self.mock_repository.save.assert_called_once()
