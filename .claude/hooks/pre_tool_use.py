@@ -26,8 +26,8 @@ from pathlib import Path
 # Import the AI_DATA path loader for logging
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.env_loader import get_ai_data_path, is_claude_edit_enabled
-# Import centralized messages
-from config.messages import get_error_message, get_warning_message, get_info_message
+# Import centralized configuration factory
+from utils.config_factory import get_error_message, get_warning_message, get_info_message
 try:
     from utils.docs_indexer import check_documentation_requirement
 except ImportError:
@@ -71,6 +71,14 @@ try:
 except ImportError:
     get_mcp_interceptor = None
     MCP_INTERCEPTOR_ENABLED = False
+
+# Import hint bridge to display pending hints from post_tool_use
+try:
+    from utils.hint_bridge import get_pending_hints
+    HINT_BRIDGE_ENABLED = True
+except ImportError:
+    get_pending_hints = None
+    HINT_BRIDGE_ENABLED = False
 
 def load_allowed_root_files():
     """
@@ -500,6 +508,16 @@ def main():
 
         # Get session ID if available
         session_id = input_data.get('session_id', None)
+
+        # HINT BRIDGE: Display any pending hints from previous operations
+        if HINT_BRIDGE_ENABLED and get_pending_hints:
+            try:
+                pending_hints = get_pending_hints()
+                if pending_hints:
+                    # Display hints that were generated after the last tool use
+                    print(pending_hints, file=sys.stderr)
+            except Exception:
+                pass  # Don't block on hint display errors
 
         # MCP INTERCEPTOR: Track call_agent operations to update active agent
         if MCP_INTERCEPTOR_ENABLED and get_mcp_interceptor:

@@ -350,14 +350,14 @@ start_postgresql_local() {
     echo -e "${CYAN}Building backend and frontend containers in parallel...${RESET}"
     echo -e "${YELLOW}This will be faster as both containers build simultaneously${RESET}"
 
-    # Always use .env.dev for consistency
-    docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml build --parallel --no-cache || {
+    # Always use .env.dev for consistency and set CONTAINER_ENV=docker
+    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml build --parallel --no-cache || {
         echo -e "${RED}❌ Build failed. Check error messages above${RESET}"
         return 1
     }
 
     echo -e "${CYAN}Starting backend and frontend services...${RESET}"
-    docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml up -d || {
+    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml up -d || {
         echo -e "${RED}❌ Failed to start services. Check error messages above${RESET}"
         return 1
     }
@@ -394,7 +394,7 @@ start_database_only() {
 
     # Start PostgreSQL only (no build required)
     echo -e "${CYAN}Starting PostgreSQL database...${RESET}"
-    docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.db-only.yml up -d postgres
+    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.db-only.yml up -d postgres
 
     # Wait for database to be ready
     echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${RESET}"
@@ -450,7 +450,7 @@ start_postgresql_with_ui() {
 
     # Start pgAdmin only (with profile to include it)
     echo -e "${CYAN}Starting pgAdmin UI...${RESET}"
-    docker-compose -f docker-compose.db-only.yml --profile with-pgadmin up -d pgadmin
+    CONTAINER_ENV=docker docker-compose -f docker-compose.db-only.yml --profile with-pgadmin up -d pgadmin
     
     echo -e "${GREEN}✅ pgAdmin UI started!${RESET}"
     echo ""
@@ -522,10 +522,10 @@ start_supabase_cloud() {
     clean_existing_builds
     
     echo -e "${CYAN}🔨 Building with --no-cache (this ensures latest code changes)...${RESET}"
-    DATABASE_TYPE=supabase docker-compose --env-file ../../.env.dev -f docker-compose.yml build --no-cache
+    DATABASE_TYPE=supabase CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml build --no-cache
 
     echo -e "${CYAN}🚀 Starting services...${RESET}"
-    DATABASE_TYPE=supabase docker-compose --env-file ../../.env.dev -f docker-compose.yml up -d
+    DATABASE_TYPE=supabase CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml up -d
     
     # Wait for services to be ready
     echo -e "${YELLOW}⏳ Waiting for services to start (10 seconds)...${RESET}"
@@ -563,10 +563,10 @@ start_redis_supabase() {
     clean_existing_builds
     
     echo "Building with --no-cache..."
-    DATABASE_TYPE=supabase ENABLE_REDIS=true docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis build --no-cache
+    DATABASE_TYPE=supabase ENABLE_REDIS=true CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis build --no-cache
 
     echo "Starting services..."
-    DATABASE_TYPE=supabase ENABLE_REDIS=true docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis up -d
+    DATABASE_TYPE=supabase ENABLE_REDIS=true CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis up -d
     
     echo -e "${GREEN}✅ Services started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
@@ -583,7 +583,7 @@ show_service_status() {
     echo ""
     echo -e "${CYAN}Service Status:${RESET}"
     if [[ -n "$compose_file" ]]; then
-        docker-compose --env-file ../../.env.dev -f "$compose_file" ps
+        CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f "$compose_file" ps
     else
         docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     fi
@@ -602,7 +602,7 @@ stop_all_services() {
     # Stop Docker services
     cd "$DOCKER_DIR"
     echo "Stopping Docker services..."
-    docker-compose --env-file ../../.env.dev -f docker-compose.yml down 2>/dev/null || true
+    CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml down 2>/dev/null || true
     
     echo -e "${GREEN}✅ All services stopped${RESET}"
 }
@@ -747,11 +747,11 @@ start_optimized_mode() {
     echo -e "${CYAN}🔨 Building optimized images...${RESET}"
     
     # Build with optimized settings
-    docker-compose -f docker-compose.optimized.yml build \
+    CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml build \
         --parallel \
         --compress || {
             echo -e "${RED}Build failed, falling back to standard build${RESET}"
-            docker-compose -f docker-compose.optimized.yml build
+            CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml build
         }
     
     echo -e "${CYAN}🚀 Starting optimized services...${RESET}"
@@ -759,10 +759,10 @@ start_optimized_mode() {
     # Start with resource limits
     if [ "$USE_MINIMAL" = "true" ]; then
         # Start only essential services for very low memory
-        docker-compose -f docker-compose.optimized.yml up -d postgres backend
+        CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml up -d postgres backend
         echo -e "${YELLOW}Started minimal services only (no frontend/redis)${RESET}"
     else
-        docker-compose -f docker-compose.optimized.yml up -d
+        CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml up -d
     fi
     
     # Wait for services

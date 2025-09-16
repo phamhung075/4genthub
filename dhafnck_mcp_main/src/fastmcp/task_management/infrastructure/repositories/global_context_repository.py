@@ -158,7 +158,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 # Nested structure (v2.0)
                 nested_structure=nested_structure_dict,
                 # Unified context API compatibility - store complete data
-                data=entity.global_settings or {},
+                unified_context_data=entity.global_settings or {},
                 # Required fields
                 user_id=self.user_id,
                 created_at=datetime.now(timezone.utc),
@@ -303,7 +303,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             db_model.nested_structure = nested_structure_dict
 
             # Update unified context API data field
-            db_model.data = entity.global_settings or {}
+            db_model.unified_context_data = entity.global_settings or {}
 
             db_model.updated_at = datetime.now(timezone.utc)
             
@@ -508,8 +508,8 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
 
         # Check for unified context API data field as primary source
         # This ensures data is preserved and prioritized for unified context operations
-        data_field = getattr(db_model, "data", None)
-        if data_field and isinstance(data_field, dict) and data_field:
+        unified_context_data_field = getattr(db_model, "unified_context_data", None)
+        if unified_context_data_field and isinstance(unified_context_data_field, dict) and unified_context_data_field:
             # Check if global_settings only contains empty or default values
             has_meaningful_data = False
             for key, value in global_settings.items():
@@ -527,11 +527,11 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             if not has_meaningful_data:
                 # Use data field as primary source when nested structure is empty
                 logger.info(f"Using data field as primary source for global context {db_model.id}")
-                global_settings = data_field.copy()
+                global_settings = unified_context_data_field.copy()
             else:
                 # Merge data field into global_settings, prioritizing data field values
                 logger.info(f"Merging data field with existing structure for global context {db_model.id}")
-                for key, value in data_field.items():
+                for key, value in unified_context_data_field.items():
                     # Always prefer data field values over empty nested structure values
                     if key not in global_settings or not global_settings[key] or global_settings[key] == {}:
                         global_settings[key] = value

@@ -22,8 +22,8 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 from utils.env_loader import get_ai_data_path
 from utils.docs_indexer import update_index, check_documentation_requirement, move_to_obsolete
-# Import centralized messages
-from config.messages import get_warning_message, get_info_message, get_system_prompt
+# Import centralized configuration factory
+from utils.config_factory import get_warning_message, get_info_message
 
 # Import the new context update system
 try:

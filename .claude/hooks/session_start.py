@@ -4,6 +4,7 @@
 # dependencies = [
 #     "python-dotenv",
 #     "requests",
+#     "pyyaml",
 # ]
 # ///
 
@@ -16,6 +17,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List, Any
 import logging
+import yaml
 
 try:
     from dotenv import load_dotenv
@@ -295,9 +297,60 @@ def format_mcp_context(tasks: Optional[List[Dict]], next_task: Optional[Dict], g
     return "\n".join(context_parts)
 
 
+def load_session_start_config():
+    """Load session start messages configuration from YAML file."""
+    try:
+        config_path = Path(__file__).parent / "config" / "session_start_messages.yaml"
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                return yaml.safe_load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load session start config: {e}")
+    return None
+
+
+def detect_agent_from_context(input_data):
+    """Detect which agent is being initialized from the context.
+
+    Checks for agent hints in:
+    - Task context (for sub-agent sessions)
+    - Delegation markers
+    - Session data
+
+    Returns: agent name or 'master-orchestrator-agent' as default
+    """
+    # Check if there's a task_id or agent hint in the input
+    if isinstance(input_data, dict):
+        # Check for explicit agent hint
+        if 'agent' in input_data:
+            return input_data.get('agent', 'master-orchestrator-agent')
+
+        # Check for task context that might indicate sub-agent
+        if 'task_id' in input_data:
+            # This is a sub-agent session - try to determine which agent
+            task_id = input_data.get('task_id')
+            logger.debug(f"Detected task_id: {task_id}, checking for agent assignment")
+            # Could query MCP to get the assigned agent for this task
+            # For now, we'll need additional context
+
+        # Check for delegation markers
+        if 'delegated_from' in input_data:
+            # Extract agent type from delegation
+            delegated_from = input_data.get('delegated_from', {})
+            if isinstance(delegated_from, dict) and 'agent' in delegated_from:
+                return delegated_from.get('agent')
+
+        # Check for subagent_type hint
+        if 'subagent_type' in input_data:
+            return input_data.get('subagent_type')
+
+    # Default to master orchestrator for main sessions
+    return 'master-orchestrator-agent'
+
+
 def detect_session_type():
     """Detect if this is a main session or sub-agent session.
-    
+
     Note: Session type detection is now simplified. Runtime agent switching
     handles context changes automatically when agents are called, eliminating
     the need for complex session detection.
@@ -307,16 +360,43 @@ def detect_session_type():
     return "main"
 
 
-def load_development_context(source):
+def load_development_context(source, input_data=None):
     """Load relevant development context with MCP integration based on session source."""
     context_parts = []
-    
-    # MAIN SESSION: Load master orchestrator capabilities
-    # Note: Runtime agent switching will provide specialized context when agents are called
-    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent') to load your orchestrator capabilities.")
-    context_parts.append("")
-    context_parts.append("🎯 **You are the MASTER ORCHESTRATOR** - coordinate and delegate work to specialized agents, you have no permission to work directly on tasks.")
-    context_parts.append("")
+
+    # Detect which agent is being initialized
+    agent_name = detect_agent_from_context(input_data or {})
+    logger.info(f"Detected agent for session: {agent_name}")
+
+    # Load session start messages configuration
+    config = load_session_start_config()
+
+    # Get appropriate messages based on agent type
+    if config and 'agent_messages' in config:
+        agent_config = config['agent_messages'].get(agent_name)
+
+        if not agent_config:
+            # Use default message template for unknown agents
+            default_config = config.get('default_agent', {})
+            init_msg = default_config.get('initialization_message', '').replace('{agent_name}', agent_name)
+            role_desc = default_config.get('role_description', '').replace('{AGENT_NAME}', agent_name.upper().replace('-', ' '))
+        else:
+            init_msg = agent_config.get('initialization_message', '')
+            role_desc = agent_config.get('role_description', '')
+
+        if init_msg:
+            context_parts.append(init_msg.strip())
+            context_parts.append("")
+        if role_desc:
+            context_parts.append(role_desc.strip())
+            context_parts.append("")
+    else:
+        # Fallback to hardcoded message if config not available
+        logger.warning("Session start config not available, using fallback")
+        context_parts.append(f"🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__dhafnck_mcp_http__call_agent('{agent_name}') to load your capabilities.")
+        context_parts.append("")
+        context_parts.append(f"🎯 **You are the {agent_name.upper().replace('-', ' ')}** - perform your specialized tasks according to your role.")
+        context_parts.append("")
     
     # Add timestamp and session info
     context_parts.append(f"Session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -467,7 +547,7 @@ def main():
         
         # Enhanced context loading with MCP integration
         logger.info("Loading development context with MCP integration...")
-        context = load_development_context(source)
+        context = load_development_context(source, input_data)
         
         # Track injection results for monitoring
         injection_result = {

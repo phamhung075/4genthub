@@ -44,6 +44,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV APP_DEBUG=true
 ENV ENV=development
 ENV APP_LOG_LEVEL=DEBUG
+# Mark container environment for logging
+ENV CONTAINER_ENV=docker
 
 # Database settings for local PostgreSQL (matching .env.dev)
 ENV DATABASE_TYPE=postgresql

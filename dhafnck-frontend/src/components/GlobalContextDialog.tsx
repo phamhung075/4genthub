@@ -1,9 +1,10 @@
-import { Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Save, Settings, Shield, X } from "lucide-react";
+import { Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Save, Settings, Shield, X, AlertCircle } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getGlobalContext, updateGlobalContext } from "../api";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Textarea } from "./ui/textarea";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 
@@ -24,9 +25,13 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   const [saving, setSaving] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'view' | 'edit'>('view');
-  
+
   // Store the entire nested data structure for editing
   const [editingData, setEditingData] = useState<any>(null);
+
+  // Raw JSON editing state
+  const [rawJsonText, setRawJsonText] = useState<string>('');
+  const [jsonValidationError, setJsonValidationError] = useState<string>('');
 
   // Fetch global context when dialog opens
   useEffect(() => {
@@ -38,6 +43,8 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       setGlobalContext(null);
       setEditingData(null);
       setActiveTab('view');
+      setRawJsonText('');
+      setJsonValidationError('');
     }
   }, [open]);
 
@@ -84,7 +91,10 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       // Store both the raw context and a copy for editing
       setGlobalContext(finalContextData);
       setEditingData(JSON.parse(JSON.stringify(finalContextData))); // Deep copy for editing
-      
+
+      // Initialize raw JSON text for editing
+      setRawJsonText(JSON.stringify(finalContextData, null, 2));
+
       console.log('Final context data:', finalContextData);
     } catch (error) {
       console.error('Error fetching global context:', error);
@@ -105,16 +115,43 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       };
       setGlobalContext(emptyContext);
       setEditingData(JSON.parse(JSON.stringify(emptyContext)));
+      setRawJsonText(JSON.stringify(emptyContext, null, 2));
     } finally {
       setLoading(false);
     }
   };
 
+  // Validate JSON text and return parsed object or error
+  const validateJsonText = (jsonText: string): { isValid: boolean; data?: any; error?: string } => {
+    try {
+      if (!jsonText.trim()) {
+        return { isValid: false, error: 'JSON cannot be empty' };
+      }
+      const parsed = JSON.parse(jsonText);
+      return { isValid: true, data: parsed };
+    } catch (error) {
+      return {
+        isValid: false,
+        error: error instanceof Error ? error.message : 'Invalid JSON format'
+      };
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
+    setJsonValidationError('');
+
     try {
+      // Validate raw JSON if we're in edit mode
+      const validation = validateJsonText(rawJsonText);
+      if (!validation.isValid) {
+        setJsonValidationError(validation.error || 'Invalid JSON');
+        setSaving(false);
+        return;
+      }
+
       const dataToSave = {
-        ...editingData,
+        ...validation.data,
         last_updated: new Date().toISOString()
       };
 
@@ -122,6 +159,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       await fetchGlobalContext();
       setEditMode(false);
       setActiveTab('view');
+      setJsonValidationError('');
     } catch (error) {
       console.error('Error saving global context:', error);
       alert('Failed to save global context. Please try again.');
@@ -133,32 +171,44 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   const handleCancel = () => {
     if (globalContext) {
       setEditingData(JSON.parse(JSON.stringify(globalContext)));
+      setRawJsonText(JSON.stringify(globalContext, null, 2));
     }
     setEditMode(false);
     setActiveTab('view');
+    setJsonValidationError('');
   };
 
-  // Update nested field value for edit mode
+  // Handle raw JSON text changes with live validation
+  const handleRawJsonChange = (value: string) => {
+    setRawJsonText(value);
+
+    // Clear previous validation error when user starts typing
+    if (jsonValidationError) {
+      setJsonValidationError('');
+    }
+  };
+
+  // Update nested field value for edit mode (legacy - not used in raw JSON mode)
   const updateNestedField = (path: string[], value: any) => {
     if (!editingData) return;
-    
+
     const newData = { ...editingData };
     let current = newData;
-    
+
     for (let i = 0; i < path.length - 1; i++) {
       if (!current[path[i]]) {
         current[path[i]] = {};
       }
       current = current[path[i]];
     }
-    
+
     const lastKey = path[path.length - 1];
     if (value === '' || value === null || value === undefined) {
       delete current[lastKey];
     } else {
       current[lastKey] = value;
     }
-    
+
     setEditingData(newData);
   };
 
@@ -262,10 +312,57 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                 </div>
                 
                 {activeTab === 'edit' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                    <h3 className="font-semibold text-sm mb-2 dark:text-gray-200">Edit Mode</h3>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      <p>Direct JSON editing is coming soon. For now, use the View tab to see your data.</p>
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <h3 className="font-semibold text-sm mb-2 dark:text-gray-200 flex items-center gap-2">
+                        <Code className="w-4 h-4" />
+                        Raw JSON Editor
+                      </h3>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                        Edit the complete global context data as JSON. Changes will be validated before saving.
+                      </p>
+
+                      {jsonValidationError && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-3">
+                          <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                            <AlertCircle className="w-4 h-4" />
+                            <span className="font-medium text-sm">JSON Validation Error</span>
+                          </div>
+                          <p className="text-sm text-red-600 dark:text-red-400 mt-1">{jsonValidationError}</p>
+                        </div>
+                      )}
+
+                      <Textarea
+                        value={rawJsonText}
+                        onChange={(e) => handleRawJsonChange(e.target.value)}
+                        placeholder="Enter valid JSON..."
+                        className="min-h-[400px] font-mono text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"
+                        style={{ fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace' }}
+                      />
+
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {rawJsonText.length} characters • {rawJsonText.split('\n').length} lines
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              try {
+                                const formatted = JSON.stringify(JSON.parse(rawJsonText), null, 2);
+                                setRawJsonText(formatted);
+                                setJsonValidationError('');
+                              } catch (error) {
+                                setJsonValidationError('Invalid JSON - cannot format');
+                              }
+                            }}
+                            disabled={!rawJsonText.trim()}
+                          >
+                            Format JSON
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

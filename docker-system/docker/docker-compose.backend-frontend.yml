@@ -27,8 +27,15 @@ services:
       APP_DEBUG: ${APP_DEBUG}
       FASTMCP_HOST: 0.0.0.0
       FASTMCP_PORT: ${FASTMCP_PORT}
+      # Mark as Docker environment for logging
+      CONTAINER_ENV: docker
     ports:
       - "${FASTMCP_PORT}:8000"
+    volumes:
+      # Mount logs directory to persist logs outside container
+      - ../../logs:/data/logs
+      # Mount data directory for other persistent data
+      - ../../data:/data/resources
     networks:
       - dhafnck-network
     restart: unless-stopped
