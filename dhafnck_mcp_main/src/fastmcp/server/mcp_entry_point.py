@@ -14,12 +14,19 @@ import json
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-# Load environment variables from .env file FIRST
+# Load environment variables from .env.dev or .env file FIRST
 try:
     from dotenv import load_dotenv
-    # Load from the parent directory where .env is located
-    env_path = Path(__file__).parent.parent.parent.parent.parent / ".env"
-    if env_path.exists():
+    # Load from the parent directory where .env/.env.dev is located
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    env_dev_path = project_root / ".env.dev"
+    env_path = project_root / ".env"
+
+    # Try .env.dev first, then .env
+    if env_dev_path.exists():
+        load_dotenv(env_dev_path, override=True)
+        print(f"✅ Loaded environment variables from {env_dev_path}")
+    elif env_path.exists():
         load_dotenv(env_path)
         print(f"✅ Loaded environment variables from {env_path}")
     else:

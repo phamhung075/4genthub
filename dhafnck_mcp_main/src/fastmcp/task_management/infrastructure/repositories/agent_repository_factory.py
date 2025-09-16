@@ -83,8 +83,14 @@ class AgentRepositoryFactory:
         """Get default repository type from environment"""
         # Check standard environment variables
         env = os.getenv('ENVIRONMENT', 'production')
-        db_type = os.getenv('DATABASE_TYPE', 'supabase')
-        
+        db_type = os.getenv('DATABASE_TYPE')
+
+        if not db_type:
+            raise ValueError(
+                "DATABASE_TYPE environment variable is not set. "
+                "Please set DATABASE_TYPE to 'postgresql', 'sqlite', or 'supabase'"
+            )
+
         if env == 'test':
             return AgentRepositoryType.MOCK
         elif db_type in ['sqlite', 'supabase', 'postgresql']:

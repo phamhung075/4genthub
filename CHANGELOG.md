@@ -6,6 +6,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 102 (2025-09-16)
+#### Database Configuration and SQLite Support
+- **Fixed database initialization error**:
+  - Updated database_config.py to load `.env.dev` file in addition to `.env`
+  - Database now properly loads configuration from `.env.dev` for development
+  - PostgreSQL connection works with Docker container on localhost:5432
+- **Restored SQLite support for test mode only**:
+  - SQLite is only allowed when pytest is running (`PYTEST_CURRENT_TEST` in environment)
+  - Tests automatically use SQLite to avoid PostgreSQL dependency
+  - SQLite uses temporary database at `/tmp/dhafnck_mcp_test.db`
+- **Removed obsolete code**:
+  - Removed deprecated DATABASE_URL fallback logic
+  - Removed automatic SQLite fallback in development mode
+  - Cleaned up redundant configuration code
+  - No more backward compatibility or legacy code
+- **Database configuration requirements**:
+  - Now requires individual environment variables: DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD
+  - Supports PostgreSQL and Supabase for development/production
+  - SQLite only for pytest test execution
+- **Files modified**:
+  - `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/database/database_config.py`
+  - Created `dhafnck_mcp_main/src/tests/test_db_connection.py` for database testing
+  - Created `dhafnck_mcp_main/src/tests/test_sqlite_mode.py` for SQLite test verification
+
 ### Fixed - Iteration 101 (2025-09-16)
 #### CLAUDE.md System Instructions Corrected
 - **Removed references to non-existent MCP tools**:

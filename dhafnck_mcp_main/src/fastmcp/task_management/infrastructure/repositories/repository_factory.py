@@ -7,6 +7,7 @@ It supports SQLite for tests, Supabase for production, and Redis caching when en
 import os
 import logging
 from typing import Optional, Any
+from .utils import get_repository_config
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,7 @@ class RepositoryFactory:
     @staticmethod
     def get_environment_config():
         """Get environment configuration for repository selection"""
-        return {
-            'environment': os.getenv('ENVIRONMENT', 'production'),
-            'database_type': os.getenv('DATABASE_TYPE', 'supabase'),
-            'redis_enabled': os.getenv('REDIS_ENABLED', 'true').lower() == 'true',
-            'use_cache': os.getenv('USE_CACHE', 'true').lower() == 'true'
-        }
+        return get_repository_config()
     
     @staticmethod
     def get_task_repository(project_id: Optional[str] = None, 
