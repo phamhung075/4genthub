@@ -107,6 +107,55 @@ def set_current_agent(session_id: str, agent_name: str) -> None:
     return agent_state_manager.set_current_agent(session_id, agent_name)
 
 
+def get_agent_role_from_session(session_id: str) -> str:
+    """Get the current agent role for a session based on agent name mapping."""
+    if not session_id:
+        return "Assistant"
+
+    agent_name = get_current_agent(session_id)
+
+    # Map agent names to human-readable roles
+    role_mapping = {
+        'coding-agent': 'Coding',
+        'debugger-agent': 'Debugging',
+        'test-orchestrator-agent': 'Testing',
+        'documentation-agent': 'Documentation',
+        'master-orchestrator-agent': 'Orchestrating',
+        'ui-specialist-agent': 'UI/UX',
+        'security-auditor-agent': 'Security',
+        'devops-agent': 'DevOps',
+        'deep-research-agent': 'Research',
+        'performance-load-tester-agent': 'Performance',
+        'system-architect-agent': 'Architecture',
+        'project-initiator-agent': 'Planning',
+        'task-planning-agent': 'Planning',
+        'code-reviewer-agent': 'Review',
+        'prototyping-agent': 'Prototyping',
+        'ml-specialist-agent': 'ML/AI',
+        'analytics-setup-agent': 'Analytics',
+        'marketing-strategy-orchestrator-agent': 'Marketing',
+        'compliance-scope-agent': 'Compliance',
+        'ethical-review-agent': 'Ethics',
+        'root-cause-analysis-agent': 'Analysis',
+        'efficiency-optimization-agent': 'Optimization',
+        'health-monitor-agent': 'Monitoring',
+        'branding-agent': 'Branding',
+        'community-strategy-agent': 'Community',
+        'creative-ideation-agent': 'Creative',
+        'technology-advisor-agent': 'Advisory',
+        'elicitation-agent': 'Requirements',
+        'uat-coordinator-agent': 'QA',
+        'design-system-agent': 'Design Systems',
+        'core-concept-agent': 'Concepts',
+        'llm-ai-agents-research': 'AI Research',
+        # Default Claude or unknown agents
+        'claude': 'Assistant',
+        'Claude': 'Assistant'
+    }
+
+    return role_mapping.get(agent_name, 'Assistant')
+
+
 def update_agent_state_from_call_agent(session_id: str, tool_input: dict) -> None:
     """Update agent state when call_agent tool is executed."""
     agent_name = tool_input.get('name_agent', '')

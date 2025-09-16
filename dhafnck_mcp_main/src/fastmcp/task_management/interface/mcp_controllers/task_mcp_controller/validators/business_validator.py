@@ -152,7 +152,7 @@ class BusinessValidator:
         # Define valid transitions
         valid_transitions = {
             "pending": ["in_progress", "blocked", "cancelled"],
-            "in_progress": ["completed", "blocked", "pending"],
+            "in_progress": ["completed", "blocked", "pending", "in_progress"],
             "blocked": ["pending", "in_progress", "cancelled"],
             "completed": ["pending", "in_progress"],  # Allow reopening
             "cancelled": ["pending"]  # Allow reactivation
@@ -171,7 +171,7 @@ class BusinessValidator:
         
         valid_transitions = {
             "pending": ["in_progress", "blocked", "cancelled"],
-            "in_progress": ["completed", "blocked", "pending"],
+            "in_progress": ["completed", "blocked", "pending", "in_progress"],
             "blocked": ["pending", "in_progress", "cancelled"],
             "completed": ["pending", "in_progress"],
             "cancelled": ["pending"]

@@ -3,21 +3,284 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "python-dotenv",
+#     "requests",
 # ]
 # ///
 
 import json
 import os
 import sys
+import time
+import subprocess
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 try:
     from dotenv import load_dotenv
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
 
     load_dotenv()
 except ImportError:
-    pass  # dotenv is optional
+    pass  # dependencies are optional
+
+# Import the agent state manager utilities
+sys.path.insert(0, str(Path(__file__).parent.parent / "hooks"))
+from utils.agent_state_manager import get_current_agent, get_agent_role_from_session
+
+
+def check_mcp_authentication():
+    """Check if .mcp.json token is available for MCP authentication."""
+    try:
+        # Look for .mcp.json in project root
+        project_root = Path.cwd()
+        mcp_json_path = project_root / ".mcp.json"
+
+        if not mcp_json_path.exists():
+            # Try parent directories up to 3 levels
+            for _ in range(3):
+                project_root = project_root.parent
+                mcp_json_path = project_root / ".mcp.json"
+                if mcp_json_path.exists():
+                    break
+
+        if mcp_json_path.exists():
+            with open(mcp_json_path, 'r') as f:
+                mcp_config = json.load(f)
+
+            # Extract token from dhafnck_mcp_http configuration
+            dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
+            auth_header = dhafnck_config.get("headers", {}).get("Authorization", "")
+
+            if auth_header.startswith("Bearer "):
+                return True, None
+            else:
+                return False, "No Bearer token found in .mcp.json"
+        else:
+            return False, ".mcp.json file not found"
+    except Exception as e:
+        return False, f"Error reading .mcp.json: {str(e)}"
+
+
+def get_mcp_connection_status():
+    """Get MCP server connection status with caching and resilient error handling."""
+
+    # Configuration
+    cache_duration = int(os.getenv("MCP_STATUS_CACHE_DURATION", "45"))  # seconds
+    connection_timeout = float(os.getenv("MCP_CONNECTION_TIMEOUT", "2.0"))  # seconds
+    server_url = os.getenv("MCP_SERVER_URL", "http://localhost:8000")
+
+    # Cache file location
+    cache_file = Path("logs") / "mcp_connection_cache.json"
+
+    try:
+        # Check cache first
+        if cache_file.exists():
+            with open(cache_file, 'r') as f:
+                cache_data = json.load(f)
+                cache_time = datetime.fromisoformat(cache_data.get("timestamp", ""))
+
+                # Use cached result if still valid
+                if datetime.now() - cache_time < timedelta(seconds=cache_duration):
+                    cached_status = cache_data.get("status", "❌ Unknown")
+                    return cached_status
+    except Exception:
+        pass  # Ignore cache read errors
+
+    # Test connection
+    status = _test_mcp_connection(server_url, connection_timeout)
+
+    # Cache the result
+    try:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'w') as f:
+            json.dump({
+                "status": status,
+                "timestamp": datetime.now().isoformat(),
+                "server_url": server_url
+            }, f)
+    except Exception:
+        pass  # Ignore cache write errors
+
+    return status
+
+
+def _test_mcp_connection(server_url, timeout):
+    """Test actual connection to MCP server."""
+
+    try:
+        # Create session with retry strategy
+        session = requests.Session()
+
+        # Configure retry strategy for resilience
+        retry_strategy = Retry(
+            total=1,  # Only 1 retry for fast status checks
+            status_forcelist=[429, 500, 502, 503, 504],
+            backoff_factor=0.1
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+
+        # Set headers
+        session.headers.update({
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "Status-Line-MCP-Check/1.0"
+        })
+
+        # First try health endpoint (fast and reliable)
+        start_time = time.time()
+
+        response = session.get(
+            f"{server_url}/health",
+            timeout=timeout
+        )
+
+        response_time = int((time.time() - start_time) * 1000)  # ms
+
+        if response.status_code == 200:
+            result = response.json()
+            status = result.get("status", "unknown")
+            server_name = result.get("server", "MCP")
+
+            if status == "healthy":
+                # Check if auth is enabled and test accordingly
+                auth_enabled = result.get("auth_enabled", True)
+
+                if auth_enabled:
+                    # Test authentication status
+                    auth_valid, auth_error = check_mcp_authentication()
+                    if not auth_valid:
+                        return f"❌ Auth Required ({server_url}) | {auth_error}"
+                    else:
+                        return f"✅ Connected ({server_url}) {response_time}ms"
+                else:
+                    # Auth disabled - server is healthy and ready
+                    return f"✅ Connected ({server_url}) {response_time}ms"
+            else:
+                return f"❌ Unhealthy ({server_url}) | Status: {status}"
+        elif response.status_code == 401:
+            return f"❌ Auth Failed ({server_url})"
+        elif response.status_code == 404:
+            return f"❌ Not Found ({server_url})"
+        else:
+            return f"❌ HTTP {response.status_code} ({server_url})"
+
+    except requests.exceptions.Timeout:
+        return f"❌ Timeout ({server_url})"
+    except requests.exceptions.ConnectionError:
+        return f"❌ Connection Refused ({server_url})"
+    except Exception as e:
+        error_msg = str(e)[:30] + "..." if len(str(e)) > 30 else str(e)
+        return f"❌ Error ({server_url}) | {error_msg}"
+
+
+def _get_mcp_token():
+    """Get MCP token from .mcp.json file."""
+    try:
+        # Look for .mcp.json in project root
+        project_root = Path.cwd()
+        mcp_json_path = project_root / ".mcp.json"
+
+        if not mcp_json_path.exists():
+            # Try parent directories up to 3 levels
+            for _ in range(3):
+                project_root = project_root.parent
+                mcp_json_path = project_root / ".mcp.json"
+                if mcp_json_path.exists():
+                    break
+
+        if mcp_json_path.exists():
+            with open(mcp_json_path, 'r') as f:
+                mcp_config = json.load(f)
+
+            # Extract token from dhafnck_mcp_http configuration
+            dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
+            auth_header = dhafnck_config.get("headers", {}).get("Authorization", "")
+
+            if auth_header.startswith("Bearer "):
+                return auth_header.replace("Bearer ", "")
+    except Exception:
+        pass
+
+    return None
+
+
+def get_project_name():
+    """Get project name from git remote origin or directory name."""
+    try:
+        # Try git remote origin URL first
+        result = subprocess.run(
+            ['git', 'remote', 'get-url', 'origin'],
+            capture_output=True,
+            text=True,
+            timeout=2
+        )
+        if result.returncode == 0:
+            url = result.stdout.strip()
+            if url:
+                # Extract project name from URL (handle both SSH and HTTPS)
+                # Examples: git@github.com:user/repo.git -> repo
+                #          https://github.com/user/repo.git -> repo
+                project_name = Path(url).stem.replace('.git', '')
+                if project_name and project_name != 'origin':
+                    return project_name
+
+        # Fallback to current directory name
+        return Path.cwd().name
+    except Exception:
+        # Final fallback to current directory name
+        return Path.cwd().name
+
+
+def get_git_branch():
+    """Get current git branch if in a git repository."""
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            capture_output=True,
+            text=True,
+            timeout=2
+        )
+        if result.returncode == 0:
+            branch = result.stdout.strip()
+            if branch:
+                return branch
+            else:
+                # Handle detached HEAD state
+                result = subprocess.run(
+                    ['git', 'rev-parse', '--short', 'HEAD'],
+                    capture_output=True,
+                    text=True,
+                    timeout=2
+                )
+                if result.returncode == 0:
+                    return f"detached:{result.stdout.strip()}"
+        return "no-git"
+    except Exception:
+        return "no-git"
+
+
+def get_git_status():
+    """Get git status indicators."""
+    try:
+        # Check if there are uncommitted changes
+        result = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True,
+            text=True,
+            timeout=2
+        )
+        if result.returncode == 0:
+            changes = result.stdout.strip()
+            if changes:
+                lines = changes.split('\n')
+                return f"±{len(lines)}"
+    except Exception:
+        pass
+    return ""
 
 
 def log_status_line(input_data, status_line_output, error_message=None):
@@ -118,7 +381,7 @@ def format_extras(extras):
 
 
 def generate_status_line(input_data):
-    """Generate the status line with agent name, most recent prompt, and extras."""
+    """Generate the status line with project name, git branch, agent name, and MCP connection status."""
     # Extract session ID from input data
     session_id = input_data.get("session_id", "unknown")
 
@@ -126,46 +389,109 @@ def generate_status_line(input_data):
     model_info = input_data.get("model", {})
     model_name = model_info.get("display_name", "Claude")
 
+    # Configuration options from environment variables
+    show_project = os.getenv('STATUS_SHOW_PROJECT', 'true').lower() in ('true', '1', 'yes', 'on')
+    show_branch = os.getenv('STATUS_SHOW_BRANCH', 'true').lower() in ('true', '1', 'yes', 'on')
+    short_project_name = os.getenv('STATUS_SHORT_PROJECT_NAME', 'false').lower() in ('true', '1', 'yes', 'on')
+
+    # Check MCP authentication status first for fallback
+    auth_valid, auth_error = check_mcp_authentication()
+
+    # If authentication failed, show prominent error (fallback behavior)
+    if not auth_valid:
+        error_status = f"\033[91m🔐 MCP AUTH ERROR:\033[0m \033[93m{auth_error}\033[0m \033[90m| Fix .mcp.json configuration\033[0m"
+        log_status_line(input_data, error_status, f"MCP Authentication Error: {auth_error}")
+        return error_status
+
     # Get session data
     session_data, error = get_session_data(session_id)
-
-    if error:
-        # Log the error but show a default message
-        log_status_line(input_data, f"[{model_name}] 💭 No session data", error)
-        return f"\033[36m[{model_name}]\033[0m \033[90m💭 No session data\033[0m"
-
-    # Extract agent name, prompts, and extras
-    agent_name = session_data.get("agent_name", "Agent")
-    prompts = session_data.get("prompts", [])
-    extras = session_data.get("extras", {})
 
     # Build status line components
     parts = []
 
-    # Agent name - Bright Red
-    parts.append(f"\033[91m[{agent_name}]\033[0m")
+    # Model name - should be first
+    parts.append(f"\033[1;96m◆ {model_name}\033[0m")  # Bold cyan for model name
 
-    # Model name - Blue
-    parts.append(f"\033[34m[{model_name}]\033[0m")
+    # Project name - prominent display as requested
+    if show_project:
+        project_name = get_project_name()
+        if project_name:
+            # Option to show short project name (just the name without path info)
+            if short_project_name and len(project_name) > 20:
+                project_name = project_name[:17] + "..."
+            parts.append(f"\033[1;94m📁 {project_name}\033[0m")  # Bold blue with folder icon
 
-    # Most recent prompt
-    if prompts:
-        current_prompt = prompts[-1]
-        icon = get_prompt_icon(current_prompt)
-        truncated = truncate_prompt(current_prompt, 100)
-        parts.append(f"{icon} \033[97m{truncated}\033[0m")
+    # Git branch with enhanced display and status
+    if show_branch:
+        git_branch = get_git_branch()
+        if git_branch and git_branch != "no-git":
+            git_status = get_git_status()
+
+            # Color code branches by type
+            branch_color = "\033[92m"  # Default green
+            if git_branch == "main" or git_branch == "master":
+                branch_color = "\033[1;92m"  # Bold green for main branches
+            elif git_branch.startswith("develop"):
+                branch_color = "\033[93m"  # Yellow for develop
+            elif git_branch.startswith("feature/"):
+                branch_color = "\033[94m"  # Blue for features
+            elif git_branch.startswith("hotfix/"):
+                branch_color = "\033[91m"  # Red for hotfixes
+            elif git_branch.startswith("detached:"):
+                branch_color = "\033[95m"  # Magenta for detached HEAD
+
+            if git_status:
+                # Modified files indicator
+                parts.append(f"{branch_color}🌿 {git_branch}\033[0m \033[93m{git_status}\033[0m")
+            else:
+                # Clean state
+                parts.append(f"{branch_color}🌿 {git_branch}\033[0m")
+
+
+
+    # Get real-time MCP connection status
+    try:
+        mcp_status = get_mcp_connection_status()
+    except Exception as e:
+        # Fallback to simple status if connection check fails
+        mcp_status = f"🔄 MCP Status Error: {str(e)[:20]}..."
+
+    # MCP Connection status - Real-time connection with color coding
+    if "✅" in mcp_status:
+        # Connected - Green
+        parts.append(f"\033[92m🔗 MCP: {mcp_status}\033[0m")
+    elif "🔄" in mcp_status:
+        # Checking - Yellow
+        parts.append(f"\033[93m🔗 MCP: {mcp_status}\033[0m")
     else:
-        parts.append("\033[90m💭 No prompts yet\033[0m")
+        # Error/Disconnected - Red
+        parts.append(f"\033[91m🔗 MCP: {mcp_status}\033[0m")
 
-    # Add extras if they exist
-    if extras:
-        extras_str = format_extras(extras)
-        if extras_str:
-            # Display extras in cyan with brackets
-            parts.append(f"\033[36m[{extras_str}]\033[0m")
+    # Last prompt display - should be at the end
+    if session_data:
+        prompts = session_data.get('prompts', [])
+        if prompts and len(prompts) > 0:
+            # Get the most recent prompt
+            last_prompt = prompts[-1] if isinstance(prompts, list) else str(prompts)
+            if last_prompt:
+                prompt_icon = get_prompt_icon(last_prompt)
+                truncated_prompt = truncate_prompt(last_prompt, 75)
+                parts.append(f"\033[96m{prompt_icon} {truncated_prompt}\033[0m")  # Cyan for prompt
 
-    # Join with separator
-    status_line = " | ".join(parts)
+    # Get current agent from session state for consistent display
+    current_agent = get_current_agent(session_id) if session_id else 'master-orchestrator-agent'
+
+    # Active agent display - use current_agent from session state
+    parts.append(f"\033[92m🎯 Active: {current_agent}\033[0m")  # Green text showing active role
+
+    # Dynamic agent role display - Based on session state
+    agent_role = get_agent_role_from_session(session_id) if session_id else 'Assistant'
+
+    if agent_role and agent_role != 'Assistant':
+        # Show dynamic agent role format: [Agent] [Role]
+        parts.append(f"\033[94m[Agent] [{agent_role}]\033[0m")  # Blue text for agent role
+    # Join with separator (using bullet separator for cleaner look)
+    status_line = " • ".join(parts)
 
     return status_line
 

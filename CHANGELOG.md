@@ -6,7 +6,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added - 2025-09-16
+- Status Line v4: Real-time MCP connection status monitoring with intelligent caching
+  - **Feature**: Live connection status display showing server connectivity, response times, and error states
+  - **Format**: `🔗 MCP: ✅ Connected (http://localhost:8000) 2ms` (green) or `🔗 MCP: ❌ Connection Refused (http://localhost:9999)` (red)
+  - **Caching**: 45-second cache duration to prevent excessive network calls (configurable via MCP_STATUS_CACHE_DURATION)
+  - **Configuration**: MCP_SERVER_URL, MCP_CONNECTION_TIMEOUT (2.0s), MCP_STATUS_CACHE_DURATION (45s)
+  - **Resilience**: Timeout handling, retry strategy, graceful fallback when requests library unavailable
+  - **Authentication**: Detects auth-enabled vs auth-disabled servers, shows auth-specific errors
+  - **Performance**: Uses fast /health endpoint (~2ms response time), intelligent error handling
+  - **Files**: `.claude/status_lines/status_line_v4.py` (enhanced with MCP connection testing functions)
+  - **Testing**: Comprehensive testing with connected/disconnected scenarios, cache validation, error handling
+
+### Added - 2025-09-16
+- **Status Line Project & Branch Display**: Enhanced status line with project name and git branch context
+  - **Project Name Display**: Added `get_project_name()` function that extracts project name from git remote origin URL
+  - **Fallback Logic**: Falls back to current directory name if git remote not available
+  - **Enhanced Branch Display**: Updated `get_git_branch()` to use `git branch --show-current`
+  - **Detached HEAD Support**: Handles detached HEAD state with commit hash display
+  - **Color Coding**: Branch types color coded (main=bold green, feature=blue, hotfix=red, develop=yellow, detached=magenta)
+  - **Status Indicators**: Shows git status with ±N format for modified files
+  - **Configuration Options**: Environment variables for customizing display:
+    * `STATUS_SHOW_PROJECT=true/false` - Show/hide project name (default: true)
+    * `STATUS_SHOW_BRANCH=true/false` - Show/hide git branch (default: true)
+    * `STATUS_SHORT_PROJECT_NAME=true/false` - Truncate long project names (default: false)
+  - **Format**: `◆ Claude • 📁 project-name • 🌿 main ±5 • 🎯 Active: coding-agent • 📊 data 📚 ai_docs`
+  - **Performance**: 2-second timeout on git commands, no impact on status line speed
+  - **Error Handling**: Graceful fallbacks for non-git directories and command failures
+  - **Files**: Modified `.claude/status_lines/status_line.py` with comprehensive documentation
+
 ### Fixed - 2025-09-16
+- **Project API 422 Errors**: Fixed FastAPI form data handling in project creation and update endpoints
+  - **Issue**: Frontend sending `application/x-www-form-urlencoded` data was causing 422 validation errors
+  - **Root Cause**: FastAPI route parameters not configured to accept form data using `Form()` dependencies
+  - **Solution**: Updated `/dhafnck_mcp_main/src/fastmcp/server/routes/project_routes.py` to use proper Form dependencies
+  - **Changes**:
+    - Create: `name: str` → `name: str = Form(...)`, `description: str = ""` → `description: str = Form("")`
+    - Update: `name: Optional[str] = None` → `name: Optional[str] = Form(None)`, `description: Optional[str] = None` → `description: Optional[str] = Form(None)`
+  - **Impact**: Project creation and update from frontend now work correctly, no more 422 errors on form submissions
 - Database schema: Renamed 'data' column to 'unified_context_data' for clarity
 - Docker environment: Added CONTAINER_ENV for proper runtime detection
 - Session messages: Dynamic agent detection for all 33 agents
@@ -22,6 +59,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - **Files**: `dhafnck-frontend/src/components/GlobalContextDialog.tsx`, `dhafnck-frontend/src/tests/components/GlobalContextDialog.test.tsx`
   - **Features**: 400px textarea with monospace font, live JSON validation, Format JSON button, character/line count, comprehensive error states
   - **Testing**: All 15 component tests pass, frontend builds successfully
+- Task status transitions: Fixed invalid "in_progress to in_progress" transition error blocking task updates
+  - **Issue**: Business validator incorrectly prevented updating in_progress tasks with new details/context
+  - **Root Cause**: Missing "in_progress" in valid transitions list for "in_progress" status
+  - **Solution**: Added "in_progress" as valid transition from "in_progress" in both validation methods
+  - **Files**: `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/validators/business_validator.py:155,174`
+  - **Testing**: Created comprehensive test suite with 6 test cases covering all transition scenarios
+  - **Impact**: Users can now update task details and context while task remains in_progress without status errors
+- MCP Authentication: Simplified authentication by removing Keycloak fallback and displaying clear errors
+  - **Issue**: Complex authentication flow with Keycloak fallback was unnecessary and confusing
+  - **Solution**: Simplified to .mcp.json-only authentication with prominent status line error display
+  - **Files**: `.claude/hooks/utils/mcp_client.py`, `.claude/hooks/core_clean_arch/exceptions.py`, `.claude/status_lines/status_line_v4.py`
+  - **Changes**: Removed all Keycloak configuration and logic, added MCPAuthenticationError exception, enhanced status line to show authentication errors
+  - **Testing**: Verified authentication works with .mcp.json token, error messages display correctly when token is missing or invalid
+  - **Impact**: Users get clear visual feedback when MCP authentication is misconfigured, simplified codebase with single authentication method
 
 ### Added - 2025-09-16
 - Complete agent library: 33 specialized agents with unique configurations
