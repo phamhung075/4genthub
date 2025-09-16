@@ -296,32 +296,21 @@ class CRUDHandler:
         
         return facade.delete_task(task_id)
     
-    def complete_task(self, facade: TaskApplicationFacade, task_id: Optional[str], 
-                     completion_summary: Optional[str] = None, 
+    def complete_task(self, facade: TaskApplicationFacade, task_id: Optional[str],
+                     completion_summary: Optional[str] = None,
                      testing_notes: Optional[str] = None) -> Dict[str, Any]:
         """Handle task completion with summary."""
         if not task_id:
             return self._create_standardized_error(
-                operation="complete_task", 
+                operation="complete_task",
                 field="task_id",
                 expected="A valid task_id string",
                 hint="Include 'task_id' in your request"
             )
-        
-        # Create update request for completion
-        request_data = {
-            "task_id": task_id,  # task_id is required for UpdateTaskRequest
-            "status": "done",
-            "completed_at": datetime.now(timezone.utc).isoformat()
-        }
-        
-        if completion_summary:
-            request_data["completion_summary"] = completion_summary
-        if testing_notes:
-            request_data["testing_notes"] = testing_notes
-        
-        request = UpdateTaskRequest(**request_data)
-        return facade.update_task(task_id, request)
+
+        # Use the facade's complete_task method directly
+        # This properly handles both transitioning to done and updating already-done tasks
+        return facade.complete_task(task_id, completion_summary, testing_notes)
     
     def _create_standardized_error(self, operation: str, field: str, 
                                  expected: str, hint: str) -> Dict[str, Any]:

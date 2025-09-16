@@ -76,8 +76,14 @@ class GitBranchRepositoryFactory:
         """Get default repository type from environment or fallback"""
         # Check environment variables properly
         env = os.getenv('ENVIRONMENT', 'production')
-        db_type = os.getenv('DATABASE_TYPE', 'supabase')
-        
+        db_type = os.getenv('DATABASE_TYPE')
+
+        if not db_type:
+            raise ValueError(
+                "DATABASE_TYPE environment variable is not set. "
+                "Please set DATABASE_TYPE to 'postgresql', 'sqlite', or 'supabase'"
+            )
+
         if env == 'test':
             return GitBranchRepositoryType.MEMORY
         elif db_type in ['sqlite', 'supabase', 'postgresql']:
