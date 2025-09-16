@@ -164,8 +164,8 @@ export const MCPConfigExample = () => {
       "real-time-sync",
       "multi-tenant"
     ],
-    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjBkZTRjNWQtMmE5Ny00MzI0LWFiY2QtOWRhZTM5MjI3NjFlIiwic2NvcGVzIjpbIm9wZW5pZCIsInRhc2s6cmVhZCIsInRhc2s6d3JpdGUiXSwiZXhwIjoxNzI1ODE3NDIxfQ",
-    expiresAt: "2025-09-08T18:37:01Z"
+    token: "your-jwt-token-here", // SECURITY: Never use real tokens in code - use environment variables
+    expiresAt: "2025-12-31T23:59:59Z" // Example expiration date
   };
 
   return (
