@@ -13,7 +13,7 @@ tags: [RUNTIME-CONSTANTS, RUNTIME-VARIABLES, init, continue, P00-MT00, P00-MT01,
 CONTINUE_AUTOMATIC: ON              # Auto-continue tasks after completion
 FORCE_CONTINUE_AUTOMATIC: ON       # Force automatic continuation without asking
 USE_ABSOLUTE_PATH_FROM_ROOT_PROJECT: ON  # Always use absolute paths from project root
-project_id: 4genthub_main
+project_id: agenthub_main
 PROJECT_ROOT: /home/<username>/agentic-project
 AI_DOCS_PATH: /home/<username>/agentic-project/ai_docs
 UI_DOCS_PATH: /home/<username>/agentic-project/ai_docs/ui

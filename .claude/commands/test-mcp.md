@@ -1,4 +1,4 @@
-**Test Plan for 4genthub_http Tools Actions**
+**Test Plan for agenthub_http Tools Actions**
    $ARGUMENTS
 
 **Test Checklist:**

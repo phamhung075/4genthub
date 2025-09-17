@@ -7,7 +7,7 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.backend.dev
-    container_name: 4genthub-backend
+    container_name: agenthub-backend
     env_file:
       - ../../.env.dev
     environment:
@@ -16,12 +16,12 @@ services:
       AUTH_PROVIDER: ${AUTH_PROVIDER}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       # Connect to PostgreSQL container on the same network
-      DATABASE_HOST: 4genthub-postgres
+      DATABASE_HOST: agenthub-postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: ${DATABASE_NAME}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@4genthub-postgres:5432/${DATABASE_NAME}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@agenthub-postgres:5432/${DATABASE_NAME}
       CORS_ORIGINS: ${CORS_ORIGINS}
       ENV: ${ENV}
       APP_DEBUG: ${APP_DEBUG}
@@ -37,10 +37,10 @@ services:
       # Mount data directory for other persistent data
       - ../../data:/data/resources
     networks:
-      - 4genthub-network
+      - agenthub-network
     restart: unless-stopped
     external_links:
-      - 4genthub-postgres:postgres
+      - agenthub-postgres:postgres
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${FASTMCP_PORT}/health"]
       interval: 30s
@@ -52,7 +52,7 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.frontend.dev
-    container_name: 4genthub-frontend
+    container_name: agenthub-frontend
     env_file:
       - ../../.env.dev
     environment:
@@ -68,10 +68,10 @@ services:
     depends_on:
       - backend
     networks:
-      - 4genthub-network
+      - agenthub-network
     restart: unless-stopped
 
 networks:
-  4genthub-network:
+  agenthub-network:
     external: true
-    name: 4genthub-network
+    name: agenthub-network

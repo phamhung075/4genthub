@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide documents the Phase 6 deployment and cleanup implementation, providing comprehensive instructions for production deployment, monitoring, and maintenance of the 4genthub system.
+This guide documents the Phase 6 deployment and cleanup implementation, providing comprehensive instructions for production deployment, monitoring, and maintenance of the agenthub system.
 
 ## 🎯 Phase 6 Objectives Completed
 
@@ -126,8 +126,8 @@ APP_DEBUG=false                  # Debug mode (false for prod)
 DATABASE_TYPE=postgresql
 DATABASE_HOST=postgres           # Container name or IP
 DATABASE_PORT=5432
-DATABASE_NAME=4genthub
-DATABASE_USER=4genthub_user
+DATABASE_NAME=agenthub
+DATABASE_USER=agenthub_user
 DATABASE_PASSWORD=SecurePassword123!
 
 # Application Ports
@@ -139,7 +139,7 @@ MCP_PORT=8001                   # Production backend port
 AUTH_ENABLED=true
 AUTH_PROVIDER=keycloak
 KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=mcp-frontend
 
 # Security
@@ -166,7 +166,7 @@ CORS_ORIGINS=http://localhost:3800,https://yourdomain.com
 
 ### Container Network
 
-- **Network**: `4genthub-network` (bridge)
+- **Network**: `agenthub-network` (bridge)
 - **Service Discovery**: Container name-based DNS
 - **Health Checks**: Built-in Docker health checks
 - **Volume Management**: Persistent data volumes
@@ -236,7 +236,7 @@ DRY_RUN=true ./scripts/cleanup-legacy.sh all
 ./scripts/cleanup-legacy.sh all
 
 # Database backup (production)
-docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub > backup_$(date +%Y%m%d).sql
+docker exec agenthub-postgres pg_dump -U agenthub_user agenthub > backup_$(date +%Y%m%d).sql
 
 # Resource cleanup
 ./deployment-manager.sh --cleanup
@@ -261,10 +261,10 @@ curl -f http://localhost:8000/health
 
 ```bash
 # Check database readiness
-docker exec 4genthub-postgres pg_isready -U 4genthub_user
+docker exec agenthub-postgres pg_isready -U agenthub_user
 
 # Connect to database manually
-docker exec -it 4genthub-postgres psql -U 4genthub_user -d 4genthub
+docker exec -it agenthub-postgres psql -U agenthub_user -d agenthub
 ```
 
 #### 3. Port Conflicts
@@ -288,7 +288,7 @@ netstat -tulpn | grep :8000
 docker stats --no-stream
 
 # Database performance
-docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub -c "SELECT * FROM pg_stat_activity;"
+docker exec agenthub-postgres psql -U agenthub_user -d agenthub -c "SELECT * FROM pg_stat_activity;"
 ```
 
 ### Rollback Procedures

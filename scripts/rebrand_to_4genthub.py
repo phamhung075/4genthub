@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rebrand AgenthubMCP to 4genthub across the entire codebase.
+Rebrand AgenthubMCP to agenthub across the entire codebase.
 This script performs a comprehensive find and replace operation.
 """
 
@@ -15,18 +15,18 @@ PROJECT_ROOT = Path("/home/daihungpham/__projects__/agentic-project")
 # Define replacement patterns
 REPLACEMENTS = [
     # Case-sensitive replacements
-    ("AgenthubMCP", "4genthub"),
-    ("Agenthub MCP", "4genthub"),
-    ("DHAFNCK_MCP", "4GENTHUB"),
-    ("agenthub_mcp", "4genthub"),
-    ("agenthub-mcp", "4genthub"),
-    ("agenthub", "4genthub"),
-    ("Agenthub", "4genthub"),
-    ("DHAFNCK", "4GENTHUB"),
+    ("AgenthubMCP", "agenthub"),
+    ("Agenthub MCP", "agenthub"),
+    ("DHAFNCK_MCP", "AGENTHUB"),
+    ("agenthub_mcp", "agenthub"),
+    ("agenthub-mcp", "agenthub"),
+    ("agenthub", "agenthub"),
+    ("Agenthub", "agenthub"),
+    ("DHAFNCK", "AGENTHUB"),
 
     # Path replacements (already done via mv commands)
-    # ("agenthub-frontend", "4genthub-frontend"),
-    # ("agenthub_mcp_main", "4genthub_main"),
+    # ("agenthub-frontend", "agenthub-frontend"),
+    # ("agenthub_mcp_main", "agenthub_main"),
 ]
 
 # Files and directories to skip
@@ -45,7 +45,7 @@ SKIP_PATTERNS = [
     "dist",
     "build",
     "*.egg-info",
-    "scripts/rebrand_to_4genthub.py",  # Skip this script itself
+    "scripts/rebrand_to_agenthub.py",  # Skip this script itself
 ]
 
 def should_skip(path: Path) -> bool:
@@ -110,7 +110,7 @@ def replace_in_file(file_path: Path, replacements: List[Tuple[str, str]]) -> int
 
 def main():
     """Main function to perform the rebranding."""
-    print("🚀 Starting rebranding from AgenthubMCP to 4genthub...")
+    print("🚀 Starting rebranding from AgenthubMCP to agenthub...")
     print(f"Project root: {PROJECT_ROOT}")
 
     total_files_processed = 0

@@ -181,9 +181,9 @@ This is a P0 critical issue because:
 The task creation assignees parameter is not being passed from MCP tool invocation to the CRUD handler. 
 
 Add debug logging to trace the parameter flow through:
-1. /home/daihungpham/__projects__/agentic-project/4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py (line 259)
-2. /home/daihungpham/__projects__/agentic-project/4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/operation_factory.py (line 98)
-3. /home/daihungpham/__projects__/agentic-project/4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.py (line 25)
+1. /home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py (line 259)
+2. /home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/operation_factory.py (line 98)
+3. /home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.py (line 25)
 
 Log the assignees parameter at each stage to identify where it's being lost.
 ```

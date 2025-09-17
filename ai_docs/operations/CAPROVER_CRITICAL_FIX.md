@@ -1,7 +1,7 @@
 # 🚨 CRITICAL: CapRover Using Wrong Dockerfile!
 
 ## The Problem
-Your **backend app (4genthub-backend)** is building with the **frontend Dockerfile**! This is why you see:
+Your **backend app (agenthub-backend)** is building with the **frontend Dockerfile**! This is why you see:
 - Vite build output
 - nginx:alpine 
 - COPY failed for /app/dist
@@ -11,7 +11,7 @@ Your **backend app (4genthub-backend)** is building with the **frontend Dockerfi
 ### Option 1: Fix in CapRover Dashboard (Easiest)
 
 1. **Go to CapRover Dashboard**
-2. **Navigate to Apps → 4genthub-backend**
+2. **Navigate to Apps → agenthub-backend**
 3. **Click on "Deployment" tab**
 4. **Update the captain-definition in the web editor:**
 
@@ -66,15 +66,15 @@ git push origin frontend-deploy
 ```
 
 Then in CapRover:
-- **4genthub-backend** → Deploy from `backend-deploy` branch
-- **4genthub-frontend** → Deploy from `frontend-deploy` branch
+- **agenthub-backend** → Deploy from `backend-deploy` branch
+- **agenthub-frontend** → Deploy from `frontend-deploy` branch
 
 ## Quick Verification
 
 After fixing, the backend build should show:
 ```
 Step X: FROM python:3.11-slim
-Step X: COPY 4genthub_main/pyproject.toml
+Step X: COPY agenthub_main/pyproject.toml
 Step X: RUN uv sync
 ```
 

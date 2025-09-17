@@ -1,4 +1,4 @@
-# Development Frontend Dockerfile for 4genthub
+# Development Frontend Dockerfile for agenthub
 # Based on production Dockerfile but optimized for development
 # Note: Hot-reload disabled in Docker - rebuild container for code changes
 
@@ -25,7 +25,7 @@ ENV VITE_BUILD_TIME=development
 ENV VITE_BUILD_SHA=development
 
 # Copy package files from frontend directory
-COPY 4genthub-frontend/package*.json ./
+COPY agenthub-frontend/package*.json ./
 
 # Install dependencies including dev dependencies for development
 RUN npm ci || npm install
@@ -34,14 +34,14 @@ RUN npm ci || npm install
 RUN npm install -g serve
 
 # Copy frontend source code
-COPY 4genthub-frontend/ .
+COPY agenthub-frontend/ .
 
 # Create a development startup script
 RUN cat <<'EOF' > /app/start-dev.sh
 #!/bin/sh
 set -e
 
-echo "Starting 4genthub Frontend Development Server..."
+echo "Starting agenthub Frontend Development Server..."
 echo "================================================"
 
 # Validate required environment variables

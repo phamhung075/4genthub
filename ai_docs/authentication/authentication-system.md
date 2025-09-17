@@ -1,7 +1,7 @@
 # Authentication System Architecture
 
 ## Overview
-The 4genthub platform implements a comprehensive JWT-based authentication system that supports multiple token types, flexible validation, and seamless integration with MCP protocol and frontend applications.
+The agenthub platform implements a comprehensive JWT-based authentication system that supports multiple token types, flexible validation, and seamless integration with MCP protocol and frontend applications.
 
 ## Core Components
 
@@ -158,7 +158,7 @@ const response = await fetch('/api/resource', {
 ```json
 {
   "mcpServers": {
-    "4genthub": {
+    "agenthub": {
       "type": "http",
       "url": "http://localhost:8000/mcp/",
       "headers": {

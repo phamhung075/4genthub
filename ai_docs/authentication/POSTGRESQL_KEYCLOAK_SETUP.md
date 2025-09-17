@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for configuring 4genthub with:
+This guide provides comprehensive instructions for configuring agenthub with:
 - **PostgreSQL** running in Docker container (local development)
 - **Keycloak** running on cloud service (authentication)
 - **MCP Server** with secure token-based authentication
@@ -59,7 +59,7 @@ Edit `.env.production` and update Keycloak settings:
 
 ```env
 KEYCLOAK_URL=https://your-keycloak-instance.com
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 ```
@@ -68,7 +68,7 @@ KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 
 In your Keycloak admin console:
 
-1. **Create Realm**: `4genthub`
+1. **Create Realm**: `agenthub`
 
 2. **Create Client**: `mcp-backend`
    - Client Protocol: `openid-connect`
@@ -122,8 +122,8 @@ PostgreSQL runs in Docker with the following default settings:
 ```yaml
 Host: postgres (internal) / localhost (external)
 Port: 5432
-Database: 4genthub_prod
-User: 4genthub_user
+Database: agenthub_prod
+User: agenthub_user
 Password: [Generated secure password in .env.production]
 ```
 
@@ -225,27 +225,27 @@ permissions = ["projects:list", "projects:get"]
    ```
 
 2. Access at: http://localhost:5050
-   - Email: admin@4genthub.com
+   - Email: admin@agenthub.com
    - Password: [Check .env.production]
 
 3. Add PostgreSQL server:
    - Host: postgres
    - Port: 5432
-   - Database: 4genthub_prod
-   - Username: 4genthub_user
+   - Database: agenthub_prod
+   - Username: agenthub_user
    - Password: [From .env.production]
 
 ### Direct Database Access
 
 ```bash
 # Connect to PostgreSQL
-docker exec -it 4genthub-postgres psql -U 4genthub_user -d 4genthub_prod
+docker exec -it agenthub-postgres psql -U agenthub_user -d agenthub_prod
 
 # Backup database
-docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > backup.sql
+docker exec agenthub-postgres pg_dump -U agenthub_user agenthub_prod > backup.sql
 
 # Restore database
-docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < backup.sql
+docker exec -i agenthub-postgres psql -U agenthub_user agenthub_prod < backup.sql
 ```
 
 ## Monitoring & Logs
@@ -268,7 +268,7 @@ docker-compose logs -f postgres
 curl http://localhost:8001/health
 
 # PostgreSQL health
-docker exec 4genthub-postgres pg_isready -U 4genthub_user
+docker exec agenthub-postgres pg_isready -U agenthub_user
 ```
 
 ## Troubleshooting
@@ -377,10 +377,10 @@ Create backup script `backup-postgres.sh`:
 #!/bin/bash
 BACKUP_DIR="/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/4genthub_${TIMESTAMP}.sql"
+BACKUP_FILE="${BACKUP_DIR}/agenthub_${TIMESTAMP}.sql"
 
 # Create backup
-docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > $BACKUP_FILE
+docker exec agenthub-postgres pg_dump -U agenthub_user agenthub_prod > $BACKUP_FILE
 
 # Compress
 gzip $BACKUP_FILE
@@ -404,7 +404,7 @@ If migrating from Supabase:
 2. Transform data format if needed
 3. Import to PostgreSQL:
    ```bash
-   docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < supabase_export.sql
+   docker exec -i agenthub-postgres psql -U agenthub_user agenthub_prod < supabase_export.sql
    ```
 
 ## Support
@@ -413,7 +413,7 @@ For issues or questions:
 - Check logs: `docker-compose logs -f`
 - Review this documentation
 - Test with: `python test-keycloak-mcp.py`
-- Check PostgreSQL: `docker exec 4genthub-postgres pg_isready`
+- Check PostgreSQL: `docker exec agenthub-postgres pg_isready`
 
 ## Next Steps
 

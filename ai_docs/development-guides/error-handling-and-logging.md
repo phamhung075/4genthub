@@ -2,7 +2,7 @@
 
 ## Overview
 
-The 4genthub system implements comprehensive error handling and logging to ensure reliable operation and easy debugging. This guide covers the error handling patterns, logging configuration, and best practices.
+The agenthub system implements comprehensive error handling and logging to ensure reliable operation and easy debugging. This guide covers the error handling patterns, logging configuration, and best practices.
 
 ## Error Handling Architecture
 
@@ -110,8 +110,8 @@ ctx_logger.info("Task created successfully")
 
 The system creates multiple log files:
 
-1. **4genthub.log** - Main application log with all levels
-2. **4genthub_errors.log** - Error-only log for quick issue identification
+1. **agenthub.log** - Main application log with all levels
+2. **agenthub_errors.log** - Error-only log for quick issue identification
 
 Both files support automatic rotation when they reach 10MB, keeping 5 backup copies.
 
@@ -256,13 +256,13 @@ To analyze logs for specific patterns:
 
 ```bash
 # Find all errors for a specific task
-grep -i "task_id.*task123" logs/4genthub.log | grep ERROR
+grep -i "task_id.*task123" logs/agenthub.log | grep ERROR
 
 # Get all database errors
-grep "DATABASE_ERROR" logs/4genthub_errors.log
+grep "DATABASE_ERROR" logs/agenthub_errors.log
 
 # View logs in real-time
-tail -f logs/4genthub.log | jq '.'  # For JSON format
+tail -f logs/agenthub.log | jq '.'  # For JSON format
 ```
 
 ### Recent Improvements (January 2025)
@@ -381,7 +381,7 @@ For detailed information about the fixes and how to validate they're working:
 ```bash
 # Quick validation commands
 # 1. Test TaskId scoping (should work without UnboundLocalError)
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="test-branch-uuid",
     title="Validation test",
@@ -389,7 +389,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # 2. Test async repository patterns (should complete without warnings)
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="create",
     task_id="test-task-uuid",
     data_title="Test context"

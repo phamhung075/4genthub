@@ -16,7 +16,7 @@ These tables are used for many-to-many relationships and need `user_id` columns 
 ## Solution Components
 
 ### 1. Database Migration Script
-**File:** `4genthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql`
+**File:** `agenthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql`
 
 **What it does:**
 - Adds `user_id` columns to missing relationship tables
@@ -29,14 +29,14 @@ These tables are used for many-to-many relationships and need `user_id` columns 
 **Usage:**
 ```bash
 # For PostgreSQL/Supabase
-psql -d your_database < 4genthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql
+psql -d your_database < agenthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql
 
 # For SQLite (manual execution needed)
-sqlite3 your_database.db < 4genthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql
+sqlite3 your_database.db < agenthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql
 ```
 
 ### 2. Schema Validation Script
-**File:** `4genthub_main/scripts/validate_schema.py`
+**File:** `agenthub_main/scripts/validate_schema.py`
 
 **What it does:**
 - Compares SQLAlchemy models to actual database schema
@@ -47,20 +47,20 @@ sqlite3 your_database.db < 4genthub_main/database/migrations/004_fix_user_isolat
 **Usage:**
 ```bash
 # Basic validation
-python 4genthub_main/scripts/validate_schema.py
+python agenthub_main/scripts/validate_schema.py
 
 # Verbose output
-python 4genthub_main/scripts/validate_schema.py --verbose
+python agenthub_main/scripts/validate_schema.py --verbose
 
 # Attempt automatic fixes
-python 4genthub_main/scripts/validate_schema.py --fix
+python agenthub_main/scripts/validate_schema.py --fix
 
 # Use custom database URL
-python 4genthub_main/scripts/validate_schema.py --database-url "postgresql://user:pass@localhost/db"
+python agenthub_main/scripts/validate_schema.py --database-url "postgresql://user:pass@localhost/db"
 ```
 
 ### 3. Repository Graceful Error Handling
-**File:** `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
+**File:** `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
 
 **What was updated:**
 - Added graceful error handling for relationship loading
@@ -74,7 +74,7 @@ python 4genthub_main/scripts/validate_schema.py --database-url "postgresql://use
 - Updated `get_task()`, `create_task()`, `update_task()` methods
 
 ### 4. Integration Test Suite
-**File:** `4genthub_main/src/tests/integration/test_task_persistence_fix.py`
+**File:** `agenthub_main/src/tests/integration/test_task_persistence_fix.py`
 
 **What it tests:**
 - Task creation with all relationships (assignees, labels, subtasks)
@@ -87,10 +87,10 @@ python 4genthub_main/scripts/validate_schema.py --database-url "postgresql://use
 **Usage:**
 ```bash
 # Run with pytest
-pytest 4genthub_main/src/tests/integration/test_task_persistence_fix.py -v
+pytest agenthub_main/src/tests/integration/test_task_persistence_fix.py -v
 
 # Run standalone for debugging
-python 4genthub_main/src/tests/integration/test_task_persistence_fix.py
+python agenthub_main/src/tests/integration/test_task_persistence_fix.py
 ```
 
 ## Fix Application Steps
@@ -106,22 +106,22 @@ cp your_database.db backup_before_fix.db
 
 ### Step 2: Validate Current Schema
 ```bash
-python 4genthub_main/scripts/validate_schema.py --verbose
+python agenthub_main/scripts/validate_schema.py --verbose
 ```
 
 ### Step 3: Apply Migration
 ```bash
 # Run the migration script
-psql -d your_database < 4genthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql
+psql -d your_database < agenthub_main/database/migrations/004_fix_user_isolation_missing_columns.sql
 ```
 
 ### Step 4: Verify Fix
 ```bash
 # Re-validate schema
-python 4genthub_main/scripts/validate_schema.py
+python agenthub_main/scripts/validate_schema.py
 
 # Run integration tests
-pytest 4genthub_main/src/tests/integration/test_task_persistence_fix.py -v
+pytest agenthub_main/src/tests/integration/test_task_persistence_fix.py -v
 ```
 
 ### Step 5: Test Application

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `manage_agent` tool provides agent registration, assignment, and lifecycle management within the 4genthub platform. It handles basic CRUD operations for agents and their assignment to git branches (task trees) within projects.
+The `manage_agent` tool provides agent registration, assignment, and lifecycle management within the agenthub platform. It handles basic CRUD operations for agents and their assignment to git branches (task trees) within projects.
 
 ## Base Information
 
@@ -446,4 +446,4 @@ The manage_agent tool uses a two-stage validation pattern for optimal flexibilit
 - Use workflow guidance responses to understand next steps
 - Regular rebalancing improves overall project efficiency
 
-This agent management system provides simple but effective agent registration and assignment capabilities within the 4genthub platform's Domain-Driven Design architecture.
+This agent management system provides simple but effective agent registration and assignment capabilities within the agenthub platform's Domain-Driven Design architecture.

@@ -4,7 +4,7 @@ services:
   # =============================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: 4genthub-postgres
+    container_name: agenthub-postgres
     restart: unless-stopped
     env_file:
       - ../../.env.dev  # Load environment variables from .env.dev
@@ -15,11 +15,11 @@ services:
       POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./4genthub_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./agenthub_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     networks:
-      - 4genthub_network
+      - agenthub_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 10s
@@ -33,7 +33,7 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.backend
-    container_name: 4genthub-server
+    container_name: agenthub-server
     restart: unless-stopped
     env_file:
       - ../../.env.dev  # Load environment variables from .env.dev
@@ -61,7 +61,7 @@ services:
       AUTH_PROVIDER: ${AUTH_PROVIDER:-keycloak}
       EMAIL_VERIFIED_AUTO: ${EMAIL_VERIFIED_AUTO:-true}
       KEYCLOAK_URL: ${KEYCLOAK_URL}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-4genthub}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-agenthub}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-mcp-backend}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_VERIFY_TOKEN_AUDIENCE: ${KEYCLOAK_VERIFY_TOKEN_AUDIENCE:-true}
@@ -86,13 +86,13 @@ services:
       FEATURE_RATE_LIMITING: ${FEATURE_RATE_LIMITING:-true}
       FEATURE_REQUEST_LOGGING: ${FEATURE_REQUEST_LOGGING:-true}
     volumes:
-      - ./4genthub_main:/app
+      - ./agenthub_main:/app
       - ./data:/data
-      - mcp_logs:/var/log/4genthub
+      - mcp_logs:/var/log/agenthub
     ports:
       - "8000:8000"
     networks:
-      - 4genthub_network
+      - agenthub_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,10 +103,10 @@ services:
   # =============================================================================
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: 4genthub-pgadmin
+    container_name: agenthub-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@4genthub.com}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@agenthub.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-AdminPassword2025!}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
@@ -115,7 +115,7 @@ services:
     ports:
       - "5050:80"
     networks:
-      - 4genthub_network
+      - agenthub_network
     depends_on:
       - postgres
     profiles:
@@ -125,17 +125,17 @@ services:
 # Networks
 # =============================================================================
 networks:
-  4genthub_network:
+  agenthub_network:
     external: true
-    name: 4genthub-network
+    name: agenthub-network
 
 # =============================================================================
 # Volumes
 # =============================================================================
 volumes:
   postgres_data:
-    name: 4genthub_postgres_data
+    name: agenthub_postgres_data
   mcp_logs:
-    name: 4genthub_logs
+    name: agenthub_logs
   pgadmin_data:
-    name: 4genthub_pgadmin_data
+    name: agenthub_pgadmin_data

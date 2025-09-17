@@ -33,7 +33,7 @@ git_branch_repo = ORMGitBranchRepository(user_id=self._user_id)
 The repository manages its own database session internally through the `get_db_session()` context manager inherited from `BaseORMRepository`.
 
 ## Files Modified
-- `4genthub_main/src/fastmcp/task_management/application/services/project_management_service.py`
+- `agenthub_main/src/fastmcp/task_management/application/services/project_management_service.py`
   - Line 195: Fixed repository instantiation for branch validation
   - Lines 237-242: Used `get_session()` directly for task count queries
   - Line 262: Fixed repository instantiation for branch deletion

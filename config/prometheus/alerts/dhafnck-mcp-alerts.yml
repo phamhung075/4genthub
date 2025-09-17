@@ -1,5 +1,5 @@
 groups:
-  - name: 4genthub-alerts
+  - name: agenthub-alerts
     rules:
       # High-level service availability alerts
       - alert: ServiceDown

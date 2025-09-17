@@ -12,7 +12,7 @@ Fixed a critical bug in task repository git branch filtering where falsy values 
 ## Root Cause Analysis
 
 ### Location
-- **File**: `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
+- **File**: `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
 - **Lines**: 795-796 in `find_by_criteria()` method
 
 ### Original Broken Code
@@ -134,7 +134,7 @@ fixed_result = fixed_logic("", "main")        # Returns "" (CORRECT)
 ## Related Files Modified
 
 ### Core Fix
-- `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
+- `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py`
 
 ### New Test Files
 - `src/tests/unit/task_management/test_git_branch_filtering_fix.py`

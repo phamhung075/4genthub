@@ -15,7 +15,7 @@ print("=" * 60)
 # Analyze first 10 test files for import issues
 issues_found = []
 for test_file in failed_tests[:10]:
-    test_path = f"4genthub_main/src/tests/{test_file}"
+    test_path = f"agenthub_main/src/tests/{test_file}"
     if not os.path.exists(test_path):
         issues_found.append(f"File not found: {test_path}")
         continue

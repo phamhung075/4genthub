@@ -9,16 +9,16 @@ import sys
 import os
 
 def main():
-    # Change to 4genthub_main directory (as fixed in test-menu.sh)
+    # Change to agenthub_main directory (as fixed in test-menu.sh)
     project_root = "/home/daihungpham/__projects__/agentic-project"
-    4genthub_dir = f"{project_root}/4genthub_main"
+    agenthub_dir = f"{project_root}/agenthub_main"
     
     # Set PYTHONPATH
     env = os.environ.copy()
-    env['PYTHONPATH'] = f"{4genthub_dir}/src:{env.get('PYTHONPATH', '')}"
+    env['PYTHONPATH'] = f"{agenthub_dir}/src:{env.get('PYTHONPATH', '')}"
     
-    # Change to 4genthub_main directory
-    os.chdir(4genthub_dir)
+    # Change to agenthub_main directory
+    os.chdir(agenthub_dir)
     
     # Run pytest collection only
     try:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Production Rollback Script - 4genthub
+# Production Rollback Script - agenthub
 # =============================================================================
 # This script performs a complete rollback of the production deployment,
 # restoring the previous stable version with minimal downtime.
@@ -23,8 +23,8 @@ readonly NC='\033[0m'
 # Configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-readonly ROLLBACK_LOG="/var/log/4genthub-rollback.log"
-readonly ROLLBACK_DATA_DIR="/tmp/4genthub-rollback"
+readonly ROLLBACK_LOG="/var/log/agenthub-rollback.log"
+readonly ROLLBACK_DATA_DIR="/tmp/agenthub-rollback"
 
 ENVIRONMENT="production"
 AUTO_CONFIRM="false"
@@ -238,7 +238,7 @@ restore_previous_images() {
     fi
     
     # Pull or restore previous images
-    local images=("4genthub-backend" "4genthub-frontend")
+    local images=("agenthub-backend" "agenthub-frontend")
     
     for image in "${images[@]}"; do
         local previous_image_tag="${image}:${previous_version}"
@@ -420,7 +420,7 @@ main() {
     # Create log file
     mkdir -p "$(dirname "$ROLLBACK_LOG")" 2>/dev/null || true
     touch "$ROLLBACK_LOG" 2>/dev/null || {
-        ROLLBACK_LOG="/tmp/4genthub-rollback.log"
+        ROLLBACK_LOG="/tmp/agenthub-rollback.log"
         log_warning "Cannot write to /var/log, using ${ROLLBACK_LOG}"
     }
     

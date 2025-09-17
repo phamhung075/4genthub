@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example: Convert 4genthub agents to .claude/agents files using the new JSON format
+Example: Convert agenthub agents to .claude/agents files using the new JSON format
 """
 
 import json
@@ -50,9 +50,9 @@ def json_to_claude_agent_file(agent_json: Dict[str, Any], output_dir: str = ".cl
     
     return str(filepath)
 
-def create_agent_from_4genthub(agent_name: str, output_dir: str = ".claude/agents") -> str:
+def create_agent_from_agenthub(agent_name: str, output_dir: str = ".claude/agents") -> str:
     """
-    Complete workflow: Get agent from 4genthub and create .claude/agents file
+    Complete workflow: Get agent from agenthub and create .claude/agents file
     
     Args:
         agent_name: Name of the agent (with or without @ prefix)
@@ -63,7 +63,7 @@ def create_agent_from_4genthub(agent_name: str, output_dir: str = ".claude/agent
     """
     
     # Mock call_agent function for demonstration
-    # In real usage, this would be: mcp__4genthub_http__call_agent(name_agent=f"@{agent_name}")
+    # In real usage, this would be: mcp__agenthub_http__call_agent(name_agent=f"@{agent_name}")
     
     # Example response structure (this would come from actual MCP call)
     mock_response = {
@@ -114,7 +114,7 @@ Always prioritize quality and thoroughness in all testing activities.""",
         },
         "capabilities": [
             "mcp__browsermcp__browser_navigate",
-            "mcp__4genthub_http__manage_task",
+            "mcp__agenthub_http__manage_task",
             "mcp__sequential-thinking__sequentialthinking"
         ],
         "source": "agent-library"
@@ -128,7 +128,7 @@ Always prioritize quality and thoroughness in all testing activities.""",
 
 def batch_create_agents(agent_names: list, output_dir: str = ".claude/agents") -> Dict[str, str]:
     """
-    Create multiple .claude/agents files from 4genthub agents
+    Create multiple .claude/agents files from agenthub agents
     
     Args:
         agent_names: List of agent names to create
@@ -142,7 +142,7 @@ def batch_create_agents(agent_names: list, output_dir: str = ".claude/agents") -
     
     for name in agent_names:
         try:
-            filepath = create_agent_from_4genthub(name, output_dir)
+            filepath = create_agent_from_agenthub(name, output_dir)
             results[name] = filepath
             print(f"✅ Created {name}: {filepath}")
         except Exception as e:
@@ -154,12 +154,12 @@ def batch_create_agents(agent_names: list, output_dir: str = ".claude/agents") -
 def main():
     """Demonstration of the JSON to .claude/agents workflow"""
     
-    print("=== 4genthub to Claude Code Agent Conversion ===\n")
+    print("=== agenthub to Claude Code Agent Conversion ===\n")
     
     # Example 1: Single agent conversion
     print("1. Creating single agent...")
     try:
-        filepath = create_agent_from_4genthub("test-orchestrator-agent", "/tmp/claude-agents-demo")
+        filepath = create_agent_from_agenthub("test-orchestrator-agent", "/tmp/claude-agents-demo")
         print(f"✅ Agent created: {filepath}\n")
         
         # Show the created file

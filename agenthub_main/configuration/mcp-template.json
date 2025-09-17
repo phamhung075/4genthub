@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "agenthub": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "AGENTHUB_TOKEN=${AGENTHUB_TOKEN}",
+        "-v",
+        "agenthub-data:/data",
+        "agenthub/mcp-server:latest"
+      ],
+      "env": {
+        "AGENTHUB_TOKEN": "${AGENTHUB_TOKEN}"
+      }
+    }
+  }
+}

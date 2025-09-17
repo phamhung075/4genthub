@@ -1,4 +1,4 @@
-# Development Backend Dockerfile for 4genthub
+# Development Backend Dockerfile for agenthub
 # Optimized for development with debugging tools
 # Based on production Dockerfile but simplified for dev workflow
 # Note: Hot-reload disabled in Docker - rebuild container for code changes
@@ -20,23 +20,23 @@ RUN apt-get update && apt-get install -y \
 RUN pip install uv
 
 # Copy dependency files first for better caching
-COPY 4genthub_main/pyproject.toml 4genthub_main/uv.lock* 4genthub_main/README.md 4genthub_main/requirements.txt ./4genthub_main/
+COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md agenthub_main/requirements.txt ./agenthub_main/
 
 # Install dependencies with editable mode for development
-WORKDIR /app/4genthub_main
+WORKDIR /app/agenthub_main
 RUN uv pip install --system -e . && \
     uv pip install --system --no-cache -r requirements.txt
 
 WORKDIR /app
 
 # Copy application code
-COPY 4genthub_main/ ./4genthub_main/
+COPY agenthub_main/ ./agenthub_main/
 
 # Create necessary directories
 RUN mkdir -p /data /data/logs /data/resources /app/.cache
 
 # Set Python environment for development
-ENV PYTHONPATH="/app/4genthub_main/src:/app:$PYTHONPATH"
+ENV PYTHONPATH="/app/agenthub_main/src:/app:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -51,10 +51,10 @@ ENV CONTAINER_ENV=docker
 ENV DATABASE_TYPE=postgresql
 ENV DATABASE_HOST=localhost
 ENV DATABASE_PORT=5432
-ENV DATABASE_NAME=4genthub
-ENV DATABASE_USER=4genthub_user
+ENV DATABASE_NAME=agenthub
+ENV DATABASE_USER=agenthub_user
 ENV DATABASE_PASSWORD=dev_password
-ENV DATABASE_URL=postgresql://4genthub_user:dev_password@localhost:5432/4genthub
+ENV DATABASE_URL=postgresql://agenthub_user:dev_password@localhost:5432/agenthub
 
 # FastMCP settings
 ENV FASTMCP_PORT=8000
@@ -87,7 +87,7 @@ RUN cat <<'EOF' > /app/docker-entrypoint.sh
 #!/bin/sh
 set -e
 
-echo "Starting 4genthub Development Server..."
+echo "Starting agenthub Development Server..."
 echo "================================================"
 
 # Validate required environment variables
@@ -154,14 +154,14 @@ fi
 # Initialize database if needed
 if [ "${AUTO_MIGRATE:-true}" = "true" ]; then
     echo "Initializing database..."
-    cd /app/4genthub_main
+    cd /app/agenthub_main
     python scripts/init_database.py || echo "Database initialization skipped or already done"
 fi
 
 # Start the application with the same entry point as dev mode
 echo ""
 echo "🚀 Starting FastMCP server on port ${FASTMCP_PORT}..."
-cd /app/4genthub_main
+cd /app/agenthub_main
 exec python -m fastmcp.server.mcp_entry_point
 EOF
 

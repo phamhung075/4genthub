@@ -14,7 +14,7 @@ Successfully fixed all 5 failing tests in `test_context_injector.py` by identify
 
 ## Tests Fixed
 
-### File: `4genthub_main/src/tests/hooks/test_context_injector.py`
+### File: `agenthub_main/src/tests/hooks/test_context_injector.py`
 
 | Test Method | Issue | Fix Applied |
 |------------|-------|-------------|
@@ -67,7 +67,7 @@ config.test_mode = False  # Override auto-detection
 
 All 5 tests verified passing:
 ```bash
-pytest 4genthub_main/src/tests/hooks/test_context_injector.py -xvs
+pytest agenthub_main/src/tests/hooks/test_context_injector.py -xvs
 # Result: 5 passed
 ```
 

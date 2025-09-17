@@ -7,8 +7,8 @@ import importlib.util
 import traceback
 
 # Setup paths
-sys.path.insert(0, '/home/daihungpham/__projects__/agentic-project/4genthub_main/src')
-os.chdir('/home/daihungpham/__projects__/agentic-project/4genthub_main')
+sys.path.insert(0, '/home/daihungpham/__projects__/agentic-project/agenthub_main/src')
+os.chdir('/home/daihungpham/__projects__/agentic-project/agenthub_main')
 os.environ["HOOK_JWT_SECRET"] = "test-secret-key-for-hook-auth"
 
 # Read failing tests
@@ -21,7 +21,7 @@ errors_found = {}
 success_count = 0
 
 for test_file in failed_tests[:10]:  # Check first 10
-    test_path = f"/home/daihungpham/__projects__/agentic-project/4genthub_main/{test_file}"
+    test_path = f"/home/daihungpham/__projects__/agentic-project/agenthub_main/{test_file}"
 
     try:
         # Try to import the test module

@@ -6,7 +6,7 @@
 
 ```python
 # EXACT MCP TOOL SYNTAX
-result = mcp__4genthub_http__manage_task(
+result = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="550e8400-e29b-41d4-a716-446655440000",  # REQUIRED - get from branch creation
     title="Implement Factory Pattern Refactoring",  # REQUIRED - clear, actionable
@@ -28,14 +28,14 @@ result = mcp__4genthub_http__manage_task(
         4. Achieve SOLID principle compliance
         
         ## 📁 Files to Analyze First
-        - /4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/operation_factory.py
-        - /4genthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py
-        - /4genthub_main/src/fastmcp/task_management/application/services/repository_provider_service.py
+        - /agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/operation_factory.py
+        - /agenthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py
+        - /agenthub_main/src/fastmcp/task_management/application/services/repository_provider_service.py
         
         ## 🔧 Files to Modify
         
         ### 1. Create Abstract Base Factory
-        **File**: `/4genthub_main/src/fastmcp/task_management/application/factories/abstract_factory.py`
+        **File**: `/agenthub_main/src/fastmcp/task_management/application/factories/abstract_factory.py`
         **Action**: CREATE NEW
         ```python
         from abc import ABC, abstractmethod
@@ -57,14 +57,14 @@ result = mcp__4genthub_http__manage_task(
         ```
         
         ### 2. Refactor TaskFacadeFactory
-        **File**: `/4genthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py`
+        **File**: `/agenthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py`
         **Changes**:
         - Line 16-34: Remove duplicate singleton implementation
         - Line 35: Extend from AbstractFacadeFactory
         - Line 84-151: Move to _create_facade_impl method
         
         ### 3. Create Parameter Filter Service
-        **File**: `/4genthub_main/src/fastmcp/task_management/application/services/parameter_filter_service.py`
+        **File**: `/agenthub_main/src/fastmcp/task_management/application/services/parameter_filter_service.py`
         **Action**: CREATE NEW
         - Centralize parameter filtering logic
         - Remove hard-coded parameter lists from factories
@@ -135,7 +135,7 @@ print(f"Created task: {task_id}")
 
 ```python
 # Create subtask 1
-subtask1 = mcp__4genthub_http__manage_subtask(
+subtask1 = mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=task_id,  # Parent task ID
     title="Create Abstract Factory Base Classes",
@@ -147,7 +147,7 @@ subtask1 = mcp__4genthub_http__manage_subtask(
 )
 
 # Create subtask 2
-subtask2 = mcp__4genthub_http__manage_subtask(
+subtask2 = mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=task_id,
     title="Implement Parameter Filter Service",
@@ -158,7 +158,7 @@ subtask2 = mcp__4genthub_http__manage_subtask(
 )
 
 # Create subtask 3
-subtask3 = mcp__4genthub_http__manage_subtask(
+subtask3 = mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=task_id,
     title="Refactor TaskFacadeFactory",
@@ -173,7 +173,7 @@ subtask3 = mcp__4genthub_http__manage_subtask(
 
 ```python
 # Start working on task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="update",
     task_id=task_id,
     status="in_progress",
@@ -181,7 +181,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # Update subtask progress
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="update",
     task_id=task_id,
     subtask_id=subtask1["subtask"]["id"],
@@ -191,7 +191,7 @@ mcp__4genthub_http__manage_subtask(
 )
 
 # Complete a subtask
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="complete",
     task_id=task_id,
     subtask_id=subtask1["subtask"]["id"],
@@ -205,7 +205,7 @@ mcp__4genthub_http__manage_subtask(
 
 ```python
 # Search for related tasks
-search_result = mcp__4genthub_http__manage_task(
+search_result = mcp__agenthub_http__manage_task(
     action="search",
     query="factory refactoring",
     git_branch_id="550e8400-e29b-41d4-a716-446655440000",
@@ -213,7 +213,7 @@ search_result = mcp__4genthub_http__manage_task(
 )
 
 # List all tasks in branch
-list_result = mcp__4genthub_http__manage_task(
+list_result = mcp__agenthub_http__manage_task(
     action="list",
     git_branch_id="550e8400-e29b-41d4-a716-446655440000",
     status="in_progress",  # Optional filter
@@ -222,7 +222,7 @@ list_result = mcp__4genthub_http__manage_task(
 )
 
 # Get next recommended task
-next_task = mcp__4genthub_http__manage_task(
+next_task = mcp__agenthub_http__manage_task(
     action="next",
     git_branch_id="550e8400-e29b-41d4-a716-446655440000",
     include_context=True  # Get AI insights
@@ -233,7 +233,7 @@ next_task = mcp__4genthub_http__manage_task(
 
 ```python
 # Complete the main task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="complete",
     task_id=task_id,
     completion_summary="""
@@ -272,21 +272,21 @@ mcp__4genthub_http__manage_task(
 
 ```python
 # Add dependency to existing task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="add_dependency",
     task_id=task_id,
     dependency_id="other-task-id"
 )
 
 # Remove dependency
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="remove_dependency",
     task_id=task_id,
     dependency_id="other-task-id"
 )
 
 # Create task with dependencies
-dependent_task = mcp__4genthub_http__manage_task(
+dependent_task = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="550e8400-e29b-41d4-a716-446655440000",
     title="Test Refactored Factories",
@@ -302,7 +302,7 @@ dependent_task = mcp__4genthub_http__manage_task(
 
 ```python
 # Step 1: Create main epic task
-epic = mcp__4genthub_http__manage_task(
+epic = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="auth-feature-branch-id",
     title="Epic: Implement Complete Authentication System",
@@ -331,7 +331,7 @@ epic = mcp__4genthub_http__manage_task(
 )
 
 # Step 2: Create feature tasks
-jwt_task = mcp__4genthub_http__manage_task(
+jwt_task = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="auth-feature-branch-id",
     title="Implement JWT Authentication",
@@ -345,7 +345,7 @@ jwt_task = mcp__4genthub_http__manage_task(
     """
 )
 
-oauth_task = mcp__4genthub_http__manage_task(
+oauth_task = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="auth-feature-branch-id",
     title="Implement OAuth2 Integration",
@@ -400,7 +400,7 @@ jwt_subtasks = [
 ]
 
 for subtask_data in jwt_subtasks:
-    mcp__4genthub_http__manage_subtask(
+    mcp__agenthub_http__manage_subtask(
         action="create",
         task_id=jwt_task["task"]["id"],
         title=subtask_data["title"],
@@ -410,7 +410,7 @@ for subtask_data in jwt_subtasks:
     )
 
 # Step 4: Create testing task
-test_task = mcp__4genthub_http__manage_task(
+test_task = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="auth-feature-branch-id",
     title="Comprehensive Authentication Testing",
@@ -450,7 +450,7 @@ test_task = mcp__4genthub_http__manage_task(
 )
 
 # Step 5: Create documentation task
-docs_task = mcp__4genthub_http__manage_task(
+docs_task = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="auth-feature-branch-id",
     title="Authentication System Documentation",

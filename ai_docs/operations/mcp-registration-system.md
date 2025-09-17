@@ -1,7 +1,7 @@
 # MCP Registration System Documentation
 
 ## Overview
-The 4genthub server implements a comprehensive registration system for MCP (Model Context Protocol) clients, including Claude Desktop and other compatible clients.
+The agenthub server implements a comprehensive registration system for MCP (Model Context Protocol) clients, including Claude Desktop and other compatible clients.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ Content-Type: application/json
   "success": true,
   "session_id": "uuid-v4-session-id",
   "server": {
-    "name": "4genthub-server",
+    "name": "agenthub-server",
     "version": "2.1.0",
     "protocol_version": "2024-11-05"
   },
@@ -178,7 +178,7 @@ token = jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
 ```json
 {
   "mcpServers": {
-    "4genthub_http": {
+    "agenthub_http": {
       "type": "http",
       "url": "http://localhost:8000/mcp/",
       "headers": {
@@ -195,7 +195,7 @@ For stdio-based clients, use the MCP bridge:
 ```json
 {
   "mcpServers": {
-    "4genthub": {
+    "agenthub": {
       "command": "python",
       "args": ["src/mcp_bridge.py"],
       "transport": "stdio"
@@ -236,7 +236,7 @@ curl http://localhost:8000/registrations
 
 ### Log Files
 - **Bridge logs**: `/tmp/mcp_bridge.log`
-- **Server logs**: `docker logs 4genthub-server`
+- **Server logs**: `docker logs agenthub-server`
 
 ## Security Considerations
 

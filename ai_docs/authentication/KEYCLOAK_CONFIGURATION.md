@@ -1,4 +1,4 @@
-# Keycloak Configuration for 4genthub (Backend-as-Middleware)
+# Keycloak Configuration for agenthub (Backend-as-Middleware)
 
 ## Architecture Overview
 - **Frontend** → communicates only with → **Backend**
@@ -10,30 +10,30 @@
 ### Basic Settings
 - **Client ID:** `mcp-backend`
 - **Name:** MCP Backend Services
-- **Description:** Backend services for 4genthub platform
+- **Description:** Backend services for agenthub platform
 - **Always display in UI:** On
 
 ### Access Settings
-- **Root URL:** `https://4genthub-backend.92.5.226.7.nip.io`
-- **Home URL:** `https://4genthub-backend.92.5.226.7.nip.io`
+- **Root URL:** `https://agenthub-backend.92.5.226.7.nip.io`
+- **Home URL:** `https://agenthub-backend.92.5.226.7.nip.io`
 
 ### Valid Redirect URIs
 Since only backend talks to Keycloak:
 ```
-https://4genthub-backend.92.5.226.7.nip.io/*
+https://agenthub-backend.92.5.226.7.nip.io/*
 http://localhost:8000/*
 ```
 
 ### Valid Post Logout Redirect URIs
 ```
-https://4genthub-backend.92.5.226.7.nip.io/*
+https://agenthub-backend.92.5.226.7.nip.io/*
 http://localhost:8000/*
 ```
 
 ### Web Origins (CORS)
 Only backend origins needed (WITHOUT trailing slashes or wildcards):
 ```
-https://4genthub-backend.92.5.226.7.nip.io
+https://agenthub-backend.92.5.226.7.nip.io
 http://localhost:8000
 ```
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete the rebranding from agenthub to 4genthub for remaining files.
+Complete the rebranding from agenthub to agenthub for remaining files.
 This script handles SQL files and other specific file types.
 """
 
@@ -20,27 +20,27 @@ FILES_TO_UPDATE = [
     ".github/workflows/production-deployment.yml",
     "scripts/deployment/force-caprover-rebuild.sh",
     "scripts/force-caprover-rebuild.sh",
-    "4genthub_main/scripts/init.sql",
+    "agenthub_main/scripts/init.sql",
     "docker-system/init-postgres-production.sql",
-    "4genthub_main/scripts/supabase_complete_wipe.sql",
-    "4genthub_main/scripts/supabase_data_cleanup.sql",
-    "4genthub_main/config/keycloak_service_account.sample",
-    "4genthub_main/.github/workflows/deploy-mvp.yml",
-    "4genthub_main/.github/workflows/production-deployment.yml",
+    "agenthub_main/scripts/supabase_complete_wipe.sql",
+    "agenthub_main/scripts/supabase_data_cleanup.sql",
+    "agenthub_main/config/keycloak_service_account.sample",
+    "agenthub_main/.github/workflows/deploy-mvp.yml",
+    "agenthub_main/.github/workflows/production-deployment.yml",
 ]
 
 # Define replacement patterns
 REPLACEMENTS = [
     # Case-sensitive replacements
-    ("AgenthubMCP", "4genthub"),
-    ("agenthub_mcp", "4genthub"),
-    ("agenthub-mcp", "4genthub"),
-    ("agenthub_user", "4genthub_user"),
-    ("agenthub-frontend", "4genthub-frontend"),
-    ("agenthub_mcp_main", "4genthub_main"),
-    ("agenthub", "4genthub"),
-    ("Agenthub", "4genthub"),
-    ("DHAFNCK", "4GENTHUB"),
+    ("AgenthubMCP", "agenthub"),
+    ("agenthub_mcp", "agenthub"),
+    ("agenthub-mcp", "agenthub"),
+    ("agenthub_user", "agenthub_user"),
+    ("agenthub-frontend", "agenthub-frontend"),
+    ("agenthub_mcp_main", "agenthub_main"),
+    ("agenthub", "agenthub"),
+    ("Agenthub", "agenthub"),
+    ("DHAFNCK", "AGENTHUB"),
 ]
 
 def replace_in_file(file_path: Path):
@@ -71,7 +71,7 @@ def replace_in_file(file_path: Path):
 
 def main():
     """Main function to complete the rebranding."""
-    print("🚀 Completing rebranding from agenthub to 4genthub...")
+    print("🚀 Completing rebranding from agenthub to agenthub...")
     print(f"Project root: {PROJECT_ROOT}")
     print()
 

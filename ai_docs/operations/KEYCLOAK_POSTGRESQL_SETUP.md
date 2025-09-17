@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to configure 4genthub to work with:
+This guide explains how to configure agenthub to work with:
 - **PostgreSQL** running in a Docker container locally
 - **Keycloak** running on a cloud service for authentication
 - **MCP** tokens for API access
@@ -53,13 +53,13 @@ ENV=production
 DATABASE_TYPE=postgresql
 DATABASE_HOST=localhost  # Use 'postgres' when running inside Docker
 DATABASE_PORT=5432
-DATABASE_NAME=4genthub_prod
-DATABASE_USER=4genthub_user
+DATABASE_NAME=agenthub_prod
+DATABASE_USER=agenthub_user
 DATABASE_PASSWORD=YourSecurePasswordHere  # CHANGE THIS!
 DATABASE_SSL_MODE=prefer
 
 # Connection URL
-DATABASE_URL=postgresql://4genthub_user:YourSecurePasswordHere@localhost:5432/4genthub_prod?sslmode=prefer
+DATABASE_URL=postgresql://agenthub_user:YourSecurePasswordHere@localhost:5432/agenthub_prod?sslmode=prefer
 
 # =============================================================================
 # KEYCLOAK AUTHENTICATION (Cloud Service)
@@ -69,7 +69,7 @@ AUTH_PROVIDER=keycloak
 
 # Replace with your actual Keycloak cloud instance
 KEYCLOAK_URL=https://your-keycloak-instance.cloud.com
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here  # CHANGE THIS!
 
@@ -100,20 +100,20 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: 4genthub-postgres
+    container_name: agenthub-postgres
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./4genthub_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./agenthub_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
 
   mcp-server:
     build: .
-    container_name: 4genthub-server
+    container_name: agenthub-server
     environment:
       DATABASE_HOST: postgres  # Use service name inside Docker
       # ... other environment variables
@@ -135,7 +135,7 @@ docker-compose up -d postgres
 sleep 5
 
 # Initialize the database (if not auto-initialized)
-docker exec -i 4genthub-postgres psql -U 4genthub_user -d 4genthub_prod < 4genthub_main/scripts/init.sql
+docker exec -i agenthub-postgres psql -U agenthub_user -d agenthub_prod < agenthub_main/scripts/init.sql
 ```
 
 ### 4. Configure Keycloak
@@ -143,7 +143,7 @@ docker exec -i 4genthub-postgres psql -U 4genthub_user -d 4genthub_prod < 4genth
 In your Keycloak cloud instance:
 
 1. **Create a Realm**:
-   - Name: `4genthub`
+   - Name: `agenthub`
 
 2. **Create a Client**:
    - Client ID: `mcp-backend`
@@ -263,13 +263,13 @@ The PostgreSQL database includes:
    docker ps | grep postgres
    
    # Test connection
-   docker exec 4genthub-postgres pg_isready -U 4genthub_user
+   docker exec agenthub-postgres pg_isready -U agenthub_user
    ```
 
 2. **Keycloak Connection Failed**:
    ```bash
    # Test Keycloak endpoint
-   curl https://your-keycloak.cloud.com/realms/4genthub/.well-known/openid-configuration
+   curl https://your-keycloak.cloud.com/realms/agenthub/.well-known/openid-configuration
    ```
 
 3. **MCP Server Not Starting**:
@@ -278,7 +278,7 @@ The PostgreSQL database includes:
    docker-compose logs mcp-server
    
    # Verify environment variables
-   docker exec 4genthub-server env | grep KEYCLOAK
+   docker exec agenthub-server env | grep KEYCLOAK
    ```
 
 ### Authentication Issues
@@ -320,10 +320,10 @@ The PostgreSQL database includes:
 
 ```bash
 # Backup PostgreSQL
-docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > backup.sql
+docker exec agenthub-postgres pg_dump -U agenthub_user agenthub_prod > backup.sql
 
 # Restore from backup
-docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < backup.sql
+docker exec -i agenthub-postgres psql -U agenthub_user agenthub_prod < backup.sql
 ```
 
 ### Update Keycloak Configuration
@@ -343,7 +343,7 @@ curl http://localhost:8001/health
 curl http://localhost:8001/metrics
 
 # Check database connections
-docker exec 4genthub-postgres psql -U 4genthub_user -c "SELECT count(*) FROM pg_stat_activity;"
+docker exec agenthub-postgres psql -U agenthub_user -c "SELECT count(*) FROM pg_stat_activity;"
 ```
 
 ## Migration from Previous Setup

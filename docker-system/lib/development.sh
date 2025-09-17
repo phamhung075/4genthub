@@ -40,11 +40,11 @@ dev_setup() {
         echo "Creating necessary directories..."
         info "Created .env file from dev template"
         echo "Loading dev environment..."
-        echo "Creating network: 4genthub-network"
-        echo "Starting 4genthub_postgres_1 ... done"
-        echo "Starting 4genthub_redis_1 ... done"
-        echo "Starting 4genthub_backend_1 ... done"
-        echo "Starting 4genthub_frontend_1 ... done"
+        echo "Creating network: agenthub-network"
+        echo "Starting agenthub_postgres_1 ... done"
+        echo "Starting agenthub_redis_1 ... done"
+        echo "Starting agenthub_backend_1 ... done"
+        echo "Starting agenthub_frontend_1 ... done"
         echo "Waiting for services to be healthy..."
         echo "Seeding development data..."
         success "Development data seeded"
@@ -53,7 +53,7 @@ dev_setup() {
         echo "🚀 Quick start:"
         echo "  Backend API: http://localhost:8000"
         echo "  Frontend:    http://localhost:3000"
-        echo "  Database:    postgresql://4genthub_user:dev_password@localhost:5432/4genthub"
+        echo "  Database:    postgresql://agenthub_user:dev_password@localhost:5432/agenthub"
         echo ""
         echo "📝 Useful commands:"
         echo "  ./docker-cli.sh logs backend     # View backend logs"
@@ -67,7 +67,7 @@ dev_setup() {
     check_docker_compose
     
     # Create necessary directories
-    mkdir -p "${PROJECT_ROOT}/4genthub_main/data"
+    mkdir -p "${PROJECT_ROOT}/agenthub_main/data"
     mkdir -p "${PROJECT_ROOT}/backups"
     mkdir -p "${PROJECT_ROOT}/logs"
     
@@ -81,7 +81,7 @@ dev_setup() {
     load_environment "dev"
     
     # Ensure network
-    ensure_network "4genthub-network"
+    ensure_network "agenthub-network"
     
     # Start services
     start_command
@@ -96,7 +96,7 @@ dev_setup() {
     echo "🚀 Quick start:"
     echo "  Backend API: http://localhost:8000"
     echo "  Frontend:    http://localhost:3000"
-    echo "  Database:    postgresql://4genthub_user:dev_password@localhost:5432/4genthub"
+    echo "  Database:    postgresql://agenthub_user:dev_password@localhost:5432/agenthub"
     echo ""
     echo "📝 Useful commands:"
     echo "  ./docker-cli.sh logs backend     # View backend logs"
@@ -117,15 +117,15 @@ dev_reset() {
     
     # Check if in test mode
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
-        echo "Stopping 4genthub_postgres_1 ... done"
-        echo "Stopping 4genthub_redis_1 ... done"
-        echo "Stopping 4genthub_backend_1 ... done"
-        echo "Stopping 4genthub_frontend_1 ... done"
+        echo "Stopping agenthub_postgres_1 ... done"
+        echo "Stopping agenthub_redis_1 ... done"
+        echo "Stopping agenthub_backend_1 ... done"
+        echo "Stopping agenthub_frontend_1 ... done"
         echo "Removing development volumes..."
-        echo "Starting 4genthub_postgres_1 ... done"
-        echo "Starting 4genthub_redis_1 ... done"
-        echo "Starting 4genthub_backend_1 ... done"
-        echo "Starting 4genthub_frontend_1 ... done"
+        echo "Starting agenthub_postgres_1 ... done"
+        echo "Starting agenthub_redis_1 ... done"
+        echo "Starting agenthub_backend_1 ... done"
+        echo "Starting agenthub_frontend_1 ... done"
         echo "DROP DATABASE"
         echo "CREATE DATABASE"
         echo "GRANT"
@@ -144,8 +144,8 @@ dev_reset() {
     
     # Remove volumes
     info "Removing development volumes..."
-    docker volume rm 4genthub-postgres-data 2>/dev/null || true
-    docker volume rm 4genthub-redis-data 2>/dev/null || true
+    docker volume rm agenthub-postgres-data 2>/dev/null || true
+    docker volume rm agenthub-redis-data 2>/dev/null || true
     
     # Start services
     start_command

@@ -58,22 +58,22 @@ class OperationClassifier:
                 'priority': 'high'
             },
             'task_created': {
-                'tools': ['mcp__4genthub_http__manage_task'],
+                'tools': ['mcp__agenthub_http__manage_task'],
                 'actions': ['create'],
                 'priority': 'high'
             },
             'task_updated': {
-                'tools': ['mcp__4genthub_http__manage_task'],
+                'tools': ['mcp__agenthub_http__manage_task'],
                 'actions': ['update', 'complete'],
                 'priority': 'high'
             },
             'subtask_updated': {
-                'tools': ['mcp__4genthub_http__manage_subtask'],
+                'tools': ['mcp__agenthub_http__manage_subtask'],
                 'actions': ['create', 'update', 'complete'],
                 'priority': 'high'
             },
             'context_updated': {
-                'tools': ['mcp__4genthub_http__manage_context'],
+                'tools': ['mcp__agenthub_http__manage_context'],
                 'actions': ['update', 'add_insight', 'add_progress'],
                 'priority': 'critical'
             },

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# 4genthub Production Deployment Script
+# agenthub Production Deployment Script
 # =============================================================================
 # This script handles the complete production deployment of the MCP Auto-Injection System
 # including security hardening, monitoring setup, and validation checks.
@@ -23,8 +23,8 @@ readonly NC='\033[0m' # No Color
 # Configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-readonly DEPLOYMENT_LOG="/var/log/4genthub-deployment.log"
-readonly ROLLBACK_DATA_DIR="/tmp/4genthub-rollback"
+readonly DEPLOYMENT_LOG="/var/log/agenthub-deployment.log"
+readonly ROLLBACK_DATA_DIR="/tmp/agenthub-rollback"
 
 # Default values
 ENVIRONMENT="production"
@@ -214,7 +214,7 @@ build_images() {
     local timestamp
     timestamp=$(date +"%Y%m%d-%H%M%S")
     
-    local images=("4genthub-backend" "4genthub-frontend")
+    local images=("agenthub-backend" "agenthub-frontend")
     for image in "${images[@]}"; do
         docker tag "${image}:latest" "${image}:${timestamp}"
         docker tag "${image}:latest" "${image}:${ENVIRONMENT}-latest"
@@ -336,13 +336,13 @@ confirm_deployment() {
 }
 
 main() {
-    log_info "Starting 4genthub deployment to ${ENVIRONMENT}"
+    log_info "Starting agenthub deployment to ${ENVIRONMENT}"
     log_info "Deployment log: ${DEPLOYMENT_LOG}"
     
     # Create log file
     mkdir -p "$(dirname "$DEPLOYMENT_LOG")" 2>/dev/null || true
     touch "$DEPLOYMENT_LOG" 2>/dev/null || {
-        DEPLOYMENT_LOG="/tmp/4genthub-deployment.log"
+        DEPLOYMENT_LOG="/tmp/agenthub-deployment.log"
         log_warning "Cannot write to /var/log, using ${DEPLOYMENT_LOG}"
     }
     

@@ -2,7 +2,7 @@
 
 set -e
 
-echo "🚀 4genthub CapRover Deployment"
+echo "🚀 agenthub CapRover Deployment"
 echo "================================="
 
 # Configuration
@@ -64,16 +64,16 @@ if [ "$SKIP_BUILD" != "true" ]; then
     
     # Build backend
     if [ -f "Dockerfile.production" ]; then
-        docker build -f Dockerfile.production -t $DOCKER_NAMESPACE/4genthub-backend:latest .
+        docker build -f Dockerfile.production -t $DOCKER_NAMESPACE/agenthub-backend:latest .
         print_status "Backend image built"
     else
         print_warning "Dockerfile.production not found, skipping backend build"
     fi
     
     # Build frontend
-    if [ -f "4genthub-frontend/Dockerfile.production" ]; then
-        cd 4genthub-frontend
-        docker build -f Dockerfile.production -t $DOCKER_NAMESPACE/4genthub-frontend:latest .
+    if [ -f "agenthub-frontend/Dockerfile.production" ]; then
+        cd agenthub-frontend
+        docker build -f Dockerfile.production -t $DOCKER_NAMESPACE/agenthub-frontend:latest .
         cd ..
         print_status "Frontend image built"
     else
@@ -81,13 +81,13 @@ if [ "$SKIP_BUILD" != "true" ]; then
     fi
     
     # Push images to registry
-    if docker push $DOCKER_NAMESPACE/4genthub-backend:latest 2>/dev/null; then
+    if docker push $DOCKER_NAMESPACE/agenthub-backend:latest 2>/dev/null; then
         print_status "Backend image pushed to registry"
     else
         print_warning "Failed to push backend image"
     fi
     
-    if docker push $DOCKER_NAMESPACE/4genthub-frontend:latest 2>/dev/null; then
+    if docker push $DOCKER_NAMESPACE/agenthub-frontend:latest 2>/dev/null; then
         print_status "Frontend image pushed to registry"
     else
         print_warning "Failed to push frontend image"
@@ -103,7 +103,7 @@ caprover deploy \
     --caproverUrl $CAPROVER_SERVER_URL \
     --caproverPassword $CAPROVER_PASSWORD \
     --caproverApp $CAPROVER_BACKEND_APP_NAME \
-    --imageName $DOCKER_NAMESPACE/4genthub-backend:latest || print_warning "Backend deployment failed"
+    --imageName $DOCKER_NAMESPACE/agenthub-backend:latest || print_warning "Backend deployment failed"
 
 print_status "Backend deployment initiated"
 
@@ -113,7 +113,7 @@ caprover deploy \
     --caproverUrl $CAPROVER_SERVER_URL \
     --caproverPassword $CAPROVER_PASSWORD \
     --caproverApp $CAPROVER_FRONTEND_APP_NAME \
-    --imageName $DOCKER_NAMESPACE/4genthub-frontend:latest || print_warning "Frontend deployment failed"
+    --imageName $DOCKER_NAMESPACE/agenthub-frontend:latest || print_warning "Frontend deployment failed"
 
 print_status "Frontend deployment initiated"
 

@@ -1,6 +1,6 @@
 # Product Requirements Documentation
 
-This folder contains product requirements, specifications, and strategic planning documents for the 4genthub AI Agent Orchestration Platform.
+This folder contains product requirements, specifications, and strategic planning documents for the agenthub AI Agent Orchestration Platform.
 
 ## 📋 Contents
 

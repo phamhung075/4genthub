@@ -11,7 +11,7 @@ describe "Core Docker Commands"
 it "should start all services with 'start' command"
 test_start_command() {
     # Setup
-    mock_docker_compose "up -d" "Starting 4genthub_postgres_1 ... done"
+    mock_docker_compose "up -d" "Starting agenthub_postgres_1 ... done"
     
     # Execute
     output=$($DOCKER_CLI start 2>&1)
@@ -19,7 +19,7 @@ test_start_command() {
     
     # Assert
     assert_equals 0 $exit_code "Start command should exit with 0"
-    assert_contains "$output" "Starting 4genthub services" "Should show starting message"
+    assert_contains "$output" "Starting agenthub services" "Should show starting message"
     assert_docker_compose_called_with "up -d"
 }
 
@@ -27,7 +27,7 @@ test_start_command() {
 it "should stop all services with 'stop' command"
 test_stop_command() {
     # Setup
-    mock_docker_compose "stop" "Stopping 4genthub_postgres_1 ... done"
+    mock_docker_compose "stop" "Stopping agenthub_postgres_1 ... done"
     
     # Execute
     output=$($DOCKER_CLI stop 2>&1)
@@ -35,7 +35,7 @@ test_stop_command() {
     
     # Assert
     assert_equals 0 $exit_code "Stop command should exit with 0"
-    assert_contains "$output" "Stopping 4genthub services" "Should show stopping message"
+    assert_contains "$output" "Stopping agenthub services" "Should show stopping message"
     assert_docker_compose_called_with "stop"
 }
 
@@ -43,7 +43,7 @@ test_stop_command() {
 it "should restart specific service"
 test_restart_specific_service() {
     # Setup
-    mock_docker_compose "restart backend" "Restarting 4genthub-backend ... done"
+    mock_docker_compose "restart backend" "Restarting agenthub-backend ... done"
     
     # Execute
     output=$($DOCKER_CLI restart backend 2>&1)
@@ -59,10 +59,10 @@ test_restart_specific_service() {
 it "should display service status"
 test_status_command() {
     # Setup
-    mock_docker_ps "4genthub-postgres:Running (healthy):5432->5432/tcp
-4genthub-redis:Running (healthy):6379->6379/tcp
-4genthub-backend:Running (healthy):8000->8000/tcp
-4genthub-frontend:Running:3000->3000/tcp"
+    mock_docker_ps "agenthub-postgres:Running (healthy):5432->5432/tcp
+agenthub-redis:Running (healthy):6379->6379/tcp
+agenthub-backend:Running (healthy):8000->8000/tcp
+agenthub-frontend:Running:3000->3000/tcp"
     
     # Execute
     output=$($DOCKER_CLI status 2>&1)
@@ -105,7 +105,7 @@ test_shell_command() {
     
     # Assert
     assert_equals 0 $exit_code "Shell command should exit with 0"
-    assert_contains "$output" "docker exec -it 4genthub-backend" "Should build correct exec command"
+    assert_contains "$output" "docker exec -it agenthub-backend" "Should build correct exec command"
 }
 
 # Test: Invalid command should show error
@@ -130,7 +130,7 @@ test_help_command() {
     
     # Assert
     assert_equals 0 $exit_code "Help command should exit with 0"
-    assert_contains "$output" "4genthub Docker CLI" "Should show title"
+    assert_contains "$output" "agenthub Docker CLI" "Should show title"
     assert_contains "$output" "USAGE:" "Should show usage section"
     assert_contains "$output" "COMMANDS:" "Should show commands section"
     assert_contains "$output" "start" "Should list start command"

@@ -1,8 +1,8 @@
-# 4genthub Docker Development System Guide
+# agenthub Docker Development System Guide
 
 ## Overview
 
-The 4genthub project includes a sophisticated Docker-based development system designed to streamline the development workflow with multiple deployment configurations and advanced features. The system is managed through `docker-system/docker-menu.sh`, a comprehensive interactive menu system.
+The agenthub project includes a sophisticated Docker-based development system designed to streamline the development workflow with multiple deployment configurations and advanced features. The system is managed through `docker-system/docker-menu.sh`, a comprehensive interactive menu system.
 
 ## Docker Menu System (`docker-system/docker-menu.sh`)
 
@@ -85,7 +85,7 @@ check_and_free_ports() {
 #### Build Cleanup
 ```bash
 clean_existing_builds() {
-    # Removes existing 4genthub images
+    # Removes existing agenthub images
     # Clears Python cache files
     # Ensures fresh --no-cache builds
 }
@@ -98,7 +98,7 @@ clean_existing_builds() {
 The backend is built around the FastMCP framework with a comprehensive MCP (Model Context Protocol) server implementation:
 
 ```
-4genthub_main/src/fastmcp/server/
+agenthub_main/src/fastmcp/server/
 ├── mcp_entry_point.py          # Main entry point with dual auth
 ├── server.py                   # FastMCP server core
 ├── connection_manager.py       # Connection state management
@@ -386,7 +386,7 @@ ENV=development|production
 
 ## Conclusion
 
-The 4genthub Docker development system provides a comprehensive, production-ready development environment with:
+The agenthub Docker development system provides a comprehensive, production-ready development environment with:
 
 - **Multiple deployment configurations** for different use cases
 - **Sophisticated MCP server architecture** with dual authentication

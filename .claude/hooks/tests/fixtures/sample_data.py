@@ -197,7 +197,7 @@ SAMPLE_FILE_PROTECTION = {
     ],
     "valid_test_paths": [
         "src/tests/",
-        "4genthub_main/src/tests/",
+        "agenthub_main/src/tests/",
         ".claude/hooks/tests/",
         "tests/"
     ],

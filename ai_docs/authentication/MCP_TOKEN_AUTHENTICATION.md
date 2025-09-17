@@ -1,7 +1,7 @@
 # MCP Token-Based Authentication Architecture
 
 ## Overview
-The 4genthub server uses **token-based authentication** for secure access control. This means:
+The agenthub server uses **token-based authentication** for secure access control. This means:
 - **CORS can be fully open** (`*`) since security is handled by tokens
 - **Any Claude Code instance** can connect from any location
 - **Tokens are generated from the frontend** after user authentication
@@ -51,8 +51,8 @@ return {"token": mcp_token, "expires_in": 86400}
 ```json
 {
   "mcpServers": {
-    "4genthub": {
-      "url": "https://4genthub-backend.92.5.226.7.nip.io/mcp",
+    "agenthub": {
+      "url": "https://agenthub-backend.92.5.226.7.nip.io/mcp",
       "transport": "http",
       "headers": {
         "Authorization": "Bearer YOUR_MCP_TOKEN_HERE"
@@ -195,7 +195,7 @@ Add to your Claude Code MCP configuration:
 ```json
 {
   "mcpServers": {
-    "4genthub": {
+    "agenthub": {
       "url": "https://your-mcp-server.com/mcp",
       "transport": "http",
       "headers": {
@@ -230,7 +230,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
 
 ## Summary
 
-The 4genthub server uses **token-based authentication** which means:
+The agenthub server uses **token-based authentication** which means:
 
 1. **CORS is open** (`*`) - Any origin can make requests
 2. **Security via tokens** - Every request must have valid token

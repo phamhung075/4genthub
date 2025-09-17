@@ -35,7 +35,7 @@ color: red
 ## **Step-by-Step Process to get prompt:**
 
 **Step 1: Initialize MCP Agent**
-- Call `mcp--4genthub-http--call-agent(name_agent="@root-cause-analysis-agent")` to get agent information
+- Call `mcp--agenthub-http--call-agent(name_agent="@root-cause-analysis-agent")` to get agent information
 - **Display**: `[Agent: Initializing...]`
 
 **Step 2: Extract Configuration Data**

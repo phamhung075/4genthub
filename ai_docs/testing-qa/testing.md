@@ -2,7 +2,7 @@
 
 ## Overview
 
-Comprehensive testing strategies for the 4genthub platform using Test-Driven Development (TDD) patterns with strict authentication requirements.
+Comprehensive testing strategies for the agenthub platform using Test-Driven Development (TDD) patterns with strict authentication requirements.
 
 ## Quick Start
 
@@ -26,17 +26,17 @@ def test_operation_without_auth_raises_error(self):
 ### Test Categories
 
 #### Unit Tests
-- **Location**: `4genthub_main/src/tests/unit/`
+- **Location**: `agenthub_main/src/tests/unit/`
 - **Target Coverage**: 90%+
 - **Focus**: Individual components, business logic, value objects
 
 #### Integration Tests  
-- **Location**: `4genthub_main/src/tests/integration/`
+- **Location**: `agenthub_main/src/tests/integration/`
 - **Target Coverage**: All API endpoints
 - **Focus**: Component interaction, database operations, MCP tools
 
 #### End-to-End Tests
-- **Location**: `4genthub_main/src/tests/e2e/`
+- **Location**: `agenthub_main/src/tests/e2e/`
 - **Target Coverage**: Critical user journeys  
 - **Focus**: Complete workflows, user scenarios
 
@@ -44,16 +44,16 @@ def test_operation_without_auth_raises_error(self):
 
 ```bash
 # All tests
-pytest 4genthub_main/src/tests/
+pytest agenthub_main/src/tests/
 
 # Unit tests only
-pytest 4genthub_main/src/tests/unit/
+pytest agenthub_main/src/tests/unit/
 
 # With coverage
-pytest --cov=4genthub_main/src --cov-report=html
+pytest --cov=agenthub_main/src --cov-report=html
 
 # Specific test file
-pytest 4genthub_main/src/tests/unit/test_task_management.py
+pytest agenthub_main/src/tests/unit/test_task_management.py
 ```
 
 ## Test Structure
@@ -194,13 +194,13 @@ def test_external_dependency(self, mock_api):
 ### Coverage Reports
 ```bash
 # Generate HTML coverage report
-pytest --cov=4genthub_main/src --cov-report=html
+pytest --cov=agenthub_main/src --cov-report=html
 
 # View coverage report  
 open htmlcov/index.html
 
 # Terminal coverage report
-pytest --cov=4genthub_main/src --cov-report=term-missing
+pytest --cov=agenthub_main/src --cov-report=term-missing
 ```
 
 ## Common Patterns

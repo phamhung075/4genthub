@@ -465,7 +465,7 @@ class PreToolUseHook:
 
         # Check for MCP hint matrix hints FIRST (use factory)
         output_parts = []
-        if tool_name.startswith('mcp__4genthub_http'):
+        if tool_name.startswith('mcp__agenthub_http'):
             try:
                 # Using unified hint system instead of matrix factory
                 hint_system = get_hint_system()

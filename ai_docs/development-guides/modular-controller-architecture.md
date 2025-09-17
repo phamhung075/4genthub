@@ -6,7 +6,7 @@
 
 ## Overview
 
-The 4genthub platform has implemented a modular controller architecture to address the maintainability challenges of large monolithic controller files. This architecture uses the factory pattern to decompose complex controllers into focused, specialized components while preserving backward compatibility.
+The agenthub platform has implemented a modular controller architecture to address the maintainability challenges of large monolithic controller files. This architecture uses the factory pattern to decompose complex controllers into focused, specialized components while preserving backward compatibility.
 
 ## Architecture Pattern
 
