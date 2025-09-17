@@ -5,7 +5,7 @@
 ### 1. Global Context (User-scoped)
 ```python
 # Update global context with organization standards
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="global",
     context_id=user_id,  # Your user ID
@@ -26,7 +26,7 @@ mcp__4genthub_http__manage_context(
 ### 2. Project Context
 ```python
 # Update project context with technology decisions
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="project",
     context_id=project_id,
@@ -55,7 +55,7 @@ mcp__4genthub_http__manage_context(
 ### 3. Branch Context
 ```python
 # Update branch context with feature-specific information
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="branch",
     context_id=branch_id,
@@ -85,7 +85,7 @@ mcp__4genthub_http__manage_context(
 ### 4. Task Context
 ```python
 # Update task context with specific implementation details
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="task",
     context_id=task_id,
@@ -125,7 +125,7 @@ mcp__4genthub_http__manage_context(
 ### ❌ WRONG - This overwrites existing data
 ```python
 # DON'T DO THIS - Overwrites all existing context
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="task",
     context_id=task_id,
@@ -140,7 +140,7 @@ mcp__4genthub_http__manage_context(
 ### ✅ CORRECT - Read, merge, then update
 ```python
 # Step 1: Read existing context
-existing = mcp__4genthub_http__manage_context(
+existing = mcp__agenthub_http__manage_context(
     action="get",
     level="task",
     context_id=task_id,
@@ -152,7 +152,7 @@ updated_patterns = existing["context"].get("discovered_patterns", {})
 updated_patterns["new_pattern"] = "value"  # Add to existing patterns
 
 # Step 3: Update with merged data
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="task",
     context_id=task_id,
@@ -172,7 +172,7 @@ mcp__4genthub_http__manage_context(
 
 ```python
 # 1. Start work - Read branch context to understand feature
-branch_context = mcp__4genthub_http__manage_context(
+branch_context = mcp__agenthub_http__manage_context(
     action="get",
     level="branch",
     context_id=branch_id,
@@ -180,7 +180,7 @@ branch_context = mcp__4genthub_http__manage_context(
 )
 
 # 2. Create task and its context
-task = mcp__4genthub_http__manage_task(
+task = mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Add password reset functionality",
@@ -188,7 +188,7 @@ task = mcp__4genthub_http__manage_task(
 )
 
 # 3. Create task context for frontend visibility
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="create",
     level="task",
     context_id=task["task"]["id"],
@@ -202,7 +202,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # 4. As work progresses, update task context
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="task",
     context_id=task["task"]["id"],
@@ -216,7 +216,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # 5. Document discoveries in branch context
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="branch",
     context_id=branch_id,
@@ -232,7 +232,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # 6. Complete task with summary
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="complete",
     task_id=task["task"]["id"],
     completion_summary="Implemented secure password reset with email verification, one-time tokens, and rate limiting",
@@ -240,7 +240,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # 7. Update task context with completion details
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="task",
     context_id=task["task"]["id"],
@@ -267,7 +267,7 @@ When you discover something reusable, delegate it to a higher level:
 ```python
 # Discovered a reusable authentication pattern in task
 # Delegate to project level for other branches to use
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="delegate",
     level="task",
     context_id=task_id,

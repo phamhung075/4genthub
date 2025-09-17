@@ -41,11 +41,11 @@ class MCPTaskInterceptor:
             True if operation was tracked, False otherwise
         """
         # Check if this is a call_agent operation
-        if tool_name == "mcp__4genthub_http__call_agent":
+        if tool_name == "mcp__agenthub_http__call_agent":
             return self._handle_call_agent(parameters, session_id)
 
         # Check if this is a task management operation
-        if tool_name not in ["mcp__4genthub_http__manage_task", "manage_task"]:
+        if tool_name not in ["mcp__agenthub_http__manage_task", "manage_task"]:
             return False
 
         try:
@@ -175,7 +175,7 @@ class MCPTaskInterceptor:
         This is called after the tool execution completes to update tracking
         based on the actual response.
         """
-        if tool_name not in ["mcp__4genthub_http__manage_task", "manage_task"]:
+        if tool_name not in ["mcp__agenthub_http__manage_task", "manage_task"]:
             return False
 
         try:

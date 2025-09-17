@@ -49,7 +49,7 @@ graph TD
 
 ### 1. TaskApplicationFacade Enhancement
 
-**File**: `4genthub_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
+**File**: `agenthub_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
 
 **Required Method Addition**:
 ```python
@@ -100,7 +100,7 @@ async def create_task(self, git_branch_id: str, title: str, **kwargs) -> TaskCre
 
 ### 2. Repository Integration
 
-**File**: `4genthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py`
+**File**: `agenthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py`
 
 **Required Dependency Injection**:
 ```python
@@ -122,7 +122,7 @@ class TaskFacadeFactory:
 
 ### 3. GitBranchRepository Method
 
-**File**: `4genthub_main/src/fastmcp/task_management/domain/repositories/git_branch_repository.py`
+**File**: `agenthub_main/src/fastmcp/task_management/domain/repositories/git_branch_repository.py`
 
 **Required Method Addition**:
 ```python
@@ -160,7 +160,7 @@ class GitBranchRepository(ABC):
 
 ### 4. ORM Repository Implementation
 
-**File**: `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/git_branch_repository.py`
+**File**: `agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/git_branch_repository.py`
 
 **Required Implementation**:
 ```python
@@ -202,7 +202,7 @@ class ORMGitBranchRepository(GitBranchRepository):
 
 ### 5. Domain Model Updates
 
-**File**: `4genthub_main/src/fastmcp/task_management/domain/entities/git_branch.py`
+**File**: `agenthub_main/src/fastmcp/task_management/domain/entities/git_branch.py`
 
 **Ensure GitBranch Entity includes project_id**:
 ```python
@@ -224,7 +224,7 @@ class GitBranch:
 
 ### Unit Tests Required
 
-**File**: `4genthub_main/src/tests/unit/application/facades/test_task_application_facade.py`
+**File**: `agenthub_main/src/tests/unit/application/facades/test_task_application_facade.py`
 
 ```python
 class TestTaskApplicationFacadeProjectResolution:
@@ -285,7 +285,7 @@ class TestTaskApplicationFacadeProjectResolution:
 
 ### Integration Tests Required
 
-**File**: `4genthub_main/src/tests/integration/test_mcp_task_management.py`
+**File**: `agenthub_main/src/tests/integration/test_mcp_task_management.py`
 
 ```python
 class TestMCPTaskManagementIntegration:

@@ -10,11 +10,11 @@ No legacy patterns or fallback or migration mechanisms are allowed
 Complete Detailed Request Flow
 
 Step 0 Fix error
-see 4genthub_main/backend.log for fix error appear on log
+see agenthub_main/backend.log for fix error appear on log
 
 Step 1 MCP Tool Call
 The MCP tool initiates the request from Claude or other MCP clients
-Tool name mcp__4genthub_http__manage_task
+Tool name mcp__agenthub_http__manage_task
 Parameters passed action create title New Task git_branch_id branch123
 Tool sends HTTP POST request to backend server
 
@@ -23,7 +23,7 @@ MCP tool call converts to HTTP request
 Endpoint POST /api/v1/mcp/tools/call
 Headers Authorization Bearer JWT_TOKEN Content Type application json
 Request body contains tool name and arguments
-Body structure name mcp__4genthub_http__manage_task arguments action create title New Task git_branch_id branch123
+Body structure name mcp__agenthub_http__manage_task arguments action create title New Task git_branch_id branch123
 
 Step 3 Authentication Middleware
 FastAPI middleware intercepts request before reaching route handler
@@ -133,12 +133,12 @@ MCP tool returns result to user
 Detailed Example Task Creation Flow
 
 1 MCP Tool Call
-mcp__4genthub_http__manage_task action create title Implement login feature git_branch_id abc123
+mcp__agenthub_http__manage_task action create title Implement login feature git_branch_id abc123
 
 2 HTTP Request
 POST /api/v1/mcp/tools/call
 Authorization Bearer [REDACTED]
-Body name mcp__4genthub_http__manage_task arguments action create title Implement login feature git_branch_id abc123
+Body name mcp__agenthub_http__manage_task arguments action create title Implement login feature git_branch_id abc123
 
 3 Authentication
 Token validated with Keycloak

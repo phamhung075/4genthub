@@ -219,7 +219,7 @@ Use appropriate agent based on issue type:
 Always include:
 ```python
 # Standard context resolution
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="resolve",
     level="task",
     context_id=task_id,
@@ -228,7 +228,7 @@ mcp__4genthub_http__manage_context(
 ```
 
 ### 3. SYSTEMATIC APPROACH
-Follow the 4genthub operation sequence:
+Follow the agenthub operation sequence:
 1. Health check and agent switching
 2. Context resolution
 3. Task status updates

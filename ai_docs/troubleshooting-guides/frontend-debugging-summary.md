@@ -27,7 +27,7 @@
 ### Phase 3: Authentication Analysis ✅ COMPLETED
 - Analyzed environment configuration:
   - `AUTH_ENABLED=true` - Authentication required
-  - `4GENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead` - MVP mode enabled but not bypassing auth
+  - `AGENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead` - MVP mode enabled but not bypassing auth
   - Valid Supabase configuration present
 - Confirmed frontend has no mechanism to obtain/store JWT tokens
 - **Result**: Authentication configuration causing the blockage
@@ -81,13 +81,13 @@
 ```bash
 # BEFORE (Causing Issue)
 AUTH_ENABLED=true          # Authentication required
-4GENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead              # MVP mode enabled but not bypassing auth
+AGENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead              # MVP mode enabled but not bypassing auth
 SUPABASE_URL=https://...           # Valid Supabase config
 CORS_ORIGINS=...,localhost:3000    # Missing port 3800
 
 # AFTER (Fixed)
 AUTH_ENABLED=false         # Authentication disabled for development
-4GENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead              # MVP mode enabled  
+AGENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead              # MVP mode enabled  
 SUPABASE_URL=https://...           # Supabase config preserved
 CORS_ORIGINS=...,localhost:3800    # Added frontend port
 ```
@@ -177,7 +177,7 @@ CORS_ORIGINS=...,localhost:3800    # Added frontend port
 
 ### Using Debug Script:
 ```bash
-cd 4genthub_main
+cd agenthub_main
 python scripts/debug_frontend_tasks.py --comprehensive
 ```
 

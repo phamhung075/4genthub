@@ -1,12 +1,12 @@
 # Development Guides Index
 
-This directory contains comprehensive guides for developers working with the 4genthub system.
+This directory contains comprehensive guides for developers working with the agenthub system.
 
 ## Available Guides
 
 ### Integration & Compatibility
 
-- **[Claude Code Integration](./claude-code-integration.md)** - Complete guide for integrating your 60+ 4genthub agents with Claude Code's agent system through bridge architecture
+- **[Claude Code Integration](./claude-code-integration.md)** - Complete guide for integrating your 60+ agenthub agents with Claude Code's agent system through bridge architecture
 - **[Agent Bridge Examples](./agent-bridge-examples.md)** - Practical examples showing how to use bridge agents for complex workflows, debugging, testing, and multi-agent coordination
 
 ## Quick Start

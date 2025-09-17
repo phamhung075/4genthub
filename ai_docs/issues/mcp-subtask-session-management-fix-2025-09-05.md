@@ -53,7 +53,7 @@ elif hasattr(self, 'session') and self.session:
 
 ### Files Modified
 
-1. **`4genthub_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`**
+1. **`agenthub_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`**
    - **Lines 53-59**: Reversed session check priority in `get_db_session()`
    - **Change**: Transaction sessions now have highest priority
    - **Impact**: All operations within transactions use the same session

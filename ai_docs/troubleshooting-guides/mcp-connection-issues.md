@@ -2,7 +2,7 @@
 
 ## Common Connection Issues and Solutions
 
-### Issue 1: "Failed to reconnect to 4genthub_http"
+### Issue 1: "Failed to reconnect to agenthub_http"
 
 #### Symptoms
 - Claude Code shows connection error
@@ -12,7 +12,7 @@
 #### Diagnosis Steps
 1. Check Docker container status:
    ```bash
-   docker ps | grep 4genthub
+   docker ps | grep agenthub
    ```
 
 2. Verify server health:
@@ -60,7 +60,7 @@ print(f'New token: {token}')
 
 ##### Solution C: Restart Docker Container
 ```bash
-cd /path/to/4genthub_main
+cd /path/to/agenthub_main
 docker-compose restart
 ```
 
@@ -90,7 +90,7 @@ echo 'YOUR_TOKEN' | cut -d. -f2 | base64 -d | python -m json.tool
 ##### Verify JWT Secret
 ```bash
 # Check Docker container secret
-docker exec 4genthub-server env | grep JWT_SECRET
+docker exec agenthub-server env | grep JWT_SECRET
 
 # Should match .env file
 cat .env | grep JWT_SECRET_KEY
@@ -148,7 +148,7 @@ echo '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-1
 
 1. **Ensure server is running**:
    ```bash
-   docker ps | grep 4genthub-server
+   docker ps | grep agenthub-server
    ```
 
 2. **Check port availability**:
@@ -158,7 +158,7 @@ echo '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-1
 
 3. **Restart bridge with correct path**:
    ```bash
-   cd /path/to/4genthub_main
+   cd /path/to/agenthub_main
    python3 src/mcp_bridge.py
    ```
 
@@ -187,16 +187,16 @@ Access-Control-Allow-Methods: GET, POST, OPTIONS
 ```bash
 # Check all components
 echo "=== Docker Status ==="
-docker ps | grep 4genthub
+docker ps | grep agenthub
 
 echo "=== Server Health ==="
 curl -s http://localhost:8000/health | python -m json.tool
 
 echo "=== MCP Config ==="
-cat .mcp.json | grep -A5 4genthub_http
+cat .mcp.json | grep -A5 agenthub_http
 
 echo "=== Recent Logs ==="
-docker logs 4genthub-server --tail 10
+docker logs agenthub-server --tail 10
 ```
 
 ### 2. Token Validation
@@ -234,7 +234,7 @@ JWT_EXPIRATION_MINUTES=43200  # 30 days
 ### Docker Environment
 ```bash
 # Check current values
-docker exec 4genthub-server env | grep -E "JWT|MCP|AUTH"
+docker exec agenthub-server env | grep -E "JWT|MCP|AUTH"
 ```
 
 ---
@@ -242,8 +242,8 @@ docker exec 4genthub-server env | grep -E "JWT|MCP|AUTH"
 ## Log File Locations
 
 1. **MCP Bridge Logs**: `/tmp/mcp_bridge.log`
-2. **Docker Container Logs**: `docker logs 4genthub-server`
-3. **Frontend Logs**: `docker logs 4genthub-frontend`
+2. **Docker Container Logs**: `docker logs agenthub-server`
+3. **Frontend Logs**: `docker logs agenthub-frontend`
 
 ---
 

@@ -33,43 +33,43 @@ setUp() {
 case "$1 $2" in
     "ps --format")
         # Mock the actual container names that exist
-        echo "4genthub-server"
-        echo "4genthub-frontend" 
-        echo "4genthub-redis"
+        echo "agenthub-server"
+        echo "agenthub-frontend" 
+        echo "agenthub-redis"
         ;;
-    "inspect 4genthub-server")
+    "inspect agenthub-server")
         echo '[{"State":{"Status":"running","Health":{"Status":"healthy"}}}]'
         ;;
-    "inspect 4genthub-frontend")
+    "inspect agenthub-frontend")
         echo '[{"State":{"Status":"running","Health":{"Status":"unhealthy"}}}]'
         ;;
-    "inspect 4genthub-redis")
+    "inspect agenthub-redis")
         echo '[{"State":{"Status":"running","Health":{"Status":"healthy"}}}]'
         ;;
-    "inspect 4genthub-backend"|"inspect 4genthub-postgres")
+    "inspect agenthub-backend"|"inspect agenthub-postgres")
         exit 1  # Container does not exist
         ;;
     "ps --filter"*)
-        # Return container IDs for 4genthub containers
-        echo "abc123"  # 4genthub-server
-        echo "def456"  # 4genthub-frontend  
-        echo "ghi789"  # 4genthub-redis
+        # Return container IDs for agenthub containers
+        echo "abc123"  # agenthub-server
+        echo "def456"  # agenthub-frontend  
+        echo "ghi789"  # agenthub-redis
         ;;
     "stats --no-stream"*)
         echo "CONTAINER          CPU %     MEM USAGE"
-        echo "4genthub-server 0.23%     100.3MiB / 512MiB"
-        echo "4genthub-frontend   0.71%     11.89MiB / 256MiB"
-        echo "4genthub-redis      0.00%     12.19MiB / 128MiB"
+        echo "agenthub-server 0.23%     100.3MiB / 512MiB"
+        echo "agenthub-frontend   0.71%     11.89MiB / 256MiB"
+        echo "agenthub-redis      0.00%     12.19MiB / 128MiB"
         ;;
-    "logs 4genthub-server"*)
+    "logs agenthub-server"*)
         echo "INFO: MCP server healthy"
         echo "INFO: Processing requests"
         ;;
-    "logs 4genthub-backend"*)
-        echo "Error response from daemon: No such container: 4genthub-backend"
+    "logs agenthub-backend"*)
+        echo "Error response from daemon: No such container: agenthub-backend"
         exit 1
         ;;
-    "network inspect 4genthub-network"*)
+    "network inspect agenthub-network"*)
         # First network inspect should fail, triggering fallback
         exit 1
         ;;
@@ -154,16 +154,16 @@ assert_not_contains() {
 # Test cases
 
 test_monitoring_detects_correct_backend_container() {
-    echo "🧪 Testing: Monitoring detects 4genthub-server as backend"
+    echo "🧪 Testing: Monitoring detects agenthub-server as backend"
     
     local output
     output=$(show_monitoring_snapshot 2>&1)
     
-    # Should show backend as running (mapped from 4genthub-server)
+    # Should show backend as running (mapped from agenthub-server)
     assert_contains "$output" "✅ backend:     Running" "Backend status should show as running"
     
-    # Should NOT try to access 4genthub-backend container
-    assert_not_contains "$output" "4genthub-backend" "Should not reference old container name"
+    # Should NOT try to access agenthub-backend container
+    assert_not_contains "$output" "agenthub-backend" "Should not reference old container name"
 }
 
 test_monitoring_handles_missing_postgres() {
@@ -180,7 +180,7 @@ test_monitoring_handles_missing_postgres() {
 }
 
 test_monitoring_detects_frontend_correctly() {
-    echo "🧪 Testing: Monitoring detects 4genthub-frontend correctly"
+    echo "🧪 Testing: Monitoring detects agenthub-frontend correctly"
     
     local output
     output=$(show_monitoring_snapshot 2>&1)
@@ -190,7 +190,7 @@ test_monitoring_detects_frontend_correctly() {
 }
 
 test_monitoring_detects_redis_correctly() {
-    echo "🧪 Testing: Monitoring detects 4genthub-redis correctly"
+    echo "🧪 Testing: Monitoring detects agenthub-redis correctly"
     
     local output
     output=$(show_monitoring_snapshot 2>&1)
@@ -206,9 +206,9 @@ test_monitoring_resource_usage_uses_correct_containers() {
     output=$(show_monitoring_snapshot 2>&1)
     
     # Should include actual container names in resource usage
-    assert_contains "$output" "4genthub-server" "Resource usage should include mcp-server"
-    assert_contains "$output" "4genthub-frontend" "Resource usage should include frontend"
-    assert_contains "$output" "4genthub-redis" "Resource usage should include redis"
+    assert_contains "$output" "agenthub-server" "Resource usage should include mcp-server"
+    assert_contains "$output" "agenthub-frontend" "Resource usage should include frontend"
+    assert_contains "$output" "agenthub-redis" "Resource usage should include redis"
 }
 
 test_monitoring_logs_uses_correct_backend_container() {
@@ -217,9 +217,9 @@ test_monitoring_logs_uses_correct_backend_container() {
     local output
     output=$(show_monitoring_snapshot 2>&1)
     
-    # Should get logs from 4genthub-server, not 4genthub-backend
+    # Should get logs from agenthub-server, not agenthub-backend
     assert_contains "$output" "INFO: MCP server healthy" "Should show logs from mcp-server"
-    assert_not_contains "$output" "No such container: 4genthub-backend" "Should not try to access old backend container"
+    assert_not_contains "$output" "No such container: agenthub-backend" "Should not try to access old backend container"
 }
 
 test_monitoring_network_status_correct() {

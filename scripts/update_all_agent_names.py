@@ -84,12 +84,12 @@ AGENT_NAME_MAPPINGS = {
 
 # Directories to process
 DIRECTORIES_TO_PROCESS = [
-    "4genthub_main/src",
-    "4genthub_main/scripts",
-    "4genthub_main/agent-library",
+    "agenthub_main/src",
+    "agenthub_main/scripts",
+    "agenthub_main/agent-library",
     ".claude",
     "ai_docs",
-    "4genthub-frontend/src",
+    "agenthub-frontend/src",
 ]
 
 # File extensions to process

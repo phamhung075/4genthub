@@ -65,7 +65,7 @@ it "should execute comprehensive health check workflow"
 test_workflow_health_check() {
     # Setup
     mock_docker "info" "Docker running"
-    mock_docker_ps "4genthub-postgres:Running (healthy):5432->5432/tcp"
+    mock_docker_ps "agenthub-postgres:Running (healthy):5432->5432/tcp"
     
     # Execute
     output=$($DOCKER_CLI workflow health-check 2>&1)
@@ -114,7 +114,7 @@ test_workflow_missing_prereq() {
 it "should verify deployment version"
 test_workflow_deploy_version() {
     # Setup
-    mock_docker "pull 4genthub/backend:v2.0.0" "Pulling v2.0.0..."
+    mock_docker "pull agenthub/backend:v2.0.0" "Pulling v2.0.0..."
     
     # Execute
     output=$(echo "y" | $DOCKER_CLI workflow prod-deploy production v2.0.0 2>&1)

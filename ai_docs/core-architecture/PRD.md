@@ -1,14 +1,14 @@
-# Product Requirements Document (PRD) - 4genthub Platform
+# Product Requirements Document (PRD) - agenthub Platform
 
 ## Executive Summary
 
-**Product Name**: 4genthub - AI-Human Collaboration Platform  
+**Product Name**: agenthub - AI-Human Collaboration Platform  
 **Version**: 0.0.2 Alpha  
 **Date**: September 2025  
 **Status**: Active Development
 
 ### Vision Statement
-4genthub is an enterprise-grade AI agent orchestration platform that enables seamless collaboration between humans and specialized AI agents through an intuitive web interface. The platform leverages the Model Context Protocol (MCP) to orchestrate 60+ specialized AI agents, maintaining context across sessions and enabling complex multi-agent workflows.
+agenthub is an enterprise-grade AI agent orchestration platform that enables seamless collaboration between humans and specialized AI agents through an intuitive web interface. The platform leverages the Model Context Protocol (MCP) to orchestrate 60+ specialized AI agents, maintaining context across sessions and enabling complex multi-agent workflows.
 
 ### Mission
 To revolutionize software development by providing a human-first platform where AI agents work as collaborative team members, maintaining context, tracking progress, and delivering intelligent automation through visual interfaces.
@@ -24,7 +24,7 @@ Current AI development tools lack:
 - Enterprise-grade project management for AI-driven development
 
 ### Solution
-4genthub provides:
+agenthub provides:
 - **60+ Specialized AI Agents**: Each optimized for specific development tasks
 - **4-Tier Context Hierarchy**: Global → Project → Branch → Task context inheritance
 - **Visual Web Dashboard**: Real-time monitoring and control of AI agents

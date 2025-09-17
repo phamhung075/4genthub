@@ -1,7 +1,7 @@
 # User-Scoped Global Context Architecture
 
 ## Overview
-The 4genthub context hierarchy implements a **user-scoped global context** system, not a system-wide singleton. This document clarifies the correct implementation.
+The agenthub context hierarchy implements a **user-scoped global context** system, not a system-wide singleton. This document clarifies the correct implementation.
 
 ## Context Hierarchy
 

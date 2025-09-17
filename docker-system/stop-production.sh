@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# 4genthub Production Stop Script
+# agenthub Production Stop Script
 # =============================================================================
 
 set -e  # Exit on error
@@ -18,7 +18,7 @@ COMPOSE_FILE="docker-compose.production.yml"
 
 echo -e "${BLUE}"
 echo "============================================================"
-echo "     Stopping 4genthub Production Server"
+echo "     Stopping agenthub Production Server"
 echo "============================================================"
 echo -e "${NC}"
 
@@ -36,7 +36,7 @@ docker-compose -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}============================================================${NC}"
-echo -e "${GREEN}     4genthub Production Server Stopped${NC}"
+echo -e "${GREEN}     agenthub Production Server Stopped${NC}"
 echo -e "${GREEN}============================================================${NC}"
 echo ""
 echo -e "${YELLOW}To restart, run: ./start-production.sh${NC}"

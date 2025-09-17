@@ -1,7 +1,7 @@
 # End-to-End Testing Guidelines
 
 ## 1. Overview
-Describe E2E testing strategies, tools, and workflows for 4genthub.
+Describe E2E testing strategies, tools, and workflows for agenthub.
 
 **Example:**
 - "E2E tests simulate real user flows using Cypress."
@@ -100,4 +100,4 @@ The context system has been unified under the `manage_context` tool:
 ```
 
 ---
-*This document follows the 4genthub PRD template. Update as E2E testing practices evolve.* 
+*This document follows the agenthub PRD template. Update as E2E testing practices evolve.* 

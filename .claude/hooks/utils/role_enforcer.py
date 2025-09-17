@@ -131,9 +131,9 @@ class RoleEnforcer:
         # Fallback default
         return {
             "name": "uninitialized",
-            "allowed_tools": ["mcp__4genthub_http__call_agent", "Read", "Grep", "Glob"],
+            "allowed_tools": ["mcp__agenthub_http__call_agent", "Read", "Grep", "Glob"],
             "blocked_tools": "*",
-            "warning": "[NO ROLE] Must call mcp__4genthub_http__call_agent first!"
+            "warning": "[NO ROLE] Must call mcp__agenthub_http__call_agent first!"
         }
 
     def _check_path_restrictions(self, role: str, tool_name: str, parameters: Dict[str, Any]) -> Tuple[bool, str]:

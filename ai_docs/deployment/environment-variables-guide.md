@@ -1,7 +1,7 @@
 # Environment Variables Guide: ENV vs NODE_ENV vs VITE_ENV
 
 ## Overview
-This guide clarifies the purpose and usage of different environment variables in the 4genthub project.
+This guide clarifies the purpose and usage of different environment variables in the agenthub project.
 
 ## Variable Definitions
 

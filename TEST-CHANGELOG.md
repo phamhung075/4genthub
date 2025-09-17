@@ -188,7 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✅ MAJOR MILESTONE: Complete .claude/hooks Testing Suite
 
 #### Summary
-- **162 total test files created** (24 in `.claude/hooks/tests/`, 138 in `4genthub_main/src/tests/`)
+- **162 total test files created** (24 in `.claude/hooks/tests/`, 138 in `agenthub_main/src/tests/`)
 - **Complete testing infrastructure** with pytest configuration, GitHub Actions CI/CD, and coverage reporting
 - **80%+ coverage targets** with HTML, XML, and JSON reporting formats
 
@@ -321,20 +321,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ./scripts/test-menu.sh
 
 # Run specific categories
-pytest 4genthub_main/src/tests/unit/
-pytest 4genthub_main/src/tests/integration/
-pytest 4genthub_main/src/tests/e2e/
+pytest agenthub_main/src/tests/unit/
+pytest agenthub_main/src/tests/integration/
+pytest agenthub_main/src/tests/e2e/
 
 # Run with coverage
-pytest --cov=4genthub_main/src --cov-report=html
+pytest --cov=agenthub_main/src --cov-report=html
 
 # Enhanced test runner
-./4genthub_main/scripts/run_tests_enhanced.sh
+./agenthub_main/scripts/run_tests_enhanced.sh
 ```
 
 ### Test Structure
 ```
-4genthub_main/src/tests/
+agenthub_main/src/tests/
 ├── unit/                 # Individual component tests
 ├── integration/          # Component interaction tests
 ├── e2e/                 # End-to-end workflow tests

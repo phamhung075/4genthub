@@ -1,8 +1,8 @@
-# 4genthub Test Creation Guide - DDD Architecture
+# agenthub Test Creation Guide - DDD Architecture
 
 ## Executive Summary
 
-Based on comprehensive analysis of the 4genthub codebase, **613 source files** have been analyzed with only **19.1% test coverage**. This guide provides prioritized recommendations for creating unit tests focusing on Domain-Driven Design (DDD) layers.
+Based on comprehensive analysis of the agenthub codebase, **613 source files** have been analyzed with only **19.1% test coverage**. This guide provides prioritized recommendations for creating unit tests focusing on Domain-Driven Design (DDD) layers.
 
 ### Current Coverage by DDD Layer:
 - **Domain**: 51.1% (47/92 files) 🟡 - NEEDS IMPROVEMENT
@@ -23,7 +23,7 @@ Based on comprehensive analysis of the 4genthub codebase, **613 source files** h
 ### 1. Rule Value Objects (`fastmcp/task_management/domain/value_objects/rule_value_objects.py`)
 **Priority: 130 | 7 classes, 28 methods | 219 LOC**
 
-**Test File**: `4genthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/rule_value_objects_test.py`
+**Test File**: `agenthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/rule_value_objects_test.py`
 
 ```python
 # Test Template
@@ -212,17 +212,17 @@ class TestRuleContent:
 
 ```bash
 # Create test directories
-mkdir -p 4genthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects
-mkdir -p 4genthub_main/src/tests/unit/fastmcp/task_management/domain/entities
-mkdir -p 4genthub_main/src/tests/unit/fastmcp/task_management/domain/services
-mkdir -p 4genthub_main/src/tests/unit/fastmcp/task_management/domain/repositories
+mkdir -p agenthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects
+mkdir -p agenthub_main/src/tests/unit/fastmcp/task_management/domain/entities
+mkdir -p agenthub_main/src/tests/unit/fastmcp/task_management/domain/services
+mkdir -p agenthub_main/src/tests/unit/fastmcp/task_management/domain/repositories
 
 # Create high-priority test files
-touch 4genthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/rule_value_objects_test.py
-touch 4genthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/hints_test.py
-touch 4genthub_main/src/tests/unit/fastmcp/task_management/domain/entities/rule_content_test.py
-touch 4genthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/compliance_objects_test.py
-touch 4genthub_main/src/tests/unit/fastmcp/task_management/domain/repositories/rule_repository_test.py
+touch agenthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/rule_value_objects_test.py
+touch agenthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/hints_test.py
+touch agenthub_main/src/tests/unit/fastmcp/task_management/domain/entities/rule_content_test.py
+touch agenthub_main/src/tests/unit/fastmcp/task_management/domain/value_objects/compliance_objects_test.py
+touch agenthub_main/src/tests/unit/fastmcp/task_management/domain/repositories/rule_repository_test.py
 ```
 
 ## 📋 Domain Layer Test Patterns
@@ -327,14 +327,14 @@ faker>=18.0.0           # For fake data generation
 ```python
 # pytest.ini
 [tool:pytest]
-testpaths = 4genthub_main/src/tests
+testpaths = agenthub_main/src/tests
 python_files = *test*.py
 python_classes = Test*
 python_functions = test_*
 addopts = 
     --strict-markers
     --strict-config
-    --cov=4genthub_main/src/fastmcp
+    --cov=agenthub_main/src/fastmcp
     --cov-report=html
     --cov-report=term-missing
     --cov-fail-under=50

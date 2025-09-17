@@ -5,8 +5,8 @@ ACTION=${1:-status}
 case $ACTION in
     disable)
         echo "🔓 Disabling authentication..."
-        docker exec 4genthub-backend sh -c 'export AUTH_ENABLED=false'
-        docker restart 4genthub-backend
+        docker exec agenthub-backend sh -c 'export AUTH_ENABLED=false'
+        docker restart agenthub-backend
         sleep 3
         echo "✅ Authentication disabled. You can now access projects without login."
         echo "   Go to http://localhost:3800 - you should see projects without login"
@@ -14,8 +14,8 @@ case $ACTION in
 
     enable)
         echo "🔒 Enabling authentication..."
-        docker exec 4genthub-backend sh -c 'export AUTH_ENABLED=true'
-        docker restart 4genthub-backend
+        docker exec agenthub-backend sh -c 'export AUTH_ENABLED=true'
+        docker restart agenthub-backend
         sleep 3
         echo "✅ Authentication enabled. Login required to access projects."
         ;;

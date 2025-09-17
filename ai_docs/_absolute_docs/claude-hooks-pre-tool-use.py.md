@@ -31,7 +31,7 @@ Pre-tool validation hook that enforces file system protection rules and document
 - **`.md` files**: Only allowed in `ai_docs/` directory
 - **`.sh` scripts**: Must be placed in `scripts/` directory  
 - **Test files**: Must follow paths defined in `.valid_test_paths`
-- **`.venv` folder**: Only one allowed at `4genthub_main/.venv`
+- **`.venv` folder**: Only one allowed at `agenthub_main/.venv`
 - **`logs` folder**: Only one allowed in project root
 
 ### 3. Selective Documentation Enforcement
@@ -55,9 +55,9 @@ Lists files that are allowed to be created/modified in the project root:
 
 ### `.valid_test_paths`
 Defines allowed paths for test file creation:
-- `4genthub_main/src/tests/`
-- `4genthub-frontend/src/tests/`
-- `4genthub-frontend/src/__tests__/`
+- `agenthub_main/src/tests/`
+- `agenthub-frontend/src/tests/`
+- `agenthub-frontend/src/__tests__/`
 - Other test directories as configured
 
 ## Error Messages

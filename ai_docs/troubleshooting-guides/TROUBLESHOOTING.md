@@ -1,4 +1,4 @@
-# 4genthub Troubleshooting Guide
+# agenthub Troubleshooting Guide
 
 ## 🚨 "Failed to generate token" Error
 
@@ -38,7 +38,7 @@ You're seeing a "Failed to generate token" error even though a valid token objec
 #### Step 3: Verify the Fix
 1. **Restart your Next.js development server**:
    ```bash
-   cd 4genthub_main/frontend
+   cd agenthub_main/frontend
    npm run dev
    ```
 2. **Try generating a token again**

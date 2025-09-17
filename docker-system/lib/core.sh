@@ -6,13 +6,13 @@ source "${SCRIPT_DIR}/lib/database/interface.sh"
 
 # Start services
 start_command() {
-    info "Starting 4genthub services..."
+    info "Starting agenthub services..."
     
     check_docker
     check_docker_compose
     
     # Ensure network exists
-    ensure_network "4genthub-network"
+    ensure_network "agenthub-network"
     
     # Load environment
     load_environment
@@ -24,10 +24,10 @@ start_command() {
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         # In test mode, simulate docker compose output
         docker compose $compose_args up -d
-        echo "Starting 4genthub_postgres_1 ... done"
-        echo "Starting 4genthub_backend_1 ... done"
-        echo "Starting 4genthub_redis_1 ... done"
-        echo "Starting 4genthub_frontend_1 ... done"
+        echo "Starting agenthub_postgres_1 ... done"
+        echo "Starting agenthub_backend_1 ... done"
+        echo "Starting agenthub_redis_1 ... done"
+        echo "Starting agenthub_frontend_1 ... done"
     elif is_development; then
         info "Starting in development mode with hot reload..."
         docker compose $compose_args up -d --build
@@ -55,7 +55,7 @@ start_command() {
 
 # Stop services
 stop_command() {
-    info "Stopping 4genthub services..."
+    info "Stopping agenthub services..."
     
     check_docker
     check_docker_compose
@@ -66,10 +66,10 @@ stop_command() {
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         # In test mode, call mock docker compose
         docker compose $compose_args stop
-        echo "Stopping 4genthub_postgres_1 ... done"
-        echo "Stopping 4genthub_backend_1 ... done"
-        echo "Stopping 4genthub_redis_1 ... done"
-        echo "Stopping 4genthub_frontend_1 ... done"
+        echo "Stopping agenthub_postgres_1 ... done"
+        echo "Stopping agenthub_backend_1 ... done"
+        echo "Stopping agenthub_redis_1 ... done"
+        echo "Stopping agenthub_frontend_1 ... done"
     else
         docker compose $compose_args down
     fi
@@ -93,7 +93,7 @@ restart_command() {
         
         docker compose $compose_args restart "$service"
     else
-        info "Restarting 4genthub services..."
+        info "Restarting agenthub services..."
         stop_command
         sleep 2
         start_command
@@ -102,7 +102,7 @@ restart_command() {
 
 # Show status
 status_command() {
-    info "4genthub Service Status"
+    info "agenthub Service Status"
     echo "========================="
     
     # Check if in test mode
@@ -172,7 +172,7 @@ shell_command() {
     # Check if in test mode or dry run
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]] || [[ "$dry_run" == "true" ]]; then
         validate_service_name "$service" || return 1
-        echo "docker exec -it 4genthub-$service /bin/bash"
+        echo "docker exec -it agenthub-$service /bin/bash"
         return 0
     fi
     

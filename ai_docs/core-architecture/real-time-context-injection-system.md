@@ -10,10 +10,10 @@ The Real-Time Context Injection System is a sophisticated architecture that enha
 
 #### Hook Authentication (JWT)
 - **Purpose**: Secure communication between Claude hooks and MCP server
-- **Implementation**: `4genthub_main/src/fastmcp/auth/hook_auth.py`
+- **Implementation**: `agenthub_main/src/fastmcp/auth/hook_auth.py`
 - **Configuration**:
   ```bash
-  HOOK_JWT_SECRET="4genthub-hook-secret-2025"
+  HOOK_JWT_SECRET="agenthub-hook-secret-2025"
   HOOK_JWT_ALGORITHM="HS256"
   ```
 - **Token Generation**: Automatic JWT token creation for hook requests
@@ -99,7 +99,7 @@ graph TD
 ### Environment Variables
 ```bash
 # Hook JWT Authentication
-HOOK_JWT_SECRET="4genthub-hook-secret-2025"
+HOOK_JWT_SECRET="agenthub-hook-secret-2025"
 HOOK_JWT_ALGORITHM="HS256"
 
 # MCP Server Configuration
@@ -114,11 +114,11 @@ CONTEXT_CACHE_TTL_SECONDS="900"
 ### Context Triggers Configuration
 ```python
 context_triggers = {
-    'mcp__4genthub_http__manage_task': {
+    'mcp__agenthub_http__manage_task': {
         'actions': ['create', 'update', 'list'],
         'context_types': ['project', 'branch', 'recent_tasks']
     },
-    'mcp__4genthub_http__manage_subtask': {
+    'mcp__agenthub_http__manage_subtask': {
         'actions': ['create', 'update'],
         'context_types': ['parent_task', 'project']
     },
@@ -144,9 +144,9 @@ context_triggers = {
 ## Testing
 
 ### Test Suite Location
-- **Unit Tests**: `4genthub_main/src/tests/test_context_injection.py`
-- **Integration Tests**: `4genthub_main/src/tests/test_context_injection_system.py`
-- **Performance Tests**: `4genthub_main/src/tests/test_context_injection_performance.py`
+- **Unit Tests**: `agenthub_main/src/tests/test_context_injection.py`
+- **Integration Tests**: `agenthub_main/src/tests/test_context_injection_system.py`
+- **Performance Tests**: `agenthub_main/src/tests/test_context_injection_performance.py`
 
 ### Test Coverage
 - Authentication flow validation
@@ -159,12 +159,12 @@ context_triggers = {
 ### Running Tests
 ```bash
 # Create test data
-python3 4genthub_main/src/tests/create_test_data.py
+python3 agenthub_main/src/tests/create_test_data.py
 
 # Run comprehensive test
-HOOK_JWT_SECRET="4genthub-hook-secret-2025" \
+HOOK_JWT_SECRET="agenthub-hook-secret-2025" \
 HOOK_JWT_ALGORITHM="HS256" \
-python3 4genthub_main/src/tests/test_context_injection_system.py
+python3 agenthub_main/src/tests/test_context_injection_system.py
 ```
 
 ## Security Considerations

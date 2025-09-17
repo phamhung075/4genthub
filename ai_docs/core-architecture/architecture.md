@@ -1,8 +1,8 @@
-# 4genthub System Architecture
+# agenthub System Architecture
 
 ## Overview
 
-4genthub is a multi-project AI orchestration platform built using Domain-Driven Design (DDD) principles with a 4-tier hierarchical context system. The platform enables autonomous AI agents to manage complex software development workflows across multiple projects and team contexts.
+agenthub is a multi-project AI orchestration platform built using Domain-Driven Design (DDD) principles with a 4-tier hierarchical context system. The platform enables autonomous AI agents to manage complex software development workflows across multiple projects and team contexts.
 
 ## Core Architecture Principles
 
@@ -124,7 +124,7 @@ Task Context Request → Branch Context → Project Context → Global Context
 
 ### Dual PostgreSQL Setup
 
-4genthub uses a dual PostgreSQL architecture designed for optimal development-production parity:
+agenthub uses a dual PostgreSQL architecture designed for optimal development-production parity:
 
 ```
 Production Environment:
@@ -277,6 +277,6 @@ else:
 
 ## Conclusion
 
-The 4genthub architecture provides a robust, scalable foundation for AI-driven project management. The combination of DDD principles, hierarchical context management, and MCP integration enables sophisticated autonomous workflows while maintaining clean separation of concerns and high testability.
+The agenthub architecture provides a robust, scalable foundation for AI-driven project management. The combination of DDD principles, hierarchical context management, and MCP integration enables sophisticated autonomous workflows while maintaining clean separation of concerns and high testability.
 
 The architecture is designed to evolve with changing requirements while maintaining backward compatibility and system stability.

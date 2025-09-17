@@ -1,0 +1,35 @@
+collaboration:
+  agent_communication: true
+  enabled: true
+command_execution:
+  enabled: true
+  restrictions:
+  - sandbox_mode
+  allowed_commands:
+  - '*'
+file_operations:
+  enabled: true
+  permissions:
+    read: true
+    write: true
+    create: true
+    delete: true
+mcp_tools:
+  enabled: true
+  tools:
+  - mcp__agenthub_http__manage_task
+  - mcp__agenthub_http__manage_subtask
+  - mcp__agenthub_http__manage_context
+  - mcp__agenthub_http__manage_project
+  - mcp__agenthub_http__manage_git_branch
+  - mcp--agenthub-http--manage-agent
+  - mcp--agenthub-http--call-agent
+  - mcp__agenthub_http__manage_rule
+  - mcp__agenthub_http__manage_compliance
+  - mcp__agenthub_http__manage_connection
+  - mcp__sequential-thinking__sequentialthinking
+  - mcp__ide__getDiagnostics
+  - mcp__ide__executeCode
+  - mcp__browsermcp__browser_navigate
+  - mcp__browsermcp__browser_snapshot
+  - mcp__shadcn-ui-server__list-components

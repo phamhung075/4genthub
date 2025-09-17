@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up Keycloak authentication with the 4genthub platform.
+This guide provides step-by-step instructions for setting up Keycloak authentication with the agenthub platform.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ This guide provides step-by-step instructions for setting up Keycloak authentica
 1. Log in to Keycloak Admin Console
 2. Create a new realm named `mcp` (or use your preferred name)
 3. Configure realm settings:
-   - Display name: "4genthub"
+   - Display name: "agenthub"
    - Enable user registration if needed
    - Set token lifespans:
      - Access Token: 30 minutes
@@ -94,7 +94,7 @@ Add protocol mappers for the client:
    - Property: `email`
    - Token Claim Name: `email`
 
-## Step 2: 4genthub Configuration
+## Step 2: agenthub Configuration
 
 ### 2.1 Update .env File
 
@@ -126,7 +126,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 Run the configuration test script:
 
 ```bash
-cd 4genthub_main
+cd agenthub_main
 python scripts/test/test-keycloak-mcp-clean.py
 ```
 
@@ -175,7 +175,7 @@ Expected output:
 docker-compose up -d
 
 # Or using quick start script
-./4genthub_main/scripts/quick_start_postgres_keycloak.sh
+./agenthub_main/scripts/quick_start_postgres_keycloak.sh
 ```
 
 ### 4.2 Verify Authentication
@@ -201,7 +201,7 @@ curl -H "Authorization: Bearer <access_token>" \
 
 ### 5.1 Update Frontend Environment
 
-Create/update `4genthub-frontend/.env`:
+Create/update `agenthub-frontend/.env`:
 
 ```bash
 REACT_APP_API_URL=http://localhost:8000
@@ -348,4 +348,4 @@ docker-compose logs -f backend
 - [Keycloak Documentation](https://www.keycloak.org/documentation)
 - [OpenID Connect Specification](https://openid.net/connect/)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
-- [4genthub Authentication Architecture](../CORE%20ARCHITECTURE/authentication-system-current.md)
+- [agenthub Authentication Architecture](../CORE%20ARCHITECTURE/authentication-system-current.md)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Smart Test Menu System for 4genthub
+# Smart Test Menu System for agenthub
 # Features intelligent caching to skip passed tests and rerun only failures
 # Created: 2025-09-12
 
@@ -26,7 +26,7 @@ else
     # Running from project root (symlink)
     PROJECT_ROOT="$(pwd)"
 fi
-TEST_DIR="${PROJECT_ROOT}/4genthub_main/src/tests"
+TEST_DIR="${PROJECT_ROOT}/agenthub_main/src/tests"
 VENV_PATH="${PROJECT_ROOT}/venv"
 
 # Smart cache paths for test results
@@ -127,7 +127,7 @@ get_test_stats() {
 print_header() {
     clear
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${WHITE}${BOLD}        🧪 SMART TEST RUNNER - 4genthub 🧪                   ${CYAN}║${NC}"
+    echo -e "${CYAN}║${WHITE}${BOLD}        🧪 SMART TEST RUNNER - agenthub 🧪                   ${CYAN}║${NC}"
     echo -e "${CYAN}╠════════════════════════════════════════════════════════════════╣${NC}"
     
     # Get statistics
@@ -451,10 +451,10 @@ main() {
                 mkdir -p "${COVERAGE_DIR}"
 
                 # Generate coverage report with HTML output to .test_cache
-                python -m pytest "${TEST_DIR}" --cov=4genthub_main/src --cov-report=html:${COVERAGE_DIR} --cov-report=term --cov-report=json:${COVERAGE_DIR}/coverage.json
+                python -m pytest "${TEST_DIR}" --cov=agenthub_main/src --cov-report=html:${COVERAGE_DIR} --cov-report=term --cov-report=json:${COVERAGE_DIR}/coverage.json
 
                 # Save text report too
-                python -m pytest "${TEST_DIR}" --cov=4genthub_main/src --cov-report=term > "${COVERAGE_DIR}/coverage.txt" 2>&1
+                python -m pytest "${TEST_DIR}" --cov=agenthub_main/src --cov-report=term > "${COVERAGE_DIR}/coverage.txt" 2>&1
 
                 echo -e "${GREEN}✓ Coverage report generated!${NC}"
                 echo -e "${CYAN}  HTML Report: ${COVERAGE_DIR}/index.html${NC}"

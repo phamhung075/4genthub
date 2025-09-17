@@ -2,7 +2,7 @@
 
 ## Overview
 
-The 4genthub Context System is a hierarchical, cloud-synchronized notebook system where AI agents manually write and read context information. Think of it as a shared cloud notebook that AI agents (Claude Code, Cursor) must remember to check before work and update after work. The system cannot modify the AI's built-in tools or automatically capture their actions.
+The agenthub Context System is a hierarchical, cloud-synchronized notebook system where AI agents manually write and read context information. Think of it as a shared cloud notebook that AI agents (Claude Code, Cursor) must remember to check before work and update after work. The system cannot modify the AI's built-in tools or automatically capture their actions.
 
 ## 📚 Documentation Structure
 

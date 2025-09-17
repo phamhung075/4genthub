@@ -9,10 +9,10 @@ describe "Monitoring and Health Commands"
 it "should display monitoring snapshot"
 test_monitor_snapshot() {
     # Setup
-    mock_docker_ps "4genthub-postgres:Running (healthy):5432->5432/tcp
-4genthub-redis:Running (healthy):6379->6379/tcp
-4genthub-backend:Running (healthy):8000->8000/tcp
-4genthub-frontend:Running:3000->3000/tcp"
+    mock_docker_ps "agenthub-postgres:Running (healthy):5432->5432/tcp
+agenthub-redis:Running (healthy):6379->6379/tcp
+agenthub-backend:Running (healthy):8000->8000/tcp
+agenthub-frontend:Running:3000->3000/tcp"
     mock_docker "stats --no-stream" "CONTAINER CPU% MEM%"
     mock_docker_exec "postgres" "psql -c 'SELECT 1'"
     
@@ -22,7 +22,7 @@ test_monitor_snapshot() {
     
     # Assert
     assert_equals 0 $exit_code "Monitor snapshot should exit with 0"
-    assert_contains "$output" "4genthub Monitoring Dashboard" "Should show dashboard title"
+    assert_contains "$output" "agenthub Monitoring Dashboard" "Should show dashboard title"
     assert_contains "$output" "SERVICE STATUS" "Should show service status section"
     assert_contains "$output" "RESOURCE USAGE" "Should show resource usage section"
     assert_contains "$output" "DATABASE METRICS" "Should show database metrics"
@@ -34,7 +34,7 @@ test_monitor_snapshot() {
 it "should perform comprehensive health check"
 test_health_check() {
     # Setup
-    mock_docker_ps "4genthub-postgres:Running (healthy):5432->5432/tcp"
+    mock_docker_ps "agenthub-postgres:Running (healthy):5432->5432/tcp"
     mock_docker_exec "postgres" "pg_isready"
     
     # Execute
@@ -78,7 +78,7 @@ test_monitor_realtime() {
     
     # Assert
     assert_equals 0 $exit_code "Monitor should exit with 0"
-    assert_contains "$output" "4genthub Monitoring Dashboard" "Should show monitoring dashboard"
+    assert_contains "$output" "agenthub Monitoring Dashboard" "Should show monitoring dashboard"
     assert_contains "$output" "SERVICE STATUS" "Should show service status"
 }
 
@@ -140,7 +140,7 @@ test_disk_usage() {
 it "should verify network connectivity"
 test_network_check() {
     # Setup
-    mock_docker "network inspect 4genthub-network" '{"Containers": {"id1": {}, "id2": {}}}'
+    mock_docker "network inspect agenthub-network" '{"Containers": {"id1": {}, "id2": {}}}'
     
     # Execute
     output=$($DOCKER_CLI diagnose 2>&1)

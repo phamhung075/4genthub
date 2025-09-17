@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers the complete database clean slate migration for 4genthub v3.0.0, designed to provide a fresh development environment with proper user isolation, performance optimization, and clean architecture.
+This guide covers the complete database clean slate migration for agenthub v3.0.0, designed to provide a fresh development environment with proper user isolation, performance optimization, and clean architecture.
 
 ## Migration Components
 
@@ -16,7 +16,7 @@ This guide covers the complete database clean slate migration for 4genthub v3.0.
 ### 2. Directory Structure
 
 ```
-4genthub_main/database/
+agenthub_main/database/
 ├── migrations/
 │   ├── 000_complete_database_wipe_and_fresh_init.sql (NEW)
 │   ├── README.md (NEW)
@@ -46,7 +46,7 @@ This guide covers the complete database clean slate migration for 4genthub v3.0.
 export SUPABASE_DB_URL="postgresql://[user]:[password]@[host]:5432/[database]"
 
 # Run migration with confirmation
-cd 4genthub_main/database/scripts
+cd agenthub_main/database/scripts
 python run_fresh_migration.py --supabase
 
 # Verify setup
@@ -60,7 +60,7 @@ python verify_database_setup.py --supabase --detailed
 psql -d your_database_url
 
 # Execute migration
-\i 4genthub_main/database/migrations/000_complete_database_wipe_and_fresh_init.sql
+\i agenthub_main/database/migrations/000_complete_database_wipe_and_fresh_init.sql
 
 # Verify
 SELECT * FROM database_status ORDER BY wiped_at DESC LIMIT 1;
@@ -162,13 +162,13 @@ WHERE schemaname = 'public' AND rowsecurity = true;
 
 ```bash
 # Test project creation
-mcp__4genthub_http__manage_project(action="create", name="test-project")
+mcp__agenthub_http__manage_project(action="create", name="test-project")
 
 # Test task creation
-mcp__4genthub_http__manage_task(action="create", git_branch_id="...", title="Test Task")
+mcp__agenthub_http__manage_task(action="create", git_branch_id="...", title="Test Task")
 
 # Test context operations
-mcp__4genthub_http__manage_context(action="create", level="task", ...)
+mcp__agenthub_http__manage_context(action="create", level="task", ...)
 ```
 
 ### 2. User Registration Testing

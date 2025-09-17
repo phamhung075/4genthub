@@ -102,46 +102,46 @@ KillBash(shell_id: string): any
 Terminate a running background bash shell by its ID
 
 
-## 4genthub Project Management Tools
+## agenthub Project Management Tools
 
 ```typescript
-mcp__4genthub_http__manage_task(action: string, git_branch_id?: string, title?: string, assignees?: string, ...various optional params): any
+mcp__agenthub_http__manage_task(action: string, git_branch_id?: string, title?: string, assignees?: string, ...various optional params): any
 ```
 Complete task lifecycle management with CRUD operations, search, dependencies, and workflow management
 
 
 ```typescript
-mcp__4genthub_http__manage_subtask(action: string, task_id?: string, subtask_id?: string, title?: string, ...various optional params): any
+mcp__agenthub_http__manage_subtask(action: string, task_id?: string, subtask_id?: string, title?: string, ...various optional params): any
 ```
 Manage subtasks within parent tasks for hierarchical task breakdown and progress tracking
 
 
 ```typescript
-mcp__4genthub_http__manage_context(action: string, level?: string, context_id?: string, data?: string, ...various optional params): any
+mcp__agenthub_http__manage_context(action: string, level?: string, context_id?: string, data?: string, ...various optional params): any
 ```
 Manage hierarchical contexts across 4 tiers (Global → Project → Branch → Task) with inheritance
 
 
 ```typescript
-mcp__4genthub_http__manage_project(action: string, project_id?: string, name?: string, description?: string, ...various optional params): any
+mcp__agenthub_http__manage_project(action: string, project_id?: string, name?: string, description?: string, ...various optional params): any
 ```
 Manage projects throughout lifecycle with health monitoring and resource management
 
 
 ```typescript
-mcp__4genthub_http__manage_git_branch(action: string, project_id?: string, git_branch_id?: string, git_branch_name?: string, ...various optional params): any
+mcp__agenthub_http__manage_git_branch(action: string, project_id?: string, git_branch_id?: string, git_branch_name?: string, ...various optional params): any
 ```
 Manage git branches with CRUD operations, agent assignments, and lifecycle management
 
 
 ```typescript
-mcp__4genthub_http__manage_agent(action: string, project_id?: string, agent_id?: string, name?: string, ...various optional params): any
+mcp__agenthub_http__manage_agent(action: string, project_id?: string, agent_id?: string, name?: string, ...various optional params): any
 ```
 Manage agent registration, assignment, and lifecycle within projects (33 specialized agents)
 
 
 ```typescript
-mcp__4genthub_http__call_agent(name_agent: string): any
+mcp__agenthub_http__call_agent(name_agent: string): any
 ```
 Load and invoke specialized agents by name for task execution with vision insights
 
@@ -149,37 +149,37 @@ Load and invoke specialized agents by name for task execution with vision insigh
 ## Authentication Tools
 
 ```typescript
-mcp__4genthub_http__validate_token(token: string): any
+mcp__agenthub_http__validate_token(token: string): any
 ```
 Validate an authentication token and get user information
 
 
 ```typescript
-mcp__4genthub_http__get_rate_limit_status(token: string): any
+mcp__agenthub_http__get_rate_limit_status(token: string): any
 ```
 Get rate limit status for a token
 
 
 ```typescript
-mcp__4genthub_http__revoke_token(token: string): any
+mcp__agenthub_http__revoke_token(token: string): any
 ```
 Revoke an authentication token
 
 
 ```typescript
-mcp__4genthub_http__get_auth_status(): any
+mcp__agenthub_http__get_auth_status(): any
 ```
 Get authentication system status and configuration
 
 
 ```typescript
-mcp__4genthub_http__generate_token(): any
+mcp__agenthub_http__generate_token(): any
 ```
 Generate secure authentication token (deprecated - use API at /api/v2/tokens)
 
 
 ```typescript
-mcp__4genthub_http__manage_connection(include_details?: boolean, user_id?: string): any
+mcp__agenthub_http__manage_connection(include_details?: boolean, user_id?: string): any
 ```
 Basic health check endpoint for system monitoring
 
@@ -508,7 +508,7 @@ Take screenshot of current browser page
 - **Web & Search**: 2 tools (WebFetch, WebSearch)
 - **Task Management**: 1 tool (TodoWrite)
 - **Process Management**: 2 tools (BashOutput, KillBash)
-- **4genthub Project**: 7 tools (task, subtask, context, project, branch, agent management)
+- **agenthub Project**: 7 tools (task, subtask, context, project, branch, agent management)
 - **Authentication**: 6 tools (token validation, rate limiting, auth status)
 - **MCP Resources**: 2 tools (list and read MCP resources)
 - **AI Thinking**: 1 tool (sequential thinking)
