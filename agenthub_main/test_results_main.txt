@@ -3,9 +3,9 @@
 🛡️  Test data isolation enabled
 🧹 Automatic cleanup configured
 ============================= test session starts ==============================
-platform linux -- Python 3.12.3, pytest-8.4.0, pluggy-1.6.0 -- /home/daihungpham/__projects__/agentic-project/agenthub_main/.venv/bin/python
+platform linux -- Python 3.12.3, pytest-8.4.0, pluggy-1.6.0 -- ./agenthub_main/.venv/bin/python
 cachedir: .pytest_cache
-rootdir: /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests
+rootdir: ./agenthub_main/src/tests
 configfile: pytest.ini
 plugins: report-0.2.1, xdist-3.7.0, timeout-2.4.0, env-1.1.5, cov-6.2.1, anyio-4.9.0, httpx-0.35.0, flakefinder-1.1.0, asyncio-1.0.0
 timeout: 60.0s
@@ -1124,10 +1124,10 @@ Required environment variables:
 SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD
 ----------------------------- Captured stderr call -----------------------------
 Traceback (most recent call last):
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/auth/mcp_integration/test_supabase_connection_fix.py", line 195, in test_database_config_with_fix
+  File "./agenthub_main/src/tests/auth/mcp_integration/test_supabase_connection_fix.py", line 195, in test_database_config_with_fix
     db_config = DatabaseConfig()
                 ^^^^^^^^^^^^^^^^
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/infrastructure/database/database_config.py", line 134, in __init__
+  File "./agenthub_main/src/fastmcp/task_management/infrastructure/database/database_config.py", line 134, in __init__
     raise ValueError(
 ValueError: Database configuration missing for supabase.
 Required environment variables:
@@ -1257,10 +1257,10 @@ RECOMMENDED FIX
 ❌ ISSUE: No fix method worked - deeper investigation needed
 ----------------------------- Captured stderr call -----------------------------
 Traceback (most recent call last):
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/auth/mcp_integration/test_supabase_connection_fix.py", line 195, in test_database_config_with_fix
+  File "./agenthub_main/src/tests/auth/mcp_integration/test_supabase_connection_fix.py", line 195, in test_database_config_with_fix
     db_config = DatabaseConfig()
                 ^^^^^^^^^^^^^^^^
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/infrastructure/database/database_config.py", line 134, in __init__
+  File "./agenthub_main/src/fastmcp/task_management/infrastructure/database/database_config.py", line 134, in __init__
     raise ValueError(
 ValueError: Database configuration missing for supabase.
 Required environment variables:
@@ -1602,7 +1602,7 @@ src/tests/hooks/test_hook_integration.py:321: in test_documentation_workflow_int
     raise AssertionError(_error_message()) from cause
 E   AssertionError: expected call not found.
 E   Expected: update_index(PosixPath('/tmp/pytest-of-daihungpham/pytest-41/test_documentation_workflow_in0/ai_docs'))
-E     Actual: update_index(PosixPath('/home/daihungpham/__projects__/agentic-project/agenthub_main/ai_docs'))
+E     Actual: update_index(PosixPath('./agenthub_main/ai_docs'))
 ---------------------------- Captured stdout setup -----------------------------
 2025-09-17 07:21:39,626 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - DatabaseSourceManager singleton cleared
 2025-09-17 07:21:39,629 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database connections closed
@@ -1737,7 +1737,7 @@ src/tests/hooks/test_hook_integration.py:366: in test_concurrent_execution_safet
                       ^^^^^^^^^^^^^^^^^^^
 /usr/lib/python3.12/unittest/mock.py:1431: in get_original
     raise AttributeError(
-E   AttributeError: <module 'pre_tool_use' from '/home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py'> does not have the attribute 'check_documentation_requirement'
+E   AttributeError: <module 'pre_tool_use' from './.claude/hooks/pre_tool_use.py'> does not have the attribute 'check_documentation_requirement'
 ---------------------------- Captured stdout setup -----------------------------
 2025-09-17 07:21:42,701 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - DatabaseSourceManager singleton cleared
 2025-09-17 07:21:42,704 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database connections closed
@@ -1806,7 +1806,7 @@ _____________ TestValidatorComponents.test_documentation_validator _____________
                       ^^^^^^^^^^^^^^^^^^^
 /usr/lib/python3.12/unittest/mock.py:1431: in get_original
     raise AttributeError(
-E   AttributeError: <module 'pre_tool_use' from '/home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py'> does not have the attribute 'is_file_in_session'
+E   AttributeError: <module 'pre_tool_use' from './.claude/hooks/pre_tool_use.py'> does not have the attribute 'is_file_in_session'
 ---------------------------- Captured stdout setup -----------------------------
 2025-09-17 07:21:43,194 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - DatabaseSourceManager singleton cleared
 2025-09-17 07:21:43,198 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database connections closed
@@ -1875,7 +1875,7 @@ ______________ TestValidatorComponents.test_permission_validator _______________
                       ^^^^^^^^^^^^^^^^^^^
 /usr/lib/python3.12/unittest/mock.py:1431: in get_original
     raise AttributeError(
-E   AttributeError: <module 'pre_tool_use' from '/home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py'> does not have the attribute 'check_tool_permission'
+E   AttributeError: <module 'pre_tool_use' from './.claude/hooks/pre_tool_use.py'> does not have the attribute 'check_tool_permission'
 ---------------------------- Captured stdout setup -----------------------------
 2025-09-17 07:21:43,244 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - DatabaseSourceManager singleton cleared
 2025-09-17 07:21:43,247 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database connections closed
@@ -1944,7 +1944,7 @@ ________________ TestProcessorComponents.test_context_processor ________________
                       ^^^^^^^^^^^^^^^^^^^
 /usr/lib/python3.12/unittest/mock.py:1431: in get_original
     raise AttributeError(
-E   AttributeError: <module 'pre_tool_use' from '/home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py'> does not have the attribute 'inject_context_sync'
+E   AttributeError: <module 'pre_tool_use' from './.claude/hooks/pre_tool_use.py'> does not have the attribute 'inject_context_sync'
 ---------------------------- Captured stdout setup -----------------------------
 2025-09-17 07:21:43,297 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - DatabaseSourceManager singleton cleared
 2025-09-17 07:21:43,300 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database connections closed
@@ -1998,19 +1998,19 @@ INFO     fastmcp.task_management.infrastructure.database.init_database:init_data
 INFO     fastmcp.task_management.infrastructure.database.database_initializer:database_initializer.py:118 Database initialized successfully: /tmp/agenthub_test.db
 =============================== warnings summary ===============================
 src/tests/conftest.py:255
-  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: auth/interface/auth_endpoints_test.py)
+  ./agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: auth/interface/auth_endpoints_test.py)
     class MockFastAPIClient:
 
 src/tests/conftest.py:255
-  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: server/app_factory_test.py)
+  ./agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: server/app_factory_test.py)
     class MockFastAPIClient:
 
 src/tests/conftest.py:255
-  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: task_management/infrastructure/monitoring/metrics_integration_test.py)
+  ./agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: task_management/infrastructure/monitoring/metrics_integration_test.py)
     class MockFastAPIClient:
 
 src/tests/conftest.py:255
-  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: unit/auth/interface/auth_endpoints_test.py)
+  ./agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: unit/auth/interface/auth_endpoints_test.py)
     class MockFastAPIClient:
 
 ai_task_planning/application/services/ai_planning_service_test.py: 68 warnings
@@ -2046,7 +2046,7 @@ hooks/test_hook_e2e.py: 40 warnings
 hooks/test_hook_integration.py: 48 warnings
 hooks/test_hook_integration_simple.py: 40 warnings
 hooks/test_hook_system_comprehensive.py: 36 warnings
-  /home/daihungpham/__projects__/agentic-project/agenthub_main/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:943: DeprecationWarning: The default datetime adapter is deprecated as of Python 3.12; see the sqlite3 documentation for suggested replacement recipes
+  ./agenthub_main/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:943: DeprecationWarning: The default datetime adapter is deprecated as of Python 3.12; see the sqlite3 documentation for suggested replacement recipes
     cursor.execute(statement, parameters)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

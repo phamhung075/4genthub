@@ -54,7 +54,7 @@ Implemented runtime injection of environment variables that overrides build-time
 
 1. Build and package:
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
+cd ./agenthub-frontend
 npm run build
 tar -czf frontend-runtime-fix.tar.gz captain-definition build/ package.json
 ```

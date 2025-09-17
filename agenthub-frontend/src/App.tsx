@@ -16,6 +16,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
+import { HelpSetup } from './pages/HelpSetup';
 
 // Use lazy loading for TaskList component for better performance
 const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
@@ -205,6 +206,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <TokenManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/help"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <HelpSetup />
+                </AppLayout>
               </ProtectedRoute>
             }
           />

@@ -143,7 +143,7 @@ FASTMCP_LOG_LEVEL=DEBUG
 ## Related Files
 
 ### Fixed Files
-- `/home/daihungpham/__projects__/agentic-project/.env` - Authentication disabled
+- `./.env` - Authentication disabled
 - CORS origins updated to include port 3800
 
 ### Debug Scripts

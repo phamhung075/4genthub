@@ -269,3 +269,100 @@ class TestContextOperationHandler:
         assert "Unknown action: unknown_action" in result["error"]["message"]
         assert result["error"]["code"] == "OPERATION_FAILED"
         assert "Valid actions:" in result["error"]["message"]
+
+    @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.handlers.context_operation_handler.get_authenticated_user_id')
+    def test_update_context_returns_updated_data_field(self, mock_get_user_id):
+        """Test that update action returns enhanced response with updated_data field."""
+        # Mock authentication
+        mock_get_user_id.return_value = "test-user-id"
+
+        # Mock facade with update response
+        mock_facade = Mock()
+        updated_context_data = {
+            "id": "branch-123",
+            "branch_test_data": {
+                "tasks_created": 5,
+                "subtasks_created": 4
+            },
+            "updated_at": "2025-09-17T12:30:00Z"
+        }
+        mock_facade.update_context.return_value = {
+            "success": True,
+            "context": updated_context_data,
+            "level": "branch",
+            "context_id": "branch-123",
+            "propagated": True
+        }
+
+        # Call handler for update action
+        result = self.handler.handle_context_operation(
+            facade=mock_facade,
+            action="update",
+            level="branch",
+            context_id="branch-123",
+            data={"branch_test_data": {"tasks_created": 5, "subtasks_created": 4}},
+            propagate_changes=True
+        )
+
+        # Verify facade was called correctly
+        mock_facade.update_context.assert_called_once()
+        call_args = mock_facade.update_context.call_args[1]
+        assert call_args["level"] == "branch"
+        assert call_args["context_id"] == "branch-123"
+        assert call_args["propagate_changes"] is True
+
+        # Verify the response structure includes updated_data field
+        assert result["success"] is True
+        assert "data" in result
+
+        # Check the enhanced response structure for update operations
+        data_section = result["data"]
+        assert "id" in data_section
+        assert "updated_data" in data_section
+        assert "level" in data_section
+        assert "propagated" in data_section
+
+        # Verify the actual content
+        assert data_section["id"] == "branch-123"
+        assert data_section["level"] == "branch"
+        assert data_section["propagated"] is True
+        assert data_section["updated_data"] == updated_context_data
+
+        # Verify meta includes operation info
+        assert "meta" in result
+        assert result["meta"]["operation"] == "update"
+
+    @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.handlers.context_operation_handler.get_authenticated_user_id')
+    def test_update_context_backward_compatibility(self, mock_get_user_id):
+        """Test that update action changes don't break existing consumers that expect context field."""
+        # Mock authentication
+        mock_get_user_id.return_value = "test-user-id"
+
+        # Mock facade with update response (no context data)
+        mock_facade = Mock()
+        mock_facade.update_context.return_value = {
+            "success": True,
+            "context": None,  # Empty context to test edge case
+            "level": "task",
+            "context_id": "task-456",
+            "propagated": False
+        }
+
+        # Call handler for update action
+        result = self.handler.handle_context_operation(
+            facade=mock_facade,
+            action="update",
+            level="task",
+            context_id="task-456",
+            data={"task_status": "completed"}
+        )
+
+        # Verify response structure handles empty context gracefully
+        assert result["success"] is True
+        assert "data" in result
+
+        data_section = result["data"]
+        assert data_section["id"] == "task-456"
+        assert data_section["level"] == "task"
+        assert data_section["propagated"] is False
+        assert data_section["updated_data"] == {}  # Empty dict for no context

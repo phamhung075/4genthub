@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **2025-09-17**: Created comprehensive test suite for dependencies parameter handling
+  - **File**: `agenthub_main/src/tests/test_dependencies_parameter.py` - Basic test for all dependency formats
+  - **File**: `agenthub_main/src/tests/test_dependencies_all_formats.py` - Comprehensive test with edge cases
+  - **Tests**: Validates that `manage_task` create action accepts dependencies in:
+    - Array format: `["task-id-1", "task-id-2"]`
+    - Single string format: `"task-id"`
+    - Comma-separated string format: `"task-id-1,task-id-2"`
+  - **Result**: All formats work correctly when using valid UUIDs
+
 ### Fixed
 - **Session 38 - Iteration 27 (2025-09-17)**: Fixed Hook System Comprehensive Tests
   - **Issue**: `test_hook_system_comprehensive.py` had multiple failing tests due to import and fixture issues

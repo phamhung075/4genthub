@@ -11,7 +11,7 @@ def fix_infrastructure_imports():
     """Fix ....infrastructure imports to ...infrastructure in application/services and application/orchestrators/services"""
     
     # Paths that need fixing (from application/services/* or application/orchestrators/services/*)
-    base_path = Path("/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/application")
+    base_path = Path("./agenthub_main/src/fastmcp/task_management/application")
     
     patterns_to_fix = [
         # From application/services/* to infrastructure (3 levels up)

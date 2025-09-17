@@ -1,4 +1,4 @@
-import { Home, Key, Moon, Settings, Sun } from 'lucide-react';
+import { Home, HelpCircle, Key, Moon, Settings, Sun } from 'lucide-react';
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -41,6 +41,13 @@ export const Header: React.FC = () => {
       href: "/tokens",
       gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
       iconColor: "text-orange-500",
+    },
+    {
+      icon: HelpCircle,
+      label: "Help & Setup",
+      href: "/help",
+      gradient: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(147,51,234,0.06) 50%, rgba(124,58,237,0) 100%)",
+      iconColor: "text-purple-500",
     },
     {
       icon: Settings,
@@ -112,12 +119,26 @@ export const Header: React.FC = () => {
                 <Home className="h-5 w-5" />
                 <span className="font-medium">Dashboard</span>
               </Link>
-              <Link 
-                to="/tokens" 
+              <Link
+                to="/tokens"
                 className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
               >
                 <Key className="h-5 w-5" />
                 <span className="font-medium">Tokens</span>
+              </Link>
+              <Link
+                to="/help"
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+              >
+                <HelpCircle className="h-5 w-5" />
+                <span className="font-medium">Help</span>
+              </Link>
+              <Link
+                to="/initialization"
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+              >
+                <Wrench className="h-5 w-5" />
+                <span className="font-medium">Setup</span>
               </Link>
               <Link 
                 to="/profile" 

@@ -36,7 +36,7 @@ Pipfile
 Pipfile.lock
 
 # Build and deployment
-docker-menu.sh
+build-menu.sh
 test-menu.sh
 captain-definition.backend
 captain-definition.frontend

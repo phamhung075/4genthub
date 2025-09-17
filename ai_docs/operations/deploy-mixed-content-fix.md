@@ -12,7 +12,7 @@ Modified `src/config/environment.ts` to automatically upgrade HTTP API URLs to H
 
 ```bash
 # From the frontend directory
-cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
+cd ./agenthub-frontend
 
 # Deploy to CapRover
 caprover deploy -a webapp
@@ -22,7 +22,7 @@ caprover deploy -a webapp
 
 1. **Package the build**:
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
+cd ./agenthub-frontend
 tar -czf frontend-fix.tar.gz captain-definition build/ nginx.conf package.json
 ```
 

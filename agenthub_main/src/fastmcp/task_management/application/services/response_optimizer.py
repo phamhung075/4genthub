@@ -282,6 +282,11 @@ class ResponseOptimizer:
                 if key == "projects":
                     cleaned[key] = self.remove_nulls(value) if value else []
                     continue
+
+                # Special case: preserve 'updated_data' field even if empty (required for update operations)
+                if key == "updated_data":
+                    cleaned[key] = self.remove_nulls(value) if value else {}
+                    continue
                     
                 # Recursively clean the value
                 cleaned_value = self.remove_nulls(value)

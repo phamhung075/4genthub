@@ -9,7 +9,7 @@ Your CapRover environment variables are correctly set to HTTPS, but the current 
 
 ```bash
 # 1. Navigate to frontend directory
-cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
+cd ./agenthub-frontend
 
 # 2. Deploy directly to CapRover
 caprover deploy -a webapp

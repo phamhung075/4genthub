@@ -251,8 +251,8 @@ export default function UserProfileDropdown() {
 
   const handleNavigation = (path: string, routeName: string) => {
     // Check if route exists
-    const existingRoutes = ['/dashboard', '/profile', '/tokens'];
-    
+    const existingRoutes = ['/dashboard', '/profile', '/tokens', '/help', '/local-setup'];
+
     if (existingRoutes.includes(path)) {
       navigate(path);
     } else {
@@ -332,9 +332,7 @@ export default function UserProfileDropdown() {
       <DropdownMenuSeparator />
 
       <div className="py-1">
-        <DropdownMenuItem onClick={() => {
-          showInfoToast('Documentation Coming Soon', 'Help documentation will be available in the next release');
-        }}>
+        <DropdownMenuItem onClick={() => handleNavigation('/help', 'Help & Support')}>
           <HelpCircle className="mr-3 h-4 w-4 text-zinc-500" />
           Help & Support
         </DropdownMenuItem>

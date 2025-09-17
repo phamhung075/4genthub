@@ -33,7 +33,7 @@ def fix_imports_in_file(file_path):
 
 def main():
     """Main function to fix all test imports"""
-    test_dir = Path('/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests')
+    test_dir = Path('./agenthub_main/src/tests')
     
     fixed_files = []
     

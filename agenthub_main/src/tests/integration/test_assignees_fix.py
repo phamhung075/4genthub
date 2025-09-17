@@ -5,7 +5,7 @@ import sys
 import os
 
 # Add the project path to sys.path
-project_path = "/home/daihungpham/__projects__/agentic-project/agenthub_main/src"
+project_path = "./agenthub_main/src"
 sys.path.insert(0, project_path)
 
 def test_agent_role_validation():

@@ -90,5 +90,5 @@ def fix_timezone_imports():
     print(f"\nFixed timezone imports in {fixed_count} files")
 
 if __name__ == "__main__":
-    os.chdir('/home/daihungpham/__projects__/agentic-project/agenthub_main')
+    os.chdir('./agenthub_main')
     fix_timezone_imports()

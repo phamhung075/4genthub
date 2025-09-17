@@ -501,7 +501,7 @@ Generated: {datetime.now().isoformat()}
         
         # Generate and save report
         report = self.generate_test_report()
-        report_path = "/home/daihungpham/__projects__/agentic-project/ai_docs/testing-qa/mcp-tools-test-report.md"
+        report_path = "./ai_docs/testing-qa/mcp-tools-test-report.md"
         
         # Write report
         with open(report_path, 'w') as f:

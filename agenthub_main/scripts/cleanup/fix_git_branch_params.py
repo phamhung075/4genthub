@@ -3,7 +3,7 @@
 
 import re
 
-file_path = '/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/unit/task_management/application/services/git_branch_application_service_test.py'
+file_path = './agenthub_main/src/tests/unit/task_management/application/services/git_branch_application_service_test.py'
 
 with open(file_path, 'r') as f:
     content = f.read()

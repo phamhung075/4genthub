@@ -24,7 +24,7 @@ def solution_1_disable_auth():
     """Solution 1: Disable authentication for development."""
     print_section("SOLUTION 1: DISABLE AUTHENTICATION (QUICKEST FIX)")
     
-    env_file = Path("/home/daihungpham/__projects__/agentic-project/.env")
+    env_file = Path("./.env")
     
     print("This solution disables authentication to allow frontend access during development.")
     print("✅ Pros: Immediate fix, no frontend changes needed")
@@ -81,7 +81,7 @@ def solution_2_generate_dev_token():
         from datetime import datetime, timedelta
         
         # Read JWT secret from environment
-        env_file = Path("/home/daihungpham/__projects__/agentic-project/.env")
+        env_file = Path("./.env")
         if env_file.exists():
             env_content = env_file.read_text()
             jwt_secret = None
@@ -112,7 +112,7 @@ def solution_2_generate_dev_token():
                 print()
                 
                 # Save token to file
-                token_file = Path("/home/daihungpham/__projects__/agentic-project/dev_token.txt")
+                token_file = Path("./dev_token.txt")
                 token_file.write_text(f"access_token={token}\n\nInstructions:\n1. Copy the token above\n2. Set it as 'access_token' cookie in browser\n3. Refresh the frontend")
                 print(f"✅ Token saved to: {token_file}")
                 return True
@@ -138,7 +138,7 @@ def solution_3_mvp_mode_fix():
     print()
     
     # Check if MVP mode is enabled
-    env_file = Path("/home/daihungpham/__projects__/agentic-project/.env")
+    env_file = Path("./.env")
     if env_file.exists():
         content = env_file.read_text()
         mvp_enabled = "AGENTHUB_MVP_MODE=true" in content
@@ -176,7 +176,7 @@ def solution_4_cors_fix():
     print("❌ Cons: May not solve authentication issues")
     print()
     
-    env_file = Path("/home/daihungpham/__projects__/agentic-project/.env")
+    env_file = Path("./.env")
     if env_file.exists():
         content = env_file.read_text()
         
@@ -225,7 +225,7 @@ def solution_5_comprehensive_debug():
     print("❌ Cons: Generates verbose logs")
     print()
     
-    env_file = Path("/home/daihungpham/__projects__/agentic-project/.env")
+    env_file = Path("./.env")
     if env_file.exists():
         content = env_file.read_text()
         

@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 # Base directory for orchestrator services
-base_dir = Path("/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/application/orchestrators/services")
+base_dir = Path("./agenthub_main/src/fastmcp/task_management/application/orchestrators/services")
 
 # Import patterns to fix
 replacements = [

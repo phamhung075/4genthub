@@ -400,8 +400,8 @@ class StandardResponseFormatter:
         if data.get("success") is True:
             logger.info(f"DEBUG format_context_response: operation={operation}, data keys={data.keys()}")
             # Handle different context operations
-            if operation in ['create', 'get', 'update'] or operation.endswith('.create') or operation.endswith('.get') or operation.endswith('.update'):
-                # Single context operations - return context data directly in data field
+            if operation in ['create', 'get'] or operation.endswith('.create') or operation.endswith('.get'):
+                # Single context operations (create, get) - return context data directly in data field
                 if "context" in data and data["context"]:
                     # Return the actual context data in the data field
                     standardized_data = data["context"]
@@ -410,6 +410,28 @@ class StandardResponseFormatter:
                     # If no context, return empty dict
                     standardized_data = {}
                     logger.info(f"DEBUG format_context_response: no context found, returning empty dict")
+            elif operation in ['update'] or operation.endswith('.update'):
+                # Update operations - include both context metadata and updated_data field
+                if "context" in data and data["context"]:
+                    context_data = data["context"]
+                    # Structure response with id, updated_data, and metadata
+                    standardized_data = {
+                        "id": data.get("context_id", context_data.get("id")),
+                        "updated_data": context_data,
+                        # Include operation metadata inline for clarity
+                        "level": data.get("level"),
+                        "propagated": data.get("propagated", False)
+                    }
+                    logger.debug(f"Update operation formatted with updated_data field")
+                else:
+                    # If no context, return empty structure
+                    standardized_data = {
+                        "id": data.get("context_id"),
+                        "updated_data": {},
+                        "level": data.get("level"),
+                        "propagated": data.get("propagated", False)
+                    }
+                    logger.debug(f"Update operation formatted with empty updated_data field")
                 
             elif operation in ['list'] or operation.endswith('.list'):
                 # List operations - standardize to "contexts"
@@ -432,16 +454,28 @@ class StandardResponseFormatter:
                     standardized_data["resolved_context"] = data["resolved"]
             
             # Add operation metadata
-            metadata["context_operation"] = {
-                "level": data.get("level"),
-                "context_id": data.get("context_id"),
-                "source_level": data.get("source_level"),
-                "target_level": data.get("target_level"),
-                "inherited": data.get("inherited", False),
-                "propagated": data.get("propagated", False),
-                "created": data.get("created", False),
-                "count": data.get("count")
-            }
+            # For update operations, some metadata is already included in the data structure
+            if operation in ['update'] or operation.endswith('.update'):
+                metadata["context_operation"] = {
+                    "source_level": data.get("source_level"),
+                    "target_level": data.get("target_level"),
+                    "inherited": data.get("inherited", False),
+                    "created": data.get("created", False),
+                    "count": data.get("count"),
+                    "operation_type": "update"
+                }
+            else:
+                metadata["context_operation"] = {
+                    "level": data.get("level"),
+                    "context_id": data.get("context_id"),
+                    "source_level": data.get("source_level"),
+                    "target_level": data.get("target_level"),
+                    "inherited": data.get("inherited", False),
+                    "propagated": data.get("propagated", False),
+                    "created": data.get("created", False),
+                    "count": data.get("count")
+                }
+
             
             # Remove None values from metadata
             metadata["context_operation"] = {k: v for k, v in metadata["context_operation"].items() if v is not None}

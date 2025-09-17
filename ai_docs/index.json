@@ -4,8 +4,8 @@
     "tracked_files": {
       "claude-hooks-pre-tool-use.py": {
         "doc_path": "_absolute_docs/claude-hooks-pre-tool-use.py.md",
-        "hash": "23cfaa55d476db33ee15cf985d91ea96",
-        "last_updated": "2025-09-13T23:31:32.131968"
+        "hash": "d7f6ad40706d14d87fb39d95ebea90e4",
+        "last_updated": "2025-09-17T14:11:39.075923"
       },
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
@@ -29,11 +29,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "23cfaa55d476db33ee15cf985d91ea96",
-          "modified": "2025-09-13T23:31:32.131968",
+          "hash": "d7f6ad40706d14d87fb39d95ebea90e4",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "claude-hooks-pre-tool-use.py.md",
           "path": "_absolute_docs/claude-hooks-pre-tool-use.py.md",
-          "size": 4833
+          "size": 4829
         }
       ],
       "path": "_absolute_docs"
@@ -69,25 +69,25 @@
       "count": 3,
       "files": [
         {
-          "hash": "7df1eb4da60ef5733a3fbf68d709a058",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "b7200161c62e0ae9a680556f00416b1b",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 13425
+          "size": 13404
         },
         {
-          "hash": "b820ff36ef8e14503e5f3e163c6f2112",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "45b660ec0976c99efab646e369c9d88f",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 483007
+          "size": 482301
         },
         {
-          "hash": "685c2ab96a5a963830ec6d20686d1767",
-          "modified": "2025-09-17T10:26:47.260866",
+          "hash": "c746a4f9110ffbebbb50999b1070dec9",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 53785
+          "size": 53760
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -96,18 +96,18 @@
       "count": 3,
       "files": [
         {
-          "hash": "bc0a191370138f90a6ed290b1e606214",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "9f98c646b53e159a7bbb3e685c6f83a5",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "parameter-type-conversion-verification.md",
           "path": "api-behavior/parameter-type-conversion-verification.md",
-          "size": 4264
+          "size": 4262
         },
         {
-          "hash": "b754bd6338c3ad1d5647354c8db9f5d8",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "c393f7e09d28d7684ce24f4449c0bf3c",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "parameter-type-validation.md",
           "path": "api-behavior/parameter-type-validation.md",
-          "size": 6084
+          "size": 6078
         },
         {
           "hash": "a0ba333221f5d1f56abc3ebe94823fa3",
@@ -123,60 +123,60 @@
       "count": 13,
       "files": [
         {
-          "hash": "229288008418e159381b52ab6afad102",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "677ae44155bbd2b3ca5ab9b6e533aa76",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "mcp-client-configuration-guide.md",
           "path": "api-integration/mcp-client-configuration-guide.md",
-          "size": 17072
+          "size": 17081
         },
         {
-          "hash": "2b0428083f2cfb2bc75de2a008a81dc5",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "1418838288008d5fce256cb6b5b06411",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "MCP_SERVER_ARCHITECTURE_GUIDE.md",
           "path": "api-integration/MCP_SERVER_ARCHITECTURE_GUIDE.md",
-          "size": 12191
+          "size": 12193
         },
         {
-          "hash": "a8eeeb00c9940218bd9e4338f587b9b0",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "44e43f2ced870e2b39e1b188e132ba40",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "README.md",
           "path": "api-integration/README.md",
-          "size": 2020
+          "size": 2018
         },
         {
-          "hash": "42052e7d91ae704f97cc449ec7e270ab",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "8d076339c70683f0034db1d7583861e7",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "api-verification-status.md",
           "path": "api-integration/api-verification-status.md",
-          "size": 6421
+          "size": 6419
         },
         {
-          "hash": "599073567a25ba25044e75a42d14cc84",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "679352bd79061c5d2981a35684473f8b",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "api-reference.md",
           "path": "api-integration/api-reference.md",
-          "size": 23806
+          "size": 23717
         },
         {
-          "hash": "bd95f6cf5e0f5367e050ef8ccd1ba660",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "de6b25e0fa060df49f91bc23527bfa63",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "mcp-client-api-reference.md",
           "path": "api-integration/mcp-client-api-reference.md",
-          "size": 14506
+          "size": 14507
         },
         {
-          "hash": "a427540a34b16c69665c48d377d4095f",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "4aadee5ec9f7a39220cbd127373a0c32",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "configuration.md",
           "path": "api-integration/configuration.md",
-          "size": 19251
+          "size": 19210
         },
         {
-          "hash": "5ee07991ec84ea2086d2754645ef67b8",
-          "modified": "2025-09-13T23:31:32.139687",
+          "hash": "b223f4c963cea2ceec9e42456e363424",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "mcp-http-client-architecture.md",
           "path": "api-integration/mcp-http-client-architecture.md",
-          "size": 16373
+          "size": 16375
         },
         {
           "hash": "d3482fdff391015ba16acdf6c9042a9d",
@@ -186,11 +186,11 @@
           "size": 38707
         },
         {
-          "hash": "84f57a32849b78b4ec73ff983c458b76",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "ec4700cd37c8e091fd865b389b7c599e",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "mcp-client-usage-examples.md",
           "path": "api-integration/mcp-client-usage-examples.md",
-          "size": 32342
+          "size": 32337
         },
         {
           "hash": "c3a616a3fb8c7741dce8084105afa5b6",
@@ -200,11 +200,11 @@
           "size": 30556
         },
         {
-          "hash": "fd8f5684d9825fc176607a388f45e03f",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "0303dac2283067ce394d79f9ec06fc4e",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "mcp-controller-implementation-changes.md",
           "path": "api-integration/mcp-controller-implementation-changes.md",
-          "size": 7877
+          "size": 7865
         },
         {
           "hash": "7d5a1c7e0a9e982143ea7ae37885fc71",
@@ -220,11 +220,11 @@
       "count": 10,
       "files": [
         {
-          "hash": "6815fe5b18619ab27dcb6896f163ad7f",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "772d27f54d977f78bec6bc5be3341eea",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "index.md",
           "path": "api-integration/controllers/index.md",
-          "size": 12572
+          "size": 12559
         },
         {
           "hash": "70001a404392d3398f036a57012f02cc",
@@ -248,25 +248,25 @@
           "size": 17931
         },
         {
-          "hash": "980f2df068cedd6508d6f847946d3bea",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "ffd4a83f4054c7c6510c298c87f86d7c",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "manage-agent-api.md",
           "path": "api-integration/controllers/manage-agent-api.md",
-          "size": 12295
+          "size": 12291
         },
         {
-          "hash": "38c0a6665779ccd541ef58257558d7ae",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "a3164dead24581f90db9f34d1a933171",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "manage-connection-api.md",
           "path": "api-integration/controllers/manage-connection-api.md",
-          "size": 4883
+          "size": 4881
         },
         {
-          "hash": "335bc04064e46958a44d5287f2ccf74d",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "f4c3e6353defb3730b07ceeb782249d6",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "manage-task-api.md",
           "path": "api-integration/controllers/manage-task-api.md",
-          "size": 21710
+          "size": 21708
         },
         {
           "hash": "c3a469d9d71832890a39b9bcfa3fd100",
@@ -276,18 +276,18 @@
           "size": 16183
         },
         {
-          "hash": "7579b31101ae80217236a99afff308d6",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "74a57722535c4c67573d16af12bccf0e",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "manage-project-api.md",
           "path": "api-integration/controllers/manage-project-api.md",
-          "size": 13686
+          "size": 13684
         },
         {
-          "hash": "1a66718cca8a07b55de8fd0e95ac9fed",
-          "modified": "2025-09-13T23:31:32.135828",
+          "hash": "cf7076927bef487cc12bcc0ae4ae8626",
+          "modified": "2025-09-17T14:11:39.075923",
           "name": "call-agent-api.md",
           "path": "api-integration/controllers/call-agent-api.md",
-          "size": 11225
+          "size": 11220
         }
       ],
       "path": "api-integration/controllers"
@@ -296,11 +296,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "a133a935eaedb5e98a3480beced18164",
-          "modified": "2025-09-13T23:31:32.139687",
+          "hash": "e197c0102085a007c552f4818e442c81",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "agent-correspondence-map.md",
           "path": "architecture-design/agent-correspondence-map.md",
-          "size": 5361
+          "size": 5358
         }
       ],
       "path": "architecture-design"
@@ -309,18 +309,18 @@
       "count": 12,
       "files": [
         {
-          "hash": "8b08db53d3022e3e96f944f3c6865cfb",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "164570188509123f5999f7aee57e9478",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "keycloak-service-account-setup.md",
           "path": "authentication/keycloak-service-account-setup.md",
-          "size": 11775
+          "size": 11748
         },
         {
-          "hash": "93beda12cf890c27acd9270df253ec7b",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "506f9e907bdb631625b4ccd6b8947b63",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "authentication-system.md",
           "path": "authentication/authentication-system.md",
-          "size": 8729
+          "size": 8728
         },
         {
           "hash": "6f12b6e61ea5dd58963c432731ae6c7b",
@@ -337,57 +337,57 @@
           "size": 4952
         },
         {
-          "hash": "1b42465a7a588bfeb11abe7be1c7ff6b",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "526120aabc2cffbcfdd6e7171050c647",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "token-flow.md",
           "path": "authentication/token-flow.md",
-          "size": 10708
+          "size": 10706
         },
         {
-          "hash": "7618b118c2df55c77d8a6a894797751a",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "88ae2a8f33930ca5df89efcf184b2b5a",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "MCP_TOKEN_AUTHENTICATION.md",
           "path": "authentication/MCP_TOKEN_AUTHENTICATION.md",
-          "size": 7694
+          "size": 7681
         },
         {
-          "hash": "05a732ed181a156ee9e69f39afe3c923",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "83407de9f530d29bc24cac6bbbbd5d39",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "KEYCLOAK_SETUP.md",
           "path": "authentication/KEYCLOAK_SETUP.md",
-          "size": 6576
+          "size": 6563
         },
         {
-          "hash": "25b4b6a0324e33dca52e57a9100e4a7e",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "ff4005bcb18d6c77a1f08679b311a3d6",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "POSTGRESQL_KEYCLOAK_SETUP.md",
           "path": "authentication/POSTGRESQL_KEYCLOAK_SETUP.md",
-          "size": 9989
+          "size": 9973
         },
         {
-          "hash": "c14a19fed4327f1621ae94fefd95d63c",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "ada4f60dfd69f53b2fe40abfcbc31c5e",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "KEYCLOAK_CONFIGURATION.md",
           "path": "authentication/KEYCLOAK_CONFIGURATION.md",
-          "size": 3057
+          "size": 3038
         },
         {
-          "hash": "9aa9071cf1aaf6e721fe4edb1698498f",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "080230bf82c294aea41ceddcccc10243",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "authentication-system-current.md",
           "path": "authentication/authentication-system-current.md",
-          "size": 7663
+          "size": 7656
         },
         {
-          "hash": "5a2c5f36214ebcea89088e275df19f75",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "28ab8b490463fa1b20ead52d469360fc",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "AUTHENTICATION_REFACTOR_STRATEGY.md",
           "path": "authentication/AUTHENTICATION_REFACTOR_STRATEGY.md",
-          "size": 12515
+          "size": 12513
         },
         {
-          "hash": "4b5b804fb5bcc6d19e521340746024fa",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "b610d6d13357be64920500adce3fed6a",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "TOKEN_SECURITY_GUIDE.md",
           "path": "authentication/TOKEN_SECURITY_GUIDE.md",
           "size": 4904
@@ -400,7 +400,7 @@
       "files": [
         {
           "hash": "b7737720b26d285c6a63e32041af0f71",
-          "modified": "2025-09-17T10:58:19.285111",
+          "modified": "2025-09-17T13:15:40.075185",
           "name": "hooks-mcp-query-guide.md",
           "path": "claude-code/hooks-mcp-query-guide.md",
           "size": 11175
@@ -414,48 +414,55 @@
         },
         {
           "hash": "64a3e8dad60db8e9fa9cf270732ff852",
-          "modified": "2025-09-13T23:31:32.158985",
+          "modified": "2025-09-17T13:15:40.075185",
           "name": "sub-agent-format.md",
           "path": "claude-code/sub-agent-format.md",
           "size": 434
         },
         {
-          "hash": "15567ec0873cf1f54e59f6fc96cb91be",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "25d88530a884faaced5e7505e92136cb",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "tools_list.md",
           "path": "claude-code/tools_list.md",
-          "size": 13509
+          "size": 13466
         }
       ],
       "path": "claude-code"
     },
     "claude-code/hook": {
-      "count": 4,
+      "count": 5,
       "files": [
         {
+          "hash": "207fb40e782d2a3e37248ffb728ee393",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hooks-system-guide.md",
+          "path": "claude-code/hook/hooks-system-guide.md",
+          "size": 31659
+        },
+        {
           "hash": "a7315270d44722b85b92aa826ca16e6a",
-          "modified": "2025-09-17T00:40:29.826987",
+          "modified": "2025-09-17T13:15:40.075185",
           "name": "hook-message-flow-analysis.md",
           "path": "claude-code/hook/hook-message-flow-analysis.md",
           "size": 3490
         },
         {
           "hash": "4ba44339c67eb2672fb47f5786280d28",
-          "modified": "2025-09-17T00:40:29.826987",
+          "modified": "2025-09-17T13:15:40.075185",
           "name": "hooks-architecture-analysis.md",
           "path": "claude-code/hook/hooks-architecture-analysis.md",
           "size": 5897
         },
         {
           "hash": "618b251c1a0203b76c5b8d0c44e311a1",
-          "modified": "2025-09-17T10:50:59.675394",
+          "modified": "2025-09-17T13:15:40.075185",
           "name": "hooks-dependency-map.md",
           "path": "claude-code/hook/hooks-dependency-map.md",
           "size": 10524
         },
         {
           "hash": "5ecfc308bae2180356fc84a3e597ad26",
-          "modified": "2025-09-13T23:31:32.147406",
+          "modified": "2025-09-17T13:15:40.075185",
           "name": "hooks-reference.md",
           "path": "claude-code/hook/hooks-reference.md",
           "size": 23055
@@ -467,25 +474,25 @@
       "count": 3,
       "files": [
         {
-          "hash": "9adf40c28d1c8c7f34b460cd2ba4bc43",
-          "modified": "2025-09-14T12:24:20.211712",
+          "hash": "8a4bab22645b9c8fc0c51d524db02844",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "architecture-overview.md",
           "path": "claude-hooks-docker/architecture-overview.md",
-          "size": 19518
+          "size": 19519
         },
         {
-          "hash": "131308306ec5ea025e79aa02b2b1404f",
-          "modified": "2025-09-14T12:24:20.211712",
+          "hash": "fc25148c6eb7250376e29afb010c28b7",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "docker-configuration.md",
           "path": "claude-hooks-docker/docker-configuration.md",
-          "size": 26110
+          "size": 26112
         },
         {
-          "hash": "fc280d7f73d9867627afb67fa7efd59b",
-          "modified": "2025-09-14T12:24:20.211712",
+          "hash": "46e6c2f41f147872b6a29904dd423a60",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "technical-implementation.md",
           "path": "claude-hooks-docker/technical-implementation.md",
-          "size": 40003
+          "size": 40004
         }
       ],
       "path": "claude-hooks-docker"
@@ -494,11 +501,11 @@
       "count": 21,
       "files": [
         {
-          "hash": "bc7bea35f9e0ad299468c3faf420e102",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "18805f2182b58a0df3ccee79091f9c68",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "AI-CONTEXT-REALISTIC-APPROACH.md",
           "path": "context-system/AI-CONTEXT-REALISTIC-APPROACH.md",
-          "size": 14035
+          "size": 14032
         },
         {
           "hash": "e896edace08e6c2a53cf4b1e08657d9c",
@@ -515,18 +522,18 @@
           "size": 15268
         },
         {
-          "hash": "e820139040aea477c9eb0c25d73604b6",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "fbb344344746a46808906d1d6564d24b",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "00-understanding-mcp-context.md",
           "path": "context-system/00-understanding-mcp-context.md",
-          "size": 6767
+          "size": 6761
         },
         {
-          "hash": "6d51c04e481c5d369ccb1b3a2e546157",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "5444fc676d29100c9f27133443cb7b74",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "index.md",
           "path": "context-system/index.md",
-          "size": 2739
+          "size": 2736
         },
         {
           "hash": "6e2383efa70ce873a7e0a16e0002986c",
@@ -536,18 +543,18 @@
           "size": 11038
         },
         {
-          "hash": "d8bc026580f64271823b4583af0ffabf",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "a5de684e6e5defd1b6e83b6ed7555084",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "04-implementation-guide.md",
           "path": "context-system/04-implementation-guide.md",
-          "size": 14898
+          "size": 14896
         },
         {
-          "hash": "276b169a3ec899ca5cc09a727949214a",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "c7a4b67bf7758e0c8c829db114488f3d",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "CONTEXT_UPDATE_EXAMPLES.md",
           "path": "context-system/CONTEXT_UPDATE_EXAMPLES.md",
-          "size": 9880
+          "size": 9835
         },
         {
           "hash": "b69c433e21faa937a32c24662553060b",
@@ -557,11 +564,11 @@
           "size": 4243
         },
         {
-          "hash": "b154e86e34b9af6f9872a4decbb3f0bb",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "f75eb91b99323f89841ec7cf40b7d25a",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "README.md",
           "path": "context-system/README.md",
-          "size": 4429
+          "size": 4427
         },
         {
           "hash": "42987435633c787f94d1e3da7bf6914a",
@@ -571,11 +578,11 @@
           "size": 21200
         },
         {
-          "hash": "997e095119241b5952c8f56edac72a2a",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "a62fd49296386ea1ca8e90c3790abcdb",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "03-api-reference.md",
           "path": "context-system/03-api-reference.md",
-          "size": 8556
+          "size": 8553
         },
         {
           "hash": "501f1a3b6515862298eeca108094abe8",
@@ -585,11 +592,11 @@
           "size": 19672
         },
         {
-          "hash": "9b1fd156f0adeaf76a801dce152b056e",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "3a1e6d0472e9e95af3f3ab85f657e20d",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "01-architecture.md",
           "path": "context-system/01-architecture.md",
-          "size": 4484
+          "size": 4482
         },
         {
           "hash": "389b101c182bc81234aee07c0ebd22aa",
@@ -599,11 +606,11 @@
           "size": 3087
         },
         {
-          "hash": "cfe22ec6637630c5e5f3cc368b9ebfc8",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "06452c0f1b3d4711b1d8ce200f145298",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "CONTEXT_UPDATE_IMPLEMENTATION.md",
           "path": "context-system/CONTEXT_UPDATE_IMPLEMENTATION.md",
-          "size": 86040
+          "size": 86036
         },
         {
           "hash": "77495fa6a0c03a1580797d1c477e229e",
@@ -613,32 +620,32 @@
           "size": 67147
         },
         {
-          "hash": "76e262b99baa880762f05b89869b1683",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "c1d7ba5d71d820280260f0b5b9ea4c1c",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "manual-context-system-gap-analysis.md",
           "path": "context-system/manual-context-system-gap-analysis.md",
-          "size": 16833
+          "size": 16829
         },
         {
-          "hash": "4962f994b50de3f7af7c806c5144ca00",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "c68893f7b38c410216a6ebed8a6d684d",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "CONTEXT_DATA_MODELS.md",
           "path": "context-system/CONTEXT_DATA_MODELS.md",
-          "size": 33271
+          "size": 33269
         },
         {
-          "hash": "c245ca16e93bb76952cdffc7bc8ba569",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "fb12acc8d545122aae3d9ef81dcfd0bc",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "context-database-schema-complete.md",
           "path": "context-system/context-database-schema-complete.md",
-          "size": 12579
+          "size": 12565
         },
         {
-          "hash": "55b3a07454ae21802b0585e262c56353",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "2a9cf3527e91c20865b1ca0a2b187d00",
+          "modified": "2025-09-17T14:11:39.079903",
           "name": "user-scoped-global-context.md",
           "path": "context-system/user-scoped-global-context.md",
-          "size": 4845
+          "size": 4843
         }
       ],
       "path": "context-system"
@@ -647,32 +654,32 @@
       "count": 25,
       "files": [
         {
-          "hash": "134c4b083eb9ca196677d3c8c6200b2c",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "98913a14d2a297a49e49caac996604a4",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "index.md",
           "path": "core-architecture/index.md",
-          "size": 9607
+          "size": 9603
         },
         {
-          "hash": "22ea3e5cc60120ad4cac686240935888",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "aa8ff3b4ff161471d3cd7bc34cbf1be2",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "sub-agent-instructions.md",
           "path": "core-architecture/sub-agent-instructions.md",
-          "size": 3485
+          "size": 3480
         },
         {
-          "hash": "b6129eae9dff5f725430f2ed51d0a40f",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "abdb3a9a7a1ec7c1a5908e157d360333",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "real-time-context-injection-system.md",
           "path": "core-architecture/real-time-context-injection-system.md",
-          "size": 8344
+          "size": 8311
         },
         {
-          "hash": "fc1705e85ca4f51c296ab12c21ee22b3",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "fd065682e2fb36fdaf4edd0e3ad08b8d",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
-          "size": 13896
+          "size": 13887
         },
         {
           "hash": "ecfe6c884554eba0685b104218229d09",
@@ -682,46 +689,46 @@
           "size": 18470
         },
         {
-          "hash": "82ca22389b5d5f7006786c75cb6c63f0",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "f5b529dde17aa7cc855633ea1bbdce00",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "database-architecture.md",
           "path": "core-architecture/database-architecture.md",
-          "size": 9138
+          "size": 9115
         },
         {
-          "hash": "e6943bf2854720f8d96b01aae20cd76f",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "7996c942e243fbbcc96d08129658b58e",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "architecture.md",
           "path": "core-architecture/architecture.md",
-          "size": 11273
+          "size": 11265
         },
         {
-          "hash": "8ecebf76d9655ee36fca97f1ecd7b993",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "625c2c6c27016d8e4277e8e4552c800f",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "context-hierarchy-system.md",
           "path": "core-architecture/context-hierarchy-system.md",
-          "size": 22276
+          "size": 22270
         },
         {
-          "hash": "d3f01b57186bb1adeb6eec88f26528f8",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "85d16e04184626bc307cb309c6af9ae2",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "README.md",
           "path": "core-architecture/README.md",
-          "size": 2319
+          "size": 2315
         },
         {
-          "hash": "659e5ddc63d9b088842002a0e528362b",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "42b688fb88fab4daabc238fe423f0ae2",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "deprecated-agent-mappings.md",
           "path": "core-architecture/deprecated-agent-mappings.md",
-          "size": 12547
+          "size": 12541
         },
         {
-          "hash": "bd9d7419d5ae628099abed907178ac4a",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "d7331d162d9cdc48de9fbf4a31bff66d",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "session-type-detection.md",
           "path": "core-architecture/session-type-detection.md",
-          "size": 4385
+          "size": 4364
         },
         {
           "hash": "ef52584808bee6e17988bceb3e3b841d",
@@ -738,18 +745,18 @@
           "size": 4409
         },
         {
-          "hash": "757a620fe140dd27c1ae6f95871676cf",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "f654dd6fa298d23fa0fcfe00c62908b4",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "domain-driven-design-layers.md",
           "path": "core-architecture/domain-driven-design-layers.md",
-          "size": 18932
+          "size": 18926
         },
         {
-          "hash": "08cc937e96d02d232771f4e3b2751fe4",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "6918341bc710221546526ebcac7d7bf2",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "PRD.md",
           "path": "core-architecture/PRD.md",
-          "size": 10155
+          "size": 10147
         },
         {
           "hash": "06ecc70235b07f405b5e6ff3c9077941",
@@ -759,11 +766,11 @@
           "size": 7604
         },
         {
-          "hash": "21792707cd89b4c4edc42ced79c593f1",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "1e49e71e05398459233696cf7343bb56",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
-          "size": 6369
+          "size": 6309
         },
         {
           "hash": "1164b62c5119ebd9364fb0e0c8d5e36a",
@@ -780,11 +787,11 @@
           "size": 4263
         },
         {
-          "hash": "43a99a81dc077d595ad930d568847d3e",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "dcf98b7f72ff6d004d8cdb91f4cd2517",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-orchestration-architecture.md",
           "path": "core-architecture/agent-orchestration-architecture.md",
-          "size": 30642
+          "size": 30619
         },
         {
           "hash": "3e8655875e5419e4816635dccf2f33d4",
@@ -794,25 +801,25 @@
           "size": 20661
         },
         {
-          "hash": "a918b5610e29e778a012b977f7a3f69e",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "9e7dacddaf71fdced6e9c098b94a7003",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "design-patterns-in-architecture.md",
           "path": "core-architecture/design-patterns-in-architecture.md",
-          "size": 34828
+          "size": 34824
         },
         {
-          "hash": "54842f7f299f0f16b89c453ea1860961",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "2e885b833bedba234a95055c9c294902",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "mcp-auto-injection-architecture.md",
           "path": "core-architecture/mcp-auto-injection-architecture.md",
-          "size": 64834
+          "size": 64831
         },
         {
-          "hash": "896f621123d7d01d4541bed4dcb7c4f5",
-          "modified": "2025-09-13T23:31:32.147406",
+          "hash": "eb20fbac88336fae04315fcd9947eb63",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "Architecture_Technique.md",
           "path": "core-architecture/Architecture_Technique.md",
-          "size": 19956
+          "size": 19936
         },
         {
           "hash": "24290156b3b8a5cf8accd1b58424eabf",
@@ -828,18 +835,18 @@
       "count": 2,
       "files": [
         {
-          "hash": "8125a41e2c03914778b81d8090f22b8c",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "0151028bbcc4f7ab742a28069990ab23",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "environment-variables-guide.md",
           "path": "deployment/environment-variables-guide.md",
-          "size": 5476
+          "size": 5474
         },
         {
-          "hash": "b49acdeedec5e948ece11728c6a756e9",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "04f6107718315acbca5d61f97697affd",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "frontend-environment-configuration.md",
           "path": "deployment/frontend-environment-configuration.md",
-          "size": 3929
+          "size": 3933
         }
       ],
       "path": "deployment"
@@ -862,11 +869,11 @@
           "size": 18723
         },
         {
-          "hash": "6a92594b0b637de68709a6cdd7315aa3",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "fdd834643a750eac6c08335217e766a8",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "error-handling-and-logging.md",
           "path": "development-guides/error-handling-and-logging.md",
-          "size": 15995
+          "size": 15972
         },
         {
           "hash": "5d3ce04bb9d7840b6e83fa8b08f15f53",
@@ -876,32 +883,32 @@
           "size": 7742
         },
         {
-          "hash": "cfb7df99c2f8233ce81959c16b9fba41",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "9f5c9f5793d0d33b6cb61267ce62749d",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-bridge-examples.md",
           "path": "development-guides/agent-bridge-examples.md",
-          "size": 7634
+          "size": 7557
         },
         {
-          "hash": "ab4b4a0cbb5a35c11fb72dc3fe6a8de3",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "828a791755adfb6f5d7b74a9c25f2b73",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "index.md",
           "path": "development-guides/index.md",
-          "size": 1595
+          "size": 1591
         },
         {
-          "hash": "31e030d65d799c81f43ab2e964660b04",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "e06d50e09d25c96b0240676b8ab6f36c",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "test-organization-guide.md",
           "path": "development-guides/test-organization-guide.md",
-          "size": 12253
+          "size": 12249
         },
         {
-          "hash": "20830ab87f10625c0fac8c0c9c30705b",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "32f2da5bb17d2e6961742a98d5270c88",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-simple-wrapper-design.md",
           "path": "development-guides/mcp-simple-wrapper-design.md",
-          "size": 10587
+          "size": 10581
         },
         {
           "hash": "5375deedd2bbf4df8fb7d88156779339",
@@ -911,11 +918,11 @@
           "size": 29913
         },
         {
-          "hash": "f67b8cd9130fca937a156582d8224db7",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "3b26b7c63bac31789b3d9e842f4a59f3",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "REPOSITORY_SWITCHING_GUIDE.md",
           "path": "development-guides/REPOSITORY_SWITCHING_GUIDE.md",
-          "size": 12974
+          "size": 12977
         },
         {
           "hash": "6254ba3f6325f5cbcbe46523f52f774a",
@@ -925,25 +932,25 @@
           "size": 27355
         },
         {
-          "hash": "51e08689b597a8d1e03d995cafb3a219",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "c10d33a877c510979f71600d6796b4f1",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "README.md",
           "path": "development-guides/README.md",
-          "size": 2765
+          "size": 2763
         },
         {
-          "hash": "281cd422c784e2f48c1b6877827ea1ea",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "fdf8e55a2c68662685619902aaaf0462",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-interaction-patterns.md",
           "path": "development-guides/agent-interaction-patterns.md",
-          "size": 10510
+          "size": 10508
         },
         {
-          "hash": "1fce34288ac94186c039410867618ff2",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "7d696f5efd5abd05be9676fcfdbad321",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "email-authentication-setup.md",
           "path": "development-guides/email-authentication-setup.md",
-          "size": 9278
+          "size": 9270
         },
         {
           "hash": "3aae30e354c1616d51b242ccf6dd3b03",
@@ -953,11 +960,11 @@
           "size": 5728
         },
         {
-          "hash": "7786f152020036efb3c170548ccdc74d",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "7bd4b7c93c8bbb0ae87d07a715a9b7ef",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "domain-driven-design.md",
           "path": "development-guides/domain-driven-design.md",
-          "size": 11837
+          "size": 11833
         },
         {
           "hash": "5662082fd6c9e4fd1676f78d420e57fe",
@@ -974,32 +981,32 @@
           "size": 47069
         },
         {
-          "hash": "147386251765604b02588cdfc8689459",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "e084c203601042996b4c6de27fcacfdd",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "role-based-tool-assignment-system.md",
           "path": "development-guides/role-based-tool-assignment-system.md",
-          "size": 9488
+          "size": 9468
         },
         {
-          "hash": "37954849edc2d1a3532b9290c9b27e9a",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "f02afa1460ab3bd3ad815560e208c6ac",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "REPOSITORY_ARCHITECTURE_FINAL.md",
           "path": "development-guides/REPOSITORY_ARCHITECTURE_FINAL.md",
-          "size": 12591
+          "size": 12583
         },
         {
-          "hash": "6bc25529de43e9084cda5333f0bdc80d",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "4bd4fff8f2779b2e38a5922970e56e09",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "DDD_COMPLIANCE_UPDATE_REPORT.md",
           "path": "development-guides/DDD_COMPLIANCE_UPDATE_REPORT.md",
-          "size": 10884
+          "size": 10875
         },
         {
-          "hash": "9c3748669be68423ded4c3f8b97aa127",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "831a13a39e5c59e9f1a3c2397aef3e19",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "claude-code-integration.md",
           "path": "development-guides/claude-code-integration.md",
-          "size": 8149
+          "size": 8091
         },
         {
           "hash": "d2465340682a9784173891bdb4f7cd17",
@@ -1016,11 +1023,11 @@
           "size": 9845
         },
         {
-          "hash": "9e56b1310c8907fc76e0437b6bbee715",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "c5fca2bbc0abccd38c8badc531954121",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-library-cleanup-recommendations.md",
           "path": "development-guides/agent-library-cleanup-recommendations.md",
-          "size": 13649
+          "size": 13645
         },
         {
           "hash": "c9199df0367b1220b9146144011f5b0d",
@@ -1030,11 +1037,11 @@
           "size": 6248
         },
         {
-          "hash": "b9079e1a5e25a5e76249023cab6a4012",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "d30b67d0236169db4a4700c16ebb85f5",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "DDD_COMPLIANCE_ANALYSIS_REPORT.md",
           "path": "development-guides/DDD_COMPLIANCE_ANALYSIS_REPORT.md",
-          "size": 12998
+          "size": 12989
         },
         {
           "hash": "8f88acecf4d2974a47e02940b26a7223",
@@ -1044,18 +1051,18 @@
           "size": 16094
         },
         {
-          "hash": "4b52f5d9411be6d95db6ce551028eebf",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "90ed58f6576970d55414f9d8faffb873",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "authentication-testing-patterns.md",
           "path": "development-guides/authentication-testing-patterns.md",
-          "size": 14089
+          "size": 14087
         },
         {
-          "hash": "b162d6e7f2019938a3dc7f8eced813b0",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "ada39200c30510921fd5644b98be9e10",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "test_creation_guide.md",
           "path": "development-guides/test_creation_guide.md",
-          "size": 13872
+          "size": 13832
         },
         {
           "hash": "f6b3c6b237dba50da1fb236499f38c9a",
@@ -1065,18 +1072,18 @@
           "size": 7709
         },
         {
-          "hash": "8742adbb8a1ab61e6880e5b668b173d3",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "b4b19446ea80c74254c1011d2221d43e",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-integration-guide.md",
           "path": "development-guides/mcp-integration-guide.md",
-          "size": 12263
+          "size": 12252
         },
         {
-          "hash": "b044c18a51205614ed258865e8c92756",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "ab6a654e393d6812a4a2bfe389f71f6a",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-task-creation-guide.md",
           "path": "development-guides/mcp-task-creation-guide.md",
-          "size": 18071
+          "size": 17993
         },
         {
           "hash": "6b22afe63974f5ccced52d263b74a7cc",
@@ -1086,25 +1093,25 @@
           "size": 3328
         },
         {
-          "hash": "6ad251086e4f41d65809b80a643fad76",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "0adc11b57dd38fe13f1d3f89691bbd10",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "orm-agent-repository-implementation.md",
           "path": "development-guides/orm-agent-repository-implementation.md",
-          "size": 4997
+          "size": 4995
         },
         {
-          "hash": "3e1cd4d325f3f190fadd1df8c4535824",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "333ca2df832287e661a450bc7996ba45",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "jwt-authentication-guide.md",
           "path": "development-guides/jwt-authentication-guide.md",
-          "size": 4637
+          "size": 4630
         },
         {
-          "hash": "ba4244ab991f893d1f465fd27f53a483",
-          "modified": "2025-09-14T11:01:31.814708",
+          "hash": "d6fc01f2ed54cc81805c0304684e7c62",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "docker-system-guide.md",
           "path": "development-guides/docker-system-guide.md",
-          "size": 13333
+          "size": 13322
         },
         {
           "hash": "6fffed1c76602e6724e8c8727ee932aa",
@@ -1114,25 +1121,25 @@
           "size": 28713
         },
         {
-          "hash": "202dc474cad0b3e0c0a97a0afbcf3a2d",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "047dc306f8cacd7d4e00d32889e5761b",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-hint-system-implementation.md",
           "path": "development-guides/mcp-hint-system-implementation.md",
-          "size": 7966
+          "size": 7954
         },
         {
-          "hash": "ea9788e66a5b30426182b79cab64976f",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "38015de04609a17ff042d57669ed0957",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "VISUAL_FLOW_VERIFICATION_PROMPT.md",
           "path": "development-guides/VISUAL_FLOW_VERIFICATION_PROMPT.md",
-          "size": 14430
+          "size": 14397
         },
         {
-          "hash": "3427a9b40611bb9abd0e3c6057029068",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "acbdaeed3f6d2fb8e4bcd2ba6ef69369",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "ai-task-planning-prompt.md",
           "path": "development-guides/ai-task-planning-prompt.md",
-          "size": 15647
+          "size": 15614
         },
         {
           "hash": "4f9c553bb7edf206d60d8fa673dfb49e",
@@ -1149,18 +1156,18 @@
           "size": 9003
         },
         {
-          "hash": "8283e131aebed195660d63ff3781b81c",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "66fcbcc80c2db9b53f56bccf749c0dbf",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "modular-controller-architecture.md",
           "path": "development-guides/modular-controller-architecture.md",
-          "size": 19858
+          "size": 19856
         },
         {
-          "hash": "bd875edc4502eabf6ba2ced859e036de",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "396c60701c31dc0f293120c0aba28d81",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-capacity-improvement-recommendations.md",
           "path": "development-guides/agent-capacity-improvement-recommendations.md",
-          "size": 18416
+          "size": 18406
         },
         {
           "hash": "d144b1c69d4706ab73e117f55685bed8",
@@ -1177,11 +1184,11 @@
           "size": 7812
         },
         {
-          "hash": "6a1b03eb07ac514f2edde37030348e14",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "3f1506b3725e657858947411b2661391",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "frontend-ux-enhancements.md",
           "path": "development-guides/frontend-ux-enhancements.md",
-          "size": 7921
+          "size": 7919
         },
         {
           "hash": "08e95fda42aa76e063bfc86c2d00e2fa",
@@ -1191,11 +1198,11 @@
           "size": 8082
         },
         {
-          "hash": "fd61dfcf9b3a94bf3a0e1180f160ca06",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "8415bda4c23aff6bbab39d9192e606f8",
+          "modified": "2025-09-17T14:11:39.083883",
           "name": "AGENT_ARCHITECTURE_PROMPT.md",
           "path": "development-guides/AGENT_ARCHITECTURE_PROMPT.md",
-          "size": 43283
+          "size": 43215
         }
       ],
       "path": "development-guides"
@@ -1204,18 +1211,18 @@
       "count": 2,
       "files": [
         {
-          "hash": "45372aa18b004786f4db82e4a9e01fea",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "f032b2ae5e38a44ad94d859911ec3082",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "claude-json-agent-format.md",
           "path": "integration-guides/claude-json-agent-format.md",
-          "size": 7454
+          "size": 7442
         },
         {
-          "hash": "21f4964d620f6dcfd78010c84f8e20f6",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "4961bf7d1009c4681ed857e7cafaaae7",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "claude-code-agent-delegation-guide.md",
           "path": "integration-guides/claude-code-agent-delegation-guide.md",
-          "size": 8949
+          "size": 8918
         }
       ],
       "path": "integration-guides"
@@ -1224,18 +1231,18 @@
       "count": 13,
       "files": [
         {
-          "hash": "fb5acacfe30a11f6dfed9855585a0001",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "07ce0439318b5d50890f6addc62015c5",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-authentication-fix-prompts-2025-09-05.md",
           "path": "issues/mcp-authentication-fix-prompts-2025-09-05.md",
-          "size": 10214
+          "size": 10205
         },
         {
-          "hash": "ac6ed7bb90cb7ea93f68d0faef7b1368",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "a6cbb647351b948232f57aad00b5f1f7",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "task-creation-assignees-bug.md",
           "path": "issues/task-creation-assignees-bug.md",
-          "size": 7258
+          "size": 7249
         },
         {
           "hash": "d239f7de6a3cec7103abf79b84a24475",
@@ -1245,18 +1252,18 @@
           "size": 15526
         },
         {
-          "hash": "3382d0cc46a2332f956bbe70a941bb4c",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "7d639dd1ed8b29ab0c01ecbde1c91d25",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-task-creation-fix-prompt-2025-09-05.md",
           "path": "issues/mcp-task-creation-fix-prompt-2025-09-05.md",
-          "size": 11932
+          "size": 11911
         },
         {
-          "hash": "8a24c6e9ef7d4206c27347018982b3e2",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "6af8abafb3b8930e81993768f389a7f1",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-subtask-session-management-fix-2025-09-05.md",
           "path": "issues/mcp-subtask-session-management-fix-2025-09-05.md",
-          "size": 3832
+          "size": 3829
         },
         {
           "hash": "c5a298b27a64d7416898e5e718236348",
@@ -1266,25 +1273,25 @@
           "size": 4333
         },
         {
-          "hash": "6776f47b24285631f7356da5291d43fc",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "60189137fe470dd0e5a792369f7b4d44",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-authentication-testing-blocker-2025-09-05.md",
           "path": "issues/mcp-authentication-testing-blocker-2025-09-05.md",
-          "size": 8118
+          "size": 8112
         },
         {
-          "hash": "8032f772c495d49959f281224ce4bc7b",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "51342589ccfb945d5bd444eba43ce66f",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-task-creation-import-error-2025-09-09.md",
           "path": "issues/mcp-task-creation-import-error-2025-09-09.md",
-          "size": 5232
+          "size": 5217
         },
         {
-          "hash": "0fe08e389a1034114a444df87c9abaeb",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "652ad809da4e5538783c1504bcb6bca8",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-subtask-persistence-fix-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-fix-2025-09-05.md",
-          "size": 9195
+          "size": 9186
         },
         {
           "hash": "c47d32e442127bf2b9440009e93acf6c",
@@ -1294,25 +1301,25 @@
           "size": 4698
         },
         {
-          "hash": "e7a639dd9713c862ba2b190340a24f0b",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "dff3ce2cfd7a7478a98f1c38fc79d5f4",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-subtask-persistence-critical-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-critical-2025-09-05.md",
-          "size": 3587
+          "size": 3575
         },
         {
-          "hash": "5125d77151bb92564a800977c1411a54",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "1a20ef4e176e164d8486eece814ccd4d",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-subtask-persistence-ddd-fix-prompt-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-ddd-fix-prompt-2025-09-05.md",
-          "size": 9875
+          "size": 9821
         },
         {
-          "hash": "cddb4ade4ab6430ca87aa8ca08eb30ca",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "4194fe5eba4e6b01e47ca6946fbb47f4",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "project-deletion-fix-2025-09-06.md",
           "path": "issues/project-deletion-fix-2025-09-06.md",
-          "size": 2272
+          "size": 2269
         }
       ],
       "path": "issues"
@@ -1321,11 +1328,11 @@
       "count": 10,
       "files": [
         {
-          "hash": "cb99d29edfea6c5d55772ecc95a4b447",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "150a21c9839af22982d0d76b0b3022d2",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "HIERARCHICAL_CONTEXT_MIGRATION.md",
           "path": "migration-guides/HIERARCHICAL_CONTEXT_MIGRATION.md",
-          "size": 10224
+          "size": 10222
         },
         {
           "hash": "b4cedce094f2deaa138bfed3796675d3",
@@ -1335,18 +1342,18 @@
           "size": 11109
         },
         {
-          "hash": "9ac23da7d7b761d1479ff24a9459a5ce",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "f74bda6922778844c5940d3aa044f641",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "agent-library-cleanup-migration-guide.md",
           "path": "migration-guides/agent-library-cleanup-migration-guide.md",
-          "size": 16959
+          "size": 16836
         },
         {
-          "hash": "d6460c69629611dc5b06b58cbda7f183",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "1f4e032cbc9486c5cd09a87c4c3a6f17",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "README.md",
           "path": "migration-guides/README.md",
-          "size": 2631
+          "size": 2629
         },
         {
           "hash": "50abe65df3877b0950031181846eba28",
@@ -1356,11 +1363,11 @@
           "size": 8680
         },
         {
-          "hash": "1a8bff9a5addc7a1e5e783cd62fa19b6",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "31e6ab4988a4072f8da794637e5ff1dc",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "database-clean-migration-v3.md",
           "path": "migration-guides/database-clean-migration-v3.md",
-          "size": 8672
+          "size": 8652
         },
         {
           "hash": "fa37ff1d38fce44ec03fee8edbd97111",
@@ -1370,25 +1377,25 @@
           "size": 9288
         },
         {
-          "hash": "663476307d3b610c1a6b23ead4b361bf",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "f1e6ba0cbab3a7e437d8198de5426566",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "agent-name-migration.md",
           "path": "migration-guides/agent-name-migration.md",
-          "size": 10418
+          "size": 10415
         },
         {
-          "hash": "534142094a760db7397e80fbaa67cc2a",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "bd20b6dc020912ec4c944dd7a19ae820",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "authentication-config-migration-2025-09-05.md",
           "path": "migration-guides/authentication-config-migration-2025-09-05.md",
-          "size": 4135
+          "size": 4093
         },
         {
-          "hash": "d8b7a5562973d04f937e09e46464d1b8",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "1062a6996b62778ce91db0fe36690208",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "mcp-complete-implementation-plan.md",
           "path": "migration-guides/mcp-complete-implementation-plan.md",
-          "size": 12543
+          "size": 12504
         }
       ],
       "path": "migration-guides"
@@ -1397,25 +1404,25 @@
       "count": 25,
       "files": [
         {
-          "hash": "c62f03b4f4ceb0bf85588798c40c4500",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "0aad9e989aedac5cebdd454d3846913b",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "CAPROVER_DEPLOYMENT_FIX.md",
           "path": "operations/CAPROVER_DEPLOYMENT_FIX.md",
-          "size": 5451
+          "size": 5409
         },
         {
-          "hash": "362e6bab03b727adaa5b5ef15538a6dd",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "cf8c3af37bf26d7836d9698243efca6f",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "index.md",
           "path": "operations/index.md",
-          "size": 1902
+          "size": 1900
         },
         {
-          "hash": "f7dbcfbb2847623efc0720d70a3dc8b1",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "996f6e3c28c7c494146f9f2665ab6c86",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "production-deployment-guide.md",
           "path": "operations/production-deployment-guide.md",
-          "size": 13619
+          "size": 13610
         },
         {
           "hash": "39572116d2f04a1a870ea4b0d64d71ec",
@@ -1425,53 +1432,53 @@
           "size": 8364
         },
         {
-          "hash": "3d8237970285321679933471ac8caaeb",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "83609305e10a2f3ac2195b1cb85acd71",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "database-configuration-guide.md",
           "path": "operations/database-configuration-guide.md",
-          "size": 5445
+          "size": 5444
         },
         {
-          "hash": "ba6f5a1359bb09c9215c65a788a916c9",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "ed1ec588b732aaa7e567725929d47471",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "TDD_REMEDIATION_TASK_PLAN.md",
           "path": "operations/TDD_REMEDIATION_TASK_PLAN.md",
-          "size": 12422
+          "size": 12390
         },
         {
-          "hash": "43d34d2a4a16346f1c7ff05c0b55b40a",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "56e03aea252a4b8029cbf1b831b296dd",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "cloud-storage-solutions.md",
           "path": "operations/cloud-storage-solutions.md",
-          "size": 7441
+          "size": 7426
         },
         {
-          "hash": "911ea5301b45c1e04d78b35e5ab93c84",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "b52be53ab0921c76567e790321419d81",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "disaster-recovery-procedures.md",
           "path": "operations/disaster-recovery-procedures.md",
-          "size": 12318
+          "size": 12283
         },
         {
-          "hash": "fb5714c95244a66211ec9c65fc71521c",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "98aeb8db098a17de6a458457a6c53507",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "QUICK_DEPLOY_CAPROVER.md",
           "path": "operations/QUICK_DEPLOY_CAPROVER.md",
-          "size": 2894
+          "size": 2900
         },
         {
-          "hash": "a797b09000e19b13e1d8c8fb1ef9b524",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "e6f5e575b2f3596f9553e60e5241b2ab",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "deployment-summary.md",
           "path": "operations/deployment-summary.md",
-          "size": 11966
+          "size": 11960
         },
         {
-          "hash": "a06abde04fa9c0584e447d3f5e1eb8cd",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "6a51e2d16df1b70df4fa859083bd87e1",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "performance-tuning-guide.md",
           "path": "operations/performance-tuning-guide.md",
-          "size": 17185
+          "size": 17174
         },
         {
           "hash": "9d61af9d10c9e5eb0b9fc31c6ec13426",
@@ -1481,60 +1488,60 @@
           "size": 6992
         },
         {
-          "hash": "6de4b04147f7f7e0a90362cd4518be26",
-          "modified": "2025-09-17T00:40:29.826987",
+          "hash": "ee79687d0d08c317d197dc9f3fab293c",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "phase-6-deployment-guide.md",
           "path": "operations/phase-6-deployment-guide.md",
-          "size": 12104
+          "size": 12101
         },
         {
-          "hash": "3641c47900042115ae50d06e5406086a",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "edd70918d02f81b8699af7a68a4ff1a1",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "runtime-env-configuration-fix.md",
           "path": "operations/runtime-env-configuration-fix.md",
-          "size": 4321
+          "size": 4325
         },
         {
-          "hash": "7139618e6991d2f27f2cc1a6af6b6f3a",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "d5e4871e62194e5b694eb4608f3ba63b",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "performance-optimization-guide.md",
           "path": "operations/performance-optimization-guide.md",
-          "size": 13699
+          "size": 13697
         },
         {
-          "hash": "a2675170b7840b9ca7d36f0b888317c0",
-          "modified": "2025-09-17T00:40:29.826987",
+          "hash": "aa9d6620c67c128589d9b2addae554f5",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "fix-mcp-cors-configuration.md",
           "path": "operations/fix-mcp-cors-configuration.md",
-          "size": 2901
+          "size": 2892
         },
         {
-          "hash": "3d5d5dd381717a4a9fb6b80e0754c9d8",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "242bb360f42f402b49340dc72680d0ff",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "deploy-mixed-content-fix.md",
           "path": "operations/deploy-mixed-content-fix.md",
-          "size": 2429
+          "size": 2434
         },
         {
-          "hash": "8e30cb089bdae03d8d74632711ba6c7e",
-          "modified": "2025-09-15T18:30:09.664407",
+          "hash": "6ab0d4d39adf1be7c0984b48448a94bc",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "CAPROVER_ENV_VARIABLES.md",
           "path": "operations/CAPROVER_ENV_VARIABLES.md",
-          "size": 4002
+          "size": 3996
         },
         {
-          "hash": "7158c08d1105e3cf2f9f201ee8c3ffb9",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "2769edd82554c7344de268c3af8df9d6",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "CAPROVER_CRITICAL_FIX.md",
           "path": "operations/CAPROVER_CRITICAL_FIX.md",
-          "size": 2185
+          "size": 2170
         },
         {
-          "hash": "a26f43dc578ab8b2e5610f7bfff0d062",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "d717c7579fe4ef5563aebef325404316",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "mcp-registration-system.md",
           "path": "operations/mcp-registration-system.md",
-          "size": 7145
+          "size": 7131
         },
         {
           "hash": "de42e5f296b63d6af839909478b86866",
@@ -1544,11 +1551,11 @@
           "size": 11362
         },
         {
-          "hash": "48da6877315959201102852111e2191a",
-          "modified": "2025-09-14T11:01:31.814708",
+          "hash": "4bf7db3e91592708aa7b4d2c0b94a897",
+          "modified": "2025-09-17T14:11:39.087862",
           "name": "KEYCLOAK_POSTGRESQL_SETUP.md",
           "path": "operations/KEYCLOAK_POSTGRESQL_SETUP.md",
-          "size": 9911
+          "size": 9886
         },
         {
           "hash": "7d84de67309e51ac202c3e7ec12d7e07",
@@ -1558,18 +1565,18 @@
           "size": 2714
         },
         {
-          "hash": "26014032146edb41e21a1e6ba9d5375a",
-          "modified": "2025-09-14T11:41:52.524557",
+          "hash": "8ffa4016ff8c420db980bc7e1c2e5fe5",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "docker-deployment-guide.md",
           "path": "operations/docker-deployment-guide.md",
-          "size": 16726
+          "size": 16697
         },
         {
-          "hash": "db0fa6f2da9f13ee137daf4087a04d11",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "1c883cb64434d0f281cc294c93d942ef",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "environment-setup.md",
           "path": "operations/environment-setup.md",
-          "size": 7584
+          "size": 7581
         }
       ],
       "path": "operations"
@@ -1578,18 +1585,18 @@
       "count": 2,
       "files": [
         {
-          "hash": "6b9da45b60fe925e67cadc78c0b08635",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "84f5e2457b14460c7aa5b4ec58b0a845",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "README.md",
           "path": "product-requirements/README.md",
-          "size": 1994
+          "size": 1992
         },
         {
-          "hash": "64cde3da094e09a1c1e41311a7c5bed9",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "3a216494407343c6ca5f5b2ab22c253f",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "PRD.md",
           "path": "product-requirements/PRD.md",
-          "size": 15730
+          "size": 15717
         }
       ],
       "path": "product-requirements"
@@ -1598,11 +1605,11 @@
       "count": 9,
       "files": [
         {
-          "hash": "217883a94794946cb82933003f0af904",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "45809279307daf9847fb05aa5ae3251c",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "test-fixes-root-cause-resolution.md",
           "path": "reports-status/test-fixes-root-cause-resolution.md",
-          "size": 2366
+          "size": 2354
         },
         {
           "hash": "d4abfa3729515a561032ca78a0a27ab2",
@@ -1612,25 +1619,25 @@
           "size": 6792
         },
         {
-          "hash": "315ba8a3b6ce179e5390dd83d157e137",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "945fdb52350aebace93d8ed345815ee3",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "test-error-resolution-final.md",
           "path": "reports-status/test-error-resolution-final.md",
-          "size": 1489
+          "size": 1486
         },
         {
-          "hash": "4b759470ad3700c98eb87161c4bd3f6a",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "93962577103751b4db393ef149b692f1",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "test-fixes-final-status.md",
           "path": "reports-status/test-fixes-final-status.md",
-          "size": 3108
+          "size": 3099
         },
         {
-          "hash": "15a1d64655b2f13244465a5bc85aebe2",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "220205d9a8bc8aceb9e3e56cbdd32a46",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "uat-comprehensive-report-2025-09-12.md",
           "path": "reports-status/uat-comprehensive-report-2025-09-12.md",
-          "size": 12685
+          "size": 12683
         },
         {
           "hash": "e5aeae1769b7a365e2ddc54e638e0059",
@@ -1640,25 +1647,25 @@
           "size": 11136
         },
         {
-          "hash": "c8b017cd1c5d780ba65816a725204345",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "52eab6632a04a9107b0ab1f4453025f2",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "test-cleanup-report-2025-09-12.md",
           "path": "reports-status/test-cleanup-report-2025-09-12.md",
-          "size": 2674
+          "size": 2659
         },
         {
-          "hash": "62b622bf2e8bde41441e844240bd602d",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "3420a75e715c9569bf04fd35532968ad",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "factory-check-status.md",
           "path": "reports-status/factory-check-status.md",
-          "size": 20200
+          "size": 20176
         },
         {
-          "hash": "c34904acee169fb644a376bed9967d06",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "da9be679ccd96a67fe4cb9858b420d97",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "ai-task-planning-system-complete-2025-09-12.md",
           "path": "reports-status/ai-task-planning-system-complete-2025-09-12.md",
-          "size": 12813
+          "size": 12811
         }
       ],
       "path": "reports-status"
@@ -1736,11 +1743,11 @@
           "size": 3823
         },
         {
-          "hash": "6023014c9975889f961159ca11b0cf47",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "67c6474e2abd2899e9fad8fbf6acd08d",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "secret-leak-cleanup-report-2025-09-12.md",
           "path": "security/secret-leak-cleanup-report-2025-09-12.md",
-          "size": 6480
+          "size": 6468
         },
         {
           "hash": "3149c11cd70de4f911f5f60af025be63",
@@ -1763,32 +1770,32 @@
           "size": 2235
         },
         {
-          "hash": "407f4ea508b34f9b56c66627054d80a8",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "a46868d5e7b1b8bb178331e801224bb5",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "BRANCH_SETUP.md",
           "path": "setup-guides/BRANCH_SETUP.md",
-          "size": 2235
+          "size": 2217
         },
         {
-          "hash": "93f2d6f48300aa1192bb21aad435d352",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "731094c507aa7f8d9256e7d2e854cecc",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "keycloak-authentication-fix.md",
           "path": "setup-guides/keycloak-authentication-fix.md",
-          "size": 4376
+          "size": 4373
         },
         {
-          "hash": "737a797d21bb8a947ad0a808c4503398",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "996d8825aaa6c8ada2d9e964fd85c366",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "DATABASE_UI_GUIDE.md",
           "path": "setup-guides/DATABASE_UI_GUIDE.md",
-          "size": 8087
+          "size": 8071
         },
         {
-          "hash": "79c0f365f97d1fefbcc86fa8d564f0a9",
-          "modified": "2025-09-14T11:01:31.814708",
+          "hash": "733cddf2eb5f4a97765392e13f3924bc",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "POSTGRESQL_KEYCLOAK_PRODUCTION.md",
           "path": "setup-guides/POSTGRESQL_KEYCLOAK_PRODUCTION.md",
-          "size": 8444
+          "size": 8407
         },
         {
           "hash": "d7acd3649c13ccd8b7864a8cb570a6e1",
@@ -1805,25 +1812,32 @@
           "size": 7913
         },
         {
-          "hash": "41be06cea77c58da44e8b69b75757c23",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "94aa7f9c40ff5f1da468ad3d9b8c5906",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "PRODUCTION_SETUP_SUMMARY.md",
           "path": "setup-guides/PRODUCTION_SETUP_SUMMARY.md",
-          "size": 3827
+          "size": 3817
         },
         {
-          "hash": "6b49829ccb3bfb1f4e7ecbb33545fcad",
-          "modified": "2025-09-13T23:31:32.158985",
+          "hash": "e9cfbb05cf1cafcb10694b0c0ed5d670",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "keycloak-authentication-setup.md",
           "path": "setup-guides/keycloak-authentication-setup.md",
-          "size": 8297
+          "size": 8284
         }
       ],
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 17,
+      "count": 18,
       "files": [
+        {
+          "hash": "5a500991c6169cd0be729d06373d0a60",
+          "modified": "2025-09-17T14:20:15.028544",
+          "name": "mcp-tools-test-report-2025-09-17.md",
+          "path": "testing-qa/mcp-tools-test-report-2025-09-17.md",
+          "size": 6064
+        },
         {
           "hash": "8149b16986cbc567e2c5aceec9c70c18",
           "modified": "2025-09-17T10:26:47.264821",
@@ -1839,18 +1853,18 @@
           "size": 16277
         },
         {
-          "hash": "4d386e08457a5a2855498d3ce0168e14",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "378aa13e352250d85c6226e253e6e8a8",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "testing.md",
           "path": "testing-qa/testing.md",
-          "size": 7876
+          "size": 7847
         },
         {
-          "hash": "f84ea0ff502042887067568b4ada4829",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "2bd9223597dd939347ecf38150a49c88",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "configuration-cleanup-strategy.md",
           "path": "testing-qa/configuration-cleanup-strategy.md",
-          "size": 17900
+          "size": 17879
         },
         {
           "hash": "57e431659b4d64fd8366c37c56aecfaf",
@@ -1860,18 +1874,18 @@
           "size": 7759
         },
         {
-          "hash": "68b18ec5b7b92f8cac7e46843dd27d5e",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "762e177de10f2c7e6561ae6feecb0a98",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "context_resolution_tests_summary.md",
           "path": "testing-qa/context_resolution_tests_summary.md",
-          "size": 15889
+          "size": 15883
         },
         {
-          "hash": "60dfcd751da5498d7dc6dc57e20c06f4",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "5c98fa0abb5fef3413c7a4bc3767d1f5",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-26-test-fixes.md",
           "path": "testing-qa/iteration-26-test-fixes.md",
-          "size": 3485
+          "size": 3479
         },
         {
           "hash": "f2cf478adfec52deb1846ae952ae6b15",
@@ -1881,39 +1895,39 @@
           "size": 3392
         },
         {
-          "hash": "56ddd052b447d1baa7e58a072ea41414",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "df33ea4bd0faecc33262013fb6626fab",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-34-test-success.md",
           "path": "testing-qa/iteration-34-test-success.md",
-          "size": 7711
+          "size": 7709
         },
         {
-          "hash": "bd8eccb6bbf7db44739f8ea1b9c66f6b",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "db872c87f0bf5f8deb19a6972d161ae7",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-35-test-suite-perfect.md",
           "path": "testing-qa/iteration-35-test-suite-perfect.md",
-          "size": 6580
+          "size": 6576
         },
         {
-          "hash": "94c33d89a750f45c9b4d701eaa344a41",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "acd8cd8711a40117662be7a69782c21e",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-36-test-suite-milestone.md",
           "path": "testing-qa/iteration-36-test-suite-milestone.md",
-          "size": 6899
+          "size": 6895
         },
         {
-          "hash": "302b434d6677970d78dd43e8d07aaa64",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "3a714de59d194e93a2f341e699436a69",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-32-test-fixes.md",
           "path": "testing-qa/iteration-32-test-fixes.md",
-          "size": 6237
+          "size": 6225
         },
         {
-          "hash": "43b3d1e884ea6df30b978f07214819da",
-          "modified": "2025-09-17T10:26:47.264821",
+          "hash": "05545b11bc012e256462a8512ad5d902",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-25-test-fixes.md",
           "path": "testing-qa/iteration-25-test-fixes.md",
-          "size": 2318
+          "size": 2312
         },
         {
           "hash": "b81aae68a7f9663ca9d3db5239614fc9",
@@ -1937,11 +1951,11 @@
           "size": 20706
         },
         {
-          "hash": "9a755e64b63cda7d63a570054a5359e3",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "e276321787d5df7d90fb9cd9bba91d66",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "comprehensive-mcp-tools-test-suite.md",
           "path": "testing-qa/comprehensive-mcp-tools-test-suite.md",
-          "size": 9842
+          "size": 9798
         }
       ],
       "path": "testing-qa"
@@ -1950,11 +1964,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "719b5344d5fe7d6eddee64147a6ccac1",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "afbcee1966eb9ad2a45c379340e4a531",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "End_to_End_Testing_Guidelines.md",
           "path": "testing-qa/e2e/End_to_End_Testing_Guidelines.md",
-          "size": 3351
+          "size": 3347
         }
       ],
       "path": "testing-qa/e2e"
@@ -1970,18 +1984,18 @@
           "size": 5804
         },
         {
-          "hash": "1da8cd3933efef80496e3d60cd97b25b",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "8aa163e1ffe99ea2ae3f4c645391190f",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "test-import-errors-complete-fix.md",
           "path": "troubleshooting-guides/test-import-errors-complete-fix.md",
-          "size": 2760
+          "size": 2751
         },
         {
-          "hash": "1f5aacc2420086ffda20de725a65cd27",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "637cd2ca5f29aa9ab89631444dfc2cf0",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "index.md",
           "path": "troubleshooting-guides/index.md",
-          "size": 2238
+          "size": 2236
         },
         {
           "hash": "82abf6798e5b0565de646783f253d05a",
@@ -1991,11 +2005,11 @@
           "size": 19276
         },
         {
-          "hash": "180656b4f7bf7477200c2b8860afd1e1",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "5579b83b15dcf5f8c25882d045065bbc",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "task-persistence-fix-guide.md",
           "path": "troubleshooting-guides/task-persistence-fix-guide.md",
-          "size": 6100
+          "size": 6052
         },
         {
           "hash": "7604de00347fd357315b5d656690903d",
@@ -2012,50 +2026,50 @@
           "size": 5101
         },
         {
-          "hash": "bf3bd6be70b4b11ea3cd91cdb3c17e9c",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "57875309bf75d73640ab764f40f7b9ba",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "mcp-hint-system-resolved-issues.md",
           "path": "troubleshooting-guides/mcp-hint-system-resolved-issues.md",
-          "size": 7806
+          "size": 7803
         },
         {
-          "hash": "228caad46ffee8d8cc3c00d8292509b5",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "e53cc93a7a391a5826e915c5766bcbe9",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "README.md",
           "path": "troubleshooting-guides/README.md",
-          "size": 2425
+          "size": 2423
         },
         {
-          "hash": "8a5c9f96f002b64d76a68e9bc2085bc0",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "0592e63a8d715668bab29117fb17d314",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "frontend-development-environment-fix.md",
           "path": "troubleshooting-guides/frontend-development-environment-fix.md",
-          "size": 5202
+          "size": 5206
         },
         {
-          "hash": "8a0fd0c3d1a0eedb8389c4acfc4681a1",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "f249e63e907ab6a97191072de8ec6e22",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "global-context-singleton-setup-solution.md",
           "path": "troubleshooting-guides/global-context-singleton-setup-solution.md",
-          "size": 6507
+          "size": 6497
         },
         {
-          "hash": "177144a114284af63b5a3ad07b13a349",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "d4e33195fe250d2c9d246ea39ef39f02",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "subtask-persistence-debugging-guide.md",
           "path": "troubleshooting-guides/subtask-persistence-debugging-guide.md",
-          "size": 6436
+          "size": 6428
         },
         {
-          "hash": "6a4498ef5d0dbbee75306a5a49d80b8c",
-          "modified": "2025-09-14T11:41:52.524557",
+          "hash": "64d5c896a442604631918e5d24afea65",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "production-deployment-issues.md",
           "path": "troubleshooting-guides/production-deployment-issues.md",
-          "size": 20440
+          "size": 20412
         },
         {
-          "hash": "708bf5e5432e3857503a5133100c658e",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "cbbcdc5819ef08506226b64432fc7a09",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "frontend-debugging-summary.md",
           "path": "troubleshooting-guides/frontend-debugging-summary.md",
           "size": 9921
@@ -2068,32 +2082,32 @@
           "size": 7007
         },
         {
-          "hash": "5de48ca93160b7e1282a2bdad9e9c9ef",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "f8bad23dee0bddecb2655fcdc56d40e7",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
           "path": "troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
-          "size": 20344
+          "size": 20173
         },
         {
-          "hash": "93100cf7c21136ce7a675fd8a53b9126",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "fce081e12567f2d678a7f526f32f89a8",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
           "path": "troubleshooting-guides/FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
-          "size": 7223
+          "size": 7217
         },
         {
-          "hash": "f8f885472d86f84d83cf53cb456ce99b",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "e47de53b7a91ce348fa5e551cee6baa0",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "v2-api-git-branch-filtering-fix.md",
           "path": "troubleshooting-guides/v2-api-git-branch-filtering-fix.md",
-          "size": 12660
+          "size": 12651
         },
         {
-          "hash": "b790720fb3c5b95b7857454f92451956",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "a273f602b42150fe3b138241911fd6bd",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "frontend-task-listing-fix.md",
           "path": "troubleshooting-guides/frontend-task-listing-fix.md",
-          "size": 5851
+          "size": 5830
         },
         {
           "hash": "f943ae81414922c1bf9b3f1203faf7c0",
@@ -2110,66 +2124,79 @@
           "size": 6179
         },
         {
-          "hash": "e25a9a8d85d556958d1866510baece01",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "c775e2151e99e2c21e5d33b9aa1ff1b7",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "task-list-git-branch-filtering-fix.md",
           "path": "troubleshooting-guides/task-list-git-branch-filtering-fix.md",
-          "size": 6246
+          "size": 6240
         },
         {
-          "hash": "5439e76737a629874d2d86b90fbfc7fb",
-          "modified": "2025-09-15T18:30:09.668240",
+          "hash": "bf3508ce2ded7a66846e65c43b269fa6",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "task-delegation-fix.md",
           "path": "troubleshooting-guides/task-delegation-fix.md",
-          "size": 6020
+          "size": 5966
         },
         {
-          "hash": "bc605e3b49cd2a543d682c2188b4e8e1",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "f8992d46220dc3202a5a3c844fa94a7e",
+          "modified": "2025-09-17T14:11:39.091842",
           "name": "DMAIC-D1-Authentication-Security-Requirements.md",
           "path": "troubleshooting-guides/DMAIC-D1-Authentication-Security-Requirements.md",
-          "size": 18225
+          "size": 18221
         },
         {
-          "hash": "501317cc8523391f12683ddb837cb8d6",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "68f8af28e4b559c165f1afeb7a74de72",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "task-context-completion-summary-fixes.md",
           "path": "troubleshooting-guides/task-context-completion-summary-fixes.md",
-          "size": 6597
+          "size": 6570
         },
         {
-          "hash": "7b9096cfeb80bffd6448b4ddb5b7e98c",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "20f6a92ac2cb2ee3fd79c033feab09ce",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "test-import-errors-fix.md",
           "path": "troubleshooting-guides/test-import-errors-fix.md",
-          "size": 1869
+          "size": 1857
         },
         {
-          "hash": "026da6676725cc99e43f4f05b4bc6a3b",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "37b02ad1ddd4297d896d6c3789c7d5f4",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "mcp-connection-issues.md",
           "path": "troubleshooting-guides/mcp-connection-issues.md",
-          "size": 7036
+          "size": 7012
         },
         {
-          "hash": "94e154f7d4610479bed5708f2ef1b445",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "3dec322f427737dda2e0089c7e77e04d",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "test-menu-fix-applied.md",
           "path": "troubleshooting-guides/test-menu-fix-applied.md",
-          "size": 1396
+          "size": 1384
         },
         {
-          "hash": "5c8b81d9269adffe7da7aeef9d5193d1",
-          "modified": "2025-09-13T23:31:32.162844",
+          "hash": "e78b701580595e0511876cf41772b239",
+          "modified": "2025-09-17T14:11:39.095822",
           "name": "TROUBLESHOOTING.md",
           "path": "troubleshooting-guides/TROUBLESHOOTING.md",
-          "size": 3820
+          "size": 3815
         }
       ],
       "path": "troubleshooting-guides"
+    },
+    "video-production": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "43449daa71c01c529b067b11aa2bbb91",
+          "modified": "2025-09-17T13:15:40.106921",
+          "name": "episode-03-web-dashboard.md",
+          "path": "video-production/episode-03-web-dashboard.md",
+          "size": 31567
+        }
+      ],
+      "path": "video-production"
     }
   },
-  "generated_at": "2025-09-17T11:43:44.626232",
+  "generated_at": "2025-09-17T14:20:15.124194",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2269,7 +2296,8 @@
           "hook-message-flow-analysis.md",
           "hooks-architecture-analysis.md",
           "hooks-dependency-map.md",
-          "hooks-reference.md"
+          "hooks-reference.md",
+          "hooks-system-guide.md"
         ]
       }
     },
@@ -2532,6 +2560,7 @@
         "iteration-34-test-success.md",
         "iteration-35-test-suite-perfect.md",
         "iteration-36-test-suite-milestone.md",
+        "mcp-tools-test-report-2025-09-17.md",
         "testing.md"
       ]
     },
@@ -2567,8 +2596,13 @@
         "test-menu-fix-applied.md",
         "v2-api-git-branch-filtering-fix.md"
       ]
+    },
+    "video-production": {
+      "files": [
+        "episode-03-web-dashboard.md"
+      ]
     }
   },
-  "total_directories": 31,
-  "total_files": 283
+  "total_directories": 32,
+  "total_files": 286
 }

@@ -52,7 +52,7 @@ class TestSuiteVerifier:
                     test_files.append(path)
             elif line and line.endswith('.py') and 'agenthub_main' in line:
                 # Handle lines that might not have the arrow format
-                if '/home/daihungpham/__projects__/agentic-project/' in line:
+                if './' in line:
                     test_files.append(line)
 
         print(f"DEBUG: Loaded {len(test_files)} test files from failed_tests.txt")
@@ -85,9 +85,9 @@ class TestSuiteVerifier:
         """
         try:
             # Convert absolute path to relative path from working directory
-            if test_file.startswith('/home/daihungpham/__projects__/agentic-project/'):
+            if test_file.startswith('./'):
                 # Remove project root prefix
-                test_file = test_file.replace('/home/daihungpham/__projects__/agentic-project/', '')
+                test_file = test_file.replace('./', '')
 
             if test_file.startswith('agenthub_main/'):
                 # Remove agenthub_main prefix since we run from that directory
@@ -173,7 +173,7 @@ class TestSuiteVerifier:
             if not test.startswith('/'):
                 if not test.startswith('agenthub_main/'):
                     test = f"agenthub_main/src/tests/{test}"
-                test = f"/home/daihungpham/__projects__/agentic-project/{test}"
+                test = f"./{test}"
 
             if test not in all_passed_tests:
                 all_passed_tests.append(test)
@@ -192,7 +192,7 @@ class TestSuiteVerifier:
                 if not test.startswith('/'):
                     if not test.startswith('agenthub_main/'):
                         test = f"agenthub_main/src/tests/{test}"
-                    test = f"/home/daihungpham/__projects__/agentic-project/{test}"
+                    test = f"./{test}"
                 f.write(f"{i:5d}→{test}\n")
 
         print(f"  ✅ Updated {self.passed_tests_file}")
