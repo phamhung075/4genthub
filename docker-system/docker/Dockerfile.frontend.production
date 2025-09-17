@@ -1,11 +1,14 @@
 # Cache bust: 1757949765
 # Production Frontend Dockerfile for agenthub
 # Multi-stage build optimized for production deployment
-# Features: Minimal image size, optimized assets, security hardening
-# Version: 2.0.4 - Force rebuild with correct API endpoints (2025-09-15)
+# Features: Minimal image size, optimized assets, security hardening, multi-platform support
+# Version: 2.0.5 - Fixed ARM64/AMD64 platform compatibility (2025-09-17)
+
+# syntax=docker/dockerfile:1
+# Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-FROM --platform=${BUILDPLATFORM:-linux/amd64} node:20-alpine as builder
+FROM --platform=${BUILDPLATFORM} node:20-alpine as builder
 
 WORKDIR /build
 
@@ -53,7 +56,7 @@ ENV NODE_ENV=${NODE_ENV}
 RUN npm run build
 
 # Stage 2: Production Runtime with Nginx
-FROM --platform=${TARGETPLATFORM:-linux/amd64} nginx:alpine
+FROM --platform=${TARGETPLATFORM} nginx:alpine
 
 # Accept runtime build arguments
 ARG VITE_API_URL
