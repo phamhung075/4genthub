@@ -7,6 +7,8 @@
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
+# Define platform argument with default for cross-platform builds
+ARG BUILDPLATFORM=linux/amd64
 FROM --platform=${BUILDPLATFORM} python:3.11-slim as builder
 
 WORKDIR /build
@@ -32,6 +34,8 @@ RUN uv venv /opt/venv && \
     uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
 
 # Stage 2: Production Runtime
+# Define target platform argument with default for cross-platform builds
+ARG TARGETPLATFORM=linux/amd64
 FROM --platform=${TARGETPLATFORM} python:3.11-slim
 
 # Accept build arguments for environment configuration
