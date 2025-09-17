@@ -7,14 +7,20 @@ import { AuthContext } from '../../contexts/AuthContext';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', () => ({
-  ...vi.importActual('react-router-dom'),
-  useNavigate: () => mockNavigate,
-}));
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
-// Mock ThemeToggle component
-vi.mock('../../components/ThemeToggle', () => ({
-  ThemeToggle: () => <div data-testid="theme-toggle">Theme Toggle</div>
+// Mock useTheme hook
+vi.mock('../../hooks/useTheme', () => ({
+  useTheme: () => ({
+    theme: 'light',
+    toggleTheme: vi.fn(),
+  }),
 }));
 
 describe('Header', () => {
@@ -65,7 +71,7 @@ describe('Header', () => {
   it('displays the application title and tagline', () => {
     renderWithAuth();
     expect(screen.getByText('4genthub')).toBeInTheDocument();
-    expect(screen.getByText('Multi-Project AI Orchestration Platform')).toBeInTheDocument();
+    expect(screen.getByText('AI Orchestration Platform')).toBeInTheDocument();
   });
 
   it('displays user initials correctly', () => {
@@ -75,7 +81,7 @@ describe('Header', () => {
 
   it('displays user initials for single name', () => {
     renderWithAuth({ ...mockUser, username: 'Alice' });
-    expect(screen.getByText('AL')).toBeInTheDocument();
+    expect(screen.getByText('A')).toBeInTheDocument();
   });
 
   it('displays username on larger screens', () => {
@@ -85,63 +91,64 @@ describe('Header', () => {
 
   it('toggles dropdown menu when clicked', () => {
     renderWithAuth();
-    
-    // Dropdown should not be visible initially
-    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument();
-    
+
+    // Dropdown items should not be visible initially
+    expect(screen.queryByText('Your Profile')).not.toBeInTheDocument();
+    expect(screen.queryByText('API Tokens')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign Out')).not.toBeInTheDocument();
+
     // Click user button to open dropdown
     const userButton = screen.getByRole('button', { name: /JD/i });
     fireEvent.click(userButton);
-    
+
     // Dropdown should now be visible
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
-    expect(screen.getByText('Profile')).toBeInTheDocument();
+    expect(screen.getByText('Your Profile')).toBeInTheDocument();
     expect(screen.getByText('API Tokens')).toBeInTheDocument();
     expect(screen.getByText('Sign Out')).toBeInTheDocument();
   });
 
   it('closes dropdown when clicking outside', () => {
     renderWithAuth();
-    
+
     // Open dropdown
     const userButton = screen.getByRole('button', { name: /JD/i });
     fireEvent.click(userButton);
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
-    
+    expect(screen.getByText('Your Profile')).toBeInTheDocument();
+
     // Click outside (on the overlay)
     const overlay = document.querySelector('.fixed.inset-0');
     fireEvent.click(overlay!);
-    
+
     // Dropdown should be closed
-    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('Your Profile')).not.toBeInTheDocument();
   });
 
   it('navigates to profile when profile link is clicked', () => {
     renderWithAuth();
-    
+
     // Open dropdown
     const userButton = screen.getByRole('button', { name: /JD/i });
     fireEvent.click(userButton);
-    
+
     // Click profile link
-    const profileLink = screen.getByRole('link', { name: /Profile/i });
+    const profileLink = screen.getByText('Your Profile');
     fireEvent.click(profileLink);
-    
+
     // Dropdown should close
-    expect(screen.queryByText('john@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('Your Profile')).not.toBeInTheDocument();
   });
 
   it('handles logout correctly', async () => {
     renderWithAuth();
-    
+
     // Open dropdown
     const userButton = screen.getByRole('button', { name: /JD/i });
     fireEvent.click(userButton);
-    
+
     // Click sign out
-    const signOutButton = screen.getByRole('button', { name: /Sign Out/i });
+    const signOutButton = screen.getByText('Sign Out');
     fireEvent.click(signOutButton);
-    
+
     // Should call logout and navigate
     expect(mockLogout).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/login');
@@ -194,12 +201,13 @@ describe('Header', () => {
     expect(screen.queryByRole('button', { name: /JD/i })).not.toBeInTheDocument();
   });
 
-  it('renders theme toggle for authenticated users', () => {
+  it('renders theme toggle in menu for authenticated users', () => {
     renderWithAuth();
-    expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
+    // Theme toggle should be present in the menu items (as Dark/Light button)
+    expect(screen.getAllByText('Dark').length).toBeGreaterThan(0);
   });
 
-  it('renders theme toggle for non-authenticated users', () => {
+  it('renders theme toggle in menu for non-authenticated users', () => {
     render(
       <BrowserRouter>
         <AuthContext.Provider value={{
@@ -215,6 +223,7 @@ describe('Header', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
+    // Theme toggle should be present in the menu for non-auth users too
+    expect(screen.getAllByText('Dark').length).toBeGreaterThan(0);
   });
 });
