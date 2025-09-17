@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **Production Docker configuration for MCP backend URL** - 2025-09-17 🐳
+  - Fixed `__RUNTIME_INJECTED__` placeholder appearing in MCP configuration
+  - Updated `docker-system/docker/Dockerfile.frontend.production` to use actual default values (http://localhost:8001)
+  - Added proper build arguments to `docker-compose.production.yml` for frontend service
+  - Updated `agenthub-frontend/.env.production` with proper production defaults
+  - Ensures frontend can properly connect to backend on port 8001 in production
+  - Build arguments now properly propagate through multi-stage Docker build
+
 ### Added
 - **MCP Initialization page for setup and troubleshooting** - 2025-09-17 🛠️
   - Created comprehensive Initialization page at `/initialization` route

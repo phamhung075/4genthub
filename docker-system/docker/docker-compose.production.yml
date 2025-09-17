@@ -95,6 +95,14 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.frontend.production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8001}
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-}
+        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-}
+        VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend}
+        NODE_ENV: production
+        VITE_ENV: production
     container_name: agenthub-frontend
     restart: unless-stopped
     profiles: ["with-frontend"]  # Only start when explicitly requested
