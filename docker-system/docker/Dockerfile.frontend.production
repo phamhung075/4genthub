@@ -46,9 +46,9 @@ ARG APP_LOG_LEVEL=INFO
 
 # Build-time environment variables - use actual values or defaults
 # These are used during build but can be overridden at runtime via env-config.js
-# IMPORTANT: Use build args if provided, otherwise use production defaults
-ENV VITE_API_URL=${VITE_API_URL:-http://localhost:8001}
-ENV VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8001}
+# IMPORTANT: Use build args if provided, otherwise use localhost for local testing
+ENV VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+ENV VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8000}
 ENV VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL:-}
 ENV VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM:-}
 ENV VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend}

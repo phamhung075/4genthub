@@ -767,13 +767,13 @@ export function TokenManagement() {
               </Alert>
               
               {/* MCP Configuration Display */}
-              <MCPConfigProfile 
+              <MCPConfigProfile
                 configData={{
                   serverName: "agenthub",
                   protocol: "HTTP",
                   version: "2.1.0",
-                  host: (import.meta as any).env?.VITE_API_URL?.replace(/^https?:\/\//, '').replace(/:\d+$/, '') || 'localhost',
-                  port: parseInt((import.meta as any).env?.VITE_API_URL?.match(/:(\d+)$/)?.[1] || '8000'),
+                  host: (import.meta as any).env?.VITE_API_URL?.replace(/^https?:\/\//, '').replace(/:\d+.*$/, '') || 'localhost',
+                  port: parseInt((import.meta as any).env?.VITE_API_URL?.match(/:(\d+)/)?.[1] || '80'),
                   authentication: "JWT Bearer",
                   capabilities: selectedScopes,
                   token: generatedToken || undefined,
