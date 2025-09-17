@@ -164,11 +164,11 @@ class TestManageUnifiedContextDescription:
     def test_description_example_code_validity(self):
         """Test that example code snippets are properly formatted"""
         description = MANAGE_UNIFIED_CONTEXT_DESCRIPTION
-        
+
         # Check that examples contain proper parameter syntax
         assert 'action="create"' in description
         assert 'level="task"' in description
-        assert 'context_id="task-123"' in description
+        assert 'context_id="task456"' in description
         
         # Check JSON string examples are valid JSON-like
         json_examples = re.findall(r"data='({.*?})'", description)
@@ -393,8 +393,8 @@ class TestParameterConsistency:
         # Extract action names (simple approach)
         mentioned_actions = []
         for word in valid_section.split():
-            # Remove punctuation and check if it's a likely action name
-            clean_word = word.strip(',').strip()
+            # Remove punctuation, quotes, and check if it's a likely action name
+            clean_word = word.strip(',').strip('.').strip("'").strip()
             if clean_word in ['create', 'get', 'update', 'delete', 'resolve', 'delegate', 'add_insight', 'add_progress', 'list']:
                 mentioned_actions.append(clean_word)
         

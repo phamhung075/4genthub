@@ -59,12 +59,12 @@ class ContentAnalyzer:
     
     # Enhanced dependency keywords with context patterns
     DEPENDENCY_PATTERNS = {
-        # Direct dependency indicators
-        r'\b(?:requires?|needs?|depends?\s+on)\s+(["\']?[\w\s\-]+["\']?)': 0.9,
-        r'\b(?:after|following)\s+(["\']?[\w\s\-]+["\']?)': 0.8,
-        r'\b(?:before|preceding)\s+(["\']?[\w\s\-]+["\']?)': 0.8,
-        r'\b(?:blocks?|blocked\s+by)\s+(["\']?[\w\s\-]+["\']?)': 1.0,
-        r'\b(?:prerequisite|prerequist)\s+(["\']?[\w\s\-]+["\']?)': 0.9,
+        # Direct dependency indicators - more flexible patterns without strict lookaheads
+        r'\b(?:requires?|needs?|depends?\s+on)\s+(?:the\s+)?([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)\b': 0.9,
+        r'\b(?:after|following)\s+(?:the\s+)?([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)\b': 0.8,
+        r'\b(?:before|preceding)\s+(?:the\s+)?([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)\b': 0.8,
+        r'\b(?:blocks?|blocked\s+by)\s+(?:the\s+)?([A-Za-z][a-zA-Z]*(?:\s+[a-zA-Z]+)*)\b': 1.0,
+        r'\b(?:prerequisite|prerequist)\s+(?:the\s+)?([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*)\b': 0.9,
         
         # Implementation relationships
         r'\b(?:implements?|implementation\s+of)\s+(["\']?[\w\s\-]+["\']?)': 0.7,
@@ -101,6 +101,8 @@ class ContentAnalyzer:
         'component_names': r'\b([A-Z][a-zA-Z0-9]*Component)\b',
         'service_names': r'\b([A-Z][a-zA-Z0-9]*Service)\b',
         'model_names': r'\b([A-Z][a-zA-Z0-9]*Model)\b',
+        # Add pattern for capitalized multi-word entities like "User Model" - requires ALL words to be capitalized
+        'entity_names': r'\b([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)+)\b',
     }
     
     def __init__(self):
@@ -215,9 +217,11 @@ class ContentAnalyzer:
     def _extract_entity_features(self, content: str) -> List[ContentFeature]:
         """Extract technical entities from content"""
         features = []
-        
+
         for entity_type, pattern in self.TECHNICAL_ENTITIES.items():
-            matches = re.finditer(pattern, content, re.IGNORECASE)
+            # Use case-sensitive matching for entity_names to ensure proper capitalization
+            flags = 0 if entity_type == 'entity_names' else re.IGNORECASE
+            matches = re.finditer(pattern, content, flags)
             for match in matches:
                 entity_name = match.group(1) if match.groups() else match.group(0)
                 
@@ -231,6 +235,7 @@ class ContentAnalyzer:
                     'component_names': 0.7,
                     'service_names': 0.7,
                     'model_names': 0.7,
+                    'entity_names': 0.6,
                 }
                 confidence = confidence_map.get(entity_type, 0.5)
                 
@@ -299,7 +304,15 @@ class ContentAnalyzer:
         # Calculate string similarity
         similarity = self._calculate_string_similarity(source_feature.value, target_feature.value)
         
-        if similarity < 0.5:  # Minimum similarity threshold
+        # Dynamic threshold based on feature type and confidence
+        if source_feature.feature_type == AnalysisType.KEYWORD or target_feature.feature_type == AnalysisType.KEYWORD:
+            min_threshold = 0.3  # More permissive for keyword matches
+        elif source_feature.confidence > 0.7 or target_feature.confidence > 0.7:
+            min_threshold = 0.3  # More permissive for high confidence features
+        else:
+            min_threshold = 0.5  # Default threshold
+
+        if similarity < min_threshold:
             return None
         
         # Calculate confidence based on feature types and similarity

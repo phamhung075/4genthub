@@ -110,24 +110,29 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
     def create(self, entity: GlobalContext) -> GlobalContext:
         """Create a new global context for the current user with nested structure support."""
         with self.get_db_session() as session:
-            # Check if user already has a global context
-            if self.user_id:
+            # Check if context already exists
+            normalized_id = self._normalize_context_id(entity.id)
+            if self._is_system_mode:
+                # In system mode, use direct lookup by normalized ID
+                existing = session.get(GlobalContextModel, normalized_id)
+            elif self.user_id:
+                # In user mode, filter by user_id
                 existing = session.query(GlobalContextModel).filter(
                     and_(
-                        GlobalContextModel.id == entity.id,  # Use the entity's ID
+                        GlobalContextModel.id == normalized_id,  # Use the normalized ID
                         GlobalContextModel.user_id == self.user_id
                     )
                 ).first()
             else:
-                # No user_id - this shouldn't happen in production
+                # No user_id and not system mode - this shouldn't happen
                 logger.warning("Checking for global context without user_id")
                 existing = None
             
             if existing:
                 raise ValueError(f"Global context already exists for user. Use update instead.")
             
-            # Ensure user_id is set - required for database constraint
-            if not self.user_id:
+            # Ensure user_id is set unless in system mode
+            if not self.user_id and not self._is_system_mode:
                 raise ValueError("user_id is required for global context creation. Repository must be scoped to a user.")
             
             # Use modern nested structure only
@@ -145,7 +150,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             
             # Create database model with both structures
             db_model = GlobalContextModel(
-                id=entity.id,
+                id=normalized_id,
                 organization_id=entity.organization_name,
                 # Flat structure (backward compatibility)
                 organization_standards=organization_standards,
@@ -340,7 +345,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             db_model = query.first()
             
             if not db_model:
-                return False
+                raise ValueError(f"Global context with ID {context_id} not found")
             
             # Ensure user ownership before delete
             self.ensure_user_ownership(db_model)
@@ -349,7 +354,8 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             self.log_access("delete", "global_context", context_id)
             
             session.delete(db_model)
-            
+            session.flush()
+
             # Invalidate cache after delete
             self.invalidate_cache_for_entity(
                 entity_type="context",
@@ -383,8 +389,18 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             self.log_access("list", "global_context", f"count={len(db_models)}")
             
             return [self._to_entity(model) for model in db_models]
-    
-    
+
+    def exists(self, context_id: str) -> bool:
+        """Check if a global context exists for the current user."""
+        with self.get_db_session() as session:
+            query = session.query(GlobalContextModel).filter(GlobalContextModel.id == context_id)
+
+            # Apply user filter for security
+            query = self.apply_user_filter(query)
+
+            return query.first() is not None
+
+
     def count_user_contexts(self) -> int:
         """
         Count the number of global contexts for the current user.
@@ -471,18 +487,21 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             # Build global_settings from flat structure (backward compatibility)
             global_settings = {
                 "organization_standards": getattr(db_model, "organization_standards", None) or {},
-                "security_policies": db_model.security_policies or {},
+                "security_policies": getattr(db_model, "security_policies", None) or {},
                 "compliance_requirements": getattr(db_model, "compliance_requirements", None) or {},
                 "shared_resources": getattr(db_model, "shared_resources", None) or {},
                 "reusable_patterns": getattr(db_model, "reusable_patterns", None) or {},
-                "delegation_rules": db_model.delegation_rules or {}
+                "delegation_rules": getattr(db_model, "delegation_rules", None) or {},
+                "autonomous_rules": getattr(db_model, "autonomous_rules", None) or {},
+                "coding_standards": getattr(db_model, "coding_standards", None) or {},
+                "workflow_templates": getattr(db_model, "workflow_templates", None) or {}
             }
             
             # Handle preferences
             global_preferences = getattr(db_model, "global_preferences", None) or {}
             
             # Extract custom fields from global_preferences if they exist
-            if "_custom" in global_preferences:
+            if isinstance(global_preferences, dict) and "_custom" in global_preferences:
                 global_preferences_copy = global_preferences.copy()
                 custom_fields = global_preferences_copy.pop("_custom", {})
                 
@@ -505,6 +524,17 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 # Map global_preferences to user_preferences for frontend compatibility
                 global_settings["user_preferences"] = global_preferences
                 global_settings["global_preferences"] = global_preferences
+
+            # Handle custom fields in workflow_templates
+            workflow_templates = global_settings.get("workflow_templates", {})
+            if isinstance(workflow_templates, dict) and "_custom" in workflow_templates:
+                custom_fields = workflow_templates.get("_custom", {})
+                for key, value in custom_fields.items():
+                    global_settings[key] = value
+                # Remove _custom key from workflow_templates after extraction
+                workflow_templates = workflow_templates.copy()
+                workflow_templates.pop("_custom", None)
+                global_settings["workflow_templates"] = workflow_templates
 
         # Check for unified context API data field as primary source
         # This ensures data is preserved and prioritized for unified context operations

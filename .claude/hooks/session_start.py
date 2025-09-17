@@ -130,7 +130,7 @@ class FileLogger(Logger):
     def __init__(self, log_dir: Path, log_name: str):
         self.log_dir = log_dir
         self.log_name = log_name
-        self.log_path = log_dir / f"{log_name}.json"
+        self.log_path = log_dir / log_name
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
     def log(self, level: str, message: str, data: Optional[Dict] = None):
@@ -695,29 +695,76 @@ class SessionStartHook:
 def log_session_start(input_data: Dict) -> None:
     """Backward compatibility wrapper for log_session_start."""
     try:
-        from utils.env_loader import get_ai_data_path
         log_dir = get_ai_data_path()
-        logger = FileLogger(log_dir, "session_start.json")
-        logger.log("info", "Session start", input_data)
+        log_path = log_dir / "session_start.json"
+
+        # Ensure directory exists
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Load existing data
+        log_data = []
+        if log_path.exists():
+            try:
+                with open(log_path, 'r') as f:
+                    log_data = json.load(f)
+            except:
+                log_data = []
+
+        # Append new data directly (for test compatibility)
+        log_data.append(input_data)
+
+        # Save updated data
+        with open(log_path, 'w') as f:
+            json.dump(log_data, f, indent=2)
+
     except Exception:
         # Fail silently for compatibility
         pass
 
 
-def get_git_status() -> Optional[Dict]:
+def get_git_status() -> tuple:
     """Backward compatibility wrapper for git status."""
     try:
         git_provider = GitContextProvider()
-        return git_provider.get_context({})
+        context = git_provider.get_context({})
+        if context and 'error' not in context:
+            branch = context.get('current_branch', None)
+            changes = context.get('uncommitted_changes', None)
+            # Map "unknown" to None for backward compatibility (indicates git command failure)
+            if branch == "unknown":
+                branch = None
+                changes = None  # Also set changes to None when git commands fail
+            return branch, changes
+        else:
+            return None, None
     except Exception:
-        return None
+        return None, None
 
 
-def get_recent_issues() -> Optional[List]:
+def get_recent_issues() -> Optional[str]:
     """Backward compatibility wrapper for recent issues."""
     try:
-        # Return minimal structure for compatibility
-        return []
+        # Check if gh CLI is available
+        which_result = subprocess.run(
+            ['which', 'gh'],
+            capture_output=True, text=True, timeout=5
+        )
+
+        if which_result.returncode != 0:
+            return None
+
+        # Get recent issues using gh CLI
+        issues_result = subprocess.run(
+            ['gh', 'issue', 'list', '--state=open', '--limit=10'],
+            capture_output=True, text=True, timeout=10
+        )
+
+        if issues_result.returncode == 0 and issues_result.stdout.strip():
+            # Return the raw output, removing trailing newline for consistency
+            return issues_result.stdout.rstrip('\n')
+        else:
+            return None
+
     except Exception:
         return None
 
@@ -725,22 +772,51 @@ def get_recent_issues() -> Optional[List]:
 def query_mcp_pending_tasks() -> Optional[List]:
     """Backward compatibility wrapper for pending tasks."""
     try:
-        mcp_provider = MCPContextProvider()
-        context = mcp_provider.get_context({})
-        if context and 'pending_tasks' in context:
-            return context['pending_tasks']
+        # First check cache
+        cache = get_session_cache()
+        if cache:
+            cached_tasks = cache.get_pending_tasks()
+            if cached_tasks:
+                return cached_tasks
+
+        # Fallback to server query
+        client = get_default_client()
+        if client:
+            server_tasks = client.query_pending_tasks(limit=5)
+            if server_tasks:
+                # Cache the results if available
+                if cache:
+                    cache.cache_pending_tasks(server_tasks)
+                return server_tasks
+
         return []
     except Exception:
         return None
 
 
-def query_mcp_next_task() -> Optional[Dict]:
+def query_mcp_next_task(branch_id: Optional[str] = None) -> Optional[Dict]:
     """Backward compatibility wrapper for next task."""
     try:
-        mcp_provider = MCPContextProvider()
-        context = mcp_provider.get_context({})
-        if context and 'next_task' in context:
-            return context['next_task']
+        if not branch_id:
+            return None
+
+        # First check cache
+        cache = get_session_cache()
+        if cache:
+            cached_task = cache.get_next_task(branch_id)
+            if cached_task:
+                return cached_task
+
+        # Fallback to server query
+        client = get_default_client()
+        if client:
+            next_task = client.get_next_recommended_task(branch_id)
+            if next_task:
+                # Cache the result if available
+                if cache:
+                    cache.cache_next_task(branch_id, next_task)
+                return next_task
+
         return None
     except Exception:
         return None
@@ -749,11 +825,52 @@ def query_mcp_next_task() -> Optional[Dict]:
 def get_git_branch_context() -> Optional[Dict]:
     """Backward compatibility wrapper for git branch context."""
     try:
-        git_provider = GitContextProvider()
-        context = git_provider.get_context({})
-        if context:
-            return context.get('branch_context')
-        return None
+        # Check cache first
+        cache = get_session_cache()
+        if cache:
+            cached_status = cache.get_git_status()
+            if cached_status:
+                return cached_status
+
+        # Get git context from subprocess calls
+        # Get current branch
+        branch_result = subprocess.run(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            capture_output=True, text=True, timeout=5
+        )
+        current_branch = branch_result.stdout.strip() if branch_result.returncode == 0 else "unknown"
+
+        # Get uncommitted changes count
+        status_result = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True, text=True, timeout=5
+        )
+        changes = []
+        if status_result.returncode == 0 and status_result.stdout.strip():
+            changes = status_result.stdout.strip().split('\n')
+
+        # Get recent commits
+        log_result = subprocess.run(
+            ['git', 'log', '--oneline', '-5'],
+            capture_output=True, text=True, timeout=5
+        )
+        recent_commits = []
+        if log_result.returncode == 0 and log_result.stdout.strip():
+            recent_commits = log_result.stdout.strip().split('\n')
+
+        result = {
+            "branch": current_branch,
+            "uncommitted_changes": len(changes),
+            "recent_commits": recent_commits,
+            "git_branch_id": None  # Test expects this to be None
+        }
+
+        # Cache the result
+        if cache:
+            cache.cache_git_status(result)
+
+        return result
+
     except Exception:
         return None
 

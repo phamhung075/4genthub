@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 import smtplib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
@@ -311,7 +311,7 @@ class MetricsReporter:
         """Generate daily optimization report."""
         
         if report_date is None:
-            report_date = datetime.now().date()
+            report_date = datetime.now(timezone.utc).date()
         
         # Get metrics for the past 24 hours
         summary = self.metrics_collector.get_optimization_summary(24)
@@ -321,7 +321,7 @@ class MetricsReporter:
             "report_date": report_date.strftime("%Y-%m-%d"),
             "time_period": "Past 24 Hours",
             "summary": summary,
-            "generation_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            "generation_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         }
         
         # Generate HTML report
@@ -357,7 +357,7 @@ class MetricsReporter:
         """Generate weekly trend analysis report."""
         
         if week_start is None:
-            today = datetime.now().date()
+            today = datetime.now(timezone.utc).date()
             days_since_monday = today.weekday()
             week_start = today - timedelta(days=days_since_monday)
         
@@ -387,7 +387,7 @@ class MetricsReporter:
             "compression_trend_class": "trend-up" if trends.get("compression_ratio", {}).get("trend") == "up" else "trend-down",
             "health_trend": "↗️ Improving" if trends.get("system_health", {}).get("trend") == "up" else "↘️ Declining",
             "health_trend_class": "trend-up" if trends.get("system_health", {}).get("trend") == "up" else "trend-down",
-            "generation_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            "generation_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         }
         
         # Generate HTML report
@@ -425,7 +425,7 @@ class MetricsReporter:
         """Generate monthly ROI and cost-benefit analysis report."""
         
         if month_start is None:
-            today = datetime.now().date()
+            today = datetime.now(timezone.utc).date()
             month_start = today.replace(day=1)
         
         # Get monthly data (30 days)
@@ -441,7 +441,7 @@ class MetricsReporter:
             "roi_analysis": roi_analysis,
             "cost_savings": roi_analysis.get("estimated_cost_savings", 0),
             "efficiency_gains": roi_analysis.get("efficiency_improvement", 0),
-            "generation_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            "generation_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         }
         
         # Save JSON report for monthly ROI
@@ -703,7 +703,7 @@ class MetricsReporter:
         
         Please check the system immediately and review the full dashboard for details.
         
-        Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+        Generated at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
         """
         
         try:
@@ -727,7 +727,7 @@ class MetricsReporter:
     async def _wait_until_time(self, time_str: str):
         """Wait until specific time of day (HH:MM format)."""
         hour, minute = map(int, time_str.split(':'))
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         
         if target <= now:
@@ -741,7 +741,7 @@ class MetricsReporter:
         days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
         target_day = days.index(day_name.lower())
         
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         current_day = now.weekday()
         
         days_ahead = target_day - current_day
@@ -756,7 +756,7 @@ class MetricsReporter:
     
     async def _wait_until_monthday(self, day: int):
         """Wait until specific day of month."""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         
         # Try this month first
         try:

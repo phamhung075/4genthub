@@ -26,12 +26,10 @@ class TestGetTaskUseCase:
     @pytest.fixture
     def mock_task_repository(self):
         """Create a mock task repository"""
-        from unittest.mock import MagicMock, _MockClass
-
         # Check if TaskRepository is already mocked
         if (hasattr(TaskRepository, '_mock_name') or
             hasattr(TaskRepository, '_spec_class') or
-            isinstance(TaskRepository, (_MockClass, type(MagicMock)))):
+            hasattr(TaskRepository, '_mock_methods')):
             # It's already a Mock, don't use spec
             return Mock()
         else:
@@ -79,12 +77,10 @@ class TestGetTaskUseCase:
     @pytest.fixture
     def sample_task(self):
         """Create a sample task entity"""
-        from unittest.mock import MagicMock, _MockClass
-
         # Check if Task is already mocked
         if (hasattr(Task, '_mock_name') or
             hasattr(Task, '_spec_class') or
-            isinstance(Task, (_MockClass, type(MagicMock)))):
+            hasattr(Task, '_mock_methods')):
             # It's already a Mock, don't use spec
             task = Mock()
         else:

@@ -319,8 +319,32 @@ class TestMLDependencyPredictor:
             {
                 'id': 'proj_1',
                 'tasks': [
-                    {'id': '1', 'title': 'Task 1', 'description': '', 'assignees': [], 'dependencies': []},
-                    {'id': '2', 'title': 'Task 2', 'description': '', 'assignees': [], 'dependencies': ['1']}
+                    {
+                        'id': '1',
+                        'title': 'Task 1',
+                        'description': 'First task description',
+                        'details': 'Task details',
+                        'assignees': ['developer'],
+                        'priority': 'medium',
+                        'status': 'done',
+                        'estimated_effort': '2 hours',
+                        'created_at': '2024-01-01T00:00:00Z',
+                        'updated_at': '2024-01-01T01:00:00Z',
+                        'dependencies': []
+                    },
+                    {
+                        'id': '2',
+                        'title': 'Task 2',
+                        'description': 'Second task description',
+                        'details': 'Task details',
+                        'assignees': ['developer'],
+                        'priority': 'high',
+                        'status': 'done',
+                        'estimated_effort': '4 hours',
+                        'created_at': '2024-01-01T01:00:00Z',
+                        'updated_at': '2024-01-01T05:00:00Z',
+                        'dependencies': ['1']
+                    }
                 ]
             }
         ]
@@ -347,8 +371,32 @@ class TestMLDependencyPredictor:
             {
                 'id': 'proj_1',
                 'tasks': [
-                    {'id': '1', 'title': 'Task 1', 'description': '', 'assignees': [], 'dependencies': []},
-                    {'id': '2', 'title': 'Task 2', 'description': '', 'assignees': [], 'dependencies': ['1']}
+                    {
+                        'id': '1',
+                        'title': 'Task 1',
+                        'description': 'First task description',
+                        'details': 'Task details',
+                        'assignees': ['developer'],
+                        'priority': 'medium',
+                        'status': 'done',
+                        'estimated_effort': '2 hours',
+                        'created_at': '2024-01-01T00:00:00Z',
+                        'updated_at': '2024-01-01T01:00:00Z',
+                        'dependencies': []
+                    },
+                    {
+                        'id': '2',
+                        'title': 'Task 2',
+                        'description': 'Second task description',
+                        'details': 'Task details',
+                        'assignees': ['developer'],
+                        'priority': 'high',
+                        'status': 'done',
+                        'estimated_effort': '4 hours',
+                        'created_at': '2024-01-01T01:00:00Z',
+                        'updated_at': '2024-01-01T05:00:00Z',
+                        'dependencies': ['1']
+                    }
                 ]
             }
         ]

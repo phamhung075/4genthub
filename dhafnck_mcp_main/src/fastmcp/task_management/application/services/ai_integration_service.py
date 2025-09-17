@@ -300,18 +300,26 @@ class AITaskIntegrationService:
         # This would use agent intelligence to suggest assignments
         # For now, return basic suggestions
         suggestions = []
-        
-        if any(keyword in task_content.lower() for keyword in ['ui', 'frontend', 'component', 'interface']):
-            suggestions.append('ui-specialist-agent')
-        elif any(keyword in task_content.lower() for keyword in ['test', 'testing', 'qa']):
+        content_lower = task_content.lower()
+
+        # Use word boundary matching to avoid substring false positives
+        import re
+
+        # Test-related keywords (higher priority for exact matches)
+        if re.search(r'\b(test|testing|qa|suite|spec|unit|integration)\b', content_lower):
             suggestions.append('test-orchestrator-agent')
-        elif any(keyword in task_content.lower() for keyword in ['security', 'auth', 'authentication']):
+        # UI-related keywords
+        elif re.search(r'\b(ui|frontend|component|interface|dashboard|view|screen)\b', content_lower):
+            suggestions.append('ui-specialist-agent')
+        # Security-related keywords
+        elif re.search(r'\b(security|auth|authentication|login|permission|access)\b', content_lower):
             suggestions.append('security-auditor-agent')
-        elif any(keyword in task_content.lower() for keyword in ['debug', 'fix', 'bug', 'error']):
+        # Debug-related keywords
+        elif re.search(r'\b(debug|fix|bug|error|issue|troubleshoot)\b', content_lower):
             suggestions.append('debugger-agent')
         else:
             suggestions.append('coding-agent')
-        
+
         return {
             'suggested_agents': suggestions,
             'reasoning': 'Based on keyword analysis',

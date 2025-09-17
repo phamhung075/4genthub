@@ -25,6 +25,17 @@ except ImportError:
     WEBSOCKET_AVAILABLE = False
     logger.warning("FastAPI WebSocket support not available")
 
+    # Create mock classes for testing when FastAPI is not available
+    class WebSocket:
+        pass
+
+    class WebSocketDisconnect(Exception):
+        pass
+
+    class WebSocketState:
+        CONNECTED = "CONNECTED"
+        DISCONNECTED = "DISCONNECTED"
+
 
 class EventType(Enum):
     """Types of context events"""
@@ -190,7 +201,8 @@ class ContextNotificationService:
                 # Send event
                 if WEBSOCKET_AVAILABLE:
                     websocket = subscription.websocket
-                    if isinstance(websocket, WebSocket):
+                    # Check if we have a real WebSocket with proper methods
+                    if hasattr(websocket, 'client_state') and hasattr(websocket, 'send_json'):
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json(event.to_dict())
                             subscription.last_activity = datetime.now(timezone.utc)
@@ -244,13 +256,15 @@ class ContextNotificationService:
         logger.info(f"Client {client_id} subscribed with scope {scope}")
         
         # Send welcome message
-        if WEBSOCKET_AVAILABLE and isinstance(websocket, WebSocket):
-            await websocket.send_json({
-                'type': 'welcome',
-                'client_id': client_id,
-                'scope': scope.value,
-                'timestamp': datetime.now(timezone.utc).isoformat()
-            })
+        if WEBSOCKET_AVAILABLE:
+            # Only send welcome message if we have real FastAPI WebSocket
+            if hasattr(websocket, 'send_json'):
+                await websocket.send_json({
+                    'type': 'welcome',
+                    'client_id': client_id,
+                    'scope': scope.value,
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                })
         
         return subscription
     
@@ -324,7 +338,8 @@ class ContextNotificationService:
             try:
                 if WEBSOCKET_AVAILABLE:
                     websocket = subscription.websocket
-                    if isinstance(websocket, WebSocket):
+                    # Check if we have a real WebSocket with proper methods
+                    if hasattr(websocket, 'client_state') and hasattr(websocket, 'send_json'):
                         if websocket.client_state == WebSocketState.CONNECTED:
                             await websocket.send_json({
                                 'type': 'heartbeat',

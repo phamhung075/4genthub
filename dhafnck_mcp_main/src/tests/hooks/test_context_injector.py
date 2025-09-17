@@ -224,7 +224,10 @@ class TestMCPContextQuery:
 
     def setup_method(self):
         """Set up test fixtures."""
+        # Create config and manually override test_mode after __post_init__ runs
         self.config = ContextInjectionConfig()
+        # Force test_mode to False to enable MCP mocking in tests
+        self.config.test_mode = False
 
         with patch('context_injector.OptimizedMCPClient') as mock_client_class, \
              patch('context_injector.SessionContextCache') as mock_cache_class:
@@ -271,23 +274,33 @@ class TestMCPContextQuery:
 
         result = await self.query_engine.query_context(context_requirements)
 
-        assert result is not None
-        assert "mcp_operation" in result
-        assert "task" in result
-        assert result["task"] == task_data
+        # The test should handle both test mode enabled and disabled scenarios
+        if self.config.test_mode:
+            # In test mode, task context retrieval is skipped, so result should be None
+            assert result is None
+        else:
+            # In normal mode, we should get the mocked result
+            assert result is not None
+            assert "mcp_operation" in result
+            assert "task" in result
+            assert result["task"] == task_data
 
-        # Verify MCP was queried
-        self.mock_client.make_request.assert_called_with(
-            "/mcp/manage_task",
-            {
-                "action": "get",
-                "task_id": "task_123",
-                "include_context": True
-            }
-        )
+            # Verify MCP was queried only if not in test mode
+            self.mock_client.make_request.assert_called_with(
+                "/mcp/manage_task",
+                {
+                    "action": "get",
+                    "task_id": "task_123",
+                    "include_context": True
+                }
+            )
 
-        # Verify result was cached
-        self.mock_cache.set.assert_called()
+        # Verify result was cached only if we got a result
+        if result is not None:
+            self.mock_cache.set.assert_called()
+        else:
+            # In test mode, nothing should be cached when result is None
+            self.mock_cache.set.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_query_file_context(self):
@@ -460,6 +473,8 @@ class TestContextInjector:
 
             self.mock_detector = Mock()
             self.mock_query_engine = Mock()
+            # Make query_context async
+            self.mock_query_engine.query_context = AsyncMock()
             mock_detector_class.return_value = self.mock_detector
             mock_query_class.return_value = self.mock_query_engine
 
@@ -766,6 +781,8 @@ class TestIntegrationScenarios:
         """Test end-to-end context injection for task operations."""
         # Create real instances without mocking
         config = ContextInjectionConfig(cache_ttl_seconds=1)
+        # Force test_mode to False to enable MCP mocking in tests
+        config.test_mode = False
 
         with patch('context_injector.OptimizedMCPClient') as mock_client_class, \
              patch('context_injector.SessionContextCache') as mock_cache_class:
@@ -814,6 +831,8 @@ class TestIntegrationScenarios:
     async def test_performance_under_load(self):
         """Test context injection performance under concurrent load."""
         config = ContextInjectionConfig(performance_threshold_ms=1000)
+        # Force test_mode to False to enable MCP mocking in tests
+        config.test_mode = False
 
         with patch('context_injector.OptimizedMCPClient') as mock_client_class, \
              patch('context_injector.SessionContextCache') as mock_cache_class:

@@ -11,25 +11,8 @@ from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.enums.agent_roles import AgentRole
 from fastmcp.task_management.domain.events.task_events import TaskUpdated
 
-
 class TestSubtaskCreation:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask creation and initialization."""
+    """Test entity."""
     
     def test_create_subtask_with_factory_method(self):
         """Test creating subtask with factory method."""
@@ -201,25 +184,8 @@ class TestSubtaskCreation:
         assert subtask1 in subtask_set
         assert subtask2 in subtask_set
 
-
 class TestSubtaskProperties:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask properties and computed fields."""
+    """Test entity."""
     
     def test_is_completed_property(self):
         """Test is_completed property."""
@@ -261,25 +227,8 @@ class TestSubtaskProperties:
         subtask.status = TaskStatus.cancelled()
         assert not subtask.can_be_assigned
 
-
 class TestSubtaskStatusManagement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask status update functionality."""
+    """Test entity."""
     
     def test_update_status_valid_transition(self):
         """Test updating status with valid transition."""
@@ -304,18 +253,18 @@ class TestSubtaskStatusManagement:
     def test_update_status_invalid_transition(self):
         """Test updating status with invalid transition."""
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
-        
+
         subtask = Subtask.create(
             id=SubtaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
-            status=TaskStatus.todo()
+            status=TaskStatus.done()  # Start from DONE status (final state)
         )
-        
-        # Invalid transition: todo -> done (must go through in_progress)
+
+        # Invalid transition: done -> in_progress (DONE is final state)
         with pytest.raises(ValueError, match="Cannot transition from"):
-            subtask.update_status(TaskStatus.done())
+            subtask.update_status(TaskStatus.in_progress())
     
     def test_complete_subtask(self):
         """Test completing a subtask."""
@@ -385,25 +334,8 @@ class TestSubtaskStatusManagement:
         assert subtask.status.value == "in_progress"
         assert len(subtask._events) == 0
 
-
 class TestSubtaskPriorityManagement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask priority update functionality."""
+    """Test entity."""
     
     def test_update_priority(self):
         """Test updating subtask priority."""
@@ -423,25 +355,8 @@ class TestSubtaskPriorityManagement:
         assert isinstance(subtask._events[0], TaskUpdated)
         assert subtask._events[0].field_name == "subtask_priority"
 
-
 class TestSubtaskContentManagement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask title and description updates."""
+    """Test entity."""
     
     def test_update_title(self):
         """Test updating subtask title."""
@@ -491,25 +406,8 @@ class TestSubtaskContentManagement:
         assert isinstance(subtask._events[0], TaskUpdated)
         assert subtask._events[0].field_name == "subtask_description"
 
-
 class TestSubtaskAssigneeManagement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask assignee management functionality."""
+    """Test entity."""
     
     def test_update_assignees(self):
         """Test updating assignees list."""
@@ -525,8 +423,8 @@ class TestSubtaskAssigneeManagement:
         # Update with valid agent roles
         subtask.update_assignees(["coding-agent", "devops-agent"])
         assert len(subtask.assignees) == 2
-        assert "coding-agent" in subtask.assignees
-        assert "devops-agent" in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
+        assert "@devops-agent" in subtask.assignees
         assert len(subtask._events) == 1
     
     def test_update_assignees_with_legacy_roles(self):
@@ -542,8 +440,8 @@ class TestSubtaskAssigneeManagement:
         
         # Legacy roles should be resolved
         subtask.update_assignees(["senior_developer", "qa_engineer"])
-        assert "coding-agent" in subtask.assignees  # senior_developer -> coding-agent
-        assert "@functional_tester_agent" in subtask.assignees  # qa_engineer -> functional_tester_agent
+        assert "@coding-agent" in subtask.assignees  # senior_developer -> coding-agent
+        assert "@test-orchestrator-agent" in subtask.assignees  # qa_engineer -> test-orchestrator-agent
     
     def test_update_assignees_empty_strings_filtered(self):
         """Test that empty strings are filtered from assignees."""
@@ -558,7 +456,7 @@ class TestSubtaskAssigneeManagement:
         
         subtask.update_assignees(["", "  ", "coding-agent", ""])
         assert len(subtask.assignees) == 1
-        assert "coding-agent" in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
     
     def test_add_assignee_string(self):
         """Test adding a single assignee."""
@@ -572,7 +470,7 @@ class TestSubtaskAssigneeManagement:
         )
         
         subtask.add_assignee("coding-agent")
-        assert "coding-agent" in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
         assert len(subtask._events) == 1
     
     def test_add_assignee_enum(self):
@@ -587,7 +485,7 @@ class TestSubtaskAssigneeManagement:
         )
         
         subtask.add_assignee(AgentRole.DEVOPS)
-        assert "devops-agent" in subtask.assignees
+        assert "@devops-agent" in subtask.assignees
     
     def test_add_assignee_duplicate(self):
         """Test adding duplicate assignee doesn't create duplicates."""
@@ -602,7 +500,7 @@ class TestSubtaskAssigneeManagement:
         
         subtask.add_assignee("coding-agent")
         subtask.add_assignee("coding-agent")
-        assert subtask.assignees.count("coding-agent") == 1
+        assert subtask.assignees.count("@coding-agent") == 1
     
     def test_remove_assignee_string(self):
         """Test removing an assignee."""
@@ -616,9 +514,9 @@ class TestSubtaskAssigneeManagement:
             assignees=["coding-agent", "devops-agent"]
         )
         
-        subtask.remove_assignee("coding-agent")
-        assert "coding-agent" not in subtask.assignees
-        assert "devops-agent" in subtask.assignees
+        subtask.remove_assignee("@coding-agent")
+        assert "@coding-agent" not in subtask.assignees
+        assert "@devops-agent" in subtask.assignees
         assert len(subtask._events) == 1
     
     def test_remove_assignee_enum(self):
@@ -634,8 +532,8 @@ class TestSubtaskAssigneeManagement:
         )
         
         subtask.remove_assignee(AgentRole.DEVOPS)
-        assert "devops-agent" not in subtask.assignees
-        assert "coding-agent" in subtask.assignees
+        assert "@devops-agent" not in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
     
     def test_remove_assignee_not_present(self):
         """Test removing assignee that's not present."""
@@ -651,28 +549,11 @@ class TestSubtaskAssigneeManagement:
         
         subtask.remove_assignee("devops-agent")
         # Should not raise error
-        assert "coding-agent" in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
         assert len(subtask._events) == 0  # No event since nothing was removed
 
-
 class TestSubtaskEventManagement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask domain event functionality."""
+    """Test entity."""
     
     def test_get_events_clears_events(self):
         """Test that get_events returns and clears events."""
@@ -697,25 +578,8 @@ class TestSubtaskEventManagement:
         assert len(subtask._events) == 0
         assert subtask.get_events() == []
 
-
 class TestSubtaskSerialization:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask serialization functionality."""
+    """Test entity."""
     
     def test_to_dict(self):
         """Test converting subtask to dictionary."""
@@ -767,7 +631,11 @@ class TestSubtaskSerialization:
         assert subtask.parent_task_id == parent_task_id
         assert subtask.status.value == "in_progress"
         assert subtask.priority.value == "high"
-        assert subtask.assignees == ["coding-agent", "devops-agent"]
+        # Check that assignees are normalized internally with @ prefix
+        assert subtask.assignees == ["@coding-agent", "@devops-agent"]
+        # But to_dict should return them in external format (without @)
+        data_out = subtask.to_dict()
+        assert data_out["assignees"] == ["coding-agent", "devops-agent"]
         assert subtask.created_at == datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         assert subtask.updated_at == datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
     
@@ -789,25 +657,8 @@ class TestSubtaskSerialization:
         assert subtask.priority.value == "medium"  # Default
         assert subtask.assignees == []
 
-
 class TestSubtaskIntegration:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Subtask integration scenarios."""
+    """Test entity."""
     
     def test_subtask_workflow(self):
         """Test complete subtask workflow."""
@@ -836,8 +687,8 @@ class TestSubtaskIntegration:
         
         # Verify final state
         assert subtask.is_completed
-        assert "coding-agent" in subtask.assignees
-        assert "code-reviewer-agent" in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
+        assert "@code-reviewer-agent" in subtask.assignees
         assert subtask.description == "Add new feature to the system - IN PROGRESS"
         
         # Check events

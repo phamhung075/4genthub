@@ -6,7 +6,7 @@ supporting both SQLite and PostgreSQL databases.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, List, Dict, Optional, Union
 
 from sqlalchemy import and_, desc, or_, text, func
@@ -835,7 +835,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
     def get_overdue_tasks(self) -> list[TaskEntity]:
         """Get tasks that are overdue"""
         with self.get_db_session() as session:
-            now = datetime.now().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             
             tasks = session.query(Task).options(
                 joinedload(Task.assignees),
@@ -860,7 +860,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     Task.git_branch_id == self.git_branch_id if self.git_branch_id else True
                 )
             ).update(
-                {'status': status, 'updated_at': datetime.now()},
+                {'status': status, 'updated_at': datetime.now(timezone.utc)},
                 synchronize_session=False
             )
             

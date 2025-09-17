@@ -39,7 +39,32 @@ class Subtask:
             self.priority = Priority.medium()
         if self.assignees is None:
             self.assignees = []
-            
+
+        # Normalize assignees to ensure consistent @ prefix format
+        if self.assignees:
+            normalized_assignees = []
+            for assignee in self.assignees:
+                if assignee and assignee.strip():
+                    # Try to resolve legacy role names
+                    resolved_assignee = resolve_legacy_role(assignee)
+                    if resolved_assignee:
+                        # Ensure resolved assignee has @ prefix
+                        if not resolved_assignee.startswith("@"):
+                            resolved_assignee = f"@{resolved_assignee}"
+                        normalized_assignees.append(resolved_assignee)
+                    elif AgentRole.is_valid_role(assignee):
+                        # Ensure valid agent role has @ prefix
+                        if not assignee.startswith("@"):
+                            assignee = f"@{assignee}"
+                        normalized_assignees.append(assignee)
+                    elif assignee.startswith("@"):
+                        # Already has @ prefix, keep as is
+                        normalized_assignees.append(assignee)
+                    else:
+                        # Keep original if not a valid role but not empty
+                        normalized_assignees.append(assignee)
+            self.assignees = normalized_assignees
+
         self._validate()
         
         # Set timestamps if not provided (ensure timezone-aware)

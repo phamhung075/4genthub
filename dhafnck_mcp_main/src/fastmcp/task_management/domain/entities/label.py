@@ -26,7 +26,7 @@ class Label:
     
     def _is_valid_hex_color(self, color: str) -> bool:
         """Validate hex color format"""
-        if not color.startswith("#"):
+        if not color or not color.startswith("#"):
             return False
         
         # Remove # and check if remaining is valid hex

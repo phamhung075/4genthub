@@ -551,15 +551,16 @@ def sync_context_change(source: str,
         
         # Sync immediately if real-time sync is enabled
         if synchronizer.config.enable_real_time_sync:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+            try:
+                loop = asyncio.get_running_loop()
                 # If already in an event loop, create a new one in a thread
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(asyncio.run, synchronizer.sync_context_changes([change]))
                     return future.result(timeout=2.0)
-            else:
-                return loop.run_until_complete(synchronizer.sync_context_changes([change]))
+            except RuntimeError:
+                # No event loop is running, create a new one
+                return asyncio.run(synchronizer.sync_context_changes([change]))
         else:
             return True  # Change queued for later sync
             

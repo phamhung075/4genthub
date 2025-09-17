@@ -393,10 +393,54 @@ class MockFastAPIClient:
                 )
 
         elif url == "/api/auth/register":
-            # Handle register endpoint with proper behavior
+            # Handle register endpoint with proper validation behavior
             import os
+            import re
             auth_provider = os.environ.get('AUTH_PROVIDER', 'test')
 
+            # Get request data
+            request_data = kwargs.get('json', {})
+            email = request_data.get('email', '')
+            password = request_data.get('password', '')
+            username = request_data.get('username', '')
+
+            # Validate email format
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                return MockResponse(
+                    status_code=422,
+                    json_data={
+                        "detail": [{
+                            "type": "value_error",
+                            "loc": ["body", "email"],
+                            "msg": "Value error, Please provide a valid email address",
+                            "input": email,
+                            "ctx": {"error": {}}
+                        }]
+                    }
+                )
+
+            # Validate password strength
+            if (len(password) < 8 or
+                not re.search(r'[A-Z]', password) or
+                not re.search(r'[a-z]', password) or
+                not re.search(r'\d', password) or
+                not re.search(r'[!@#$%^&*()\-_+=]', password)):
+
+                return MockResponse(
+                    status_code=422,
+                    json_data={
+                        "detail": [{
+                            "type": "value_error",
+                            "loc": ["body", "password"],
+                            "msg": f"Value error, Password does not meet requirements. It must contain: at least 8 characters, at least 1 uppercase letter (A-Z), at least 1 number (0-9), at least 1 special character (!@#$%^&*()-_+=). Your password has {len(password)} characters. Example of a valid password: Password123!",
+                            "input": password,
+                            "ctx": {"error": {}}
+                        }]
+                    }
+                )
+
+            # If validation passes, proceed with normal registration
             if auth_provider == 'supabase':
                 # Return 501 for Supabase (not implemented)
                 return MockResponse(
@@ -411,8 +455,8 @@ class MockFastAPIClient:
                     json_data={
                         "success": True,
                         "user_id": str(uuid.uuid4()),
-                        "email": kwargs.get('json', {}).get('email', 'test@example.com'),
-                        "username": kwargs.get('json', {}).get('username', kwargs.get('json', {}).get('email', 'test@example.com')),
+                        "email": email,
+                        "username": username or email,
                         "message": "SUCCESS: Account created in Test Mode",
                         "message_type": "success",
                         "display_color": "green",

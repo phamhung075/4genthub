@@ -448,20 +448,31 @@ class TestContextVersioningService:
     @pytest.mark.asyncio
     async def test_merge_versions_invalid_strategy(self, versioning_service):
         """Test merge with invalid strategy"""
-        version = await versioning_service.create_version(
+        # Create first version
+        version1 = await versioning_service.create_version(
             context_level=ContextLevel.PROJECT,
             context_id="proj_1",
-            data={},
+            data={"field_a": "value_a"},
             change_type=ChangeType.CREATE,
             change_summary="v1",
             changed_by="user1"
         )
-        
+
+        # Create second version to meet minimum requirement for merge
+        version2 = await versioning_service.create_version(
+            context_level=ContextLevel.PROJECT,
+            context_id="proj_1",
+            data={"field_b": "value_b"},
+            change_type=ChangeType.UPDATE,
+            change_summary="v2",
+            changed_by="user1"
+        )
+
         with pytest.raises(ValueError, match="Unknown merge strategy"):
             await versioning_service.merge_versions(
                 context_level=ContextLevel.PROJECT,
                 context_id="proj_1",
-                version_ids=[version.version_id],
+                version_ids=[version1.version_id, version2.version_id],
                 merge_strategy="invalid_strategy",
                 user_id="user1"
             )

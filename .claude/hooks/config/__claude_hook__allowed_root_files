@@ -48,3 +48,6 @@ setup.cfg
 # License
 LICENSE
 LICENSE.md
+
+
+loop-worker_testfix.sh

@@ -148,26 +148,30 @@ class ResponseOptimizer:
                 if profile.value == profile_str:
                     return profile
         
-        # Check for DEBUG indicators
+        # Check for explicit DEBUG request first (highest priority)
         headers = request_context.get("headers", {})
         params = request_context.get("params", {})
         operation = response.get("operation", "").lower()
-        
-        for indicator in self.DEBUG_INDICATORS:
-            if (indicator in str(headers).lower() or 
-                indicator in str(params).lower() or
-                request_context.get("debug", False)):
-                return ResponseProfile.DEBUG
-        
-        # Check for AI agent requests (need DETAILED profile)
+
+        # Explicit debug flag takes precedence
+        if request_context.get("debug", False):
+            return ResponseProfile.DEBUG
+
+        # Check for AI agent requests (prioritize specific AI agent indicators)
         assignees = response.get("data", {}).get("assignees", [])
         user_agent = headers.get("User-Agent", "").lower()
-        
+
         for indicator in self.AI_AGENT_INDICATORS:
             if (indicator in str(assignees).lower() or
                 indicator in user_agent or
                 indicator in str(params).lower()):
                 return ResponseProfile.DETAILED
+
+        # Check for other DEBUG indicators (headers/params only, not explicit flag)
+        for indicator in self.DEBUG_INDICATORS:
+            if (indicator in str(headers).lower() or
+                indicator in str(params).lower()):
+                return ResponseProfile.DEBUG
         
         # Check for high-frequency operations (use MINIMAL profile)
         for op in self.HIGH_FREQUENCY_OPS:

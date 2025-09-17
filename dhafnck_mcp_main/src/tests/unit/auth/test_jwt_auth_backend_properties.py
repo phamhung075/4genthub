@@ -55,7 +55,7 @@ class TestJWTAuthBackendProperties:
     def test_token_router_compatibility(self):
         """Test that properties work as expected by token_router"""
         import jwt
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         
         backend = JWTAuthBackend()
         

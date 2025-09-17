@@ -3,7 +3,7 @@
 import logging
 import asyncio
 from typing import Optional, Union, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ...application.dtos.task import TaskResponse
 from ...application.dtos.context import GetContextRequest
@@ -130,7 +130,7 @@ class GetTaskUseCase:
             _event = TaskRetrieved(
                 task_id=task.id,
                 task_data=task.to_dict() if hasattr(task, 'to_dict') else {},
-                retrieved_at=datetime.now()
+                retrieved_at=datetime.now(timezone.utc)
             )
             # Note: Event publishing would be handled by an event dispatcher in a full implementation
             

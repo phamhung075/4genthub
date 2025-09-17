@@ -299,7 +299,8 @@ class PostToolUseHook:
                 # Generate post-action contextual hints based on result
                 hints = hint_system.generate_post_action_hints(tool_name, tool_input, tool_result)
                 if hints:
-                    output_parts.append(hints)
+                    # hints is a list of strings, extend output_parts instead of append
+                    output_parts.extend(hints)
             except Exception as e:
                 self.logger.log('error', f'MCP post-action hint matrix failed: {e}')
 

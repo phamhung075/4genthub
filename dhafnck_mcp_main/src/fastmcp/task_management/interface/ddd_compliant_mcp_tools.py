@@ -411,7 +411,7 @@ class DDDCompliantMCPTools:
     
     def manage_context(self, **kwargs) -> Dict[str, Any]:
         """Wrapper method for context management - delegates to context controller"""
-        return self._context_controller.manage_context(**kwargs)
+        return self._context_controller.manage_unified_context(**kwargs)
     
     def manage_agent(self, **kwargs) -> Dict[str, Any]:
         """Wrapper method for agent management - delegates to agent controller"""

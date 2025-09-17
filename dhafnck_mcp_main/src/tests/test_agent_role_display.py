@@ -61,7 +61,7 @@ def test_status_line_integration():
 
     # Import status line module
     sys.path.insert(0, str(project_root / ".claude" / "status_lines"))
-    from status_line import generate_status_line
+    from status_line_mcp import generate_status_line
 
     # Create test input data
     test_session = str(uuid.uuid4())

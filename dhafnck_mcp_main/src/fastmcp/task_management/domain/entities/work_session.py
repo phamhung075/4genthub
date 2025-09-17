@@ -1,7 +1,7 @@
 """WorkSession Domain Entity"""
 
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -47,8 +47,8 @@ class WorkSession:
             raise ValueError(f"Cannot pause session in {self.status.value} state")
         
         self.status = SessionStatus.PAUSED
-        self.paused_at = datetime.now()
-        self.last_activity = datetime.now()
+        self.paused_at = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(timezone.utc)
         
         if reason:
             self.add_progress_update("session_paused", f"Session paused: {reason}")
@@ -60,12 +60,12 @@ class WorkSession:
         
         if self.paused_at:
             # Add paused time to total
-            paused_duration = datetime.now() - self.paused_at
+            paused_duration = datetime.now(timezone.utc) - self.paused_at
             self.total_paused_duration += paused_duration
             self.paused_at = None
         
         self.status = SessionStatus.ACTIVE
-        self.last_activity = datetime.now()
+        self.last_activity = datetime.now(timezone.utc)
         self.add_progress_update("session_resumed", "Session resumed")
     
     def complete_session(self, success: bool = True, notes: str = "") -> None:
@@ -74,8 +74,8 @@ class WorkSession:
             raise ValueError(f"Cannot complete session in {self.status.value} state")
         
         self.status = SessionStatus.COMPLETED
-        self.ended_at = datetime.now()
-        self.last_activity = datetime.now()
+        self.ended_at = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(timezone.utc)
         
         if notes:
             self.session_notes += f"\nCompletion notes: {notes}"
@@ -86,8 +86,8 @@ class WorkSession:
     def cancel_session(self, reason: str = "") -> None:
         """Cancel the work session"""
         self.status = SessionStatus.CANCELLED
-        self.ended_at = datetime.now()
-        self.last_activity = datetime.now()
+        self.ended_at = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(timezone.utc)
         
         if reason:
             self.session_notes += f"\nCancellation reason: {reason}"
@@ -97,21 +97,21 @@ class WorkSession:
     def timeout_session(self) -> None:
         """Timeout the work session due to inactivity or max duration"""
         self.status = SessionStatus.TIMEOUT
-        self.ended_at = datetime.now()
+        self.ended_at = datetime.now(timezone.utc)
         
         self.add_progress_update("session_timeout", "Session timed out")
     
     def add_progress_update(self, update_type: str, message: str, metadata: Dict = None) -> None:
         """Add a progress update to the session"""
         update = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "type": update_type,
             "message": message,
             "metadata": metadata or {}
         }
         
         self.progress_updates.append(update)
-        self.last_activity = datetime.now()
+        self.last_activity = datetime.now(timezone.utc)
     
     def lock_resource(self, resource_id: str) -> None:
         """Lock a resource for this session"""
@@ -133,7 +133,7 @@ class WorkSession:
     def get_active_duration(self) -> timedelta:
         """Get the total active duration (excluding paused time)"""
         if self.status == SessionStatus.ACTIVE:
-            total_duration = datetime.now() - self.started_at
+            total_duration = datetime.now(timezone.utc) - self.started_at
         elif self.ended_at:
             total_duration = self.ended_at - self.started_at
         else:
@@ -144,7 +144,7 @@ class WorkSession:
     def get_total_duration(self) -> timedelta:
         """Get the total duration including paused time"""
         if self.status == SessionStatus.ACTIVE:
-            return datetime.now() - self.started_at
+            return datetime.now(timezone.utc) - self.started_at
         elif self.ended_at:
             return self.ended_at - self.started_at
         else:
@@ -212,7 +212,7 @@ class WorkSession:
     
     def update_activity(self) -> None:
         """Update the last activity timestamp"""
-        self.last_activity = datetime.now()
+        self.last_activity = datetime.now(timezone.utc)
     
     @classmethod
     def create_session(
@@ -223,7 +223,7 @@ class WorkSession:
         max_duration_hours: Optional[float] = None
     ) -> 'WorkSession':
         """Factory method to create a new work session"""
-        session_id = f"{agent_id}_{task_id}_{datetime.now().timestamp()}"
+        session_id = f"{agent_id}_{task_id}_{datetime.now(timezone.utc).timestamp()}"
         
         max_duration = None
         if max_duration_hours:
@@ -234,7 +234,7 @@ class WorkSession:
             agent_id=agent_id,
             task_id=task_id,
             git_branch_name=git_branch_name,
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
             max_duration=max_duration
         )
         

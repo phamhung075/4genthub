@@ -76,18 +76,18 @@
           "size": 13425
         },
         {
-          "hash": "e2a9a65e02a48f090734051cee4f9380",
-          "modified": "2025-09-16T16:51:30.060704",
+          "hash": "169d28df038a86d56e117b9bec0ba3d3",
+          "modified": "2025-09-17T08:56:03.310364",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 42857
+          "size": 408819
         },
         {
-          "hash": "c03ff2962fe9aa88f79741cb861960fa",
-          "modified": "2025-09-16T16:51:29.973536",
+          "hash": "2fb0f1d7cd53acfb125d7001fe8731f2",
+          "modified": "2025-09-17T08:56:03.274321",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 53606
+          "size": 47252
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -400,35 +400,35 @@
       "files": [
         {
           "hash": "ed97151e11351f5701af88ba98ae722e",
-          "modified": "2025-09-16T16:07:55.195707",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hooks-refactoring-plan.md",
           "path": "claude-code/hooks-refactoring-plan.md",
           "size": 11049
         },
         {
           "hash": "408e02b024c1d25338a7b343cdda28f8",
-          "modified": "2025-09-16T16:19:13.987706",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "cleanup-log.md",
           "path": "claude-code/cleanup-log.md",
           "size": 1469
         },
         {
           "hash": "a7315270d44722b85b92aa826ca16e6a",
-          "modified": "2025-09-16T17:52:09.769965",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hook-message-flow-analysis.md",
           "path": "claude-code/hook-message-flow-analysis.md",
           "size": 3490
         },
         {
           "hash": "4ba44339c67eb2672fb47f5786280d28",
-          "modified": "2025-09-16T16:05:12.147573",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hooks-architecture-analysis.md",
           "path": "claude-code/hooks-architecture-analysis.md",
           "size": 5897
         },
         {
           "hash": "515d6d60231ac39334d86658b9b3ed9c",
-          "modified": "2025-09-16T16:23:42.123575",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hooks-dependency-map.md",
           "path": "claude-code/hooks-dependency-map.md",
           "size": 6258
@@ -927,7 +927,7 @@
         },
         {
           "hash": "3aae30e354c1616d51b242ccf6dd3b03",
-          "modified": "2025-09-16T16:45:10.058842",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hint-manager-consolidated-system.md",
           "path": "development-guides/hint-manager-consolidated-system.md",
           "size": 5728
@@ -1462,7 +1462,7 @@
         },
         {
           "hash": "6de4b04147f7f7e0a90362cd4518be26",
-          "modified": "2025-09-16T17:24:28.332636",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "phase-6-deployment-guide.md",
           "path": "operations/phase-6-deployment-guide.md",
           "size": 12104
@@ -1483,7 +1483,7 @@
         },
         {
           "hash": "a2675170b7840b9ca7d36f0b888317c0",
-          "modified": "2025-09-15T19:00:44.877505",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "fix-mcp-cors-configuration.md",
           "path": "operations/fix-mcp-cors-configuration.md",
           "size": 2901
@@ -1816,14 +1816,21 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 8,
+      "count": 19,
       "files": [
         {
           "hash": "1ab1eabc6919aaf6d105b43bc7a8d748",
-          "modified": "2025-09-16T21:06:58.759232",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hook-testing-techniques.md",
           "path": "testing-qa/hook-testing-techniques.md",
           "size": 16277
+        },
+        {
+          "hash": "fc25533180824e09f10bc4658b4a9657",
+          "modified": "2025-09-17T04:30:00.524214",
+          "name": "iteration-15-test-fixes.md",
+          "path": "testing-qa/iteration-15-test-fixes.md",
+          "size": 4029
         },
         {
           "hash": "4d386e08457a5a2855498d3ce0168e14",
@@ -1840,11 +1847,53 @@
           "size": 17900
         },
         {
+          "hash": "57e431659b4d64fd8366c37c56aecfaf",
+          "modified": "2025-09-17T00:40:29.826987",
+          "name": "hook-test-fixing-progress.md",
+          "path": "testing-qa/hook-test-fixing-progress.md",
+          "size": 7759
+        },
+        {
           "hash": "68b18ec5b7b92f8cac7e46843dd27d5e",
           "modified": "2025-09-13T23:31:32.162844",
           "name": "context_resolution_tests_summary.md",
           "path": "testing-qa/context_resolution_tests_summary.md",
           "size": 15889
+        },
+        {
+          "hash": "bad95ebf2614a09391eb1bda3f48e829",
+          "modified": "2025-09-17T07:39:41.952744",
+          "name": "iteration-24-test-achievement.md",
+          "path": "testing-qa/iteration-24-test-achievement.md",
+          "size": 3282
+        },
+        {
+          "hash": "60dfcd751da5498d7dc6dc57e20c06f4",
+          "modified": "2025-09-17T08:37:43.349973",
+          "name": "iteration-26-test-fixes.md",
+          "path": "testing-qa/iteration-26-test-fixes.md",
+          "size": 3485
+        },
+        {
+          "hash": "f2cf478adfec52deb1846ae952ae6b15",
+          "modified": "2025-09-17T08:55:34.404874",
+          "name": "iteration-27-test-fixes.md",
+          "path": "testing-qa/iteration-27-test-fixes.md",
+          "size": 3392
+        },
+        {
+          "hash": "302b434d6677970d78dd43e8d07aaa64",
+          "modified": "2025-09-17T09:17:59.334820",
+          "name": "iteration-32-test-fixes.md",
+          "path": "testing-qa/iteration-32-test-fixes.md",
+          "size": 6237
+        },
+        {
+          "hash": "43b3d1e884ea6df30b978f07214819da",
+          "modified": "2025-09-17T08:26:40.679743",
+          "name": "iteration-25-test-fixes.md",
+          "path": "testing-qa/iteration-25-test-fixes.md",
+          "size": 2318
         },
         {
           "hash": "b81aae68a7f9663ca9d3db5239614fc9",
@@ -1854,8 +1903,15 @@
           "size": 20177
         },
         {
+          "hash": "a4942553943f837b2d5c9a87146e7dcd",
+          "modified": "2025-09-17T02:01:37.142223",
+          "name": "iteration-8-test-fixes.md",
+          "path": "testing-qa/iteration-8-test-fixes.md",
+          "size": 4205
+        },
+        {
           "hash": "a479d2820089f544a14eccf1a5996c95",
-          "modified": "2025-09-16T21:05:17.058731",
+          "modified": "2025-09-17T00:40:29.826987",
           "name": "hook-system-architecture.md",
           "path": "testing-qa/hook-system-architecture.md",
           "size": 17549
@@ -1873,6 +1929,27 @@
           "name": "comprehensive-mcp-tools-test-suite.md",
           "path": "testing-qa/comprehensive-mcp-tools-test-suite.md",
           "size": 9842
+        },
+        {
+          "hash": "239f905e282aadffee45abea91e40516",
+          "modified": "2025-09-17T05:51:20.666439",
+          "name": "iteration-18-test-fixes.md",
+          "path": "testing-qa/iteration-18-test-fixes.md",
+          "size": 3926
+        },
+        {
+          "hash": "4f19125102c1a6ee9029fe9f0b663f47",
+          "modified": "2025-09-17T02:22:36.645523",
+          "name": "iteration-10-test-fixes.md",
+          "path": "testing-qa/iteration-10-test-fixes.md",
+          "size": 3231
+        },
+        {
+          "hash": "e5dbe951650508fc6dfdfa6bccb21e3f",
+          "modified": "2025-09-17T06:24:35.474122",
+          "name": "iteration-19-test-fixes.md",
+          "path": "testing-qa/iteration-19-test-fixes.md",
+          "size": 5614
         }
       ],
       "path": "testing-qa"
@@ -2100,7 +2177,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-16T21:06:58.876799",
+  "generated_at": "2025-09-17T09:17:59.385071",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2114,7 +2191,6 @@
         ]
       }
     },
-    "_obsolete_docs": {},
     "_workplace": {
       "workers": {
         "fix_tests_loop": {
@@ -2450,7 +2526,18 @@
         "context_resolution_tests_summary.md",
         "documentation-quality-prevention-strategy.md",
         "hook-system-architecture.md",
+        "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
+        "iteration-10-test-fixes.md",
+        "iteration-15-test-fixes.md",
+        "iteration-18-test-fixes.md",
+        "iteration-19-test-fixes.md",
+        "iteration-24-test-achievement.md",
+        "iteration-25-test-fixes.md",
+        "iteration-26-test-fixes.md",
+        "iteration-27-test-fixes.md",
+        "iteration-32-test-fixes.md",
+        "iteration-8-test-fixes.md",
         "testing.md"
       ]
     },
@@ -2488,6 +2575,6 @@
       ]
     }
   },
-  "total_directories": 31,
-  "total_files": 274
+  "total_directories": 30,
+  "total_files": 285
 }

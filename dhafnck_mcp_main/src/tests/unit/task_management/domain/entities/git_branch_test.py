@@ -15,6 +15,7 @@ import pytest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 import uuid
+import time
 
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.task import Task
@@ -616,10 +617,11 @@ class TestEdgeCases:
         task1 = Task(id=TaskId("task-1"), title="Task 1", description="First")
         task2 = Task(id=TaskId("task-2"), title="Task 2", description="Second")
         
-        # Simulate concurrent additions
+        # Simulate concurrent additions with small delay to ensure different timestamps
         original_updated = git_branch.updated_at
         git_branch.add_root_task(task1)
         first_update = git_branch.updated_at
+        time.sleep(0.001)  # 1ms delay to ensure different timestamp
         git_branch.add_root_task(task2)
         second_update = git_branch.updated_at
         

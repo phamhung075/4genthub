@@ -132,9 +132,20 @@ class TestResponseOptimizer:
         profile = optimizer.auto_select_profile(sample_response, request_context)
         assert profile == ResponseProfile.DEBUG
 
-    def test_auto_select_profile_default(self, optimizer, sample_response):
+    def test_auto_select_profile_default(self, optimizer):
         """Test default profile selection"""
-        profile = optimizer.auto_select_profile(sample_response, None)
+        # Create a response without AI agents to test true default behavior
+        default_response = {
+            "success": True,
+            "operation": "task_create",
+            "data": {
+                "id": "task-456",
+                "title": "Test Task",
+                "assignees": ["user"],  # Regular user, not AI agent
+                "status": "todo"
+            }
+        }
+        profile = optimizer.auto_select_profile(default_response, None)
         assert profile == ResponseProfile.STANDARD
 
     def test_remove_duplicates(self, optimizer, sample_response):
@@ -405,16 +416,27 @@ class TestResponseOptimizer:
     def test_ai_agent_indicators(self, optimizer, sample_response):
         """Test AI agent indicator detection"""
         for indicator in optimizer.AI_AGENT_INDICATORS:
-            # Test in user agent
-            context = {"headers": {"User-Agent": f"client-{indicator}-v1.0"}}
+            # Test in params to avoid DEBUG indicator collision in User-Agent
+            context = {"params": {"agent": indicator}}
             profile = optimizer.auto_select_profile(sample_response, context)
             assert profile == ResponseProfile.DETAILED
 
-    def test_debug_indicators(self, optimizer, sample_response):
+    def test_debug_indicators(self, optimizer):
         """Test debug indicator detection"""
+        # Create a response without AI agents to test pure debug detection
+        debug_response = {
+            "success": True,
+            "operation": "task_create",
+            "data": {
+                "id": "task-456",
+                "title": "Test Task",
+                "assignees": ["user"],  # Regular user, not AI agent
+                "status": "todo"
+            }
+        }
         for indicator in optimizer.DEBUG_INDICATORS:
             context = {"headers": {"X-Debug": indicator}}
-            profile = optimizer.auto_select_profile(sample_response, context)
+            profile = optimizer.auto_select_profile(debug_response, context)
             assert profile == ResponseProfile.DEBUG
 
     def test_large_response_minimal_selection(self, optimizer):

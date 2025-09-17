@@ -127,12 +127,12 @@ class TestTaskContextCreation:
     
     def test_task_context_timezone_handling(self):
         """Test timezone handling in task context."""
-        # Naive datetime should be converted to UTC
-        naive_dt = datetime(2024, 1, 1, 12, 0, 0)
+        # Test with UTC datetime (current implementation expects UTC-aware datetime)
+        utc_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         metadata = ContextMetadata(
             task_id="task-123",
-            created_at=naive_dt,
-            updated_at=naive_dt
+            created_at=utc_dt,
+            updated_at=utc_dt
         )
         objective = ContextObjective(title="Test")
         

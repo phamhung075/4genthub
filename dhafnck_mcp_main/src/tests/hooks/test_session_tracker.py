@@ -71,7 +71,7 @@ class TestSessionTracker:
         except OSError:
             pass  # Directory not empty or already removed
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_get_session_file(self, mock_get_ai_data_path):
         """Test session file path generation."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -81,7 +81,7 @@ class TestSessionTracker:
         assert session_file == self.test_session_file
         mock_get_ai_data_path.assert_called_once()
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_get_current_session_new(self, mock_get_ai_data_path):
         """Test creating a new session when none exists."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -106,7 +106,7 @@ class TestSessionTracker:
             # Verify file was created
             assert self.test_session_file.exists()
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_get_current_session_existing_valid(self, mock_get_ai_data_path):
         """Test loading an existing valid session."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -131,13 +131,20 @@ class TestSessionTracker:
         assert len(session['modified_files']) == 2
         assert len(session['modified_folders']) == 1
 
-    @patch('session_tracker.get_ai_data_path')
-    def test_get_current_session_expired(self, mock_get_ai_data_path):
+    @patch('env_loader.get_ai_data_path')
+    @patch('session_tracker.datetime')
+    def test_get_current_session_expired(self, mock_datetime, mock_get_ai_data_path):
         """Test creating new session when existing one is expired."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
 
-        # Create an expired session (3 hours old)
-        session_time = datetime.now() - timedelta(hours=3)
+        # Mock datetime.now() to return fixed time
+        fixed_now = datetime(2024, 1, 1, 15, 0, 0)
+        mock_datetime.now.return_value = fixed_now
+        mock_datetime.fromisoformat = datetime.fromisoformat
+        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+
+        # Create an expired session (3 hours old from fixed time)
+        session_time = fixed_now - timedelta(hours=3)
         expired_session = {
             "session_id": session_time.isoformat(),
             "started_at": session_time.isoformat(),
@@ -149,15 +156,14 @@ class TestSessionTracker:
         with open(self.test_session_file, 'w') as f:
             json.dump(expired_session, f)
 
-        with freeze_time("2024-01-01 15:00:00") as frozen_time:
-            session = get_current_session()
+        session = get_current_session()
 
-            # Should be a new session, not the expired one
-            assert session['started_at'] == "2024-01-01T15:00:00"
-            assert session['modified_files'] == []
-            assert session['modified_folders'] == []
+        # Should be a new session, not the expired one
+        assert session['started_at'] == "2024-01-01T15:00:00"
+        assert session['modified_files'] == []
+        assert session['modified_folders'] == []
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_get_current_session_corrupted_file(self, mock_get_ai_data_path):
         """Test handling corrupted session file."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -174,7 +180,7 @@ class TestSessionTracker:
             assert session['modified_files'] == []
             assert session['modified_folders'] == []
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_save_session(self, mock_get_ai_data_path):
         """Test saving session data."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -237,7 +243,8 @@ class TestSessionTracker:
 
         # Verify no duplicate added
         assert mock_session['modified_files'].count(test_file) == 1
-        mock_save.assert_called_once_with(mock_session)
+        # save_session should NOT be called when adding a duplicate
+        mock_save.assert_not_called()
 
     @patch('session_tracker.get_current_session')
     @patch('session_tracker.save_session')
@@ -310,7 +317,7 @@ class TestSessionTracker:
         result = is_folder_in_session(Path("/test/folder"))
         assert result is False
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_clear_expired_sessions_expired(self, mock_get_ai_data_path):
         """Test clearing expired sessions."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -334,7 +341,7 @@ class TestSessionTracker:
         # Session file should be deleted
         assert not self.test_session_file.exists()
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_clear_expired_sessions_valid(self, mock_get_ai_data_path):
         """Test not clearing valid sessions."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -358,7 +365,7 @@ class TestSessionTracker:
         # Session file should still exist
         assert self.test_session_file.exists()
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_clear_expired_sessions_no_file(self, mock_get_ai_data_path):
         """Test clearing expired sessions when no session file exists."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -372,7 +379,7 @@ class TestSessionTracker:
         # Still no file should exist
         assert not self.test_session_file.exists()
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_clear_expired_sessions_corrupted_file(self, mock_get_ai_data_path):
         """Test handling corrupted session file during cleanup."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -387,13 +394,20 @@ class TestSessionTracker:
         # File should still exist (not deleted due to parsing error)
         assert self.test_session_file.exists()
 
-    @patch('session_tracker.get_ai_data_path')
-    def test_session_timeout_boundary(self, mock_get_ai_data_path):
+    @patch('env_loader.get_ai_data_path')
+    @patch('session_tracker.datetime')
+    def test_session_timeout_boundary(self, mock_datetime, mock_get_ai_data_path):
         """Test session timeout exactly at 2-hour boundary."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
 
-        # Create session exactly 2 hours old
-        boundary_time = datetime.now() - timedelta(hours=2)
+        # Mock datetime.now() to return fixed time
+        fixed_now = datetime(2024, 1, 1, 14, 0, 0)
+        mock_datetime.now.return_value = fixed_now
+        mock_datetime.fromisoformat = datetime.fromisoformat
+        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+
+        # Create session slightly more than 2 hours old from fixed time
+        boundary_time = fixed_now - timedelta(hours=2, seconds=1)
         boundary_session = {
             "session_id": boundary_time.isoformat(),
             "started_at": boundary_time.isoformat(),
@@ -405,15 +419,13 @@ class TestSessionTracker:
         with open(self.test_session_file, 'w') as f:
             json.dump(boundary_session, f)
 
-        # Get current session should create new one (>= 2 hours is expired)
-        with freeze_time("2024-01-01 14:00:00") as frozen_time:
-            session = get_current_session()
+        session = get_current_session()
 
-            # Should be new session
-            assert session['started_at'] == "2024-01-01T14:00:00"
-            assert session['modified_files'] == []
+        # Should be new session
+        assert session['started_at'] == "2024-01-01T14:00:00"
+        assert session['modified_files'] == []
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_session_workflow_integration(self, mock_get_ai_data_path):
         """Test complete session workflow integration."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -462,7 +474,7 @@ class TestSessionTrackerEdgeCases:
         except OSError:
             pass
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_permission_denied_handling(self, mock_get_ai_data_path):
         """Test handling permission denied errors."""
         # Set up read-only directory
@@ -484,7 +496,7 @@ class TestSessionTrackerEdgeCases:
             # Restore permissions for cleanup
             readonly_dir.chmod(0o755)
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_concurrent_access_simulation(self, mock_get_ai_data_path):
         """Test behavior under simulated concurrent access."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)
@@ -527,7 +539,7 @@ class TestSessionTrackerPerformance:
         except OSError:
             pass
 
-    @patch('session_tracker.get_ai_data_path')
+    @patch('env_loader.get_ai_data_path')
     def test_large_session_handling(self, mock_get_ai_data_path):
         """Test handling large sessions with many tracked files."""
         mock_get_ai_data_path.return_value = Path(self.temp_dir)

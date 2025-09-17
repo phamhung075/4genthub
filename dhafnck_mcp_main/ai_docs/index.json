@@ -1,0 +1,35 @@
+{
+  "absolute_docs": {
+    "obsolete_docs": [],
+    "tracked_files": {}
+  },
+  "categories": {
+    "_workplace/workers/fix_tests_loop": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "f333acbc5039a368898704aa3e64966b",
+          "modified": "2025-09-17T01:08:22.500032",
+          "name": "iteration-32-summary.md",
+          "path": "_workplace/workers/fix_tests_loop/iteration-32-summary.md",
+          "size": 2256
+        }
+      ],
+      "path": "_workplace/workers/fix_tests_loop"
+    }
+  },
+  "generated_at": "2025-09-17T08:55:34.458737",
+  "structure": {
+    "_workplace": {
+      "workers": {
+        "fix_tests_loop": {
+          "files": [
+            "iteration-32-summary.md"
+          ]
+        }
+      }
+    }
+  },
+  "total_directories": 3,
+  "total_files": 1
+}

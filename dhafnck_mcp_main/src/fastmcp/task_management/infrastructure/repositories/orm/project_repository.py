@@ -7,7 +7,7 @@ supporting both SQLite and PostgreSQL databases.
 
 import logging
 from typing import List, Optional, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.orm import joinedload
 
@@ -105,7 +105,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     # Update existing project
                     existing.name = project.name
                     existing.description = project.description
-                    existing.updated_at = datetime.now()
+                    existing.updated_at = datetime.now(timezone.utc)
                     existing.status = getattr(project, 'status', 'active')
                     existing.metadata = getattr(project, 'metadata', {})
                 else:
@@ -232,7 +232,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     project.id,
                     name=project.name,
                     description=project.description,
-                    updated_at=datetime.now()
+                    updated_at=datetime.now(timezone.utc)
                 )
                 
                 if not updated:
@@ -365,7 +365,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     
                     # Unassign the agent
                     branch.assigned_agent_id = None
-                    branch.updated_at = datetime.now()
+                    branch.updated_at = datetime.now(timezone.utc)
                     
                     return {
                         "success": True,
@@ -444,7 +444,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
         try:
             with self.transaction():
                 # Update timestamp
-                updates['updated_at'] = datetime.now()
+                updates['updated_at'] = datetime.now(timezone.utc)
                 
                 updated_project = super().update(project_id, **updates)
                 if not updated_project:

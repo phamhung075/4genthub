@@ -3,7 +3,7 @@
 from typing import Dict, List, Optional, Set, Any
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 class CoordinationType(Enum):
@@ -81,7 +81,7 @@ class CoordinationRequest:
         """Check if request has expired"""
         if not self.deadline:
             return False
-        return datetime.now() > self.deadline
+        return datetime.now(timezone.utc) > self.deadline
     
     def to_notification(self) -> Dict[str, Any]:
         """Convert to notification format for target agent"""
@@ -123,7 +123,7 @@ class WorkAssignment:
         """Check if assignment is overdue"""
         if not self.due_date:
             return False
-        return datetime.now() > self.due_date
+        return datetime.now(timezone.utc) > self.due_date
     
     def to_task_context(self) -> Dict[str, Any]:
         """Convert to task context format"""
@@ -172,7 +172,7 @@ class WorkHandoff:
             raise ValueError(f"Cannot accept handoff in status {self.status}")
         
         self.status = HandoffStatus.ACCEPTED
-        self.accepted_at = datetime.now()
+        self.accepted_at = datetime.now(timezone.utc)
     
     def reject(self, reason: str) -> None:
         """Reject the handoff"""
@@ -188,7 +188,7 @@ class WorkHandoff:
             raise ValueError(f"Cannot complete handoff in status {self.status}")
         
         self.status = HandoffStatus.COMPLETED
-        self.completed_at = datetime.now()
+        self.completed_at = datetime.now(timezone.utc)
     
     def to_handoff_package(self) -> Dict[str, Any]:
         """Create complete handoff package"""
@@ -247,7 +247,7 @@ class ConflictResolution:
         self.resolution_strategy = strategy
         self.resolved_by = resolved_by
         self.resolution_details = details
-        self.resolved_at = datetime.now()
+        self.resolved_at = datetime.now(timezone.utc)
     
     def add_vote(self, agent_id: str, choice: str) -> None:
         """Add agent vote for resolution"""
@@ -297,7 +297,7 @@ class AgentCommunication:
             return True
         
         if self.response_deadline:
-            hours_until_deadline = (self.response_deadline - datetime.now()).total_seconds() / 3600
+            hours_until_deadline = (self.response_deadline - datetime.now(timezone.utc)).total_seconds() / 3600
             return hours_until_deadline <= 2
         
         return False

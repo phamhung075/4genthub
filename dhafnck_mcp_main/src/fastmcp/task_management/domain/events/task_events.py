@@ -1,7 +1,7 @@
 """Task Domain Events"""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 from ..value_objects import TaskId
@@ -14,7 +14,7 @@ class DomainEvent:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now())
+            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ class TaskCreated:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now())
+            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ class TaskUpdated:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now())
+            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
         if self.metadata is None:
             object.__setattr__(self, 'metadata', {})
 
@@ -58,7 +58,7 @@ class TaskRetrieved:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now())
+            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -71,4 +71,4 @@ class TaskDeleted:
     
     def __post_init__(self):
         if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now()) 
+            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc)) 

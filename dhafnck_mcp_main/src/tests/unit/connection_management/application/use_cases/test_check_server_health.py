@@ -151,7 +151,7 @@ class TestCheckServerHealthUseCase:
         # Create a mock server to be returned by create_server
         new_server = Mock(spec=Server)
         new_server.name = "DhafnckMCP - Task Management & Agent Orchestration"
-        new_server.version = "2.1.0"
+        new_server.version = "0.0.2c"
         new_server.environment = {"platform": "linux", "python_version": "3.10.0", "working_directory": "/test"}
         new_server.authentication = {"enabled": True, "method": "JWT", "status": "configured"}
         new_server.task_management = {"active_tasks": 5, "completed_tasks": 10, "total_tasks": 20}
@@ -174,10 +174,10 @@ class TestCheckServerHealthUseCase:
         # Assert
         assert response.success is True
         assert response.server_name == "DhafnckMCP - Task Management & Agent Orchestration"
-        assert response.version == "2.1.0"
+        assert response.version == "0.0.2c"
         mock_server_repository.create_server.assert_called_once_with(
             name="DhafnckMCP - Task Management & Agent Orchestration",
-            version="2.1.0",
+            version="0.0.2c",
             environment={"platform": "linux", "python_version": "3.10.0", "working_directory": "/test"},
             authentication={"enabled": True, "method": "JWT", "status": "configured"},
             task_management={"active_tasks": 5, "completed_tasks": 10, "total_tasks": 20}

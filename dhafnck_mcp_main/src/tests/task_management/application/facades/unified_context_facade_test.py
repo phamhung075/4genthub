@@ -128,13 +128,14 @@ class TestUnifiedContextFacade:
         assert result["success"] is True
         mock_unified_service.create_context.assert_called_once()
         
-        # Verify call arguments
+        # Verify call arguments (facade calls with keyword arguments)
         call_args = mock_unified_service.create_context.call_args
-        assert call_args[0][0] == level  # level
-        assert call_args[0][1] == context_id  # context_id
-        assert call_args[0][2]["title"] == "Test Task"  # data with scope
-        assert call_args[1]["user_id"] == "test-user"
-        assert call_args[1]["project_id"] == "test-project"
+        kwargs = call_args[1]  # Keyword arguments
+        assert kwargs["level"] == level
+        assert kwargs["context_id"] == context_id
+        assert kwargs["data"]["title"] == "Test Task"  # data with scope
+        assert kwargs["user_id"] == "test-user"
+        assert kwargs["project_id"] == "test-project"
 
     def test_create_context_no_data(self, facade, mock_unified_service):
         """Test context creation without data"""
@@ -143,9 +144,10 @@ class TestUnifiedContextFacade:
         assert result["success"] is True
         mock_unified_service.create_context.assert_called_once()
         
-        # Verify scope was added
+        # Verify scope was added (facade calls with keyword arguments)
         call_args = mock_unified_service.create_context.call_args
-        data_param = call_args[0][2]
+        kwargs = call_args[1]  # Keyword arguments
+        data_param = kwargs["data"]
         assert data_param["user_id"] == "test-user"
         assert data_param["project_id"] == "test-project"
 
@@ -211,15 +213,16 @@ class TestUnifiedContextFacade:
     def test_create_context_data_modification(self, facade, mock_unified_service):
         """Test that create_context properly modifies data with scope"""
         original_data = {"original": "value"}
-        
+
         facade.create_context("task", "task-123", original_data)
-        
+
         # Verify original data is not modified
         assert original_data == {"original": "value"}
-        
-        # Verify service received data with scope
+
+        # Verify service received data with scope (using keyword arguments)
         call_args = mock_unified_service.create_context.call_args
-        modified_data = call_args[0][2]
+        kwargs = call_args[1]  # Access keyword arguments
+        modified_data = kwargs["data"]  # Get the data parameter
         assert modified_data["original"] == "value"
         assert modified_data["user_id"] == "test-user"
         assert modified_data["project_id"] == "test-project"

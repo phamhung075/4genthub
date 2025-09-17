@@ -212,8 +212,8 @@ def get_role_metadata_from_yaml(role_input) -> Optional[Dict[str, any]]:
 # Legacy role mappings for backward compatibility
 LEGACY_ROLE_MAPPINGS = {
     "senior_developer": "coding-agent",
-    "platform_engineer": "devops-agent", 
-    "qa_engineer": "functional_tester_agent",
+    "platform_engineer": "devops-agent",
+    "qa_engineer": "test-orchestrator-agent",  # Fixed: functional_tester_agent doesn't exist
     "code_reviewer": "code-reviewer-agent",
     "devops_engineer": "devops-agent",
     "security_engineer": "security-auditor-agent",

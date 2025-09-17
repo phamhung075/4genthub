@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import List, Optional, Set
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class ILabelRepository(ABC):
@@ -62,7 +62,7 @@ class LabelInfo:
         self.label = label
         self.category = category
         self.usage_count = usage_count
-        self.created_at = created_at or datetime.now()
+        self.created_at = created_at or datetime.now(timezone.utc)
         self.normalized = self._normalize(label)
     
     def _normalize(self, label: str) -> str:

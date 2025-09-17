@@ -456,24 +456,27 @@ class TestIntegration:
     
     def test_clock_skew_tolerance(self):
         """Test that clock skew tolerance is applied"""
-        # Token that expired 20 seconds ago (within 30 second leeway)
-        payload = {
-            "sub": "skew-user",
-            "exp": (datetime.now(timezone.utc) - timedelta(seconds=20)).timestamp()
-        }
-        token = jwt.encode(payload, JWT_SECRET_KEY or "test-secret", algorithm=JWT_ALGORITHM)
-        
-        with patch('jwt.decode') as mock_decode:
-            # Mock successful decode with leeway
-            mock_decode.return_value = {**payload, "exp": (datetime.now(timezone.utc) + timedelta(seconds=10)).timestamp()}
-            
-            user = validate_local_token(token)
-            
-            # Verify leeway was passed
-            mock_decode.assert_called_with(
-                token,
-                JWT_SECRET_KEY,
-                algorithms=[JWT_ALGORITHM],
-                leeway=30
-            )
-            assert user.id == "skew-user"
+        test_secret = "test-secret-for-clock-skew"
+
+        with patch.dict(os.environ, {"JWT_SECRET_KEY": test_secret}):
+            # Token that expired 20 seconds ago (within 30 second leeway)
+            payload = {
+                "sub": "skew-user",
+                "exp": (datetime.now(timezone.utc) - timedelta(seconds=20)).timestamp()
+            }
+            token = jwt.encode(payload, test_secret, algorithm=JWT_ALGORITHM)
+
+            with patch('jwt.decode') as mock_decode:
+                # Mock successful decode with leeway
+                mock_decode.return_value = {**payload, "exp": (datetime.now(timezone.utc) + timedelta(seconds=10)).timestamp()}
+
+                user = validate_local_token(token)
+
+                # Verify leeway was passed with correct secret
+                mock_decode.assert_called_with(
+                    token,
+                    test_secret,  # Use the same secret we set in environment
+                    algorithms=[JWT_ALGORITHM],
+                    leeway=30
+                )
+                assert user.id == "skew-user"
