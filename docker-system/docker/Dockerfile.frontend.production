@@ -1,15 +1,19 @@
-# Cache bust: 1757949766
+# Cache bust: 1757949769
 # Production Frontend Dockerfile for agenthub
 # Multi-stage build optimized for production deployment
 # Features: Minimal image size, optimized assets, security hardening, multi-platform support
-# Version: 2.1.0 - Complete platform-agnostic build for CapRover compatibility (2025-09-17)
+# Version: 2.3.0 - Optimized for ARM64 native builds (M1/M2 Macs) (2025-09-17)
+#
+# IMPORTANT: This Dockerfile is configured for linux/arm64 (ARM64) architecture
+# - Best performance on M1/M2 Macs and ARM-based servers
+# - For x86_64/AMD64 deployments, change platform to linux/amd64
 
 # syntax=docker/dockerfile:1
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-# Let Docker automatically select the appropriate platform
-FROM node:20-alpine AS builder
+# Using linux/arm64 for native ARM64 builds (M1/M2 Macs)
+FROM --platform=linux/arm64 node:20-alpine AS builder
 
 WORKDIR /build
 
@@ -57,8 +61,8 @@ ENV NODE_ENV=${NODE_ENV}
 RUN npm run build
 
 # Stage 2: Production Runtime with Nginx
-# Let Docker automatically select the appropriate platform
-FROM nginx:alpine
+# Using linux/arm64 for native ARM64 builds (M1/M2 Macs)
+FROM --platform=linux/arm64 nginx:alpine
 
 # Accept runtime build arguments
 ARG VITE_API_URL

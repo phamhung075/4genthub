@@ -1,0 +1,11 @@
+# Docker Build Configuration
+# Set the default platform for Docker builds
+# For M1/M2 Macs: linux/arm64
+# For Intel/AMD: linux/amd64
+
+# Uncomment the appropriate line for your system:
+DOCKER_DEFAULT_PLATFORM=linux/arm64  # For ARM64 (M1/M2 Macs)
+# DOCKER_DEFAULT_PLATFORM=linux/amd64  # For x86_64 (Intel/AMD)
+
+# Or set it dynamically based on your system:
+# DOCKER_DEFAULT_PLATFORM=$(uname -m | sed 's/aarch64\|arm64/linux\/arm64/; s/x86_64/linux\/amd64/')
