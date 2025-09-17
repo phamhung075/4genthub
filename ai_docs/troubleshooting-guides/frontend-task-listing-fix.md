@@ -45,7 +45,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8000,http://localhost:5173,h
 If you prefer to keep authentication enabled for testing:
 
 ```bash
-cd 4genthub_main
+cd agenthub_main
 python scripts/fix_frontend_authentication.py
 # Select option 2 to generate a development token
 ```
@@ -58,7 +58,7 @@ Then set the token as a cookie in the browser:
 ### Solution 3: MVP Mode Fix (Production-Ready)
 
 Ensure MVP mode properly bypasses authentication for development:
-- Keep `4GENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead`
+- Keep `AGENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead`
 - Keep `AUTH_ENABLED=true`
 - Fix authentication middleware to bypass auth in MVP mode
 
@@ -69,7 +69,7 @@ Ensure MVP mode properly bypasses authentication for development:
 1. **Restart the backend server** to pick up environment changes:
    ```bash
    # Stop current server (Ctrl+C if running in terminal)
-   cd 4genthub_main
+   cd agenthub_main
    python -m fastmcp.server.mcp_entry_point --transport=streamable-http
    ```
 
@@ -93,7 +93,7 @@ Ensure MVP mode properly bypasses authentication for development:
 
 Use the debug script to verify all endpoints work:
 ```bash
-cd 4genthub_main
+cd agenthub_main
 python scripts/debug_frontend_tasks.py --comprehensive
 ```
 
@@ -113,7 +113,7 @@ Expected results after fix:
 
 ### Configuration Dependencies
 - `AUTH_ENABLED`: Master authentication toggle
-- `4GENTHUB_MVP_MODE`: MVP mode for development bypasses
+- `AGENTHUB_MVP_MODE`: MVP mode for development bypasses
 - `SUPABASE_URL`: Supabase configuration for authentication
 - Environment variables loaded at server startup (restart required for changes)
 
@@ -131,7 +131,7 @@ FASTMCP_LOG_LEVEL=DEBUG
 
 ### For Development
 1. Use `AUTH_ENABLED=false` for local development
-2. Use `4GENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead` for flexible authentication
+2. Use `AGENTHUB_# MVP_MODE removed - use AUTH_ENABLED instead` for flexible authentication
 3. Set proper CORS origins including frontend ports
 
 ### For Production
@@ -147,13 +147,13 @@ FASTMCP_LOG_LEVEL=DEBUG
 - CORS origins updated to include port 3800
 
 ### Debug Scripts
-- `4genthub_main/scripts/debug_frontend_tasks.py` - API endpoint testing
-- `4genthub_main/scripts/fix_frontend_authentication.py` - Automated fixes
+- `agenthub_main/scripts/debug_frontend_tasks.py` - API endpoint testing
+- `agenthub_main/scripts/fix_frontend_authentication.py` - Automated fixes
 
 ### Key Implementation Files
-- `4genthub_main/src/fastmcp/server/routes/user_scoped_task_routes.py` - V2 API routes
-- `4genthub_main/src/fastmcp/server/mcp_entry_point.py` - Server configuration
-- `4genthub_main/src/fastmcp/server/http_server.py` - Route mounting
+- `agenthub_main/src/fastmcp/server/routes/user_scoped_task_routes.py` - V2 API routes
+- `agenthub_main/src/fastmcp/server/mcp_entry_point.py` - Server configuration
+- `agenthub_main/src/fastmcp/server/http_server.py` - Route mounting
 
 ## Testing
 

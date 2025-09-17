@@ -20,7 +20,7 @@ This guide explains how the system automatically switches between different repo
 # .env.test  
 ENVIRONMENT=test
 DATABASE_TYPE=postgresql
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/4genthub_test
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agenthub_test
 # Test with PostgreSQL for consistency with production
 ```
 
@@ -279,13 +279,13 @@ services:
     environment:
       - ENVIRONMENT=development
       - DATABASE_TYPE=postgresql
-      - DATABASE_URL=postgresql://dev_user:dev_password@postgres:5432/4genthub_dev
+      - DATABASE_URL=postgresql://dev_user:dev_password@postgres:5432/agenthub_dev
   postgres:
     image: postgres:15
     environment:
       POSTGRES_USER: dev_user
       POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: 4genthub_dev
+      POSTGRES_DB: agenthub_dev
 ```
 
 ### Production (Supabase + Redis)

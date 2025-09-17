@@ -39,7 +39,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: testpass
           POSTGRES_USER: testuser
-          POSTGRES_DB: 4genthub_test
+          POSTGRES_DB: agenthub_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -74,7 +74,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-test-${{ hashFiles('4genthub_main/src/tests/hooks/requirements-test.txt') }}
+        key: ${{ runner.os }}-pip-test-${{ hashFiles('agenthub_main/src/tests/hooks/requirements-test.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-test-
           ${{ runner.os }}-pip-
@@ -85,20 +85,20 @@ jobs:
         sudo apt-get install -y postgresql-client libpq-dev
 
     - name: Install Python dependencies
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r src/tests/hooks/requirements-test.txt
 
     - name: Setup test environment
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         # Create test environment file
         cat > .env.test << EOF
         TESTING=true
         FASTMCP_TEST_MODE=1
-        DATABASE_URL=postgresql://testuser:testpass@localhost:5432/4genthub_test
+        DATABASE_URL=postgresql://testuser:testpass@localhost:5432/agenthub_test
         REDIS_URL=redis://localhost:6379/0
         LOG_LEVEL=WARNING
         DISABLE_AUTH=true
@@ -108,7 +108,7 @@ jobs:
         mkdir -p test_reports
 
     - name: Run database migrations
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         export PYTHONPATH="$(pwd)/src"
         export $(cat .env.test | grep -v '^#' | xargs)
@@ -120,7 +120,7 @@ jobs:
         "
 
     - name: Run ${{ matrix.test-type }} tests
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         chmod +x scripts/run_tests_enhanced.sh
         scripts/run_tests_enhanced.sh --type ${{ matrix.test-type }} --ci ${{ matrix.coverage && '--coverage-threshold 80' || '--quick' }}
@@ -129,7 +129,7 @@ jobs:
       if: matrix.test-type == 'unit'
       uses: codecov/codecov-action@v3
       with:
-        file: 4genthub_main/coverage.xml
+        file: agenthub_main/coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
@@ -140,12 +140,12 @@ jobs:
       with:
         name: test-results-${{ matrix.test-type }}
         path: |
-          4genthub_main/test_reports/
-          4genthub_main/htmlcov/
+          agenthub_main/test_reports/
+          agenthub_main/htmlcov/
 
     - name: Generate test summary
       if: always()
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         echo "## Test Results (${{ matrix.test-type }})" >> $GITHUB_STEP_SUMMARY
 
@@ -182,14 +182,14 @@ jobs:
         python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install dependencies
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r src/tests/hooks/requirements-test.txt
 
     - name: Run performance tests
-      working-directory: 4genthub_main
+      working-directory: agenthub_main
       run: |
         chmod +x scripts/run_tests_enhanced.sh
         scripts/run_tests_enhanced.sh --type performance --ci
@@ -198,7 +198,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: performance-results
-        path: 4genthub_main/test_reports/
+        path: agenthub_main/test_reports/
 
   coverage-report:
     name: Coverage Report
@@ -238,7 +238,7 @@ jobs:
     - name: Run Bandit security scan
       run: |
         pip install bandit[toml]
-        bandit -r 4genthub_main/src -f json -o security_report.json || true
+        bandit -r agenthub_main/src -f json -o security_report.json || true
 
     - name: Upload security report
       uses: actions/upload-artifact@v3

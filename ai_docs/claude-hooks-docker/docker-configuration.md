@@ -242,7 +242,7 @@ services:
       # Authentication
       JWT_SECRET: ${JWT_SECRET}
       KEYCLOAK_URL: ${KEYCLOAK_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-4genthub}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-agenthub}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-claude-hooks}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
 
@@ -808,7 +808,7 @@ JWT_EXPIRATION=3600
 
 # Keycloak Configuration (optional)
 KEYCLOAK_URL=http://keycloak:8080
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=claude-hooks
 KEYCLOAK_CLIENT_SECRET=your-keycloak-secret-here
 

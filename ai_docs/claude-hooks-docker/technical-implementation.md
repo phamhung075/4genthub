@@ -217,7 +217,7 @@ class Settings(BaseSettings):
 
     # Keycloak Configuration
     KEYCLOAK_URL: Optional[str] = Field(None, env="KEYCLOAK_URL")
-    KEYCLOAK_REALM: str = Field(default="4genthub", env="KEYCLOAK_REALM")
+    KEYCLOAK_REALM: str = Field(default="agenthub", env="KEYCLOAK_REALM")
     KEYCLOAK_CLIENT_ID: str = Field(default="claude-hooks", env="KEYCLOAK_CLIENT_ID")
     KEYCLOAK_CLIENT_SECRET: Optional[str] = Field(None, env="KEYCLOAK_CLIENT_SECRET")
 

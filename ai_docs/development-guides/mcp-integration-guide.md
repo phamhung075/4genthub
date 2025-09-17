@@ -1,7 +1,7 @@
 # MCP Integration Guide
 
 ## Overview
-This guide covers the complete integration of 4genthub server with MCP (Model Context Protocol) clients, including Claude Desktop, custom clients, and bridge implementations.
+This guide covers the complete integration of agenthub server with MCP (Model Context Protocol) clients, including Claude Desktop, custom clients, and bridge implementations.
 
 ## Quick Start
 
@@ -9,7 +9,7 @@ This guide covers the complete integration of 4genthub server with MCP (Model Co
 ```json
 {
   "mcpServers": {
-    "4genthub_http": {
+    "agenthub_http": {
       "type": "http",
       "url": "http://localhost:8000/mcp/",
       "headers": {
@@ -73,7 +73,7 @@ curl -X POST http://localhost:8000/mcp/ \
 **Use Case**: Web applications, REST API clients
 
 ```javascript
-class 4genthubClient {
+class agenthubClient {
   constructor(token) {
     this.baseUrl = 'http://localhost:8000/mcp/';
     this.token = token;
@@ -372,7 +372,7 @@ All requests follow JSON-RPC 2.0 specification:
 - `prompts/list` - List available prompts
 - `prompts/get` - Get prompt template
 
-### 4genthub Extensions
+### agenthub Extensions
 - `agents/list` - List available agents
 - `agents/call` - Switch to agent
 - `workflow/status` - Get workflow status
@@ -572,4 +572,4 @@ services:
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc7519)
 - [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)
-- [4genthub API Documentation](/ai_docs/api/)
+- [agenthub API Documentation](/ai_docs/api/)

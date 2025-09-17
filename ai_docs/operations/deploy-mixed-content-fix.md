@@ -12,7 +12,7 @@ Modified `src/config/environment.ts` to automatically upgrade HTTP API URLs to H
 
 ```bash
 # From the frontend directory
-cd /home/daihungpham/__projects__/agentic-project/4genthub-frontend
+cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
 
 # Deploy to CapRover
 caprover deploy -a webapp
@@ -22,7 +22,7 @@ caprover deploy -a webapp
 
 1. **Package the build**:
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/4genthub-frontend
+cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
 tar -czf frontend-fix.tar.gz captain-definition build/ nginx.conf package.json
 ```
 
@@ -38,7 +38,7 @@ tar -czf frontend-fix.tar.gz captain-definition build/ nginx.conf package.json
 ```bash
 # Commit the changes
 cd /home/daihungpham/__projects__/agentic-project
-git add 4genthub-frontend/src/config/environment.ts
+git add agenthub-frontend/src/config/environment.ts
 git add CHANGELOG.md
 git commit -m "fix: auto-upgrade HTTP to HTTPS for API calls to prevent mixed content errors"
 
@@ -72,11 +72,11 @@ This way, the API URL will be HTTPS from the start, and no auto-upgrade will be 
 
 ## Files Changed
 
-- `4genthub-frontend/src/config/environment.ts` - Added automatic HTTP to HTTPS upgrade logic
+- `agenthub-frontend/src/config/environment.ts` - Added automatic HTTP to HTTPS upgrade logic
 - `CHANGELOG.md` - Documented the fix
 
 ## Build Info
 
 - Build completed: Sep 14 22:58
-- Build directory: `4genthub-frontend/build/`
+- Build directory: `agenthub-frontend/build/`
 - Fix applied to prevent mixed content errors

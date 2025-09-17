@@ -22,7 +22,7 @@ The frontend application uses environment variables to configure API endpoints a
 
 #### `VITE_APP_NAME`
 - **Description**: Application display name
-- **Default**: `4genthub`
+- **Default**: `agenthub`
 
 #### `VITE_ENV`
 - **Description**: Current environment
@@ -33,7 +33,7 @@ The frontend application uses environment variables to configure API endpoints a
 
 ### Local Development
 
-Create a `.env` file in the `4genthub-frontend` directory:
+Create a `.env` file in the `agenthub-frontend` directory:
 
 ```bash
 # .env
@@ -133,11 +133,11 @@ To verify your configuration:
 
 The following files use `VITE_API_URL`:
 
-- `/4genthub-frontend/src/services/tokenService.ts`
-- `/4genthub-frontend/src/services/apiV2.ts`
-- `/4genthub-frontend/src/services/mcpTokenService.ts`
-- `/4genthub-frontend/src/contexts/AuthContext.tsx`
-- `/4genthub-frontend/src/api-lazy.ts`
+- `/agenthub-frontend/src/services/tokenService.ts`
+- `/agenthub-frontend/src/services/apiV2.ts`
+- `/agenthub-frontend/src/services/mcpTokenService.ts`
+- `/agenthub-frontend/src/contexts/AuthContext.tsx`
+- `/agenthub-frontend/src/api-lazy.ts`
 
 All these files follow the pattern:
 ```typescript

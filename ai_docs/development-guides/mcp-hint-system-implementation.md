@@ -43,7 +43,7 @@ Example entry:
 ```json
 {
   "timestamp": "2025-09-12T11:57:48.285737",
-  "tool_name": "mcp__4genthub_http__manage_task",
+  "tool_name": "mcp__agenthub_http__manage_task",
   "action": "update",
   "tool_input_summary": {
     "task_id": "52852bee-5c5a-4167-9a12-199080523caa",
@@ -58,7 +58,7 @@ Example entry:
 #### `mcp_post_hints.log`
 Simple text log with timestamp and hint preview:
 ```
-2025-09-12T11:57:48.286061 - mcp__4genthub_http__manage_task:update - Hint: 📊 TASK UPDATED - REMINDERS...
+2025-09-12T11:57:48.286061 - mcp__agenthub_http__manage_task:update - Hint: 📊 TASK UPDATED - REMINDERS...
 ```
 
 #### `pending_hints.json`
@@ -66,7 +66,7 @@ Bridge storage for hints awaiting display:
 ```json
 {
   "message": "<system-reminder>\n📊 TASK UPDATED...\n</system-reminder>",
-  "from_tool": "mcp__4genthub_http__manage_task",
+  "from_tool": "mcp__agenthub_http__manage_task",
   "from_action": "update",
   "created_at": "2025-09-12T11:57:48.285361",
   "displayed": false
@@ -196,7 +196,7 @@ chmod +x .claude/hooks/pre_tool_use.py
 ### Manual Test
 ```python
 # Trigger a task creation
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     title="Test task",
     git_branch_id="valid-uuid",

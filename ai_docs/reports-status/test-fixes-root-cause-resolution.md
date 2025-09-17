@@ -8,8 +8,8 @@ The user correctly identified that I was "fixing multiple times but not working"
 
 ## Solution Applied
 ### Modified `scripts/test-menu.sh`:
-1. **Changed execution directory**: Instead of running pytest from PROJECT_ROOT, changed all instances to run from `${PROJECT_ROOT}/4genthub_main`
-2. **Adjusted test paths**: Convert absolute paths to relative paths within 4genthub_main
+1. **Changed execution directory**: Instead of running pytest from PROJECT_ROOT, changed all instances to run from `${PROJECT_ROOT}/agenthub_main`
+2. **Adjusted test paths**: Convert absolute paths to relative paths within agenthub_main
 3. **Fixed three locations**:
    - Main test execution (line 253)
    - Category-specific runs (line 406) 
@@ -22,7 +22,7 @@ cd "${PROJECT_ROOT}"
 python -m pytest $tests_to_run
 
 # After (allows pytest cache creation):
-cd "${PROJECT_ROOT}/4genthub_main" 
+cd "${PROJECT_ROOT}/agenthub_main" 
 python -m pytest $adjusted_tests
 ```
 
@@ -35,7 +35,7 @@ python -m pytest $adjusted_tests
 ### After Fix:
 - **5,966 tests collected successfully** ✅
 - Only **15 collection errors remaining** (94% improvement)
-- Pytest can create cache files in 4genthub_main/.pytest_cache
+- Pytest can create cache files in agenthub_main/.pytest_cache
 - Test menu works from project root (user requirement: "i run from root")
 
 ## Constraint Resolution

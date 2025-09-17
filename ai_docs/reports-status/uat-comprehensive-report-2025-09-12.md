@@ -1,6 +1,6 @@
 # User Acceptance Testing (UAT) Report - AI Task Planning System
 **Date**: September 12, 2025  
-**System**: 4genthub AI Agent Orchestration Platform  
+**System**: agenthub AI Agent Orchestration Platform  
 **Version**: 2.1.0  
 **Test Environment**: Development (Local)  
 **Task ID**: 49483d5b-6879-4ef1-ba7a-cbc8e9652df0

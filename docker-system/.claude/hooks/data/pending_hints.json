@@ -1,7 +1,7 @@
 [
   {
     "message": "<system-reminder>\n\ud83c\udfd7\ufe0f PROJECT CREATED - SETUP:\n\ud83c\udfd7\ufe0f PROJECT CREATED: Next, create git branches for features\n\ud83d\udccb SETUP: Create initial tasks for project setup\n</system-reminder>",
-    "from_tool": "mcp__4genthub_http__manage_project",
+    "from_tool": "mcp__agenthub_http__manage_project",
     "from_action": "create",
     "created_at": "2025-09-14T05:10:37.796811",
     "displayed": true

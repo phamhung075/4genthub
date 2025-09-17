@@ -14,14 +14,14 @@ Implemented runtime injection of environment variables that overrides build-time
 
 ### Changes Made:
 
-1. **Created Runtime Config File** (`4genthub-frontend/public/env-config.js`):
+1. **Created Runtime Config File** (`agenthub-frontend/public/env-config.js`):
    - Placeholder file that gets replaced at container startup
    - Contains window._env_ object with environment variables
 
-2. **Updated HTML** (`4genthub-frontend/index.html`):
+2. **Updated HTML** (`agenthub-frontend/index.html`):
    - Added `<script src="/env-config.js"></script>` to load runtime config
 
-3. **Modified Environment Config** (`4genthub-frontend/src/config/environment.ts`):
+3. **Modified Environment Config** (`agenthub-frontend/src/config/environment.ts`):
    - Added `getEnvVar()` helper function
    - Checks runtime config first (window._env_)
    - Falls back to build-time values if runtime not available
@@ -54,7 +54,7 @@ Implemented runtime injection of environment variables that overrides build-time
 
 1. Build and package:
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/4genthub-frontend
+cd /home/daihungpham/__projects__/agentic-project/agenthub-frontend
 npm run build
 tar -czf frontend-runtime-fix.tar.gz captain-definition build/ package.json
 ```

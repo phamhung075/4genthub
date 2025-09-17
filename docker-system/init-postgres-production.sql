@@ -2,28 +2,28 @@
 -- ================================================
 
 -- Create the production user
-CREATE USER 4genthub_user WITH PASSWORD 'ChangeThisSecurePassword2025!';
+CREATE USER agenthub_user WITH PASSWORD 'ChangeThisSecurePassword2025!';
 
 -- Create the production database
-CREATE DATABASE 4genthub_prod OWNER 4genthub_user;
+CREATE DATABASE agenthub_prod OWNER agenthub_user;
 
 -- Grant all privileges on database
-GRANT ALL PRIVILEGES ON DATABASE 4genthub_prod TO 4genthub_user;
+GRANT ALL PRIVILEGES ON DATABASE agenthub_prod TO agenthub_user;
 
 -- Connect to the new database
-\c 4genthub_prod;
+\c agenthub_prod;
 
 -- Create schema if needed
 CREATE SCHEMA IF NOT EXISTS public;
 
 -- Grant schema privileges
-GRANT ALL ON SCHEMA public TO 4genthub_user;
-GRANT CREATE ON SCHEMA public TO 4genthub_user;
+GRANT ALL ON SCHEMA public TO agenthub_user;
+GRANT CREATE ON SCHEMA public TO agenthub_user;
 
 -- Set default privileges for future tables
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO 4genthub_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO 4genthub_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO 4genthub_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO agenthub_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO agenthub_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO agenthub_user;
 
 -- Create extensions if needed
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

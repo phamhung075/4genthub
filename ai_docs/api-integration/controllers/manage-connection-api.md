@@ -56,7 +56,7 @@ Performs a basic health check to verify system availability and responsiveness.
 {
   "success": true,
   "status": "healthy",
-  "server_name": "4genthub",
+  "server_name": "agenthub",
   "version": "1.0.0",
   "authentication": {
     "enabled": true,

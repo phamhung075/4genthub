@@ -1,4 +1,4 @@
-# Highly Optimized Frontend Dockerfile for 4genthub
+# Highly Optimized Frontend Dockerfile for agenthub
 # Uses BuildKit cache mounts, layer optimization, and proper multi-stage builds
 
 # syntax=docker/dockerfile:1
@@ -13,7 +13,7 @@ FROM node:${NODE_VERSION}-alpine AS dependencies
 WORKDIR /app
 
 # Copy package files
-COPY 4genthub-frontend/package*.json ./
+COPY agenthub-frontend/package*.json ./
 
 # Install all dependencies with cache mount
 RUN --mount=type=cache,target=/root/.npm \
@@ -25,11 +25,11 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM dependencies AS development
 
 # Copy source code with proper layering
-COPY 4genthub-frontend/public/ ./public/
-COPY 4genthub-frontend/src/ ./src/
-COPY 4genthub-frontend/index.html 4genthub-frontend/vite.config.ts 4genthub-frontend/tsconfig.json ./
-COPY 4genthub-frontend/tailwind.config.* ./
-COPY 4genthub-frontend/postcss.config.js ./
+COPY agenthub-frontend/public/ ./public/
+COPY agenthub-frontend/src/ ./src/
+COPY agenthub-frontend/index.html agenthub-frontend/vite.config.ts agenthub-frontend/tsconfig.json ./
+COPY agenthub-frontend/tailwind.config.* ./
+COPY agenthub-frontend/postcss.config.js ./
 
 # Set development optimizations
 ENV NODE_OPTIONS="--max-old-space-size=2048" \
@@ -37,11 +37,11 @@ ENV NODE_OPTIONS="--max-old-space-size=2048" \
     VITE_HMR_PORT=3800
 
 # Create non-root user (handle existing GID gracefully)
-RUN (addgroup -g 1001 -S 4genthub 2>/dev/null || addgroup -S 4genthub) && \
-    (adduser -u 1001 -S 4genthub -G 4genthub 2>/dev/null || adduser -S 4genthub -G 4genthub) && \
-    chown -R 4genthub:4genthub /app
+RUN (addgroup -g 1001 -S agenthub 2>/dev/null || addgroup -S agenthub) && \
+    (adduser -u 1001 -S agenthub -G agenthub 2>/dev/null || adduser -S agenthub -G agenthub) && \
+    chown -R agenthub:agenthub /app
 
-USER 4genthub
+USER agenthub
 
 EXPOSE 3800
 
@@ -56,7 +56,7 @@ CMD ["npm", "start"]
 FROM dependencies AS builder
 
 # Copy source for building
-COPY 4genthub-frontend/ ./
+COPY agenthub-frontend/ ./
 
 # Build arguments for environment variables
 ARG VITE_API_URL

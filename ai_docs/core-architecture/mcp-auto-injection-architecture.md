@@ -238,7 +238,7 @@ def load_development_context(source):
     context_parts = []
     
     # CRITICAL: Master orchestrator loading (existing)
-    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__4genthub_http__call_agent('master-orchestrator-agent')")
+    context_parts.append("🚀 INITIALIZATION REQUIRED: You MUST immediately call mcp__agenthub_http__call_agent('master-orchestrator-agent')")
     
     # NEW: Auto-inject pending tasks via HTTP
     try:
@@ -372,7 +372,7 @@ class TokenManager:
         self.token_expiry = None
         self.keycloak_config = {
             "url": os.getenv("KEYCLOAK_URL", "http://localhost:8080"),
-            "realm": os.getenv("KEYCLOAK_REALM", "4genthub"),
+            "realm": os.getenv("KEYCLOAK_REALM", "agenthub"),
             "client_id": os.getenv("KEYCLOAK_CLIENT_ID", "claude-hooks"),
             "client_secret": os.getenv("KEYCLOAK_CLIENT_SECRET")
         }
@@ -951,7 +951,7 @@ class TestAutoInjectionSystem:
             result = load_development_context("startup")
             
             # Should still contain orchestrator loading
-            assert "call mcp__4genthub_http__call_agent" in result
+            assert "call mcp__agenthub_http__call_agent" in result
 ```
 
 ### 8.2 Integration Testing
@@ -1418,7 +1418,7 @@ class AdvancedVisualizationSystem:
 # Environment variables needed in .env
 MCP_SERVER_URL=http://localhost:8000
 KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=claude-hooks
 KEYCLOAK_CLIENT_SECRET=<secret>
 ```
@@ -1547,7 +1547,7 @@ MCP_SERVER_TIMEOUT=10
 
 # Keycloak Configuration
 KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=claude-hooks
 KEYCLOAK_CLIENT_SECRET=<paste-secret-here>
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides a clean, production-ready configuration for 4genthub using:
+This guide provides a clean, production-ready configuration for agenthub using:
 - **PostgreSQL Docker** for local database (port 5432)
 - **Keycloak Cloud** for authentication
 - **MCP Server** with JWT token validation
@@ -39,7 +39,7 @@ Update `.env` with your Keycloak cloud details:
 ```env
 # Keycloak Cloud Configuration
 KEYCLOAK_URL=https://your-keycloak-instance.com
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 ```
@@ -78,8 +78,8 @@ APP_DEBUG=false
 DATABASE_TYPE=postgresql
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_NAME=4genthub_prod
-DATABASE_USER=4genthub_user
+DATABASE_NAME=agenthub_prod
+DATABASE_USER=agenthub_user
 DATABASE_PASSWORD=SecurePassword2025!
 
 # Keycloak Authentication
@@ -95,9 +95,9 @@ KEYCLOAK_TOKEN_CACHE_TTL=300
 
 In your Keycloak admin console:
 
-1. Create realm: `4genthub`
+1. Create realm: `agenthub`
 2. Configure realm settings:
-   - Display name: "4genthub"
+   - Display name: "agenthub"
    - User registration: Enabled (optional)
    - Email verification: Enabled
 
@@ -133,7 +133,7 @@ Create the following realm roles:
 
 ```bash
 # Connect via psql
-psql -h localhost -U 4genthub_user -d 4genthub_prod
+psql -h localhost -U agenthub_user -d agenthub_prod
 
 # Access via PgAdmin (optional)
 docker-compose --profile tools up -d pgadmin
@@ -144,17 +144,17 @@ docker-compose --profile tools up -d pgadmin
 
 ```bash
 # Backup database
-docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > backup.sql
+docker exec agenthub-postgres pg_dump -U agenthub_user agenthub_prod > backup.sql
 
 # Restore database
-docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < backup.sql
+docker exec -i agenthub-postgres psql -U agenthub_user agenthub_prod < backup.sql
 ```
 
 ### Database Migrations
 
 ```bash
 # Run migrations
-cd 4genthub_main
+cd agenthub_main
 python src/fastmcp/task_management/infrastructure/database/init_database.py
 
 # Verify schema
@@ -180,7 +180,7 @@ import asyncio
 async def authenticate_and_call_mcp():
     # 1. Get Keycloak token
     token_response = await httpx.post(
-        "https://your-keycloak.com/realms/4genthub/protocol/openid-connect/token",
+        "https://your-keycloak.com/realms/agenthub/protocol/openid-connect/token",
         data={
             "grant_type": "password",
             "client_id": "mcp-backend",
@@ -216,8 +216,8 @@ async def authenticate_and_call_mcp():
 
 ```sql
 -- Restrict database access
-REVOKE ALL ON DATABASE 4genthub_prod FROM PUBLIC;
-GRANT CONNECT ON DATABASE 4genthub_prod TO 4genthub_user;
+REVOKE ALL ON DATABASE agenthub_prod FROM PUBLIC;
+GRANT CONNECT ON DATABASE agenthub_prod TO agenthub_user;
 
 -- Use SSL for remote connections
 -- Set DATABASE_SSL_MODE=require in production
@@ -259,10 +259,10 @@ services:
 curl http://localhost:8001/health
 
 # PostgreSQL health
-docker exec 4genthub-postgres pg_isready -U 4genthub_user
+docker exec agenthub-postgres pg_isready -U agenthub_user
 
 # Keycloak realm check
-curl https://your-keycloak.com/realms/4genthub
+curl https://your-keycloak.com/realms/agenthub
 ```
 
 ### Logging
@@ -290,17 +290,17 @@ docker-compose logs > logs.txt
 docker ps | grep postgres
 
 # Check PostgreSQL logs
-docker logs 4genthub-postgres
+docker logs agenthub-postgres
 
 # Test connection
-psql -h localhost -U 4genthub_user -d 4genthub_prod -c "SELECT 1"
+psql -h localhost -U agenthub_user -d agenthub_prod -c "SELECT 1"
 ```
 
 #### 2. Keycloak Authentication Failed
 
 ```bash
 # Test Keycloak connectivity
-curl https://your-keycloak.com/realms/4genthub
+curl https://your-keycloak.com/realms/agenthub
 
 # Verify client credentials
 python -c "
@@ -316,7 +316,7 @@ print(f'URL: {os.getenv(\"KEYCLOAK_URL\")}')
 
 ```bash
 # Check MCP logs for JWT errors
-docker logs 4genthub-server | grep -i jwt
+docker logs agenthub-server | grep -i jwt
 
 # Test token validation
 python test-mcp-keycloak-auth.py
@@ -329,7 +329,7 @@ python test-mcp-keycloak-auth.py
 docker-compose down -v
 
 # Remove volumes
-docker volume rm 4genthub_postgres_data 4genthub_logs
+docker volume rm agenthub_postgres_data agenthub_logs
 
 # Recreate from scratch
 python setup-postgres-keycloak.py

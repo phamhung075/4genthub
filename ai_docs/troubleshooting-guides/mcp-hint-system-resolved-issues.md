@@ -183,7 +183,7 @@ class MCPHintProvider(HintProvider):
 ### Verify Hint Display
 ```python
 # Test hint generation and display
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create", 
     title="Test task",
     git_branch_id="valid-uuid",

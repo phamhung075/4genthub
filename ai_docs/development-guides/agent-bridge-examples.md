@@ -1,6 +1,6 @@
 # Agent Bridge Usage Examples
 
-This document provides practical examples of using the Claude Code & 4genthub bridge agents.
+This document provides practical examples of using the Claude Code & agenthub bridge agents.
 
 ## Example 1: Complex Project Orchestration
 
@@ -11,10 +11,10 @@ I'll activate the uber-orchestrator bridge agent to coordinate this multi-phase 
 
 ```python
 # Connect to the orchestration system
-mcp__4genthub_http__call_agent(name_agent="master-orchestrator-agent")
+mcp__agenthub_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Check existing project context
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="resolve",
     level="project", 
     context_id=project_id,
@@ -22,7 +22,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # Create master task for the authentication system
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Implement User Authentication System",
@@ -31,19 +31,19 @@ mcp__4genthub_http__manage_task(
 )
 
 # Break down into coordinated subtasks
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=main_task_id,
     title="Architecture Design - Authentication System"
 )
 
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create", 
     task_id=main_task_id,
     title="Backend Implementation - JWT Service"
 )
 
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=main_task_id,
     title="Frontend Integration - Login/Logout UI"
@@ -61,10 +61,10 @@ I'll use the coding-specialist bridge agent for this implementation work.
 
 ```python
 # Connect to coding specialist
-mcp__4genthub_http__call_agent(name_agent="coding-agent")
+mcp__agenthub_http__call_agent(name_agent="coding-agent")
 
 # Check branch context for requirements
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="resolve",
     level="branch",
     context_id=branch_id, 
@@ -72,7 +72,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # Create task for this coding work
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Implement JWT Authentication Service",
@@ -91,10 +91,10 @@ I'll activate the debugging-expert bridge agent to systematically investigate th
 
 ```python
 # Connect to debugging specialist
-mcp__4genthub_http__call_agent(name_agent="debugger-agent")
+mcp__agenthub_http__call_agent(name_agent="debugger-agent")
 
 # Check context for system information
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="resolve",
     level="branch",
     context_id=branch_id,
@@ -102,7 +102,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # Create debugging task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create", 
     git_branch_id=branch_id,
     title="Debug: Intermittent Authentication Failures",
@@ -111,7 +111,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # Document the debugging process
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="branch",
     context_id=branch_id,
@@ -134,10 +134,10 @@ I'll use the testing-orchestrator bridge agent to create a multi-layered testing
 
 ```python
 # Connect to testing orchestrator
-mcp__4genthub_http__call_agent(name_agent="test-orchestrator-agent")
+mcp__agenthub_http__call_agent(name_agent="test-orchestrator-agent")
 
 # Assess current testing context
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="resolve",
     level="branch",
     context_id=branch_id,
@@ -145,7 +145,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # Create comprehensive testing task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Comprehensive Testing Strategy - Authentication System",
@@ -153,19 +153,19 @@ mcp__4genthub_http__manage_task(
 )
 
 # Break down into testing subtasks
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=testing_task_id,
     title="Unit Tests - JWT Service"
 )
 
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=testing_task_id, 
     title="Integration Tests - Authentication Flow"
 )
 
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create",
     task_id=testing_task_id,
     title="Security Testing - Authentication Vulnerabilities"
@@ -183,10 +183,10 @@ I'll coordinate multiple bridge agents for this complex requirement.
 
 ```python
 # Start with orchestrator for coordination
-mcp__4genthub_http__call_agent(name_agent="master-orchestrator-agent")
+mcp__agenthub_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Create master coordination task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Authentication Performance Optimization & Monitoring",
@@ -194,16 +194,16 @@ mcp__4genthub_http__manage_task(
 )
 
 # Phase 1: Performance debugging
-mcp__4genthub_http__call_agent(name_agent="performance-load-tester-agent")
+mcp__agenthub_http__call_agent(name_agent="performance-load-tester-agent")
 
 # Phase 2: Implementation fixes
-mcp__4genthub_http__call_agent(name_agent="coding-agent")
+mcp__agenthub_http__call_agent(name_agent="coding-agent")
 
 # Phase 3: Monitoring setup
-mcp__4genthub_http__call_agent(name_agent="health-monitor-agent")
+mcp__agenthub_http__call_agent(name_agent="health-monitor-agent")
 
 # Update context with coordination plan
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="branch",
     context_id=branch_id,

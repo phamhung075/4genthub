@@ -13,8 +13,8 @@ echo "   Docker: Using node:20-alpine (latest 20.x)"
 # Check Vite version compatibility
 echo ""
 echo "2. Checking Vite configuration..."
-if [ -f "4genthub-frontend/package.json" ]; then
-    VITE_VERSION=$(grep '"vite"' 4genthub-frontend/package.json | sed 's/.*"vite": "\([^"]*\)".*/\1/')
+if [ -f "agenthub-frontend/package.json" ]; then
+    VITE_VERSION=$(grep '"vite"' agenthub-frontend/package.json | sed 's/.*"vite": "\([^"]*\)".*/\1/')
     echo "   Vite version: ${VITE_VERSION}"
     echo "   ✅ Compatible with Node.js 20+"
 else
@@ -24,8 +24,8 @@ fi
 # Check port configuration
 echo ""
 echo "3. Checking port configuration..."
-if [ -f "4genthub-frontend/vite.config.ts" ]; then
-    PORT_CONFIG=$(grep "port:" 4genthub-frontend/vite.config.ts | head -1)
+if [ -f "agenthub-frontend/vite.config.ts" ]; then
+    PORT_CONFIG=$(grep "port:" agenthub-frontend/vite.config.ts | head -1)
     echo "   Vite config: ${PORT_CONFIG}"
     echo "   ✅ Port 3800 configured"
 else

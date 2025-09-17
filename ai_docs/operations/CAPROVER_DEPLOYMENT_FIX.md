@@ -1,7 +1,7 @@
 # 🚨 CapRover Deployment Fix Guide
 
 ## Problem Summary
-Your frontend at `https://4genthub-frontend.92.5.226.7.nip.io` is trying to connect to `localhost:8000` instead of your backend at `https://4genthub-backend.92.5.226.7.nip.io`.
+Your frontend at `https://agenthub-frontend.92.5.226.7.nip.io` is trying to connect to `localhost:8000` instead of your backend at `https://agenthub-backend.92.5.226.7.nip.io`.
 
 ## ✅ Files Already Fixed
 
@@ -22,7 +22,7 @@ Your frontend at `https://4genthub-frontend.92.5.226.7.nip.io` is trying to conn
 
 ### Step 1: Configure Backend App Variables
 
-1. Go to CapRover Dashboard → Apps → `4genthub-backend`
+1. Go to CapRover Dashboard → Apps → `agenthub-backend`
 2. Click on "App Config" → "Environmental Variables"
 3. Add these variables:
 
@@ -62,14 +62,14 @@ PYTHONUNBUFFERED=1
 
 ### Step 2: Configure Frontend App Variables
 
-1. Go to CapRover Dashboard → Apps → `4genthub-frontend`
+1. Go to CapRover Dashboard → Apps → `agenthub-frontend`
 2. Click on "App Config" → "Environmental Variables"
 3. Add these BUILD variables (CRITICAL - these are build-time variables):
 
 ```bash
 # CRITICAL: Frontend uses VITE_API_URL, not VITE_BACKEND_URL
-VITE_API_URL=https://4genthub-backend.92.5.226.7.nip.io
-VITE_BACKEND_URL=https://4genthub-backend.92.5.226.7.nip.io
+VITE_API_URL=https://agenthub-backend.92.5.226.7.nip.io
+VITE_BACKEND_URL=https://agenthub-backend.92.5.226.7.nip.io
 VITE_ENV=production
 
 # Keycloak (if backend handles auth, these might not be needed)
@@ -106,20 +106,20 @@ git push
 
 1. **Check Backend Health:**
 ```bash
-curl https://4genthub-backend.92.5.226.7.nip.io/health
+curl https://agenthub-backend.92.5.226.7.nip.io/health
 # Should return: {"status":"healthy"}
 ```
 
 2. **Check Frontend API Calls:**
-- Open `https://4genthub-frontend.92.5.226.7.nip.io`
+- Open `https://agenthub-frontend.92.5.226.7.nip.io`
 - Open browser DevTools → Network tab
-- API calls should go to `https://4genthub-backend.92.5.226.7.nip.io`
+- API calls should go to `https://agenthub-backend.92.5.226.7.nip.io`
 - NOT to `localhost:8000`
 
 3. **Check CORS Headers:**
 ```bash
-curl -H "Origin: https://4genthub-frontend.92.5.226.7.nip.io" \
-     -I https://4genthub-backend.92.5.226.7.nip.io/health
+curl -H "Origin: https://agenthub-frontend.92.5.226.7.nip.io" \
+     -I https://agenthub-backend.92.5.226.7.nip.io/health
 # Should include: Access-Control-Allow-Origin header
 ```
 
@@ -163,14 +163,14 @@ curl -H "Origin: https://4genthub-frontend.92.5.226.7.nip.io" \
 
 ```bash
 # Test backend from terminal
-curl https://4genthub-backend.92.5.226.7.nip.io/health
+curl https://agenthub-backend.92.5.226.7.nip.io/health
 
 # Test CORS
-curl -H "Origin: https://4genthub-frontend.92.5.226.7.nip.io" \
+curl -H "Origin: https://agenthub-frontend.92.5.226.7.nip.io" \
      -H "Access-Control-Request-Method: GET" \
      -H "Access-Control-Request-Headers: Content-Type" \
      -X OPTIONS \
-     https://4genthub-backend.92.5.226.7.nip.io/api/auth/login
+     https://agenthub-backend.92.5.226.7.nip.io/api/auth/login
 
 # View Docker logs in CapRover
 # Go to App → Logs in CapRover dashboard

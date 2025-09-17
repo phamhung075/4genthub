@@ -1,5 +1,5 @@
 #!/bin/bash
-# 4genthub Health Monitoring System
+# agenthub Health Monitoring System
 # Comprehensive system health monitoring with alerting capabilities
 # Version: 2.1.0 - Phase 6 Production Monitoring
 
@@ -15,7 +15,7 @@ STATUS_FILE="${PROJECT_ROOT}/logs/system-status.json"
 # Default endpoints and timeouts
 BACKEND_URL="http://localhost:8000"
 FRONTEND_URL="http://localhost:3800"
-DB_CONTAINER="4genthub-postgres"
+DB_CONTAINER="agenthub-postgres"
 TIMEOUT=10
 CHECK_INTERVAL=60
 ALERT_COOLDOWN=300  # 5 minutes
@@ -104,7 +104,7 @@ check_frontend_health() {
         response_time=$(echo "$end_time - $start_time" | bc -l | xargs printf "%.3f")
 
         # Check if response contains expected content
-        if echo "$response" | grep -q "4genthub" || echo "$response" | grep -q "vite" || echo "$response" | grep -q "<!DOCTYPE html>"; then
+        if echo "$response" | grep -q "agenthub" || echo "$response" | grep -q "vite" || echo "$response" | grep -q "<!DOCTYPE html>"; then
             log_info "Frontend healthy - Response: ${response_time}s"
         else
             status="degraded"
@@ -134,9 +134,9 @@ check_database_health() {
     local error_msg=""
     local connection_count=0
 
-    if docker exec "$DB_CONTAINER" pg_isready -U "${DATABASE_USER:-4genthub_user}" -d "${DATABASE_NAME:-4genthub}" > /dev/null 2>&1; then
+    if docker exec "$DB_CONTAINER" pg_isready -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" > /dev/null 2>&1; then
         # Get additional database metrics
-        if connection_count=$(docker exec "$DB_CONTAINER" psql -U "${DATABASE_USER:-4genthub_user}" -d "${DATABASE_NAME:-4genthub}" -t -c "SELECT count(*) FROM pg_stat_activity;" 2>/dev/null | xargs); then
+        if connection_count=$(docker exec "$DB_CONTAINER" psql -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -t -c "SELECT count(*) FROM pg_stat_activity;" 2>/dev/null | xargs); then
             log_info "Database healthy - Active connections: $connection_count"
         else
             connection_count=0
@@ -327,7 +327,7 @@ show_status() {
         return 1
     fi
 
-    echo -e "\n${BOLD}${BLUE}=== 4genthub System Status ===${RESET}"
+    echo -e "\n${BOLD}${BLUE}=== agenthub System Status ===${RESET}"
     echo -e "${BLUE}================================${RESET}\n"
 
     local overall_status=$(jq -r '.overall_status' "$STATUS_FILE")

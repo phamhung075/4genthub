@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive reference for all MCP tools available in the 4genthub system. Each tool is documented with its parameters, return values, and usage examples.
+This document provides comprehensive reference for all MCP tools available in the agenthub system. Each tool is documented with its parameters, return values, and usage examples.
 
 ## Tool Categories
 
@@ -64,7 +64,7 @@ Complete task lifecycle operations with Vision System integration.
 
 ```bash
 # Create new task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="create",
     git_branch_id="branch-uuid-123",
     title="Implement user authentication",
@@ -74,7 +74,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # Update task status
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="update",
     task_id="task-uuid-456",
     status="in_progress",
@@ -82,7 +82,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # Complete task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="complete",
     task_id="task-uuid-456",
     completion_summary="Implemented JWT auth with refresh tokens, added tests",
@@ -90,7 +90,7 @@ mcp__4genthub_http__manage_task(
 )
 
 # Get next priority task
-mcp__4genthub_http__manage_task(
+mcp__agenthub_http__manage_task(
     action="next",
     git_branch_id="branch-uuid-123",
     include_context=true
@@ -142,7 +142,7 @@ Hierarchical task decomposition with automatic context updates.
 
 ```bash
 # Create subtask
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="create",
     task_id="task-uuid-123",
     title="Implement JWT token generation",
@@ -150,7 +150,7 @@ mcp__4genthub_http__manage_subtask(
 )
 
 # Update progress
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="update",
     task_id="task-uuid-123",
     subtask_id="subtask-uuid-456",
@@ -159,7 +159,7 @@ mcp__4genthub_http__manage_subtask(
 )
 
 # Complete subtask
-mcp__4genthub_http__manage_subtask(
+mcp__agenthub_http__manage_subtask(
     action="complete",
     task_id="task-uuid-123",
     subtask_id="subtask-uuid-456",
@@ -190,30 +190,30 @@ Complete project lifecycle and multi-project orchestration.
 
 ```bash
 # Create new project
-mcp__4genthub_http__manage_project(
+mcp__agenthub_http__manage_project(
     action="create",
     name="user-authentication-system",
     description="JWT-based authentication with role management"
 )
 
 # Check project health
-mcp__4genthub_http__manage_project(
+mcp__agenthub_http__manage_project(
     action="project_health_check",
     project_id="project-uuid-123"
 )
 
 # List all projects
-mcp__4genthub_http__manage_project(action="list")
+mcp__agenthub_http__manage_project(action="list")
 
 # Delete project with all related data (with safety checks)
-mcp__4genthub_http__manage_project(
+mcp__agenthub_http__manage_project(
     action="delete",
     project_id="project-uuid-123",
     force=false  # Will fail if active tasks exist
 )
 
 # Force delete project (bypasses safety checks)
-mcp__4genthub_http__manage_project(
+mcp__agenthub_http__manage_project(
     action="delete",
     project_id="project-uuid-123",
     force=true  # Deletes even with active tasks
@@ -248,7 +248,7 @@ Branch operations and task tree organization.
 
 ```bash
 # Create new branch - use git_branch_name for creation, get git_branch_id (UUID) in response
-mcp__4genthub_http__manage_git_branch(
+mcp__agenthub_http__manage_git_branch(
     action="create",
     project_id="project-uuid-123",
     git_branch_name="feature/user-auth",
@@ -258,7 +258,7 @@ mcp__4genthub_http__manage_git_branch(
 
 # Assign agent to branch (multiple format examples)
 # Format 1: @agent_name (recommended)
-mcp__4genthub_http__manage_git_branch(
+mcp__agenthub_http__manage_git_branch(
     action="assign_agent",
     project_id="project-uuid-123",
     git_branch_id="branch-uuid-456",
@@ -266,7 +266,7 @@ mcp__4genthub_http__manage_git_branch(
 )
 
 # Format 2: agent_name (without @)
-mcp__4genthub_http__manage_git_branch(
+mcp__agenthub_http__manage_git_branch(
     action="assign_agent",
     project_id="project-uuid-123", 
     git_branch_id="branch-uuid-456",
@@ -274,7 +274,7 @@ mcp__4genthub_http__manage_git_branch(
 )
 
 # Format 3: UUID (existing format)
-mcp__4genthub_http__manage_git_branch(
+mcp__agenthub_http__manage_git_branch(
     action="assign_agent",
     project_id="project-uuid-123",
     git_branch_id="branch-uuid-456", 
@@ -370,7 +370,7 @@ manage_context(
 )
 
 # Add insight to context
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="add_insight",
     task_id="task-uuid-123",
     content="Found existing validation utility that can be reused",
@@ -379,14 +379,14 @@ mcp__4genthub_http__manage_context(
 )
 
 # Update context with progress
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="add_progress",
     task_id="task-uuid-123",
     content="Completed login UI, starting JWT integration"
 )
 
 # Update next steps
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update_next_steps",
     task_id="task-uuid-123",
     next_steps=["Create auth service", "Add middleware", "Write tests"]
@@ -450,11 +450,11 @@ Legacy 4-tier context system with inheritance and delegation. All functionality 
 
 ```bash
 # DEPRECATED - Use manage_context instead
-# OLD: mcp__4genthub_http__manage_context(...)
-# NEW: mcp__4genthub_http__manage_context(...)
+# OLD: mcp__agenthub_http__manage_context(...)
+# NEW: mcp__agenthub_http__manage_context(...)
 
 # Example - Resolve context with inheritance
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="resolve",
     level="task",
     context_id="task-uuid-123",
@@ -462,7 +462,7 @@ mcp__4genthub_http__manage_context(
 )
 
 # Example - Delegate pattern to project level
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="delegate",
     level="task",
     context_id="task-uuid-123",
@@ -509,10 +509,10 @@ Dynamic agent loading and execution.
 
 ```bash
 # Switch to coding agent
-mcp__4genthub_http__call_agent(name_agent="coding-agent")
+mcp__agenthub_http__call_agent(name_agent="coding-agent")
 
 # Switch to security auditor for security review
-mcp__4genthub_http__call_agent(name_agent="security-auditor-agent")
+mcp__agenthub_http__call_agent(name_agent="security-auditor-agent")
 ```
 
 ---
@@ -554,7 +554,7 @@ Operation validation and audit trails.
 
 ```bash
 # Validate file operation
-mcp__4genthub_http__manage_compliance(
+mcp__agenthub_http__manage_compliance(
     action="validate_compliance",
     operation="edit_file",
     file_path="/secure/config.yaml",
@@ -562,7 +562,7 @@ mcp__4genthub_http__manage_compliance(
 )
 
 # Execute command with compliance
-mcp__4genthub_http__manage_compliance(
+mcp__agenthub_http__manage_compliance(
     action="execute_with_compliance",
     command="npm test",
     timeout=300
@@ -588,10 +588,10 @@ Health monitoring and diagnostics.
 
 ```bash
 # Basic health check
-mcp__4genthub_http__manage_connection(action="health_check")
+mcp__agenthub_http__manage_connection(action="health_check")
 
 # Get server capabilities
-mcp__4genthub_http__manage_connection(
+mcp__agenthub_http__manage_connection(
     action="server_capabilities",
     include_details=true
 )

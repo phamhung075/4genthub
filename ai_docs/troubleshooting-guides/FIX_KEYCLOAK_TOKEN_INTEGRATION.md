@@ -10,7 +10,7 @@ The token creation endpoint (`/api/v2/tokens`) doesn't properly extract the auth
 
 ### 1. Update Token Creation Endpoint
 
-Edit `/home/daihungpham/__projects__/agentic-project/4genthub_main/src/fastmcp/server/routes/api_token_routes_postgresql.py`:
+Edit `/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/server/routes/api_token_routes_postgresql.py`:
 
 ```python
 # Line 82-84 - Current problematic code:
@@ -220,7 +220,7 @@ logger.info(f"Creating API token for user: {user_id} (email: {user_email})")
 
 Check logs:
 ```bash
-docker logs 4genthub-server 2>&1 | grep "Creating API token"
+docker logs agenthub-server 2>&1 | grep "Creating API token"
 ```
 
 ## Rollback Plan

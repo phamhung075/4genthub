@@ -407,7 +407,7 @@ class AgentMessageProvider(ContextProvider):
 
             for message in reversed(conversation[-10:]):
                 content = message.get('content', '')
-                if 'mcp__4genthub_http__call_agent' in content:
+                if 'mcp__agenthub_http__call_agent' in content:
                     import re
                     # Check for agent name in various patterns
                     match = re.search(r'"name_agent":\s*"([^"]+)"', content)
@@ -489,7 +489,7 @@ class SessionStartProcessor(SessionProcessor):
 
             for message in reversed(conversation[-10:]):  # Last 10 messages
                 content = message.get('content', '')
-                if 'mcp__4genthub_http__call_agent' in content:
+                if 'mcp__agenthub_http__call_agent' in content:
                     # Extract agent name
                     import re
                     match = re.search(r'"name_agent":\s*"([^"]+)"', content)

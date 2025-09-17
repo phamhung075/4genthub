@@ -23,7 +23,7 @@ From session logs:
 ```
 ● coding-agent(Task: Clean debug logs (using coding-agent agent)
   ⏿  Running hook PreToolUse:Task...
-  ⏿ 4genthub_http - call_agent (MCP)(name_agent: "master-orchestrator-agent")
+  ⏿ agenthub_http - call_agent (MCP)(name_agent: "master-orchestrator-agent")
 ```
 
 ## Root Cause Analysis
@@ -36,17 +36,17 @@ From session logs:
 
 ### ✅ Direct Agent Calling (Recommended)
 
-Use `mcp__4genthub_http__call_agent` directly instead of the Task tool:
+Use `mcp__agenthub_http__call_agent` directly instead of the Task tool:
 
 ```python
 # Load specific agent directly
-mcp__4genthub_http__call_agent("debugger-agent")
+mcp__agenthub_http__call_agent("debugger-agent")
 # Now you ARE the debugger agent
 
-mcp__4genthub_http__call_agent("test-orchestrator-agent") 
+mcp__agenthub_http__call_agent("test-orchestrator-agent") 
 # Now you ARE the test orchestrator
 
-mcp__4genthub_http__call_agent("security-auditor-agent")
+mcp__agenthub_http__call_agent("security-auditor-agent")
 # Now you ARE the security auditor
 ```
 
@@ -54,15 +54,15 @@ mcp__4genthub_http__call_agent("security-auditor-agent")
 
 | Task Type | Use Agent | Example |
 |-----------|-----------|---------|
-| Debug/Fix bugs | `debugger-agent` | `mcp__4genthub_http__call_agent("debugger-agent")` |
-| Write code | `coding-agent` | `mcp__4genthub_http__call_agent("coding-agent")` |
-| Testing/QA | `test-orchestrator-agent` | `mcp__4genthub_http__call_agent("test-orchestrator-agent")` |
-| Security audit | `security-auditor-agent` | `mcp__4genthub_http__call_agent("security-auditor-agent")` |
-| Documentation | `documentation-agent` | `mcp__4genthub_http__call_agent("documentation-agent")` |
-| UI/Frontend | `ui-specialist-agent` | `mcp__4genthub_http__call_agent("ui-specialist-agent")` |
-| DevOps/Deploy | `devops-agent` | `mcp__4genthub_http__call_agent("devops-agent")` |
-| Architecture | `system-architect-agent` | `mcp__4genthub_http__call_agent("system-architect-agent")` |
-| Research | `deep-research-agent` | `mcp__4genthub_http__call_agent("deep-research-agent")` |
+| Debug/Fix bugs | `debugger-agent` | `mcp__agenthub_http__call_agent("debugger-agent")` |
+| Write code | `coding-agent` | `mcp__agenthub_http__call_agent("coding-agent")` |
+| Testing/QA | `test-orchestrator-agent` | `mcp__agenthub_http__call_agent("test-orchestrator-agent")` |
+| Security audit | `security-auditor-agent` | `mcp__agenthub_http__call_agent("security-auditor-agent")` |
+| Documentation | `documentation-agent` | `mcp__agenthub_http__call_agent("documentation-agent")` |
+| UI/Frontend | `ui-specialist-agent` | `mcp__agenthub_http__call_agent("ui-specialist-agent")` |
+| DevOps/Deploy | `devops-agent` | `mcp__agenthub_http__call_agent("devops-agent")` |
+| Architecture | `system-architect-agent` | `mcp__agenthub_http__call_agent("system-architect-agent")` |
+| Research | `deep-research-agent` | `mcp__agenthub_http__call_agent("deep-research-agent")` |
 
 ### Helper Utility
 
@@ -117,7 +117,7 @@ Task(subagent_type="debugger-agent", prompt="Fix critical bug in auth system")
 ### After (Working)
 ```python
 # Load the agent directly  
-mcp__4genthub_http__call_agent("debugger-agent")
+mcp__agenthub_http__call_agent("debugger-agent")
 # Now work directly as the debugger agent
 # Analyze the bug, fix it, test the solution
 ```
@@ -125,17 +125,17 @@ mcp__4genthub_http__call_agent("debugger-agent")
 ### For Complex Multi-Agent Workflows
 ```python
 # Option 1: Sequential agent switching
-mcp__4genthub_http__call_agent("debugger-agent")
+mcp__agenthub_http__call_agent("debugger-agent")
 # Do debugging work...
 
-mcp__4genthub_http__call_agent("test-orchestrator-agent") 
+mcp__agenthub_http__call_agent("test-orchestrator-agent") 
 # Create tests for the fix...
 
-mcp__4genthub_http__call_agent("documentation-agent")
+mcp__agenthub_http__call_agent("documentation-agent")
 # Document the solution...
 
 # Option 2: Use master orchestrator for coordination
-mcp__4genthub_http__call_agent("master-orchestrator-agent")
+mcp__agenthub_http__call_agent("master-orchestrator-agent")
 # Then coordinate multiple agents from the orchestrator
 ```
 
@@ -154,7 +154,7 @@ mcp__4genthub_http__call_agent("master-orchestrator-agent")
 
 ## Recommendations
 
-1. **Use `mcp__4genthub_http__call_agent` for direct delegation**
+1. **Use `mcp__agenthub_http__call_agent` for direct delegation**
 2. **Reserve Task tool for master orchestrator coordination only**
 3. **Fix the `coding-agent` loading issue separately**
 4. **Update CLAUDE.md documentation to reflect proper delegation patterns**

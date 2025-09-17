@@ -1,4 +1,4 @@
-# Production Backend Dockerfile for 4genthub with MCP Support
+# Production Backend Dockerfile for agenthub with MCP Support
 # Multi-stage build optimized for production deployment with full MCP protocol support
 # Features: Security hardening, minimal image size, optimized layers, SSE/MCP support
 
@@ -19,10 +19,10 @@ RUN apt-get update && apt-get install -y \
     && pip install --no-cache-dir uv
 
 # Copy dependency files
-COPY 4genthub_main/pyproject.toml 4genthub_main/uv.lock* 4genthub_main/README.md 4genthub_main/requirements.txt ./4genthub_main/
+COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md agenthub_main/requirements.txt ./agenthub_main/
 
 # Install dependencies in a virtual environment (single layer)
-WORKDIR /build/4genthub_main
+WORKDIR /build/agenthub_main
 RUN uv venv /opt/venv && \
     uv pip install --python /opt/venv/bin/python --no-cache . && \
     uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
@@ -40,7 +40,7 @@ ARG CAPROVER_GIT_COMMIT_SHA
 ARG CORS_ALLOW_CREDENTIALS=true
 ARG CORS_ORIGINS
 ARG DATABASE_HOST
-ARG DATABASE_NAME=4genthub
+ARG DATABASE_NAME=agenthub
 ARG DATABASE_PASSWORD
 ARG DATABASE_PORT=5432
 ARG DATABASE_SSL_MODE=disable
@@ -77,7 +77,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
-COPY --chown=appuser:appuser 4genthub_main/ ./4genthub_main/
+COPY --chown=appuser:appuser agenthub_main/ ./agenthub_main/
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /data /data/logs /data/resources /app/.cache \
@@ -85,7 +85,7 @@ RUN mkdir -p /data /data/logs /data/resources /app/.cache \
 
 # Set Python environment for production
 ENV PATH="/opt/venv/bin:$PATH"
-ENV PYTHONPATH="/app/4genthub_main/src:/app:$PYTHONPATH"
+ENV PYTHONPATH="/app/agenthub_main/src:/app:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -129,7 +129,7 @@ ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Create production entrypoint script for MCP server
-RUN printf '#!/bin/sh\nset -e\n\necho "Starting 4genthub Production Server with MCP Support..."\necho "================================================"\n\n# Validate required environment variables\nREQUIRED_VARS="DATABASE_TYPE DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD FASTMCP_PORT JWT_SECRET_KEY"\nMISSING_VARS=""\n\nfor VAR in $REQUIRED_VARS; do\n    eval VALUE=\\$$VAR\n    if [ -z "$VALUE" ]; then\n        MISSING_VARS="$MISSING_VARS $VAR"\n        echo "❌ Missing required variable: $VAR"\n    fi\ndone\n\nif [ -n "$MISSING_VARS" ]; then\n    echo ""\n    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"\n    echo "Please ensure all production environment variables are set"\n    exit 1\nfi\n\n# Security check for JWT secret\nif [ ${#JWT_SECRET_KEY} -lt 32 ]; then\n    echo "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"\n    exit 1\nfi\n\n# Validate database connection\necho "Validating database connection..."\nRETRIES=10\nwhile [ $RETRIES -gt 0 ]; do\n    if pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} 2>/dev/null; then\n        echo "✅ Database connection verified"\n        break\n    fi\n    echo "  Waiting for database... ($RETRIES retries left)"\n    RETRIES=$((RETRIES - 1))\n    sleep 3\ndone\n\nif [ $RETRIES -eq 0 ]; then\n    echo "❌ ERROR: Database connection failed"\n    exit 1\nfi\n\n# Run database migrations if enabled\nif [ "${AUTO_MIGRATE:-false}" = "true" ]; then\n    echo "Running database migrations..."\n    cd /app/4genthub_main\n    python scripts/init_database.py || {\n        echo "❌ ERROR: Database migration failed"\n        exit 1\n    }\nfi\n\necho ""\necho "Configuration:"\necho "  Environment: ${ENV}"\necho "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"\necho "  Server Port: ${FASTMCP_PORT}"\necho "  MCP Transport: ${FASTMCP_TRANSPORT}"\necho "  Auth Enabled: ${AUTH_ENABLED:-true}"\necho "  Rate Limiting: ${FEATURE_RATE_LIMITING:-true}"\necho "  CORS Origins: ${CORS_ORIGINS:-*}"\necho "================================================"\n\n# Start the MCP server with full SSE support\necho ""\necho "🚀 Starting 4genthub server with full MCP protocol support..."\ncd /app/4genthub_main/src\n\n# Use the MCP entry point for full protocol support\nexec python -m fastmcp.server.mcp_entry_point --transport=${FASTMCP_TRANSPORT:-streamable-http}\n' > /app/docker-entrypoint.sh
+RUN printf '#!/bin/sh\nset -e\n\necho "Starting agenthub Production Server with MCP Support..."\necho "================================================"\n\n# Validate required environment variables\nREQUIRED_VARS="DATABASE_TYPE DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD FASTMCP_PORT JWT_SECRET_KEY"\nMISSING_VARS=""\n\nfor VAR in $REQUIRED_VARS; do\n    eval VALUE=\\$$VAR\n    if [ -z "$VALUE" ]; then\n        MISSING_VARS="$MISSING_VARS $VAR"\n        echo "❌ Missing required variable: $VAR"\n    fi\ndone\n\nif [ -n "$MISSING_VARS" ]; then\n    echo ""\n    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"\n    echo "Please ensure all production environment variables are set"\n    exit 1\nfi\n\n# Security check for JWT secret\nif [ ${#JWT_SECRET_KEY} -lt 32 ]; then\n    echo "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"\n    exit 1\nfi\n\n# Validate database connection\necho "Validating database connection..."\nRETRIES=10\nwhile [ $RETRIES -gt 0 ]; do\n    if pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} 2>/dev/null; then\n        echo "✅ Database connection verified"\n        break\n    fi\n    echo "  Waiting for database... ($RETRIES retries left)"\n    RETRIES=$((RETRIES - 1))\n    sleep 3\ndone\n\nif [ $RETRIES -eq 0 ]; then\n    echo "❌ ERROR: Database connection failed"\n    exit 1\nfi\n\n# Run database migrations if enabled\nif [ "${AUTO_MIGRATE:-false}" = "true" ]; then\n    echo "Running database migrations..."\n    cd /app/agenthub_main\n    python scripts/init_database.py || {\n        echo "❌ ERROR: Database migration failed"\n        exit 1\n    }\nfi\n\necho ""\necho "Configuration:"\necho "  Environment: ${ENV}"\necho "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"\necho "  Server Port: ${FASTMCP_PORT}"\necho "  MCP Transport: ${FASTMCP_TRANSPORT}"\necho "  Auth Enabled: ${AUTH_ENABLED:-true}"\necho "  Rate Limiting: ${FEATURE_RATE_LIMITING:-true}"\necho "  CORS Origins: ${CORS_ORIGINS:-*}"\necho "================================================"\n\n# Start the MCP server with full SSE support\necho ""\necho "🚀 Starting agenthub server with full MCP protocol support..."\ncd /app/agenthub_main/src\n\n# Use the MCP entry point for full protocol support\nexec python -m fastmcp.server.mcp_entry_point --transport=${FASTMCP_TRANSPORT:-streamable-http}\n' > /app/docker-entrypoint.sh
 
 # Set proper permissions and ensure Unix line endings
 RUN chmod +x /app/docker-entrypoint.sh

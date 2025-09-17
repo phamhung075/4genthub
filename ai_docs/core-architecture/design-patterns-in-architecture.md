@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The 4genthub system implements a comprehensive set of design patterns across all architectural layers to achieve CLEAN and SOLID code principles. This document analyzes the current pattern usage, identifies opportunities for improvement, and provides implementation standards based on comprehensive analysis of 38 factory implementations and extensive pattern evaluation.
+The agenthub system implements a comprehensive set of design patterns across all architectural layers to achieve CLEAN and SOLID code principles. This document analyzes the current pattern usage, identifies opportunities for improvement, and provides implementation standards based on comprehensive analysis of 38 factory implementations and extensive pattern evaluation.
 
 ## Quick Navigation
 
@@ -1064,6 +1064,6 @@ class TaskFacade:
 - [Factory Refactoring Templates](../development-guides/factory-refactoring-templates.md)
 
 **Last Updated:** 2025-09-12  
-**Document Owner:** 4genthub Architecture Team  
+**Document Owner:** agenthub Architecture Team  
 **Review Schedule:** Monthly  
 **Status:** Living Document

@@ -10,7 +10,7 @@
 
 The following tokens were found hardcoded in configuration files and have been removed:
 
-1. **4GENTHUB_TOKEN**: `vzsRAvDwKbjIOmTvCaJMS5G7FBr4mH59` (in `mcp.json`)
+1. **AGENTHUB_TOKEN**: `vzsRAvDwKbjIOmTvCaJMS5G7FBr4mH59` (in `mcp.json`)
 2. **API Token**: JWT token in `mcp-config-fix.json`
 
 ### Remediation Actions Taken
@@ -28,9 +28,9 @@ The following tokens were found hardcoded in configuration files and have been r
 Add these variables to your `.env` file:
 
 ```bash
-# 4genthub Tokens (generate new ones for production)
-4GENTHUB_TOKEN=your-secure-4genthub-token-here
-4GENTHUB_API_TOKEN=your-secure-api-token-here
+# agenthub Tokens (generate new ones for production)
+AGENTHUB_TOKEN=your-secure-agenthub-token-here
+AGENTHUB_API_TOKEN=your-secure-api-token-here
 JWT_SECRET_KEY=your-secure-jwt-secret-here
 
 # Keycloak Configuration
@@ -54,7 +54,7 @@ python3 generate-secure-tokens.py
 ```
 
 This generates cryptographically secure tokens:
-- **4GENTHUB_TOKEN**: 32-character alphanumeric token
+- **AGENTHUB_TOKEN**: 32-character alphanumeric token
 - **API_TOKEN**: 32-character API token  
 - **JWT_SECRET**: 64-byte base64-encoded secret
 
@@ -65,9 +65,9 @@ This generates cryptographically secure tokens:
 ```json
 {
   "mcpServers": {
-    "4genthub": {
+    "agenthub": {
       "env": {
-        "4GENTHUB_TOKEN": "${4GENTHUB_TOKEN}"
+        "AGENTHUB_TOKEN": "${AGENTHUB_TOKEN}"
       }
     }
   }
@@ -79,9 +79,9 @@ This generates cryptographically secure tokens:
 ```json
 {
   "mcpServers": {
-    "4genthub": {
+    "agenthub": {
       "env": {
-        "4GENTHUB_TOKEN": "vzsRAvDwKbjIOmTvCaJMS5G7FBr4mH59"
+        "AGENTHUB_TOKEN": "vzsRAvDwKbjIOmTvCaJMS5G7FBr4mH59"
       }
     }
   }

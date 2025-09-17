@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the **core architectural design documentation** for the 4genthub system, focusing on fundamental system design, technical architecture, and foundational patterns.
+This directory contains the **core architectural design documentation** for the agenthub system, focusing on fundamental system design, technical architecture, and foundational patterns.
 
 **📁 Reorganization Complete (2025-09-11)**: This folder has been cleaned and reorganized from 48 files to 6 core files. Specialized documentation has been moved to appropriate folders:
 - **Authentication**: [ai_docs/authentication/](../authentication/)
@@ -206,4 +206,4 @@ For MCP controller patterns and implementation guidelines, see:
 
 ---
 
-*This core architecture documentation provides the foundation for understanding the 4genthub system. For specific implementation details, refer to the specialized documentation folders listed above.*
+*This core architecture documentation provides the foundation for understanding the agenthub system. For specific implementation details, refer to the specialized documentation folders listed above.*

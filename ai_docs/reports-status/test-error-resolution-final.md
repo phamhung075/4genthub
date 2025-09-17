@@ -25,7 +25,7 @@ Investigation confirmed these directories and modules exist:
 ## Recommended Action
 Run the tests with verbose output to see the actual import errors:
 ```bash
-cd 4genthub_main
+cd agenthub_main
 python -m pytest src/tests -v --tb=short --import-mode=importlib
 ```
 
