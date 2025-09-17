@@ -483,6 +483,11 @@ jspm_packages/
 .mcp.json
 .claude/data
 
+# Backup folders - ignore all backup directories and their contents
+# This includes folders like backup_20250116_refactor, backup_hint_consolidation_20250916, etc.
+backup_*/
+**/backup_*/
+
 
 marketing-solution/*
 # =============================================================================
