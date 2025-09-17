@@ -76,18 +76,18 @@
           "size": 13425
         },
         {
-          "hash": "637f61ef2420372cc2cde3a54ccb30f6",
-          "modified": "2025-09-17T10:02:20.951862",
+          "hash": "b820ff36ef8e14503e5f3e163c6f2112",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 453478
+          "size": 483007
         },
         {
-          "hash": "d3cfe440b0647f6cf45c7f610bc9902c",
-          "modified": "2025-09-17T10:02:20.849864",
+          "hash": "685c2ab96a5a963830ec6d20686d1767",
+          "modified": "2025-09-17T10:26:47.260866",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 51318
+          "size": 53785
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -396,14 +396,28 @@
       "path": "authentication"
     },
     "claude-code": {
-      "count": 6,
+      "count": 9,
       "files": [
+        {
+          "hash": "e27226c6f35766c2b5568f95aec2030f",
+          "modified": "2025-09-17T10:41:38.898114",
+          "name": "hooks-system-guide.md",
+          "path": "claude-code/hooks-system-guide.md",
+          "size": 31653
+        },
         {
           "hash": "ed97151e11351f5701af88ba98ae722e",
           "modified": "2025-09-17T00:40:29.826987",
           "name": "hooks-refactoring-plan.md",
           "path": "claude-code/hooks-refactoring-plan.md",
           "size": 11049
+        },
+        {
+          "hash": "c40165e944710a67502923fa1b0b5b80",
+          "modified": "2025-09-17T10:37:25.758614",
+          "name": "mcp-json-configuration-guide.md",
+          "path": "claude-code/mcp-json-configuration-guide.md",
+          "size": 16021
         },
         {
           "hash": "408e02b024c1d25338a7b343cdda28f8",
@@ -418,6 +432,13 @@
           "name": "hook-message-flow-analysis.md",
           "path": "claude-code/hook-message-flow-analysis.md",
           "size": 3490
+        },
+        {
+          "hash": "c0c9a08d7f12631246432cad0f408fe7",
+          "modified": "2025-09-17T10:39:22.232598",
+          "name": "claude-md-configuration-guide.md",
+          "path": "claude-code/claude-md-configuration-guide.md",
+          "size": 21298
         },
         {
           "hash": "4ba44339c67eb2672fb47f5786280d28",
@@ -825,7 +846,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 50,
+      "count": 51,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -1071,6 +1092,13 @@
           "name": "orm-agent-repository-implementation.md",
           "path": "development-guides/orm-agent-repository-implementation.md",
           "size": 4997
+        },
+        {
+          "hash": "939a51ce016b4d8673ca18b8755f81c5",
+          "modified": "2025-09-17T10:34:46.958947",
+          "name": "video-tutorial-series-outline.md",
+          "path": "development-guides/video-tutorial-series-outline.md",
+          "size": 16626
         },
         {
           "hash": "3e1cd4d325f3f190fadd1df8c4535824",
@@ -1747,7 +1775,7 @@
       "path": "security"
     },
     "setup-guides": {
-      "count": 9,
+      "count": 10,
       "files": [
         {
           "hash": "96bd4cceca4513f357842eb7dd5b89db",
@@ -1755,6 +1783,13 @@
           "name": "index.md",
           "path": "setup-guides/index.md",
           "size": 2235
+        },
+        {
+          "hash": "1bc90f1dfefbbf0cb253c4dd9cdc6db7",
+          "modified": "2025-09-17T10:36:10.763312",
+          "name": "complete-setup-guide.md",
+          "path": "setup-guides/complete-setup-guide.md",
+          "size": 14140
         },
         {
           "hash": "407f4ea508b34f9b56c66627054d80a8",
@@ -1816,11 +1851,11 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 16,
+      "count": 17,
       "files": [
         {
           "hash": "8149b16986cbc567e2c5aceec9c70c18",
-          "modified": "2025-09-17T09:51:36.013339",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-33-test-fixes.md",
           "path": "testing-qa/iteration-33-test-fixes.md",
           "size": 3798
@@ -1862,42 +1897,49 @@
         },
         {
           "hash": "60dfcd751da5498d7dc6dc57e20c06f4",
-          "modified": "2025-09-17T08:37:43.349973",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-26-test-fixes.md",
           "path": "testing-qa/iteration-26-test-fixes.md",
           "size": 3485
         },
         {
           "hash": "f2cf478adfec52deb1846ae952ae6b15",
-          "modified": "2025-09-17T08:55:34.404874",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-27-test-fixes.md",
           "path": "testing-qa/iteration-27-test-fixes.md",
           "size": 3392
         },
         {
           "hash": "56ddd052b447d1baa7e58a072ea41414",
-          "modified": "2025-09-17T10:00:39.470884",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-34-test-success.md",
           "path": "testing-qa/iteration-34-test-success.md",
           "size": 7711
         },
         {
           "hash": "bd8eccb6bbf7db44739f8ea1b9c66f6b",
-          "modified": "2025-09-17T10:04:40.554194",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-35-test-suite-perfect.md",
           "path": "testing-qa/iteration-35-test-suite-perfect.md",
           "size": 6580
         },
         {
+          "hash": "94c33d89a750f45c9b4d701eaa344a41",
+          "modified": "2025-09-17T10:26:47.264821",
+          "name": "iteration-36-test-suite-milestone.md",
+          "path": "testing-qa/iteration-36-test-suite-milestone.md",
+          "size": 6899
+        },
+        {
           "hash": "302b434d6677970d78dd43e8d07aaa64",
-          "modified": "2025-09-17T09:17:59.334820",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-32-test-fixes.md",
           "path": "testing-qa/iteration-32-test-fixes.md",
           "size": 6237
         },
         {
           "hash": "43b3d1e884ea6df30b978f07214819da",
-          "modified": "2025-09-17T08:26:40.679743",
+          "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-25-test-fixes.md",
           "path": "testing-qa/iteration-25-test-fixes.md",
           "size": 2318
@@ -2156,7 +2198,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-09-17T10:04:40.652572",
+  "generated_at": "2025-09-17T10:41:38.959621",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2246,12 +2288,15 @@
     },
     "claude-code": {
       "files": [
+        "claude-md-configuration-guide.md",
         "cleanup-log.md",
         "hook-message-flow-analysis.md",
         "hooks-architecture-analysis.md",
         "hooks-dependency-map.md",
         "hooks-refactoring-plan.md",
-        "hooks-reference.md"
+        "hooks-reference.md",
+        "hooks-system-guide.md",
+        "mcp-json-configuration-guide.md"
       ]
     },
     "claude-hooks-docker": {
@@ -2372,7 +2417,8 @@
         "server-initialization-patterns.md",
         "test-organization-guide.md",
         "test_creation_guide.md",
-        "token-management-analysis.md"
+        "token-management-analysis.md",
+        "video-tutorial-series-outline.md"
       ]
     },
     "files": [
@@ -2485,6 +2531,7 @@
         "DATABASE_UI_GUIDE.md",
         "POSTGRESQL_KEYCLOAK_PRODUCTION.md",
         "PRODUCTION_SETUP_SUMMARY.md",
+        "complete-setup-guide.md",
         "index.md",
         "keycloak-authentication-fix.md",
         "keycloak-authentication-setup.md",
@@ -2514,6 +2561,7 @@
         "iteration-33-test-fixes.md",
         "iteration-34-test-success.md",
         "iteration-35-test-suite-perfect.md",
+        "iteration-36-test-suite-milestone.md",
         "testing.md"
       ]
     },
@@ -2552,5 +2600,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 282
+  "total_files": 288
 }

@@ -180,6 +180,15 @@ class RootFileValidator(Validator):
 class EnvFileValidator(Validator):
     """Validates environment file access."""
 
+    # List of allowed .env example file patterns (exact match only)
+    ALLOWED_ENV_EXAMPLES = [
+        '.env.sample',
+        '.env.example',
+        '.env.template',
+        '.env.default',
+        '.env.dist'
+    ]
+
     def validate(self, tool_name: str, tool_input: Dict) -> Tuple[bool, Optional[str]]:
         """Validate environment file access."""
         if tool_name not in ['Read', 'Write', 'Edit', 'MultiEdit']:
@@ -189,9 +198,17 @@ class EnvFileValidator(Validator):
         if not file_path:
             return True, None
 
-        # Block .env* files
+        # Check for .env files
         path_obj = Path(file_path)
-        if path_obj.name.startswith('.env'):
+        filename = path_obj.name.lower()
+
+        # Block ALL .env* files (including .env, .env.dev, .env.prod, .env.local, etc.)
+        if filename.startswith('.env'):
+            # Only allow specific example/sample/template files (exact match)
+            if filename in [e.lower() for e in self.ALLOWED_ENV_EXAMPLES]:
+                return True, None
+
+            # Block all other .env* files including .env.dev, .env.prod, .env.local, etc.
             from utils.config_factory import get_error_message
             return False, get_error_message('env_file_blocked', filename=path_obj.name)
 
