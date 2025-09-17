@@ -35,10 +35,16 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
   };
 
   // Generate the proper MCP config format
+  // Don't show port if it's 80 (default HTTP) or if host is a domain (production)
+  const shouldShowPort = configData.port !== 80 && !configData.host.includes('.com');
+  const urlBase = shouldShowPort
+    ? `http://${configData.host}:${configData.port}`
+    : `http://${configData.host}`;
+
   const mcpConfig = {
     agenthub_http: {
       type: "http",
-      url: `http://${configData.host}:${configData.port}/mcp`,
+      url: `${urlBase}/mcp`,
       headers: {
         Accept: "application/json, text/event-stream",
         ...(showToken && configData.token ? { Authorization: `Bearer ${configData.token}` } : {})
@@ -87,7 +93,7 @@ const MCPConfigCard = ({ configData, showToken }: MCPConfigProfileProps) => {
               <span className="text-blue-600 dark:text-blue-400">"url"</span>
               <span className="text-zinc-600 dark:text-gray-400">: </span>
               <span className="text-green-600 dark:text-green-400">
-                "http://{configData.host}:{configData.port}/mcp"
+                "http://{configData.host}{shouldShowPort ? `:${configData.port}` : ''}/mcp"
               </span>
               <span className="text-zinc-600 dark:text-gray-400">,</span>
             </div>

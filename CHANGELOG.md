@@ -9,11 +9,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ### Fixed
 - **Production Docker configuration for MCP backend URL** - 2025-09-17 🐳
   - Fixed `__RUNTIME_INJECTED__` placeholder appearing in MCP configuration
-  - Updated `docker-system/docker/Dockerfile.frontend.production` to use actual default values (http://localhost:8001)
+  - Updated `docker-system/docker/Dockerfile.frontend.production` to use localhost defaults, configurable via CapRover
   - Added proper build arguments to `docker-compose.production.yml` for frontend service
   - Updated `agenthub-frontend/.env.production` with proper production defaults
-  - Ensures frontend can properly connect to backend on port 8001 in production
+  - Ensures frontend can properly connect to backend via environment variables
   - Build arguments now properly propagate through multi-stage Docker build
+
+- **MCP Configuration display for production URLs** - 2025-09-17 🌐
+  - Fixed MCPConfigProfile component to hide port number for production domains
+  - Port is now hidden when it's 80 (default HTTP) or when host contains '.com'
+  - Updated TokenManagement page to extract host/port correctly from VITE_API_URL
+  - Production URLs like `http://api.4genthub.com/mcp` now display without port
+  - Development URLs like `http://localhost:8000/mcp` still show port number
 
 ### Added
 - **MCP Initialization page for setup and troubleshooting** - 2025-09-17 🛠️
