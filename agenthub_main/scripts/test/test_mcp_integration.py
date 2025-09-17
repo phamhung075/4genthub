@@ -8,7 +8,7 @@ import requests
 from datetime import datetime
 
 # Add the source directory to path
-sys.path.insert(0, '/home/daihungpham/__projects__/agentic-project/agenthub_main/src')
+sys.path.insert(0, './agenthub_main/src')
 
 def test_mcp_server():
     """Test MCP server endpoints and functionality."""

@@ -66,7 +66,7 @@ mcp__agenthub_http__call_agent("security-auditor-agent")
 
 ### Helper Utility
 
-Created `/home/daihungpham/__projects__/agentic-project/.claude/hooks/utils/agent_delegator.py` with:
+Created `./.claude/hooks/utils/agent_delegator.py` with:
 
 ```python
 from .claude.hooks.utils.agent_delegator import delegate_to_agent, get_agent_for_task

@@ -2,7 +2,7 @@
 """Check imports for test failures."""
 import sys
 import os
-os.chdir('/home/daihungpham/__projects__/agentic-project/agenthub_main')
+os.chdir('./agenthub_main')
 sys.path.insert(0, 'src')
 
 # Try to import test modules

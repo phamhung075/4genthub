@@ -49,7 +49,7 @@ Fixed failing session hooks tests by updating them to match the current implemen
 
 ## Command Used
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/agenthub_main
+cd ./agenthub_main
 python -m pytest src/tests/unit/mcp_auto_injection/test_session_hooks.py -xvs
 ```
 

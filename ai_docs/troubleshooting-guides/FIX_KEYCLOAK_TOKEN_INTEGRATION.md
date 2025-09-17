@@ -10,7 +10,7 @@ The token creation endpoint (`/api/v2/tokens`) doesn't properly extract the auth
 
 ### 1. Update Token Creation Endpoint
 
-Edit `/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/server/routes/api_token_routes_postgresql.py`:
+Edit `./agenthub_main/src/fastmcp/server/routes/api_token_routes_postgresql.py`:
 
 ```python
 # Line 82-84 - Current problematic code:

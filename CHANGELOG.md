@@ -6,6 +6,35 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **MCP Initialization page for setup and troubleshooting** - 2025-09-17 🛠️
+  - Created comprehensive Initialization page at `/initialization` route
+  - **Complete MCP Setup Guide**: .mcp.json configuration, file locations, and structure explanation
+  - **Server Setup Instructions**: Installation guides for AgentHub and common MCP servers
+  - **Connection Troubleshooting**: 15+ common issues with diagnostic solutions and commands
+  - **Quick Start Examples**: Development, production, and multi-server configurations
+  - **Connection Verification**: Health checks, test procedures, and success indicators
+  - **Technical Features**:
+    - Responsive design with dark/light theme support
+    - Uses RawJSONDisplay component for JSON examples with copy-to-clipboard
+    - Searchable content sections
+    - Expandable sections with detailed guidance
+    - Visual status indicators and progress cards
+  - **Navigation Integration**: Added "Setup" menu item in header for easy access
+  - **Files Created**: `agenthub-frontend/src/pages/Initialization.tsx`
+  - **Files Modified**: `App.tsx` (routing), `Header.tsx` (navigation)
+  - **Testing**: Build verification completed successfully with no compilation errors
+
+### Fixed
+- Fixed `manage_task` create action to properly accept dependencies parameter in multiple formats (2025-09-17)
+  - Now accepts array format: `["task-id-1", "task-id-2"]`
+  - Now accepts single string format: `"task-id"`
+  - Now accepts comma-separated string format: `"task-id-1,task-id-2"`
+  - Updated type annotations to use `Union[str, List[str]]` for flexible parameter handling
+  - File modified: `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py` (line 202-205)
+  - Also applies to `assignees` and `labels` parameters for consistency
+  - All formats properly convert to list internally before validation
+
 ### Changed - Major Rebranding from agenthub to agenthub - 2025-09-17 🚀
 - **COMPLETE PLATFORM REBRANDING**:
   - **New Name**: agenthub → agenthub (meaning "for agent hub")

@@ -8,7 +8,7 @@ import importlib.util
 # Load the module directly
 spec = importlib.util.spec_from_file_location(
     "context_injector",
-    "/home/daihungpham/__projects__/agentic-project/.claude/hooks/utils/context_injector.py"
+    "./.claude/hooks/utils/context_injector.py"
 )
 context_injector = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(context_injector)

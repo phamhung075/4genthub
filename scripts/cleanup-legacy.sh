@@ -107,12 +107,12 @@ cleanup_backup_files() {
     log_info "Cleaning up backup files..."
 
     local backup_files=(
-        "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/auth/services/mcp_token_service_test.py.bak"
-        "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/task_management/interface/controllers/git_branch_mcp_controller_test.py.backup"
-        "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/mcp_http_server.py.backup"
-        "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/server/production_app.py.backup"
-        "/home/daihungpham/__projects__/agentic-project/.test_cache/failed_tests.txt.backup"
-        "/home/daihungpham/__projects__/agentic-project/CHANGELOG.md.backup"
+        "./agenthub_main/src/tests/auth/services/mcp_token_service_test.py.bak"
+        "./agenthub_main/src/tests/task_management/interface/controllers/git_branch_mcp_controller_test.py.backup"
+        "./agenthub_main/src/mcp_http_server.py.backup"
+        "./agenthub_main/src/fastmcp/server/production_app.py.backup"
+        "./.test_cache/failed_tests.txt.backup"
+        "./CHANGELOG.md.backup"
     )
 
     for file in "${backup_files[@]}"; do
@@ -126,10 +126,10 @@ cleanup_test_logs() {
     log_info "Cleaning up test logs outside logs directory..."
 
     local test_log_files=(
-        "/home/daihungpham/__projects__/agentic-project/fix-1by1.log"
-        "/home/daihungpham/__projects__/agentic-project/.test_cache/last_run.log"
-        "/home/daihungpham/__projects__/agentic-project/.test_cache/test_run_iteration_44.log"
-        "/home/daihungpham/__projects__/agentic-project/ai_docs/_workplace/workers/fix_tests_loop/fix-1by1.log"
+        "./fix-1by1.log"
+        "./.test_cache/last_run.log"
+        "./.test_cache/test_run_iteration_44.log"
+        "./ai_docs/_workplace/workers/fix_tests_loop/fix-1by1.log"
     )
 
     for file in "${test_log_files[@]}"; do
@@ -143,9 +143,9 @@ cleanup_loop_workers() {
     log_info "Cleaning up legacy loop worker scripts..."
 
     local worker_files=(
-        "/home/daihungpham/__projects__/agentic-project/loop-worker_testfix.sh"
-        "/home/daihungpham/__projects__/agentic-project/scripts/workers/loop-worker_continue-unit-test-making.sh"
-        "/home/daihungpham/__projects__/agentic-project/scripts/workers/loop-worker_continue-test-results copy.sh"
+        "./loop-worker_testfix.sh"
+        "./scripts/workers/loop-worker_continue-unit-test-making.sh"
+        "./scripts/workers/loop-worker_continue-test-results copy.sh"
     )
 
     for file in "${worker_files[@]}"; do
@@ -155,7 +155,7 @@ cleanup_loop_workers() {
     done
 
     # Check if workers directory is empty and remove if so
-    local workers_dir="/home/daihungpham/__projects__/agentic-project/scripts/workers"
+    local workers_dir="./scripts/workers"
     if [[ -d "$workers_dir" ]] && [[ -z "$(ls -A "$workers_dir")" ]]; then
         safe_remove_dir "$workers_dir" "empty workers directory"
     fi
@@ -165,7 +165,7 @@ cleanup_old_cache_dirs() {
     log_info "Cleaning up old cache directories..."
 
     # Check .test_cache for old files
-    local test_cache_dir="/home/daihungpham/__projects__/agentic-project/.test_cache"
+    local test_cache_dir="./.test_cache"
     if [[ -d "$test_cache_dir" ]]; then
         # Remove old iteration logs
         find "$test_cache_dir" -name "test_run_iteration_*.log" -mtime +7 -type f | while read -r file; do
@@ -174,7 +174,7 @@ cleanup_old_cache_dirs() {
     fi
 
     # Clean up old pytest cache if it exists
-    local pytest_cache="/home/daihungpham/__projects__/agentic-project/.pytest_cache"
+    local pytest_cache="./.pytest_cache"
     if [[ -d "$pytest_cache" ]]; then
         find "$pytest_cache" -name "*.pyc" -type f | while read -r file; do
             safe_remove "$file" "pytest cache file"
@@ -186,7 +186,7 @@ cleanup_duplicate_docker_files() {
     log_info "Cleaning up duplicate Docker files..."
 
     # Look for potential duplicates (these would need manual review)
-    local docker_dir="/home/daihungpham/__projects__/agentic-project/docker-system"
+    local docker_dir="./docker-system"
 
     # Check for old/duplicate docker menu files
     if [[ -f "$PROJECT_ROOT/docker-menu.sh" ]]; then
@@ -205,7 +205,7 @@ cleanup_node_modules_artifacts() {
     log_info "Cleaning up node_modules artifacts..."
 
     # Clean up frontend node_modules logs (these shouldn't be in git anyway)
-    local frontend_dir="/home/daihungpham/__projects__/agentic-project/agenthub-frontend"
+    local frontend_dir="./agenthub-frontend"
     if [[ -f "$frontend_dir/node_modules/nwsapi/dist/lint.log" ]]; then
         safe_remove "$frontend_dir/node_modules/nwsapi/dist/lint.log" "node_modules artifact log"
     fi
@@ -220,7 +220,7 @@ cleanup_htmlcov_artifacts() {
     log_info "Cleaning up HTML coverage artifacts..."
 
     # Remove specific test worker coverage files that are no longer relevant
-    local htmlcov_dir="/home/daihungpham/__projects__/agentic-project/agenthub_main/htmlcov"
+    local htmlcov_dir="./agenthub_main/htmlcov"
     if [[ -f "$htmlcov_dir/z_5757ee64987f52a2_test_workers_init_py.html" ]]; then
         safe_remove "$htmlcov_dir/z_5757ee64987f52a2_test_workers_init_py.html" "obsolete coverage artifact"
     fi
@@ -231,8 +231,8 @@ cleanup_stale_pid_files() {
     log_info "Cleaning up stale PID files..."
 
     local pid_files=(
-        "/home/daihungpham/__projects__/agentic-project/dev-backend.pid"
-        "/home/daihungpham/__projects__/agentic-project/dev-frontend.pid"
+        "./dev-backend.pid"
+        "./dev-frontend.pid"
     )
 
     for pid_file in "${pid_files[@]}"; do

@@ -23,7 +23,7 @@ def test_file(test_path):
 
 def main():
     """Check all tests in failed_tests.txt and report status"""
-    failed_tests_file = Path("/home/daihungpham/__projects__/agentic-project/.test_cache/failed_tests.txt")
+    failed_tests_file = Path("./.test_cache/failed_tests.txt")
 
     if not failed_tests_file.exists():
         print("No failed_tests.txt file found")
@@ -40,7 +40,7 @@ def main():
         if line and line.endswith('.py'):
             test_path = line
             # Convert to relative path for pytest
-            test_path = test_path.replace("/home/daihungpham/__projects__/agentic-project/agenthub_main/", "")
+            test_path = test_path.replace("./agenthub_main/", "")
 
             print(f"Testing {i}/10: {test_path}")
 

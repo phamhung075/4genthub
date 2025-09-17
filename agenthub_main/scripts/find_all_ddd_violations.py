@@ -148,7 +148,7 @@ class DDDViolationFinder:
         return '\n'.join(report)
 
 def main():
-    project_root = '/home/daihungpham/__projects__/agentic-project/agenthub_main'
+    project_root = './agenthub_main'
     finder = DDDViolationFinder(project_root)
     print(finder.generate_report())
     

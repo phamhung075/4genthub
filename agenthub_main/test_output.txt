@@ -9,8 +9,8 @@ Defining minimal mock implementations inline
 🧪 Testing completion_summary context storage...
 2025-08-27 02:49:51,751 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Using SQLite for test execution (test mode detected)
 2025-08-27 02:49:51,751 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Detected TEST mode (pytest)
-2025-08-27 02:49:51,752 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Database path set to: /home/daihungpham/__projects__/agentic-project/agenthub_main/database/data/agenthub_test.db
-2025-08-27 02:49:51,752 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Using SQLite database for tests: /home/daihungpham/__projects__/agentic-project/agenthub_main/database/data/agenthub_test.db
+2025-08-27 02:49:51,752 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Database path set to: ./agenthub_main/database/data/agenthub_test.db
+2025-08-27 02:49:51,752 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Using SQLite database for tests: ./agenthub_main/database/data/agenthub_test.db
 2025-08-27 02:49:51,752 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Creating SQLite engine for test execution
 2025-08-27 02:49:51,756 - fastmcp.task_management.infrastructure.database.database_config - INFO - ✅ SQLite engine created for tests
 2025-08-27 02:49:51,758 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Connected to SQLite: 3.45.1
@@ -65,7 +65,7 @@ sqlite3.IntegrityError: FOREIGN KEY constraint failed
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py", line 794, in save
+  File "./agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py", line 794, in save
     session.commit()
   File "/home/daihungpham/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2032, in commit
     trans.commit(_to_root=True)
@@ -137,10 +137,10 @@ sqlite3.IntegrityError: FOREIGN KEY constraint failed
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/application/use_cases/create_task.py", line 90, in execute
+  File "./agenthub_main/src/fastmcp/task_management/application/use_cases/create_task.py", line 90, in execute
     save_result = self._task_repository.save(task)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py", line 794, in save
+  File "./agenthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/task_repository.py", line 794, in save
     session.commit()
   File "/home/daihungpham/.local/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2032, in commit
     trans.commit(_to_root=True)
@@ -199,7 +199,7 @@ sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) FOREIGN KEY constraint f
 (Background on this error at: https://sqlalche.me/e/20/gkpj)
 
 Traceback (most recent call last):
-  File "/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/unit/task_management/test_completion_summary_manual.py", line 158, in test_completion_summary_storage
+  File "./agenthub_main/src/tests/unit/task_management/test_completion_summary_manual.py", line 158, in test_completion_summary_storage
     raise AssertionError(f"Task creation failed: {created_task_response.message}")
 AssertionError: Task creation failed: Failed to create task: (sqlite3.IntegrityError) FOREIGN KEY constraint failed
 [SQL: INSERT INTO tasks (id, title, description, git_branch_id, status, priority, details, estimated_effort, due_date, created_at, updated_at, completed_at, completion_summary, testing_notes, context_id, progress_percentage, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]

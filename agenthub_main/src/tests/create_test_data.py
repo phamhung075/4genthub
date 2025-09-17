@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 # Add project root to path
-sys.path.insert(0, '/home/daihungpham/__projects__/agentic-project/agenthub_main/src')
+sys.path.insert(0, './agenthub_main/src')
 
 from fastmcp.task_management.infrastructure.database.database_config import get_session
 from fastmcp.task_management.infrastructure.database.models import (

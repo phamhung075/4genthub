@@ -88,7 +88,7 @@ TASK (ID: task_id)
 
 ### 1. Test Database Connection
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/agenthub_main
+cd ./agenthub_main
 PYTHONPATH=./src python3 -c "
 from fastmcp.task_management.infrastructure.database.database_config import get_db_config
 db_config = get_db_config()

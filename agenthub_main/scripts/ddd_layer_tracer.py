@@ -412,7 +412,7 @@ class DDDLayerTracer:
 
 def main():
     """Run the DDD layer tracer"""
-    project_root = '/home/daihungpham/__projects__/agentic-project/agenthub_main'
+    project_root = './agenthub_main'
     tracer = DDDLayerTracer(project_root)
     
     print(tracer.generate_report())

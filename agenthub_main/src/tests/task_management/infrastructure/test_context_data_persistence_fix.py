@@ -307,7 +307,7 @@ class TestContextDataPersistenceFix:
 if __name__ == "__main__":
     # Run tests directly for debugging
     import sys
-    sys.path.append('/home/daihungpham/__projects__/agentic-project/agenthub_main/src')
+    sys.path.append('./agenthub_main/src')
 
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker

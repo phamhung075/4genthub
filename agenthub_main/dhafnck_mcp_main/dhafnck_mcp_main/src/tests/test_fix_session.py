@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Test collection checker."""
 import os
-os.chdir('/home/daihungpham/__projects__/agentic-project/agenthub_main')
+os.chdir('./agenthub_main')
 
 import subprocess
 result = subprocess.run(

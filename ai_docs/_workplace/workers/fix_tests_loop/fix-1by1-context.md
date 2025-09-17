@@ -1277,7 +1277,7 @@ Good, we've made progress - 133 tests remaining. I've successfully fixed 1 test 
 3. **Authentication Context** - Integration tests needing proper auth mocking
 4. **Error Messages** - Tests failing on specific error message wording
 
-The progress has been documented in `/home/daihungpham/__projects__/agentic-project/ai_docs/testing-qa/test-fix-progress-2025-09-13.md`.
+The progress has been documented in `./ai_docs/testing-qa/test-fix-progress-2025-09-13.md`.
 
 ---
 

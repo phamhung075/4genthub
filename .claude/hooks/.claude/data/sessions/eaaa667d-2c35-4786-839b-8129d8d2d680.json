@@ -7,8 +7,8 @@
     "is i can make better ?",
     "you need mame somehting simple and like actual systeme but find the way make systeme simple, modulable",
     "remove all new system i no need anymore keep last version",
-    "PreToolUse:Write [python3 \n  /home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py] failed \n  with non-blocking status code 1: Message not found: error.root_file_blocked\n  Unknown error: root_file_blocked\nfix"
+    "PreToolUse:Write [python3 \n  ./.claude/hooks/pre_tool_use.py] failed \n  with non-blocking status code 1: Message not found: error.root_file_blocked\n  Unknown error: root_file_blocked\nfix"
   ],
-  "last_prompt": "PreToolUse:Write [python3 \n  /home/daihungpham/__projects__/agentic-project/.claude/hooks/pre_tool_use.py] failed \n  with non-blocking status code 1: Message not found: error.root_file_blocked\n  Unknown error: root_file_blocked\nfix",
+  "last_prompt": "PreToolUse:Write [python3 \n  ./.claude/hooks/pre_tool_use.py] failed \n  with non-blocking status code 1: Message not found: error.root_file_blocked\n  Unknown error: root_file_blocked\nfix",
   "last_updated": "2025-09-16T21:01:02.200328"
 }
