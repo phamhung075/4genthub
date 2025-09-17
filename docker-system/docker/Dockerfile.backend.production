@@ -1,9 +1,13 @@
 # Production Backend Dockerfile for agenthub with MCP Support
 # Multi-stage build optimized for production deployment with full MCP protocol support
-# Features: Security hardening, minimal image size, optimized layers, SSE/MCP support
+# Features: Security hardening, minimal image size, optimized layers, SSE/MCP support, multi-platform support
+# Version: 2.0.1 - Fixed ARM64/AMD64 platform compatibility (2025-09-17)
+
+# syntax=docker/dockerfile:1
+# Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-FROM --platform=${BUILDPLATFORM:-linux/amd64} python:3.11-slim as builder
+FROM --platform=${BUILDPLATFORM} python:3.11-slim as builder
 
 WORKDIR /build
 
@@ -28,7 +32,7 @@ RUN uv venv /opt/venv && \
     uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
 
 # Stage 2: Production Runtime
-FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.11-slim
+FROM --platform=${TARGETPLATFORM} python:3.11-slim
 
 # Accept build arguments for environment configuration
 ARG APP_DEBUG=false
