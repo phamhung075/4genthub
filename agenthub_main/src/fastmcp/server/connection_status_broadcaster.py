@@ -116,7 +116,10 @@ class ConnectionStatusBroadcaster:
         uptime_seconds = 0
         server_status = "healthy"
         recommended_action = "continue"
-        auth_enabled = False
+
+        # Get auth status from environment
+        import os
+        auth_enabled = os.getenv("AUTH_ENABLED", "false").lower() in ("true", "1", "yes", "on")
         
         # Get actual values from connection manager if available
         if self.connection_manager:
