@@ -2,13 +2,14 @@
 # Production Frontend Dockerfile for agenthub
 # Multi-stage build optimized for production deployment
 # Features: Minimal image size, optimized assets, security hardening, multi-platform support
-# Version: 2.0.7 - Removed hardcoded platform defaults to fix ARM64/AMD64 compatibility (2025-09-17)
+# Version: 2.0.8 - Fixed multi-platform build by removing platform defaults for proper BuildKit handling (2025-09-17)
 
 # syntax=docker/dockerfile:1
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-FROM --platform=${BUILDPLATFORM:-linux/amd64} node:20-alpine AS builder
+# Use BUILDPLATFORM for builder stage (cross-compilation support)
+FROM --platform=${BUILDPLATFORM} node:20-alpine AS builder
 
 WORKDIR /build
 
@@ -56,7 +57,8 @@ ENV NODE_ENV=${NODE_ENV}
 RUN npm run build
 
 # Stage 2: Production Runtime with Nginx
-FROM --platform=${TARGETPLATFORM:-linux/amd64} nginx:alpine
+# Use TARGETPLATFORM for runtime stage (native platform execution)
+FROM --platform=${TARGETPLATFORM} nginx:alpine
 
 # Accept runtime build arguments
 ARG VITE_API_URL
