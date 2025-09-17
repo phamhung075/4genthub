@@ -26,7 +26,7 @@ tests/
 pip install -r requirements-test.txt
 
 # Or install from main project (includes test deps)
-cd ../../../4genthub_main
+cd ../../../agenthub_main
 pip install -e ".[dev]"
 ```
 

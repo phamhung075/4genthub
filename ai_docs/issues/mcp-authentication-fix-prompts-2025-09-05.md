@@ -28,8 +28,8 @@ REQUIREMENTS:
 5. Maintain security - only work in development/testing environments
 
 IMPLEMENTATION LOCATION:
-- File: 4genthub_main/src/infrastructure/auth/jwt_middleware.py
-- File: 4genthub_main/src/config/settings.py
+- File: agenthub_main/src/infrastructure/auth/jwt_middleware.py
+- File: agenthub_main/src/config/settings.py
 
 CODE TEMPLATE:
 ```python
@@ -88,7 +88,7 @@ FILES TO MODIFY:
 DOCKER-COMPOSE ADDITION:
 ```yaml
 services:
-  4genthub-backend:
+  agenthub-backend:
     environment:
       - MCP_AUTH_MODE=${MCP_AUTH_MODE:-production}
       - MCP_TEST_USER_ID=${MCP_TEST_USER_ID:-test-user-12345}

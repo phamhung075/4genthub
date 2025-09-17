@@ -43,7 +43,7 @@ from utils.mcp_client import OptimizedMCPClient
 os.environ.update({
     'MCP_SERVER_URL': 'http://localhost:8000',
     'KEYCLOAK_URL': 'http://localhost:8080',
-    'KEYCLOAK_REALM': '4genthub',
+    'KEYCLOAK_REALM': 'agenthub',
     'KEYCLOAK_CLIENT_ID': 'claude-hooks',
     'KEYCLOAK_CLIENT_SECRET': 'your-secret-here'
 })
@@ -150,7 +150,7 @@ def manual_token_management():
 
 ```python
 import asyncio
-from 4genthub_main.src.fastmcp.auth.service_account import ServiceAccountAuth
+from agenthub_main.src.fastmcp.auth.service_account import ServiceAccountAuth
 
 async def service_account_example():
     """Example using service account authentication"""
@@ -939,7 +939,7 @@ class TestMCPIntegration:
     @pytest.mark.asyncio
     async def test_service_account_auth(self):
         """Test service account authentication"""
-        from 4genthub_main.src.fastmcp.auth.service_account import ServiceAccountAuth
+        from agenthub_main.src.fastmcp.auth.service_account import ServiceAccountAuth
         
         auth = ServiceAccountAuth()
         

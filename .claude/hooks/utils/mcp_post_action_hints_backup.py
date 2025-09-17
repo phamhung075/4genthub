@@ -64,17 +64,17 @@ class MCPPostActionHints:
                 return None
         
         # Only generate hints for successful operations
-        if tool_name == "mcp__4genthub_http__manage_task":
+        if tool_name == "mcp__agenthub_http__manage_task":
             hints.extend(self._task_post_hints(action, tool_input, result))
-        elif tool_name == "mcp__4genthub_http__manage_subtask":
+        elif tool_name == "mcp__agenthub_http__manage_subtask":
             hints.extend(self._subtask_post_hints(action, tool_input, result))
-        elif tool_name == "mcp__4genthub_http__manage_context":
+        elif tool_name == "mcp__agenthub_http__manage_context":
             hints.extend(self._context_post_hints(action, tool_input, result))
-        elif tool_name == "mcp__4genthub_http__manage_project":
+        elif tool_name == "mcp__agenthub_http__manage_project":
             hints.extend(self._project_post_hints(action, tool_input, result))
-        elif tool_name == "mcp__4genthub_http__manage_git_branch":
+        elif tool_name == "mcp__agenthub_http__manage_git_branch":
             hints.extend(self._branch_post_hints(action, tool_input, result))
-        elif tool_name == "mcp__4genthub_http__call_agent":
+        elif tool_name == "mcp__agenthub_http__call_agent":
             hints.extend(self._agent_post_hints(tool_input, result))
         
         # Format and return hints if any
@@ -283,7 +283,7 @@ def generate_post_action_hints(tool_name: str, tool_input: Dict, result: Any = N
     Returns:
         Optional[str]: Formatted reminder message or None
     """
-    if not tool_name.startswith('mcp__4genthub_http'):
+    if not tool_name.startswith('mcp__agenthub_http'):
         return None
     
     hint_generator = MCPPostActionHints()
@@ -294,7 +294,7 @@ if __name__ == "__main__":
     # Test cases
     test_cases = [
         {
-            "tool_name": "mcp__4genthub_http__manage_task",
+            "tool_name": "mcp__agenthub_http__manage_task",
             "tool_input": {
                 "action": "create",
                 "title": "Implement authentication",
@@ -303,7 +303,7 @@ if __name__ == "__main__":
             "result": {"task": {"id": "task_123"}}
         },
         {
-            "tool_name": "mcp__4genthub_http__manage_task",
+            "tool_name": "mcp__agenthub_http__manage_task",
             "tool_input": {
                 "action": "complete",
                 "task_id": "task_123",
@@ -311,7 +311,7 @@ if __name__ == "__main__":
             }
         },
         {
-            "tool_name": "mcp__4genthub_http__call_agent",
+            "tool_name": "mcp__agenthub_http__call_agent",
             "tool_input": {
                 "name_agent": "master-orchestrator-agent"
             }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The 4genthub system has been migrated from a basic context system to a 4-tier hierarchical context system. This document explains the architecture and migration details.
+The agenthub system has been migrated from a basic context system to a 4-tier hierarchical context system. This document explains the architecture and migration details.
 
 ## Architecture Diagram
 

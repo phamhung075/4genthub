@@ -1,0 +1,77 @@
+
+🧪 Starting agenthub Test Suite
+🛡️  Test data isolation enabled
+🧹 Automatic cleanup configured
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.0, pluggy-1.6.0 -- /home/daihungpham/__projects__/agentic-project/agenthub_main/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests
+configfile: pytest.ini
+plugins: report-0.2.1, xdist-3.7.0, timeout-2.4.0, env-1.1.5, cov-6.2.1, anyio-4.9.0, httpx-0.35.0, flakefinder-1.1.0, asyncio-1.0.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 6700 items / 3 errors / 3 skipped
+
+🧹 Performing final test data cleanup...
+🧹 Final cleanup completed:
+   - 0 test data files removed
+   - 0 temporary directories removed
+✅ Test environment is clean
+
+==================================== ERRORS ====================================
+___________ ERROR collecting hooks/test_session_state_integration.py ___________
+ImportError while importing test module '/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/hooks/test_session_state_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/tests/hooks/test_session_state_integration.py:22: in <module>
+    from freezegun import freeze_time
+E   ModuleNotFoundError: No module named 'freezegun'
+________________ ERROR collecting hooks/test_session_tracker.py ________________
+ImportError while importing test module '/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/hooks/test_session_tracker.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/tests/hooks/test_session_tracker.py:22: in <module>
+    from freezegun import freeze_time
+E   ModuleNotFoundError: No module named 'freezegun'
+_______________ ERROR collecting hooks/test_state_persistence.py _______________
+ImportError while importing test module '/home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/hooks/test_state_persistence.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/tests/hooks/test_state_persistence.py:23: in <module>
+    from freezegun import freeze_time
+E   ModuleNotFoundError: No module named 'freezegun'
+=============================== warnings summary ===============================
+src/tests/conftest.py:255
+  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: auth/interface/auth_endpoints_test.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:255
+  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: server/app_factory_test.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:255
+  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: task_management/infrastructure/monitoring/metrics_integration_test.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:255
+  /home/daihungpham/__projects__/agentic-project/agenthub_main/src/tests/conftest.py:255: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: unit/auth/interface/auth_endpoints_test.py)
+    class MockFastAPIClient:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR src/tests/hooks/test_session_state_integration.py
+ERROR src/tests/hooks/test_session_tracker.py
+ERROR src/tests/hooks/test_state_persistence.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+================== 3 skipped, 4 warnings, 3 errors in 12.09s ===================

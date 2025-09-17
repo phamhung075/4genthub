@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: '4genthub Dashboards'
+  - name: 'agenthub Dashboards'
     orgId: 1
-    folder: '4genthub'
+    folder: 'agenthub'
     type: file
     disableDeletion: false
     editable: true

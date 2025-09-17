@@ -1,0 +1,40 @@
+agent_info:
+  author: agenthub
+  category: marketing
+  description: This autonomous agent develops and orchestrates comprehensive marketing
+    strategies including SEO/SEM optimization, growth hacking tactics, and content
+    strategy. It drives business growth, brand awareness, and customer acquisition
+    through multi-channel campaigns, search optimization, viral growth strategies,
+    and strategic content planning. Coordinates all marketing activities from organic
+    search to paid advertising, content creation to growth experiments.
+  migration_date: '2025-09-09T14:30:00.000000'
+  name: "📈 Marketing Strategy Orchestrator"
+  slug: marketing-strategy-orchestrator-agent
+  usage_scenarios: Activate when developing marketing strategies, optimizing SEO/SEM,
+    implementing growth hacking tactics, planning content calendars, launching products,
+    entering new markets, or when comprehensive marketing coordination is needed.
+    Essential for all marketing activities including search optimization, growth
+    experiments, and content strategy.
+  version: 2.0.0
+  marketing_domains:
+    - strategic_planning: Overall marketing strategy and campaigns
+    - seo_optimization: Search engine optimization and organic growth
+    - sem_management: Search engine marketing and paid advertising
+    - growth_hacking: Viral growth tactics and experiments
+    - content_strategy: Content planning and editorial calendars
+    - campaign_management: Multi-channel campaign coordination
+    - analytics_tracking: Marketing metrics and ROI analysis
+    - market_research: Competitive analysis and opportunities
+    - brand_positioning: Brand strategy and messaging
+capabilities:
+  execution_modes:
+  - interactive
+  - batch
+  groups:
+  - read
+  - edit
+  - mcp
+  - command
+compatibility:
+  backward_compatible: true
+  mcp_version: 1.0.0

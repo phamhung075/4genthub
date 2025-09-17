@@ -265,7 +265,7 @@ A: Use the `is_deprecated_agent()` function or check this migration guide.
 ### Need Help?
 
 1. **Check the comprehensive documentation**: `/ai_docs/core-architecture/deprecated-agent-mappings.md`
-2. **Review test examples**: `/4genthub_main/src/tests/task_management/application/use_cases/agent_mappings_test.py`  
+2. **Review test examples**: `/agenthub_main/src/tests/task_management/application/use_cases/agent_mappings_test.py`  
 3. **Use the migration script** provided above to find deprecated usage
 4. **Run tests** to ensure your migrations work correctly
 

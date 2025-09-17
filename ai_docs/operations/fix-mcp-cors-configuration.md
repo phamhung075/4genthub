@@ -6,7 +6,7 @@ Claude Code cannot connect to the MCP server because CORS is blocking the connec
 ## Solution
 
 ### 1. Update Backend Code (Completed)
-Modified `4genthub_main/src/fastmcp/config/cors_factory.py` to:
+Modified `agenthub_main/src/fastmcp/config/cors_factory.py` to:
 - Allow wildcard (`*`) origins for MCP compatibility
 - Automatically disable credentials when wildcard is used (browser security requirement)
 - Default to wildcard when CORS_ORIGINS is not set
@@ -24,7 +24,7 @@ CORS_ORIGINS=*
 
 1. Commit the changes:
 ```bash
-git add 4genthub_main/src/fastmcp/config/cors_factory.py
+git add agenthub_main/src/fastmcp/config/cors_factory.py
 git commit -m "fix: allow wildcard CORS for MCP/Claude Code compatibility"
 git push origin client
 ```
@@ -54,7 +54,7 @@ The response should show:
 
 2. Update Claude Code configuration:
 ```json
-"4genthub_http": {
+"agenthub_http": {
   "type": "http",
   "url": "https://api.92.5.226.7.nip.io/mcp",
   "headers": {

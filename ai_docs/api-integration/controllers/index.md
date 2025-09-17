@@ -2,7 +2,7 @@
 
 ## Overview
 
-This documentation covers the comprehensive controller architecture of the 4genthub project, which implements a sophisticated task management system using Domain-Driven Design (DDD) principles. The system features two distinct controller layers designed to handle different communication protocols and client interactions.
+This documentation covers the comprehensive controller architecture of the agenthub project, which implements a sophisticated task management system using Domain-Driven Design (DDD) principles. The system features two distinct controller layers designed to handle different communication protocols and client interactions.
 
 ## Controller Architecture
 
@@ -11,20 +11,20 @@ The system employs a **dual-controller architecture** that maintains clear separ
 ### 1. MCP Controllers (Model Context Protocol)
 - **Purpose**: Handle Claude AI and MCP client communications
 - **Protocol**: MCP (Model Context Protocol) for AI agent interactions
-- **Location**: `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/`
+- **Location**: `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/`
 - **Authentication**: Token-based with permission validation
 - **Response Format**: MCP-compliant JSON responses
 
 ### 2. API Controllers (HTTP REST)
 - **Purpose**: Handle frontend and direct HTTP API interactions
 - **Protocol**: HTTP REST API for web applications
-- **Location**: `4genthub_main/src/fastmcp/task_management/interface/api_controllers/`
+- **Location**: `agenthub_main/src/fastmcp/task_management/interface/api_controllers/`
 - **Authentication**: JWT tokens with role-based access control
 - **Response Format**: Standard REST API JSON responses
 
 ### 3. Infrastructure Controllers
 - **Purpose**: Handle cross-cutting concerns like security and access control
-- **Location**: `4genthub_main/src/fastmcp/task_management/infrastructure/security/`
+- **Location**: `agenthub_main/src/fastmcp/task_management/infrastructure/security/`
 
 ## Domain-Driven Design (DDD) Compliance
 
@@ -286,4 +286,4 @@ For questions about controller implementation or to report issues:
 
 **Last Updated**: 2025-01-15  
 **Version**: 1.0  
-**Maintainer**: 4genthub Development Team
+**Maintainer**: agenthub Development Team

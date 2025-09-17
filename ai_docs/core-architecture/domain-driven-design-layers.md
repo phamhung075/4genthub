@@ -1,4 +1,4 @@
-# Domain-Driven Design Layers in 4genthub
+# Domain-Driven Design Layers in agenthub
 
 **Document Version:** 1.0  
 **Last Updated:** 2025-09-12  
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The 4genthub system implements a strict 4-layer Domain-Driven Design architecture that ensures clear separation of concerns, maintainability, and testability. Each layer has well-defined responsibilities and dependencies flow inward toward the domain core, following the principles of Clean Architecture and DDD.
+The agenthub system implements a strict 4-layer Domain-Driven Design architecture that ensures clear separation of concerns, maintainability, and testability. Each layer has well-defined responsibilities and dependencies flow inward toward the domain core, following the principles of Clean Architecture and DDD.
 
 ## Quick Navigation
 
@@ -645,6 +645,6 @@ def test_task_mcp_controller():
 - [Context Hierarchy System](./context-hierarchy-system.md)
 
 **Last Updated:** 2025-09-12  
-**Document Owner:** 4genthub Architecture Team  
+**Document Owner:** agenthub Architecture Team  
 **Review Schedule:** Monthly  
 **Status:** Living Document

@@ -6,7 +6,7 @@ services:
   # PostgreSQL Database (no build - uses official image)
   postgres:
     image: postgres:15-alpine
-    container_name: 4genthub-postgres
+    container_name: agenthub-postgres
     env_file:
       - ../../.env.dev
     environment:
@@ -19,7 +19,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - 4genthub-network
+      - agenthub-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
       interval: 10s
@@ -30,7 +30,7 @@ services:
   # pgAdmin for database management (optional)
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: 4genthub-pgadmin
+    container_name: agenthub-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin123
@@ -41,7 +41,7 @@ services:
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
-      - 4genthub-network
+      - agenthub-network
     depends_on:
       - postgres
     restart: unless-stopped
@@ -54,6 +54,6 @@ volumes:
     driver: local
 
 networks:
-  4genthub-network:
+  agenthub-network:
     external: true
-    name: 4genthub-network
+    name: agenthub-network

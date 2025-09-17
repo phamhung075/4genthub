@@ -3,15 +3,15 @@
 # Test files can ONLY be created in these directories
 
 # Backend tests
-4genthub_main/src/tests
-4genthub_main/src/tests/unit
-4genthub_main/src/tests/integration
-4genthub_main/src/tests/e2e
-4genthub_main/src/tests/performance
+agenthub_main/src/tests
+agenthub_main/src/tests/unit
+agenthub_main/src/tests/integration
+agenthub_main/src/tests/e2e
+agenthub_main/src/tests/performance
 
 # Frontend tests
-4genthub-frontend/src/tests
-4genthub-frontend/src/__tests__
-4genthub-frontend/src/components/__tests__
-4genthub-frontend/cypress
-4genthub-frontend/e2e
+agenthub-frontend/src/tests
+agenthub-frontend/src/__tests__
+agenthub-frontend/src/components/__tests__
+agenthub-frontend/cypress
+agenthub-frontend/e2e

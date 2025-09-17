@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Comprehensive Health Check Script - 4genthub Production Deployment
+# Comprehensive Health Check Script - agenthub Production Deployment
 # =============================================================================
 # This script performs comprehensive health checks after deployment including:
 # - Service availability and responsiveness
@@ -318,7 +318,7 @@ check_keycloak_integration() {
     
     # Test OIDC configuration endpoint
     local oidc_config
-    oidc_config=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" "$KEYCLOAK_URL/realms/4genthub/.well-known/openid_configuration" 2>/dev/null || echo "000")
+    oidc_config=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" "$KEYCLOAK_URL/realms/agenthub/.well-known/openid_configuration" 2>/dev/null || echo "000")
     
     case "$oidc_config" in
         200)

@@ -181,7 +181,7 @@ docker-compose exec backend env | grep DATABASE
 DATABASE_TYPE=postgresql
 DATABASE_HOST=your-database-host
 DATABASE_PORT=5432
-DATABASE_NAME=4genthub
+DATABASE_NAME=agenthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_secure_password
 FASTMCP_PORT=8000
@@ -339,7 +339,7 @@ telnet your-database-host.amazonaws.com 5432
 # - Allow connections from your application IP/network
 
 # Test connection from local machine
-psql -h your-database-host.amazonaws.com -p 5432 -U postgres -d 4genthub
+psql -h your-database-host.amazonaws.com -p 5432 -U postgres -d agenthub
 ```
 
 #### Docker Compose:
@@ -396,13 +396,13 @@ psql -h host -U postgres -c "\du"  # List users
 
 **Symptoms:**
 ```
-FATAL: database "4genthub" does not exist
+FATAL: database "agenthub" does not exist
 ```
 
 **Solutions:**
 ```bash
 # Create database manually
-psql -h $DATABASE_HOST -U $DATABASE_USER -c "CREATE DATABASE 4genthub;"
+psql -h $DATABASE_HOST -U $DATABASE_USER -c "CREATE DATABASE agenthub;"
 
 # Or enable auto-migration
 AUTO_MIGRATE=true
@@ -418,7 +418,7 @@ psql -h $DATABASE_HOST -U $DATABASE_USER -c "\l"  # List databases
 **Symptoms:**
 ```
 backend_1 exited with code 1
-Container 4genthub-backend-1 exited unexpectedly
+Container agenthub-backend-1 exited unexpectedly
 ```
 
 **Diagnostic Steps:**
@@ -520,7 +520,7 @@ ENV=production
 DATABASE_TYPE=postgresql
 DATABASE_HOST=srv-captain--postgres  # EXACT CapRover service name
 DATABASE_PORT=5432
-DATABASE_NAME=4genthub
+DATABASE_NAME=agenthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=<your_caprover_generated_password>
 DATABASE_SSL_MODE=disable  # CRITICAL: CapRover PostgreSQL doesn't support SSL
@@ -536,7 +536,7 @@ CORS_ALLOW_CREDENTIALS=true
 
 AUTH_ENABLED=true
 AUTH_PROVIDER=keycloak
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=<your_keycloak_secret>
 ```
@@ -609,7 +609,7 @@ SSL handshake failure
 DATABASE_TYPE=postgresql
 DATABASE_HOST=mydb.abc123.us-east-1.rds.amazonaws.com
 DATABASE_PORT=5432
-DATABASE_NAME=4genthub
+DATABASE_NAME=agenthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_rds_password
 DATABASE_SSL_MODE=require  # RDS requires SSL
@@ -618,7 +618,7 @@ DATABASE_SSL_MODE=require  # RDS requires SSL
 # From your application's IP or security group
 
 # Test connection:
-psql "postgresql://user:pass@mydb.abc123.us-east-1.rds.amazonaws.com:5432/4genthub?sslmode=require"
+psql "postgresql://user:pass@mydb.abc123.us-east-1.rds.amazonaws.com:5432/agenthub?sslmode=require"
 ```
 
 ### Issue: Google Cloud SQL Issues
@@ -683,19 +683,19 @@ Authentication requests failing
 **Solutions:**
 ```bash
 # Verify Keycloak URL is accessible
-curl -f $KEYCLOAK_URL/auth/realms/4genthub/.well-known/openid_configuration
+curl -f $KEYCLOAK_URL/auth/realms/agenthub/.well-known/openid_configuration
 
 # Complete Keycloak configuration:
 AUTH_ENABLED=true
 AUTH_PROVIDER=keycloak
 KEYCLOAK_URL=https://your-keycloak.com
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your_client_secret
 
 # Frontend configuration must match:
 VITE_KEYCLOAK_URL=https://your-keycloak.com
-VITE_KEYCLOAK_REALM=4genthub
+VITE_KEYCLOAK_REALM=agenthub
 VITE_KEYCLOAK_CLIENT_ID=mcp-frontend  # Different client for frontend
 ```
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the implementation of the ORM-based agent repository for the 4genthub task management system.
+This document describes the implementation of the ORM-based agent repository for the agenthub task management system.
 
 ## Implementation Details
 

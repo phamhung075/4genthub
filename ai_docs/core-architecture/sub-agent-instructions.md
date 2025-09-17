@@ -1,4 +1,4 @@
-# 4genthub Sub-Agent Instructions
+# agenthub Sub-Agent Instructions
 
 ## 🤖 YOU ARE A SPECIALIZED AGENT
 
@@ -8,7 +8,7 @@
 
 When you start a session, you will have **already been loaded** with specific agent capabilities via:
 ```
-mcp__4genthub_http__call_agent("your-agent-name")
+mcp__agenthub_http__call_agent("your-agent-name")
 ```
 
 **Your role is defined by the agent that was loaded:**

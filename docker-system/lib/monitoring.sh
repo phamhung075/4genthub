@@ -17,7 +17,7 @@ monitor_dashboard() {
         fi
     fi
     
-    info "📊 4genthub Monitoring Dashboard"
+    info "📊 agenthub Monitoring Dashboard"
     echo "================================="
     echo "Press Ctrl+C to exit"
     echo ""
@@ -48,7 +48,7 @@ show_monitoring_snapshot() {
     fi
     
     clear
-    echo "📊 4genthub Monitoring Dashboard - $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "📊 agenthub Monitoring Dashboard - $(date '+%Y-%m-%d %H:%M:%S')"
     echo "=================================================================="
     echo ""
     
@@ -61,10 +61,10 @@ show_monitoring_snapshot() {
         local container
         case "$service" in
             backend)
-                container="4genthub-server"
+                container="agenthub-server"
                 ;;
             *)
-                container="4genthub-$service"
+                container="agenthub-$service"
                 ;;
         esac
         
@@ -104,26 +104,26 @@ show_monitoring_snapshot() {
     echo "💻 RESOURCE USAGE"
     echo "-----------------"
     docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}" \
-        $(docker ps --filter "name=4genthub-" -q) 2>/dev/null | grep -v CONTAINER || echo "No containers running"
+        $(docker ps --filter "name=agenthub-" -q) 2>/dev/null | grep -v CONTAINER || echo "No containers running"
     echo ""
     
     # Database Metrics
     echo "🗄️  DATABASE METRICS"
     echo "------------------"
-    local db_container="4genthub-postgres"
+    local db_container="agenthub-postgres"
     if docker ps --format '{{.Names}}' | grep -q "^$db_container$"; then
         # Connection count
-        local connections=$(docker exec "$db_container" psql -U "${DATABASE_USER:-4genthub_user}" -d "${DATABASE_NAME:-4genthub}" -t -c \
-            "SELECT count(*) FROM pg_stat_activity WHERE datname = '${DATABASE_NAME:-4genthub}';" 2>/dev/null | tr -d ' ' || echo "0")
+        local connections=$(docker exec "$db_container" psql -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -t -c \
+            "SELECT count(*) FROM pg_stat_activity WHERE datname = '${DATABASE_NAME:-agenthub}';" 2>/dev/null | tr -d ' ' || echo "0")
         echo "Connections: $connections"
         
         # Database size
-        local db_size=$(docker exec "$db_container" psql -U "${DATABASE_USER:-4genthub_user}" -d "${DATABASE_NAME:-4genthub}" -t -c \
-            "SELECT pg_size_pretty(pg_database_size('${DATABASE_NAME:-4genthub}'));" 2>/dev/null | tr -d ' ' || echo "N/A")
+        local db_size=$(docker exec "$db_container" psql -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -t -c \
+            "SELECT pg_size_pretty(pg_database_size('${DATABASE_NAME:-agenthub}'));" 2>/dev/null | tr -d ' ' || echo "N/A")
         echo "Database size: $db_size"
         
         # Cache hit ratio
-        local cache_ratio=$(docker exec "$db_container" psql -U "${DATABASE_USER:-4genthub_user}" -d "${DATABASE_NAME:-4genthub}" -t -c \
+        local cache_ratio=$(docker exec "$db_container" psql -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -t -c \
             "SELECT ROUND(100.0 * sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)), 2) as ratio FROM pg_statio_user_tables;" 2>/dev/null | tr -d ' ' || echo "N/A")
         echo "Cache hit ratio: ${cache_ratio}%"
     else
@@ -134,7 +134,7 @@ show_monitoring_snapshot() {
     # Redis Metrics
     echo "📊 REDIS METRICS"
     echo "----------------"
-    local redis_container="4genthub-redis"
+    local redis_container="agenthub-redis"
     if docker ps --format '{{.Names}}' | grep -q "^$redis_container$"; then
         local redis_info=$(docker exec "$redis_container" redis-cli INFO stats 2>/dev/null | grep -E "instantaneous_ops_per_sec:|used_memory_human:" | cut -d: -f2 | tr '\r' ' ')
         echo "Operations/sec: $(echo $redis_info | awk '{print $1}')"
@@ -147,7 +147,7 @@ show_monitoring_snapshot() {
     # Recent Logs
     echo "📜 RECENT LOGS (last 5 entries)"
     echo "-------------------------------"
-    docker logs 4genthub-server --tail 5 2>&1 | sed 's/^/[Backend] /' || echo "No backend logs"
+    docker logs agenthub-server --tail 5 2>&1 | sed 's/^/[Backend] /' || echo "No backend logs"
     echo ""
     
     # Disk Usage
@@ -159,10 +159,10 @@ show_monitoring_snapshot() {
     # Network
     echo "🌐 NETWORK STATUS"
     echo "-----------------"
-    # Try 4genthub-network first, then fall back to docker_default
+    # Try agenthub-network first, then fall back to docker_default
     local network_count="0"
-    if docker network inspect 4genthub-network -f '{{len .Containers}}' >/dev/null 2>&1; then
-        network_count=$(docker network inspect 4genthub-network -f '{{len .Containers}}' 2>/dev/null)
+    if docker network inspect agenthub-network -f '{{len .Containers}}' >/dev/null 2>&1; then
+        network_count=$(docker network inspect agenthub-network -f '{{len .Containers}}' 2>/dev/null)
     elif docker network inspect docker_default -f '{{len .Containers}}' >/dev/null 2>&1; then
         network_count=$(docker network inspect docker_default -f '{{len .Containers}}' 2>/dev/null)
     fi
@@ -171,7 +171,7 @@ show_monitoring_snapshot() {
 
 # Test mode monitoring snapshot
 show_test_monitoring_snapshot() {
-    echo "4genthub Monitoring Dashboard - Test Mode"
+    echo "agenthub Monitoring Dashboard - Test Mode"
     echo "=================================================================="
     echo ""
     
@@ -188,10 +188,10 @@ show_test_monitoring_snapshot() {
     echo "💻 RESOURCE USAGE"
     echo "-----------------"
     echo "CONTAINER           CPU %     MEM USAGE"
-    echo "4genthub-postgres    5.2%      120MiB / 1GiB"
-    echo "4genthub-redis       2.1%      50MiB / 512MiB"
-    echo "4genthub-backend     15.3%     250MiB / 2GiB"
-    echo "4genthub-frontend    3.5%      100MiB / 1GiB"
+    echo "agenthub-postgres    5.2%      120MiB / 1GiB"
+    echo "agenthub-redis       2.1%      50MiB / 512MiB"
+    echo "agenthub-backend     15.3%     250MiB / 2GiB"
+    echo "agenthub-frontend    3.5%      100MiB / 1GiB"
     echo ""
     
     # Database Metrics

@@ -186,7 +186,7 @@ class TokenManager:
     def __init__(self):
         self.keycloak_config = {
             "url": os.getenv("KEYCLOAK_URL", "http://localhost:8080"),
-            "realm": os.getenv("KEYCLOAK_REALM", "4genthub"),
+            "realm": os.getenv("KEYCLOAK_REALM", "agenthub"),
             "client_id": os.getenv("KEYCLOAK_CLIENT_ID", "claude-hooks"),
             "client_secret": os.getenv("KEYCLOAK_CLIENT_SECRET")
         }
@@ -267,7 +267,7 @@ MCP_SERVER_TIMEOUT=10
 
 # Authentication
 KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 KEYCLOAK_CLIENT_ID=claude-hooks
 KEYCLOAK_CLIENT_SECRET=<secret>
 

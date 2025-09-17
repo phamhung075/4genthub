@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document details the complete token flow in the 4genthub system, from user authentication to MCP tool authorization.
+This document details the complete token flow in the agenthub system, from user authentication to MCP tool authorization.
 
 ## Token Lifecycle
 

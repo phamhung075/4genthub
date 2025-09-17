@@ -173,8 +173,8 @@ REQUIREMENTS:
 
 ARCHITECTURE: Follow DDD pattern - modify Infrastructure layer (middleware)
 FILES TO MODIFY: 
-- 4genthub_main/src/infrastructure/auth/jwt_middleware.py
-- 4genthub_main/src/config/settings.py
+- agenthub_main/src/infrastructure/auth/jwt_middleware.py
+- agenthub_main/src/config/settings.py
 - docker-compose.yml (add environment variables)
 
 SECURITY: Ensure bypass only works in non-production environments

@@ -2,7 +2,7 @@
 
 ## Problem Summary
 
-The 4genthub context hierarchy requires a user-scoped global context to exist before project contexts can be created. Each user has their own global context instance. Users experiencing issues with context management were encountering the error:
+The agenthub context hierarchy requires a user-scoped global context to exist before project contexts can be created. Each user has their own global context instance. Users experiencing issues with context management were encountering the error:
 
 ```
 "The manage_context.get could not be completed."
@@ -88,7 +88,7 @@ TASK (ID: task_id)
 
 ### 1. Test Database Connection
 ```bash
-cd /home/daihungpham/__projects__/agentic-project/4genthub_main
+cd /home/daihungpham/__projects__/agentic-project/agenthub_main
 PYTHONPATH=./src python3 -c "
 from fastmcp.task_management.infrastructure.database.database_config import get_db_config
 db_config = get_db_config()
@@ -109,7 +109,7 @@ print(f'Global context result: {result}')
 ### 3. Test Project Creation
 ```python
 # Via MCP tools
-mcp__4genthub_http__manage_project(
+mcp__agenthub_http__manage_project(
     action="create",
     name="test-project",
     description="Test project creation"
@@ -130,7 +130,7 @@ mcp__4genthub_http__manage_project(
 
 1. **Check MCP Server Status:**
    ```bash
-   ps aux | grep -E "(4genthub|fastmcp|8000)" | grep -v grep
+   ps aux | grep -E "(agenthub|fastmcp|8000)" | grep -v grep
    ```
 
 2. **Restart Claude Code Session:**
@@ -146,7 +146,7 @@ mcp__4genthub_http__manage_project(
 
 4. **Manual Server Restart:**
    ```bash
-   cd /path/to/4genthub_main
+   cd /path/to/agenthub_main
    python -m fastmcp serve
    ```
 

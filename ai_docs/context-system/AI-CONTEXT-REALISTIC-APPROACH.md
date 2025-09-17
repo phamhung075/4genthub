@@ -68,7 +68,7 @@ class ClaudeCodeReality:
 
 ```python
 # Reality: Context comes from tool responses
-context = await mcp__4genthub_http__manage_context(
+context = await mcp__agenthub_http__manage_context(
     action="get",
     level="task",
     context_id=task_id

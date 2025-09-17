@@ -1,6 +1,6 @@
 # Troubleshooting Guides
 
-This folder contains comprehensive troubleshooting documentation to help diagnose and resolve common issues with the 4genthub platform.
+This folder contains comprehensive troubleshooting documentation to help diagnose and resolve common issues with the agenthub platform.
 
 ## 📋 Contents
 

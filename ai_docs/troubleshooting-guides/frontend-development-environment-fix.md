@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document details the comprehensive fixes applied to resolve frontend development environment issues in the 4genthub project.
+This document details the comprehensive fixes applied to resolve frontend development environment issues in the agenthub project.
 
 ## Issues Resolved
 
@@ -22,7 +22,7 @@ This document details the comprehensive fixes applied to resolve frontend develo
 - `docker-system/docker-compose.yml` - Updated port mappings and health checks
 - `docker-system/docker/Dockerfile.frontend` - Updated nginx and expose configurations
 - `.env` - Updated `FRONTEND_PORT` from 3000 to 3800
-- `4genthub-frontend/vite.config.ts` - Added host binding for Docker compatibility
+- `agenthub-frontend/vite.config.ts` - Added host binding for Docker compatibility
 
 ### 3. Docker Configuration Issues
 **Problem**: Incorrect Dockerfile reference and missing development optimizations
@@ -48,7 +48,7 @@ This document details the comprehensive fixes applied to resolve frontend develo
 ### Modified Files
 - `docker-system/docker/Dockerfile.frontend` - Updated to Node.js 20
 - `docker-system/docker-compose.yml` - Updated Dockerfile reference, ports, volumes
-- `4genthub-frontend/vite.config.ts` - Added host binding
+- `agenthub-frontend/vite.config.ts` - Added host binding
 - `.env` - Updated port and Dockerfile configurations
 
 ## Development Environment Features
@@ -57,10 +57,10 @@ This document details the comprehensive fixes applied to resolve frontend develo
 Volume mounts configured for immediate file change detection:
 ```yaml
 volumes:
-  - ../4genthub-frontend/src:/app/src:ro
-  - ../4genthub-frontend/public:/app/public:ro
-  - ../4genthub-frontend/package.json:/app/package.json:ro
-  - ../4genthub-frontend/vite.config.ts:/app/vite.config.ts:ro
+  - ../agenthub-frontend/src:/app/src:ro
+  - ../agenthub-frontend/public:/app/public:ro
+  - ../agenthub-frontend/package.json:/app/package.json:ro
+  - ../agenthub-frontend/vite.config.ts:/app/vite.config.ts:ro
   - frontend-node-modules:/app/node_modules
 ```
 

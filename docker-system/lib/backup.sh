@@ -61,7 +61,7 @@ backup_volumes() {
     mkdir -p "$BACKUP_DIR/$backup_name/volumes"
     
     # Backup each volume
-    for volume in $(docker volume ls -q | grep '^4genthub-'); do
+    for volume in $(docker volume ls -q | grep '^agenthub-'); do
         echo "    → Backing up volume: $volume"
         docker run --rm \
             -v "$volume:/source:ro" \
@@ -89,7 +89,7 @@ backup_configs() {
 
 create_backup() {
     local backup_type="${1:-full}"
-    local backup_name="4genthub-backup-$(date +%Y%m%d-%H%M%S)"
+    local backup_name="agenthub-backup-$(date +%Y%m%d-%H%M%S)"
     
     echo "🔄 Creating backup: $backup_name"
     echo "================================"
@@ -148,7 +148,7 @@ restore_backup() {
     local temp_dir=$(mktemp -d)
     tar xzf "$backup_file" -C "$temp_dir"
     
-    local backup_dir=$(find "$temp_dir" -maxdepth 1 -type d -name "4genthub-backup-*" | head -1)
+    local backup_dir=$(find "$temp_dir" -maxdepth 1 -type d -name "agenthub-backup-*" | head -1)
     
     # Verify metadata
     if [[ -f "$backup_dir/metadata.json" ]]; then
@@ -216,7 +216,7 @@ restore_backup() {
 
 cleanup_old_backups() {
     echo "  🧹 Cleaning old backups..."
-    find "$BACKUP_DIR" -name "4genthub-backup-*.tar.gz" -mtime +$BACKUP_RETENTION_DAYS -delete
+    find "$BACKUP_DIR" -name "agenthub-backup-*.tar.gz" -mtime +$BACKUP_RETENTION_DAYS -delete
 }
 
 list_backups() {
@@ -246,7 +246,7 @@ list_backups() {
     fi
     
     # List backups with details
-    for backup in "$BACKUP_DIR"/4genthub-backup-*.tar.gz; do
+    for backup in "$BACKUP_DIR"/agenthub-backup-*.tar.gz; do
         if [[ -f "$backup" ]]; then
             local name=$(basename "$backup")
             local size=$(du -h "$backup" | cut -f1)

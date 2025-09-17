@@ -418,8 +418,8 @@ def isolated_context_test():
 context_resolution_tests:
   stage: test
   script:
-    - pytest 4genthub_main/src/tests/context/ -v --cov=context
-    - pytest 4genthub_main/src/tests/context/ --benchmark-only
+    - pytest agenthub_main/src/tests/context/ -v --cov=context
+    - pytest agenthub_main/src/tests/context/ --benchmark-only
   artifacts:
     reports:
       coverage: coverage.xml

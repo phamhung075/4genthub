@@ -52,7 +52,7 @@ This guide provides step-by-step instructions to implement the agent library cle
 
 ### ✅ Prerequisites
 - [ ] Read the complete [Agent Library Cleanup Recommendations](../architecture-design/agent-library-cleanup-recommendations.md)
-- [ ] Backup current agent library: `cp -r 4genthub_main/agent-library 4genthub_main/agent-library.backup`
+- [ ] Backup current agent library: `cp -r agenthub_main/agent-library agenthub_main/agent-library.backup`
 - [ ] Document current system usage patterns
 - [ ] Notify stakeholders of upcoming changes
 - [ ] Test environment setup and validation
@@ -74,19 +74,19 @@ This guide provides step-by-step instructions to implement the agent library cle
 #### Step 1.1: Remove Generic Purpose Agent
 ```bash
 # The generic_purpose_agent has unclear functionality and can be safely removed
-rm -rf 4genthub_main/agent-library/agents/generic_purpose_agent
+rm -rf agenthub_main/agent-library/agents/generic_purpose_agent
 ```
 
 #### Step 1.2: Remove Lead Testing Agent
 ```bash
 # Functionality completely overlaps with test-orchestrator-agent
-rm -rf 4genthub_main/agent-library/agents/lead_testing_agent
+rm -rf agenthub_main/agent-library/agents/lead_testing_agent
 ```
 
 #### Step 1.3: Remove Campaign Manager Agent  
 ```bash
 # Functionality absorbed into marketing-strategy-orchestrator-agent
-rm -rf 4genthub_main/agent-library/agents/campaign_manager_agent
+rm -rf agenthub_main/agent-library/agents/campaign_manager_agent
 ```
 
 #### Step 1.4: Update Agent Registry
@@ -128,7 +128,7 @@ def handle_deprecated_agent(agent_name):
 
 ##### Step 2.1.1: Enhance test-orchestrator-agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/test-orchestrator-agent/contexts/test_orchestrator_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/test-orchestrator-agent/contexts/test_orchestrator_agent_instructions.yaml
 
 additional_capabilities:
   functional_testing:
@@ -158,9 +158,9 @@ additional_capabilities:
 
 ##### Step 2.1.2: Remove Redundant Testing Agents
 ```bash
-rm -rf 4genthub_main/agent-library/agents/functional_tester_agent
-rm -rf 4genthub_main/agent-library/agents/exploratory_tester_agent  
-rm -rf 4genthub_main/agent-library/agents/test_case_generator_agent
+rm -rf agenthub_main/agent-library/agents/functional_tester_agent
+rm -rf agenthub_main/agent-library/agents/exploratory_tester_agent  
+rm -rf agenthub_main/agent-library/agents/test_case_generator_agent
 ```
 
 #### Step 2.2: UI/Design Domain Consolidation
@@ -169,7 +169,7 @@ rm -rf 4genthub_main/agent-library/agents/test_case_generator_agent
 
 ##### Step 2.2.1: Enhance ui_designer_expert_shadcn_agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/ui_designer_expert_shadcn_agent/contexts/ui_designer_expert_shadcn_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/ui_designer_expert_shadcn_agent/contexts/ui_designer_expert_shadcn_agent_instructions.yaml
 
 enhanced_capabilities:
   general_ui_design:
@@ -191,7 +191,7 @@ enhanced_capabilities:
 
 ##### Step 2.2.2: Enhance design-system-agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/design-system-agent/contexts/design_system_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/design-system-agent/contexts/design_system_agent_instructions.yaml
 
 expanded_capabilities:
   usability_integration:
@@ -205,8 +205,8 @@ expanded_capabilities:
 
 ##### Step 2.2.3: Remove Redundant Design Agents
 ```bash
-rm -rf 4genthub_main/agent-library/agents/ui_designer_agent
-rm -rf 4genthub_main/agent-library/agents/usability_heuristic_agent
+rm -rf agenthub_main/agent-library/agents/ui_designer_agent
+rm -rf agenthub_main/agent-library/agents/usability_heuristic_agent
 ```
 
 #### Step 2.3: Research Domain Consolidation
@@ -215,7 +215,7 @@ rm -rf 4genthub_main/agent-library/agents/usability_heuristic_agent
 
 ##### Step 2.3.1: Enhance deep-research-agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/deep-research-agent/contexts/deep_research_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/deep-research-agent/contexts/deep_research_agent_instructions.yaml
 
 expanded_research_capabilities:
   market_research:
@@ -239,8 +239,8 @@ expanded_research_capabilities:
 
 ##### Step 2.3.2: Remove Redundant Research Agents
 ```bash
-rm -rf 4genthub_main/agent-library/agents/market_research_agent
-rm -rf 4genthub_main/agent-library/agents/ux_researcher_agent
+rm -rf agenthub_main/agent-library/agents/market_research_agent
+rm -rf agenthub_main/agent-library/agents/ux_researcher_agent
 ```
 
 #### Step 2.4: Test Phase 2 Integration
@@ -259,7 +259,7 @@ rm -rf 4genthub_main/agent-library/agents/ux_researcher_agent
 
 ##### Step 3.1.1: Enhance master-orchestrator-agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/master-orchestrator-agent/contexts/uber_orchestrator_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/master-orchestrator-agent/contexts/uber_orchestrator_agent_instructions.yaml
 
 supreme_orchestration_capabilities:
   development_orchestration:
@@ -289,16 +289,16 @@ supreme_orchestration_capabilities:
 
 ##### Step 3.1.2: Remove Redundant Strategy Agents
 ```bash
-rm -rf 4genthub_main/agent-library/agents/development_orchestrator_agent
-rm -rf 4genthub_main/agent-library/agents/task_deep_manager_agent
-rm -rf 4genthub_main/agent-library/agents/workflow_architect_agent
+rm -rf agenthub_main/agent-library/agents/development_orchestrator_agent
+rm -rf agenthub_main/agent-library/agents/task_deep_manager_agent
+rm -rf agenthub_main/agent-library/agents/workflow_architect_agent
 ```
 
 #### Step 3.2: Security Domain Consolidation
 
 ##### Step 3.2.1: Enhance security-auditor-agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/security-auditor-agent/contexts/security_auditor_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/security-auditor-agent/contexts/security_auditor_agent_instructions.yaml
 
 comprehensive_security_capabilities:
   penetration_testing:
@@ -312,7 +312,7 @@ comprehensive_security_capabilities:
 
 ##### Step 3.2.2: Enhance compliance-scope-agent  
 ```yaml
-# Update 4genthub_main/agent-library/agents/compliance-scope-agent/contexts/compliance_scope_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/compliance-scope-agent/contexts/compliance_scope_agent_instructions.yaml
 
 comprehensive_compliance_capabilities:
   compliance_testing:
@@ -326,15 +326,15 @@ comprehensive_compliance_capabilities:
 
 ##### Step 3.2.3: Remove Redundant Security Agents
 ```bash
-rm -rf 4genthub_main/agent-library/agents/security_penetration_tester_agent
-rm -rf 4genthub_main/agent-library/agents/compliance_testing_agent
+rm -rf agenthub_main/agent-library/agents/security_penetration_tester_agent
+rm -rf agenthub_main/agent-library/agents/compliance_testing_agent
 ```
 
 #### Step 3.3: Documentation/Knowledge Consolidation
 
 ##### Step 3.3.1: Enhance documentation-agent
 ```yaml
-# Update 4genthub_main/agent-library/agents/documentation-agent/contexts/documentation_agent_instructions.yaml
+# Update agenthub_main/agent-library/agents/documentation-agent/contexts/documentation_agent_instructions.yaml
 
 comprehensive_knowledge_management:
   scribe_capabilities:
@@ -364,9 +364,9 @@ comprehensive_knowledge_management:
 
 ##### Step 3.3.2: Remove Redundant Documentation Agents
 ```bash
-rm -rf 4genthub_main/agent-library/agents/scribe_agent
-rm -rf 4genthub_main/agent-library/agents/knowledge_evolution_agent
-rm -rf 4genthub_main/agent-library/agents/incident_learning_agent
+rm -rf agenthub_main/agent-library/agents/scribe_agent
+rm -rf agenthub_main/agent-library/agents/knowledge_evolution_agent
+rm -rf agenthub_main/agent-library/agents/incident_learning_agent
 ```
 
 #### Step 3.4: Final Specialized Agent Cleanup
@@ -374,22 +374,22 @@ rm -rf 4genthub_main/agent-library/agents/incident_learning_agent
 Remove remaining redundant specialized agents:
 ```bash
 # Marketing domain
-rm -rf 4genthub_main/agent-library/agents/social_media_setup_agent
-rm -rf 4genthub_main/agent-library/agents/growth_hacking_idea_agent
+rm -rf agenthub_main/agent-library/agents/social_media_setup_agent
+rm -rf agenthub_main/agent-library/agents/growth_hacking_idea_agent
 
 # Design domain  
-rm -rf 4genthub_main/agent-library/agents/graphic_design_agent
-rm -rf 4genthub_main/agent-library/agents/video_production_agent
-rm -rf 4genthub_main/agent-library/agents/design_qa_analyst_agent
+rm -rf agenthub_main/agent-library/agents/graphic_design_agent
+rm -rf agenthub_main/agent-library/agents/video_production_agent
+rm -rf agenthub_main/agent-library/agents/design_qa_analyst_agent
 
 # Development domain
-rm -rf 4genthub_main/agent-library/agents/algorithmic_problem_solver_agent
+rm -rf agenthub_main/agent-library/agents/algorithmic_problem_solver_agent
 
 # Research domain
-rm -rf 4genthub_main/agent-library/agents/user_feedback_collector_agent
+rm -rf agenthub_main/agent-library/agents/user_feedback_collector_agent
 
 # Testing domain
-rm -rf 4genthub_main/agent-library/agents/visual_regression_testing_agent
+rm -rf agenthub_main/agent-library/agents/visual_regression_testing_agent
 ```
 
 ## Post-Migration Tasks
@@ -426,8 +426,8 @@ If issues are encountered during migration:
 ### Emergency Rollback
 ```bash
 # Restore from backup
-rm -rf 4genthub_main/agent-library
-mv 4genthub_main/agent-library.backup 4genthub_main/agent-library
+rm -rf agenthub_main/agent-library
+mv agenthub_main/agent-library.backup agenthub_main/agent-library
 
 # Restart services
 docker-compose restart
@@ -436,7 +436,7 @@ docker-compose restart
 ### Partial Rollback
 ```bash
 # Restore specific agents that are causing issues
-cp -r 4genthub_main/agent-library.backup/agents/[agent_name] 4genthub_main/agent-library/agents/
+cp -r agenthub_main/agent-library.backup/agents/[agent_name] agenthub_main/agent-library/agents/
 ```
 
 ## Success Metrics

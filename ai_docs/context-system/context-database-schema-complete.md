@@ -1,7 +1,7 @@
 # Complete Context System Database Schema Documentation
 
 ## Overview
-The 4genthub Context System uses a 4-tier hierarchical structure where each level has specific database columns and field mappings. This document provides the definitive guide for working with contexts at each level.
+The agenthub Context System uses a 4-tier hierarchical structure where each level has specific database columns and field mappings. This document provides the definitive guide for working with contexts at each level.
 
 ## Database Tables and Column Structure
 
@@ -35,7 +35,7 @@ The 4genthub Context System uses a 4-tier hierarchical structure where each leve
 
 #### Correct Usage Example:
 ```python
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="global",
     context_id="global-{user_id}",
@@ -94,7 +94,7 @@ data={
 
 #### Correct Usage Example:
 ```python
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="project",
     context_id=project_id,
@@ -162,7 +162,7 @@ The branch repository maps some fields differently internally:
 
 #### Correct Usage Example:
 ```python
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="branch",
     context_id=branch_id,
@@ -231,7 +231,7 @@ mcp__4genthub_http__manage_context(
 
 #### Correct Usage Example:
 ```python
-mcp__4genthub_http__manage_context(
+mcp__agenthub_http__manage_context(
     action="update",
     level="task",
     context_id=task_id,

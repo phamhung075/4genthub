@@ -18,7 +18,7 @@ This guide covers the complete setup and configuration of Keycloak service accou
 ## Prerequisites
 
 1. **Keycloak Instance**: Running Keycloak server with admin access
-2. **Realm**: Configured MCP realm (`4genthub`)
+2. **Realm**: Configured MCP realm (`agenthub`)
 3. **Network Access**: Connectivity between MCP application and Keycloak
 4. **SSL Certificate**: Valid SSL certificate for production use
 
@@ -27,7 +27,7 @@ This guide covers the complete setup and configuration of Keycloak service accou
 ### Step 1: Create Service Account Client
 
 1. Log into Keycloak Admin Console
-2. Navigate to your realm (`4genthub`)
+2. Navigate to your realm (`agenthub`)
 3. Go to **Clients** → **Create Client**
 4. Configure client settings:
    ```
@@ -95,7 +95,7 @@ The service account uses environment variables for configuration. Add these to y
 ```bash
 # Keycloak Configuration
 KEYCLOAK_URL=https://your-keycloak-instance.com
-KEYCLOAK_REALM=4genthub
+KEYCLOAK_REALM=agenthub
 
 # Service Account Configuration
 KEYCLOAK_SERVICE_CLIENT_ID=mcp-service-account
@@ -113,7 +113,7 @@ SSL_VERIFY=true
 
 Reference the sample configuration file at:
 ```
-4genthub_main/config/keycloak_service_account.sample
+agenthub_main/config/keycloak_service_account.sample
 ```
 
 ## Implementation Details
@@ -122,7 +122,7 @@ Reference the sample configuration file at:
 
 The service account functionality is implemented in:
 ```
-4genthub_main/src/fastmcp/auth/service_account.py
+agenthub_main/src/fastmcp/auth/service_account.py
 ```
 
 Key components:
@@ -227,7 +227,7 @@ Expected healthy response:
   "last_auth_success": "2025-09-11T16:30:00.000Z",
   "configuration": {
     "keycloak_url": "https://keycloak.example.com",
-    "realm": "4genthub",
+    "realm": "agenthub",
     "client_id": "mcp-service-account",
     "scopes": ["openid", "profile", "email", "mcp:read", "mcp:write"]
   }
@@ -247,7 +247,7 @@ Expected healthy response:
 Run the test suite:
 
 ```bash
-pytest 4genthub_main/src/tests/unit/auth/service_account_test.py -v
+pytest agenthub_main/src/tests/unit/auth/service_account_test.py -v
 ```
 
 ## Troubleshooting
@@ -314,12 +314,12 @@ pytest 4genthub_main/src/tests/unit/auth/service_account_test.py -v
 
 2. **Test Connectivity**:
    ```bash
-   curl -k https://your-keycloak-url/realms/4genthub/.well-known/openid-configuration
+   curl -k https://your-keycloak-url/realms/agenthub/.well-known/openid-configuration
    ```
 
 3. **Manual Token Request**:
    ```bash
-   curl -X POST https://your-keycloak-url/realms/4genthub/protocol/openid-connect/token \
+   curl -X POST https://your-keycloak-url/realms/agenthub/protocol/openid-connect/token \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "grant_type=client_credentials&client_id=mcp-service-account&client_secret=your-secret"
    ```

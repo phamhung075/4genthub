@@ -6,7 +6,7 @@ version: "1.0"
 enabled: true
 
 # Task Management Tool Hints
-mcp__4genthub_http__manage_task:
+mcp__agenthub_http__manage_task:
   create:
     required_fields:
       - title
@@ -107,7 +107,7 @@ mcp__4genthub_http__manage_task:
       missing_dependency_id: "🚨 CRITICAL: 'dependency_id' of dependency to remove"
 
 # Subtask Management Tool Hints
-mcp__4genthub_http__manage_subtask:
+mcp__agenthub_http__manage_subtask:
   create:
     required_fields:
       - task_id
@@ -154,7 +154,7 @@ mcp__4genthub_http__manage_subtask:
       completion_check: "✅ CHECK: Ensure all subtasks complete before parent"
 
 # Context Management Tool Hints
-mcp__4genthub_http__manage_context:
+mcp__agenthub_http__manage_context:
   create:
     required_fields:
       - level
@@ -197,7 +197,7 @@ mcp__4genthub_http__manage_context:
       importance_levels: "🎯 IMPORTANCE: low, medium, high, critical"
 
 # Project Management Tool Hints
-mcp__4genthub_http__manage_project:
+mcp__agenthub_http__manage_project:
   create:
     required_fields:
       - name
@@ -215,7 +215,7 @@ mcp__4genthub_http__manage_project:
       use_before_work: "🏥 TIP: Run health check before starting major work"
 
 # Git Branch Management Tool Hints
-mcp__4genthub_http__manage_git_branch:
+mcp__agenthub_http__manage_git_branch:
   create:
     required_fields:
       - project_id
@@ -235,7 +235,7 @@ mcp__4genthub_http__manage_git_branch:
       specialization: "🤖 TIP: Assign agents based on branch type"
 
 # Agent Management Tool Hints
-mcp__4genthub_http__manage_agent:
+mcp__agenthub_http__manage_agent:
   register:
     required_fields:
       - project_id
@@ -245,7 +245,7 @@ mcp__4genthub_http__manage_agent:
       auto_id: "🔑 INFO: agent_id auto-generated if not provided"
 
 # Agent Invocation Tool Hints
-mcp__4genthub_http__call_agent:
+mcp__agenthub_http__call_agent:
   default:  # No action field for this tool
     required_fields:
       - name_agent

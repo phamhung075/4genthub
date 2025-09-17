@@ -1,13 +1,13 @@
 ---
-description: Product Requirements Document for 4genthub AI Agent Orchestration Platform
+description: Product Requirements Document for agenthub AI Agent Orchestration Platform
 globs: 
 alwaysApply: false
 ---
-# 4genthub AI Agent Orchestration Platform - Product Requirements Document (PRD)
+# agenthub AI Agent Orchestration Platform - Product Requirements Document (PRD)
 
 ## PRODUCT_OVERVIEW
 ### Product_Name
-4genthub - AI Agent Orchestration Platform
+agenthub - AI Agent Orchestration Platform
 
 ### Product_Version
 2.1.0
@@ -175,8 +175,8 @@ Comprehensive AI agent orchestration platform providing:
 - **MCP Protocol**: Advanced Model Context Protocol implementation
 
 ### Architecture_Components
-- **Frontend Layer**: 4genthub-frontend/ (React + TypeScript + Tailwind + basic task management)
-- **Core MCP Server**: 4genthub_main/ (Python + FastMCP + DDD + SQLite)
+- **Frontend Layer**: agenthub-frontend/ (React + TypeScript + Tailwind + basic task management)
+- **Core MCP Server**: agenthub_main/ (Python + FastMCP + DDD + SQLite)
 - **Domain Layer**: src/fastmcp/task_management/domain/ (Entities, value objects, domain services)
 - **Application Layer**: src/fastmcp/task_management/application/ (Use cases, facades, DTOs)
 - **Infrastructure Layer**: src/fastmcp/task_management/infrastructure/ (Repositories, external services)
@@ -252,8 +252,8 @@ Comprehensive AI agent orchestration platform providing:
 
 ### System_Locations
 - **Project Root**: /home/daihungpham/agentic-project/
-- **Frontend**: /home/daihungpham/agentic-project/4genthub-frontend/ (React + TypeScript + Tailwind)
-- **Core Server**: /home/daihungpham/agentic-project/4genthub_main/ (Python + FastMCP + DDD)
-- **Agent Library**: /home/daihungpham/agentic-project/4genthub_main/agent-library/ (60+ agents)
+- **Frontend**: /home/daihungpham/agentic-project/agenthub-frontend/ (React + TypeScript + Tailwind)
+- **Core Server**: /home/daihungpham/agentic-project/agenthub_main/ (Python + FastMCP + DDD)
+- **Agent Library**: /home/daihungpham/agentic-project/agenthub_main/agent-library/ (60+ agents)
 - **Database**: SQLite databases with atomic operations and Redis caching
 - **Documentation**: /home/daihungpham/agentic-project/.cursor/rules/ (Platform rules and configuration)

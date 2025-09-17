@@ -244,7 +244,7 @@ while :; do
             echo ""
 
             # Find all test file references in the results
-            grep -oE "(4genthub_main/src/tests/[^[:space:]]+\.py|tests/[^[:space:]]+\.py)" "$TEMP_RESULTS" | sort -u > /tmp/test_files_list.txt 2>/dev/null || true
+            grep -oE "(agenthub_main/src/tests/[^[:space:]]+\.py|tests/[^[:space:]]+\.py)" "$TEMP_RESULTS" | sort -u > /tmp/test_files_list.txt 2>/dev/null || true
 
             # Count total files found
             TOTAL_FILES=$(wc -l < /tmp/test_files_list.txt 2>/dev/null || echo "0")

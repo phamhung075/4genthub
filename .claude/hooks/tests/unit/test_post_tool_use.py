@@ -193,7 +193,7 @@ class TestHintGenerator:
 
         # Use MCP tool name that the HintGenerator actually processes
         tool_data = {
-            'tool_name': 'mcp__4genthub_http__manage_task',
+            'tool_name': 'mcp__agenthub_http__manage_task',
             'tool_params': {'action': 'create', 'title': 'Test task'},
             'tool_result': {'success': True}
         }
@@ -310,7 +310,7 @@ class TestAgentStateTracker:
         """Test successful agent state tracking with call_agent tool."""
         mock_update.return_value = True
 
-        tool_name = 'mcp__4genthub_http__call_agent'
+        tool_name = 'mcp__agenthub_http__call_agent'
         tool_params = {'name_agent': 'coding-agent'}
         tool_result = {'success': True}
 
@@ -339,7 +339,7 @@ class TestAgentStateTracker:
         """Test agent state tracking with exception."""
         mock_update.side_effect = Exception("State tracking failed")
 
-        tool_name = 'mcp__4genthub_http__call_agent'
+        tool_name = 'mcp__agenthub_http__call_agent'
         tool_params = {'name_agent': 'coding-agent'}
         tool_result = {'success': True}
 
@@ -351,7 +351,7 @@ class TestAgentStateTracker:
 
     def test_process_missing_agent_name(self):
         """Test processing call_agent without agent name."""
-        tool_name = 'mcp__4genthub_http__call_agent'
+        tool_name = 'mcp__agenthub_http__call_agent'
         tool_params = {}  # Missing name_agent
         tool_result = {'success': True}
 
