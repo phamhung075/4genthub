@@ -131,14 +131,7 @@ export const Header: React.FC = () => {
                 className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
               >
                 <HelpCircle className="h-5 w-5" />
-                <span className="font-medium">Help</span>
-              </Link>
-              <Link
-                to="/initialization"
-                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-              >
-                <Wrench className="h-5 w-5" />
-                <span className="font-medium">Setup</span>
+                <span className="font-medium">Help & Setup</span>
               </Link>
               <Link 
                 to="/profile" 
