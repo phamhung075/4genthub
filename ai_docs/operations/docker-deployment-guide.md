@@ -1,4 +1,4 @@
-# Docker Deployment Guide - DhafnckMCP SSL and Environment Configuration
+# Docker Deployment Guide - 4genthub SSL and Environment Configuration
 
 ## Overview
 
@@ -50,7 +50,7 @@ CapRover's built-in PostgreSQL service typically doesn't support SSL connections
 DATABASE_TYPE=postgresql
 DATABASE_HOST=srv-captain--postgres  # CapRover internal hostname
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
+DATABASE_NAME=4genthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_caprover_generated_password
 DATABASE_SSL_MODE=disable  # CRITICAL: Must be disabled for CapRover
@@ -72,7 +72,7 @@ Managed PostgreSQL services (AWS RDS, Google Cloud SQL, Azure Database, etc.) en
 DATABASE_TYPE=postgresql
 DATABASE_HOST=your-db.region.provider.com  # Managed service hostname
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
+DATABASE_NAME=4genthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_secure_managed_password
 DATABASE_SSL_MODE=require  # CRITICAL: Must be required for managed services
@@ -114,7 +114,7 @@ APP_LOG_LEVEL=INFO  # Will be converted to lowercase
 DATABASE_TYPE=postgresql  # or 'supabase'
 DATABASE_HOST=your_database_host
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
+DATABASE_NAME=4genthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_secure_password
 DATABASE_SSL_MODE=disable  # or 'require' based on deployment type
@@ -128,7 +128,7 @@ JWT_SECRET_KEY=your_jwt_secret_key_at_least_32_chars_long
 AUTH_ENABLED=true
 AUTH_PROVIDER=keycloak
 KEYCLOAK_URL=https://your-keycloak.com
-KEYCLOAK_REALM=dhafnck-mcp
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your_keycloak_secret
 
@@ -186,7 +186,7 @@ LOG_LEVEL=$(echo "${APP_LOG_LEVEL:-info}" | tr "[:upper:]" "[:lower:]")
    DATABASE_TYPE=postgresql
    DATABASE_HOST=srv-captain--postgres
    DATABASE_PORT=5432
-   DATABASE_NAME=dhafnck_mcp
+   DATABASE_NAME=4genthub
    DATABASE_USER=postgres
    DATABASE_PASSWORD=<generated_password_from_step_1>
    DATABASE_SSL_MODE=disable  # IMPORTANT: CapRover PostgreSQL doesn't support SSL
@@ -206,7 +206,7 @@ LOG_LEVEL=$(echo "${APP_LOG_LEVEL:-info}" | tr "[:upper:]" "[:lower:]")
    VITE_BACKEND_URL=https://api.captain.yourdomain.com
    VITE_API_URL=https://api.captain.yourdomain.com
    VITE_KEYCLOAK_URL=https://auth.captain.yourdomain.com
-   VITE_KEYCLOAK_REALM=dhafnck-mcp
+   VITE_KEYCLOAK_REALM=4genthub
    VITE_KEYCLOAK_CLIENT_ID=mcp-frontend
    ```
 
@@ -239,7 +239,7 @@ services:
 DATABASE_TYPE=postgresql
 DATABASE_HOST=mydb.abc123.us-east-1.rds.amazonaws.com
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
+DATABASE_NAME=4genthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_rds_password
 DATABASE_SSL_MODE=require  # AWS RDS enforces SSL
@@ -255,7 +255,7 @@ DATABASE_SSL_MODE=require  # AWS RDS enforces SSL
 DATABASE_TYPE=postgresql
 DATABASE_HOST=10.1.2.3  # Private IP or public IP
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
+DATABASE_NAME=4genthub
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your_cloudsql_password
 DATABASE_SSL_MODE=require  # Cloud SQL enforces SSL
@@ -268,7 +268,7 @@ DATABASE_SSL_MODE=require  # Cloud SQL enforces SSL
 DATABASE_TYPE=postgresql
 DATABASE_HOST=myserver.postgres.database.azure.com
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
+DATABASE_NAME=4genthub
 DATABASE_USER=postgres@myserver  # Azure requires @server_name format
 DATABASE_PASSWORD=your_azure_password
 DATABASE_SSL_MODE=require  # Azure Database enforces SSL

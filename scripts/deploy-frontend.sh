@@ -2,7 +2,7 @@
 
 set -e
 
-echo "🎨 DhafnckMCP Frontend Deployment"
+echo "🎨 4genthub Frontend Deployment"
 echo "================================="
 
 # Configuration
@@ -53,8 +53,8 @@ for var in "${REQUIRED_VARS[@]}"; do
 done
 
 # Check if frontend directory exists
-if [ ! -d "dhafnck-frontend" ]; then
-    print_error "Frontend directory 'dhafnck-frontend' not found"
+if [ ! -d "4genthub-frontend" ]; then
+    print_error "Frontend directory '4genthub-frontend' not found"
 fi
 
 # Check if CapRover CLI is installed
@@ -67,13 +67,13 @@ fi
 if [ "$SKIP_BUILD" != "true" ]; then
     print_status "Building frontend Docker image..."
     
-    cd dhafnck-frontend
+    cd 4genthub-frontend
     
     # Determine backend URL based on environment
     if [ "$ENVIRONMENT" == "staging" ]; then
-        BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-dhafnck-mcp-backend}-staging.${CAPROVER_DOMAIN:-your-domain.com}"
+        BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-4genthub-backend}-staging.${CAPROVER_DOMAIN:-your-domain.com}"
     else
-        BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-dhafnck-mcp-backend}.${CAPROVER_DOMAIN:-your-domain.com}"
+        BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-4genthub-backend}.${CAPROVER_DOMAIN:-your-domain.com}"
     fi
     
     # Create production environment file
@@ -94,8 +94,8 @@ EOF
         # Build with optimizations
         DOCKER_BUILDKIT=1 docker build \
             -f Dockerfile.production \
-            -t $DOCKER_NAMESPACE/dhafnck-mcp-frontend:latest \
-            -t $DOCKER_NAMESPACE/dhafnck-mcp-frontend:$ENVIRONMENT \
+            -t $DOCKER_NAMESPACE/4genthub-frontend:latest \
+            -t $DOCKER_NAMESPACE/4genthub-frontend:$ENVIRONMENT \
             --build-arg SERVICE=frontend \
             --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --build-arg VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") \
@@ -103,11 +103,11 @@ EOF
         print_status "Frontend image built successfully"
         
         # Push to registry
-        docker push $DOCKER_NAMESPACE/dhafnck-mcp-frontend:latest
-        docker push $DOCKER_NAMESPACE/dhafnck-mcp-frontend:$ENVIRONMENT
+        docker push $DOCKER_NAMESPACE/4genthub-frontend:latest
+        docker push $DOCKER_NAMESPACE/4genthub-frontend:$ENVIRONMENT
         print_status "Frontend image pushed to registry"
     else
-        print_error "Dockerfile.production not found in dhafnck-frontend directory"
+        print_error "Dockerfile.production not found in 4genthub-frontend directory"
     fi
     
     cd ..
@@ -129,7 +129,7 @@ caprover deploy \
     --caproverUrl $CAPROVER_SERVER_URL \
     --caproverPassword $CAPROVER_PASSWORD \
     --caproverApp $APP_NAME \
-    --imageName $DOCKER_NAMESPACE/dhafnck-mcp-frontend:latest || {
+    --imageName $DOCKER_NAMESPACE/4genthub-frontend:latest || {
     print_error "Frontend deployment failed"
 }
 
@@ -183,9 +183,9 @@ done
 print_status "Testing frontend-backend connectivity..."
 # This is a basic connectivity test - in reality you'd test actual API calls
 if [ "$ENVIRONMENT" == "staging" ]; then
-    TEST_BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-dhafnck-mcp-backend}-staging.${CAPROVER_DOMAIN:-your-domain.com}"
+    TEST_BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-4genthub-backend}-staging.${CAPROVER_DOMAIN:-your-domain.com}"
 else
-    TEST_BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-dhafnck-mcp-backend}.${CAPROVER_DOMAIN:-your-domain.com}"
+    TEST_BACKEND_URL="https://${CAPROVER_BACKEND_APP_NAME:-4genthub-backend}.${CAPROVER_DOMAIN:-your-domain.com}"
 fi
 
 if curl -f --max-time 10 "$TEST_BACKEND_URL/health" > /dev/null 2>&1; then
@@ -215,7 +215,7 @@ echo ""
 echo "📋 Frontend Deployment Summary:"
 echo "   Environment: $ENVIRONMENT"
 echo "   App Name: $APP_NAME"
-echo "   Image: $DOCKER_NAMESPACE/dhafnck-mcp-frontend:latest"
+echo "   Image: $DOCKER_NAMESPACE/4genthub-frontend:latest"
 echo "   URL: $FRONTEND_URL"
 echo ""
 echo "🔗 Connected Services:"

@@ -44,7 +44,7 @@ def inject_pending_tasks():
     """Automatically inject pending tasks into Claude's context"""
     
     # Check for any pending tasks across all projects
-    pending_tasks = mcp__dhafnck_mcp_http__manage_task(
+    pending_tasks = mcp__4genthub_http__manage_task(
         action="list",
         status="todo",
         limit=5  # Show top 5 priority tasks
@@ -103,7 +103,7 @@ class TaskHierarchy:
     
     def create_epic(self, description):
         """Create high-level project epic"""
-        epic = mcp__dhafnck_mcp_http__manage_task(
+        epic = mcp__4genthub_http__manage_task(
             action="create",
             title=description,
             task_type="epic",
@@ -117,7 +117,7 @@ class TaskHierarchy:
         features = analyze_and_break_down(epic_id)
         
         for feature in features:
-            mcp__dhafnck_mcp_http__manage_task(
+            mcp__4genthub_http__manage_task(
                 action="create",
                 title=feature.title,
                 parent_id=epic_id,
@@ -130,7 +130,7 @@ class TaskHierarchy:
         tasks = break_down_feature(feature_id)
         
         for task in tasks:
-            mcp__dhafnck_mcp_http__manage_subtask(
+            mcp__4genthub_http__manage_subtask(
                 action="create",
                 task_id=feature_id,
                 title=task.title
@@ -143,7 +143,7 @@ def get_next_work():
     """Get next task, elaborating if needed"""
     
     # Get next item (might be epic, feature, or task)
-    next_item = mcp__dhafnck_mcp_http__manage_task(
+    next_item = mcp__4genthub_http__manage_task(
         action="next",
         git_branch_id=current_branch
     )
@@ -209,7 +209,7 @@ class CheckpointSystem:
         """Checkpoint after each task"""
         
         # Mark task complete
-        mcp__dhafnck_mcp_http__manage_task(
+        mcp__4genthub_http__manage_task(
             action="complete",
             task_id=task_id
         )
@@ -218,7 +218,7 @@ class CheckpointSystem:
         print("✅ Task complete. Getting next task...")
         
         # Get next task immediately
-        next_task = mcp__dhafnck_mcp_http__manage_task(
+        next_task = mcp__4genthub_http__manage_task(
             action="next"
         )
         
@@ -236,7 +236,7 @@ def handle_task_failure(task_id, error):
     """Handle failed or blocked tasks"""
     
     # Mark task as blocked/failed
-    mcp__dhafnck_mcp_http__manage_task(
+    mcp__4genthub_http__manage_task(
         action="update",
         task_id=task_id,
         status="blocked",
@@ -244,7 +244,7 @@ def handle_task_failure(task_id, error):
     )
     
     # Try to find alternative task
-    alternative = mcp__dhafnck_mcp_http__manage_task(
+    alternative = mcp__4genthub_http__manage_task(
         action="next",
         skip_blocked=True
     )
@@ -284,13 +284,13 @@ def resume_project(project_id=None):
     """Full context restoration when returning to project"""
     
     # Get project overview
-    project = mcp__dhafnck_mcp_http__manage_project(
+    project = mcp__4genthub_http__manage_project(
         action="get",
         project_id=project_id or detect_current_project()
     )
     
     # Get recent activity
-    recent_tasks = mcp__dhafnck_mcp_http__manage_task(
+    recent_tasks = mcp__4genthub_http__manage_task(
         action="list",
         project_id=project_id,
         status="completed",
@@ -298,12 +298,12 @@ def resume_project(project_id=None):
     )
     
     # Get current/next tasks
-    current = mcp__dhafnck_mcp_http__manage_task(
+    current = mcp__4genthub_http__manage_task(
         action="list",
         status="in_progress"
     )
     
-    upcoming = mcp__dhafnck_mcp_http__manage_task(
+    upcoming = mcp__4genthub_http__manage_task(
         action="list",
         status="todo",
         limit=5

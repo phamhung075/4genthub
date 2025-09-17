@@ -2,7 +2,7 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: dhafnck-postgres
+    container_name: 4genthub-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD:-postgres}
@@ -30,13 +30,13 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: dhafnck_mcp_main/docker/Dockerfile
+      dockerfile: 4genthub_main/docker/Dockerfile
       args:
         - ENV=production
-    container_name: dhafnck-backend
+    container_name: 4genthub-backend
     environment:
       - DATABASE_TYPE=postgresql
-      - DATABASE_URL=postgresql://dhafnck_user:dev_password@postgres:5432/dhafnck_mcp
+      - DATABASE_URL=postgresql://4genthub_user:dev_password@postgres:5432/4genthub
       - ENV=production
       - APP_DEBUG=false
       - APP_LOG_LEVEL=WARNING
@@ -67,7 +67,7 @@ services:
       dockerfile: docker-system/docker/frontend.Dockerfile
       args:
         - NODE_ENV=production
-    container_name: dhafnck-frontend
+    container_name: 4genthub-frontend
     environment:
       - NODE_ENV=production
       - VITE_API_URL=http://localhost:8000
@@ -92,4 +92,4 @@ volumes:
 networks:
   default:
     external: true
-    name: dhafnck-network
+    name: 4genthub-network

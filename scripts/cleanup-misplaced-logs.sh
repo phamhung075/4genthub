@@ -6,11 +6,11 @@ echo "Cleaning up misplaced logs directories..."
 
 # List of directories to clean (excluding root logs and git logs)
 DIRS_TO_CLEAN=(
-    "dhafnck-frontend/logs"
-    "dhafnck_mcp_main/agent-library/logs"
-    "dhafnck_mcp_main/src/tests/unit/mcp_controllers/logs"
-    "dhafnck_mcp_main/src/logs"
-    "dhafnck_mcp_main/logs"
+    "4genthub-frontend/logs"
+    "4genthub_main/agent-library/logs"
+    "4genthub_main/src/tests/unit/mcp_controllers/logs"
+    "4genthub_main/src/logs"
+    "4genthub_main/logs"
     "docker-system/logs"
     "ai_docs/core-architecture/logs"
 )

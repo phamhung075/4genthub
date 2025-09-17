@@ -1,7 +1,7 @@
 # Continue Unit Test Fix - Command File
 
 ## Objective
-Continue fixing and creating unit tests for the DhafnckMCP project backend, focusing on domain, application, and infrastructure layers.
+Continue fixing and creating unit tests for the 4genthub project backend, focusing on domain, application, and infrastructure layers.
 
 ## Current Focus
 - Fix failing unit tests in the backend
@@ -10,10 +10,10 @@ Continue fixing and creating unit tests for the DhafnckMCP project backend, focu
 - Update TEST-CHANGELOG.md with changes
 
 ## Test Categories
-- Unit tests: `dhafnck_mcp_main/src/tests/unit/`
-- Integration tests: `dhafnck_mcp_main/src/tests/integration/`
-- E2E tests: `dhafnck_mcp_main/src/tests/e2e/`
-- Performance tests: `dhafnck_mcp_main/src/tests/performance/`
+- Unit tests: `4genthub_main/src/tests/unit/`
+- Integration tests: `4genthub_main/src/tests/integration/`
+- E2E tests: `4genthub_main/src/tests/e2e/`
+- Performance tests: `4genthub_main/src/tests/performance/`
 
 ## Priority Areas
 1. Domain layer entities and value objects
@@ -24,7 +24,7 @@ Continue fixing and creating unit tests for the DhafnckMCP project backend, focu
 ## Test Execution Commands
 ```bash
 # Run all unit tests
-cd dhafnck_mcp_main
+cd 4genthub_main
 python -m pytest src/tests/unit/ -v
 
 # Run specific test file
@@ -35,7 +35,7 @@ python -m pytest src/tests/unit/ --cov=src --cov-report=html
 ```
 
 ## Rules
-1. Write tests in correct location (`dhafnck_mcp_main/src/tests/`)
+1. Write tests in correct location (`4genthub_main/src/tests/`)
 2. Follow existing test patterns and conventions
 3. Use mocks for external dependencies
 4. Ensure tests are isolated and repeatable

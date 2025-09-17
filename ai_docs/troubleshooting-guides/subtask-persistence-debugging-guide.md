@@ -9,13 +9,13 @@
 ### 1. Database Connection Verification
 ```bash
 # Test database connectivity
-docker exec dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_test -c "SELECT version();"
+docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub_test -c "SELECT version();"
 
 # Verify table exists and is accessible
-docker exec dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_test -c "\d task_subtasks"
+docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub_test -c "\d task_subtasks"
 
 # Test manual insert to verify table functionality
-docker exec dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_test -c "
+docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub_test -c "
 INSERT INTO task_subtasks (id, task_id, title, description, status, priority, user_id, created_at, updated_at) 
 VALUES ('test-uuid', '686627ae-55d4-4f32-8cbc-b9f74949552a', 'Test Manual Insert', 'Manual test', 'todo', 'high', 'test-user', now(), now());
 "
@@ -24,7 +24,7 @@ VALUES ('test-uuid', '686627ae-55d4-4f32-8cbc-b9f74949552a', 'Test Manual Insert
 ### 2. Repository Pattern Investigation
 
 #### Check SubtaskRepository Implementation
-File: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
+File: `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
 
 Key areas to debug:
 ```python
@@ -121,7 +121,7 @@ print(f"Columns: {[col.name for col in mapper.columns]}")
 ### Database Level
 ```bash
 # Check if any data exists in related tables
-docker exec dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_test -c "
+docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub_test -c "
 SELECT 
   (SELECT COUNT(*) FROM tasks) as tasks,
   (SELECT COUNT(*) FROM task_subtasks) as subtasks,
@@ -129,7 +129,7 @@ SELECT
 "
 
 # Check database constraints that might block inserts
-docker exec dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_test -c "
+docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub_test -c "
 SELECT conname, contype, confupdtype, confdeltype 
 FROM pg_constraint 
 WHERE conrelid = 'task_subtasks'::regclass;

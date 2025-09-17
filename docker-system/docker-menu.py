@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DhafnckMCP Docker Menu Interface
+4genthub Docker Menu Interface
 Interactive menu system for Docker CLI operations
 """
 
@@ -51,7 +51,7 @@ def show_header():
     """Display the application header"""
     clear_screen()
     console.print(Panel.fit(
-        "[bold cyan]DhafnckMCP Docker Management System[/bold cyan]\n"
+        "[bold cyan]4genthub Docker Management System[/bold cyan]\n"
         "[dim]PostgreSQL-First Architecture v2.0[/dim]",
         border_style="cyan"
     ))

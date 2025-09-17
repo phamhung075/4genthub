@@ -20,7 +20,7 @@ diagnose_command() {
         echo ""
         success "Network: Exists"
         echo "  Connected containers: 4"
-        echo "  dhafnck-network is operational"
+        echo "  4genthub-network is operational"
         echo ""
         echo "Checking services..."
         success "postgres: Running (healthy)"
@@ -71,9 +71,9 @@ diagnose_command() {
     
     # Network
     echo "Checking network..."
-    if docker network ls | grep -q "dhafnck-network"; then
+    if docker network ls | grep -q "4genthub-network"; then
         success "Network: Exists"
-        local containers=$(docker network inspect dhafnck-network -f '{{len .Containers}}' 2>/dev/null || echo "0")
+        local containers=$(docker network inspect 4genthub-network -f '{{len .Containers}}' 2>/dev/null || echo "0")
         echo "  Connected containers: $containers"
     else
         warning "Network: Not found (will be created on start)"
@@ -83,7 +83,7 @@ diagnose_command() {
     # Services
     echo "Checking services..."
     for service in postgres redis backend frontend; do
-        local container="dhafnck-$service"
+        local container="4genthub-$service"
         if docker ps --format '{{.Names}}' | grep -q "^$container$"; then
             local status=$(docker inspect "$container" 2>/dev/null | jq -r '.[0].State.Status' || echo "unknown")
             local health=$(docker inspect "$container" 2>/dev/null | jq -r '.[0].State.Health.Status // "none"' || echo "none")
@@ -108,7 +108,7 @@ diagnose_command() {
     
     # Database connectivity
     echo "Checking database connectivity..."
-    if docker ps --format '{{.Names}}' | grep -q "^dhafnck-postgres$"; then
+    if docker ps --format '{{.Names}}' | grep -q "^4genthub-postgres$"; then
         if db_operation test_connection &>/dev/null; then
             success "Database connection: OK"
         else
@@ -117,7 +117,7 @@ diagnose_command() {
             
             # Show postgres logs
             echo "  Recent PostgreSQL logs:"
-            docker logs dhafnck-postgres --tail 10 2>&1 | sed 's/^/    /'
+            docker logs 4genthub-postgres --tail 10 2>&1 | sed 's/^/    /'
         fi
     else
         info "Database: Not running"
@@ -196,9 +196,9 @@ fix_permissions_command() {
     find "$SCRIPT_DIR" -name "*.sh" -type f -exec chmod +x {} \;
     
     # Data directory permissions
-    if [[ -d "${PROJECT_ROOT}/dhafnck_mcp_main/data" ]]; then
+    if [[ -d "${PROJECT_ROOT}/4genthub_main/data" ]]; then
         echo "  Setting data directory permissions..."
-        chmod -R 755 "${PROJECT_ROOT}/dhafnck_mcp_main/data"
+        chmod -R 755 "${PROJECT_ROOT}/4genthub_main/data"
     fi
     
     # Backup directory permissions
@@ -247,16 +247,16 @@ emergency_backup_command() {
     mkdir -p "$backup_dir"
     
     # Try to backup database if running
-    if docker ps --format '{{.Names}}' | grep -q "^dhafnck-postgres$"; then
+    if docker ps --format '{{.Names}}' | grep -q "^4genthub-postgres$"; then
         echo "  Attempting database backup..."
         mkdir -p "$backup_dir/database"
-        docker exec dhafnck-postgres pg_dumpall -U postgres > "$backup_dir/database/emergency-dump.sql" 2>/dev/null || \
+        docker exec 4genthub-postgres pg_dumpall -U postgres > "$backup_dir/database/emergency-dump.sql" 2>/dev/null || \
             warning "  Database backup failed"
     fi
     
     # Backup volumes directly
     echo "  Backing up volumes..."
-    for volume in $(docker volume ls -q | grep '^dhafnck-'); do
+    for volume in $(docker volume ls -q | grep '^4genthub-'); do
         echo "    → $volume"
         docker run --rm \
             -v "$volume:/source:ro" \
@@ -328,7 +328,7 @@ support_bundle_command() {
         docker ps -a
         echo ""
         echo "=== Container Details ==="
-        for container in $(docker ps -a --format '{{.Names}}' | grep '^dhafnck-'); do
+        for container in $(docker ps -a --format '{{.Names}}' | grep '^4genthub-'); do
             echo "--- $container ---"
             docker inspect "$container"
             echo ""
@@ -339,7 +339,7 @@ support_bundle_command() {
     echo "  Collecting logs..."
     mkdir -p "$bundle_dir/logs"
     for service in postgres redis backend frontend; do
-        docker logs "dhafnck-$service" --tail 1000 > "$bundle_dir/logs/${service}.log" 2>&1
+        docker logs "4genthub-$service" --tail 1000 > "$bundle_dir/logs/${service}.log" 2>&1
     done
     
     # Configuration (sanitized)
@@ -359,7 +359,7 @@ support_bundle_command() {
         docker network ls
         echo ""
         echo "=== Network Details ==="
-        docker network inspect dhafnck-network
+        docker network inspect 4genthub-network
     } > "$bundle_dir/network-info.txt" 2>&1
     
     # Disk usage

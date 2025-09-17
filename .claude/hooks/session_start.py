@@ -407,7 +407,7 @@ class AgentMessageProvider(ContextProvider):
 
             for message in reversed(conversation[-10:]):
                 content = message.get('content', '')
-                if 'mcp__dhafnck_mcp_http__call_agent' in content:
+                if 'mcp__4genthub_http__call_agent' in content:
                     import re
                     # Check for agent name in various patterns
                     match = re.search(r'"name_agent":\s*"([^"]+)"', content)
@@ -489,7 +489,7 @@ class SessionStartProcessor(SessionProcessor):
 
             for message in reversed(conversation[-10:]):  # Last 10 messages
                 content = message.get('content', '')
-                if 'mcp__dhafnck_mcp_http__call_agent' in content:
+                if 'mcp__4genthub_http__call_agent' in content:
                     # Extract agent name
                     import re
                     match = re.search(r'"name_agent":\s*"([^"]+)"', content)
@@ -772,21 +772,11 @@ def get_recent_issues() -> Optional[str]:
 def query_mcp_pending_tasks() -> Optional[List]:
     """Backward compatibility wrapper for pending tasks."""
     try:
-        # First check cache
-        cache = get_session_cache()
-        if cache:
-            cached_tasks = cache.get_pending_tasks()
-            if cached_tasks:
-                return cached_tasks
-
-        # Fallback to server query
+        # Direct server query without cache
         client = get_default_client()
         if client:
             server_tasks = client.query_pending_tasks(limit=5)
             if server_tasks:
-                # Cache the results if available
-                if cache:
-                    cache.cache_pending_tasks(server_tasks)
                 return server_tasks
 
         return []
@@ -800,21 +790,11 @@ def query_mcp_next_task(branch_id: Optional[str] = None) -> Optional[Dict]:
         if not branch_id:
             return None
 
-        # First check cache
-        cache = get_session_cache()
-        if cache:
-            cached_task = cache.get_next_task(branch_id)
-            if cached_task:
-                return cached_task
-
-        # Fallback to server query
+        # Direct server query without cache
         client = get_default_client()
         if client:
             next_task = client.get_next_recommended_task(branch_id)
             if next_task:
-                # Cache the result if available
-                if cache:
-                    cache.cache_next_task(branch_id, next_task)
                 return next_task
 
         return None
@@ -825,12 +805,6 @@ def query_mcp_next_task(branch_id: Optional[str] = None) -> Optional[Dict]:
 def get_git_branch_context() -> Optional[Dict]:
     """Backward compatibility wrapper for git branch context."""
     try:
-        # Check cache first
-        cache = get_session_cache()
-        if cache:
-            cached_status = cache.get_git_status()
-            if cached_status:
-                return cached_status
 
         # Get git context from subprocess calls
         # Get current branch
@@ -864,10 +838,6 @@ def get_git_branch_context() -> Optional[Dict]:
             "recent_commits": recent_commits,
             "git_branch_id": None  # Test expects this to be None
         }
-
-        # Cache the result
-        if cache:
-            cache.cache_git_status(result)
 
         return result
 
@@ -928,12 +898,6 @@ def get_ai_data_path() -> Path:
         return Path("logs")
 
 
-def get_session_cache() -> Dict:
-    """Backward compatibility wrapper for session cache."""
-    try:
-        return {}
-    except Exception:
-        return {}
 
 
 def get_default_client():

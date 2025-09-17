@@ -48,7 +48,7 @@ graph TD
 ### 1. Task Creation Flow
 ```python
 # TRACE THIS PATH:
-mcp__dhafnck_mcp_http__manage_task(action="create")
+mcp__4genthub_http__manage_task(action="create")
     ↓
 # EXPECTED:
 → TaskMCPController.manage_task()
@@ -67,7 +67,7 @@ mcp__dhafnck_mcp_http__manage_task(action="create")
 ### 2. Context Update Flow
 ```python
 # TRACE THIS PATH:
-mcp__dhafnck_mcp_http__manage_context(action="update")
+mcp__4genthub_http__manage_context(action="update")
     ↓
 # EXPECTED:
 → ContextMCPController.manage_context()
@@ -86,7 +86,7 @@ mcp__dhafnck_mcp_http__manage_context(action="update")
 ### 3. Project Health Check Flow
 ```python
 # TRACE THIS PATH:
-mcp__dhafnck_mcp_http__manage_project(action="project_health_check")
+mcp__4genthub_http__manage_project(action="project_health_check")
     ↓
 # EXPECTED:
 → ProjectMCPController.manage_project()
@@ -182,7 +182,7 @@ graph TD
 
 | Step | Layer | Expected Component | Actual Component | Status | Notes |
 |------|-------|-------------------|------------------|--------|-------|
-| 1 | Entry | MCP Tool | `mcp__dhafnck_mcp_http__manage_X` | ✅/❌ | |
+| 1 | Entry | MCP Tool | `mcp__4genthub_http__manage_X` | ✅/❌ | |
 | 2 | Interface | Controller | `XMCPController` | ✅/❌ | |
 | 3 | Application | Facade | `XApplicationFacade` | ✅/❌ | |
 | 4 | Application | Use Case | `XUseCase` (optional) | ✅/❌ | |
@@ -258,7 +258,7 @@ def get_task(self, task_id):
 
 ### Example 1: Task Management Complete Flow
 ```
-1. Entry: mcp__dhafnck_mcp_http__manage_task
+1. Entry: mcp__4genthub_http__manage_task
 2. Controller: TaskMCPController.manage_task()
    - Location: interface/controllers/task_mcp_controller.py
    - Imports: from application.facades import TaskApplicationFacade ✅
@@ -277,7 +277,7 @@ def get_task(self, task_id):
 
 ### Example 2: Context Management Complete Flow
 ```
-1. Entry: mcp__dhafnck_mcp_http__manage_context
+1. Entry: mcp__4genthub_http__manage_context
 2. Controller: ContextMCPController.manage_context()
 3. Service: UnifiedContextService.execute()
 4. Factory: Based on level (global/project/branch/task)
@@ -392,11 +392,11 @@ if __name__ == "__main__":
     
     # List of MCP tools to verify
     mcp_tools = [
-        "mcp__dhafnck_mcp_http__manage_task",
-        "mcp__dhafnck_mcp_http__manage_context",
-        "mcp__dhafnck_mcp_http__manage_project",
-        "mcp__dhafnck_mcp_http__manage_subtask",
-        "mcp__dhafnck_mcp_http__manage_agent",
+        "mcp__4genthub_http__manage_task",
+        "mcp__4genthub_http__manage_context",
+        "mcp__4genthub_http__manage_project",
+        "mcp__4genthub_http__manage_subtask",
+        "mcp__4genthub_http__manage_agent",
     ]
     
     flows = []

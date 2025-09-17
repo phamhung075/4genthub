@@ -1,5 +1,5 @@
 #!/bin/bash
-# docker-menu.sh - DhafnckMCP Docker Management Interface
+# docker-menu.sh - 4genthub Docker Management Interface
 # Updated for streamlined database configurations
 
 set -euo pipefail
@@ -76,15 +76,15 @@ clean_existing_builds() {
     echo -e "${YELLOW}🧹 Cleaning up existing builds for fresh rebuild...${RESET}"
     
     # Stop and remove existing containers first
-    echo -e "${YELLOW}🛑 Stopping existing dhafnck containers...${RESET}"
-    docker stop dhafnck-backend dhafnck-frontend 2>/dev/null || true
-    docker rm dhafnck-backend dhafnck-frontend 2>/dev/null || true
+    echo -e "${YELLOW}🛑 Stopping existing 4genthub containers...${RESET}"
+    docker stop 4genthub-backend 4genthub-frontend 2>/dev/null || true
+    docker rm 4genthub-backend 4genthub-frontend 2>/dev/null || true
     
-    # Remove dhafnck project images to force complete rebuild
-    local dhafnck_images=$(docker images -q --filter "reference=*dhafnck*" 2>/dev/null)
-    if [[ -n "$dhafnck_images" ]]; then
-        echo -e "${YELLOW}🗑️  Removing existing dhafnck images to ensure fresh build...${RESET}"
-        docker rmi $dhafnck_images -f >/dev/null 2>&1 || true
+    # Remove 4genthub project images to force complete rebuild
+    local 4genthub_images=$(docker images -q --filter "reference=*4genthub*" 2>/dev/null)
+    if [[ -n "$4genthub_images" ]]; then
+        echo -e "${YELLOW}🗑️  Removing existing 4genthub images to ensure fresh build...${RESET}"
+        docker rmi $4genthub_images -f >/dev/null 2>&1 || true
     fi
     
     # Remove docker project images from docker-system 
@@ -96,8 +96,8 @@ clean_existing_builds() {
     
     # Clear Python cache to ensure code changes are picked up
     echo -e "${YELLOW}🐍 Clearing Python cache files...${RESET}"
-    find ../dhafnck_mcp_main -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-    find ../dhafnck_mcp_main -type f -name "*.pyc" -delete 2>/dev/null || true
+    find ../4genthub_main -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find ../4genthub_main -type f -name "*.pyc" -delete 2>/dev/null || true
     
     # Clean up dangling images and build cache
     echo -e "${YELLOW}🧽 Cleaning up dangling images and build cache...${RESET}"
@@ -206,8 +206,8 @@ load_env_config() {
         export FRONTEND_PORT=${FRONTEND_PORT:-3800}
         export DATABASE_HOST=${DATABASE_HOST:-localhost}
         export DATABASE_PORT=${DATABASE_PORT:-5432}
-        export DATABASE_NAME=${DATABASE_NAME:-dhafnck_mcp_prod}
-        export DATABASE_USER=${DATABASE_USER:-dhafnck_user}
+        export DATABASE_NAME=${DATABASE_NAME:-4genthub_prod}
+        export DATABASE_USER=${DATABASE_USER:-4genthub_user}
         export DATABASE_PASSWORD=${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}
         export DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
         export AUTH_PROVIDER=${AUTH_PROVIDER:-keycloak}
@@ -228,8 +228,8 @@ load_env_config() {
         export FRONTEND_PORT=${FRONTEND_PORT:-3800}
         export DATABASE_HOST=${DATABASE_HOST:-localhost}
         export DATABASE_PORT=${DATABASE_PORT:-5432}
-        export DATABASE_NAME=${DATABASE_NAME:-dhafnck_mcp_prod}
-        export DATABASE_USER=${DATABASE_USER:-dhafnck_user}
+        export DATABASE_NAME=${DATABASE_NAME:-4genthub_prod}
+        export DATABASE_USER=${DATABASE_USER:-4genthub_user}
         export DATABASE_PASSWORD=${DATABASE_PASSWORD:-ChangeThisSecurePassword2025!}
         export DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
         export AUTH_PROVIDER=${AUTH_PROVIDER:-keycloak}
@@ -247,8 +247,8 @@ load_env_config() {
         export FRONTEND_PORT=3800
         export DATABASE_HOST=localhost
         export DATABASE_PORT=5432
-        export DATABASE_NAME=dhafnck_mcp_prod
-        export DATABASE_USER=dhafnck_user
+        export DATABASE_NAME=4genthub_prod
+        export DATABASE_USER=4genthub_user
         export DATABASE_PASSWORD=ChangeThisSecurePassword2025!
         export DATABASE_TYPE=postgresql
         export AUTH_PROVIDER=keycloak
@@ -266,7 +266,7 @@ show_header() {
     clear
     echo -e "${CYAN}${BOLD}"
     echo "╔════════════════════════════════════════════════╗"
-    echo "║        DhafnckMCP Docker Management            ║"
+    echo "║        4genthub Docker Management            ║"
     echo "║           Build System v3.0                   ║"
     echo "╚════════════════════════════════════════════════╝"
     echo -e "${RESET}"
@@ -324,7 +324,7 @@ start_postgresql_local() {
     check_and_free_ports
 
     # Check if PostgreSQL is running
-    if ! docker ps | grep -q dhafnck-postgres; then
+    if ! docker ps | grep -q 4genthub-postgres; then
         echo -e "${RED}⚠️  PostgreSQL is not running!${RESET}"
         echo -e "${YELLOW}Please run option B first to start the database.${RESET}"
         return 1
@@ -332,11 +332,11 @@ start_postgresql_local() {
 
     # Stop any existing backend/frontend containers only
     echo -e "${YELLOW}Stopping existing backend/frontend containers...${RESET}"
-    docker stop dhafnck-backend dhafnck-frontend 2>/dev/null || true
-    docker rm dhafnck-backend dhafnck-frontend 2>/dev/null || true
+    docker stop 4genthub-backend 4genthub-frontend 2>/dev/null || true
+    docker rm 4genthub-backend 4genthub-frontend 2>/dev/null || true
 
     # Create network if it doesn't exist
-    docker network create dhafnck-network 2>/dev/null || true
+    docker network create 4genthub-network 2>/dev/null || true
 
     # Use backend-frontend only docker-compose file
     echo -e "${CYAN}Using docker-compose.backend-frontend.yml for backend and frontend only...${RESET}"
@@ -370,7 +370,7 @@ start_postgresql_local() {
     
     # Show running containers
     echo -e "\n${CYAN}Running containers:${RESET}"
-    docker ps --filter "name=dhafnck" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    docker ps --filter "name=4genthub" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 }
 
 # Start Database Only (Option B - PostgreSQL standalone)
@@ -382,12 +382,12 @@ start_database_only() {
     echo "  Port: ${DATABASE_PORT}"
 
     # Ensure network exists
-    docker network create dhafnck-network 2>/dev/null || true
+    docker network create 4genthub-network 2>/dev/null || true
 
     # Stop any existing postgres container
     echo -e "${YELLOW}Stopping existing database container if any...${RESET}"
-    docker stop dhafnck-postgres 2>/dev/null || true
-    docker rm dhafnck-postgres 2>/dev/null || true
+    docker stop 4genthub-postgres 2>/dev/null || true
+    docker rm 4genthub-postgres 2>/dev/null || true
 
     # Change to docker directory
     cd "$DOCKER_DIR"
@@ -399,7 +399,7 @@ start_database_only() {
     # Wait for database to be ready
     echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${RESET}"
     for i in {1..30}; do
-        if docker exec dhafnck-postgres pg_isready -U ${DATABASE_USER:-dhafnck_user} >/dev/null 2>&1; then
+        if docker exec 4genthub-postgres pg_isready -U ${DATABASE_USER:-4genthub_user} >/dev/null 2>&1; then
             echo -e "${GREEN}✅ PostgreSQL is ready!${RESET}"
             break
         fi
@@ -423,7 +423,7 @@ start_postgresql_with_ui() {
     echo -e "${YELLOW}Note: PostgreSQL must be running (use option B first)${RESET}"
 
     # Check if PostgreSQL is running
-    if ! docker ps | grep -q dhafnck-postgres; then
+    if ! docker ps | grep -q 4genthub-postgres; then
         echo -e "${RED}⚠️  PostgreSQL is not running!${RESET}"
         echo -e "${YELLOW}Please run option B first to start the database.${RESET}"
         return 1
@@ -439,11 +439,11 @@ start_postgresql_with_ui() {
     
     # Stop any existing pgAdmin container
     echo -e "${YELLOW}Stopping existing pgAdmin container...${RESET}"
-    docker stop dhafnck-pgadmin 2>/dev/null || true
-    docker rm dhafnck-pgadmin 2>/dev/null || true
+    docker stop 4genthub-pgadmin 2>/dev/null || true
+    docker rm 4genthub-pgadmin 2>/dev/null || true
 
     # Network should already exist from PostgreSQL
-    docker network create dhafnck-network 2>/dev/null || true
+    docker network create 4genthub-network 2>/dev/null || true
 
     # Change to docker directory
     cd "$DOCKER_DIR"
@@ -462,10 +462,10 @@ start_postgresql_with_ui() {
     echo -e "${MAGENTA}📋 To Connect PostgreSQL in pgAdmin:${RESET}"
     echo "  1. Add New Server"
     echo "  2. Use connection details:"
-    echo "     Host: dhafnck-postgres"
+    echo "     Host: 4genthub-postgres"
     echo "     Port: 5432"
-    echo "     Database: ${DATABASE_NAME:-dhafnck_mcp}"
-    echo "     Username: ${DATABASE_USER:-dhafnck_user}"
+    echo "     Database: ${DATABASE_NAME:-4genthub}"
+    echo "     Username: ${DATABASE_USER:-4genthub_user}"
     echo "     Password: ${DATABASE_PASSWORD:-dev_password}"
 }
 
@@ -546,8 +546,8 @@ start_supabase_cloud() {
     echo ""
     echo -e "${CYAN}💡 Tips:${RESET}"
     echo "  - Your data is stored in Supabase Cloud, not locally"
-    echo "  - Check logs: docker logs dhafnck-backend --tail 50"
-    echo "  - Verify connection: docker exec dhafnck-backend env | grep SUPABASE"
+    echo "  - Check logs: docker logs 4genthub-backend --tail 50"
+    echo "  - Verify connection: docker exec 4genthub-backend env | grep SUPABASE"
     
     show_service_status "docker-compose.yml"
 }
@@ -619,16 +619,16 @@ view_logs() {
     read -p "Select service: " log_choice
     
     case $log_choice in
-        1) docker logs -f dhafnck-backend 2>/dev/null || echo "Backend container not found" ;;
-        2) docker logs -f dhafnck-frontend 2>/dev/null || echo "Frontend container not found" ;;
-        3) docker logs -f dhafnck-postgres 2>/dev/null || echo "PostgreSQL container not found" ;;
-        4) docker logs -f dhafnck-redis 2>/dev/null || echo "Redis container not found" ;;
+        1) docker logs -f 4genthub-backend 2>/dev/null || echo "Backend container not found" ;;
+        2) docker logs -f 4genthub-frontend 2>/dev/null || echo "Frontend container not found" ;;
+        3) docker logs -f 4genthub-postgres 2>/dev/null || echo "PostgreSQL container not found" ;;
+        4) docker logs -f 4genthub-redis 2>/dev/null || echo "Redis container not found" ;;
         5) 
             echo "Showing logs for all services..."
-            docker logs dhafnck-backend --tail=50 2>/dev/null || true
-            docker logs dhafnck-frontend --tail=50 2>/dev/null || true
-            docker logs dhafnck-postgres --tail=50 2>/dev/null || true
-            docker logs dhafnck-redis --tail=50 2>/dev/null || true
+            docker logs 4genthub-backend --tail=50 2>/dev/null || true
+            docker logs 4genthub-frontend --tail=50 2>/dev/null || true
+            docker logs 4genthub-postgres --tail=50 2>/dev/null || true
+            docker logs 4genthub-redis --tail=50 2>/dev/null || true
             ;;
         *) echo "Invalid option" ;;
     esac
@@ -645,12 +645,12 @@ database_shell() {
     case $db_choice in
         1) 
             echo "Connecting to PostgreSQL..."
-            docker exec -it dhafnck-postgres psql -U postgres -d dhafnck_mcp 2>/dev/null || \
+            docker exec -it 4genthub-postgres psql -U postgres -d 4genthub 2>/dev/null || \
             echo "PostgreSQL container not found or not accessible"
             ;;
         2) 
             echo "Connecting to Redis..."
-            docker exec -it dhafnck-redis redis-cli 2>/dev/null || \
+            docker exec -it 4genthub-redis redis-cli 2>/dev/null || \
             echo "Redis container not found or not accessible"
             ;;
         *) echo "Invalid option" ;;
@@ -661,8 +661,8 @@ database_shell() {
 force_complete_rebuild() {
     echo -e "${RED}${BOLD}🔄 FORCE COMPLETE REBUILD${RESET}"
     echo -e "${YELLOW}This will:${RESET}"
-    echo "  - Stop and remove ALL dhafnck containers"
-    echo "  - Remove ALL dhafnck Docker images"
+    echo "  - Stop and remove ALL 4genthub containers"
+    echo "  - Remove ALL 4genthub Docker images"
     echo "  - Clear all Python cache files"
     echo "  - Remove Docker build cache"
     echo "  - Force rebuild everything from scratch"
@@ -671,18 +671,18 @@ force_complete_rebuild() {
     
     if [[ $confirm == "y" || $confirm == "Y" ]]; then
         echo -e "${YELLOW}🛑 Stopping all containers...${RESET}"
-        docker stop $(docker ps -aq --filter "name=dhafnck") 2>/dev/null || true
+        docker stop $(docker ps -aq --filter "name=4genthub") 2>/dev/null || true
         
         echo -e "${YELLOW}🗑️  Removing all containers...${RESET}"
-        docker rm $(docker ps -aq --filter "name=dhafnck") 2>/dev/null || true
+        docker rm $(docker ps -aq --filter "name=4genthub") 2>/dev/null || true
         
-        echo -e "${YELLOW}🗑️  Removing all dhafnck images...${RESET}"
-        docker rmi $(docker images -q --filter "reference=*dhafnck*") -f 2>/dev/null || true
+        echo -e "${YELLOW}🗑️  Removing all 4genthub images...${RESET}"
+        docker rmi $(docker images -q --filter "reference=*4genthub*") -f 2>/dev/null || true
         docker rmi $(docker images -q --filter "reference=docker-*") -f 2>/dev/null || true
         
         echo -e "${YELLOW}🐍 Clearing all Python cache...${RESET}"
-        find ../dhafnck_mcp_main -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-        find ../dhafnck_mcp_main -type f -name "*.pyc" -delete 2>/dev/null || true
+        find ../4genthub_main -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+        find ../4genthub_main -type f -name "*.pyc" -delete 2>/dev/null || true
         
         echo -e "${YELLOW}🧹 Pruning Docker system...${RESET}"
         docker system prune -af --volumes 2>/dev/null || true
@@ -801,9 +801,9 @@ create_pgadmin_compose() {
 services:
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: dhafnck-pgadmin
+    container_name: 4genthub-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@dhafnck.local
+      PGADMIN_DEFAULT_EMAIL: admin@4genthub.local
       PGADMIN_DEFAULT_PASSWORD: admin123
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
@@ -833,7 +833,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: dhafnck-postgres
+    container_name: 4genthub-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_ROOT_PASSWORD:-postgres}
@@ -861,13 +861,13 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: dhafnck_mcp_main/docker/Dockerfile
+      dockerfile: 4genthub_main/docker/Dockerfile
       args:
         - ENV=production
-    container_name: dhafnck-backend
+    container_name: 4genthub-backend
     environment:
       - DATABASE_TYPE=postgresql
-      - DATABASE_URL=postgresql://dhafnck_user:dev_password@postgres:5432/dhafnck_mcp
+      - DATABASE_URL=postgresql://4genthub_user:dev_password@postgres:5432/4genthub
       - ENV=production
       - APP_DEBUG=false
       - APP_LOG_LEVEL=WARNING
@@ -898,7 +898,7 @@ services:
       dockerfile: docker-system/docker/frontend.Dockerfile
       args:
         - NODE_ENV=production
-    container_name: dhafnck-frontend
+    container_name: 4genthub-frontend
     environment:
       - NODE_ENV=production
       - VITE_API_URL=http://localhost:${FASTMCP_PORT:-8000}
@@ -922,7 +922,7 @@ volumes:
 
 networks:
   default:
-    name: dhafnck-network
+    name: 4genthub-network
 EOF
     echo -e "${GREEN}✅ Created optimized docker-compose.yml${RESET}"
 }
@@ -943,7 +943,7 @@ monitor_performance() {
     while true; do
         clear
         echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════════${RESET}"
-        echo -e "${CYAN}${BOLD}   DhafnckMCP Performance Monitor - $(date +%H:%M:%S)${RESET}"
+        echo -e "${CYAN}${BOLD}   4genthub Performance Monitor - $(date +%H:%M:%S)${RESET}"
         echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════════${RESET}"
         echo ""
         
@@ -1043,7 +1043,7 @@ start_dev_mode() {
     echo -e "${YELLOW}Installing Python dependencies...${RESET}"
     
     # Get to the backend directory
-    cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+    cd "${PROJECT_ROOT}/4genthub_main"
     
     # Check if uv is available (preferred)
     if command -v uv &> /dev/null; then
@@ -1063,7 +1063,7 @@ start_dev_mode() {
         
         # Activate uv virtual environment
         source .venv/bin/activate
-        export VIRTUAL_ENV="${PROJECT_ROOT}/dhafnck_mcp_main/.venv"
+        export VIRTUAL_ENV="${PROJECT_ROOT}/4genthub_main/.venv"
     else
         # Fallback to regular pip
         echo -e "${YELLOW}uv not found, using pip${RESET}"
@@ -1096,7 +1096,7 @@ start_dev_mode() {
     export PYTHONDONTWRITEBYTECODE=1
     export PYTHONPATH="${PWD}/src:${PYTHONPATH:-}"
     # Enable MVP mode for authentication bypass
-    export DHAFNCK_MVP_MODE=true
+    export 4GENTHUB_MVP_MODE=true
     # Ensure we're not in test mode
     unset PYTEST_CURRENT_TEST
     unset TEST_MODE
@@ -1120,9 +1120,9 @@ start_dev_mode() {
     echo -e "${CYAN}Using MCP entry point (same as Docker)...${RESET}"
     cd src
     # Use the activated virtual environment's Python
-    if [[ -f "${PROJECT_ROOT}/dhafnck_mcp_main/.venv/bin/python" ]]; then
+    if [[ -f "${PROJECT_ROOT}/4genthub_main/.venv/bin/python" ]]; then
         echo -e "${GREEN}Using virtual environment Python${RESET}"
-        nohup "${PROJECT_ROOT}/dhafnck_mcp_main/.venv/bin/python" -m fastmcp.server.mcp_entry_point > "${PROJECT_ROOT}/logs/backend.log" 2>&1 &
+        nohup "${PROJECT_ROOT}/4genthub_main/.venv/bin/python" -m fastmcp.server.mcp_entry_point > "${PROJECT_ROOT}/logs/backend.log" 2>&1 &
     else
         echo -e "${YELLOW}Using system Python${RESET}"
         nohup python -m fastmcp.server.mcp_entry_point > "${PROJECT_ROOT}/logs/backend.log" 2>&1 &
@@ -1136,7 +1136,7 @@ start_dev_mode() {
     echo -e "${CYAN}🚀 Starting Frontend Server...${RESET}"
     
     # Get to the frontend directory
-    cd "${PROJECT_ROOT}/dhafnck-frontend"
+    cd "${PROJECT_ROOT}/4genthub-frontend"
     
     # Install frontend dependencies if needed
     if [[ ! -d "node_modules" ]]; then
@@ -1186,7 +1186,7 @@ start_dev_mode() {
     echo -e "${GREEN}✅ Development servers started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
     echo "Frontend: http://localhost:${FRONTEND_PORT}"
-    echo "Database: SQLite (./dhafnck_mcp_dev.db)"
+    echo "Database: SQLite (./4genthub_dev.db)"
     echo ""
     echo -e "${CYAN}🔥 Hot Reload Enabled:${RESET}"
     echo "  • Backend: Auto-reloads on Python changes"
@@ -1260,9 +1260,9 @@ restart_dev_mode() {
     
     # Clear Python cache to ensure new code is loaded
     echo -e "${YELLOW}Clearing Python cache...${RESET}"
-    find "${PROJECT_ROOT}/dhafnck_mcp_main" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-    find "${PROJECT_ROOT}/dhafnck_mcp_main" -type f -name "*.pyc" -delete 2>/dev/null || true
-    find "${PROJECT_ROOT}/dhafnck_mcp_main" -type f -name "*.pyo" -delete 2>/dev/null || true
+    find "${PROJECT_ROOT}/4genthub_main" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find "${PROJECT_ROOT}/4genthub_main" -type f -name "*.pyc" -delete 2>/dev/null || true
+    find "${PROJECT_ROOT}/4genthub_main" -type f -name "*.pyo" -delete 2>/dev/null || true
     
     # Wait longer for ports to be fully released and connections to close
     echo -e "${YELLOW}Waiting for ports to be released...${RESET}"
@@ -1304,7 +1304,7 @@ clean_docker() {
     echo "- All stopped containers"
     echo "- All unused networks, volumes, and images"
     echo "- All build cache"
-    echo "- DhafnckMCP project images (since we rebuild with --no-cache)"
+    echo "- 4genthub project images (since we rebuild with --no-cache)"
     echo ""
     read -p "Continue? (y/N): " confirm
     

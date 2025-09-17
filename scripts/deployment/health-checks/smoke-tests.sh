@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Smoke Tests Script - DhafnckMCP Production Deployment
+# Smoke Tests Script - 4genthub Production Deployment
 # =============================================================================
 # This script runs comprehensive smoke tests after deployment to validate
 # that all critical functionalities are working as expected.

@@ -1,6 +1,6 @@
 # API & Integration Documentation
 
-This folder contains comprehensive API documentation, integration guides, and configuration references for the DhafnckMCP platform.
+This folder contains comprehensive API documentation, integration guides, and configuration references for the 4genthub platform.
 
 ## 📋 Contents
 

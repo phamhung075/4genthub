@@ -2,7 +2,7 @@
 
 ## Overview
 
-DhafnckMCP implements Domain-Driven Design (DDD) principles to create a maintainable, scalable system that reflects the business domain of AI-driven project management and orchestration.
+4genthub implements Domain-Driven Design (DDD) principles to create a maintainable, scalable system that reflects the business domain of AI-driven project management and orchestration.
 
 ## Domain Model
 
@@ -383,7 +383,7 @@ class TestTaskApplicationFacade:
 
 ## Conclusion
 
-The DDD implementation in DhafnckMCP provides a clear separation between business logic and technical concerns. This architecture enables:
+The DDD implementation in 4genthub provides a clear separation between business logic and technical concerns. This architecture enables:
 
 - **Maintainability**: Clear domain boundaries and responsibilities
 - **Testability**: Isolated domain logic with minimal dependencies  

@@ -26,9 +26,9 @@ def run_command(cmd, cwd=None):
         return -1, "", str(e)
 
 def main():
-    # Set working directory to dhafnck_mcp_main
+    # Set working directory to 4genthub_main
     project_root = Path(__file__).parent.parent
-    mcp_dir = project_root / "dhafnck_mcp_main"
+    mcp_dir = project_root / "4genthub_main"
     
     if not mcp_dir.exists():
         print(f"❌ MCP directory not found: {mcp_dir}")

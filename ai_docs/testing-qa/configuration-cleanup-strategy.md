@@ -1,9 +1,9 @@
 # Configuration and Legacy Rule Cleanup Strategy
-## DhafnckMCP Project - Agent 4 DevOps Analysis
+## 4genthub Project - Agent 4 DevOps Analysis
 
 ### **Executive Summary**
 
-This document provides a comprehensive strategy for cleaning up fragmented configuration systems and legacy rules in the DhafnckMCP project. The analysis reveals multiple overlapping systems that need consolidation to achieve a unified, maintainable configuration architecture.
+This document provides a comprehensive strategy for cleaning up fragmented configuration systems and legacy rules in the 4genthub project. The analysis reveals multiple overlapping systems that need consolidation to achieve a unified, maintainable configuration architecture.
 
 ---
 
@@ -17,7 +17,7 @@ This document provides a comprehensive strategy for cleaning up fragmented confi
 
 ### **System Architecture**
 ```bash
-Agent-Library (Server):   43 agents in dhafnck_mcp_main/agent-library/
+Agent-Library (Server):   43 agents in 4genthub_main/agent-library/
 Claude Agents (Client):   Agent configurations in .claude/agents/
 Purpose:                  Server builds agents from library YAML configurations
 Integration:              Both systems work together - NOT duplicates
@@ -44,9 +44,9 @@ The agent-library YAML system is the **base for building agents on server** and 
 |---------------|---------|--------|----------------|
 | `.env.dev` (root) | Primary development config | **KEEP** | Master template |
 | `.env.keycloak.example` (root) | Keycloak example | **KEEP** | Reference template |
-| `dhafnck-frontend/.env.caprover` | CapRover deployment | **KEEP** | Deployment-specific |
-| `dhafnck-frontend/.env.example` | Frontend template | **CONSOLIDATE** | Merge with root |
-| `dhafnck-frontend/.env.production` | Production frontend | **KEEP** | Production config |
+| `4genthub-frontend/.env.caprover` | CapRover deployment | **KEEP** | Deployment-specific |
+| `4genthub-frontend/.env.example` | Frontend template | **CONSOLIDATE** | Merge with root |
+| `4genthub-frontend/.env.production` | Production frontend | **KEEP** | Production config |
 
 ### **Consolidation Strategy**
 
@@ -65,8 +65,8 @@ The agent-library YAML system is the **base for building agents on server** and 
 1. **Frontend .env.example consolidation**:
    ```bash
    # Add frontend-specific variables to root .env.dev
-   cat dhafnck-frontend/.env.example >> .env.dev
-   rm dhafnck-frontend/.env.example
+   cat 4genthub-frontend/.env.example >> .env.dev
+   rm 4genthub-frontend/.env.example
    ```
 
 2. **Create unified environment template**:
@@ -212,7 +212,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
 BACKUP_DIR="${PROJECT_ROOT}/backups/$(date +%Y%m%d_%H%M%S)"
 
-echo "🧹 DhafnckMCP Legacy Agent Cleanup"
+echo "🧹 4genthub Legacy Agent Cleanup"
 echo "================================="
 
 # Create backup directory
@@ -220,8 +220,8 @@ mkdir -p "$BACKUP_DIR"
 
 # 1. Backup legacy system
 echo "📦 Backing up legacy agent-library system..."
-if [ -d "$PROJECT_ROOT/dhafnck_mcp_main/agent-library" ]; then
-    cp -r "$PROJECT_ROOT/dhafnck_mcp_main/agent-library" "$BACKUP_DIR/"
+if [ -d "$PROJECT_ROOT/4genthub_main/agent-library" ]; then
+    cp -r "$PROJECT_ROOT/4genthub_main/agent-library" "$BACKUP_DIR/"
     echo "✅ Backup created at $BACKUP_DIR/agent-library"
 else
     echo "ℹ️  No legacy agent-library directory found"
@@ -229,7 +229,7 @@ fi
 
 # 2. Verify new system coverage
 echo "🔍 Verifying agent coverage..."
-LEGACY_COUNT=$(find "$PROJECT_ROOT/dhafnck_mcp_main/agent-library/agents" -type d -name "*agent*" 2>/dev/null | wc -l || echo "0")
+LEGACY_COUNT=$(find "$PROJECT_ROOT/4genthub_main/agent-library/agents" -type d -name "*agent*" 2>/dev/null | wc -l || echo "0")
 NEW_COUNT=$(find "$PROJECT_ROOT/.claude/agents" -name "*.md" 2>/dev/null | wc -l || echo "0")
 
 echo "Legacy agents: $LEGACY_COUNT"
@@ -249,8 +249,8 @@ fi
 
 # 3. Remove legacy system
 echo "🗑️  Removing legacy agent-library system..."
-if [ -d "$PROJECT_ROOT/dhafnck_mcp_main/agent-library" ]; then
-    rm -rf "$PROJECT_ROOT/dhafnck_mcp_main/agent-library"
+if [ -d "$PROJECT_ROOT/4genthub_main/agent-library" ]; then
+    rm -rf "$PROJECT_ROOT/4genthub_main/agent-library"
     echo "✅ Legacy agent-library system removed"
 fi
 
@@ -276,7 +276,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
 BACKUP_DIR="${PROJECT_ROOT}/backups/$(date +%Y%m%d_%H%M%S)"
 
-echo "🔧 DhafnckMCP Environment Configuration Consolidation"
+echo "🔧 4genthub Environment Configuration Consolidation"
 echo "=================================================="
 
 # Create backup
@@ -293,11 +293,11 @@ echo "✅ Environment files backed up to $BACKUP_DIR"
 
 # 2. Consolidate frontend .env.example into root
 echo "🔄 Consolidating frontend environment template..."
-if [ -f "$PROJECT_ROOT/dhafnck-frontend/.env.example" ]; then
+if [ -f "$PROJECT_ROOT/4genthub-frontend/.env.example" ]; then
     echo "" >> "$PROJECT_ROOT/.env.dev"
-    echo "# Frontend-specific variables (consolidated from dhafnck-frontend/.env.example)" >> "$PROJECT_ROOT/.env.dev"
-    cat "$PROJECT_ROOT/dhafnck-frontend/.env.example" >> "$PROJECT_ROOT/.env.dev"
-    rm "$PROJECT_ROOT/dhafnck-frontend/.env.example"
+    echo "# Frontend-specific variables (consolidated from 4genthub-frontend/.env.example)" >> "$PROJECT_ROOT/.env.dev"
+    cat "$PROJECT_ROOT/4genthub-frontend/.env.example" >> "$PROJECT_ROOT/.env.dev"
+    rm "$PROJECT_ROOT/4genthub-frontend/.env.example"
     echo "✅ Frontend .env.example consolidated into root .env.dev"
 fi
 
@@ -327,7 +327,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
 
-echo "🐳 DhafnckMCP Docker Configuration Validation"
+echo "🐳 4genthub Docker Configuration Validation"
 echo "==========================================="
 
 # 1. Test each docker-compose configuration
@@ -508,7 +508,7 @@ echo "□ Docker configurations tested"
 
 ## **CONCLUSION**
 
-This comprehensive cleanup strategy addresses all identified fragmentation issues in the DhafnckMCP project configuration systems. The phased approach ensures minimal disruption while achieving significant improvements in maintainability and developer experience.
+This comprehensive cleanup strategy addresses all identified fragmentation issues in the 4genthub project configuration systems. The phased approach ensures minimal disruption while achieving significant improvements in maintainability and developer experience.
 
 **Key Benefits:**
 - **Unified Configuration**: Single source of truth for all settings

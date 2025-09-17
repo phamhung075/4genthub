@@ -1,5 +1,5 @@
 #!/bin/bash
-# DhafnckMCP Deployment Manager
+# 4genthub Deployment Manager
 # Enhanced deployment automation with health checks and rollback capability
 # Version: 2.1.0 - Phase 6 Production Optimization
 
@@ -99,7 +99,7 @@ backup_database() {
 
     log_info "Creating database backup..."
 
-    if docker exec dhafnck-postgres pg_dump -U "${DATABASE_USER}" -d "${DATABASE_NAME}" > "$backup_file" 2>/dev/null; then
+    if docker exec 4genthub-postgres pg_dump -U "${DATABASE_USER}" -d "${DATABASE_NAME}" > "$backup_file" 2>/dev/null; then
         log "✅ Database backup created: $backup_file"
         return 0
     else
@@ -110,7 +110,7 @@ backup_database() {
 
 # Docker network setup
 setup_docker_network() {
-    local network_name="dhafnck-network"
+    local network_name="4genthub-network"
 
     if ! docker network ls --format '{{.Name}}' | grep -q "^${network_name}$"; then
         log_info "Creating Docker network: $network_name"
@@ -235,7 +235,7 @@ deploy_database_only() {
     local attempt=1
 
     while [ $attempt -le $max_attempts ]; do
-        if docker exec dhafnck-postgres pg_isready -U "${DATABASE_USER:-dhafnck_user}" 2>/dev/null; then
+        if docker exec 4genthub-postgres pg_isready -U "${DATABASE_USER:-4genthub_user}" 2>/dev/null; then
             log "✅ Database is ready"
             break
         fi
@@ -270,7 +270,7 @@ rollback_deployment() {
     # Restore database if backup exists
     if [[ "$backup_file" == *.sql ]]; then
         log_info "Restoring database from backup..."
-        docker exec -i dhafnck-postgres psql -U "${DATABASE_USER}" -d "${DATABASE_NAME}" < "$backup_file"
+        docker exec -i 4genthub-postgres psql -U "${DATABASE_USER}" -d "${DATABASE_NAME}" < "$backup_file"
     fi
 
     log "✅ Rollback completed"
@@ -293,7 +293,7 @@ check_status() {
     fi
 
     # Check database
-    if docker exec dhafnck-postgres pg_isready -U "${DATABASE_USER:-dhafnck_user}" 2>/dev/null; then
+    if docker exec 4genthub-postgres pg_isready -U "${DATABASE_USER:-4genthub_user}" 2>/dev/null; then
         echo -e "Database: ${GREEN}✅ Ready${RESET}"
     else
         echo -e "Database: ${RED}❌ Not Ready${RESET}"
@@ -305,7 +305,7 @@ check_status() {
 
 # Main menu
 show_menu() {
-    echo -e "\n${BOLD}${CYAN}DhafnckMCP Deployment Manager${RESET}"
+    echo -e "\n${BOLD}${CYAN}4genthub Deployment Manager${RESET}"
     echo -e "${CYAN}================================${RESET}"
     echo -e "${BOLD}1.${RESET} Deploy Production"
     echo -e "${BOLD}2.${RESET} Deploy Development"

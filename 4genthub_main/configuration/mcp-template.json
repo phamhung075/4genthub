@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "4genthub": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e", "4GENTHUB_TOKEN=${4GENTHUB_TOKEN}",
+        "-v", "4genthub-data:/data",
+        "4genthub/mcp-server:latest"
+      ],
+      "env": {
+        "4GENTHUB_TOKEN": "${4GENTHUB_TOKEN}"
+      }
+    }
+  }
+} 

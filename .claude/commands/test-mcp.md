@@ -1,4 +1,4 @@
-**Test Plan for dhafnck_mcp_http Tools Actions**
+**Test Plan for 4genthub_http Tools Actions**
    $ARGUMENTS
 
 **Test Checklist:**

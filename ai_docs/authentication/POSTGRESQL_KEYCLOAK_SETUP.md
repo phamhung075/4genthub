@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for configuring DhafnckMCP with:
+This guide provides comprehensive instructions for configuring 4genthub with:
 - **PostgreSQL** running in Docker container (local development)
 - **Keycloak** running on cloud service (authentication)
 - **MCP Server** with secure token-based authentication
@@ -59,7 +59,7 @@ Edit `.env.production` and update Keycloak settings:
 
 ```env
 KEYCLOAK_URL=https://your-keycloak-instance.com
-KEYCLOAK_REALM=dhafnck-mcp
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 ```
@@ -68,7 +68,7 @@ KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 
 In your Keycloak admin console:
 
-1. **Create Realm**: `dhafnck-mcp`
+1. **Create Realm**: `4genthub`
 
 2. **Create Client**: `mcp-backend`
    - Client Protocol: `openid-connect`
@@ -122,8 +122,8 @@ PostgreSQL runs in Docker with the following default settings:
 ```yaml
 Host: postgres (internal) / localhost (external)
 Port: 5432
-Database: dhafnck_mcp_prod
-User: dhafnck_user
+Database: 4genthub_prod
+User: 4genthub_user
 Password: [Generated secure password in .env.production]
 ```
 
@@ -225,27 +225,27 @@ permissions = ["projects:list", "projects:get"]
    ```
 
 2. Access at: http://localhost:5050
-   - Email: admin@dhafnck.com
+   - Email: admin@4genthub.com
    - Password: [Check .env.production]
 
 3. Add PostgreSQL server:
    - Host: postgres
    - Port: 5432
-   - Database: dhafnck_mcp_prod
-   - Username: dhafnck_user
+   - Database: 4genthub_prod
+   - Username: 4genthub_user
    - Password: [From .env.production]
 
 ### Direct Database Access
 
 ```bash
 # Connect to PostgreSQL
-docker exec -it dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_prod
+docker exec -it 4genthub-postgres psql -U 4genthub_user -d 4genthub_prod
 
 # Backup database
-docker exec dhafnck-postgres pg_dump -U dhafnck_user dhafnck_mcp_prod > backup.sql
+docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > backup.sql
 
 # Restore database
-docker exec -i dhafnck-postgres psql -U dhafnck_user dhafnck_mcp_prod < backup.sql
+docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < backup.sql
 ```
 
 ## Monitoring & Logs
@@ -268,7 +268,7 @@ docker-compose logs -f postgres
 curl http://localhost:8001/health
 
 # PostgreSQL health
-docker exec dhafnck-postgres pg_isready -U dhafnck_user
+docker exec 4genthub-postgres pg_isready -U 4genthub_user
 ```
 
 ## Troubleshooting
@@ -377,10 +377,10 @@ Create backup script `backup-postgres.sh`:
 #!/bin/bash
 BACKUP_DIR="/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/dhafnck_mcp_${TIMESTAMP}.sql"
+BACKUP_FILE="${BACKUP_DIR}/4genthub_${TIMESTAMP}.sql"
 
 # Create backup
-docker exec dhafnck-postgres pg_dump -U dhafnck_user dhafnck_mcp_prod > $BACKUP_FILE
+docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > $BACKUP_FILE
 
 # Compress
 gzip $BACKUP_FILE
@@ -404,7 +404,7 @@ If migrating from Supabase:
 2. Transform data format if needed
 3. Import to PostgreSQL:
    ```bash
-   docker exec -i dhafnck-postgres psql -U dhafnck_user dhafnck_mcp_prod < supabase_export.sql
+   docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < supabase_export.sql
    ```
 
 ## Support
@@ -413,7 +413,7 @@ For issues or questions:
 - Check logs: `docker-compose logs -f`
 - Review this documentation
 - Test with: `python test-keycloak-mcp.py`
-- Check PostgreSQL: `docker exec dhafnck-postgres pg_isready`
+- Check PostgreSQL: `docker exec 4genthub-postgres pg_isready`
 
 ## Next Steps
 

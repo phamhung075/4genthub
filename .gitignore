@@ -36,7 +36,7 @@
 .claude/data/sessions/
 .claude/data/*.json
 .claude/runtime_agent_context.json
-dhafnck_mcp_main/.claude/
+4genthub_main/.claude/
 
 # JWT tokens and API keys
 *.jwt
@@ -95,7 +95,7 @@ lerna-debug.log*
 dev-*.pid
 
 # Application logs (may contain sensitive data)
-dhafnck_mcp_main/logs/
+4genthub_main/logs/
 **/*.log.*
 
 # =============================================================================
@@ -395,10 +395,10 @@ CV-Developer-AI-Automation.md
 # PROTECTED DIRECTORIES
 # =============================================================================
 # Protect yaml-lib directory
-!dhafnck_mcp_main/yaml-lib/**
+!4genthub_main/yaml-lib/**
 !docker-system/lib/
 # Allow frontend lib directory
-!dhafnck-frontend/src/lib/
+!4genthub-frontend/src/lib/
 
 # =============================================================================
 # BACKUPS AND ARCHIVES

@@ -39,8 +39,8 @@ echo ""
 
 CAPROVER_URL=$(prompt_with_default "CapRover URL" "https://captain.yourdomain.com")
 CAPROVER_PASSWORD=$(prompt_with_default "CapRover Password" "")
-FRONTEND_APP_NAME=$(prompt_with_default "Frontend App Name" "dhafnck-frontend")
-BACKEND_APP_NAME=$(prompt_with_default "Backend App Name" "dhafnck-backend")
+FRONTEND_APP_NAME=$(prompt_with_default "Frontend App Name" "4genthub-frontend")
+BACKEND_APP_NAME=$(prompt_with_default "Backend App Name" "4genthub-backend")
 API_URL=$(prompt_with_default "Backend API URL" "https://api.92.5.226.7.nip.io")
 
 # Validate inputs
@@ -93,7 +93,7 @@ cat > /tmp/caprover-frontend-env.json <<EOF
     },
     {
       "key": "VITE_APP_NAME",
-      "value": "DhafnckMCP"
+      "value": "4genthub"
     }
   ]
 }
@@ -103,7 +103,7 @@ echo -e "${YELLOW}Frontend environment variables to be set:${NC}"
 echo "  VITE_API_URL=$API_URL"
 echo "  VITE_ENV=production"
 echo "  VITE_DEBUG=false"
-echo "  VITE_APP_NAME=DhafnckMCP"
+echo "  VITE_APP_NAME=4genthub"
 
 # Note: CapRover CLI doesn't have direct env var commands,
 # so we provide instructions for manual setup
@@ -122,7 +122,7 @@ echo ""
 echo "   VITE_API_URL = $API_URL"
 echo "   VITE_ENV = production"
 echo "   VITE_DEBUG = false"
-echo "   VITE_APP_NAME = DhafnckMCP"
+echo "   VITE_APP_NAME = 4genthub"
 echo ""
 echo "7. Click 'Save & Update'"
 echo "8. Wait for the app to rebuild and redeploy"
@@ -152,7 +152,7 @@ cat > "$CONFIG_FILE" <<EOF
 VITE_API_URL=$API_URL
 VITE_ENV=production
 VITE_DEBUG=false
-VITE_APP_NAME=DhafnckMCP
+VITE_APP_NAME=4genthub
 
 ## Backend ($BACKEND_APP_NAME)
 PORT=8000

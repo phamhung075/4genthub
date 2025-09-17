@@ -32,13 +32,13 @@ The Task tool uses a **hardcoded master-orchestrator routing pattern** for:
 ## Solution: Direct Agent Calling
 
 ### Basic Direct Calling
-Use `mcp__dhafnck_mcp_http__call_agent()` to bypass Task tool routing:
+Use `mcp__4genthub_http__call_agent()` to bypass Task tool routing:
 
 ```python
 # ✅ WORKING: Direct agent calling
-mcp__dhafnck_mcp_http__call_agent('coding-agent')
-mcp__dhafnck_mcp_http__call_agent('debugger-agent')
-mcp__dhafnck_mcp_http__call_agent('test-orchestrator-agent')
+mcp__4genthub_http__call_agent('coding-agent')
+mcp__4genthub_http__call_agent('debugger-agent')
+mcp__4genthub_http__call_agent('test-orchestrator-agent')
 ```
 
 ### Helper Functions
@@ -52,26 +52,26 @@ from agent_delegator import call_direct_agent, quick_agent_help
 
 # Generate direct call command
 command = call_direct_agent('coding')
-# Returns: "mcp__dhafnck_mcp_http__call_agent('coding-agent')"
+# Returns: "mcp__4genthub_http__call_agent('coding-agent')"
 
 # Get agent recommendation for task
 recommendation = quick_agent_help('Fix authentication bug')
 # Returns:
 # 💡 Recommended: debugger-agent
-# 📞 Command: mcp__dhafnck_mcp_http__call_agent('debugger-agent')
+# 📞 Command: mcp__4genthub_http__call_agent('debugger-agent')
 ```
 
 ### Agent Selection Guide
 
 | Task Type | Agent | Direct Call Command |
 |-----------|-------|-------------------|
-| Debug/Fix bugs | `debugger-agent` | `mcp__dhafnck_mcp_http__call_agent('debugger-agent')` |
-| Write code | `coding-agent` | `mcp__dhafnck_mcp_http__call_agent('coding-agent')` |
-| Testing | `test-orchestrator-agent` | `mcp__dhafnck_mcp_http__call_agent('test-orchestrator-agent')` |
-| Security | `security-auditor-agent` | `mcp__dhafnck_mcp_http__call_agent('security-auditor-agent')` |
-| UI/Frontend | `ui-specialist-agent` | `mcp__dhafnck_mcp_http__call_agent('ui-specialist-agent')` |
-| DevOps | `devops-agent` | `mcp__dhafnck_mcp_http__call_agent('devops-agent')` |
-| Documentation | `documentation-agent` | `mcp__dhafnck_mcp_http__call_agent('documentation-agent')` |
+| Debug/Fix bugs | `debugger-agent` | `mcp__4genthub_http__call_agent('debugger-agent')` |
+| Write code | `coding-agent` | `mcp__4genthub_http__call_agent('coding-agent')` |
+| Testing | `test-orchestrator-agent` | `mcp__4genthub_http__call_agent('test-orchestrator-agent')` |
+| Security | `security-auditor-agent` | `mcp__4genthub_http__call_agent('security-auditor-agent')` |
+| UI/Frontend | `ui-specialist-agent` | `mcp__4genthub_http__call_agent('ui-specialist-agent')` |
+| DevOps | `devops-agent` | `mcp__4genthub_http__call_agent('devops-agent')` |
+| Documentation | `documentation-agent` | `mcp__4genthub_http__call_agent('documentation-agent')` |
 
 ## Current System Architecture
 
@@ -80,7 +80,7 @@ Task Tool Routing:
 Task(subagent_type="X") → master-orchestrator-agent → agent X
 
 Direct Agent Calling:
-mcp__dhafnck_mcp_http__call_agent('X') → agent X directly
+mcp__4genthub_http__call_agent('X') → agent X directly
 ```
 
 ## Implementation Status
@@ -105,7 +105,7 @@ mcp__dhafnck_mcp_http__call_agent('X') → agent X directly
 Task(subagent_type="debugger-agent", prompt="Fix critical auth bug")
 
 # New (direct):
-mcp__dhafnck_mcp_http__call_agent('debugger-agent')
+mcp__4genthub_http__call_agent('debugger-agent')
 ```
 
 ### Example 2: Implement New Feature
@@ -114,7 +114,7 @@ mcp__dhafnck_mcp_http__call_agent('debugger-agent')
 Task(subagent_type="coding-agent", prompt="Implement user dashboard")
 
 # New (direct):
-mcp__dhafnck_mcp_http__call_agent('coding-agent')
+mcp__4genthub_http__call_agent('coding-agent')
 ```
 
 ### Example 3: Run Security Audit
@@ -123,7 +123,7 @@ mcp__dhafnck_mcp_http__call_agent('coding-agent')
 Task(subagent_type="security-auditor-agent", prompt="Audit API endpoints")
 
 # New (direct):
-mcp__dhafnck_mcp_http__call_agent('security-auditor-agent')
+mcp__4genthub_http__call_agent('security-auditor-agent')
 ```
 
 ## When to Use Each Approach
@@ -196,4 +196,4 @@ All agents support direct calling:
 
 ## Summary
 
-The direct agent calling solution provides a clean bypass for the Task tool's hardcoded master-orchestrator routing. Use `mcp__dhafnck_mcp_http__call_agent('agent-name')` for immediate specialized work, or continue using the Task tool for coordinated multi-agent workflows.
+The direct agent calling solution provides a clean bypass for the Task tool's hardcoded master-orchestrator routing. Use `mcp__4genthub_http__call_agent('agent-name')` for immediate specialized work, or continue using the Task tool for coordinated multi-agent workflows.

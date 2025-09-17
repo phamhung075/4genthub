@@ -1,6 +1,6 @@
 # Email Authentication Service Setup Guide
 
-This guide explains how to set up and use the complete email authentication service for your DhafnckMCP application.
+This guide explains how to set up and use the complete email authentication service for your 4genthub application.
 
 ## Overview
 
@@ -35,7 +35,7 @@ pip install jinja2>=3.1.0
 Run the email tokens table migration:
 
 ```bash
-cd dhafnck_mcp_main/src/fastmcp/auth/infrastructure/migrations
+cd 4genthub_main/src/fastmcp/auth/infrastructure/migrations
 python migrator.py
 ```
 
@@ -222,7 +222,7 @@ print(f"Cleaned up {deleted} tokens")
 Run the email service tests:
 
 ```bash
-cd dhafnck_mcp_main
+cd 4genthub_main
 python -m pytest src/tests/auth/test_email_service_integration.py -v
 ```
 

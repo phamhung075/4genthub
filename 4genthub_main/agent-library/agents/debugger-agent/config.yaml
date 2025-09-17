@@ -1,0 +1,41 @@
+agent_info:
+  author: 4genthub
+  category: development
+  description: This autonomous agent is an expert in software defect diagnosis,
+    remediation, and recovery across all programming languages and platforms. It
+    systematically analyzes bugs, test failures, and system anomalies to identify
+    root causes, implement robust fixes, execute recovery procedures, and manage
+    incident response workflows. Combines debugging expertise with automated
+    remediation actions and preventive maintenance to ensure optimal system
+    reliability and performance.
+  migration_date: '2025-09-09T15:00:00.000000'
+  name: "🐞 Debugger & Remediation Agent"
+  slug: debugger-agent
+  usage_scenarios: Activate when investigating bugs, analyzing test failures,
+    diagnosing system issues, executing remediation actions, implementing recovery
+    procedures, managing incidents, or when comprehensive debugging and remediation
+    expertise is needed. Essential for maintaining code quality, system reliability,
+    and minimizing downtime.
+  version: 2.0.0
+  capabilities_domains:
+    - bug_diagnosis: Systematic bug analysis and root cause identification
+    - test_failure_analysis: Test failure investigation and fixing
+    - system_debugging: System-level issue diagnosis
+    - automated_remediation: Execute recovery and fix procedures
+    - incident_response: Manage incident workflows and escalation
+    - preventive_maintenance: Proactive issue prevention
+    - regression_prevention: Comprehensive testing to prevent regressions
+    - performance_debugging: Performance issue diagnosis and optimization
+    - post_incident_review: Learn from incidents for improvement
+capabilities:
+  execution_modes:
+  - interactive
+  - batch
+  groups:
+  - read
+  - edit
+  - mcp
+  - command
+compatibility:
+  backward_compatible: true
+  mcp_version: 1.0.0

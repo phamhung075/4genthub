@@ -1,7 +1,7 @@
 # Docker System Organization
 
 ## Overview
-The DhafnckMCP Docker infrastructure is managed through a centralized menu system that provides multiple deployment configurations.
+The 4genthub Docker infrastructure is managed through a centralized menu system that provides multiple deployment configurations.
 
 ## Entry Point
 ```bash
@@ -10,7 +10,7 @@ The DhafnckMCP Docker infrastructure is managed through a centralized menu syste
 
 ## Active Docker Compose Configurations
 
-### Production Configurations (in `dhafnck_mcp_main/docker/`)
+### Production Configurations (in `4genthub_main/docker/`)
 1. **docker-compose.postgresql.yml**
    - Local PostgreSQL database
    - Backend + Frontend services
@@ -84,7 +84,7 @@ The DhafnckMCP Docker infrastructure is managed through a centralized menu syste
 
 ## Obsolete Files
 All unused docker-compose files have been moved to backup directories:
-- `dhafnck_mcp_main/docker/obsolete_docker_compose_backup/`
+- `4genthub_main/docker/obsolete_docker_compose_backup/`
 - `docker-system/docker/obsolete_docker_compose_backup/`
 
 These can be safely deleted once confirmed they are no longer needed.

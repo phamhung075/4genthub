@@ -9,16 +9,16 @@ import sys
 import os
 
 def main():
-    # Change to dhafnck_mcp_main directory (as fixed in test-menu.sh)
+    # Change to 4genthub_main directory (as fixed in test-menu.sh)
     project_root = "/home/daihungpham/__projects__/agentic-project"
-    dhafnck_dir = f"{project_root}/dhafnck_mcp_main"
+    4genthub_dir = f"{project_root}/4genthub_main"
     
     # Set PYTHONPATH
     env = os.environ.copy()
-    env['PYTHONPATH'] = f"{dhafnck_dir}/src:{env.get('PYTHONPATH', '')}"
+    env['PYTHONPATH'] = f"{4genthub_dir}/src:{env.get('PYTHONPATH', '')}"
     
-    # Change to dhafnck_mcp_main directory
-    os.chdir(dhafnck_dir)
+    # Change to 4genthub_main directory
+    os.chdir(4genthub_dir)
     
     # Run pytest collection only
     try:

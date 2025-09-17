@@ -1,6 +1,6 @@
 # CapRover Environment Variables Configuration
 
-## Backend Service (dhafnck-mcp-backend)
+## Backend Service (4genthub-backend)
 
 Set these environment variables in CapRover's App Config for the backend service:
 
@@ -50,7 +50,7 @@ KEYCLOAK_CLIENT_ID=mcp-api
 KEYCLOAK_CLIENT_SECRET=your-actual-client-secret-from-keycloak
 ```
 
-## Frontend Service (dhafnck-mcp-frontend)
+## Frontend Service (4genthub-frontend)
 
 Set these BUILD ARGUMENTS in CapRover's App Config → Environmental Variables for the frontend service:
 

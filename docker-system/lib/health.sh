@@ -72,7 +72,7 @@ generate_health_report() {
     
     # Check each component
     for service in backend frontend postgres redis; do
-        local container="dhafnck-$service"
+        local container="4genthub-$service"
         if docker ps --format '{{.Names}}' | grep -q "^$container$"; then
             check_container_health "$container"
             local health_status=$?

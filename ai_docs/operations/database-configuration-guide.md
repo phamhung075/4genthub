@@ -2,7 +2,7 @@
 
 ## Overview
 
-DhafnckMCP uses PostgreSQL as the primary database with Keycloak for authentication. This guide consolidates all database configuration information.
+4genthub uses PostgreSQL as the primary database with Keycloak for authentication. This guide consolidates all database configuration information.
 
 ## Current Architecture (as of 2025-09-02)
 
@@ -24,7 +24,7 @@ DhafnckMCP uses PostgreSQL as the primary database with Keycloak for authenticat
 ```env
 # Database Configuration
 DATABASE_TYPE=postgresql  # Default for local development
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dhafnck_db
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/4genthub_db
 
 # Alternative for Supabase (if using cloud)
 SUPABASE_DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=prefer
@@ -52,7 +52,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dhafnck_db
+      POSTGRES_DB: 4genthub_db
     ports:
       - "5432:5432"
     volumes:
@@ -126,7 +126,7 @@ alembic downgrade -1
 
 ### Migration Files Location
 ```
-dhafnck_mcp_main/
+4genthub_main/
 └── alembic/
     ├── versions/       # Migration files
     └── alembic.ini     # Configuration
@@ -137,7 +137,7 @@ dhafnck_mcp_main/
 ### Test Database
 ```python
 # Separate test database
-TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/dhafnck_test_db"
+TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/4genthub_test_db"
 ```
 
 ### Running Tests
@@ -147,7 +147,7 @@ export DATABASE_TYPE=postgresql
 export DATABASE_URL=$TEST_DATABASE_URL
 
 # Run tests
-pytest dhafnck_mcp_main/src/tests/
+pytest 4genthub_main/src/tests/
 ```
 
 ## Troubleshooting
@@ -169,10 +169,10 @@ docker ps | grep postgres
 ### Debug Commands
 ```bash
 # Check database connection
-psql -h localhost -U postgres -d dhafnck_db -c "SELECT 1"
+psql -h localhost -U postgres -d 4genthub_db -c "SELECT 1"
 
 # View current connections
-psql -h localhost -U postgres -d dhafnck_db -c "SELECT * FROM pg_stat_activity"
+psql -h localhost -U postgres -d 4genthub_db -c "SELECT * FROM pg_stat_activity"
 
 # Check environment variables
 python -c "import os; print(os.getenv('DATABASE_TYPE'))"
@@ -200,12 +200,12 @@ DB_POOL_TIMEOUT=30
 
 ### Backup Database
 ```bash
-pg_dump -h localhost -U postgres dhafnck_db > backup.sql
+pg_dump -h localhost -U postgres 4genthub_db > backup.sql
 ```
 
 ### Restore Database
 ```bash
-psql -h localhost -U postgres dhafnck_db < backup.sql
+psql -h localhost -U postgres 4genthub_db < backup.sql
 ```
 
 ## Performance Tuning

@@ -47,7 +47,7 @@ Since we can't automatically capture, we need AI to be disciplined:
 ### 1. Before Starting Work - Check the Notebook
 ```python
 # AI should always check context first
-context = mcp__dhafnck_mcp_http__manage_context(
+context = mcp__4genthub_http__manage_context(
     action="get",
     level="task",
     context_id=current_task_id,
@@ -70,7 +70,7 @@ AI should keep track mentally of:
 ### 3. After Work - Update the Notebook
 ```python
 # AI must manually update context with what it did
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="update",
     level="task",
     context_id=current_task_id,

@@ -1,5 +1,5 @@
 #!/bin/bash
-# docker-cli.sh - Unified Docker CLI Interface for DhafnckMCP
+# docker-cli.sh - Unified Docker CLI Interface for 4genthub
 # PostgreSQL-first architecture with no backward compatibility
 
 set -euo pipefail
@@ -34,7 +34,7 @@ shift 1 2>/dev/null || shift $# 2>/dev/null
 # Display help
 show_help() {
     cat << EOF
-🐳 DhafnckMCP Docker CLI - PostgreSQL Edition
+🐳 4genthub Docker CLI - PostgreSQL Edition
 
 USAGE: ./docker-cli.sh [command] [subcommand] [options]
 

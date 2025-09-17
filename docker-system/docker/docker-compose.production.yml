@@ -6,7 +6,7 @@ services:
   # PostgreSQL Database (Local Docker)
   postgres:
     image: postgres:15-alpine
-    container_name: ${POSTGRES_CONTAINER_NAME:-dhafnck-postgres-prod}
+    container_name: ${POSTGRES_CONTAINER_NAME:-4genthub-postgres-prod}
     restart: unless-stopped
     env_file:
       - ${ENV_FILE:-../../.env}
@@ -37,9 +37,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - postgres_backup:/backup
       # Mount initialization scripts
-      - ./dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/migrations:/docker-entrypoint-initdb.d:ro
+      - ./4genthub_main/src/fastmcp/task_management/infrastructure/migrations:/docker-entrypoint-initdb.d:ro
     networks:
-      - dhafnck_network
+      - 4genthub_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 10s
@@ -57,7 +57,7 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.backend.production
-    container_name: dhafnck-mcp-backend
+    container_name: 4genthub-backend
     restart: unless-stopped
     env_file:
       - ${ENV_FILE:-../../.env}
@@ -71,10 +71,10 @@ services:
     ports:
       - "${MCP_PORT:-8001}:8001"
     volumes:
-      - ./dhafnck_mcp_main:/app/dhafnck_mcp_main:ro
+      - ./4genthub_main:/app/4genthub_main:ro
       - ./logs:/app/logs
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,7 +95,7 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.frontend.production
-    container_name: dhafnck-frontend
+    container_name: 4genthub-frontend
     restart: unless-stopped
     profiles: ["with-frontend"]  # Only start when explicitly requested
     env_file:
@@ -110,7 +110,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-3800}:3800"
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       - mcp-backend
     logging:
@@ -122,11 +122,11 @@ services:
   # PgAdmin (Optional - Database Management)
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: dhafnck-pgadmin
+    container_name: 4genthub-pgadmin
     restart: unless-stopped
     profiles: ["tools"]  # Only start when profile is activated
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@dhafnck.com}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@4genthub.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-PgAdminSecure2025!}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
@@ -137,7 +137,7 @@ services:
       # Auto-configure PostgreSQL server
       - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -150,7 +150,7 @@ services:
   # Nginx Reverse Proxy (Optional - for production deployment)
   nginx:
     image: nginx:alpine
-    container_name: dhafnck-nginx
+    container_name: 4genthub-nginx
     restart: unless-stopped
     profiles: ["with-nginx"]  # Only start when profile is activated
     ports:
@@ -162,7 +162,7 @@ services:
       - ./ssl:/etc/nginx/ssl:ro
       - nginx_cache:/var/cache/nginx
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       - mcp-backend
     logging:
@@ -172,16 +172,16 @@ services:
         max-file: "5"
 
 networks:
-  dhafnck_network:
+  4genthub_network:
     external: true
-    name: dhafnck-network
+    name: 4genthub-network
 
 volumes:
   postgres_data:
-    name: ${POSTGRES_DATA_VOLUME:-dhafnck_postgres_prod_data}
+    name: ${POSTGRES_DATA_VOLUME:-4genthub_postgres_prod_data}
   postgres_backup:
-    name: ${POSTGRES_BACKUP_VOLUME:-dhafnck_postgres_prod_backup}
+    name: ${POSTGRES_BACKUP_VOLUME:-4genthub_postgres_prod_backup}
   pgadmin_data:
-    name: dhafnck_pgadmin_data
+    name: 4genthub_pgadmin_data
   nginx_cache:
-    name: dhafnck_nginx_cache
+    name: 4genthub_nginx_cache

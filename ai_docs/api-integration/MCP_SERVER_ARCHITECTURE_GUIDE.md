@@ -219,7 +219,7 @@ class PostgreSQLTaskRepository(TaskRepository):
     DATABASE: PostgreSQL container
     """
     def __init__(self):
-        self.database_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/dhafnck_dev')
+        self.database_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/4genthub_dev')
         self.engine = create_engine(self.database_url)
     
     async def create_task(self, task: Task) -> Task:
@@ -291,7 +291,7 @@ SUPABASE_ANON_KEY=xxxxx
 SUPABASE_SERVICE_KEY=xxxxx
 
 # PostgreSQL Configuration (Local Development)
-DATABASE_URL=postgresql://user:pass@localhost:5432/dhafnck_dev
+DATABASE_URL=postgresql://user:pass@localhost:5432/4genthub_dev
 
 # Redis Configuration
 REDIS_ENABLED=true  # or 'false' to disable cache

@@ -31,7 +31,7 @@ Creates a TokenManager instance with configuration from environment variables.
 **Environment Variables:**
 - `TOKEN_REFRESH_BEFORE_EXPIRY`: Seconds before expiry to refresh (default: 60)
 - `KEYCLOAK_URL`: Keycloak server URL (default: "http://localhost:8080")
-- `KEYCLOAK_REALM`: Keycloak realm (default: "dhafnck")
+- `KEYCLOAK_REALM`: Keycloak realm (default: "4genthub")
 - `KEYCLOAK_CLIENT_ID`: Client ID (default: "claude-hooks")
 - `KEYCLOAK_CLIENT_SECRET`: Client secret (required)
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document presents the results of verifying automatic parameter type conversion support across MCP controllers in the DhafnckMCP system.
+This document presents the results of verifying automatic parameter type conversion support across MCP controllers in the 4genthub system.
 
 ## Key Findings
 

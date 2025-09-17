@@ -19,7 +19,7 @@ For each issue, generate a prompt following this structured format:
 **Priority**: [High/Medium/Low based on impact]
 
 ## 📋 TECHNICAL SPECIFICATIONS
-**System**: DhafnckMCP Multi-Project AI Orchestration Platform
+**System**: 4genthub Multi-Project AI Orchestration Platform
 **Architecture**: Domain-Driven Design (DDD) with 4-tier context hierarchy
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -219,7 +219,7 @@ Use appropriate agent based on issue type:
 Always include:
 ```python
 # Standard context resolution
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="resolve",
     level="task",
     context_id=task_id,
@@ -228,7 +228,7 @@ mcp__dhafnck_mcp_http__manage_context(
 ```
 
 ### 3. SYSTEMATIC APPROACH
-Follow the DhafnckMCP operation sequence:
+Follow the 4genthub operation sequence:
 1. Health check and agent switching
 2. Context resolution
 3. Task status updates

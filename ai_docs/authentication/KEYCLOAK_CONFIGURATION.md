@@ -1,4 +1,4 @@
-# Keycloak Configuration for DhafnckMCP (Backend-as-Middleware)
+# Keycloak Configuration for 4genthub (Backend-as-Middleware)
 
 ## Architecture Overview
 - **Frontend** → communicates only with → **Backend**
@@ -10,30 +10,30 @@
 ### Basic Settings
 - **Client ID:** `mcp-backend`
 - **Name:** MCP Backend Services
-- **Description:** Backend services for DhafnckMCP platform
+- **Description:** Backend services for 4genthub platform
 - **Always display in UI:** On
 
 ### Access Settings
-- **Root URL:** `https://dhafnck-mcp-backend.92.5.226.7.nip.io`
-- **Home URL:** `https://dhafnck-mcp-backend.92.5.226.7.nip.io`
+- **Root URL:** `https://4genthub-backend.92.5.226.7.nip.io`
+- **Home URL:** `https://4genthub-backend.92.5.226.7.nip.io`
 
 ### Valid Redirect URIs
 Since only backend talks to Keycloak:
 ```
-https://dhafnck-mcp-backend.92.5.226.7.nip.io/*
+https://4genthub-backend.92.5.226.7.nip.io/*
 http://localhost:8000/*
 ```
 
 ### Valid Post Logout Redirect URIs
 ```
-https://dhafnck-mcp-backend.92.5.226.7.nip.io/*
+https://4genthub-backend.92.5.226.7.nip.io/*
 http://localhost:8000/*
 ```
 
 ### Web Origins (CORS)
 Only backend origins needed (WITHOUT trailing slashes or wildcards):
 ```
-https://dhafnck-mcp-backend.92.5.226.7.nip.io
+https://4genthub-backend.92.5.226.7.nip.io
 http://localhost:8000
 ```
 

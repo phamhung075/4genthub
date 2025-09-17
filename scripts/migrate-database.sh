@@ -40,13 +40,13 @@ if docker ps | grep -q $BACKEND_CONTAINER; then
     
     # Run migrations using the backend container
     print_status "Executing database migrations..."
-    docker exec $BACKEND_CONTAINER python -m dhafnck_mcp_main.src.infrastructure.database.migrations.run_migrations || {
+    docker exec $BACKEND_CONTAINER python -m 4genthub_main.src.infrastructure.database.migrations.run_migrations || {
         print_warning "Direct migration failed, trying alternative approach..."
         
         # Alternative approach using database connection
         docker exec $BACKEND_CONTAINER python -c "
-from dhafnck_mcp_main.src.infrastructure.database.session import get_engine
-from dhafnck_mcp_main.src.infrastructure.database.models import Base
+from 4genthub_main.src.infrastructure.database.session import get_engine
+from 4genthub_main.src.infrastructure.database.models import Base
 import os
 
 # Create all tables
@@ -61,7 +61,7 @@ print('✅ Database tables created/updated successfully')
     # Verify database connection
     print_status "Verifying database connection..."
     docker exec $BACKEND_CONTAINER python -c "
-from dhafnck_mcp_main.src.infrastructure.database.session import SessionLocal
+from 4genthub_main.src.infrastructure.database.session import SessionLocal
 try:
     db = SessionLocal()
     db.execute('SELECT 1')
@@ -77,7 +77,7 @@ else
     print_status "Attempting to run migrations via direct database connection..."
     
     # Try to connect directly to PostgreSQL container
-    DB_CONTAINER="srv-captain--dhafnck-postgres"
+    DB_CONTAINER="srv-captain--4genthub-postgres"
     
     if docker ps | grep -q $DB_CONTAINER; then
         print_status "Database container found, creating tables directly..."
@@ -147,4 +147,4 @@ echo ""
 echo "🔍 To verify the migration:"
 echo "   1. Check application logs: caprover logs --caproverApp ${CAPROVER_BACKEND_APP_NAME}"
 echo "   2. Test API endpoints: curl https://your-backend-url/health"
-echo "   3. Connect to database: docker exec -it ${DB_CONTAINER:-srv-captain--dhafnck-postgres} psql -U ${DATABASE_USER} -d ${DATABASE_NAME}"
+echo "   3. Connect to database: docker exec -it ${DB_CONTAINER:-srv-captain--4genthub-postgres} psql -U ${DATABASE_USER} -d ${DATABASE_NAME}"

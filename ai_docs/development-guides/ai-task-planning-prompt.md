@@ -11,7 +11,7 @@ When creating tasks, ALWAYS use the MCP task management system with this workflo
 
 ```typescript
 // Step 1: Create task with FULL context
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action: "create",
     git_branch_id: "<branch-uuid>",  // Required
     title: "<clear-actionable-title>",
@@ -191,7 +191,7 @@ Here's a complete example of creating a task with all context:
 ```python
 # Example: Create task for implementing user authentication
 
-task_response = mcp__dhafnck_mcp_http__manage_task(
+task_response = mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id="550e8400-e29b-41d4-a716-446655440000",
     title="Implement JWT Authentication System",
@@ -313,7 +313,7 @@ task_response = mcp__dhafnck_mcp_http__manage_task(
 task_id = task_response["task"]["id"]
 
 # Create subtasks for detailed implementation
-subtask1 = mcp__dhafnck_mcp_http__manage_subtask(
+subtask1 = mcp__4genthub_http__manage_subtask(
     action="create",
     task_id=task_id,
     title="Update User Model with Authentication Fields",
@@ -321,7 +321,7 @@ subtask1 = mcp__dhafnck_mcp_http__manage_subtask(
     progress_notes="Starting with database schema updates"
 )
 
-subtask2 = mcp__dhafnck_mcp_http__manage_subtask(
+subtask2 = mcp__4genthub_http__manage_subtask(
     action="create",
     task_id=task_id,
     title="Implement Password Hashing Utilities",
@@ -374,21 +374,21 @@ For independent tasks that can run simultaneously:
 
 ```python
 # Create multiple tasks that can be worked on in parallel
-backend_task = mcp__dhafnck_mcp_http__manage_task(
+backend_task = mcp__4genthub_http__manage_task(
     action="create",
     title="Implement Backend API",
     assignees="coding-agent",
     # ... full context
 )
 
-frontend_task = mcp__dhafnck_mcp_http__manage_task(
+frontend_task = mcp__4genthub_http__manage_task(
     action="create",
     title="Create Frontend Components",
     assignees="@ui-specialist-agent",
     # ... full context
 )
 
-test_task = mcp__dhafnck_mcp_http__manage_task(
+test_task = mcp__4genthub_http__manage_task(
     action="create",
     title="Write Integration Tests",
     assignees="@test-orchestrator-agent",
@@ -402,7 +402,7 @@ Create reusable templates for common task types:
 
 ```python
 def create_bug_fix_task(bug_description, affected_files, error_logs):
-    return mcp__dhafnck_mcp_http__manage_task(
+    return mcp__4genthub_http__manage_task(
         action="create",
         title=f"[BUG] {bug_description[:50]}",
         assignees="debugger-agent",
@@ -438,7 +438,7 @@ Update task progress regularly:
 
 ```python
 # Update task with progress
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="update",
     task_id=task_id,
     status="in_progress",
@@ -446,7 +446,7 @@ mcp__dhafnck_mcp_http__manage_task(
 )
 
 # Update subtask progress
-mcp__dhafnck_mcp_http__manage_subtask(
+mcp__4genthub_http__manage_subtask(
     action="update",
     task_id=task_id,
     subtask_id=subtask_id,
@@ -455,7 +455,7 @@ mcp__dhafnck_mcp_http__manage_subtask(
 )
 
 # Complete task with summary
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="complete",
     task_id=task_id,
     completion_summary="JWT authentication fully implemented with refresh tokens",

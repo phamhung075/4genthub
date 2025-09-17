@@ -23,19 +23,19 @@
 ### Quick Multi-Agent Process:
 ```python
 # 1. Load Compliance Agent and check status
-compliance_agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@architecture_compliance_agent")
+compliance_agent = mcp__4genthub_http__call_agent(name_agent="@architecture_compliance_agent")
 
 # 2. Create master task
-master_task = mcp__dhafnck_mcp_http__manage_task(
+master_task = mcp__4genthub_http__manage_task(
     action="create",
     title="Fix architecture violations",
     description="Fix all 61 violations to achieve DDD compliance"
 )
 
 # 3. Load appropriate agent for each violation type
-debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")  # For controllers
-coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")      # For factory
-tester = mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")  # For tests
+debugger = mcp__4genthub_http__call_agent(name_agent="debugger-agent")  # For controllers
+coding = mcp__4genthub_http__call_agent(name_agent="coding-agent")      # For factory
+tester = mcp__4genthub_http__call_agent(name_agent="test-orchestrator-agent")  # For tests
 ```
 
 ## 🔄 Complete Multi-Agent Workflow Pattern
@@ -65,7 +65,7 @@ graph TD
 ### Phase 1: Architecture Analysis and Compliance Check
 ```python
 # Load Architecture Compliance Agent
-compliance_agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@architecture_compliance_agent")
+compliance_agent = mcp__4genthub_http__call_agent(name_agent="@architecture_compliance_agent")
 
 # Analyze existing architecture
 compliance_check = {
@@ -87,10 +87,10 @@ compliance_result = analyze_architecture_compliance(compliance_check)
 ### Phase 2: Task Creation and Planning
 ```python
 # Load Task Planning Agent
-planning_agent = mcp__dhafnck_mcp_http__call_agent(name_agent="task-planning-agent")
+planning_agent = mcp__4genthub_http__call_agent(name_agent="task-planning-agent")
 
 # Create master task for the feature
-master_task = mcp__dhafnck_mcp_http__manage_task(
+master_task = mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Fix 61 architecture violations for DDD compliance",
@@ -99,7 +99,7 @@ master_task = mcp__dhafnck_mcp_http__manage_task(
 )
 
 # Create context for visibility
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     level="task",
     context_id=master_task["task"]["id"],
@@ -123,7 +123,7 @@ subtasks = [
 ]
 
 for subtask in subtasks:
-    mcp__dhafnck_mcp_http__manage_subtask(
+    mcp__4genthub_http__manage_subtask(
         action="create",
         task_id=master_task["task"]["id"],
         title=subtask["title"],
@@ -360,7 +360,7 @@ class SQLiteTaskRepository(BaseORMRepository, TaskRepository):
     
     def __init__(self):
         # PostgreSQL uses connection URL
-        self.database_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/dhafnck_dev')
+        self.database_url = os.getenv('DATABASE_URL', 'postgresql://user:pass@localhost:5432/4genthub_dev')
         super().__init__(TaskModel)
     
     def create_task(self, task: Task) -> Task:
@@ -542,7 +542,7 @@ REDIS_PASSWORD=dev_redis_password_123
 REDIS_DB=0
 
 # PostgreSQL CONFIGURATION (local development)
-DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/dhafnck_mcp_dev
+DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/4genthub_dev
 ```
 
 ## 🎯 Decision Tree for Agents
@@ -949,15 +949,15 @@ def delete_task(self, task_id):
 ### Multi-Agent Execution Order:
 ```python
 # Step 1: Analyze current violations
-compliance = mcp__dhafnck_mcp_http__call_agent(name_agent="@architecture_compliance_agent")
+compliance = mcp__4genthub_http__call_agent(name_agent="@architecture_compliance_agent")
 # Check compliance_reports/compliance_report_20250828_154945.md
 
 # Step 2: Fix controllers (14 HIGH violations)
-debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
+debugger = mcp__4genthub_http__call_agent(name_agent="debugger-agent")
 # Fix all 11 controller files using Phase 1 code above
 
 # Step 3: Implement factory (7 broken factories)
-coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
+coding = mcp__4genthub_http__call_agent(name_agent="coding-agent")
 # Create central RepositoryFactory with environment checking
 # Update all 7 existing factories to use it
 
@@ -968,7 +968,7 @@ coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 # Add invalidation to all mutation methods
 
 # Step 6: Test compliance
-tester = mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")
+tester = mcp__4genthub_http__call_agent(name_agent="test-orchestrator-agent")
 # Run architecture compliance tests
 
 # Step 7: Verify score improved
@@ -1025,18 +1025,18 @@ def test_cache_invalidation_exists():
 ### Pre-Implementation (Analysis Phase)
 ```python
 # 1. Check current compliance status
-compliance = mcp__dhafnck_mcp_http__call_agent(name_agent="@architecture_compliance_agent")
+compliance = mcp__4genthub_http__call_agent(name_agent="@architecture_compliance_agent")
 # Review: compliance_reports/compliance_report_20250828_155335.md
 
 # 2. Create master task
-task = mcp__dhafnck_mcp_http__manage_task(
+task = mcp__4genthub_http__manage_task(
     action="create",
     title="Fix 61 architecture violations",
     priority="critical"
 )
 
 # 3. Create context for tracking
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     level="task",
     context_id=task["id"],
@@ -1047,11 +1047,11 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Implementation Phase (Code Fixes)
 ```python
 # Phase 1: Fix Controllers (14 HIGH violations)
-debugger = mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
+debugger = mcp__4genthub_http__call_agent(name_agent="debugger-agent")
 # Apply controller fixes from Phase 1 section above
 
 # Phase 2: Fix Factories (7 broken factories)  
-coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
+coding = mcp__4genthub_http__call_agent(name_agent="coding-agent")
 # Implement RepositoryFactory with environment checking
 
 # Phase 3: Fix Facades (25 violations)
@@ -1061,7 +1061,7 @@ coding = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 # Add invalidation to all mutation methods
 
 # Phase 5: Test Compliance
-tester = mcp__dhafnck_mcp_http__call_agent(name_agent="test-orchestrator-agent")
+tester = mcp__4genthub_http__call_agent(name_agent="test-orchestrator-agent")
 # Run compliance tests
 ```
 
@@ -1074,7 +1074,7 @@ final_check = analyze_architecture_compliance()
 assert final_check["score"] == 100
 
 # 3. Update context with results
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="update",
     level="project",
     data={
@@ -1085,7 +1085,7 @@ mcp__dhafnck_mcp_http__manage_context(
 )
 
 # 4. Complete task
-mcp__dhafnck_mcp_http__complete_task_with_update(
+mcp__4genthub_http__complete_task_with_update(
     task_id=task["id"],
     completion_summary="Fixed all 61 violations, compliance score now 100/100"
 )

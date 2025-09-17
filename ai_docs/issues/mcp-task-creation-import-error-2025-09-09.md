@@ -7,7 +7,7 @@
 
 ## Problem Summary
 
-The `mcp__dhafnck_mcp_http__manage_task` tool fails specifically on the `create` operation with the error:
+The `mcp__4genthub_http__manage_task` tool fails specifically on the `create` operation with the error:
 ```
 No module named 'fastmcp.task_management.interface.domain'
 ```
@@ -90,7 +90,7 @@ The error occurs specifically during the `create` operation, suggesting:
 
 ### Files to Investigate
 ```
-dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/
+4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/
 ├── handlers/
 │   ├── crud_handler.py          # ⚠️ Likely contains the problematic import
 │   └── task_operation_handler.py
@@ -148,13 +148,13 @@ Once fixed, verify these operations work:
 
 ```bash
 # Basic task creation
-mcp__dhafnck_mcp_http__manage_task(action="create", git_branch_id="...", title="Test Task", assignees="coding-agent")
+mcp__4genthub_http__manage_task(action="create", git_branch_id="...", title="Test Task", assignees="coding-agent")
 
 # Complex task creation with dependencies
-mcp__dhafnck_mcp_http__manage_task(action="create", ..., dependencies=["task-id-1"])
+mcp__4genthub_http__manage_task(action="create", ..., dependencies=["task-id-1"])
 
 # Task creation with all parameters
-mcp__dhafnck_mcp_http__manage_task(action="create", ..., priority="high", estimated_effort="2 days", labels="auth,backend")
+mcp__4genthub_http__manage_task(action="create", ..., priority="high", estimated_effort="2 days", labels="auth,backend")
 ```
 
 ## Related Documentation

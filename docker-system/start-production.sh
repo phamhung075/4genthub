@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# DhafnckMCP Production Startup Script
+# 4genthub Production Startup Script
 # PostgreSQL Docker + Keycloak Cloud
 # =============================================================================
 
@@ -22,7 +22,7 @@ LOG_DIR="./logs"
 # Banner
 echo -e "${BLUE}"
 echo "============================================================"
-echo "     DhafnckMCP Production Server"
+echo "     4genthub Production Server"
 echo "     PostgreSQL Docker + Keycloak Cloud"
 echo "============================================================"
 echo -e "${NC}"
@@ -75,7 +75,7 @@ if check_port 5432; then
     read -p "Stop existing PostgreSQL? [y/N]: " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker stop dhafnck-postgres-prod 2>/dev/null || true
+        docker stop 4genthub-postgres-prod 2>/dev/null || true
         sleep 2
     fi
 fi
@@ -86,7 +86,7 @@ if check_port 8001; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         pkill -f "mcp_server" 2>/dev/null || true
-        docker stop dhafnck-mcp-backend 2>/dev/null || true
+        docker stop 4genthub-backend 2>/dev/null || true
         sleep 2
     fi
 fi
@@ -117,7 +117,7 @@ fi
 
 # Initialize database schema (if needed)
 echo -e "${BLUE}Checking database schema...${NC}"
-if [ -f "./dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/migrations/001_initial_schema.sql" ]; then
+if [ -f "./4genthub_main/src/fastmcp/task_management/infrastructure/migrations/001_initial_schema.sql" ]; then
     echo "Applying database migrations..."
     docker-compose -f "$COMPOSE_FILE" exec -T postgres psql -U "$DATABASE_USER" -d "$DATABASE_NAME" \
         -f /docker-entrypoint-initdb.d/001_initial_schema.sql 2>/dev/null || true
@@ -162,19 +162,19 @@ else
     echo -e "${BLUE}Starting MCP server locally...${NC}"
     
     # Check Python environment
-    if [ ! -d "./dhafnck_mcp_main/venv" ]; then
+    if [ ! -d "./4genthub_main/venv" ]; then
         echo -e "${YELLOW}Creating Python virtual environment...${NC}"
-        python3 -m venv ./dhafnck_mcp_main/venv
-        source ./dhafnck_mcp_main/venv/bin/activate
-        pip install -r ./dhafnck_mcp_main/requirements.txt
+        python3 -m venv ./4genthub_main/venv
+        source ./4genthub_main/venv/bin/activate
+        pip install -r ./4genthub_main/requirements.txt
     else
-        source ./dhafnck_mcp_main/venv/bin/activate
+        source ./4genthub_main/venv/bin/activate
     fi
     
     # Start MCP server
-    export PYTHONPATH="./dhafnck_mcp_main/src:$PYTHONPATH"
+    export PYTHONPATH="./4genthub_main/src:$PYTHONPATH"
     export ENV_FILE="$ENV_FILE"
-    nohup python ./dhafnck_mcp_main/src/mcp_http_server.py > "$LOG_DIR/mcp-server.log" 2>&1 &
+    nohup python ./4genthub_main/src/mcp_http_server.py > "$LOG_DIR/mcp-server.log" 2>&1 &
     MCP_PID=$!
     echo "MCP server started with PID: $MCP_PID"
     
@@ -195,13 +195,13 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${BLUE}Starting PgAdmin...${NC}"
     docker-compose -f "$COMPOSE_FILE" --profile tools up -d pgadmin
     echo -e "${GREEN}✅ PgAdmin available at: http://localhost:5050${NC}"
-    echo "   Email: ${PGADMIN_EMAIL:-admin@dhafnck.com}"
+    echo "   Email: ${PGADMIN_EMAIL:-admin@4genthub.com}"
 fi
 
 # Display status
 echo ""
 echo -e "${GREEN}============================================================${NC}"
-echo -e "${GREEN}     DhafnckMCP Production Server Started Successfully${NC}"
+echo -e "${GREEN}     4genthub Production Server Started Successfully${NC}"
 echo -e "${GREEN}============================================================${NC}"
 echo ""
 echo -e "${BLUE}Services:${NC}"

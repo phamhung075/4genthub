@@ -6,7 +6,7 @@
 
 ## How It Works
 
-When Claude calls an agent using `mcp__dhafnck_mcp_http__call_agent`, the system automatically:
+When Claude calls an agent using `mcp__4genthub_http__call_agent`, the system automatically:
 1. **Detects Agent Calls** - Post-tool hook monitors for agent invocations
 2. **Switches Context** - Provides specialized agent instructions 
 3. **Runtime Switching** - Works within the same session without env vars
@@ -20,7 +20,7 @@ The system automatically provides specialized context when agents are loaded:
 ### 🎯 Master Orchestrator (Default)
 Standard Claude behavior with orchestrator capabilities loaded via:
 ```
-mcp__dhafnck_mcp_http__call_agent('master-orchestrator-agent')
+mcp__4genthub_http__call_agent('master-orchestrator-agent')
 ```
 
 ### 🤖 Specialized Agents (Automatic)
@@ -45,14 +45,14 @@ When calling any specialized agent, the system automatically provides:
 Task(subagent_type="coding-agent", prompt="Fix this bug")
 
 // Use direct agent calling:
-mcp__dhafnck_mcp_http__call_agent("coding-agent")
+mcp__4genthub_http__call_agent("coding-agent")
 // System automatically provides specialized context
 ```
 
 ### Agent Delegation Pattern
 ```typescript
 // 1. Create MCP task with full context
-const taskResult = await mcp__dhafnck_mcp_http__manage_task({
+const taskResult = await mcp__4genthub_http__manage_task({
   action: "create",
   git_branch_id: "branch-uuid", 
   title: "Fix authentication bug",
@@ -61,7 +61,7 @@ const taskResult = await mcp__dhafnck_mcp_http__manage_task({
 });
 
 // 2. Delegate with task ID only (saves tokens)
-mcp__dhafnck_mcp_http__call_agent("coding-agent")
+mcp__4genthub_http__call_agent("coding-agent")
 // Agent will be told: "task_id: {uuid}" and load full context from MCP
 ```
 
@@ -78,7 +78,7 @@ mcp__dhafnck_mcp_http__call_agent("coding-agent")
 ### How the System Works
 
 1. **Post-Tool Hook Detection** (`.claude/hooks/post_tool_use.py`):
-   - Monitors for `mcp__dhafnck_mcp_http__call_agent` calls
+   - Monitors for `mcp__4genthub_http__call_agent` calls
    - Automatically invokes agent context switching
    - Provides specialized instructions via system reminder
 
@@ -94,7 +94,7 @@ mcp__dhafnck_mcp_http__call_agent("coding-agent")
 
 ### Agent Context Flow
 ```
-1. Claude calls mcp__dhafnck_mcp_http__call_agent("coding-agent")
+1. Claude calls mcp__4genthub_http__call_agent("coding-agent")
 2. Post-tool hook detects the call
 3. Agent context manager creates specialized context
 4. System provides runtime instructions to Claude

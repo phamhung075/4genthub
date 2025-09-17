@@ -2,31 +2,31 @@
 
 ## Overview
 
-This guide covers common issues, known problems, and systematic troubleshooting approaches for the DhafnckMCP system.
+This guide covers common issues, known problems, and systematic troubleshooting approaches for the 4genthub system.
 
 ## Quick Diagnostic Commands
 
 ### System Health Check
 ```bash
 # Check MCP server health
-mcp__dhafnck_mcp_http__manage_connection(action="health_check")
+mcp__4genthub_http__manage_connection(action="health_check")
 
 # Check database connectivity
-mcp__dhafnck_mcp_http__manage_project(action="list")
+mcp__4genthub_http__manage_project(action="list")
 
 # Check context with inheritance
-mcp__dhafnck_mcp_http__manage_context(action="get", level="task", context_id="your-task-id", include_inherited=True)
+mcp__4genthub_http__manage_context(action="get", level="task", context_id="your-task-id", include_inherited=True)
 
 # Verify January 2025 fixes are working (all should succeed without errors)
 # Test task creation (validates TaskId scoping fix)
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="create", 
     git_branch_id="test-branch-id", 
     title="Health check task"
 )
 
 # Test context operations (validates async repository fixes)
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     task_id="test-task-id",
     data_title="Test context"
@@ -36,10 +36,10 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Agent System Check
 ```bash
 # Verify agent is active
-mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
+mcp__4genthub_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Check agent assignments
-mcp__dhafnck_mcp_http__manage_agent(action="list", project_id="your-project-id")
+mcp__4genthub_http__manage_agent(action="list", project_id="your-project-id")
 ```
 
 ## Known Issues and Solutions
@@ -172,7 +172,7 @@ from .hierarchical_context_service import UnifiedContextService
 **Solution**:
 ```bash
 # ALWAYS update context before completing task
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="update",
     level="task",
     context_id="your-task-id",
@@ -184,7 +184,7 @@ mcp__dhafnck_mcp_http__manage_context(
 )
 
 # THEN complete the task
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="complete",
     task_id="your-task-id",
     completion_summary="Detailed completion summary",
@@ -212,7 +212,7 @@ git_branch_name="main"
 git_branch_id="uuid-from-branch-creation"
 
 # Get branch ID from project listing
-branches = mcp__dhafnck_mcp_http__manage_git_branch(
+branches = mcp__4genthub_http__manage_git_branch(
     action="list",
     project_id="your-project-id"
 )
@@ -225,11 +225,11 @@ branches = mcp__dhafnck_mcp_http__manage_git_branch(
 **Diagnosis**:
 ```bash
 # Check database file permissions
-ls -la /data/dhafnck_mcp.db
+ls -la /data/4genthub.db
 
 # Check Docker container status
 docker ps
-docker logs dhafnck-mcp-container
+docker logs 4genthub-container
 ```
 
 **Solutions by Mode**:
@@ -237,16 +237,16 @@ docker logs dhafnck-mcp-container
 #### Docker Container Mode
 ```bash
 # Ensure database volume is mounted
-docker run -v /path/to/data:/data dhafnck-mcp
+docker run -v /path/to/data:/data 4genthub
 
 # Check database file exists
-docker exec -it container-name ls -la /data/dhafnck_mcp.db
+docker exec -it container-name ls -la /data/4genthub.db
 ```
 
 #### Local Development Mode
 ```bash
 # Ensure Docker database is accessible
-# Database MUST be at /data/dhafnck_mcp.db
+# Database MUST be at /data/4genthub.db
 # Rebuild Docker container for code changes:
 docker-compose down
 docker-compose build
@@ -255,7 +255,7 @@ docker-compose up
 
 #### MCP STDIN Mode
 ```bash
-# Uses local database (dhafnck_mcp_local.db)
+# Uses local database (4genthub_local.db)
 # This is expected and normal
 # Database will be created automatically
 ```
@@ -271,7 +271,7 @@ docker-compose up
 **Solution**:
 ```bash
 # ALWAYS switch to appropriate agent before work
-mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
+mcp__4genthub_http__call_agent(name_agent="coding-agent")
 
 # For different work types:
 # Debug work: debugger-agent
@@ -288,12 +288,12 @@ mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 **Diagnosis**:
 ```bash
 # Check cache status
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="get_health"
 )
 
 # Check resolved context with full inheritance
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="resolve",
     level="task",
     context_id="your-task-id"
@@ -303,12 +303,12 @@ mcp__dhafnck_mcp_http__manage_context(
 **Solutions**:
 ```bash
 # Clear cache if hit ratio is low
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="cleanup_cache"
 )
 
 # Force refresh for specific context
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="resolve",
     level="task",
     context_id="your-task-id",
@@ -323,13 +323,13 @@ mcp__dhafnck_mcp_http__manage_context(
 **Diagnosis**:
 ```bash
 # Check context delegations (use manage_context with delegate action)
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="list",
     level="project"  # Check at higher level for delegated items
 )
 
 # List contexts at project level to see delegated patterns
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="list",
     level="project"
 )
@@ -338,14 +338,14 @@ mcp__dhafnck_mcp_http__manage_context(
 **Solutions**:
 ```bash
 # Delegate context to higher level
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="delegate",
     level="task",
     delegation_id="delegation-uuid"
 )
 
 # Remove delegated content by updating context
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="update",
     level="project",
     delegation_id="delegation-uuid",
@@ -358,19 +358,19 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Step 1: System Health Assessment
 ```bash
 # 1. Check MCP connection
-health = mcp__dhafnck_mcp_http__manage_connection(action="health_check")
+health = mcp__4genthub_http__manage_connection(action="health_check")
 
 # 2. Verify database connectivity
-projects = mcp__dhafnck_mcp_http__manage_project(action="list")
+projects = mcp__4genthub_http__manage_project(action="list")
 
 # 3. Check agent system
-agent = mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
+agent = mcp__4genthub_http__call_agent(name_agent="master-orchestrator-agent")
 ```
 
 ### Step 2: Context Validation
 ```bash
 # 1. Get resolved context with inheritance
-resolved_context = mcp__dhafnck_mcp_http__manage_context(
+resolved_context = mcp__4genthub_http__manage_context(
     action="resolve",
     level="task",
     context_id="your-task-id"
@@ -379,7 +379,7 @@ resolved_context = mcp__dhafnck_mcp_http__manage_context(
 # 2. Check for missing contexts
 if validation.errors:
     # Create missing contexts
-    mcp__dhafnck_mcp_http__manage_context(
+    mcp__4genthub_http__manage_context(
         action="create",
         level="project",
         context_id="project-id",
@@ -390,19 +390,19 @@ if validation.errors:
 ### Step 3: Data Integrity Check
 ```bash
 # 1. Verify project structure
-project = mcp__dhafnck_mcp_http__manage_project(
+project = mcp__4genthub_http__manage_project(
     action="get",
     project_id="your-project-id"
 )
 
 # 2. Check branch associations
-branches = mcp__dhafnck_mcp_http__manage_git_branch(
+branches = mcp__4genthub_http__manage_git_branch(
     action="list",
     project_id="your-project-id"
 )
 
 # 3. Validate task relationships
-tasks = mcp__dhafnck_mcp_http__manage_task(
+tasks = mcp__4genthub_http__manage_task(
     action="list",
     git_branch_id="your-branch-id"
 )
@@ -411,7 +411,7 @@ tasks = mcp__dhafnck_mcp_http__manage_task(
 ### Step 4: Performance Analysis
 ```bash
 # 1. Check cache performance
-cache_status = mcp__dhafnck_mcp_http__manage_context(
+cache_status = mcp__4genthub_http__manage_context(
     action="get_health"
 )
 
@@ -419,7 +419,7 @@ cache_status = mcp__dhafnck_mcp_http__manage_context(
 # Look for resolution_timing in responses
 
 # 3. Check project-level contexts for delegations
-project_contexts = mcp__dhafnck_mcp_http__manage_context(
+project_contexts = mcp__4genthub_http__manage_context(
     action="list",
     level="project"
 )
@@ -455,7 +455,7 @@ project_contexts = mcp__dhafnck_mcp_http__manage_context(
 #### "Context resolution failed" Error
 ```bash
 # Diagnosis:
-context_check = mcp__dhafnck_mcp_http__manage_context(
+context_check = mcp__4genthub_http__manage_context(
     action="get",
     level="task",
     context_id="failing-task-id"
@@ -497,7 +497,7 @@ available_agents = [
 #### "Agent operation timeout" Error
 ```bash
 # Solution: Switch to debugger agent
-mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
+mcp__4genthub_http__call_agent(name_agent="debugger-agent")
 
 # Investigate timeout cause
 # Check system resources
@@ -509,7 +509,7 @@ mcp__dhafnck_mcp_http__call_agent(name_agent="debugger-agent")
 #### "Task not found" Error
 ```bash
 # Diagnosis: Check task exists
-tasks = mcp__dhafnck_mcp_http__manage_task(
+tasks = mcp__4genthub_http__manage_task(
     action="search",
     query="task-title-or-description"
 )
@@ -542,7 +542,7 @@ cache_metrics = get_cache_metrics()
 
 # Actions:
 if cache_metrics.hit_ratio < 0.5:
-    mcp__dhafnck_mcp_http__manage_context(
+    mcp__4genthub_http__manage_context(
         action="cleanup_cache"
     )
 ```
@@ -579,10 +579,10 @@ if cache_metrics.hit_ratio < 0.5:
 docker-compose down
 
 # 2. Backup current database
-cp /data/dhafnck_mcp.db /data/dhafnck_mcp.db.backup
+cp /data/4genthub.db /data/4genthub.db.backup
 
 # 3. Clear cache
-rm -rf /tmp/dhafnck_cache/*
+rm -rf /tmp/4genthub_cache/*
 
 # 4. Restart with clean state
 docker-compose up --build
@@ -594,10 +594,10 @@ docker-compose up --build
 ls -la /data/*.backup
 
 # 2. Restore from backup if needed
-cp /data/dhafnck_mcp.db.backup /data/dhafnck_mcp.db
+cp /data/4genthub.db.backup /data/4genthub.db
 
 # 3. Verify data integrity
-mcp__dhafnck_mcp_http__manage_project(action="list")
+mcp__4genthub_http__manage_project(action="list")
 ```
 
 ### Context System Recovery
@@ -605,7 +605,7 @@ mcp__dhafnck_mcp_http__manage_project(action="list")
 # 1. Validate all contexts
 # Run validation on all active tasks
 for task_id in active_tasks:
-    mcp__dhafnck_mcp_http__manage_context(
+    mcp__4genthub_http__manage_context(
         action="resolve",
         level="task",
         context_id=task_id
@@ -616,7 +616,7 @@ for task_id in active_tasks:
 # Re-establish inheritance chains
 
 # 3. Clear and rebuild cache
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="cleanup_cache"
 )
 ```
@@ -626,10 +626,10 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Daily Health Checks
 ```bash
 # 1. System health
-mcp__dhafnck_mcp_http__manage_connection(action="health_check")
+mcp__4genthub_http__manage_connection(action="health_check")
 
 # 2. Database size and performance
-du -h /data/dhafnck_mcp.db
+du -h /data/4genthub.db
 
 # 3. Cache performance
 cache_status = get_cache_status()
@@ -641,18 +641,18 @@ error_metrics = get_error_metrics()
 ### Weekly Maintenance
 ```bash
 # 1. Database cleanup
-mcp__dhafnck_mcp_http__manage_project(
+mcp__4genthub_http__manage_project(
     action="cleanup_obsolete",
     project_id="project-id"
 )
 
 # 2. Cache optimization
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="cleanup_cache"
 )
 
 # 3. Review delegated patterns at project level
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="list",
     level="project"
 )
@@ -672,7 +672,7 @@ mcp__dhafnck_mcp_http__manage_context(
 ### Log Analysis
 ```bash
 # Check application logs
-docker logs dhafnck-mcp-container
+docker logs 4genthub-container
 
 # Look for patterns:
 # ERROR: Database connection failed
@@ -731,7 +731,7 @@ If you suspect any of the January 2025 fixes have regressed, run these tests:
 
 ```bash
 # 1. Test TaskId scoping (should not show UnboundLocalError)
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id="test-branch-uuid",
     title="TaskId validation test",
@@ -739,7 +739,7 @@ mcp__dhafnck_mcp_http__manage_task(
 )
 
 # 2. Test async repository patterns (should not show async/sync mismatch errors)
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     task_id="test-task-uuid",
     data_title="Async test context"
@@ -747,7 +747,7 @@ mcp__dhafnck_mcp_http__manage_context(
 
 # 3. Test database schema (should not show foreign key errors)
 # Create task with proper branch reference
-task_result = mcp__dhafnck_mcp_http__manage_task(
+task_result = mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id="valid-branch-uuid",
     title="Schema validation test"
@@ -755,7 +755,7 @@ task_result = mcp__dhafnck_mcp_http__manage_task(
 
 # 4. Test import path resolution (should not show ModuleNotFoundError)
 # Any context operation should work without import errors
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="resolve",
     level="task",
     context_id="test-task-uuid"
@@ -774,7 +774,7 @@ If any of these errors appear, the fixes may have regressed and need investigati
 
 ---
 
-This comprehensive guide should help diagnose and resolve most issues encountered in the DhafnckMCP system. For persistent issues, follow the systematic troubleshooting approach and use the emergency recovery procedures when necessary.
+This comprehensive guide should help diagnose and resolve most issues encountered in the 4genthub system. For persistent issues, follow the systematic troubleshooting approach and use the emergency recovery procedures when necessary.
 
 **Document Version**: 2.0  
 **Last Updated**: January 19, 2025  

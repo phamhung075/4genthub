@@ -4,7 +4,7 @@
 **Status**: Active
 
 ## Overview
-This document describes the interaction patterns between the 31 consolidated agents in the DhafnckMCP system. After reducing from 42 to 31 agents, the interaction patterns have been streamlined for better efficiency and clearer delegation paths.
+This document describes the interaction patterns between the 31 consolidated agents in the 4genthub system. After reducing from 42 to 31 agents, the interaction patterns have been streamlined for better efficiency and clearer delegation paths.
 
 ## Agent Hierarchy & Roles
 

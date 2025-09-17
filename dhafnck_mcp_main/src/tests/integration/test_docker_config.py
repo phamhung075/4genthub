@@ -65,7 +65,7 @@ class TestCapRoverPostgreSQLConnection:
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "srv-captain--postgres",
             "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "dhafnck_mcp",
+            "DATABASE_NAME": "agenthub_mcp",
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "caprover_password",
             "DATABASE_SSL_MODE": "disable",  # Key setting for CapRover
@@ -103,7 +103,7 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: dhafnck_mcp
+      POSTGRES_DB: agenthub_mcp
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: caprover_test_password
       # CapRover PostgreSQL typically doesn't have SSL configured
@@ -124,7 +124,7 @@ services:
       DATABASE_TYPE: postgresql
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: dhafnck_mcp
+      DATABASE_NAME: agenthub_mcp
       DATABASE_USER: postgres
       DATABASE_PASSWORD: caprover_test_password
       DATABASE_SSL_MODE: disable  # CapRover setting
@@ -200,7 +200,7 @@ class TestManagedPostgreSQLConnection:
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "prod-db.abc123.us-east-1.rds.amazonaws.com",
             "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "dhafnck_mcp",
+            "DATABASE_NAME": "agenthub_mcp",
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "managed_secure_password!@#$%",
             "DATABASE_SSL_MODE": "require",  # Managed services require SSL
@@ -414,7 +414,7 @@ class TestEndToEndDeploymentScenarios:
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "srv-captain--postgres",
             "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "dhafnck_mcp",
+            "DATABASE_NAME": "agenthub_mcp",
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "caprover_generated_password_123",
             "DATABASE_SSL_MODE": "disable",  # CapRover key setting
@@ -428,7 +428,7 @@ class TestEndToEndDeploymentScenarios:
             "AUTH_ENABLED": "true",
             "AUTH_PROVIDER": "keycloak",
             "KEYCLOAK_URL": "https://auth.captain.example.com",
-            "KEYCLOAK_REALM": "dhafnck-mcp",
+            "KEYCLOAK_REALM": "agenthub-mcp",
             "KEYCLOAK_CLIENT_ID": "mcp-backend",
             "KEYCLOAK_CLIENT_SECRET": "caprover_keycloak_secret",
 
@@ -477,7 +477,7 @@ class TestEndToEndDeploymentScenarios:
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "prod-db.abc123.us-east-1.rds.amazonaws.com",
             "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "dhafnck_mcp",
+            "DATABASE_NAME": "agenthub_mcp",
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "very_secure_managed_db_password!@#$",
             "DATABASE_SSL_MODE": "require",  # Managed services require SSL
@@ -491,7 +491,7 @@ class TestEndToEndDeploymentScenarios:
             "AUTH_ENABLED": "true",
             "AUTH_PROVIDER": "keycloak",
             "KEYCLOAK_URL": "https://auth.example.com",
-            "KEYCLOAK_REALM": "dhafnck-mcp",
+            "KEYCLOAK_REALM": "agenthub-mcp",
             "KEYCLOAK_CLIENT_ID": "mcp-backend",
             "KEYCLOAK_CLIENT_SECRET": "production_keycloak_client_secret",
 
@@ -533,7 +533,7 @@ services:
       DATABASE_TYPE: postgresql
       DATABASE_HOST: test-postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: dhafnck_mcp
+      DATABASE_NAME: agenthub_mcp
       DATABASE_USER: postgres
       DATABASE_PASSWORD: test_password_for_validation
       FASTMCP_PORT: 8000
@@ -584,7 +584,7 @@ services:
       DATABASE_TYPE: postgresql
       DATABASE_HOST: test-postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: dhafnck_mcp
+      DATABASE_NAME: agenthub_mcp
       DATABASE_USER: postgres
       FASTMCP_PORT: 8000
     command: |
@@ -637,7 +637,7 @@ services:
       DATABASE_TYPE: postgresql
       DATABASE_HOST: test-postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: dhafnck_mcp
+      DATABASE_NAME: agenthub_mcp
       DATABASE_USER: postgres
       DATABASE_PASSWORD: test_password
       FASTMCP_PORT: 8000

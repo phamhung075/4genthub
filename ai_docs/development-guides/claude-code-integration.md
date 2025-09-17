@@ -1,14 +1,14 @@
-# Claude Code & DhafnckMCP Agent System Integration Guide
+# Claude Code & 4genthub Agent System Integration Guide
 
 ## Overview
 
-This guide explains how to integrate your advanced DhafnckMCP agent system (60+ specialized agents) with Claude Code's native agent system. Rather than replacing either system, we create a bridge architecture that allows both systems to work together seamlessly.
+This guide explains how to integrate your advanced 4genthub agent system (60+ specialized agents) with Claude Code's native agent system. Rather than replacing either system, we create a bridge architecture that allows both systems to work together seamlessly.
 
 ## System Architecture
 
 ### Two Complementary Systems
 
-**DhafnckMCP Agent System:**
+**4genthub Agent System:**
 - 60+ specialized workflow orchestration agents
 - Advanced task management with 4-tier context hierarchy
 - Server-side orchestration (localhost:8000)
@@ -25,23 +25,23 @@ This guide explains how to integrate your advanced DhafnckMCP agent system (60+ 
 ### Bridge Architecture
 
 The solution creates **bridge agents** in Claude Code that:
-- Invoke your specialized DhafnckMCP agents
+- Invoke your specialized 4genthub agents
 - Maintain task tracking and context management
 - Preserve workflow integration
 - Enable seamless handoffs between systems
 
 ## Installation & Setup
 
-### 1. Verify DhafnckMCP System
+### 1. Verify 4genthub System
 
-Ensure your DhafnckMCP server is running:
+Ensure your 4genthub server is running:
 
 ```bash
 # Check server health
 curl http://localhost:8000/mcp/health
 
 # Verify in Claude Code
-mcp__dhafnck_mcp_http__manage_connection(action="health_check")
+mcp__4genthub_http__manage_connection(action="health_check")
 ```
 
 ### 2. Create Bridge Agents
@@ -97,14 +97,14 @@ Use the uber-orchestrator agent to coordinate this multi-phase project.
 
 When a bridge agent is activated, it will:
 
-1. **Connect to your DhafnckMCP agent**:
+1. **Connect to your 4genthub agent**:
    ```
-   mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
+   mcp__4genthub_http__call_agent(name_agent="master-orchestrator-agent")
    ```
 
 2. **Check existing project context**:
    ```
-   mcp__dhafnck_mcp_http__manage_context(
+   mcp__4genthub_http__manage_context(
        action="resolve",
        level="branch", 
        context_id=branch_id,
@@ -114,7 +114,7 @@ When a bridge agent is activated, it will:
 
 3. **Create or update tasks** for tracking:
    ```
-   mcp__dhafnck_mcp_http__manage_task(
+   mcp__4genthub_http__manage_task(
        action="create",
        git_branch_id=branch_id,
        title="Work description"
@@ -125,7 +125,7 @@ When a bridge agent is activated, it will:
 
 5. **Update context** with findings:
    ```
-   mcp__dhafnck_mcp_http__manage_context(
+   mcp__4genthub_http__manage_context(
        action="update",
        level="branch",
        context_id=branch_id,
@@ -141,7 +141,7 @@ When a bridge agent is activated, it will:
 
 ### Core Bridge Agents
 
-| Claude Code Agent | DhafnckMCP Agents | Use Cases |
+| Claude Code Agent | 4genthub Agents | Use Cases |
 |------------------|-------------------|-----------|
 | `uber-orchestrator` | master-orchestrator-agent, task-planning-agent | Complex projects, coordination |
 | `coding-specialist` | coding-agent, system-architect-agent, @algorithmic_problem_solver_agent | Implementation work |
@@ -182,13 +182,13 @@ You can create custom bridge agents for specific workflows:
 ---
 name: my-custom-workflow
 description: Custom workflow for specific project needs
-tools: mcp__dhafnck_mcp_http__call_agent, mcp__dhafnck_mcp_http__manage_task
+tools: mcp__4genthub_http__call_agent, mcp__4genthub_http__manage_task
 model: sonnet
 ---
 
 # Custom Workflow Agent
 
-I bridge your specific workflow requirements with the DhafnckMCP system.
+I bridge your specific workflow requirements with the 4genthub system.
 
 When activated, I will:
 1. Connect to @specialized_agent_name
@@ -215,7 +215,7 @@ Always ensure context is properly managed:
 
 ```python
 # Before starting work
-context = mcp__dhafnck_mcp_http__manage_context(
+context = mcp__4genthub_http__manage_context(
     action="resolve",
     level="branch",
     context_id=branch_id,
@@ -223,7 +223,7 @@ context = mcp__dhafnck_mcp_http__manage_context(
 )
 
 # After completing work  
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="update",
     level="branch", 
     context_id=branch_id,
@@ -236,7 +236,7 @@ mcp__dhafnck_mcp_http__manage_context(
 Create tasks before starting significant work:
 
 ```python
-task = mcp__dhafnck_mcp_http__manage_task(
+task = mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title="Descriptive task title",
@@ -250,10 +250,10 @@ When multiple agents are needed:
 
 ```python
 # Start with orchestrator
-mcp__dhafnck_mcp_http__call_agent(name_agent="master-orchestrator-agent")
+mcp__4genthub_http__call_agent(name_agent="master-orchestrator-agent")
 
 # Then delegate to specialists
-mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
+mcp__4genthub_http__call_agent(name_agent="coding-agent")
 ```
 
 ## Troubleshooting
@@ -265,7 +265,7 @@ mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 - Check agent files are in `~/.claude/agents/`
 - Verify YAML frontmatter syntax
 
-**DhafnckMCP connection issues:**
+**4genthub connection issues:**
 - Verify server is running: `curl http://localhost:8000/mcp/health`
 - Check MCP configuration in `.mcp.json`
 - Ensure no port conflicts
@@ -281,7 +281,7 @@ mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
 # Check Claude Code agent directory
 ls -la ~/.claude/agents/
 
-# Test DhafnckMCP connection
+# Test 4genthub connection
 curl http://localhost:8000/mcp/tools
 
 # Verify MCP configuration

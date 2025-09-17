@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive patterns for testing authentication in the DhafnckMCP platform following the 2025-08-25 test modernization initiative. All authentication testing now enforces strict security patterns with no default user fallbacks.
+This guide provides comprehensive patterns for testing authentication in the 4genthub platform following the 2025-08-25 test modernization initiative. All authentication testing now enforces strict security patterns with no default user fallbacks.
 
 ## 🔒 Security Requirements
 

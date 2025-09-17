@@ -20,8 +20,8 @@ The Deprecated Agent Mappings system provides backward compatibility for agent n
 
 ### File Locations
 
-- **Implementation**: `/dhafnck_mcp_main/src/fastmcp/task_management/application/use_cases/agent_mappings.py`
-- **Tests**: `/dhafnck_mcp_main/src/tests/task_management/application/use_cases/agent_mappings_test.py`
+- **Implementation**: `/4genthub_main/src/fastmcp/task_management/application/use_cases/agent_mappings.py`
+- **Tests**: `/4genthub_main/src/tests/task_management/application/use_cases/agent_mappings_test.py`
 
 ## Agent Consolidation Categories
 

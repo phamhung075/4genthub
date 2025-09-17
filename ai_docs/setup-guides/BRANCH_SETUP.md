@@ -19,7 +19,7 @@ cat > captain-definition << 'EOF'
 EOF
 
 # Deploy to CapRover
-caprover deploy --appName dhafnck-mcp-backend
+caprover deploy --appName 4genthub-backend
 ```
 
 ### Frontend Branch
@@ -36,7 +36,7 @@ cat > captain-definition << 'EOF'
 EOF
 
 # Deploy to CapRover
-caprover deploy --appName dhafnck-mcp-frontend
+caprover deploy --appName 4genthub-frontend
 ```
 
 ## Alternative: Use Environment-Specific Files
@@ -50,11 +50,11 @@ Then copy the appropriate one before deployment:
 ```bash
 # For backend deployment
 cp captain-definition-backend captain-definition
-caprover deploy --appName dhafnck-mcp-backend
+caprover deploy --appName 4genthub-backend
 
 # For frontend deployment
 cp captain-definition-frontend captain-definition
-caprover deploy --appName dhafnck-mcp-frontend
+caprover deploy --appName 4genthub-frontend
 ```
 
 ## CapRover Dashboard Method
@@ -83,5 +83,5 @@ This ensures:
 
 | Branch | App Name | Dockerfile Path |
 |--------|----------|----------------|
-| backend/main | dhafnck-mcp-backend | ./docker-system/docker/Dockerfile.backend.production |
-| frontend | dhafnck-mcp-frontend | ./docker-system/docker/Dockerfile.frontend.production |
+| backend/main | 4genthub-backend | ./docker-system/docker/Dockerfile.backend.production |
+| frontend | 4genthub-frontend | ./docker-system/docker/Dockerfile.frontend.production |

@@ -2,7 +2,7 @@
 
 set -e
 
-echo "🐳 DhafnckMCP Backend Deployment"
+echo "🐳 4genthub Backend Deployment"
 echo "================================"
 
 # Configuration
@@ -66,8 +66,8 @@ if [ "$SKIP_BUILD" != "true" ]; then
         # Build with optimizations
         DOCKER_BUILDKIT=1 docker build \
             -f Dockerfile.production \
-            -t $DOCKER_NAMESPACE/dhafnck-mcp-backend:latest \
-            -t $DOCKER_NAMESPACE/dhafnck-mcp-backend:$ENVIRONMENT \
+            -t $DOCKER_NAMESPACE/4genthub-backend:latest \
+            -t $DOCKER_NAMESPACE/4genthub-backend:$ENVIRONMENT \
             --build-arg SERVICE=backend \
             --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --build-arg VCS_REF=$(git rev-parse --short HEAD) \
@@ -75,8 +75,8 @@ if [ "$SKIP_BUILD" != "true" ]; then
         print_status "Backend image built successfully"
         
         # Push to registry
-        docker push $DOCKER_NAMESPACE/dhafnck-mcp-backend:latest
-        docker push $DOCKER_NAMESPACE/dhafnck-mcp-backend:$ENVIRONMENT
+        docker push $DOCKER_NAMESPACE/4genthub-backend:latest
+        docker push $DOCKER_NAMESPACE/4genthub-backend:$ENVIRONMENT
         print_status "Backend image pushed to registry"
     else
         print_error "Dockerfile.production not found"
@@ -99,7 +99,7 @@ caprover deploy \
     --caproverUrl $CAPROVER_SERVER_URL \
     --caproverPassword $CAPROVER_PASSWORD \
     --caproverApp $APP_NAME \
-    --imageName $DOCKER_NAMESPACE/dhafnck-mcp-backend:latest || {
+    --imageName $DOCKER_NAMESPACE/4genthub-backend:latest || {
     print_error "Backend deployment failed"
 }
 
@@ -159,12 +159,12 @@ echo ""
 echo "📋 Backend Deployment Summary:"
 echo "   Environment: $ENVIRONMENT"
 echo "   App Name: $APP_NAME"
-echo "   Image: $DOCKER_NAMESPACE/dhafnck-mcp-backend:latest"
+echo "   Image: $DOCKER_NAMESPACE/4genthub-backend:latest"
 echo "   URL: $BACKEND_URL"
 echo ""
 echo "🔗 Connected Services:"
-echo "   Database: srv-captain--dhafnck-postgres"
-echo "   Cache: srv-captain--dhafnck-redis"
+echo "   Database: srv-captain--4genthub-postgres"
+echo "   Cache: srv-captain--4genthub-redis"
 echo "   Auth: ${KEYCLOAK_URL:-https://keycloak.92.5.226.7.nip.io}"
 echo ""
 echo "🔍 Next steps:"

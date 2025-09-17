@@ -59,7 +59,7 @@ You're using field names that don't match the database columns exactly. See [Com
 ### Context not showing in frontend?
 Contexts must be explicitly created - they're not auto-created with tasks. Use:
 ```python
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     level="task",
     context_id=task_id,

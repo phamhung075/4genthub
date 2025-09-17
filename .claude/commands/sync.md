@@ -4,7 +4,7 @@
 
 OBJECTIVE
 ---------
-Synchronize project documentation, architecture, and context layers to maintain consistency between codebase, git repository, and DhafnckMCP system. Ensure all documentation reflects current state and all context layers contain accurate project information.
+Synchronize project documentation, architecture, and context layers to maintain consistency between codebase, git repository, and 4genthub system. Ensure all documentation reflects current state and all context layers contain accurate project information.
 
 KEY REQUIREMENTS
 ----------------
@@ -20,7 +20,7 @@ ENTRY POINT
 -----------
 READ PRD and Architecture
 START → Call master-orchestrator-agent or documentation-agent
-Or use MCP tools directly: mcp__dhafnck_mcp_http__manage_context
+Or use MCP tools directly: mcp__4genthub_http__manage_context
 
 SYNCHRONIZATION DECISION TREE
 ------------------------------
@@ -89,8 +89,8 @@ IF synchronizing project/branch:
         - PROJECT_NAME from git repo name
         - BRANCH_NAME from current git branch
     
-    CHECK DhafnckMCP project:
-        - CALL mcp__dhafnck_mcp_http__manage_project(
+    CHECK 4genthub project:
+        - CALL mcp__4genthub_http__manage_project(
             action="list",
             user_id=user_id
           )
@@ -98,7 +98,7 @@ IF synchronizing project/branch:
         
         IF not_found:
             - CREATE project:
-              mcp__dhafnck_mcp_http__manage_project(
+              mcp__4genthub_http__manage_project(
                 action="create",
                 name=git_repo_name,
                 user_id=user_id
@@ -106,8 +106,8 @@ IF synchronizing project/branch:
         ELSE IF name_mismatch:
             - UPDATE project name to match git
     
-    CHECK DhafnckMCP branch:
-        - CALL mcp__dhafnck_mcp_http__manage_git_branch(
+    CHECK 4genthub branch:
+        - CALL mcp__4genthub_http__manage_git_branch(
             action="list",
             project_id=project_id,
             user_id=user_id
@@ -116,7 +116,7 @@ IF synchronizing project/branch:
         
         IF not_found:
             - CREATE branch:
-              mcp__dhafnck_mcp_http__manage_git_branch(
+              mcp__4genthub_http__manage_git_branch(
                 action="create",
                 project_id=project_id,
                 git_branch_name=git_branch_name,
@@ -139,7 +139,7 @@ IF synchronizing contexts:
         - User preferences
         - System-wide configurations
         
-        CALL mcp__dhafnck_mcp_http__manage_context(
+        CALL mcp__4genthub_http__manage_context(
             action="update",
             level="global",
             context_id="global",
@@ -157,7 +157,7 @@ IF synchronizing contexts:
         - Team preferences
         - Project workflow
         
-        CALL mcp__dhafnck_mcp_http__manage_context(
+        CALL mcp__4genthub_http__manage_context(
             action="update",
             level="project",
             context_id=project_id,
@@ -177,7 +177,7 @@ IF synchronizing contexts:
         - Active features
         - Technical debt items
         
-        CALL mcp__dhafnck_mcp_http__manage_context(
+        CALL mcp__4genthub_http__manage_context(
             action="update",
             level="branch",
             context_id=branch_id,
@@ -273,7 +273,7 @@ Files and Directories:
 - PRD: ai_docs/architecture-design/PRD.md
 - Architecture: ai_docs/architecture-design/Architecture_Technique.md
 - Issues Log: ai_docs/issues/sync-issues-{date}.md
-- Context Data: Stored in DhafnckMCP database (all 4 layers)
+- Context Data: Stored in 4genthub database (all 4 layers)
 
 CONTEXT DATA STRUCTURE
 ======================
@@ -335,7 +335,7 @@ Common Issues:
 
 Resolution Strategies:
 ----------------------
-- Sanitize git branch names for DhafnckMCP
+- Sanitize git branch names for 4genthub
 - Use unique identifiers to prevent duplicates
 - Split large context updates into chunks
 - Check file permissions before writing

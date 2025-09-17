@@ -7,9 +7,9 @@ source "${SCRIPT_DIR}/lib/common.sh"
 get_pg_connection_params() {
     local host="${DATABASE_HOST:-postgres}"
     local port="${DATABASE_PORT:-5432}"
-    local user="${DATABASE_USER:-dhafnck_user}"
+    local user="${DATABASE_USER:-4genthub_user}"
     local password="${DATABASE_PASSWORD:-changeme}"
-    local database="${DATABASE_NAME:-dhafnck_mcp}"
+    local database="${DATABASE_NAME:-4genthub}"
     
     echo "postgresql://${user}:${password}@${host}:${port}/${database}"
 }
@@ -44,8 +44,8 @@ postgresql_status() {
         success "PostgreSQL is ready and accepting connections"
         
         # Show database size
-        docker exec "$container_id" psql -U "${DATABASE_USER:-dhafnck_user}" -d "${DATABASE_NAME:-dhafnck_mcp}" \
-            -c "SELECT pg_database_size('${DATABASE_NAME:-dhafnck_mcp}')::bigint/1024/1024 as size_mb;" 2>/dev/null || true
+        docker exec "$container_id" psql -U "${DATABASE_USER:-4genthub_user}" -d "${DATABASE_NAME:-4genthub}" \
+            -c "SELECT pg_database_size('${DATABASE_NAME:-4genthub}')::bigint/1024/1024 as size_mb;" 2>/dev/null || true
     else
         error "PostgreSQL is not ready"
         return 1
@@ -90,19 +90,19 @@ postgresql_init() {
     
     # Create database if not exists
     docker exec "$container_id" psql -U postgres -tc \
-        "SELECT 1 FROM pg_database WHERE datname = '${DATABASE_NAME:-dhafnck_mcp}'" | grep -q 1 || \
+        "SELECT 1 FROM pg_database WHERE datname = '${DATABASE_NAME:-4genthub}'" | grep -q 1 || \
         docker exec "$container_id" psql -U postgres -c \
-        "CREATE DATABASE ${DATABASE_NAME:-dhafnck_mcp};"
+        "CREATE DATABASE ${DATABASE_NAME:-4genthub};"
     
     # Create user if not exists
     docker exec "$container_id" psql -U postgres -tc \
-        "SELECT 1 FROM pg_user WHERE usename = '${DATABASE_USER:-dhafnck_user}'" | grep -q 1 || \
+        "SELECT 1 FROM pg_user WHERE usename = '${DATABASE_USER:-4genthub_user}'" | grep -q 1 || \
         docker exec "$container_id" psql -U postgres -c \
-        "CREATE USER ${DATABASE_USER:-dhafnck_user} WITH PASSWORD '${DATABASE_PASSWORD:-changeme}';"
+        "CREATE USER ${DATABASE_USER:-4genthub_user} WITH PASSWORD '${DATABASE_PASSWORD:-changeme}';"
     
     # Grant privileges
     docker exec "$container_id" psql -U postgres -c \
-        "GRANT ALL PRIVILEGES ON DATABASE ${DATABASE_NAME:-dhafnck_mcp} TO ${DATABASE_USER:-dhafnck_user};"
+        "GRANT ALL PRIVILEGES ON DATABASE ${DATABASE_NAME:-4genthub} TO ${DATABASE_USER:-4genthub_user};"
     
     success "Database initialized successfully"
 }
@@ -160,8 +160,8 @@ postgresql_backup() {
     
     # Create backup
     docker exec "$container_id" pg_dump \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         --verbose \
         --clean \
         --if-exists \
@@ -214,8 +214,8 @@ postgresql_restore() {
     
     # Restore database
     docker exec -i "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         < "$restore_file"
     
     # Clean up temporary file
@@ -233,7 +233,7 @@ postgresql_shell() {
         echo "psql (13.0)"
         echo "Type \"help\" for help."
         echo ""
-        echo "dhafnck_mcp=> [test mode - not interactive]"
+        echo "4genthub=> [test mode - not interactive]"
         return 0
     fi
     
@@ -244,8 +244,8 @@ postgresql_shell() {
     fi
     
     docker exec -it "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}"
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}"
 }
 
 # Reset database
@@ -272,14 +272,14 @@ postgresql_reset() {
     
     # Drop and recreate database
     docker exec "$container_id" psql -U postgres -c \
-        "DROP DATABASE IF EXISTS ${DATABASE_NAME:-dhafnck_mcp};"
+        "DROP DATABASE IF EXISTS ${DATABASE_NAME:-4genthub};"
     
     docker exec "$container_id" psql -U postgres -c \
-        "CREATE DATABASE ${DATABASE_NAME:-dhafnck_mcp};"
+        "CREATE DATABASE ${DATABASE_NAME:-4genthub};"
     
     # Re-grant privileges
     docker exec "$container_id" psql -U postgres -c \
-        "GRANT ALL PRIVILEGES ON DATABASE ${DATABASE_NAME:-dhafnck_mcp} TO ${DATABASE_USER:-dhafnck_user};"
+        "GRANT ALL PRIVILEGES ON DATABASE ${DATABASE_NAME:-4genthub} TO ${DATABASE_USER:-4genthub_user};"
     
     # Run migrations
     postgresql_migrate
@@ -304,8 +304,8 @@ postgresql_test_connection() {
     fi
     
     if docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -c "SELECT version();" &>/dev/null; then
         success "Connection successful"
         return 0
@@ -338,14 +338,14 @@ postgresql_analyze() {
     
     # Run ANALYZE
     docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -c "ANALYZE VERBOSE;"
     
     # Show table statistics
     docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -c "SELECT schemaname, tablename, n_live_tup, n_dead_tup, last_vacuum, last_autovacuum FROM pg_stat_user_tables ORDER BY n_live_tup DESC;"
 }
 
@@ -372,8 +372,8 @@ postgresql_slow_queries() {
     fi
     
     docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -c "SELECT query, calls, total_time, mean_time, max_time FROM pg_stat_statements ORDER BY mean_time DESC LIMIT $limit;" 2>/dev/null || \
         echo "Note: pg_stat_statements extension may not be enabled"
 }
@@ -400,15 +400,15 @@ postgresql_optimize() {
     
     # Run VACUUM ANALYZE
     docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -c "VACUUM ANALYZE;"
     
     # Reindex
     docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
-        -c "REINDEX DATABASE ${DATABASE_NAME:-dhafnck_mcp};"
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
+        -c "REINDEX DATABASE ${DATABASE_NAME:-4genthub};"
     
     success "Database optimization completed"
 }
@@ -442,8 +442,8 @@ postgresql_health_check() {
     # Check replication lag (if applicable)
     local container_id=$(get_container_id "postgres")
     if docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -c "SELECT pg_is_in_recovery();" | grep -q "f"; then
         ((health_score++))
         echo "✅ Replication: Not in recovery"
@@ -453,8 +453,8 @@ postgresql_health_check() {
     
     # Check dead tuples
     local dead_tuples=$(docker exec "$container_id" psql \
-        -U "${DATABASE_USER:-dhafnck_user}" \
-        -d "${DATABASE_NAME:-dhafnck_mcp}" \
+        -U "${DATABASE_USER:-4genthub_user}" \
+        -d "${DATABASE_NAME:-4genthub}" \
         -t -c "SELECT SUM(n_dead_tup) FROM pg_stat_user_tables;" | tr -d ' ')
     
     if [[ "$dead_tuples" -lt 10000 ]]; then

@@ -9,7 +9,7 @@ The test files were created for modules that don't exist yet or have different i
 ## Files with Import Issues
 
 ### 1. Enhanced Auth Endpoints Test
-- **File**: `dhafnck_mcp_main/src/tests/auth/api/enhanced_auth_endpoints_test.py`
+- **File**: `4genthub_main/src/tests/auth/api/enhanced_auth_endpoints_test.py`
 - **Issue**: Trying to import functions that are router endpoints, not exported functions
 - **Fix**: Refactored to only test models and utility functions
 
@@ -40,12 +40,12 @@ Remove test files for modules that haven't been implemented yet.
 
 ```bash
 # List all test files with errors
-find dhafnck_mcp_main/src/tests -name "*test*.py" -type f | while read f; do
-    python -c "import sys; sys.path.insert(0, 'dhafnck_mcp_main/src'); exec(open('$f').read())" 2>/dev/null || echo "Error in: $f"
+find 4genthub_main/src/tests -name "*test*.py" -type f | while read f; do
+    python -c "import sys; sys.path.insert(0, '4genthub_main/src'); exec(open('$f').read())" 2>/dev/null || echo "Error in: $f"
 done
 
 # Run tests with better error reporting
-cd dhafnck_mcp_main
+cd 4genthub_main
 python -m pytest src/tests --tb=short --co -q
 ```
 

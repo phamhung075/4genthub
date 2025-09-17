@@ -63,7 +63,7 @@ color: teal
 ## **Step-by-Step Process to get prompt:**
 
 **Step 1: Initialize MCP Agent**
-- Call `mcp--dhafnck-mcp-http--call-agent(name_agent="@ui-designer-expert-shadcn-agent")` to get agent information
+- Call `mcp--4genthub-http--call-agent(name_agent="@ui-designer-expert-shadcn-agent")` to get agent information
 - **Display**: `[Agent: Initializing...]`
 
 **Step 2: Extract Configuration Data**

@@ -65,12 +65,12 @@ test_wrong_location:
   message: "BLOCKED: Test files must be in designated test directories"
   hint: "Place test files in approved test directories"
   valid_paths:
-    - "dhafnck_mcp_main/src/tests"
-    - "dhafnck-frontend/src/tests"
+    - "4genthub_main/src/tests"
+    - "4genthub-frontend/src/tests"
 
 venv_wrong_location:
-  message: "BLOCKED: Virtual environment must be in dhafnck_mcp_main/.venv"
-  hint: "Create .venv only at: dhafnck_mcp_main/.venv"
+  message: "BLOCKED: Virtual environment must be in 4genthub_main/.venv"
+  hint: "Create .venv only at: 4genthub_main/.venv"
 
 logs_not_in_root:
   message: "BLOCKED: 'logs' folder can only exist in project root"
@@ -100,9 +100,9 @@ tool_permission_denied:
   action: "Available tools: {available_tools}"
 
 agent_not_loaded:
-  message: "BLOCKED: No agent loaded - please call mcp__dhafnck_mcp_http__call_agent first"
+  message: "BLOCKED: No agent loaded - please call mcp__4genthub_http__call_agent first"
   hint: "Initialize your agent role before attempting any work"
-  action: "Call mcp__dhafnck_mcp_http__call_agent with appropriate agent name"
+  action: "Call mcp__4genthub_http__call_agent with appropriate agent name"
 
 # MCP task management errors
 task_not_found:

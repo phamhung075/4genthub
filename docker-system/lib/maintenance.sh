@@ -95,7 +95,7 @@ cleanup_command() {
 
 # Update command
 update_command() {
-    info "🔄 Updating DhafnckMCP system..."
+    info "🔄 Updating 4genthub system..."
     
     # Check for updates
     echo "  Checking for updates..."

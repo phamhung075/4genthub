@@ -4,7 +4,7 @@ Automated script to fix import path issues in all failing test files.
 
 This script reads the failed_tests.txt file and fixes the import path setup
 in each test file by calculating the correct parents[N] expression based on
-the file's location relative to dhafnck_mcp_main/src.
+the file's location relative to 4genthub_main/src.
 """
 
 import re
@@ -18,7 +18,7 @@ def calculate_correct_path_expression(test_file_path: Path, target_dir: Path) ->
     
     Args:
         test_file_path: Path to the test file
-        target_dir: Path to dhafnck_mcp_main/src
+        target_dir: Path to 4genthub_main/src
         
     Returns:
         String expression like "Path(__file__).resolve().parents[2]"
@@ -28,33 +28,33 @@ def calculate_correct_path_expression(test_file_path: Path, target_dir: Path) ->
     
     # Calculate relative path from test_dir to target_dir
     try:
-        # Count how many levels up we need to go from test file to reach dhafnck_mcp_main/src
+        # Count how many levels up we need to go from test file to reach 4genthub_main/src
         test_parts = test_dir.parts
         target_parts = target_dir.parts
         
-        # Find the dhafnck_mcp_main part in both paths
-        dhafnck_index_test = -1
-        dhafnck_index_target = -1
+        # Find the 4genthub_main part in both paths
+        4genthub_index_test = -1
+        4genthub_index_target = -1
         
         for i, part in enumerate(test_parts):
-            if part == "dhafnck_mcp_main":
-                dhafnck_index_test = i
+            if part == "4genthub_main":
+                4genthub_index_test = i
                 break
                 
         for i, part in enumerate(target_parts):
-            if part == "dhafnck_mcp_main":
-                dhafnck_index_target = i
+            if part == "4genthub_main":
+                4genthub_index_target = i
                 break
         
-        if dhafnck_index_test == -1 or dhafnck_index_target == -1:
-            raise ValueError("Cannot find dhafnck_mcp_main in paths")
+        if 4genthub_index_test == -1 or 4genthub_index_target == -1:
+            raise ValueError("Cannot find 4genthub_main in paths")
         
-        # Count levels from test file back to dhafnck_mcp_main/src
-        # test_parts[dhafnck_index_test:] gives us ['dhafnck_mcp_main', 'src', 'tests', 'unit', 'module', ...]
-        # target_parts[dhafnck_index_target:] gives us ['dhafnck_mcp_main', 'src']
+        # Count levels from test file back to 4genthub_main/src
+        # test_parts[4genthub_index_test:] gives us ['4genthub_main', 'src', 'tests', 'unit', 'module', ...]
+        # target_parts[4genthub_index_target:] gives us ['4genthub_main', 'src']
         
-        test_depth = len(test_parts) - dhafnck_index_test - 1  # -1 because we don't count the file itself
-        target_depth = len(target_parts) - dhafnck_index_target - 1
+        test_depth = len(test_parts) - 4genthub_index_test - 1  # -1 because we don't count the file itself
+        target_depth = len(target_parts) - 4genthub_index_target - 1
         
         # We need to go up (test_depth - target_depth) levels
         levels_up = test_depth - target_depth
@@ -83,32 +83,32 @@ def find_and_fix_import_setup(file_content: str, correct_expression: str) -> Tup
     
     # Patterns to look for and fix
     patterns_to_fix = [
-        # Pattern 1: project_root = Path(__file__).resolve().parent / "dhafnck_mcp_main/src"
-        (r'project_root\s*=\s*Path\(__file__\)\.resolve\(\)\.parent\s*/\s*["\']dhafnck_mcp_main/src["\']',
+        # Pattern 1: project_root = Path(__file__).resolve().parent / "4genthub_main/src"
+        (r'project_root\s*=\s*Path\(__file__\)\.resolve\(\)\.parent\s*/\s*["\']4genthub_main/src["\']',
          f'project_root = {correct_expression}'),
         
-        # Pattern 2: project_root = Path(__file__).parent / "dhafnck_mcp_main/src"  
-        (r'project_root\s*=\s*Path\(__file__\)\.parent\s*/\s*["\']dhafnck_mcp_main/src["\']',
+        # Pattern 2: project_root = Path(__file__).parent / "4genthub_main/src"  
+        (r'project_root\s*=\s*Path\(__file__\)\.parent\s*/\s*["\']4genthub_main/src["\']',
          f'project_root = {correct_expression}'),
         
         # Pattern 3: project_root = Path(__file__).parent
         (r'project_root\s*=\s*Path\(__file__\)\.parent\s*$',
          f'project_root = {correct_expression}'),
         
-        # Pattern 4: sys.path.insert(0, str(Path(__file__).parent / "dhafnck_mcp_main/src"))
-        (r'sys\.path\.insert\(0,\s*str\(Path\(__file__\)\.parent\s*/\s*["\']dhafnck_mcp_main/src["\']\)\)',
+        # Pattern 4: sys.path.insert(0, str(Path(__file__).parent / "4genthub_main/src"))
+        (r'sys\.path\.insert\(0,\s*str\(Path\(__file__\)\.parent\s*/\s*["\']4genthub_main/src["\']\)\)',
          f'sys.path.insert(0, str({correct_expression}))'),
         
-        # Pattern 5: sys.path.append('/absolute/path/to/dhafnck_mcp_main/src')
-        (r'sys\.path\.append\(["\'][^"\']*dhafnck_mcp_main/src["\']\)',
+        # Pattern 5: sys.path.append('/absolute/path/to/4genthub_main/src')
+        (r'sys\.path\.append\(["\'][^"\']*4genthub_main/src["\']\)',
          f'sys.path.append(str({correct_expression}))'),
         
-        # Pattern 6: sys.path.insert(0, '/absolute/path/to/dhafnck_mcp_main/src')
-        (r'sys\.path\.insert\(0,\s*["\'][^"\']*dhafnck_mcp_main/src["\']\)',
+        # Pattern 6: sys.path.insert(0, '/absolute/path/to/4genthub_main/src')
+        (r'sys\.path\.insert\(0,\s*["\'][^"\']*4genthub_main/src["\']\)',
          f'sys.path.insert(0, str({correct_expression}))'),
         
-        # Pattern 7: Any other variations that go directly to parent then add dhafnck_mcp_main/src
-        (r'Path\(__file__\)[^=\n]*\.parent[^=\n]*/[^=\n]*["\']dhafnck_mcp_main[/\\]src["\']',
+        # Pattern 7: Any other variations that go directly to parent then add 4genthub_main/src
+        (r'Path\(__file__\)[^=\n]*\.parent[^=\n]*/[^=\n]*["\']4genthub_main[/\\]src["\']',
          correct_expression)
     ]
     
@@ -164,7 +164,7 @@ def main():
     
     # Set up paths
     project_root = Path(__file__).resolve().parent.parent  # Go up from scripts/ to project root
-    target_dir = project_root / "dhafnck_mcp_main" / "src"
+    target_dir = project_root / "4genthub_main" / "src"
     failed_tests_file = project_root / ".test_cache" / "failed_tests.txt"
     
     print("=== AUTOMATED TEST IMPORT PATH FIXER ===")
@@ -197,9 +197,9 @@ def main():
         else:
             continue
         
-        # Fix incorrect path: replace 'src/tests/' with 'dhafnck_mcp_main/src/tests/'
-        if '/src/tests/' in file_path and 'dhafnck_mcp_main' not in file_path:
-            file_path = file_path.replace('/src/tests/', '/dhafnck_mcp_main/src/tests/')
+        # Fix incorrect path: replace 'src/tests/' with '4genthub_main/src/tests/'
+        if '/src/tests/' in file_path and '4genthub_main' not in file_path:
+            file_path = file_path.replace('/src/tests/', '/4genthub_main/src/tests/')
         
         test_files.append(Path(file_path))
     

@@ -1,4 +1,4 @@
-# DhafnckMCP System Architecture Overview
+# 4genthub System Architecture Overview
 
 **Document Version:** 1.0  
 **Last Updated:** 2025-09-12  
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The DhafnckMCP system is a sophisticated multi-agent project management platform built on Domain-Driven Design (DDD) principles with a 4-tier context hierarchy. The system orchestrates 43+ specialized agents through MCP (Model Context Protocol) integration, providing intelligent task management, automated workflows, and comprehensive project coordination capabilities.
+The 4genthub system is a sophisticated multi-agent project management platform built on Domain-Driven Design (DDD) principles with a 4-tier context hierarchy. The system orchestrates 43+ specialized agents through MCP (Model Context Protocol) integration, providing intelligent task management, automated workflows, and comprehensive project coordination capabilities.
 
 ## Quick Navigation
 
@@ -151,7 +151,7 @@ Port:             3800
 ### Infrastructure
 ```
 Containerization: Docker + docker-compose
-Database Volume:  /data/dhafnck_mcp.db
+Database Volume:  /data/4genthub.db
 Backend Port:     8000
 Environment:      .env configuration
 Orchestration:    docker-system/docker-menu.sh
@@ -215,7 +215,7 @@ graph LR
         CC[Claude Client]
     end
     
-    subgraph "MCP Server (DhafnckMCP)"
+    subgraph "MCP Server (4genthub)"
         TOOLS[MCP Tools<br/>manage_task<br/>manage_agent<br/>call_agent]
         CTRL[MCP Controllers]
         SVC[Application Services]
@@ -308,8 +308,8 @@ graph LR
 ### Development Environment
 ```
 Docker Containers:
-├── dhafnck-backend (Python/FastMCP)
-├── dhafnck-frontend (React/TypeScript) 
+├── 4genthub-backend (Python/FastMCP)
+├── 4genthub-frontend (React/TypeScript) 
 ├── postgresql (Database)
 ├── keycloak (Authentication)
 └── redis (Optional caching)
@@ -410,6 +410,6 @@ Ports:
 ---
 
 **Last Updated:** 2025-09-12  
-**Document Owner:** DhafnckMCP Architecture Team  
+**Document Owner:** 4genthub Architecture Team  
 **Review Schedule:** Monthly  
 **Status:** Living Document - Updated as system evolves

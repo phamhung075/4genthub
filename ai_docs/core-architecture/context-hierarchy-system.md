@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The DhafnckMCP system implements a sophisticated 4-tier context hierarchy that enables configuration inheritance, multi-tenant isolation, and intelligent data flow across the entire system. The hierarchy flows from Global (user-scoped) → Project → Branch → Task, with each level inheriting and extending configurations from its parent while maintaining complete data isolation between users.
+The 4genthub system implements a sophisticated 4-tier context hierarchy that enables configuration inheritance, multi-tenant isolation, and intelligent data flow across the entire system. The hierarchy flows from Global (user-scoped) → Project → Branch → Task, with each level inheriting and extending configurations from its parent while maintaining complete data isolation between users.
 
 ## Quick Navigation
 
@@ -123,7 +123,7 @@ graph TD
   "user_id": "uuid",  // For multi-tenant isolation
   "inherited_from": "global_context_id",
   "project_config": {
-    "name": "DhafnckMCP",
+    "name": "4genthub",
     "description": "Multi-agent task management system",
     "technology_stack": ["Python", "React", "PostgreSQL"],
     "quality_gates": {...},
@@ -671,6 +671,6 @@ class ContextValidator:
 - [Agent Orchestration Architecture](./agent-orchestration-architecture.md)
 
 **Last Updated:** 2025-09-12  
-**Document Owner:** DhafnckMCP Architecture Team  
+**Document Owner:** 4genthub Architecture Team  
 **Review Schedule:** Monthly  
 **Status:** Living Document

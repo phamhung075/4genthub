@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "returncode": 4,
+  "stdout": "",
+  "stderr": "ERROR: /home/daihungpham/__projects__/agentic-project/4genthub_main/pyproject.toml: Unescaped '\\' in a string (at line 224, column 26)\n\n",
+  "duration": 0.30377984046936035,
+  "command": "python -m pytest -m unit --cov=src --cov-report=html --cov-report=term-missing --cov-report=xml --cov-fail-under=80 --junit-xml=test_reports/unit_tests.xml -v",
+  "coverage_threshold_met": false
+}

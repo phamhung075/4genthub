@@ -10,8 +10,8 @@ Added PYTHONPATH export and corrected working directory in 3 places:
 
 ```bash
 # Before running tests:
-export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH}"
-cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+export PYTHONPATH="${PROJECT_ROOT}/4genthub_main/src:${PYTHONPATH}"
+cd "${PROJECT_ROOT}/4genthub_main"
 ```
 
 ### 2. Fixed enhanced_auth_endpoints_test.py
@@ -32,7 +32,7 @@ cd "${PROJECT_ROOT}/dhafnck_mcp_main"
 
 ### Option 2: Run Directly
 ```bash
-cd dhafnck_mcp_main
+cd 4genthub_main
 export PYTHONPATH="src:${PYTHONPATH}"
 python -m pytest src/tests -v
 ```
@@ -44,7 +44,7 @@ The 22 remaining errors are in:
 
 ## Key Changes Made
 1. **test-menu.sh**: Added PYTHONPATH export in 3 locations
-2. **test-menu.sh**: Changed cd command to go to dhafnck_mcp_main directory
+2. **test-menu.sh**: Changed cd command to go to 4genthub_main directory
 3. **enhanced_auth_endpoints_test.py**: Fixed imports and deprecated method
 
 The test suite is now functional and can run tests successfully!

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DhafnckMCP Context System implements a 4-tier hierarchical architecture where manual context updates sync to the cloud, enabling context sharing and multi-agent collaboration through a shared "cloud notebook" that AI agents must manually read from and write to.
+The 4genthub Context System implements a 4-tier hierarchical architecture where manual context updates sync to the cloud, enabling context sharing and multi-agent collaboration through a shared "cloud notebook" that AI agents must manually read from and write to.
 
 ## 4-Tier Hierarchy
 

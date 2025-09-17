@@ -1,8 +1,8 @@
-# Keycloak Authentication Setup for DhafnckMCP
+# Keycloak Authentication Setup for 4genthub
 
 ## Overview
 
-DhafnckMCP now uses Keycloak as the primary authentication provider, integrated with PostgreSQL Docker for local development. This guide explains the setup and configuration.
+4genthub now uses Keycloak as the primary authentication provider, integrated with PostgreSQL Docker for local development. This guide explains the setup and configuration.
 
 ## Architecture
 
@@ -61,7 +61,7 @@ AUTH_ENABLED=true
 ./start_mcp_with_keycloak.sh
 
 # Or manually
-cd dhafnck_mcp_main/src
+cd 4genthub_main/src
 python mcp_http_server.py
 ```
 
@@ -167,7 +167,7 @@ new_token_data = response.json()
 ### Run Test Script
 
 ```bash
-cd dhafnck_mcp_main
+cd 4genthub_main
 python test_keycloak_mcp.py
 ```
 
@@ -267,7 +267,7 @@ This setup replaces the previous Supabase authentication with Keycloak:
 ## Support
 
 For issues or questions:
-1. Check server logs: `dhafnck_mcp_main/logs/`
+1. Check server logs: `4genthub_main/logs/`
 2. Review this documentation
 3. Test with the provided test script
 4. Verify environment configuration

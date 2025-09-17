@@ -31,12 +31,12 @@ Infrastructure Layer (ORM & Database)
 ### 1. Infrastructure Layer Issues (Most Likely)
 
 #### Database Transaction Management
-- **File**: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
+- **File**: `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
 - **Issue**: Database transactions not being committed properly
 - **Fix Required**: Ensure session.commit() is called after subtask creation
 
 #### Repository Implementation
-- **File**: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`
+- **File**: `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`
 - **Issue**: Base repository may not be handling persistence correctly
 - **Fix Required**: Verify add() and flush() operations
 
@@ -48,19 +48,19 @@ Infrastructure Layer (ORM & Database)
 ### 2. Application Layer Issues
 
 #### Service Transaction Management
-- **File**: `dhafnck_mcp_main/src/fastmcp/task_management/application/services/repository_provider_service.py`
+- **File**: `4genthub_main/src/fastmcp/task_management/application/services/repository_provider_service.py`
 - **Issue**: Service layer not properly managing database sessions
 - **Fix Required**: Ensure proper session lifecycle management
 
 #### Facade Pattern Implementation
-- **File**: `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
+- **File**: `4genthub_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
 - **Issue**: Facade may not be calling repository methods correctly
 - **Fix Required**: Verify subtask creation workflow
 
 ### 3. Domain Layer Issues (Less Likely)
 
 #### Repository Interface Contract
-- **File**: `dhafnck_mcp_main/src/fastmcp/task_management/domain/repositories/`
+- **File**: `4genthub_main/src/fastmcp/task_management/domain/repositories/`
 - **Issue**: Repository interface contract mismatch
 - **Fix Required**: Verify domain repository interface compliance
 
@@ -70,7 +70,7 @@ Infrastructure Layer (ORM & Database)
 
 #### 1.1 Check Subtask ORM Model
 ```python
-# File: dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/orm/models/subtask.py
+# File: 4genthub_main/src/fastmcp/task_management/infrastructure/orm/models/subtask.py
 class SubtaskORM(Base):
     __tablename__ = 'subtasks'
     
@@ -83,7 +83,7 @@ class SubtaskORM(Base):
 
 #### 1.2 Fix Subtask Repository Implementation
 ```python
-# File: dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py
+# File: 4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py
 class SubtaskORMRepository(BaseORMRepository[SubtaskORM]):
     
     def create(self, subtask_data: dict) -> SubtaskORM:
@@ -97,7 +97,7 @@ class SubtaskORMRepository(BaseORMRepository[SubtaskORM]):
 
 #### 1.3 Verify Base Repository Implementation
 ```python
-# File: dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py
+# File: 4genthub_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py
 class BaseORMRepository:
     
     def create(self, entity_data: dict):
@@ -113,7 +113,7 @@ class BaseORMRepository:
 
 #### 2.1 Service Transaction Management
 ```python
-# File: dhafnck_mcp_main/src/fastmcp/task_management/application/services/subtask_service.py
+# File: 4genthub_main/src/fastmcp/task_management/application/services/subtask_service.py
 class SubtaskService:
     
     def create_subtask(self, subtask_data: dict) -> Subtask:
@@ -134,7 +134,7 @@ class SubtaskService:
 
 #### 2.2 Facade Layer Fix
 ```python
-# File: dhafnck_mcp_main/src/fastmcp/task_management/application/facades/task_application_facade.py
+# File: 4genthub_main/src/fastmcp/task_management/application/facades/task_application_facade.py
 class TaskApplicationFacade:
     
     def create_subtask(self, request_data: dict) -> dict:
@@ -206,18 +206,18 @@ WHERE constraint_type = 'FOREIGN KEY' AND tc.table_name = 'subtasks';
 ## Files to Investigate and Fix
 
 ### High Priority (Infrastructure Layer)
-1. `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
-2. `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`
-3. `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/orm/models/subtask.py`
+1. `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
+2. `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`
+3. `4genthub_main/src/fastmcp/task_management/infrastructure/orm/models/subtask.py`
 
 ### Medium Priority (Application Layer)
-1. `dhafnck_mcp_main/src/fastmcp/task_management/application/services/repository_provider_service.py`
-2. `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
-3. `dhafnck_mcp_main/src/fastmcp/task_management/application/factories/task_facade_factory.py`
+1. `4genthub_main/src/fastmcp/task_management/application/services/repository_provider_service.py`
+2. `4genthub_main/src/fastmcp/task_management/application/facades/task_application_facade.py`
+3. `4genthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py`
 
 ### Low Priority (Domain & Interface)
-1. `dhafnck_mcp_main/src/fastmcp/task_management/domain/repositories/subtask_repository.py`
-2. `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_controller.py`
+1. `4genthub_main/src/fastmcp/task_management/domain/repositories/subtask_repository.py`
+2. `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_controller.py`
 
 ## Testing Strategy After Fix
 

@@ -1,8 +1,8 @@
-# Performance Tuning Guide - DhafnckMCP Auto-Injection System
+# Performance Tuning Guide - 4genthub Auto-Injection System
 
 ## Overview
 
-This guide provides comprehensive performance optimization strategies for the DhafnckMCP Auto-Injection System, covering all components from database optimization to application-level tuning.
+This guide provides comprehensive performance optimization strategies for the 4genthub Auto-Injection System, covering all components from database optimization to application-level tuning.
 
 ## Performance Baselines
 
@@ -137,7 +137,7 @@ import asyncio
 from fastapi import FastAPI
 
 app = FastAPI(
-    title="DhafnckMCP API",
+    title="4genthub API",
     docs_url=None if ENVIRONMENT == "production" else "/docs",
     redoc_url=None if ENVIRONMENT == "production" else "/redoc"
 )
@@ -225,7 +225,7 @@ async def optimize_background_tasks():
 from celery import Celery
 
 celery_app = Celery(
-    "dhafnck_mcp",
+    "4genthub",
     broker="redis://redis:6379/1",
     backend="redis://redis:6379/2"
 )
@@ -527,7 +527,7 @@ docker stats --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.Net
 from locust import HttpUser, task, between
 import random
 
-class DhafnckMCPUser(HttpUser):
+class 4genthubUser(HttpUser):
     wait_time = between(1, 5)
     
     def on_start(self):

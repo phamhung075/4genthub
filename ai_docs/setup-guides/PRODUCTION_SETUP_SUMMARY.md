@@ -13,8 +13,8 @@ Your server is now configured for production with:
 ```bash
 # Database is running and configured:
 - Host: localhost:5432
-- Database: dhafnck_mcp_prod
-- User: dhafnck_user
+- Database: 4genthub_prod
+- User: 4genthub_user
 - Password: ChangeThisSecurePassword2025!
 
 # Test connection:
@@ -69,14 +69,14 @@ python test-mcp-keycloak-production.py --username testuser --password testpass12
 DATABASE_TYPE=postgresql
 DATABASE_HOST=localhost  # Use 'postgres' when running in Docker Compose
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp_prod
-DATABASE_USER=dhafnck_user
+DATABASE_NAME=4genthub_prod
+DATABASE_USER=4genthub_user
 DATABASE_PASSWORD=ChangeThisSecurePassword2025!
 
 # Authentication
 AUTH_PROVIDER=keycloak
 KEYCLOAK_URL=https://your-keycloak.cloud.provider.com  # UPDATE THIS
-KEYCLOAK_REALM=dhafnck-mcp
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-secret-here  # UPDATE THIS
 ```
@@ -101,7 +101,7 @@ KEYCLOAK_CLIENT_SECRET=your-secret-here  # UPDATE THIS
 ## ⚠️ Important Notes
 
 - PostgreSQL is running and accessible at `localhost:5432`
-- The database `dhafnck_mcp_prod` has been created with proper permissions
+- The database `4genthub_prod` has been created with proper permissions
 - All backward compatibility code has been removed
 - The system now uses a clean PostgreSQL + Keycloak architecture
 - Remember to update passwords in production!

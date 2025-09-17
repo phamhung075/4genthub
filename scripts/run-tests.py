@@ -10,7 +10,7 @@ os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 
 # Change to test directory to avoid creating files in root
 project_root = Path(__file__).parent.parent
-test_dir = project_root / "dhafnck_mcp_main"
+test_dir = project_root / "4genthub_main"
 os.chdir(test_dir)
 
 # Create a cache directory in the tests folder

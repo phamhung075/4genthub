@@ -1,9 +1,9 @@
 ---
-description: Technical Architecture for DhafnckMCP AI Agent Orchestration Platform
+description: Technical Architecture for 4genthub AI Agent Orchestration Platform
 globs: 
 alwaysApply: false
 ---
-# DhafnckMCP AI Agent Orchestration Platform - Technical Architecture
+# 4genthub AI Agent Orchestration Platform - Technical Architecture
 
 ## SYSTEM_ARCHITECTURE_OVERVIEW
 ### Architecture_Type
@@ -22,7 +22,7 @@ Sophisticated enterprise-grade architecture implementing Domain-Driven Design pr
 ## DOMAIN_DRIVEN_DESIGN_IMPLEMENTATION
 
 ### Domain_Layer
-**Location**: `dhafnck_mcp_main/src/fastmcp/task_management/domain/`
+**Location**: `4genthub_main/src/fastmcp/task_management/domain/`
 
 #### Entities
 - **Task**: Core entity with business logic, validation, and lifecycle management
@@ -53,7 +53,7 @@ Sophisticated enterprise-grade architecture implementing Domain-Driven Design pr
 - **ContextCreated, ContextUpdated, InsightAdded**: Context management events
 
 ### Application_Layer
-**Location**: `dhafnck_mcp_main/src/fastmcp/task_management/application/`
+**Location**: `4genthub_main/src/fastmcp/task_management/application/`
 
 #### Use_Cases
 - **Task Management**: CreateTask, UpdateTask, CompleteTask, DeleteTask, ListTasks, SearchTasks, GetNextTask
@@ -76,7 +76,7 @@ Sophisticated enterprise-grade architecture implementing Domain-Driven Design pr
 - **ProjectApplicationFacade**: Project management operations facade
 
 ### Infrastructure_Layer
-**Location**: `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/`
+**Location**: `4genthub_main/src/fastmcp/task_management/infrastructure/`
 
 #### Repositories
 - **JsonTaskRepository**: JSON-based task storage with atomic operations
@@ -96,7 +96,7 @@ Sophisticated enterprise-grade architecture implementing Domain-Driven Design pr
 - **Database Management**: Automated migrations, backups, and health monitoring
 
 ### Interface_Layer
-**Location**: `dhafnck_mcp_main/src/fastmcp/task_management/interface/`
+**Location**: `4genthub_main/src/fastmcp/task_management/interface/`
 
 #### MCP_Controllers (Modular Factory Architecture - August 2025)
 **Architecture Pattern**: All controllers refactored using factory-based modular design with 93% code size reduction
@@ -437,8 +437,8 @@ CREATE TABLE contexts (
 - **Security**: Comprehensive security and compliance
 
 ### Deployment_Components
-- **Core Server**: dhafnck_mcp_main/ (Python + FastMCP + DDD)
-- **Frontend**: dhafnck-frontend/ (React + TypeScript + Tailwind)
+- **Core Server**: 4genthub_main/ (Python + FastMCP + DDD)
+- **Frontend**: 4genthub-frontend/ (React + TypeScript + Tailwind)
 - **Agent Library**: agent-library/ (60+ specialized agents)
 - **Configuration**: .cursor/rules/ (Platform rules and settings)
 
@@ -482,4 +482,4 @@ CREATE TABLE contexts (
 
 ## CONCLUSION
 
-The DhafnckMCP AI Agent Orchestration Platform represents a sophisticated enterprise-grade implementation of Domain-Driven Design principles with comprehensive MCP protocol integration. The architecture provides a solid foundation for advanced multi-agent coordination, hierarchical context management, and autonomous workflow execution, supporting 60+ specialized agents and 15+ MCP tool categories with enterprise-level performance, security, and compliance capabilities.
+The 4genthub AI Agent Orchestration Platform represents a sophisticated enterprise-grade implementation of Domain-Driven Design principles with comprehensive MCP protocol integration. The architecture provides a solid foundation for advanced multi-agent coordination, hierarchical context management, and autonomous workflow execution, supporting 60+ specialized agents and 15+ MCP tool categories with enterprise-level performance, security, and compliance capabilities.

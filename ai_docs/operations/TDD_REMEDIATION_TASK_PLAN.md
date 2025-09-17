@@ -88,17 +88,17 @@ This document provides a complete task breakdown for addressing critical JWT aut
     "files_to_modify": [
       {
         "action": "remove",
-        "file": "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/server/routes/token_routes.py",
+        "file": "/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/server/routes/token_routes.py",
         "reason": "Starlette bridge layer - no longer needed"
       },
       {
         "action": "keep",
-        "file": "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/server/routes/token_router.py", 
+        "file": "/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/server/routes/token_router.py", 
         "reason": "FastAPI implementation - primary route handler"
       },
       {
         "action": "update",
-        "file": "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/server/mcp_entry_point.py",
+        "file": "/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/server/mcp_entry_point.py",
         "reason": "Update server registration to use FastAPI routes directly"
       }
     ],
@@ -130,7 +130,7 @@ This document provides a complete task breakdown for addressing critical JWT aut
       {
         "name": "Custom JWTService",
         "purpose": "Application tokens",
-        "location": "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/auth/interface/"
+        "location": "/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/auth/interface/"
       },
       {
         "name": "Supabase JWT", 
@@ -140,13 +140,13 @@ This document provides a complete task breakdown for addressing critical JWT aut
       {
         "name": "MCP JWT backend",
         "purpose": "Server authentication", 
-        "location": "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/auth/mcp_integration/"
+        "location": "/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/auth/mcp_integration/"
       }
     ],
     "solution": "Create UnifiedJWTService handling all token types",
     "architecture_design": {
       "class_name": "UnifiedJWTService",
-      "location": "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/auth/services/",
+      "location": "/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/auth/services/",
       "responsibilities": [
         "Single validation point for all JWT tokens",
         "Consistent error handling across token types",
@@ -186,9 +186,9 @@ This document provides a complete task breakdown for addressing critical JWT aut
   "context": {
     "scope": "80+ test files with token-related functionality",
     "key_test_files": [
-      "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/tests/server/routes/token_routes_test.py",
-      "/home/daihungpham/agentic-project/dhafnck_mcp_main/src/tests/server/routes/token_router_test.py",
-      "/home/daihungpham/agentic-project/dhafnck-frontend/src/tests/pages/TokenManagement.test.tsx"
+      "/home/daihungpham/agentic-project/4genthub_main/src/tests/server/routes/token_routes_test.py",
+      "/home/daihungpham/agentic-project/4genthub_main/src/tests/server/routes/token_router_test.py",
+      "/home/daihungpham/agentic-project/4genthub-frontend/src/tests/pages/TokenManagement.test.tsx"
     ],
     "updates_needed": [
       "Remove mocks for eliminated Starlette layer",
@@ -326,7 +326,7 @@ When the MCP system is available, use this document to create tasks with the fol
 
 ```python
 # For each task above, create with:
-task = mcp__dhafnck_mcp_http__manage_task(
+task = mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id=branch_id,
     title=task["title"],
@@ -335,7 +335,7 @@ task = mcp__dhafnck_mcp_http__manage_task(
 )
 
 # Create context for frontend visibility:
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     level="task", 
     context_id=task["task"]["id"],
@@ -344,7 +344,7 @@ mcp__dhafnck_mcp_http__manage_context(
 )
 
 # Assign to appropriate agent:
-mcp__dhafnck_mcp_http__call_agent(name_agent=task["agent_assignment"])
+mcp__4genthub_http__call_agent(name_agent=task["agent_assignment"])
 ```
 
 ## **Post-Implementation Validation**

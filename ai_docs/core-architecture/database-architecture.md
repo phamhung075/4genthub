@@ -2,7 +2,7 @@
 
 ## Overview
 
-DhafnckMCP implements a **dual PostgreSQL architecture** designed for optimal development-production parity while leveraging cloud-managed services for production scale.
+4genthub implements a **dual PostgreSQL architecture** designed for optimal development-production parity while leveraging cloud-managed services for production scale.
 
 ## Architecture Design
 
@@ -10,7 +10,7 @@ DhafnckMCP implements a **dual PostgreSQL architecture** designed for optimal de
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                DhafnckMCP Database Architecture             │
+│                4genthub Database Architecture             │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Production Environment          Development Environment    │
@@ -60,10 +60,10 @@ SUPABASE_REGION=us-west-1  # Choose closest to your users
 DATABASE_TYPE=postgresql
 
 # Local development database
-DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/dhafnck_mcp_dev
+DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/4genthub_dev
 
 # Docker container database
-DATABASE_URL=postgresql://dhafnck_user:dhafnck_password@postgres:5432/dhafnck_mcp
+DATABASE_URL=postgresql://4genthub_user:4genthub_password@postgres:5432/4genthub
 
 # Connection pool settings (optional)
 DB_POOL_SIZE=20
@@ -75,7 +75,7 @@ DB_POOL_TIMEOUT=30
 ```bash
 # Test database (PostgreSQL for consistency)
 DATABASE_TYPE=postgresql
-TEST_DATABASE_URL=postgresql://postgres:test@localhost:5432/dhafnck_mcp_test
+TEST_DATABASE_URL=postgresql://postgres:test@localhost:5432/4genthub_test
 ```
 
 ## Implementation Details
@@ -114,7 +114,7 @@ engine = create_engine(
     pool_recycle=300,       # 5-minute recycle
     connect_args={
         "connect_timeout": 10,
-        "application_name": "dhafnck_mcp",
+        "application_name": "4genthub",
         "keepalives": 1,
         "keepalives_idle": 30,
     }
@@ -213,7 +213,7 @@ def database_health():
 1. **Backup Existing Data**:
    ```bash
    # Export SQLite data
-   sqlite3 dhafnck_mcp.db .dump > backup.sql
+   sqlite3 4genthub.db .dump > backup.sql
    ```
 
 2. **Setup PostgreSQL Environment**:
@@ -232,7 +232,7 @@ def database_health():
    ```bash
    # Switch to PostgreSQL
    export DATABASE_TYPE=postgresql
-   export DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/dhafnck_mcp_dev
+   export DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/4genthub_dev
    ```
 
 ### Data Migration
@@ -254,7 +254,7 @@ The migration preserves:
 psql "postgresql://postgres.[project]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?sslmode=require"
 
 # Test local PostgreSQL
-psql -h localhost -p 5432 -U dev_user -d dhafnck_mcp_dev
+psql -h localhost -p 5432 -U dev_user -d 4genthub_dev
 ```
 
 #### Performance Issues

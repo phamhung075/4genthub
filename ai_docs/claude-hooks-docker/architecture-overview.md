@@ -499,7 +499,7 @@ services:
 
       # Authentication
       - KEYCLOAK_URL=http://keycloak:8080
-      - KEYCLOAK_REALM=dhafnck
+      - KEYCLOAK_REALM=4genthub
       - JWT_SECRET=${JWT_SECRET}
 
       # Project configuration

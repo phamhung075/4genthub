@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `manage_project` tool provides comprehensive project lifecycle management including creation, configuration, health monitoring, analytics, and coordination across the multi-tenant DhafnckMCP platform. It serves as the top-level organizational container for all project activities.
+The `manage_project` tool provides comprehensive project lifecycle management including creation, configuration, health monitoring, analytics, and coordination across the multi-tenant 4genthub platform. It serves as the top-level organizational container for all project activities.
 
 ## Base Information
 

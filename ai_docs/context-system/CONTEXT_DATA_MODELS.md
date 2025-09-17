@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DhafnckMCP Context System operates on a 4-tier hierarchical structure: **Global → Project → Branch → Task**. Each tier has specific data models, update patterns, and inheritance behaviors designed to optimize multi-agent collaboration and session persistence.
+The 4genthub Context System operates on a 4-tier hierarchical structure: **Global → Project → Branch → Task**. Each tier has specific data models, update patterns, and inheritance behaviors designed to optimize multi-agent collaboration and session persistence.
 
 This document provides the definitive guide to:
 - **Data Models**: Exact structure for each context level

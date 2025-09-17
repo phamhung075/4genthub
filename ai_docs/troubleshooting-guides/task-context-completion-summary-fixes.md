@@ -20,7 +20,7 @@ The task repository factory is falling back to mock repository instead of ORM re
 ## Fixes Applied
 
 ### Fix 1: ProjectContextRepository Primary Key
-**File:** `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/project_context_repository.py`
+**File:** `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/project_context_repository.py`
 **Line:** 75
 
 **Before:**
@@ -41,7 +41,7 @@ db_model = ProjectContextModel(
 ```
 
 ### Fix 2: BranchContextRepository Primary Key
-**File:** `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/branch_context_repository.py`
+**File:** `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/branch_context_repository.py`
 **Line:** 87
 
 **Before:**
@@ -63,7 +63,7 @@ db_model = BranchContextModel(
 ```
 
 ### Fix 3: TaskContextRepository Primary Key
-**File:** `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/task_context_repository.py`
+**File:** `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/task_context_repository.py`
 **Line:** 65
 
 **Before:**
@@ -84,7 +84,7 @@ db_model = TaskContextModel(
 ```
 
 ### Fix 4: Remove Non-Existent Fields from BranchContext
-**File:** `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/branch_context_repository.py`
+**File:** `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/branch_context_repository.py`
 **Lines:** 217-218 (removed)
 
 **Before:**
@@ -97,7 +97,7 @@ db_model = TaskContextModel(
 These lines were removed as the fields don't exist in the BranchContext model.
 
 ### Fix 5: Logger Scope Issue in Task Entity
-**File:** `dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/task.py`
+**File:** `4genthub_main/src/fastmcp/task_management/domain/entities/task.py`
 **Lines:** 667-668
 
 **Before:**
@@ -175,10 +175,10 @@ Multiple critical issues were identified and fixed in the context storage system
 
 ## Files Modified
 
-1. `/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/project_context_repository.py`
-2. `/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/branch_context_repository.py`
-3. `/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/task_context_repository.py`
-4. `/home/daihungpham/agentic-project/dhafnck_mcp_main/src/fastmcp/task_management/domain/entities/task.py`
+1. `/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/task_management/infrastructure/repositories/project_context_repository.py`
+2. `/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/task_management/infrastructure/repositories/branch_context_repository.py`
+3. `/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/task_management/infrastructure/repositories/task_context_repository.py`
+4. `/home/daihungpham/agentic-project/4genthub_main/src/fastmcp/task_management/domain/entities/task.py`
 
 ## Session Timeline
 

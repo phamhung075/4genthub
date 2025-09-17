@@ -1,0 +1,89 @@
+---
+globs: *
+alwaysApply: false
+---
+`protect` is permission edit content of actual file
+
+# Project actual: AgenthubMCP - Cloud-Scale Architecture Project
+**Next Milestone**: MVP Development (Phase 00 implementation)
+
+## Project Structure Guidelines
+
+`agenthub_mcp_main/.venv` is correct path for virtual environment use `uv` for test (`uv run python -m pytest tests -v --tb=short`), try to recheck path if fail, must command on project folder `agenthub_mcp_main`
+`*test.py` file need save on correct location of `agenthub_mcp_main/tests`
+document `*.md` using for develop this project need save on `ai_docs`, always clean/update document or content obsolete first, then continue task
+
+## AI Automation Rules
+
+**CRITICAL RULE**: AI need automatique add task to update test and ai_docs when code is change
+- When any code file is modified, AI must automatically create tasks to:
+  - Update corresponding unit tests
+  - Update integration tests if applicable
+  - Update relevant documentation (API docs, README, technical specs)
+  - Update code comments and docstrings
+- This ensures documentation and tests stay synchronized with code changes
+- Use task management tools to track these automated tasks
+
+**DOCUMENTATION METADATA RULE**: Document spec or API docs must update `globs` and `description` property on metadata (.md or .mdc) to match direct files relative
+- When creating or updating documentation files (.md or .mdc), ensure metadata properties are accurate:
+  - `globs` property must reflect the actual file paths and patterns relative to the document location
+  - `description` property must accurately describe the content and purpose of the documentation
+- This ensures documentation metadata stays synchronized with file structure and content
+- Apply this rule to all specification documents, API documentation, and technical documentation files
+
+## FIX knowledge
+
+The async test failures were caused by missing pytest-asyncio plugin. I've resolved this by:
+
+  1. Added pytest-asyncio dependency using uv add pytest-asyncio
+  2. Updated pytest.ini to include asyncio_mode = auto and the missing test markers
+  3. Verified the fix by running the previously failing tests with uv run python -m pytest
+  
+
+deprecation warning about using datetime.utcnow(). Let me fix this by replacing it with the recommended datetime.now(datetime.UTC)
+
+Docker container actual run with the HTTP stream
+deprecation warning about using datetime.utcnow(). Let me fix this by replacing it with the recommended datetime.now(datetime.UTC)
+
+Docker container actual run with the HTTP stream# AgenthubMCP - Cloud-Scale Architecture Project
+**Next Milestone**: MVP Development (Phase 00 implementation)
+
+## Project Structure Guidelines
+
+`agenthub_mcp_main/.venv` is correct path for virtual environment use `uv` for test (`uv run python -m pytest tests -v --tb=short`), try to recheck path if fail, must command on project folder `agenthub_mcp_main`
+`*test.py` file need save on correct location of `agenthub_mcp_main/tests`
+document `*.md` using for develop this project need save on `ai_docs`, always clean/update document or content obsolete first, then continue task
+
+## AI Automation Rules
+
+**CRITICAL RULE**: AI need automatique add task to update test and ai_docs when code is change
+- When any code file is modified, AI must automatically create tasks to:
+  - Update corresponding unit tests
+  - Update integration tests if applicable
+  - Update relevant documentation (API docs, README, technical specs)
+  - Update code comments and docstrings
+- This ensures documentation and tests stay synchronized with code changes
+- Use task management tools to track these automated tasks
+
+**DOCUMENTATION METADATA RULE**: Document spec or API docs must update `globs` and `description` property on metadata (.md or .mdc) to match direct files relative
+- When creating or updating documentation files (.md or .mdc), ensure metadata properties are accurate:
+  - `globs` property must reflect the actual file paths and patterns relative to the document location
+  - `description` property must accurately describe the content and purpose of the documentation
+- This ensures documentation metadata stays synchronized with file structure and content
+- Apply this rule to all specification documents, API documentation, and technical documentation files
+
+## FIX knowledge
+
+The async test failures were caused by missing pytest-asyncio plugin. I've resolved this by:
+
+  1. Added pytest-asyncio dependency using uv add pytest-asyncio
+  2. Updated pytest.ini to include asyncio_mode = auto and the missing test markers
+  3. Verified the fix by running the previously failing tests with uv run python -m pytest
+  
+
+deprecation warning about using datetime.utcnow(). Let me fix this by replacing it with the recommended datetime.now(datetime.UTC)
+
+Docker container actual run with the HTTP stream
+deprecation warning about using datetime.utcnow(). Let me fix this by replacing it with the recommended datetime.now(datetime.UTC)
+
+Docker container actual run with the HTTP stream

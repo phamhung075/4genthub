@@ -1,11 +1,11 @@
-# 🚀 DhafnckMCP - AI-Human Collaboration Platform
+# 🚀 4genthub - AI-Human Collaboration Platform
 Dai Hung PHAM
 <div align="center">
 
-[![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/dhafnck/dhafnck_mcp)
+[![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/4genthub/4genthub)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2.1.0-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
 [![Docker Support](https://img.shields.io/badge/Docker-Multi%20Config-success?style=for-the-badge&logo=docker)](https://docker.com)
-[![AI Agents](https://img.shields.io/badge/AI%20Agents-43%20Core%20Agents-purple?style=for-the-badge&logo=robot)](https://github.com/dhafnck/dhafnck_mcp)
+[![AI Agents](https://img.shields.io/badge/AI%20Agents-43%20Core%20Agents-purple?style=for-the-badge&logo=robot)](https://github.com/4genthub/4genthub)
 
 **The Future of Human-AI Collaboration in Software Development**
 
@@ -17,7 +17,7 @@ Dai Hung PHAM
 
 ---
 
-## ✨ **What Makes DhafnckMCP Special?**
+## ✨ **What Makes 4genthub Special?**
 
 🎭 **Human-First AI Orchestration** — Control 43 specialized AI agents through a beautiful web interface  
 🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions  
@@ -216,7 +216,7 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 
 ```
 ╔════════════════════════════════════════════════════════╗
-║             DhafnckMCP Docker Management               ║
+║             4genthub Docker Management               ║
 ║                  Build System v3.0                    ║
 ╚════════════════════════════════════════════════════════╝
 
@@ -280,17 +280,17 @@ Transform any AI tool into a collaborative agent with our MCP protocol:
 
 ```python
 # 🎭 1. Orchestrate agents through MCP
-agent = mcp__dhafnck_mcp_http__call_agent(name_agent="@task_planning_agent")
+agent = mcp__4genthub_http__call_agent(name_agent="@task_planning_agent")
 
 # 📋 2. Create collaborative workspace  
-project = mcp__dhafnck_mcp_http__manage_project(
+project = mcp__4genthub_http__manage_project(
     action="create",
     name="user-authentication-system",
     description="Complete JWT-based authentication with React frontend"
 )
 
 # 🌿 3. Set up development branch
-branch = mcp__dhafnck_mcp_http__manage_git_branch(
+branch = mcp__4genthub_http__manage_git_branch(
     action="create",
     project_id=project["project"]["id"],
     git_branch_name="feature/auth-system",
@@ -298,7 +298,7 @@ branch = mcp__dhafnck_mcp_http__manage_git_branch(
 )
 
 # 🎯 4. Define AI-human collaborative task
-task = mcp__dhafnck_mcp_http__manage_task(
+task = mcp__4genthub_http__manage_task(
     action="create",
     git_branch_id=branch["git_branch"]["id"],
     title="Build complete authentication system",
@@ -307,7 +307,7 @@ task = mcp__dhafnck_mcp_http__manage_task(
 )
 
 # 🧠 5. Share context across AI sessions (the magic!)
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action="create",
     level="task",
     context_id=task["task"]["id"],
@@ -520,13 +520,13 @@ Human: Validate solution
 
 🌟 **Star us on GitHub** • 🐛 **Report Issues** • 💡 **Suggest Features** • 📚 **Contribute Docs**
 
-[**GitHub Issues**](https://github.com/dhafnck/dhafnck_mcp/issues) • [**Discussions**](https://github.com/dhafnck/dhafnck_mcp/discussions) • [**Contributing Guide**](CONTRIBUTING.md)
+[**GitHub Issues**](https://github.com/4genthub/4genthub/issues) • [**Discussions**](https://github.com/4genthub/4genthub/discussions) • [**Contributing Guide**](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-## 🎉 **Why DhafnckMCP Will Transform Your Development**
+## 🎉 **Why 4genthub Will Transform Your Development**
 
 <div align="center">
 
@@ -538,7 +538,7 @@ Human: Validate solution
 <tr>
 <td width="50%">
 
-#### 😫 **Before DhafnckMCP**
+#### 😫 **Before 4genthub**
 - Switching between multiple AI tools
 - Losing context between sessions  
 - Repeating the same explanations
@@ -549,7 +549,7 @@ Human: Validate solution
 </td>
 <td width="50%">
 
-#### 🚀 **With DhafnckMCP**
+#### 🚀 **With 4genthub**
 - One platform, 60+ specialized agents
 - Persistent context across all sessions
 - Agents remember your preferences  
@@ -561,7 +561,7 @@ Human: Validate solution
 </tr>
 </table>
 
-### 🎯 **The DhafnckMCP Promise**
+### 🎯 **The 4genthub Promise**
 
 > **"What if working with AI felt as natural as working with your best teammate?"**
 
@@ -591,6 +591,6 @@ git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.
 
 <div align="center">
 
-**DhafnckMCP v0.0.2** • **Production NOT Ready** • **Built with ❤️ for Human-AI Collaboration**
+**4genthub v0.0.2** • **Production NOT Ready** • **Built with ❤️ for Human-AI Collaboration**
 
 </div>

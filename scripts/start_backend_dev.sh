@@ -2,7 +2,7 @@
 
 # Backend Startup Script with Proper Environment Loading
 
-echo "🚀 Starting DhafnckMCP Backend Server"
+echo "🚀 Starting 4genthub Backend Server"
 echo "======================================"
 
 # Get the script directory
@@ -30,11 +30,11 @@ else
 fi
 
 # Change to the backend directory
-cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+cd "${PROJECT_ROOT}/4genthub_main"
 
 # Ensure we're in production mode
 export ENV=development
-export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH:-}"
+export PYTHONPATH="${PROJECT_ROOT}/4genthub_main/src:${PYTHONPATH:-}"
 
 # Start the backend
 echo "🔄 Starting MCP server..."
