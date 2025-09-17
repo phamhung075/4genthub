@@ -111,35 +111,45 @@ class TaskManagementLogger:
         # File handlers
         if enable_file:
             # Main log file with rotation
-            file_handler = logging.handlers.RotatingFileHandler(
-                log_path / "agenthub.log",
-                maxBytes=max_bytes,
-                backupCount=backup_count
-            )
-            if enable_json:
-                file_handler.setFormatter(JSONFormatter())
-            else:
-                file_formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+            try:
+                file_handler = logging.handlers.RotatingFileHandler(
+                    log_path / "agenthub.log",
+                    maxBytes=max_bytes,
+                    backupCount=backup_count
                 )
-                file_handler.setFormatter(file_formatter)
-            root_logger.addHandler(file_handler)
-            
-            # Error log file
-            error_handler = logging.handlers.RotatingFileHandler(
-                log_path / "agenthub_errors.log",
-                maxBytes=max_bytes,
-                backupCount=backup_count
-            )
-            error_handler.setLevel(logging.ERROR)
-            if enable_json:
-                error_handler.setFormatter(JSONFormatter())
-            else:
-                error_formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s\n%(exc_info)s'
-                )
-                error_handler.setFormatter(error_formatter)
-            root_logger.addHandler(error_handler)
+                if enable_json:
+                    file_handler.setFormatter(JSONFormatter())
+                else:
+                    file_formatter = logging.Formatter(
+                        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+                    )
+                    file_handler.setFormatter(file_formatter)
+                root_logger.addHandler(file_handler)
+            except PermissionError:
+                # If we can't create the main log file handler, disable file logging
+                print(f"Warning: Cannot create main log file {log_path / 'agenthub.log'}, permission denied")
+                enable_file = False
+
+            # Error log file (only if main file handler was successful)
+            if enable_file:
+                try:
+                    error_handler = logging.handlers.RotatingFileHandler(
+                        log_path / "agenthub_errors.log",
+                        maxBytes=max_bytes,
+                        backupCount=backup_count
+                    )
+                    error_handler.setLevel(logging.ERROR)
+                    if enable_json:
+                        error_handler.setFormatter(JSONFormatter())
+                    else:
+                        error_formatter = logging.Formatter(
+                            '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s\n%(exc_info)s'
+                        )
+                        error_handler.setFormatter(error_formatter)
+                    root_logger.addHandler(error_handler)
+                except PermissionError:
+                    # If we can't create the error log file handler, just continue without it
+                    print(f"Warning: Cannot create error log file {log_path / 'agenthub_errors.log'}, permission denied")
         
         # Configure specific loggers
         cls._configure_module_loggers(log_level)
