@@ -38,13 +38,14 @@ class TokenApplicationFacade:
         Args:
             token_repository: Token repository instance (injected dependency)
         """
-        # Get JWT secret from environment
+        # Get JWT configuration from environment
         jwt_secret = os.getenv("JWT_SECRET_KEY")
         if not jwt_secret:
             logger.error("JWT_SECRET_KEY not configured in environment")
             raise ValueError("JWT_SECRET_KEY must be set in environment")
-            
-        self.jwt_service = JWTService(secret_key=jwt_secret)
+
+        jwt_issuer = os.getenv("JWT_ISSUER", "agenthub")
+        self.jwt_service = JWTService(secret_key=jwt_secret, issuer=jwt_issuer)
         self.mcp_token_service = mcp_token_service
         self._token_repository = token_repository
     
