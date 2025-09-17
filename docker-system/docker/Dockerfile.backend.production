@@ -7,9 +7,7 @@
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-# Define platform argument without default to enable automatic platform detection
-ARG BUILDPLATFORM
-FROM --platform=${BUILDPLATFORM} python:3.11-slim as builder
+FROM python:3.11-slim as builder
 
 WORKDIR /build
 
@@ -34,9 +32,7 @@ RUN uv venv /opt/venv && \
     uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
 
 # Stage 2: Production Runtime
-# Define target platform argument without default to enable automatic platform detection
-ARG TARGETPLATFORM
-FROM --platform=${TARGETPLATFORM} python:3.11-slim
+FROM python:3.11-slim
 
 # Accept build arguments for environment configuration
 ARG APP_DEBUG=false
