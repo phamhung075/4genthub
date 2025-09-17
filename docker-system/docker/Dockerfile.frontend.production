@@ -1,14 +1,14 @@
-# Cache bust: 1757949765
+# Cache bust: 1757949766
 # Production Frontend Dockerfile for agenthub
 # Multi-stage build optimized for production deployment
 # Features: Minimal image size, optimized assets, security hardening, multi-platform support
-# Version: 2.0.9 - Removed platform specifications entirely to let Docker handle native platform selection (2025-09-17)
+# Version: 2.1.0 - Complete platform-agnostic build for CapRover compatibility (2025-09-17)
 
 # syntax=docker/dockerfile:1
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-# Multi-platform support - Docker will use native platform automatically
+# Let Docker automatically select the appropriate platform
 FROM node:20-alpine AS builder
 
 WORKDIR /build
@@ -57,7 +57,7 @@ ENV NODE_ENV=${NODE_ENV}
 RUN npm run build
 
 # Stage 2: Production Runtime with Nginx
-# Multi-platform support - Docker will use native platform automatically
+# Let Docker automatically select the appropriate platform
 FROM nginx:alpine
 
 # Accept runtime build arguments
