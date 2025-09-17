@@ -88,7 +88,7 @@ class TestDatabaseConfig:
                 with pytest.raises(ValueError) as exc_info:
                     DatabaseConfig()
 
-                assert "PostgreSQL is required for production" in str(exc_info.value)
+                assert "SQLite is only allowed for test execution" in str(exc_info.value)
     
     @patch.dict(os.environ, {"DATABASE_TYPE": "invalid_type"})
     def test_invalid_database_type(self):
@@ -96,7 +96,7 @@ class TestDatabaseConfig:
         with pytest.raises(ValueError) as exc_info:
             DatabaseConfig()
         
-        assert "UNSUPPORTED DATABASE_TYPE" in str(exc_info.value)
+        assert "Invalid DATABASE_TYPE" in str(exc_info.value)
         assert "invalid_type" in str(exc_info.value)
     
     @patch.dict(os.environ, {
@@ -160,16 +160,7 @@ class TestDatabaseConfig:
             assert "p@ss!w0rd#$%" not in url
             assert "p%40ss%21w0rd%23%24%25" in url
     
-    @patch.dict(os.environ, {"DATABASE_URL": "postgresql://user:pass@host:5432/db"})
-    def test_database_url_priority(self):
-        """Test that DATABASE_URL takes priority over individual components"""
-        config = DatabaseConfig.__new__(DatabaseConfig)
-        config._initialized = False
-        config.database_type = "postgresql"
-        
-        url = config._get_secure_database_url()
-        
-        assert url == "postgresql://user:pass@host:5432/db"
+# NOTE: DATABASE_URL support was removed - production code only uses individual DATABASE_* components
     
     @patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
     @patch('sqlalchemy.event.listens_for')
@@ -247,7 +238,7 @@ class TestDatabaseConfig:
         with pytest.raises(ValueError) as exc_info:
             config._create_engine("invalid://url")
         
-        assert "INVALID DATABASE URL" in str(exc_info.value)
+        assert "Invalid database URL" in str(exc_info.value)
     
     @patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
     @patch('sqlalchemy.event.listens_for')
@@ -526,7 +517,12 @@ class TestConnectionValidation:
     
     @patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
     @patch('sqlalchemy.event.listens_for')
-    @patch.dict(os.environ, {"DATABASE_TYPE": "postgresql", "DATABASE_URL": "postgresql://user:pass@host:5432/db"})
+    @patch.dict(os.environ, {
+        "DATABASE_TYPE": "postgresql",
+        "DATABASE_HOST": "localhost",
+        "DATABASE_USER": "user",
+        "DATABASE_PASSWORD": "pass"
+    })
     def test_postgresql_connection_validation(self, mock_listens_for, mock_ensure_ai):
         """Test PostgreSQL connection validation"""
         mock_ensure_ai.return_value = True
@@ -645,36 +641,25 @@ class TestSecurityFeatures:
     """Test security-related features"""
     
     def test_password_not_logged(self):
-        """Test that passwords are not exposed in logs"""
+        """Test that special characters in passwords are properly URL encoded"""
         config = DatabaseConfig.__new__(DatabaseConfig)
         config._initialized = False
         config.database_type = "postgresql"
-        
+
         with patch.dict(os.environ, {
             "DATABASE_HOST": "localhost",
-            "DATABASE_PASSWORD": "secret_password",
+            "DATABASE_PASSWORD": "secret@pass#word!",  # Password with special characters
             "DATABASE_USER": "user"
         }):
             url = config._get_secure_database_url()
-            
-            # Password should be URL encoded, not plaintext
-            assert "secret_password" not in url
-            assert "secret_password" not in str(url)
+
+            # Raw password with special characters should be URL encoded, not plaintext
+            assert "secret@pass#word!" not in url
+            assert "secret@pass#word!" not in str(url)
+            # Verify URL-encoded version is present
+            assert "secret%40pass%23word%21" in url
     
-    def test_database_url_credential_warning(self):
-        """Test warning when DATABASE_URL contains credentials"""
-        config = DatabaseConfig.__new__(DatabaseConfig)
-        config._initialized = False
-        config.database_type = "postgresql"
-        
-        with patch.dict(os.environ, {"DATABASE_URL": "postgresql://user:pass@host:5432/db"}):
-            with patch('fastmcp.task_management.infrastructure.database.database_config.logger') as mock_logger:
-                url = config._get_secure_database_url()
-                
-                # Should log security warning
-                mock_logger.warning.assert_called()
-                warning_call = mock_logger.warning.call_args[0][0]
-                assert "DATABASE_URL contains credentials" in warning_call
+# NOTE: DATABASE_URL support was removed - no longer relevant
     
     def test_secure_connection_parameters(self):
         """Test that secure connection parameters are enforced"""

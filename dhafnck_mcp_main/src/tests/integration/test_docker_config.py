@@ -88,8 +88,17 @@ class TestCapRoverPostgreSQLConnection:
     @pytest.mark.skipif(not docker_available, reason="Docker not available")
     def test_caprover_postgres_docker_compose_configuration(self, temp_docker_compose):
         """Test Docker Compose configuration for CapRover-style PostgreSQL"""
-        compose_content = """
-version: '3.8'
+        import socket
+
+        # Find an available port dynamically to avoid conflicts
+        def find_free_port():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('', 0))
+                return s.getsockname()[1]
+
+        free_port = find_free_port()
+
+        compose_content = f"""
 services:
   postgres:
     image: postgres:15-alpine
@@ -99,7 +108,7 @@ services:
       POSTGRES_PASSWORD: caprover_test_password
       # CapRover PostgreSQL typically doesn't have SSL configured
     ports:
-      - "54321:5432"  # Use non-standard port to avoid conflicts
+      - "{free_port}:5432"  # Use dynamically allocated port to avoid conflicts
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -140,11 +149,21 @@ networks:
         temp_docker_compose.write_text(compose_content)
 
         try:
-            # Start services
+            # Cleanup any existing containers first to prevent conflicts
             subprocess.run([
                 "docker-compose", "-f", str(temp_docker_compose),
+                "down", "-v"
+            ], capture_output=True)
+
+            # Start services
+            result = subprocess.run([
+                "docker-compose", "-f", str(temp_docker_compose),
                 "up", "-d", "postgres"
-            ], check=True, capture_output=True)
+            ], capture_output=True, text=True)
+
+            if result.returncode != 0:
+                logger.error(f"Docker compose up failed: {result.stderr}")
+                raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
 
             # Wait for PostgreSQL to be ready
             time.sleep(10)
@@ -323,7 +342,6 @@ def root():
     def test_uvicorn_startup_in_docker_container(self, temp_docker_compose, docker_client_fixture):
         """Test uvicorn startup inside Docker container with log level conversion"""
         compose_content = """
-version: '3.8'
 services:
   backend:
     image: python:3.11-slim
@@ -335,22 +353,20 @@ services:
     command: |
       sh -c "
         pip install fastapi uvicorn &&
-        cat > /app/test_server.py << 'EOF'
-from fastapi import FastAPI
-import os
-
-app = FastAPI()
-
-@app.get('/health')
-def health():
-    log_level = os.getenv('APP_LOG_LEVEL', 'info').lower()
-    return {'status': 'healthy', 'log_level': log_level}
-EOF
+        mkdir -p /app &&
         cd /app &&
-        # Test the log level case conversion like in entrypoint script
-        export CONVERTED_LOG_LEVEL=$$(echo \"$$APP_LOG_LEVEL\" | tr '[:upper:]' '[:lower:]')
-        echo \"Starting uvicorn with log level: $$CONVERTED_LOG_LEVEL\"
-        python -m uvicorn test_server:app --host 0.0.0.0 --port 8000 --log-level $$CONVERTED_LOG_LEVEL
+        echo 'from fastapi import FastAPI' > test_server.py &&
+        echo 'import os' >> test_server.py &&
+        echo '' >> test_server.py &&
+        echo 'app = FastAPI()' >> test_server.py &&
+        echo '' >> test_server.py &&
+        echo '@app.get(\"/health\")' >> test_server.py &&
+        echo 'def health():' >> test_server.py &&
+        echo '    log_level = os.getenv(\"APP_LOG_LEVEL\", \"info\").lower()' >> test_server.py &&
+        echo '    return {\"status\": \"healthy\", \"log_level\": log_level}' >> test_server.py &&
+        export CONVERTED_LOG_LEVEL=\$(echo \"\$APP_LOG_LEVEL\" | tr '[:upper:]' '[:lower:]') &&
+        echo \"Starting uvicorn with log level: \$CONVERTED_LOG_LEVEL\" &&
+        python -m uvicorn test_server:app --host 0.0.0.0 --port 8000 --log-level \$CONVERTED_LOG_LEVEL
       "
 """
 
@@ -509,7 +525,6 @@ class TestEndToEndDeploymentScenarios:
         """Integration test for Docker entrypoint environment validation"""
         # Create a comprehensive test of the Docker entrypoint validation
         compose_content = """
-version: '3.8'
 services:
   entrypoint-test:
     image: python:3.11-slim
@@ -529,35 +544,7 @@ services:
 
       # Optional variables
       DATABASE_SSL_MODE: disable
-    command: |
-      sh -c "
-        echo 'Testing Docker entrypoint environment validation...'
-
-        # Check required variables individually
-        echo '✅ Found DATABASE_TYPE'
-        echo '✅ Found DATABASE_HOST'
-        echo '✅ Found DATABASE_PORT'
-        echo '✅ Found DATABASE_NAME'
-        echo '✅ Found DATABASE_USER'
-        echo '✅ Found DATABASE_PASSWORD'
-        echo '✅ Found FASTMCP_PORT'
-        echo '✅ Found JWT_SECRET_KEY'
-
-        # Test JWT secret length
-        SECRET_LENGTH=$${#JWT_SECRET_KEY}
-        if [ $$SECRET_LENGTH -lt 32 ]; then
-          echo '❌ ERROR: JWT_SECRET_KEY must be at least 32 characters'
-          exit 1
-        else
-          echo \"✅ JWT_SECRET_KEY length is adequate ($$SECRET_LENGTH chars)\"
-        fi
-
-        # Test log level conversion
-        CONVERTED_LOG_LEVEL=$$(echo \"$$APP_LOG_LEVEL\" | tr '[:upper:]' '[:lower:]')
-        echo \"✅ Log level converted: $$APP_LOG_LEVEL -> $$CONVERTED_LOG_LEVEL\"
-
-        echo '✅ All environment validation tests passed!'
-      "
+    command: ["python3", "-c", "import os; print('Testing Docker entrypoint environment validation...'); print('✅ Found DATABASE_TYPE'); print('✅ Found DATABASE_HOST'); print('✅ Found DATABASE_PORT'); print('✅ Found DATABASE_NAME'); print('✅ Found DATABASE_USER'); print('✅ Found DATABASE_PASSWORD'); print('✅ Found FASTMCP_PORT'); print('✅ Found JWT_SECRET_KEY'); jwt_secret = os.getenv('JWT_SECRET_KEY', ''); secret_length = len(jwt_secret); print('❌ ERROR: JWT_SECRET_KEY must be at least 32 characters') if secret_length < 32 else print(f'✅ JWT_SECRET_KEY length is adequate ({secret_length} chars)'); exit(1) if secret_length < 32 else None; app_log_level = os.getenv('APP_LOG_LEVEL', 'info'); converted_log_level = app_log_level.lower(); print(f'✅ Log level converted: {app_log_level} -> {converted_log_level}'); print('✅ All environment validation tests passed!')"]
 """
 
         temp_docker_compose.write_text(compose_content)
@@ -589,7 +576,6 @@ class TestErrorScenarios:
     def test_docker_entrypoint_missing_environment_variables(self, temp_docker_compose):
         """Test Docker entrypoint fails gracefully with missing environment variables"""
         compose_content = """
-version: '3.8'
 services:
   missing-env-test:
     image: python:3.11-slim
@@ -605,14 +591,14 @@ services:
       sh -c "
         echo 'Testing missing environment variables...'
         # Check specific required variables that are missing
-        if [ -z \"$$DATABASE_PASSWORD\" ]; then
+        if [ -z \"$DATABASE_PASSWORD\" ]; then
           echo '❌ Missing required variable: DATABASE_PASSWORD'
         fi
-        if [ -z \"$$JWT_SECRET_KEY\" ]; then
+        if [ -z \"$JWT_SECRET_KEY\" ]; then
           echo '❌ Missing required variable: JWT_SECRET_KEY'
         fi
         # Exit with error if any required vars are missing
-        if [ -z \"$$DATABASE_PASSWORD\" ] || [ -z \"$$JWT_SECRET_KEY\" ]; then
+        if [ -z \"$DATABASE_PASSWORD\" ] || [ -z \"$JWT_SECRET_KEY\" ]; then
           echo '❌ ERROR: Missing required environment variables: DATABASE_PASSWORD JWT_SECRET_KEY'
           exit 1
         fi
@@ -644,7 +630,6 @@ services:
     def test_docker_entrypoint_weak_jwt_secret(self, temp_docker_compose):
         """Test Docker entrypoint fails with weak JWT secret"""
         compose_content = """
-version: '3.8'
 services:
   weak-jwt-test:
     image: python:3.11-slim
@@ -657,7 +642,19 @@ services:
       DATABASE_PASSWORD: test_password
       FASTMCP_PORT: 8000
       JWT_SECRET_KEY: weak  # Intentionally weak (too short)
-    command: python3 -c "import os, sys; jwt_secret = os.getenv('JWT_SECRET_KEY', ''); print('Testing JWT secret length validation...'); print(f'JWT secret: {jwt_secret}'); print(f'JWT secret length: {len(jwt_secret)}'); (print('❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production') or sys.exit(1)) if len(jwt_secret) < 32 else print('JWT secret is adequate')"
+    command: |
+      python3 -c "
+      import os, sys
+      jwt_secret = os.getenv('JWT_SECRET_KEY', '')
+      print('Testing JWT secret length validation...')
+      print(f'JWT secret: {jwt_secret}')
+      print(f'JWT secret length: {len(jwt_secret)}')
+      if len(jwt_secret) < 32:
+          print('❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production')
+          sys.exit(1)
+      else:
+          print('JWT secret is adequate')
+      "
 """
 
         temp_docker_compose.write_text(compose_content)

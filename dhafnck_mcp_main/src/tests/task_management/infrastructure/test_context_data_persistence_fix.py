@@ -226,7 +226,7 @@ class TestContextDataPersistenceFix:
             }
         }
 
-        # Manually create database model with data field only
+        # Manually create database model with unified_context_data field only
         db_model = GlobalContextModel(
             id="test-fallback-123",
             user_id="test-user-123",
@@ -238,7 +238,7 @@ class TestContextDataPersistenceFix:
             global_preferences={},
             delegation_rules={},
             nested_structure={},  # Empty nested structure
-            data=test_data_only  # Only data field has content
+            unified_context_data=test_data_only  # Only unified_context_data field has content
         )
 
         db_session.add(db_model)
@@ -283,7 +283,7 @@ class TestContextDataPersistenceFix:
             global_preferences={"theme": "light"},
             delegation_rules={},
             nested_structure=old_context_data,
-            data={}  # Explicitly set empty data field to simulate old records
+            unified_context_data={}  # Explicitly set empty unified_context_data field to simulate old records
         )
 
         db_session.add(db_model)
