@@ -1,8 +1,8 @@
-# Disaster Recovery Procedures - DhafnckMCP Auto-Injection System
+# Disaster Recovery Procedures - 4genthub Auto-Injection System
 
 ## Overview
 
-This document outlines comprehensive disaster recovery procedures for the DhafnckMCP Auto-Injection System, including recovery time objectives (RTO), recovery point objectives (RPO), and step-by-step restoration procedures.
+This document outlines comprehensive disaster recovery procedures for the 4genthub Auto-Injection System, including recovery time objectives (RTO), recovery point objectives (RPO), and step-by-step restoration procedures.
 
 ## Service Level Objectives (SLOs)
 
@@ -25,11 +25,11 @@ This document outlines comprehensive disaster recovery procedures for the Dhafnc
 1. **Assess Scope (15 minutes)**
 ```bash
 # Check external monitoring
-curl -f https://status.dhafnck-mcp.com/api/health
+curl -f https://status.4genthub.com/api/health
 ping production-server-ip
 
 # Verify DNS resolution
-nslookup dhafnck-mcp.com
+nslookup 4genthub.com
 ```
 
 2. **Activate Disaster Recovery Site (30 minutes)**
@@ -48,7 +48,7 @@ export DR_REGION=us-west-2
 ```bash
 # Restore database from latest backup
 ./scripts/restore-database.sh \
-    --backup-location s3://dhafnck-mcp-backups/latest \
+    --backup-location s3://4genthub-backups/latest \
     --environment disaster-recovery
 
 # Validate data integrity
@@ -92,16 +92,16 @@ docker-compose -f docker-system/docker-compose.production.yml stop mcp-backend
 2. **Assess Corruption (15 minutes)**
 ```bash
 # Check database integrity
-docker-compose exec postgres pg_dump --schema-only dhafnck_mcp > schema_check.sql
+docker-compose exec postgres pg_dump --schema-only 4genthub > schema_check.sql
 
 # Verify backup availability
-aws s3 ls s3://dhafnck-mcp-backups/ --recursive | tail -10
+aws s3 ls s3://4genthub-backups/ --recursive | tail -10
 ```
 
 3. **Restore from Backup (1 hour)**
 ```bash
 # Find most recent clean backup
-LATEST_BACKUP=$(aws s3 ls s3://dhafnck-mcp-backups/ | sort | tail -1)
+LATEST_BACKUP=$(aws s3 ls s3://4genthub-backups/ | sort | tail -1)
 
 # Restore database
 ./scripts/restore-database.sh \
@@ -305,7 +305,7 @@ sleep 60
 
 **Initial Incident Report:**
 ```
-INCIDENT ALERT - DhafnckMCP Production
+INCIDENT ALERT - 4genthub Production
 Severity: [Critical/High/Medium/Low]
 Time: [UTC Timestamp]
 Impact: [Service/Feature affected]
@@ -315,7 +315,7 @@ ETA: [Estimated resolution time]
 
 **Resolution Notification:**
 ```
-INCIDENT RESOLVED - DhafnckMCP Production
+INCIDENT RESOLVED - 4genthub Production
 Time Resolved: [UTC Timestamp]
 Duration: [Total downtime]
 Root Cause: [Brief description]
@@ -358,17 +358,17 @@ Follow-up: [Post-incident review scheduled]
 **Incident Commander:**
 - Name: [Primary DevOps Lead]
 - Phone: +1-XXX-XXX-XXXX
-- Email: devops-lead@dhafnck-mcp.dev
+- Email: devops-lead@4genthub.dev
 
 **Database Administrator:**
 - Name: [DBA]
 - Phone: +1-XXX-XXX-XXXX
-- Email: dba@dhafnck-mcp.dev
+- Email: dba@4genthub.dev
 
 **Security Officer:**
 - Name: [CISO]
 - Phone: +1-XXX-XXX-XXXX
-- Email: security@dhafnck-mcp.dev
+- Email: security@4genthub.dev
 
 ### Escalation Matrix
 

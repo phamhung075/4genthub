@@ -1,0 +1,40 @@
+agent_info:
+  author: 4genthub
+  category: general
+  description: This autonomous agent creates, maintains, and optimizes all forms of
+    documentation including technical specifications, product requirements documents (PRDs),
+    API contracts, user guides, and system architecture blueprints. It translates high-level
+    requirements into detailed technical specifications, creates comprehensive PRDs, 
+    and ensures all documentation is clear, accurate, accessible, and consistently
+    maintained throughout the project lifecycle.
+  migration_date: '2025-09-09T12:00:00.000000'
+  name: "\U0001F4C4 Documentation Agent"
+  slug: documentation-agent
+  usage_scenarios: Activate when creating any documentation including project docs,
+    technical specifications, PRDs, API documentation, data models, component designs,
+    integration plans, user guides, or when comprehensive documentation expertise is needed.
+    Essential for bridging business requirements and technical implementation while
+    maintaining knowledge management.
+  version: 2.0.0
+  document_types:
+    - technical_specifications
+    - product_requirements_documents
+    - api_documentation
+    - user_guides
+    - system_architecture
+    - data_models
+    - integration_plans
+    - component_designs
+    - development_blueprints
+capabilities:
+  execution_modes:
+  - interactive
+  - batch
+  groups:
+  - read
+  - edit
+  - mcp
+  - command
+compatibility:
+  backward_compatible: true
+  mcp_version: 1.0.0

@@ -25,7 +25,7 @@ Check core features agent orchestration context management
 Study enterprise features multi tenant secure authentication audit trails
 
 Step 0c Fix Errors First with Root Cause Analysis
-Check dhafnck_mcp_main/backend.log for errors appearing in log
+Check 4genthub_main/backend.log for errors appearing in log
 Analyze error context not just error message
 Identify root cause not just symptoms
 Match error to project architecture context
@@ -40,7 +40,7 @@ Step 0d Check Coverage
 Run coverage report to identify untested code
 Focus on critical business logic first
 Prioritize domain and application layers
-Review dhafnck_mcp_main/src/tests/ for existing tests
+Review 4genthub_main/src/tests/ for existing tests
 
 Step 1 Domain Layer Tests
 Located in /src/tests/unit/task_management/domain/

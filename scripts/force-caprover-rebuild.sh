@@ -10,12 +10,12 @@ TIMESTAMP=$(date +%s)
 sed -i "1s/.*Cache bust: .*/# Cache bust: $TIMESTAMP/" docker-system/docker/Dockerfile.frontend.production
 
 # 2. Bump version in package.json to force new build
-cd dhafnck-frontend
+cd 4genthub-frontend
 npm version patch --no-git-tag-version
 cd ..
 
 # 3. Add cache bust to tokenService to ensure it's recompiled
-echo "// Cache bust: $TIMESTAMP" >> dhafnck-frontend/src/services/tokenService.ts
+echo "// Cache bust: $TIMESTAMP" >> 4genthub-frontend/src/services/tokenService.ts
 
 # 4. Commit all changes
 git add -A

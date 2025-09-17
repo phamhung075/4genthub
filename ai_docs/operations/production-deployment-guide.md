@@ -1,8 +1,8 @@
-# Production Deployment Guide - DhafnckMCP Auto-Injection System
+# Production Deployment Guide - 4genthub Auto-Injection System
 
 ## Overview
 
-This comprehensive guide covers the complete production deployment process for the DhafnckMCP Auto-Injection System, including security hardening, monitoring setup, and operational procedures.
+This comprehensive guide covers the complete production deployment process for the 4genthub Auto-Injection System, including security hardening, monitoring setup, and operational procedures.
 
 ## Table of Contents
 
@@ -455,7 +455,7 @@ docker-compose exec mcp-backend top
 **4. Authentication Failures**
 ```bash
 # Check Keycloak connectivity
-curl -f ${KEYCLOAK_URL}/auth/realms/dhafnck/.well-known/openid_configuration
+curl -f ${KEYCLOAK_URL}/auth/realms/4genthub/.well-known/openid_configuration
 
 # Verify JWT configuration
 grep JWT_SECRET_KEY .env
@@ -554,8 +554,8 @@ docker-compose -f docker-system/docker-compose.production-enhanced.yml ps
 
 ### Emergency Contacts
 
-- **DevOps Team:** devops@dhafnck-mcp.dev
-- **Security Team:** security@dhafnck-mcp.dev
+- **DevOps Team:** devops@4genthub.dev
+- **Security Team:** security@4genthub.dev
 - **On-Call Engineer:** +1-XXX-XXX-XXXX
 
 ### Support Resources

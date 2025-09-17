@@ -1,5 +1,5 @@
 #!/bin/bash
-# DhafnckMCP Legacy Cleanup Script
+# 4genthub Legacy Cleanup Script
 # Phase 6: Clean up unused files and legacy configurations
 # Version: 2.1.0 - Safe cleanup with backup option
 
@@ -107,10 +107,10 @@ cleanup_backup_files() {
     log_info "Cleaning up backup files..."
 
     local backup_files=(
-        "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/auth/services/mcp_token_service_test.py.bak"
-        "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests/task_management/interface/controllers/git_branch_mcp_controller_test.py.backup"
-        "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/mcp_http_server.py.backup"
-        "/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/fastmcp/server/production_app.py.backup"
+        "/home/daihungpham/__projects__/agentic-project/4genthub_main/src/tests/auth/services/mcp_token_service_test.py.bak"
+        "/home/daihungpham/__projects__/agentic-project/4genthub_main/src/tests/task_management/interface/controllers/git_branch_mcp_controller_test.py.backup"
+        "/home/daihungpham/__projects__/agentic-project/4genthub_main/src/mcp_http_server.py.backup"
+        "/home/daihungpham/__projects__/agentic-project/4genthub_main/src/fastmcp/server/production_app.py.backup"
         "/home/daihungpham/__projects__/agentic-project/.test_cache/failed_tests.txt.backup"
         "/home/daihungpham/__projects__/agentic-project/CHANGELOG.md.backup"
     )
@@ -205,7 +205,7 @@ cleanup_node_modules_artifacts() {
     log_info "Cleaning up node_modules artifacts..."
 
     # Clean up frontend node_modules logs (these shouldn't be in git anyway)
-    local frontend_dir="/home/daihungpham/__projects__/agentic-project/dhafnck-frontend"
+    local frontend_dir="/home/daihungpham/__projects__/agentic-project/4genthub-frontend"
     if [[ -f "$frontend_dir/node_modules/nwsapi/dist/lint.log" ]]; then
         safe_remove "$frontend_dir/node_modules/nwsapi/dist/lint.log" "node_modules artifact log"
     fi
@@ -220,7 +220,7 @@ cleanup_htmlcov_artifacts() {
     log_info "Cleaning up HTML coverage artifacts..."
 
     # Remove specific test worker coverage files that are no longer relevant
-    local htmlcov_dir="/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/htmlcov"
+    local htmlcov_dir="/home/daihungpham/__projects__/agentic-project/4genthub_main/htmlcov"
     if [[ -f "$htmlcov_dir/z_5757ee64987f52a2_test_workers_init_py.html" ]]; then
         safe_remove "$htmlcov_dir/z_5757ee64987f52a2_test_workers_init_py.html" "obsolete coverage artifact"
     fi
@@ -255,7 +255,7 @@ generate_report() {
     local report_file="${PROJECT_ROOT}/logs/cleanup-report-$(date +%Y%m%d-%H%M%S).md"
 
     cat > "$report_file" << EOF
-# DhafnckMCP Cleanup Report
+# 4genthub Cleanup Report
 **Date**: $(date)
 **Type**: ${DRY_RUN}
 
@@ -289,7 +289,7 @@ EOF
 main() {
     local mode="${1:-interactive}"
 
-    log "🧹 Starting DhafnckMCP cleanup process..."
+    log "🧹 Starting 4genthub cleanup process..."
     log "Backup directory: $BACKUP_DIR"
 
     if [[ "$DRY_RUN" == "true" ]]; then
@@ -318,7 +318,7 @@ main() {
             cleanup_loop_workers
             ;;
         "interactive"|*)
-            echo -e "\n${BOLD}${BLUE}DhafnckMCP Cleanup Tool${RESET}"
+            echo -e "\n${BOLD}${BLUE}4genthub Cleanup Tool${RESET}"
             echo -e "${BLUE}========================${RESET}"
             echo -e "${BOLD}1.${RESET} Full cleanup (recommended)"
             echo -e "${BOLD}2.${RESET} Backup files only"

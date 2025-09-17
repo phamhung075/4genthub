@@ -82,7 +82,7 @@ class AgentDelegator:
             "agent": agent_name,
             "context": context,
             "delegation_method": "direct_call",
-            "instruction": f"Use: mcp__dhafnck_mcp_http__call_agent('{agent_name}')",
+            "instruction": f"Use: mcp__4genthub_http__call_agent('{agent_name}')",
             "note": "This bypasses the Task tool's master-orchestrator routing"
         }
     
@@ -152,7 +152,7 @@ def call_direct_agent(agent_name: str) -> str:
         available = ', '.join(AgentDelegator.AVAILABLE_AGENTS)
         return f"❌ ERROR: '{clean_name}' not found. Available: {available}"
 
-    return f"mcp__dhafnck_mcp_http__call_agent('{clean_name}')"
+    return f"mcp__4genthub_http__call_agent('{clean_name}')"
 
 
 def quick_agent_help(task_description: str) -> str:
@@ -201,7 +201,7 @@ def print_delegation_guide():
     print("   → Routes through master-orchestrator first")
     print()
     print("✅ WORKING: Direct agent calling")
-    print("   mcp__dhafnck_mcp_http__call_agent('debugger-agent')")
+    print("   mcp__4genthub_http__call_agent('debugger-agent')")
     print("   → Calls agent directly, bypasses master-orchestrator")
     print()
     print("🔄 COMPARISON:")
@@ -224,13 +224,13 @@ def print_delegation_guide():
     print()
     print("📝 USAGE EXAMPLES:")
     print("   # Direct debugging:")
-    print("   mcp__dhafnck_mcp_http__call_agent('debugger-agent')")
+    print("   mcp__4genthub_http__call_agent('debugger-agent')")
     print()
     print("   # Direct coding:")
-    print("   mcp__dhafnck_mcp_http__call_agent('coding-agent')")
+    print("   mcp__4genthub_http__call_agent('coding-agent')")
     print()
     print("   # Direct testing:")
-    print("   mcp__dhafnck_mcp_http__call_agent('test-orchestrator-agent')")
+    print("   mcp__4genthub_http__call_agent('test-orchestrator-agent')")
     print()
     print("⚠️  IMPORTANT: Load agent capabilities first, then work directly")
     print("   The call_agent response contains full system_prompt and tools")

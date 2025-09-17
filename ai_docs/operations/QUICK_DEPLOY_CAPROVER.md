@@ -9,7 +9,7 @@ Your CapRover environment variables are correctly set to HTTPS, but the current 
 
 ```bash
 # 1. Navigate to frontend directory
-cd /home/daihungpham/__projects__/agentic-project/dhafnck-frontend
+cd /home/daihungpham/__projects__/agentic-project/4genthub-frontend
 
 # 2. Deploy directly to CapRover
 caprover deploy -a webapp
@@ -38,11 +38,11 @@ git push origin frontend
 cd /home/daihungpham/__projects__/agentic-project
 tar -czf frontend-deploy.tar.gz \
   captain-definition.frontend \
-  dhafnck-frontend/build/ \
-  dhafnck-frontend/package.json \
-  dhafnck-frontend/package-lock.json \
-  dhafnck-frontend/index.html \
-  dhafnck-frontend/public/ \
+  4genthub-frontend/build/ \
+  4genthub-frontend/package.json \
+  4genthub-frontend/package-lock.json \
+  4genthub-frontend/index.html \
+  4genthub-frontend/public/ \
   docker-system/docker/Dockerfile.frontend.production \
   scripts/frontend-docker-entrypoint.sh
 

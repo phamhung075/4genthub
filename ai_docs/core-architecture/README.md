@@ -1,6 +1,6 @@
 # Core Architecture Documentation
 
-This folder contains the **core architectural design documents** for the DhafnckMCP AI Agent Orchestration Platform.
+This folder contains the **core architectural design documents** for the 4genthub AI Agent Orchestration Platform.
 
 **🧹 Reorganized (2025-09-11)**: This folder has been cleaned from 48 files to 6 core files. Specialized documentation has been moved to appropriate folders for better organization.
 
@@ -25,7 +25,7 @@ This folder contains the **core architectural design documents** for the Dhafnck
 
 ## 🎯 Purpose
 
-These documents provide the foundational design principles, architectural patterns, and technical decisions that guide the development of the DhafnckMCP platform. They focus on core system architecture rather than implementation details.
+These documents provide the foundational design principles, architectural patterns, and technical decisions that guide the development of the 4genthub platform. They focus on core system architecture rather than implementation details.
 
 ## 👥 Audience
 

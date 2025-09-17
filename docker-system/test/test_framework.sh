@@ -349,7 +349,7 @@ case "\$1" in
         if [[ "\$2" == "inspect" ]]; then
             echo '{"Containers": {}}'
         else
-            echo "dhafnck-network"
+            echo "4genthub-network"
         fi
         exit 0
         ;;

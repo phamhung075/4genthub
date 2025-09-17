@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide documents the Phase 6 deployment and cleanup implementation, providing comprehensive instructions for production deployment, monitoring, and maintenance of the DhafnckMCP system.
+This guide documents the Phase 6 deployment and cleanup implementation, providing comprehensive instructions for production deployment, monitoring, and maintenance of the 4genthub system.
 
 ## 🎯 Phase 6 Objectives Completed
 
@@ -126,8 +126,8 @@ APP_DEBUG=false                  # Debug mode (false for prod)
 DATABASE_TYPE=postgresql
 DATABASE_HOST=postgres           # Container name or IP
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp
-DATABASE_USER=dhafnck_user
+DATABASE_NAME=4genthub
+DATABASE_USER=4genthub_user
 DATABASE_PASSWORD=SecurePassword123!
 
 # Application Ports
@@ -139,7 +139,7 @@ MCP_PORT=8001                   # Production backend port
 AUTH_ENABLED=true
 AUTH_PROVIDER=keycloak
 KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=dhafnck
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-frontend
 
 # Security
@@ -166,7 +166,7 @@ CORS_ORIGINS=http://localhost:3800,https://yourdomain.com
 
 ### Container Network
 
-- **Network**: `dhafnck-network` (bridge)
+- **Network**: `4genthub-network` (bridge)
 - **Service Discovery**: Container name-based DNS
 - **Health Checks**: Built-in Docker health checks
 - **Volume Management**: Persistent data volumes
@@ -236,7 +236,7 @@ DRY_RUN=true ./scripts/cleanup-legacy.sh all
 ./scripts/cleanup-legacy.sh all
 
 # Database backup (production)
-docker exec dhafnck-postgres pg_dump -U dhafnck_user dhafnck_mcp > backup_$(date +%Y%m%d).sql
+docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub > backup_$(date +%Y%m%d).sql
 
 # Resource cleanup
 ./deployment-manager.sh --cleanup
@@ -261,10 +261,10 @@ curl -f http://localhost:8000/health
 
 ```bash
 # Check database readiness
-docker exec dhafnck-postgres pg_isready -U dhafnck_user
+docker exec 4genthub-postgres pg_isready -U 4genthub_user
 
 # Connect to database manually
-docker exec -it dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp
+docker exec -it 4genthub-postgres psql -U 4genthub_user -d 4genthub
 ```
 
 #### 3. Port Conflicts
@@ -288,7 +288,7 @@ netstat -tulpn | grep :8000
 docker stats --no-stream
 
 # Database performance
-docker exec dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp -c "SELECT * FROM pg_stat_activity;"
+docker exec 4genthub-postgres psql -U 4genthub_user -d 4genthub -c "SELECT * FROM pg_stat_activity;"
 ```
 
 ### Rollback Procedures

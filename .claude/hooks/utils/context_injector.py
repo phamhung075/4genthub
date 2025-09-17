@@ -72,15 +72,15 @@ class ContextRelevanceDetector:
     def __init__(self):
         self.context_triggers = {
             # MCP task management operations
-            'mcp__dhafnck_mcp_http__manage_task': {
+            'mcp__4genthub_http__manage_task': {
                 'actions': ['get', 'update', 'complete', 'next', 'list', 'search'],
                 'priority': 'high'
             },
-            'mcp__dhafnck_mcp_http__manage_subtask': {
+            'mcp__4genthub_http__manage_subtask': {
                 'actions': ['create', 'update', 'complete', 'list'],
                 'priority': 'high'
             },
-            'mcp__dhafnck_mcp_http__manage_context': {
+            'mcp__4genthub_http__manage_context': {
                 'actions': ['get', 'update', 'resolve'],
                 'priority': 'high'
             },

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Script to standardize all agent names to kebab-case format.
-This will rename files in .claude/agents and folders in dhafnck_mcp_main/agent-library/agents
+This will rename files in .claude/agents and folders in 4genthub_main/agent-library/agents
 """
 
 import os
@@ -12,7 +12,7 @@ from pathlib import Path
 # Define base paths
 PROJECT_ROOT = Path("/home/daihungpham/__projects__/agentic-project")
 CLAUDE_AGENTS_DIR = PROJECT_ROOT / ".claude/agents"
-AGENT_LIBRARY_DIR = PROJECT_ROOT / "dhafnck_mcp_main/agent-library/agents"
+AGENT_LIBRARY_DIR = PROJECT_ROOT / "4genthub_main/agent-library/agents"
 
 def to_kebab_case(name):
     """Convert any agent name format to kebab-case."""
@@ -67,7 +67,7 @@ def update_claude_agent_content():
             print(f"No changes needed in: {file_path.name}")
 
 def rename_agent_library_folders():
-    """Rename all folders in dhafnck_mcp_main/agent-library/agents to kebab-case."""
+    """Rename all folders in 4genthub_main/agent-library/agents to kebab-case."""
     print("\n=== Renaming agent-library folders ===")
     
     # Get all directories except hidden ones

@@ -1,6 +1,6 @@
 # Migration Guides
 
-This folder contains migration documentation for upgrading and transitioning between different versions and configurations of the DhafnckMCP platform.
+This folder contains migration documentation for upgrading and transitioning between different versions and configurations of the 4genthub platform.
 
 ## 📋 Contents
 

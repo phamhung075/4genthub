@@ -142,10 +142,10 @@ class TestTaskCreation:
 
 ## Files Modified
 
-1. `/dhafnck_mcp_main/src/tests/unit/task_management/domain/entities/test_task.py`
-2. `/dhafnck_mcp_main/src/tests/unit/task_management/domain/entities/test_subtask.py`
-3. `/dhafnck_mcp_main/src/tests/unit/task_management/domain/entities/test_git_branch.py`
-4. `/dhafnck_mcp_main/src/tests/unit/task_management/domain/value_objects/test_subtask_id.py`
+1. `/4genthub_main/src/tests/unit/task_management/domain/entities/test_task.py`
+2. `/4genthub_main/src/tests/unit/task_management/domain/entities/test_subtask.py`
+3. `/4genthub_main/src/tests/unit/task_management/domain/entities/test_git_branch.py`
+4. `/4genthub_main/src/tests/unit/task_management/domain/value_objects/test_subtask_id.py`
 5. `/.test_cache/failed_tests.txt` - Updated to reflect actual status
 
 ## Conclusion

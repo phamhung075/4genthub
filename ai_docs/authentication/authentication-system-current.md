@@ -1,8 +1,8 @@
-# DhafnckMCP Authentication System Architecture
+# 4genthub Authentication System Architecture
 
 ## Overview
 
-The DhafnckMCP platform uses a comprehensive authentication system that supports multiple providers with Keycloak as the primary production authentication service. The system is designed for security, scalability, and multi-tenant isolation.
+The 4genthub platform uses a comprehensive authentication system that supports multiple providers with Keycloak as the primary production authentication service. The system is designed for security, scalability, and multi-tenant isolation.
 
 ## Current Implementation (as of 2025-09-05)
 
@@ -238,7 +238,7 @@ All MCP tools require authentication and appropriate permissions:
 curl https://your-keycloak/realms/mcp/.well-known/openid-configuration
 
 # Validate token manually
-python dhafnck_mcp_main/scripts/test/test-keycloak-mcp-clean.py
+python 4genthub_main/scripts/test/test-keycloak-mcp-clean.py
 
 # Check authentication status
 curl http://localhost:8001/auth/status

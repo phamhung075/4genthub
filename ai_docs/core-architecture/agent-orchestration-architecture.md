@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The DhafnckMCP system employs a sophisticated multi-agent orchestration architecture centered around a Master Orchestrator that coordinates 43+ specialized agents. This enterprise-grade system uses token-efficient delegation, transparent task management, and intelligent agent assignment patterns to deliver scalable, maintainable, and traceable AI-driven project management.
+The 4genthub system employs a sophisticated multi-agent orchestration architecture centered around a Master Orchestrator that coordinates 43+ specialized agents. This enterprise-grade system uses token-efficient delegation, transparent task management, and intelligent agent assignment patterns to deliver scalable, maintainable, and traceable AI-driven project management.
 
 ## Quick Navigation
 
@@ -492,9 +492,9 @@ Task(
     """
 )
 
-# DhafnckMCP approach (token-efficient)
+# 4genthub approach (token-efficient)
 # Step 1: Store full context in MCP task
-task = mcp__dhafnck_mcp_http__manage_task(
+task = mcp__4genthub_http__manage_task(
     action="create",
     title="Implement JWT authentication",
     assignees="coding-agent",
@@ -592,7 +592,7 @@ All agents follow standardized progress reporting:
 
 ```python
 # Initial progress report
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="update",
     task_id=task_id,
     status="in_progress", 
@@ -600,7 +600,7 @@ mcp__dhafnck_mcp_http__manage_task(
 )
 
 # Regular progress updates (every 25% completion)
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="update",
     task_id=task_id,
     details="Completed authentication logic, implementing refresh tokens",
@@ -608,14 +608,14 @@ mcp__dhafnck_mcp_http__manage_task(
 )
 
 # Blocker escalation
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="update",
     task_id=task_id,
     details="Blocked: Need database schema approval before continuing"
 )
 
 # Completion report
-mcp__dhafnck_mcp_http__manage_task(
+mcp__4genthub_http__manage_task(
     action="complete",
     task_id=task_id,
     completion_summary="JWT authentication implemented with refresh tokens",
@@ -638,7 +638,7 @@ mcp__dhafnck_mcp_http__manage_task(
 | Approach | Token Usage | Efficiency Gain |
 |----------|-------------|-----------------|
 | Traditional Full Context | 5,000-15,000 tokens | Baseline |
-| DhafnckMCP task_id Reference | 20-30 tokens | **95% savings** |
+| 4genthub task_id Reference | 20-30 tokens | **95% savings** |
 | Context Inheritance | 100-500 tokens | 90% savings |
 | Cached Context | 50-200 tokens | 96% savings |
 
@@ -830,6 +830,6 @@ class AgentQualityAssurance:
 - [Design Patterns in Architecture](./design-patterns-in-architecture.md)
 
 **Last Updated:** 2025-09-12  
-**Document Owner:** DhafnckMCP Architecture Team  
+**Document Owner:** 4genthub Architecture Team  
 **Review Schedule:** Monthly  
 **Status:** Living Document

@@ -7,8 +7,8 @@ The test suite has collection errors due to test files that were created for non
 
 ### 1. Tests for Non-Existent Modules
 These test files reference source modules that don't exist:
-- `dhafnck_mcp_main/src/tests/server/routes/token_mgmt_routes_test.py` - No `server/routes` module exists
-- `dhafnck_mcp_main/src/tests/server/auth/providers/jwt_bearer_test.py` - Need to check if module exists
+- `4genthub_main/src/tests/server/routes/token_mgmt_routes_test.py` - No `server/routes` module exists
+- `4genthub_main/src/tests/server/auth/providers/jwt_bearer_test.py` - Need to check if module exists
 
 ### 2. Tests with Wrong Import Paths
 These tests exist but have incorrect imports:
@@ -27,7 +27,7 @@ These tests might be valid but need verification:
 
 ### Immediate Actions
 1. **Remove tests for non-existent modules**:
-   - Remove entire `dhafnck_mcp_main/src/tests/server/` directory if server module doesn't exist
+   - Remove entire `4genthub_main/src/tests/server/` directory if server module doesn't exist
    
 2. **Fix import paths in existing tests**:
    - Verify source modules exist before keeping tests
@@ -40,10 +40,10 @@ These tests might be valid but need verification:
 ### Verification Steps
 ```bash
 # Check which source modules actually exist
-find dhafnck_mcp_main/src/fastmcp -type f -name "*.py" | grep -E "(context_search|context_versioning|batch_context|token_repository)"
+find 4genthub_main/src/fastmcp -type f -name "*.py" | grep -E "(context_search|context_versioning|batch_context|token_repository)"
 
 # List all failing test files
-cd dhafnck_mcp_main
+cd 4genthub_main
 python -m pytest src/tests --co -q 2>&1 | grep ERROR
 
 # Test individual files

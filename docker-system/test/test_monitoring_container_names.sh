@@ -33,43 +33,43 @@ setUp() {
 case "$1 $2" in
     "ps --format")
         # Mock the actual container names that exist
-        echo "dhafnck-mcp-server"
-        echo "dhafnck-frontend" 
-        echo "dhafnck-redis"
+        echo "4genthub-server"
+        echo "4genthub-frontend" 
+        echo "4genthub-redis"
         ;;
-    "inspect dhafnck-mcp-server")
+    "inspect 4genthub-server")
         echo '[{"State":{"Status":"running","Health":{"Status":"healthy"}}}]'
         ;;
-    "inspect dhafnck-frontend")
+    "inspect 4genthub-frontend")
         echo '[{"State":{"Status":"running","Health":{"Status":"unhealthy"}}}]'
         ;;
-    "inspect dhafnck-redis")
+    "inspect 4genthub-redis")
         echo '[{"State":{"Status":"running","Health":{"Status":"healthy"}}}]'
         ;;
-    "inspect dhafnck-backend"|"inspect dhafnck-postgres")
+    "inspect 4genthub-backend"|"inspect 4genthub-postgres")
         exit 1  # Container does not exist
         ;;
     "ps --filter"*)
-        # Return container IDs for dhafnck containers
-        echo "abc123"  # dhafnck-mcp-server
-        echo "def456"  # dhafnck-frontend  
-        echo "ghi789"  # dhafnck-redis
+        # Return container IDs for 4genthub containers
+        echo "abc123"  # 4genthub-server
+        echo "def456"  # 4genthub-frontend  
+        echo "ghi789"  # 4genthub-redis
         ;;
     "stats --no-stream"*)
         echo "CONTAINER          CPU %     MEM USAGE"
-        echo "dhafnck-mcp-server 0.23%     100.3MiB / 512MiB"
-        echo "dhafnck-frontend   0.71%     11.89MiB / 256MiB"
-        echo "dhafnck-redis      0.00%     12.19MiB / 128MiB"
+        echo "4genthub-server 0.23%     100.3MiB / 512MiB"
+        echo "4genthub-frontend   0.71%     11.89MiB / 256MiB"
+        echo "4genthub-redis      0.00%     12.19MiB / 128MiB"
         ;;
-    "logs dhafnck-mcp-server"*)
+    "logs 4genthub-server"*)
         echo "INFO: MCP server healthy"
         echo "INFO: Processing requests"
         ;;
-    "logs dhafnck-backend"*)
-        echo "Error response from daemon: No such container: dhafnck-backend"
+    "logs 4genthub-backend"*)
+        echo "Error response from daemon: No such container: 4genthub-backend"
         exit 1
         ;;
-    "network inspect dhafnck-network"*)
+    "network inspect 4genthub-network"*)
         # First network inspect should fail, triggering fallback
         exit 1
         ;;
@@ -154,16 +154,16 @@ assert_not_contains() {
 # Test cases
 
 test_monitoring_detects_correct_backend_container() {
-    echo "🧪 Testing: Monitoring detects dhafnck-mcp-server as backend"
+    echo "🧪 Testing: Monitoring detects 4genthub-server as backend"
     
     local output
     output=$(show_monitoring_snapshot 2>&1)
     
-    # Should show backend as running (mapped from dhafnck-mcp-server)
+    # Should show backend as running (mapped from 4genthub-server)
     assert_contains "$output" "✅ backend:     Running" "Backend status should show as running"
     
-    # Should NOT try to access dhafnck-backend container
-    assert_not_contains "$output" "dhafnck-backend" "Should not reference old container name"
+    # Should NOT try to access 4genthub-backend container
+    assert_not_contains "$output" "4genthub-backend" "Should not reference old container name"
 }
 
 test_monitoring_handles_missing_postgres() {
@@ -180,7 +180,7 @@ test_monitoring_handles_missing_postgres() {
 }
 
 test_monitoring_detects_frontend_correctly() {
-    echo "🧪 Testing: Monitoring detects dhafnck-frontend correctly"
+    echo "🧪 Testing: Monitoring detects 4genthub-frontend correctly"
     
     local output
     output=$(show_monitoring_snapshot 2>&1)
@@ -190,7 +190,7 @@ test_monitoring_detects_frontend_correctly() {
 }
 
 test_monitoring_detects_redis_correctly() {
-    echo "🧪 Testing: Monitoring detects dhafnck-redis correctly"
+    echo "🧪 Testing: Monitoring detects 4genthub-redis correctly"
     
     local output
     output=$(show_monitoring_snapshot 2>&1)
@@ -206,9 +206,9 @@ test_monitoring_resource_usage_uses_correct_containers() {
     output=$(show_monitoring_snapshot 2>&1)
     
     # Should include actual container names in resource usage
-    assert_contains "$output" "dhafnck-mcp-server" "Resource usage should include mcp-server"
-    assert_contains "$output" "dhafnck-frontend" "Resource usage should include frontend"
-    assert_contains "$output" "dhafnck-redis" "Resource usage should include redis"
+    assert_contains "$output" "4genthub-server" "Resource usage should include mcp-server"
+    assert_contains "$output" "4genthub-frontend" "Resource usage should include frontend"
+    assert_contains "$output" "4genthub-redis" "Resource usage should include redis"
 }
 
 test_monitoring_logs_uses_correct_backend_container() {
@@ -217,9 +217,9 @@ test_monitoring_logs_uses_correct_backend_container() {
     local output
     output=$(show_monitoring_snapshot 2>&1)
     
-    # Should get logs from dhafnck-mcp-server, not dhafnck-backend
+    # Should get logs from 4genthub-server, not 4genthub-backend
     assert_contains "$output" "INFO: MCP server healthy" "Should show logs from mcp-server"
-    assert_not_contains "$output" "No such container: dhafnck-backend" "Should not try to access old backend container"
+    assert_not_contains "$output" "No such container: 4genthub-backend" "Should not try to access old backend container"
 }
 
 test_monitoring_network_status_correct() {

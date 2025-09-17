@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the enhanced user experience features implemented for branch deletion and other CRUD operations in the DhafnckMCP frontend. The improvements provide instant feedback, optimistic updates, and comprehensive error handling to create a responsive and professional user experience.
+This document describes the enhanced user experience features implemented for branch deletion and other CRUD operations in the 4genthub frontend. The improvements provide instant feedback, optimistic updates, and comprehensive error handling to create a responsive and professional user experience.
 
 ## Key Features
 

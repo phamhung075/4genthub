@@ -62,7 +62,7 @@ jobs:
       - name: Run Bandit security linter
         run: |
           pip install bandit[toml]
-          bandit -r dhafnck_mcp_main/src -f json -o bandit-results.json
+          bandit -r 4genthub_main/src -f json -o bandit-results.json
         continue-on-error: true
 
       - name: Upload Bandit results
@@ -89,19 +89,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8 black isort mypy pytest-cov
-          pip install -r dhafnck_mcp_main/requirements.txt
+          pip install -r 4genthub_main/requirements.txt
 
       - name: Run Black code formatter check
-        run: black --check dhafnck_mcp_main/src
+        run: black --check 4genthub_main/src
 
       - name: Run isort import sorting check
-        run: isort --check-only dhafnck_mcp_main/src
+        run: isort --check-only 4genthub_main/src
 
       - name: Run flake8 linting
-        run: flake8 dhafnck_mcp_main/src --max-line-length=100
+        run: flake8 4genthub_main/src --max-line-length=100
 
       - name: Run mypy type checking
-        run: mypy dhafnck_mcp_main/src --ignore-missing-imports
+        run: mypy 4genthub_main/src --ignore-missing-imports
         continue-on-error: true
 
   # Unit and integration tests
@@ -115,7 +115,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_USER: postgres
-          POSTGRES_DB: dhafnck_test
+          POSTGRES_DB: 4genthub_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -146,36 +146,36 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r dhafnck_mcp_main/requirements.txt
-          pip install -r dhafnck_mcp_main/requirements-test.txt
+          pip install -r 4genthub_main/requirements.txt
+          pip install -r 4genthub_main/requirements-test.txt
 
       - name: Set up test environment
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dhafnck_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/4genthub_test
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET_KEY: test-secret-key-for-ci
           KEYCLOAK_URL: http://localhost:8080
           KEYCLOAK_CLIENT_SECRET: test-secret
         run: |
-          cd dhafnck_mcp_main
+          cd 4genthub_main
           python -m pytest src/tests/unit --cov=src --cov-report=xml --cov-report=html
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./dhafnck_mcp_main/coverage.xml
+          file: ./4genthub_main/coverage.xml
           flags: unittests
           name: codecov-umbrella
 
       - name: Run integration tests
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dhafnck_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/4genthub_test
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET_KEY: test-secret-key-for-ci
           KEYCLOAK_URL: http://localhost:8080
           KEYCLOAK_CLIENT_SECRET: test-secret
         run: |
-          cd dhafnck_mcp_main
+          cd 4genthub_main
           python -m pytest src/tests/integration -v
 
   # Build and push Docker images
@@ -254,8 +254,8 @@ jobs:
         id: build-frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./dhafnck-frontend
-          file: ./dhafnck-frontend/Dockerfile.production
+          context: ./4genthub-frontend
+          file: ./4genthub-frontend/Dockerfile.production
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
@@ -274,7 +274,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || inputs.environment == 'staging'
     environment:
       name: staging
-      url: https://staging.dhafnck-mcp.com
+      url: https://staging.4genthub.com
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -319,7 +319,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') || (inputs.environment == 'production' && inputs.force_deploy)
     environment:
       name: production
-      url: https://dhafnck-mcp.com
+      url: https://4genthub.com
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -240,7 +240,7 @@ def update_work(message: str, task_id: Optional[str] = None) -> None:
         return  # No task to update
     
     try:
-        mcp__dhafnck_mcp_http__manage_task(
+        mcp__4genthub_http__manage_task(
             action="update",
             task_id=task_id,
             details=append_to_details(message)
@@ -260,7 +260,7 @@ def complete_work(summary: Optional[str] = None, task_id: Optional[str] = None) 
         summary = SmartDefaults.generate_summary(task_id, _session.actions)
     
     try:
-        mcp__dhafnck_mcp_http__manage_task(
+        mcp__4genthub_http__manage_task(
             action="complete",
             task_id=task_id,
             completion_summary=summary

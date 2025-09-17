@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Security Fixes Script - DhafnckMCP Production Deployment
+# Security Fixes Script - 4genthub Production Deployment
 # =============================================================================
 # This script applies all HIGH and MEDIUM security fixes identified in the 
 # Phase 1 Foundation Security Audit Report (SA-2025-09-11-001)
@@ -23,7 +23,7 @@ readonly NC='\033[0m'
 # Configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-readonly BACKUP_DIR="/tmp/dhafnck-mcp-security-backup-$(date +%Y%m%d-%H%M%S)"
+readonly BACKUP_DIR="/tmp/4genthub-security-backup-$(date +%Y%m%d-%H%M%S)"
 
 ENVIRONMENT="production"
 DRY_RUN="false"
@@ -94,10 +94,10 @@ create_backup() {
     
     # Backup all Python files that will be modified
     local files_to_backup=(
-        "dhafnck_mcp_main/src/infrastructure/auth/auth_endpoints.py"
-        "dhafnck_mcp_main/src/infrastructure/auth/jwt_auth_middleware.py"
-        "dhafnck_mcp_main/src/infrastructure/mcp/mcp_client.py"
-        "dhafnck_mcp_main/src/infrastructure/auth/service_account.py"
+        "4genthub_main/src/infrastructure/auth/auth_endpoints.py"
+        "4genthub_main/src/infrastructure/auth/jwt_auth_middleware.py"
+        "4genthub_main/src/infrastructure/mcp/mcp_client.py"
+        "4genthub_main/src/infrastructure/auth/service_account.py"
     )
     
     for file in "${files_to_backup[@]}"; do
@@ -118,7 +118,7 @@ create_backup() {
 fix_ssl_verification() {
     log_info "Applying Fix SA-001: SSL Certificate Verification"
     
-    local auth_endpoints="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/auth/auth_endpoints.py"
+    local auth_endpoints="${PROJECT_ROOT}/4genthub_main/src/infrastructure/auth/auth_endpoints.py"
     
     if [[ ! -f "$auth_endpoints" ]]; then
         log_warning "auth_endpoints.py not found, skipping SSL verification fix"
@@ -143,7 +143,7 @@ fix_ssl_verification() {
 fix_tls_enforcement() {
     log_info "Applying Fix SA-002/SA-007: TLS Enforcement"
     
-    local ssl_config_file="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/security/ssl_config.py"
+    local ssl_config_file="${PROJECT_ROOT}/4genthub_main/src/infrastructure/security/ssl_config.py"
     
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would create SSL configuration module"
@@ -214,7 +214,7 @@ EOF
 fix_jwt_validation_bypass() {
     log_info "Applying Fix SA-003: JWT Validation Bypass"
     
-    local jwt_middleware="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/auth/jwt_auth_middleware.py"
+    local jwt_middleware="${PROJECT_ROOT}/4genthub_main/src/infrastructure/auth/jwt_auth_middleware.py"
     
     if [[ ! -f "$jwt_middleware" ]]; then
         log_warning "jwt_auth_middleware.py not found, skipping JWT validation fix"
@@ -274,7 +274,7 @@ EOF
 fix_default_secret_key() {
     log_info "Applying Fix SA-005: Default Secret Key Validation"
     
-    local env_validation_file="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/security/env_validation.py"
+    local env_validation_file="${PROJECT_ROOT}/4genthub_main/src/infrastructure/security/env_validation.py"
     
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would create environment validation module"
@@ -371,7 +371,7 @@ EOF
 fix_rate_limiting() {
     log_info "Applying Fix SA-008: Enhanced Rate Limiting"
     
-    local rate_limiter_file="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/security/rate_limiter.py"
+    local rate_limiter_file="${PROJECT_ROOT}/4genthub_main/src/infrastructure/security/rate_limiter.py"
     
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would create enhanced rate limiter"
@@ -507,7 +507,7 @@ RESULTS=()
 check_ssl_verification() {
     echo "Checking SSL verification fixes..."
     
-    local auth_file="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/auth/auth_endpoints.py"
+    local auth_file="${PROJECT_ROOT}/4genthub_main/src/infrastructure/auth/auth_endpoints.py"
     
     if grep -q "verify=False" "$auth_file" 2>/dev/null; then
         RESULTS+=("FAIL: SSL verification still disabled in auth_endpoints.py")
@@ -522,9 +522,9 @@ check_security_modules() {
     echo "Checking security modules creation..."
     
     local modules=(
-        "dhafnck_mcp_main/src/infrastructure/security/ssl_config.py"
-        "dhafnck_mcp_main/src/infrastructure/security/env_validation.py"
-        "dhafnck_mcp_main/src/infrastructure/security/rate_limiter.py"
+        "4genthub_main/src/infrastructure/security/ssl_config.py"
+        "4genthub_main/src/infrastructure/security/env_validation.py"
+        "4genthub_main/src/infrastructure/security/rate_limiter.py"
     )
     
     local missing=0
@@ -543,7 +543,7 @@ check_security_modules() {
 check_environment_validation() {
     echo "Testing environment validation..."
     
-    local validator="${PROJECT_ROOT}/dhafnck_mcp_main/src/infrastructure/security/env_validation.py"
+    local validator="${PROJECT_ROOT}/4genthub_main/src/infrastructure/security/env_validation.py"
     
     if [[ -f "$validator" ]]; then
         if python3 "$validator" &>/dev/null; then

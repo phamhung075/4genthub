@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Call Agent MCP Controller (`call_agent_mcp_controller`) provides dynamic agent invocation capabilities within the DhafnckMCP system. This controller enables AI systems and clients to dynamically load and execute specialized agents by name, facilitating flexible multi-agent orchestration and workflow management.
+The Call Agent MCP Controller (`call_agent_mcp_controller`) provides dynamic agent invocation capabilities within the 4genthub system. This controller enables AI systems and clients to dynamically load and execute specialized agents by name, facilitating flexible multi-agent orchestration and workflow management.
 
 ## Controller Details
 
 - **Controller Name**: `CallAgentMCPController`
 - **MCP Tool**: `call_agent`
-- **Location**: `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/`
+- **Location**: `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/`
 - **Protocol**: MCP (Model Context Protocol)
 - **Architecture**: Domain-Driven Design (DDD) compliant
 

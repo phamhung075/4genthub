@@ -1,5 +1,5 @@
 groups:
-  - name: dhafnck-mcp-alerts
+  - name: 4genthub-alerts
     rules:
       # High-level service availability alerts
       - alert: ServiceDown

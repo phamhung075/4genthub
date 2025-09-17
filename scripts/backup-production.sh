@@ -2,7 +2,7 @@
 
 set -e
 
-echo "💾 DhafnckMCP Production Backup"
+echo "💾 4genthub Production Backup"
 echo "=============================="
 
 # Colors for output
@@ -25,9 +25,9 @@ print_error() {
 }
 
 # Configuration
-BACKUP_DIR="/tmp/dhafnck-mcp-backups"
+BACKUP_DIR="/tmp/4genthub-backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_NAME="dhafnck_mcp_backup_$TIMESTAMP"
+BACKUP_NAME="4genthub_backup_$TIMESTAMP"
 
 # Load environment
 if [ -f ".env.pro" ]; then
@@ -43,7 +43,7 @@ print_status "Created backup directory: $BACKUP_DIR"
 
 # 1. Database Backup
 print_status "Creating database backup..."
-DB_CONTAINER="srv-captain--dhafnck-postgres"
+DB_CONTAINER="srv-captain--4genthub-postgres"
 DB_BACKUP_FILE="$BACKUP_DIR/${BACKUP_NAME}_database.sql"
 
 if docker ps | grep -q $DB_CONTAINER; then
@@ -69,13 +69,13 @@ if [ -f ".env.pro" ]; then
     cp .env.pro $CONFIG_BACKUP_DIR/
 fi
 
-if [ -f "dhafnck-frontend/.env.production" ]; then
-    cp dhafnck-frontend/.env.production $CONFIG_BACKUP_DIR/
+if [ -f "4genthub-frontend/.env.production" ]; then
+    cp 4genthub-frontend/.env.production $CONFIG_BACKUP_DIR/
 fi
 
 # Backup configuration files
-if [ -d "dhafnck_mcp_main/configuration" ]; then
-    cp -r dhafnck_mcp_main/configuration $CONFIG_BACKUP_DIR/
+if [ -d "4genthub_main/configuration" ]; then
+    cp -r 4genthub_main/configuration $CONFIG_BACKUP_DIR/
 fi
 
 # Backup Docker files
@@ -83,8 +83,8 @@ cp -f Dockerfile* $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 cp -f docker-compose*.yml $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 cp -f captain-definition $CONFIG_BACKUP_DIR/ 2>/dev/null || true
 
-if [ -f "dhafnck-frontend/captain-definition" ]; then
-    cp dhafnck-frontend/captain-definition $CONFIG_BACKUP_DIR/frontend-captain-definition
+if [ -f "4genthub-frontend/captain-definition" ]; then
+    cp 4genthub-frontend/captain-definition $CONFIG_BACKUP_DIR/frontend-captain-definition
 fi
 
 # Compress configuration backup
@@ -96,8 +96,8 @@ print_status "Configuration backup created: ${CONFIG_BACKUP_DIR}.tar.gz"
 print_status "Creating agent library backup..."
 AGENT_BACKUP_FILE="$BACKUP_DIR/${BACKUP_NAME}_agents.tar.gz"
 
-if [ -d "dhafnck_mcp_main/agent-library" ]; then
-    tar -czf $AGENT_BACKUP_FILE -C "dhafnck_mcp_main" agent-library
+if [ -d "4genthub_main/agent-library" ]; then
+    tar -czf $AGENT_BACKUP_FILE -C "4genthub_main" agent-library
     print_status "Agent library backup created: $AGENT_BACKUP_FILE"
 else
     print_warning "Agent library directory not found, skipping agent backup"
@@ -145,7 +145,7 @@ fi
 # 5. Create backup manifest
 MANIFEST_FILE="$BACKUP_DIR/${BACKUP_NAME}_manifest.txt"
 cat > $MANIFEST_FILE << EOF
-DhafnckMCP Production Backup Manifest
+4genthub Production Backup Manifest
 =====================================
 
 Backup Date: $(date)
@@ -180,7 +180,7 @@ fi
 
 # 7. Cleanup old backups (keep last 7 days locally)
 print_status "Cleaning up old local backups..."
-find $BACKUP_DIR -name "dhafnck_mcp_backup_*" -mtime +7 -delete 2>/dev/null || true
+find $BACKUP_DIR -name "4genthub_backup_*" -mtime +7 -delete 2>/dev/null || true
 
 # Summary
 echo ""

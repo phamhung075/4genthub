@@ -140,7 +140,7 @@ class HintGenerator(Component):
 
     def process(self, tool_name: str, tool_input: Dict, tool_result: Any) -> Optional[Any]:
         """Generate hints based on tool execution."""
-        if not tool_name.startswith('mcp__dhafnck_mcp_http'):
+        if not tool_name.startswith('mcp__4genthub_http'):
             return None
 
         try:
@@ -175,7 +175,7 @@ class AgentStateTracker(Component):
 
     def process(self, tool_name: str, tool_input: Dict, tool_result: Any) -> Optional[Any]:
         """Update agent state if call_agent was used."""
-        if tool_name != 'mcp__dhafnck_mcp_http__call_agent':
+        if tool_name != 'mcp__4genthub_http__call_agent':
             return None
 
         agent_name = tool_input.get('name_agent', '')
@@ -292,7 +292,7 @@ class PostToolUseHook:
 
         # Check for MCP post-action hints
         output_parts = []
-        if tool_name.startswith('mcp__dhafnck_mcp_http') and tool_result:
+        if tool_name.startswith('mcp__4genthub_http') and tool_result:
             try:
                 from utils.unified_hint_system import get_hint_system
                 hint_system = get_hint_system()

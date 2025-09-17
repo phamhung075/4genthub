@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides technical implementation details for integrating with the DhafnckMCP context system, including code examples, integration patterns, and troubleshooting.
+This guide provides technical implementation details for integrating with the 4genthub context system, including code examples, integration patterns, and troubleshooting.
 
 ## System Requirements
 

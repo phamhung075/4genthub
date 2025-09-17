@@ -1,6 +1,6 @@
 # Troubleshooting Guides Index
 
-This directory contains troubleshooting guides for common issues and their resolutions in the DhafnckMCP system.
+This directory contains troubleshooting guides for common issues and their resolutions in the 4genthub system.
 
 ## Available Guides
 

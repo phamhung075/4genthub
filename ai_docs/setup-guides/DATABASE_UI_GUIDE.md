@@ -22,18 +22,18 @@ docker-compose up -d postgres pgadmin
    ```
 
 2. Login with default credentials:
-   - **Email**: `admin@dhafnck.com`
+   - **Email**: `admin@4genthub.com`
    - **Password**: `AdminPassword2025!`
 
 3. Connect to your PostgreSQL database:
    - Click "Add New Server"
    - **General Tab**:
-     - Name: `DhafnckMCP Database`
+     - Name: `4genthub Database`
    - **Connection Tab**:
      - Host: `postgres` (Docker service name)
      - Port: `5432`
-     - Database: `dhafnck_mcp_prod`
-     - Username: `dhafnck_user`
+     - Database: `4genthub_prod`
+     - Username: `4genthub_user`
      - Password: `ChangeThisSecurePassword2025!`
    - Click "Save"
 
@@ -57,8 +57,8 @@ sudo snap install dbeaver-ce
 **Connection Settings**:
 - Host: `localhost`
 - Port: `5432`
-- Database: `dhafnck_mcp_prod`
-- Username: `dhafnck_user`
+- Database: `4genthub_prod`
+- Username: `4genthub_user`
 - Password: `ChangeThisSecurePassword2025!`
 
 ### Option 2: Adminer (Lightweight Web UI)
@@ -68,12 +68,12 @@ Add to your `docker-compose.yml`:
 ```yaml
   adminer:
     image: adminer:latest
-    container_name: dhafnck-adminer
+    container_name: 4genthub-adminer
     restart: unless-stopped
     ports:
       - "8080:8080"
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       - postgres
     environment:
@@ -85,9 +85,9 @@ Add to your `docker-compose.yml`:
 Access at: `http://localhost:8080`
 - System: `PostgreSQL`
 - Server: `postgres`
-- Username: `dhafnck_user`
+- Username: `4genthub_user`
 - Password: `ChangeThisSecurePassword2025!`
-- Database: `dhafnck_mcp_prod`
+- Database: `4genthub_prod`
 
 ### Option 3: TablePlus (Premium Desktop App)
 
@@ -99,9 +99,9 @@ Download from: https://tableplus.com/
 - Create new PostgreSQL connection
 - Host: `localhost`
 - Port: `5432`
-- User: `dhafnck_user`
+- User: `4genthub_user`
 - Password: `ChangeThisSecurePassword2025!`
-- Database: `dhafnck_mcp_prod`
+- Database: `4genthub_prod`
 
 ### Option 4: Beekeeper Studio (Free & Open Source)
 
@@ -128,7 +128,7 @@ FROM information_schema.tables
 WHERE table_schema = 'public' 
 ORDER BY table_name;
 
--- Common tables in DhafnckMCP:
+-- Common tables in 4genthub:
 -- • projects
 -- • git_branches  
 -- • tasks
@@ -203,7 +203,7 @@ services:
 ```sql
 -- Create read-only user
 CREATE USER readonly_viewer WITH PASSWORD 'ViewOnlyPass2025!';
-GRANT CONNECT ON DATABASE dhafnck_mcp_prod TO readonly_viewer;
+GRANT CONNECT ON DATABASE 4genthub_prod TO readonly_viewer;
 GRANT USAGE ON SCHEMA public TO readonly_viewer;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_viewer;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly_viewer;
@@ -218,10 +218,10 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly_vie
 docker ps | grep postgres
 
 # Check PostgreSQL logs
-docker logs dhafnck-postgres
+docker logs 4genthub-postgres
 
 # Test connection from within Docker network
-docker exec -it dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_prod
+docker exec -it 4genthub-postgres psql -U 4genthub_user -d 4genthub_prod
 ```
 
 ### pgAdmin Connection Failed
@@ -231,7 +231,7 @@ docker exec -it dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_prod
 # The hostname should be the Docker service name
 
 # Test network connectivity
-docker exec -it dhafnck-pgadmin ping postgres
+docker exec -it 4genthub-pgadmin ping postgres
 ```
 
 ### Permission Denied Errors
@@ -239,7 +239,7 @@ docker exec -it dhafnck-pgadmin ping postgres
 ```bash
 # Reset pgAdmin data volume if corrupted
 docker-compose down
-docker volume rm dhafnck_pgadmin_data
+docker volume rm 4genthub_pgadmin_data
 docker-compose --profile tools up -d
 ```
 
@@ -271,7 +271,7 @@ SELECT
   pg_database.datname,
   pg_size_pretty(pg_database_size(pg_database.datname)) AS size
 FROM pg_database
-WHERE datname = 'dhafnck_mcp_prod';
+WHERE datname = '4genthub_prod';
 
 -- Check table sizes
 SELECT
@@ -293,16 +293,16 @@ docker-compose --profile tools up -d
 docker-compose stop pgadmin
 
 # View database logs
-docker logs -f dhafnck-postgres
+docker logs -f 4genthub-postgres
 
 # Backup database
-docker exec dhafnck-postgres pg_dump -U dhafnck_user dhafnck_mcp_prod > backup.sql
+docker exec 4genthub-postgres pg_dump -U 4genthub_user 4genthub_prod > backup.sql
 
 # Restore database
-docker exec -i dhafnck-postgres psql -U dhafnck_user dhafnck_mcp_prod < backup.sql
+docker exec -i 4genthub-postgres psql -U 4genthub_user 4genthub_prod < backup.sql
 
 # Access PostgreSQL CLI
-docker exec -it dhafnck-postgres psql -U dhafnck_user -d dhafnck_mcp_prod
+docker exec -it 4genthub-postgres psql -U 4genthub_user -d 4genthub_prod
 ```
 
 ## 📝 Environment Variables
@@ -315,8 +315,8 @@ PGADMIN_EMAIL=admin@yourcompany.com
 PGADMIN_PASSWORD=YourSecureAdminPassword!
 
 # Database Configuration
-DATABASE_NAME=dhafnck_mcp_prod
-DATABASE_USER=dhafnck_user
+DATABASE_NAME=4genthub_prod
+DATABASE_USER=4genthub_user
 DATABASE_PASSWORD=YourSecureDatabasePassword!
 DATABASE_SSL_MODE=prefer
 ```
@@ -355,6 +355,6 @@ DATABASE_SSL_MODE=prefer
 **Quick Start Summary**:
 1. Run: `docker-compose --profile tools up -d`
 2. Open: http://localhost:5050
-3. Login: admin@dhafnck.com / AdminPassword2025!
+3. Login: admin@4genthub.com / AdminPassword2025!
 4. Connect to database with provided credentials
 5. Start exploring your data!

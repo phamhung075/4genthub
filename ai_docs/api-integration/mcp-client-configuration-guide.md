@@ -56,12 +56,12 @@ export KEYCLOAK_URL=http://localhost:8080
 
 #### KEYCLOAK_REALM
 - **Description**: Keycloak realm name
-- **Default**: `dhafnck`
+- **Default**: `4genthub`
 - **Required**: Yes
 - **Example**: `mcp-production`
 
 ```bash
-export KEYCLOAK_REALM=dhafnck
+export KEYCLOAK_REALM=4genthub
 ```
 
 #### KEYCLOAK_CLIENT_ID
@@ -199,7 +199,7 @@ export HTTP_POOL_MAXSIZE=10
 #### 1. Create Client in Keycloak Admin Console
 
 1. Navigate to Keycloak Admin Console
-2. Select your realm (e.g., `dhafnck`)
+2. Select your realm (e.g., `4genthub`)
 3. Go to **Clients** → **Create Client**
 4. Configure client settings:
 
@@ -516,7 +516,7 @@ export MCP_SERVER_URL=http://mcp-server.internal:8000
 # Development .env file
 export KEYCLOAK_URL=http://localhost:8080
 export MCP_SERVER_URL=http://localhost:8000
-export KEYCLOAK_REALM=dhafnck-dev
+export KEYCLOAK_REALM=4genthub-dev
 export KEYCLOAK_CLIENT_ID=claude-hooks-dev
 export KEYCLOAK_CLIENT_SECRET=dev-secret-123
 
@@ -537,7 +537,7 @@ export SESSION_CACHE_TTL=900
 # Production .env file
 export KEYCLOAK_URL=https://keycloak.example.com
 export MCP_SERVER_URL=https://api.example.com
-export KEYCLOAK_REALM=dhafnck-prod
+export KEYCLOAK_REALM=4genthub-prod
 export KEYCLOAK_CLIENT_ID=claude-hooks-prod
 export KEYCLOAK_CLIENT_SECRET=${PROD_CLIENT_SECRET}
 
@@ -563,7 +563,7 @@ export HTTP_POOL_MAXSIZE=40
 # Staging mirrors production but with relaxed limits
 export KEYCLOAK_URL=https://keycloak-staging.example.com
 export MCP_SERVER_URL=https://api-staging.example.com
-export KEYCLOAK_REALM=dhafnck-staging
+export KEYCLOAK_REALM=4genthub-staging
 export KEYCLOAK_CLIENT_ID=claude-hooks-staging
 
 # Staging-specific settings
@@ -591,7 +591,7 @@ services:
       
       # Authentication
       KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: dhafnck
+      KEYCLOAK_REALM: 4genthub
       KEYCLOAK_CLIENT_ID: claude-hooks
       KEYCLOAK_CLIENT_SECRET_FILE: /run/secrets/client_secret
       
@@ -634,7 +634,7 @@ data:
   MCP_SERVER_URL: "https://api.example.com"
   MCP_SERVER_TIMEOUT: "15"
   KEYCLOAK_URL: "https://keycloak.example.com"
-  KEYCLOAK_REALM: "dhafnck"
+  KEYCLOAK_REALM: "4genthub"
   KEYCLOAK_CLIENT_ID: "claude-hooks"
   RATE_LIMIT_REQUESTS_PER_MINUTE: "100"
   HTTP_POOL_CONNECTIONS: "20"
@@ -660,7 +660,7 @@ MCP_SERVER_TIMEOUT=10
 # AUTHENTICATION
 # ====================
 KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=dhafnck
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=claude-hooks
 KEYCLOAK_CLIENT_SECRET=your-secret-here
 TOKEN_REFRESH_BEFORE_EXPIRY=60

@@ -131,9 +131,9 @@ class TokenManager:
                 with open(mcp_json_path, 'r') as f:
                     mcp_config = json.load(f)
                     
-                # Extract token from dhafnck_mcp_http configuration
-                dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
-                auth_header = dhafnck_config.get("headers", {}).get("Authorization", "")
+                # Extract token from 4genthub_http configuration
+                4genthub_config = mcp_config.get("mcpServers", {}).get("4genthub_http", {})
+                auth_header = 4genthub_config.get("headers", {}).get("Authorization", "")
                 
                 if auth_header.startswith("Bearer "):
                     return auth_header.replace("Bearer ", "")

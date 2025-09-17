@@ -136,7 +136,7 @@ get_container_id() {
     fi
     
     # Try with docker ps first (more reliable)
-    docker ps -q --filter "name=dhafnck-$service" 2>/dev/null | head -1
+    docker ps -q --filter "name=4genthub-$service" 2>/dev/null | head -1
 }
 
 get_version() {
@@ -172,7 +172,7 @@ is_development() {
 
 # Network helpers
 ensure_network() {
-    local network_name="${1:-dhafnck-network}"
+    local network_name="${1:-4genthub-network}"
     
     if ! docker network ls --format '{{.Name}}' | grep -q "^${network_name}$"; then
         info "Creating network: $network_name"

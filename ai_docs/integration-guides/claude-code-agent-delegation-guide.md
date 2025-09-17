@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DhafnckMCP `call_agent` tool now provides Claude Code-compatible agent definitions, enabling seamless agent delegation between Claude Code's Task tool and DhafnckMCP's specialized agents.
+The 4genthub `call_agent` tool now provides Claude Code-compatible agent definitions, enabling seamless agent delegation between Claude Code's Task tool and 4genthub's specialized agents.
 
 ## How It Works
 
@@ -10,14 +10,14 @@ The DhafnckMCP `call_agent` tool now provides Claude Code-compatible agent defin
 
 When `call_agent` is invoked, it:
 
-1. **Loads the agent** from `dhafnck_mcp_main/agent-library/agents/{agent_name}/`
+1. **Loads the agent** from `4genthub_main/agent-library/agents/{agent_name}/`
 2. **Extracts configuration** from YAML files (config.yaml, capabilities.yaml, contexts/)
 3. **Converts to Claude Code format** with proper frontmatter and system prompt
 4. **Returns** a `claude_agent_definition` field compatible with `.claude/agents/*.md`
 
 ### 2. Agent Structure Mapping
 
-| DhafnckMCP Structure | Claude Code Format |
+| 4genthub Structure | Claude Code Format |
 |---------------------|-------------------|
 | `config.yaml` → `agent_info.description` | `description:` frontmatter field |
 | `config.yaml` → `agent_info.slug` | `name:` frontmatter field |
@@ -39,7 +39,7 @@ When `call_agent` is invoked, it:
 
 ```python
 # Call the MCP tool to get agent definition
-result = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
+result = mcp__4genthub_http__call_agent(name_agent="coding-agent")
 
 if result['success']:
     # The claude_agent_definition can be used by Claude Code's Task tool
@@ -69,11 +69,11 @@ tools: Read, Grep, Glob, Edit, Write, MultiEdit, Bash, *
 
 ### Claude Code Integration Pattern
 
-Now Claude Code can delegate to DhafnckMCP agents using this pattern:
+Now Claude Code can delegate to 4genthub agents using this pattern:
 
 ```python
-# 1. Get the agent definition from DhafnckMCP
-agent_result = mcp__dhafnck_mcp_http__call_agent(name_agent="coding-agent")
+# 1. Get the agent definition from 4genthub
+agent_result = mcp__4genthub_http__call_agent(name_agent="coding-agent")
 
 # 2. If successful, Claude Code can now use the Task tool with the agent specification
 if agent_result['success']:
@@ -87,7 +87,7 @@ if agent_result['success']:
 
 ## Supported Agents
 
-All 42+ agents from `dhafnck_mcp_main/agent-library/agents/` are supported:
+All 42+ agents from `4genthub_main/agent-library/agents/` are supported:
 
 ### Development & Coding
 - `coding-agent` - Implementation and feature development
@@ -117,12 +117,12 @@ And many more...
 
 ### For Claude Code Users
 
-1. **Access to 42+ Specialized Agents** - Leverage DhafnckMCP's extensive agent library
+1. **Access to 42+ Specialized Agents** - Leverage 4genthub's extensive agent library
 2. **Production-Ready Agents** - All agents include comprehensive system prompts and capabilities
 3. **Consistent Interface** - Standard `.claude/agents/*.md` format for familiarity
 4. **Tool Access Control** - Agents inherit appropriate tool permissions based on capabilities
 
-### For DhafnckMCP Users
+### For 4genthub Users
 
 1. **Claude Code Compatibility** - Agents work seamlessly with Claude Code's Task tool
 2. **Delegation Workflow** - Smooth handoff between main Claude and specialized agents
@@ -255,6 +255,6 @@ The `claude_agent_definition` field contains a complete `.claude/agents/*.md` co
 }
 ```
 
-**Solution**: Ensure `dhafnck_mcp_main/agent-library/` exists and contains agent definitions.
+**Solution**: Ensure `4genthub_main/agent-library/` exists and contains agent definitions.
 
-This integration provides a powerful bridge between Claude Code's delegation capabilities and DhafnckMCP's specialized agent ecosystem, enabling more sophisticated and specialized AI workflows.
+This integration provides a powerful bridge between Claude Code's delegation capabilities and 4genthub's specialized agent ecosystem, enabling more sophisticated and specialized AI workflows.

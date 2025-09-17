@@ -7,8 +7,8 @@ Successfully reduced test collection errors from 23 to 16, with most of the test
 
 ### ✅ 1. Fixed test-menu.sh Python Path
 ```bash
-export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH}"
-cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+export PYTHONPATH="${PROJECT_ROOT}/4genthub_main/src:${PYTHONPATH}"
+cd "${PROJECT_ROOT}/4genthub_main"
 ```
 
 ### ✅ 2. Fixed FastAPI Import Errors in conftest.py
@@ -63,7 +63,7 @@ These tests have issues due to:
 
 ### Direct pytest Command
 ```bash
-cd dhafnck_mcp_main
+cd 4genthub_main
 export PYTHONPATH="src:${PYTHONPATH}"
 python -m pytest src/tests -v
 ```

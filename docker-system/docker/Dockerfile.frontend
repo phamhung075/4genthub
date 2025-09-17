@@ -1,4 +1,4 @@
-# Highly Optimized Frontend Dockerfile for DhafnckMCP
+# Highly Optimized Frontend Dockerfile for 4genthub
 # Uses BuildKit cache mounts, layer optimization, and proper multi-stage builds
 
 # syntax=docker/dockerfile:1
@@ -13,7 +13,7 @@ FROM node:${NODE_VERSION}-alpine AS dependencies
 WORKDIR /app
 
 # Copy package files
-COPY dhafnck-frontend/package*.json ./
+COPY 4genthub-frontend/package*.json ./
 
 # Install all dependencies with cache mount
 RUN --mount=type=cache,target=/root/.npm \
@@ -25,11 +25,11 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM dependencies AS development
 
 # Copy source code with proper layering
-COPY dhafnck-frontend/public/ ./public/
-COPY dhafnck-frontend/src/ ./src/
-COPY dhafnck-frontend/index.html dhafnck-frontend/vite.config.ts dhafnck-frontend/tsconfig.json ./
-COPY dhafnck-frontend/tailwind.config.* ./
-COPY dhafnck-frontend/postcss.config.js ./
+COPY 4genthub-frontend/public/ ./public/
+COPY 4genthub-frontend/src/ ./src/
+COPY 4genthub-frontend/index.html 4genthub-frontend/vite.config.ts 4genthub-frontend/tsconfig.json ./
+COPY 4genthub-frontend/tailwind.config.* ./
+COPY 4genthub-frontend/postcss.config.js ./
 
 # Set development optimizations
 ENV NODE_OPTIONS="--max-old-space-size=2048" \
@@ -37,11 +37,11 @@ ENV NODE_OPTIONS="--max-old-space-size=2048" \
     VITE_HMR_PORT=3800
 
 # Create non-root user (handle existing GID gracefully)
-RUN (addgroup -g 1001 -S dhafnck 2>/dev/null || addgroup -S dhafnck) && \
-    (adduser -u 1001 -S dhafnck -G dhafnck 2>/dev/null || adduser -S dhafnck -G dhafnck) && \
-    chown -R dhafnck:dhafnck /app
+RUN (addgroup -g 1001 -S 4genthub 2>/dev/null || addgroup -S 4genthub) && \
+    (adduser -u 1001 -S 4genthub -G 4genthub 2>/dev/null || adduser -S 4genthub -G 4genthub) && \
+    chown -R 4genthub:4genthub /app
 
-USER dhafnck
+USER 4genthub
 
 EXPOSE 3800
 
@@ -56,7 +56,7 @@ CMD ["npm", "start"]
 FROM dependencies AS builder
 
 # Copy source for building
-COPY dhafnck-frontend/ ./
+COPY 4genthub-frontend/ ./
 
 # Build arguments for environment variables
 ARG VITE_API_URL

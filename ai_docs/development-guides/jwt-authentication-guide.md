@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DhafnckMCP platform uses Keycloak for authentication with JWT tokens. This guide consolidates all JWT authentication information into a single comprehensive resource.
+The 4genthub platform uses Keycloak for authentication with JWT tokens. This guide consolidates all JWT authentication information into a single comprehensive resource.
 
 ## Current Architecture (as of 2025-09-02)
 
@@ -42,7 +42,7 @@ DATABASE_TYPE=postgresql  # Default for local development
   "sub": "user-uuid-from-keycloak",
   "exp": 1234567890,
   "iat": 1234567890,
-  "aud": "dhafnck-mcp",
+  "aud": "4genthub",
   "iss": "keycloak"
 }
 ```
@@ -78,7 +78,7 @@ class AuthenticationService:
 ### Unit Tests
 ```bash
 # Run authentication tests
-pytest dhafnck_mcp_main/src/tests/auth/test_token_extraction.py -v
+pytest 4genthub_main/src/tests/auth/test_token_extraction.py -v
 ```
 
 ### Manual Testing
@@ -114,7 +114,7 @@ pytest dhafnck_mcp_main/src/tests/auth/test_token_extraction.py -v
 Enable debug logging to troubleshoot authentication issues:
 ```python
 import logging
-logging.getLogger('dhafnck.auth').setLevel(logging.DEBUG)
+logging.getLogger('4genthub.auth').setLevel(logging.DEBUG)
 ```
 
 ## Migration from Previous Versions

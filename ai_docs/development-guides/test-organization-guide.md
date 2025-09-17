@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide describes the standardized test architecture and patterns for the DhafnckMCP project. It consolidates best practices and provides clear guidelines for writing maintainable, consistent tests.
+This guide describes the standardized test architecture and patterns for the 4genthub project. It consolidates best practices and provides clear guidelines for writing maintainable, consistent tests.
 
 ## Test Architecture Structure
 
@@ -447,4 +447,4 @@ When adding new tests:
 - [Pytest Documentation](https://ai_docs.pytest.org/)
 - [Coverage.py Documentation](https://coverage.readthedocs.io/)
 - [Testing Best Practices](https://ai_docs.python-guide.org/writing/tests/)
-- [DhafnckMCP Architecture Guide](../CORE ARCHITECTURE/system-architecture.md)
+- [4genthub Architecture Guide](../CORE ARCHITECTURE/system-architecture.md)

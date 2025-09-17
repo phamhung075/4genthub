@@ -23,7 +23,7 @@ class TestSuiteVerifier:
         self.test_cache_dir = self.project_root / ".test_cache"
         self.failed_tests_file = self.test_cache_dir / "failed_tests.txt"
         self.passed_tests_file = self.test_cache_dir / "passed_tests.txt"
-        self.working_dir = self.project_root / "dhafnck_mcp_main"
+        self.working_dir = self.project_root / "4genthub_main"
 
         # Results tracking
         self.newly_passing = []
@@ -50,7 +50,7 @@ class TestSuiteVerifier:
                 path = line.split('→', 1)[1].strip()
                 if path and path.endswith('.py'):
                     test_files.append(path)
-            elif line and line.endswith('.py') and 'dhafnck_mcp_main' in line:
+            elif line and line.endswith('.py') and '4genthub_main' in line:
                 # Handle lines that might not have the arrow format
                 if '/home/daihungpham/__projects__/agentic-project/' in line:
                     test_files.append(line)
@@ -89,9 +89,9 @@ class TestSuiteVerifier:
                 # Remove project root prefix
                 test_file = test_file.replace('/home/daihungpham/__projects__/agentic-project/', '')
 
-            if test_file.startswith('dhafnck_mcp_main/'):
-                # Remove dhafnck_mcp_main prefix since we run from that directory
-                test_file = test_file[len('dhafnck_mcp_main/'):]
+            if test_file.startswith('4genthub_main/'):
+                # Remove 4genthub_main prefix since we run from that directory
+                test_file = test_file[len('4genthub_main/'):]
 
             # Construct the full path relative to working directory
             test_path = self.working_dir / test_file
@@ -171,8 +171,8 @@ class TestSuiteVerifier:
         for test in self.newly_passing:
             # Convert to absolute path for consistency
             if not test.startswith('/'):
-                if not test.startswith('dhafnck_mcp_main/'):
-                    test = f"dhafnck_mcp_main/src/tests/{test}"
+                if not test.startswith('4genthub_main/'):
+                    test = f"4genthub_main/src/tests/{test}"
                 test = f"/home/daihungpham/__projects__/agentic-project/{test}"
 
             if test not in all_passed_tests:
@@ -190,8 +190,8 @@ class TestSuiteVerifier:
             for i, test in enumerate(remaining_failed, 1):
                 # Convert to absolute path for consistency
                 if not test.startswith('/'):
-                    if not test.startswith('dhafnck_mcp_main/'):
-                        test = f"dhafnck_mcp_main/src/tests/{test}"
+                    if not test.startswith('4genthub_main/'):
+                        test = f"4genthub_main/src/tests/{test}"
                     test = f"/home/daihungpham/__projects__/agentic-project/{test}"
                 f.write(f"{i:5d}→{test}\n")
 

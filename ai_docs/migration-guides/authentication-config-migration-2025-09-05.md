@@ -23,19 +23,19 @@ This guide documents the migration from the deprecated `MCP_AUTH_ENABLED` config
 - `.env` - Removed `MCP_AUTH_ENABLED` line
 
 #### Python Scripts
-- `dhafnck_mcp_main/scripts/setup/configure-postgres-keycloak-production.py`
-- `dhafnck_mcp_main/scripts/setup/setup-clean-postgres-keycloak.py`
-- `dhafnck_mcp_main/scripts/setup/setup-postgres-keycloak.py`
-- `dhafnck_mcp_main/scripts/setup/configure-postgres-keycloak-clean.py`
-- `dhafnck_mcp_main/scripts/setup/configure-postgres-keycloak.py`
-- `dhafnck_mcp_main/scripts/test/test-keycloak-mcp-clean.py`
-- `dhafnck_mcp_main/scripts/test/test-production-setup.py`
+- `4genthub_main/scripts/setup/configure-postgres-keycloak-production.py`
+- `4genthub_main/scripts/setup/setup-clean-postgres-keycloak.py`
+- `4genthub_main/scripts/setup/setup-postgres-keycloak.py`
+- `4genthub_main/scripts/setup/configure-postgres-keycloak-clean.py`
+- `4genthub_main/scripts/setup/configure-postgres-keycloak.py`
+- `4genthub_main/scripts/test/test-keycloak-mcp-clean.py`
+- `4genthub_main/scripts/test/test-production-setup.py`
 
 #### Shell Scripts
-- `dhafnck_mcp_main/scripts/quick_start_postgres_keycloak.sh`
-- `dhafnck_mcp_main/scripts/quick_start_production.sh`
-- `dhafnck_mcp_main/scripts/setup/quickstart-postgres-keycloak.sh`
-- `dhafnck_mcp_main/scripts/setup/setup-postgres-keycloak.sh`
+- `4genthub_main/scripts/quick_start_postgres_keycloak.sh`
+- `4genthub_main/scripts/quick_start_production.sh`
+- `4genthub_main/scripts/setup/quickstart-postgres-keycloak.sh`
+- `4genthub_main/scripts/setup/setup-postgres-keycloak.sh`
 - `docker-system/start-production.sh`
 
 #### Documentation
@@ -60,7 +60,7 @@ This guide documents the migration from the deprecated `MCP_AUTH_ENABLED` config
 2. **If using Keycloak, ensure these variables are set:**
    ```bash
    KEYCLOAK_URL=https://your-keycloak-instance.com
-   KEYCLOAK_REALM=dhafnck-mcp
+   KEYCLOAK_REALM=4genthub
    KEYCLOAK_CLIENT_ID=mcp-backend
    KEYCLOAK_CLIENT_SECRET=your-client-secret-here
    KEYCLOAK_VERIFY_TOKEN_AUDIENCE=true
@@ -101,10 +101,10 @@ After migration, verify authentication is working:
 curl http://localhost:8001/health
 
 # If using Keycloak, test token validation
-python dhafnck_mcp_main/scripts/test/test-keycloak-mcp-clean.py
+python 4genthub_main/scripts/test/test-keycloak-mcp-clean.py
 
 # For production setup verification
-python dhafnck_mcp_main/scripts/test/test-production-setup.py
+python 4genthub_main/scripts/test/test-production-setup.py
 ```
 
 ## Support

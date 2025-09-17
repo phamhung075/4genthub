@@ -47,7 +47,7 @@ APP_LOG_LEVEL=info                            # Use lowercase: debug, info, warn
 ### Keycloak Configuration (when AUTH_PROVIDER=keycloak)
 ```bash
 KEYCLOAK_URL=https://your-keycloak-instance.com
-KEYCLOAK_REALM=dhafnck-mcp
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 KEYCLOAK_VERIFY_TOKEN_AUDIENCE=true
@@ -114,7 +114,7 @@ cd docker-system && ./docker-menu.sh
 
 Tests use the same `.env` but with test database:
 ```bash
-TEST_DATABASE_NAME=dhafnck_mcp_test
+TEST_DATABASE_NAME=4genthub_test
 TEST_DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${TEST_DATABASE_NAME}
 ```
 
@@ -155,7 +155,7 @@ BACKUP_ENABLED=true
 ### Security
 - `JWT_SECRET_KEY`: Application secret key
 - `JWT_SECRET`: JWT signing secret
-- `DHAFNCK_TOKEN`: Application token
+- `4GENTHUB_TOKEN`: Application token
 
 ### Features
 - `FEATURE_VISION_SYSTEM`: Enable vision system
@@ -171,10 +171,10 @@ Check your configuration:
 source .env && echo $DATABASE_TYPE
 
 # Test database connection
-docker exec dhafnck-postgres pg_isready -U $DATABASE_USER
+docker exec 4genthub-postgres pg_isready -U $DATABASE_USER
 
 # Test Redis connection
-docker exec dhafnck-redis redis-cli ping
+docker exec 4genthub-redis redis-cli ping
 ```
 
 ## ⚠️ Security Best Practices

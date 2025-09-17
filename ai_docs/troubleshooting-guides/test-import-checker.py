@@ -10,7 +10,7 @@ from pathlib import Path
 
 def check_test_imports():
     """Check for import issues in test files"""
-    test_dir = Path("/home/daihungpham/__projects__/agentic-project/dhafnck_mcp_main/src/tests")
+    test_dir = Path("/home/daihungpham/__projects__/agentic-project/4genthub_main/src/tests")
     errors_found = []
     
     for test_file in test_dir.rglob("*.py"):

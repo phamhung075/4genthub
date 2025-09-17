@@ -3,7 +3,7 @@
 ## Overview
 This document maps the correspondence between:
 - `.claude/agents/` - Agent capability descriptions and calling conditions
-- `dhafnck_mcp_main/agent-library/agents/` - Actual agent implementations
+- `4genthub_main/agent-library/agents/` - Actual agent implementations
 
 ## Status: 2025-09-11
 

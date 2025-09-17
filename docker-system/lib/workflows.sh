@@ -66,12 +66,12 @@ workflow_dev_setup() {
     
     # Step 2: Clone repositories if needed
     info "Step 2/6: Checking project structure..."
-    if [[ ! -d "${PROJECT_ROOT}/dhafnck_mcp_main" ]]; then
-        error "Backend repository not found at ${PROJECT_ROOT}/dhafnck_mcp_main"
+    if [[ ! -d "${PROJECT_ROOT}/4genthub_main" ]]; then
+        error "Backend repository not found at ${PROJECT_ROOT}/4genthub_main"
         return 1
     fi
-    if [[ ! -d "${PROJECT_ROOT}/dhafnck-frontend" ]]; then
-        warning "Frontend repository not found at ${PROJECT_ROOT}/dhafnck-frontend"
+    if [[ ! -d "${PROJECT_ROOT}/4genthub-frontend" ]]; then
+        warning "Frontend repository not found at ${PROJECT_ROOT}/4genthub-frontend"
     fi
     
     # Step 3: Setup environment
@@ -83,7 +83,7 @@ workflow_dev_setup() {
     info "Step 4/6: Installing development tools..."
     if confirm "Install development tools (pgAdmin, MailHog)?"; then
         docker compose --profile tools up -d
-        echo "  pgAdmin: http://localhost:5050 (admin@dhafnck.local / admin)"
+        echo "  pgAdmin: http://localhost:5050 (admin@4genthub.local / admin)"
         echo "  MailHog: http://localhost:8025"
     fi
     
@@ -104,7 +104,7 @@ workflow_dev_setup() {
 📚 Quick Reference:
   Backend API:  http://localhost:8000/docs
   Frontend:     http://localhost:3000
-  Database:     postgresql://dhafnck_user:dev_password@localhost:5432/dhafnck_mcp
+  Database:     postgresql://4genthub_user:dev_password@localhost:5432/4genthub
   
 🛠️ Common Tasks:
   View logs:        ./docker-cli.sh logs backend
@@ -172,16 +172,16 @@ workflow_prod_deploy() {
     
     # Step 4: Pull new images
     info "Step 4/8: Pulling new images..."
-    docker pull "dhafnck/backend:$image_tag"
-    docker pull "dhafnck/frontend:$image_tag"
+    docker pull "4genthub/backend:$image_tag"
+    docker pull "4genthub/frontend:$image_tag"
     
     # Step 5: Run database migrations
     info "Step 5/8: Running database migrations..."
     # Run migrations in a temporary container
     docker run --rm \
-        --network dhafnck-network \
+        --network 4genthub-network \
         -e DATABASE_URL="postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}" \
-        "dhafnck/backend:$image_tag" \
+        "4genthub/backend:$image_tag" \
         python -m alembic upgrade head
     
     # Step 6: Deploy with rolling update
@@ -331,8 +331,8 @@ workflow_health_check() {
     info "Checking services..."
     local services=("postgres" "redis" "backend" "frontend")
     for service in "${services[@]}"; do
-        if docker ps --format '{{.Names}}' | grep -q "dhafnck-$service"; then
-            local health=$(docker inspect -f '{{.State.Health.Status}}' "dhafnck-$service" 2>/dev/null || echo "none")
+        if docker ps --format '{{.Names}}' | grep -q "4genthub-$service"; then
+            local health=$(docker inspect -f '{{.State.Health.Status}}' "4genthub-$service" 2>/dev/null || echo "none")
             case "$health" in
                 healthy|none)
                     success "$service: Running"
@@ -374,7 +374,7 @@ workflow_health_check() {
     
     # Network
     info "Checking network..."
-    if docker network ls | grep -q "dhafnck-network"; then
+    if docker network ls | grep -q "4genthub-network"; then
         success "Network: OK"
     else
         error "Network: Not found"

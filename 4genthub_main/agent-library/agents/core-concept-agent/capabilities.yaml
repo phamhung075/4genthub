@@ -1,0 +1,20 @@
+collaboration:
+  agent_communication: true
+  enabled: true
+command_execution:
+  enabled: false
+  restrictions:
+  - sandbox_mode
+file_operations:
+  enabled: true
+  permissions:
+    read: true
+    write: false
+    create: false
+    delete: false
+mcp_tools:
+  enabled: true
+  tools:
+  - mcp__sequential-thinking__sequentialthinking
+  - mcp__4genthub_http__manage_context
+  - mcp__4genthub_http__manage_task

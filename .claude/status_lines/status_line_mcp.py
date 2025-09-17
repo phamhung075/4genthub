@@ -49,9 +49,9 @@ def check_mcp_authentication():
             with open(mcp_json_path, 'r') as f:
                 mcp_config = json.load(f)
 
-            # Extract token from dhafnck_mcp_http configuration
-            dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
-            auth_header = dhafnck_config.get("headers", {}).get("Authorization", "")
+            # Extract token from 4genthub_http configuration
+            4genthub_config = mcp_config.get("mcpServers", {}).get("4genthub_http", {})
+            auth_header = 4genthub_config.get("headers", {}).get("Authorization", "")
 
             if auth_header.startswith("Bearer "):
                 return True, None
@@ -88,9 +88,9 @@ def get_mcp_connection_status():
             with open(mcp_json_path, 'r') as f:
                 mcp_config = json.load(f)
 
-            # Extract URL from dhafnck_mcp_http configuration
-            dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
-            configured_url = dhafnck_config.get("url", "")
+            # Extract URL from 4genthub_http configuration
+            4genthub_config = mcp_config.get("mcpServers", {}).get("4genthub_http", {})
+            configured_url = 4genthub_config.get("url", "")
             if configured_url:
                 server_url = configured_url
     except Exception:
@@ -233,9 +233,9 @@ def _get_mcp_token():
             with open(mcp_json_path, 'r') as f:
                 mcp_config = json.load(f)
 
-            # Extract token from dhafnck_mcp_http configuration
-            dhafnck_config = mcp_config.get("mcpServers", {}).get("dhafnck_mcp_http", {})
-            auth_header = dhafnck_config.get("headers", {}).get("Authorization", "")
+            # Extract token from 4genthub_http configuration
+            4genthub_config = mcp_config.get("mcpServers", {}).get("4genthub_http", {})
+            auth_header = 4genthub_config.get("headers", {}).get("Authorization", "")
 
             if auth_header.startswith("Bearer "):
                 return auth_header.replace("Bearer ", "")

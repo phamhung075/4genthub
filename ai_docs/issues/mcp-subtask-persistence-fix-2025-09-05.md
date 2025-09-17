@@ -218,17 +218,17 @@ def save(self, subtask: Subtask) -> bool:
 ## Files to Modify
 
 ### Primary Files
-1. `/dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
+1. `/4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
    - Fix `_to_model_data()` method (lines 760-773)
    - Fix `save()` method transaction handling (lines 62-105)
    - Add comprehensive logging
 
 ### Secondary Files
-2. `/dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/base_user_scoped_repository.py`
+2. `/4genthub_main/src/fastmcp/task_management/infrastructure/repositories/base_user_scoped_repository.py`
    - Review `set_user_id()` method (lines 133-150)
    - Ensure clean error handling
 
-3. `/dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`
+3. `/4genthub_main/src/fastmcp/task_management/infrastructure/repositories/base_orm_repository.py`
    - Review transaction context manager (lines 76-99)
    - Ensure session consistency
 

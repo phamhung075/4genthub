@@ -6,7 +6,7 @@ The unified tool for all context management operations.
 
 ### Basic Syntax
 ```python
-mcp__dhafnck_mcp_http__manage_context(
+mcp__4genthub_http__manage_context(
     action: str,                    # Required: Operation to perform
     level: str = "task",           # Context level: global, project, branch, task
     context_id: str = None,        # Context identifier (required for most actions)

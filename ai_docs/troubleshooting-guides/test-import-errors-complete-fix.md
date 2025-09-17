@@ -48,8 +48,8 @@ class MockFastAPI:
 
 **Solution Applied**: Added PYTHONPATH export in test-menu.sh:
 ```bash
-export PYTHONPATH="${PROJECT_ROOT}/dhafnck_mcp_main/src:${PYTHONPATH}"
-cd "${PROJECT_ROOT}/dhafnck_mcp_main"
+export PYTHONPATH="${PROJECT_ROOT}/4genthub_main/src:${PYTHONPATH}"
+cd "${PROJECT_ROOT}/4genthub_main"
 ```
 
 ## Remaining Issues (Minor)
@@ -71,7 +71,7 @@ Some tests expect `fastmcp.task_management.infrastructure.orm` which doesn't exi
 # Select option 3 for all tests
 
 # Or run directly
-cd dhafnck_mcp_main
+cd 4genthub_main
 export PYTHONPATH="src:${PYTHONPATH}"
 python -m pytest src/tests -v
 ```

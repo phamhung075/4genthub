@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `manage_task` tool provides comprehensive task lifecycle management with Vision System integration, automatic progress tracking, and intelligent workflow guidance. This is the core task management interface for the DhafnckMCP system.
+The `manage_task` tool provides comprehensive task lifecycle management with Vision System integration, automatic progress tracking, and intelligent workflow guidance. This is the core task management interface for the 4genthub system.
 
 ## Base Information
 

@@ -1,6 +1,6 @@
 # Development Guides
 
-This folder contains technical development guides, implementation patterns, and best practices for developing with the DhafnckMCP platform.
+This folder contains technical development guides, implementation patterns, and best practices for developing with the 4genthub platform.
 
 ## 📋 Contents
 

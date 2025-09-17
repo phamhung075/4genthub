@@ -2,10 +2,10 @@
 
 ## Overview
 
-The comprehensive test suite for dhafnck_mcp_http tools provides complete coverage of all issues discovered and fixed during development. This suite ensures reliability, data integrity, and regression prevention for the MCP tool ecosystem.
+The comprehensive test suite for 4genthub_http tools provides complete coverage of all issues discovered and fixed during development. This suite ensures reliability, data integrity, and regression prevention for the MCP tool ecosystem.
 
-**File**: `dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py`  
-**Test Runner**: `dhafnck_mcp_main/src/tests/run_comprehensive_tests.py`
+**File**: `4genthub_main/src/tests/integration/test_mcp_tools_comprehensive.py`  
+**Test Runner**: `4genthub_main/src/tests/run_comprehensive_tests.py`
 
 ## Test Coverage Areas
 
@@ -157,35 +157,35 @@ TEST_USER_ID = "test_user_comprehensive"
 
 ```bash
 # Run all tests with basic output
-python dhafnck_mcp_main/src/tests/run_comprehensive_tests.py
+python 4genthub_main/src/tests/run_comprehensive_tests.py
 
 # Run with verbose output
-python dhafnck_mcp_main/src/tests/run_comprehensive_tests.py --verbose
+python 4genthub_main/src/tests/run_comprehensive_tests.py --verbose
 
 # Run with coverage reporting
-python dhafnck_mcp_main/src/tests/run_comprehensive_tests.py --coverage
+python 4genthub_main/src/tests/run_comprehensive_tests.py --coverage
 
 # List available test classes
-python dhafnck_mcp_main/src/tests/run_comprehensive_tests.py --list-classes
+python 4genthub_main/src/tests/run_comprehensive_tests.py --list-classes
 
 # Run specific test class
-python dhafnck_mcp_main/src/tests/run_comprehensive_tests.py --class TestTaskPersistence
+python 4genthub_main/src/tests/run_comprehensive_tests.py --class TestTaskPersistence
 ```
 
 ### Using Pytest Directly
 
 ```bash
 # Basic test run
-pytest dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py -v
+pytest 4genthub_main/src/tests/integration/test_mcp_tools_comprehensive.py -v
 
 # Run with coverage
-pytest dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py --cov=dhafnck_mcp_main.src.fastmcp
+pytest 4genthub_main/src/tests/integration/test_mcp_tools_comprehensive.py --cov=4genthub_main.src.fastmcp
 
 # Run specific test class
-pytest dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py::TestTaskPersistence -v
+pytest 4genthub_main/src/tests/integration/test_mcp_tools_comprehensive.py::TestTaskPersistence -v
 
 # Run specific test method
-pytest dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py::TestTaskPersistence::test_task_creation_with_all_relationships -v
+pytest 4genthub_main/src/tests/integration/test_mcp_tools_comprehensive.py::TestTaskPersistence::test_task_creation_with_all_relationships -v
 ```
 
 ## Test Results Interpretation
@@ -212,7 +212,7 @@ pytest dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py::T
 # Example GitHub Actions workflow
 - name: Run Comprehensive MCP Tests
   run: |
-    cd dhafnck_mcp_main
+    cd 4genthub_main
     python src/tests/run_comprehensive_tests.py --coverage
     
 - name: Upload Coverage Reports
@@ -267,4 +267,4 @@ pytest dhafnck_mcp_main/src/tests/integration/test_mcp_tools_comprehensive.py::T
 
 **Last Updated**: 2025-08-24  
 **Test Suite Version**: v1.0.0  
-**Maintained By**: DhafnckMCP Test Orchestrator Agent
+**Maintained By**: 4genthub Test Orchestrator Agent

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the parameter type validation and automatic type coercion behavior for MCP tools in the DhafnckMCP system. The system provides intelligent parameter type handling with automatic conversion of common string representations to their proper types.
+This document describes the parameter type validation and automatic type coercion behavior for MCP tools in the 4genthub system. The system provides intelligent parameter type handling with automatic conversion of common string representations to their proper types.
 
 ## Issue Summary
 
@@ -12,7 +12,7 @@ This document describes the parameter type validation and automatic type coercio
 
 ## Description
 
-The DhafnckMCP system includes comprehensive parameter type coercion that automatically converts:
+The 4genthub system includes comprehensive parameter type coercion that automatically converts:
 
 ### Boolean Parameters
 The system automatically converts these string values to boolean:
@@ -158,7 +158,7 @@ The system uses the `parameter_validation_fix.py` module which provides:
 
 ## Conclusion
 
-The DhafnckMCP system now includes intelligent parameter type handling that automatically converts common string representations to their proper types. This makes the API more user-friendly while maintaining type safety. The system only returns errors when a value cannot be reasonably converted to the expected type.
+The 4genthub system now includes intelligent parameter type handling that automatically converts common string representations to their proper types. This makes the API more user-friendly while maintaining type safety. The system only returns errors when a value cannot be reasonably converted to the expected type.
 
 ## References
 

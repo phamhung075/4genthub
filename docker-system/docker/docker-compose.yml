@@ -4,7 +4,7 @@ services:
   # =============================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: dhafnck-postgres
+    container_name: 4genthub-postgres
     restart: unless-stopped
     env_file:
       - ../../.env.dev  # Load environment variables from .env.dev
@@ -15,11 +15,11 @@ services:
       POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./dhafnck_mcp_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./4genthub_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     networks:
-      - dhafnck_network
+      - 4genthub_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 10s
@@ -33,7 +33,7 @@ services:
     build:
       context: ../..
       dockerfile: docker-system/docker/Dockerfile.backend
-    container_name: dhafnck-mcp-server
+    container_name: 4genthub-server
     restart: unless-stopped
     env_file:
       - ../../.env.dev  # Load environment variables from .env.dev
@@ -61,7 +61,7 @@ services:
       AUTH_PROVIDER: ${AUTH_PROVIDER:-keycloak}
       EMAIL_VERIFIED_AUTO: ${EMAIL_VERIFIED_AUTO:-true}
       KEYCLOAK_URL: ${KEYCLOAK_URL}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-dhafnck-mcp}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-4genthub}
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-mcp-backend}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_VERIFY_TOKEN_AUDIENCE: ${KEYCLOAK_VERIFY_TOKEN_AUDIENCE:-true}
@@ -86,13 +86,13 @@ services:
       FEATURE_RATE_LIMITING: ${FEATURE_RATE_LIMITING:-true}
       FEATURE_REQUEST_LOGGING: ${FEATURE_REQUEST_LOGGING:-true}
     volumes:
-      - ./dhafnck_mcp_main:/app
+      - ./4genthub_main:/app
       - ./data:/data
-      - mcp_logs:/var/log/dhafnck-mcp
+      - mcp_logs:/var/log/4genthub
     ports:
       - "8000:8000"
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,10 +103,10 @@ services:
   # =============================================================================
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: dhafnck-pgadmin
+    container_name: 4genthub-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@dhafnck.com}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@4genthub.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-AdminPassword2025!}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
@@ -115,7 +115,7 @@ services:
     ports:
       - "5050:80"
     networks:
-      - dhafnck_network
+      - 4genthub_network
     depends_on:
       - postgres
     profiles:
@@ -125,17 +125,17 @@ services:
 # Networks
 # =============================================================================
 networks:
-  dhafnck_network:
+  4genthub_network:
     external: true
-    name: dhafnck-network
+    name: 4genthub-network
 
 # =============================================================================
 # Volumes
 # =============================================================================
 volumes:
   postgres_data:
-    name: dhafnck_postgres_data
+    name: 4genthub_postgres_data
   mcp_logs:
-    name: dhafnck_mcp_logs
+    name: 4genthub_logs
   pgadmin_data:
-    name: dhafnck_pgadmin_data
+    name: 4genthub_pgadmin_data

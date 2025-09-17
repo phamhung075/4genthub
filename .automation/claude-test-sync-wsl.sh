@@ -42,11 +42,11 @@ get_git_timestamp() {
 find_test_file() {
     local source_file="$1"
     
-    # Define mapping patterns for dhafnck_mcp project structure
-    if [[ "$source_file" =~ ^dhafnck_mcp_main/src/fastmcp/.*\.py$ ]]; then
+    # Define mapping patterns for 4genthub project structure
+    if [[ "$source_file" =~ ^4genthub_main/src/fastmcp/.*\.py$ ]]; then
         # Map src files to tests directory
-        echo "${source_file/dhafnck_mcp_main\/src\/fastmcp/dhafnck_mcp_main\/src\/tests}" | sed 's/\.py$/_test.py/'
-    elif [[ "$source_file" =~ ^dhafnck-frontend/src/.*\.tsx?$ ]]; then
+        echo "${source_file/4genthub_main\/src\/fastmcp/4genthub_main\/src\/tests}" | sed 's/\.py$/_test.py/'
+    elif [[ "$source_file" =~ ^4genthub-frontend/src/.*\.tsx?$ ]]; then
         # Map frontend source to tests
         echo "${source_file/src\//src\/tests/}" | sed 's/\.\(tsx\?\)$/.test.\1/'
     elif [[ "$source_file" =~ ^src/.*\.js$ ]]; then
@@ -157,7 +157,7 @@ if [[ $total_issues -gt 3 ]] || [[ $(echo "$changed_files" | wc -l) -gt 5 ]]; th
 ❗ START EXECUTING IMMEDIATELY ❗
 
 FIRST ACTION: Execute this command RIGHT NOW:
-mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+mcp__4genthub_http__call_agent(name_agent="@test_orchestrator_agent")
 
 You are in MANDATORY BACKGROUND AUTOMATION MODE.
 Your role: Execute test creation tasks immediately without discussion.
@@ -207,7 +207,7 @@ EOF
 
 ## EXECUTION COMMANDS - DO NOW:
 
-STEP 1: mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+STEP 1: mcp__4genthub_http__call_agent(name_agent="@test_orchestrator_agent")
 STEP 2: Get last commit changes and analyze modified/added/deleted code files
 STEP 3: Identify functions, classes, and methods requiring test coverage
 STEP 4: Delete tests for removed code and verify/clean up imports
@@ -237,7 +237,7 @@ else
 ❗ START EXECUTING IMMEDIATELY ❗
 
 FIRST ACTION: Execute this command RIGHT NOW:
-mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+mcp__4genthub_http__call_agent(name_agent="@test_orchestrator_agent")
 
 You are in MANDATORY BACKGROUND AUTOMATION MODE.
 Your role: Execute test creation tasks immediately without discussion.
@@ -358,7 +358,7 @@ cat >> "$TEMP_PROMPT" << 'EOF'
 
 ### Phase 0: MANDATORY Agent Assignment
 **EXECUTE IMMEDIATELY - NO CONFIRMATION:**
-Use this exact command: `mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")`
+Use this exact command: `mcp__4genthub_http__call_agent(name_agent="@test_orchestrator_agent")`
 
 **DO NOT:**
 - Ask which agent to use
@@ -403,7 +403,7 @@ Use this exact command: `mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orc
 - **Preserve test intent** when updating - if business logic changed, update tests accordingly
 - **Be thorough but efficient** - comprehensive coverage without redundant tests
 - **Consider maintainability** - tests should be easy to understand and modify
-- **Follow project structure** - dhafnck_mcp_main tests go in dhafnck_mcp_main/src/tests/
+- **Follow project structure** - 4genthub_main tests go in 4genthub_main/src/tests/
 
 ## 📋 WORKFLOW REFERENCE & STANDARDS
 **Follow the established review process:** `.automation/template/test-review-after-commit.md`
@@ -432,7 +432,7 @@ Use this exact command: `mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orc
 ---
 
 ## FINAL COMMAND:
-EXECUTE: mcp__dhafnck_mcp_http__call_agent(name_agent="@test_orchestrator_agent")
+EXECUTE: mcp__4genthub_http__call_agent(name_agent="@test_orchestrator_agent")
 THEN: Create all missing test files
 NO TALKING - JUST DO IT
 EOF

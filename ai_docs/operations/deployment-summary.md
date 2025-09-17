@@ -74,7 +74,7 @@ This document provides a comprehensive summary of the completed Deployment & Pro
   - Datasource configuration
   - Monitoring visualization
 
-- **Alerting:** `config/prometheus/alerts/dhafnck-mcp-alerts.yml`
+- **Alerting:** `config/prometheus/alerts/4genthub-alerts.yml`
   - 25+ critical alerts configured
   - Service availability monitoring
   - Performance threshold alerting
@@ -196,7 +196,7 @@ Production Deployment Files:
 │   └── docker-compose.production-enhanced.yml
 ├── config/
 │   ├── prometheus/prometheus.yml
-│   ├── prometheus/alerts/dhafnck-mcp-alerts.yml
+│   ├── prometheus/alerts/4genthub-alerts.yml
 │   ├── grafana/datasources/prometheus.yml
 │   └── grafana/dashboards/dashboard.yml
 └── ai_docs/operations/

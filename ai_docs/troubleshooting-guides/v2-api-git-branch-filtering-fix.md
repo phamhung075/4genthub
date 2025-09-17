@@ -18,7 +18,7 @@
 ## Root Cause Analysis
 
 ### Backend Issue
-**Location**: `dhafnck_mcp_main/src/fastmcp/server/routes/user_scoped_task_routes.py` lines 105-208
+**Location**: `4genthub_main/src/fastmcp/server/routes/user_scoped_task_routes.py` lines 105-208
 
 The `list_tasks` function only accepted these parameters:
 - `task_status: Optional[str] = None`
@@ -28,7 +28,7 @@ The `list_tasks` function only accepted these parameters:
 **Missing**: `git_branch_id` parameter for branch filtering
 
 ### Frontend Issues
-**Location 1**: `dhafnck-frontend/src/services/apiV2.ts` lines 49-55
+**Location 1**: `4genthub-frontend/src/services/apiV2.ts` lines 49-55
 ```typescript
 // BROKEN: No parameters accepted
 getTasks: async () => {
@@ -40,7 +40,7 @@ getTasks: async () => {
 },
 ```
 
-**Location 2**: `dhafnck-frontend/src/api.ts` line 144
+**Location 2**: `4genthub-frontend/src/api.ts` line 144
 ```typescript
 // BROKEN: V2 API call ignores git_branch_id parameter
 const response: any = await taskApiV2.getTasks();
@@ -178,7 +178,7 @@ Args:
 
 #### 2.1 Fixed V2 API getTasks Method
 
-**File**: `dhafnck-frontend/src/services/apiV2.ts`
+**File**: `4genthub-frontend/src/services/apiV2.ts`
 
 **Before**:
 ```typescript
@@ -213,7 +213,7 @@ getTasks: async (params?: { git_branch_id?: string }) => {
 
 #### 2.2 Fixed Frontend API Parameter Passing
 
-**File**: `dhafnck-frontend/src/api.ts`
+**File**: `4genthub-frontend/src/api.ts`
 
 **Before**:
 ```typescript
@@ -263,7 +263,7 @@ export async function listTasks(params: any = {}): Promise<Task[]> {
 
 ### 1. Structural Tests
 ```bash
-cd dhafnck_mcp_main/src && python -c "
+cd 4genthub_main/src && python -c "
 # Test function signature
 import inspect
 with open('fastmcp/server/routes/user_scoped_task_routes.py', 'r') as f:
@@ -338,29 +338,29 @@ Frontend: tasks only from branch xyz
 ## Files Modified - Complete Fix
 
 ### Backend Files
-1. **Core Backend Fix**: `dhafnck_mcp_main/src/fastmcp/server/routes/user_scoped_task_routes.py`
+1. **Core Backend Fix**: `4genthub_main/src/fastmcp/server/routes/user_scoped_task_routes.py`
    - Added `git_branch_id` parameter to `list_tasks` function
    - Updated `UserScopedRepositoryFactory.create_task_repository` method
    - Enhanced debug logging and API documentation
 
-2. **Backend Test Coverage**: `dhafnck_mcp_main/src/tests/integration/test_v2_api_git_branch_filtering_fix.py`
+2. **Backend Test Coverage**: `4genthub_main/src/tests/integration/test_v2_api_git_branch_filtering_fix.py`
    - 9 comprehensive test methods
    - API signature validation
    - Mock integration testing
    - Parameter behavior validation
 
 ### Frontend Files (NEW!)
-3. **Frontend V2 API Fix**: `dhafnck-frontend/src/services/apiV2.ts`
+3. **Frontend V2 API Fix**: `4genthub-frontend/src/services/apiV2.ts`
    - Added `params?: { git_branch_id?: string }` parameter to `getTasks` method
    - Implemented proper URL query parameter construction
    - Maintains backward compatibility with optional parameters
 
-4. **Frontend API Layer Fix**: `dhafnck-frontend/src/api.ts`
+4. **Frontend API Layer Fix**: `4genthub-frontend/src/api.ts`
    - Updated `listTasks()` to extract and pass `git_branch_id` to V2 API
    - Added comprehensive debug logging for troubleshooting
    - Preserved V1 API fallback functionality
 
-5. **Frontend Test Coverage**: `dhafnck_mcp_main/src/tests/integration/test_frontend_v2_api_branch_filtering_fix.py`
+5. **Frontend Test Coverage**: `4genthub_main/src/tests/integration/test_frontend_v2_api_branch_filtering_fix.py`
    - 12 comprehensive test methods covering frontend behavior
    - V2 API parameter handling tests
    - Fallback mechanism tests

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide documents the comprehensive performance optimization infrastructure implemented in Phase 4 of the DhafnckMCP system. The system now includes advanced monitoring, analytics, and alerting capabilities built on top of the existing high-performance architecture.
+This guide documents the comprehensive performance optimization infrastructure implemented in Phase 4 of the 4genthub system. The system now includes advanced monitoring, analytics, and alerting capabilities built on top of the existing high-performance architecture.
 
 ## System Performance Architecture
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers all configuration options for the DhafnckMCP system, including environment variables, database settings, authentication, caching, and performance tuning.
+This guide covers all configuration options for the 4genthub system, including environment variables, database settings, authentication, caching, and performance tuning.
 
 ## Configuration Hierarchy
 
@@ -30,7 +30,7 @@ config/
 
 ### Database Configuration
 
-DhafnckMCP uses a **dual PostgreSQL architecture** designed for optimal development-production parity:
+4genthub uses a **dual PostgreSQL architecture** designed for optimal development-production parity:
 
 - **Production**: Supabase cloud PostgreSQL (fully managed, globally distributed)
 - **Local Development**: PostgreSQL Docker container (full feature compatibility)
@@ -68,10 +68,10 @@ SUPABASE_REGION=us-west-1    # Choose closest region
 ```bash
 # Local development with PostgreSQL Docker
 DATABASE_TYPE=postgresql
-DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/dhafnck_mcp_dev
+DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/4genthub_dev
 
 # Docker deployment
-DATABASE_URL=postgresql://dhafnck_user:password@postgres:5432/dhafnck_mcp
+DATABASE_URL=postgresql://4genthub_user:password@postgres:5432/4genthub
 
 # SSL configuration for production-like local setup
 DB_SSL_MODE=disable          # Typically disabled for local development
@@ -122,7 +122,7 @@ HOST=0.0.0.0                    # Listen address (0.0.0.0 for all interfaces)
 PORT=8000                       # Listen port
 
 # Application settings
-APP_NAME=DhafnckMCP
+APP_NAME=4genthub
 APP_VERSION=1.0.0
 APP_DESCRIPTION="AI-driven project orchestration platform"
 
@@ -163,7 +163,7 @@ AUTH_PROVIDER=keycloak          # Options: keycloak, supabase, local
 
 # Keycloak configuration (when AUTH_PROVIDER=keycloak)
 KEYCLOAK_URL=https://your-keycloak-instance.com
-KEYCLOAK_REALM=dhafnck-mcp
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 KEYCLOAK_VERIFY_TOKEN_AUDIENCE=true
@@ -188,15 +188,15 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 # Token settings
 TOKEN_EXPIRY_HOURS=24
 TOKEN_REFRESH_THRESHOLD=0.5     # Refresh when 50% of lifetime remaining
-TOKEN_ISSUER=dhafnck-mcp
-TOKEN_AUDIENCE=dhafnck-users
+TOKEN_ISSUER=4genthub
+TOKEN_AUDIENCE=4genthub-users
 ```
 
 #### Authentication Providers
 ```bash
 # Bearer token authentication
 AUTH_BEARER_ENABLED=true
-AUTH_BEARER_REALM=DhafnckMCP
+AUTH_BEARER_REALM=4genthub
 
 # OAuth configuration (if using OAuth)
 OAUTH_CLIENT_ID=your-oauth-client-id
@@ -207,7 +207,7 @@ OAUTH_SCOPES=["openid", "email", "profile"]
 # Session configuration
 SESSION_SECRET_KEY=your-session-secret
 SESSION_EXPIRE_SECONDS=3600
-SESSION_COOKIE_NAME=dhafnck_session
+SESSION_COOKIE_NAME=4genthub_session
 SESSION_COOKIE_SECURE=true      # HTTPS only
 SESSION_COOKIE_HTTPONLY=true
 ```
@@ -234,7 +234,7 @@ REDIS_SOCKET_CONNECT_TIMEOUT=5
 # Cache configuration
 CACHE_ENABLED=true
 CACHE_DEFAULT_TTL=3600          # Default TTL in seconds
-CACHE_KEY_PREFIX=dhafnck:
+CACHE_KEY_PREFIX=4genthub:
 CACHE_COMPRESSION=true
 
 # Context cache specific
@@ -263,7 +263,7 @@ MEMORY_CACHE_TTL=1800
 LOG_LEVEL=INFO                  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_FORMAT=json                 # json, text
 LOG_FILE_ENABLED=true
-LOG_FILE_PATH=/var/log/dhafnck_mcp.log
+LOG_FILE_PATH=/var/log/4genthub.log
 LOG_FILE_MAX_SIZE=10485760      # 10MB
 LOG_FILE_BACKUP_COUNT=5
 
@@ -298,7 +298,7 @@ SENTRY_TRACES_SAMPLE_RATE=0.1
 #### MCP Server Settings
 ```bash
 # MCP server configuration
-MCP_SERVER_NAME=dhafnck-mcp
+MCP_SERVER_NAME=4genthub
 MCP_SERVER_VERSION=1.0.0
 MCP_PROTOCOL_VERSION=1.0.0
 
@@ -381,7 +381,7 @@ LOG_CONSOLE_ENABLED=true
 LOG_REQUEST_DETAILS=true
 
 # Database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/dhafnck_mcp_dev
+DATABASE_URL=postgresql://postgres:password@localhost:5432/4genthub_dev
 DB_ECHO=true
 
 # Cache
@@ -409,14 +409,14 @@ LOG_FORMAT=json
 LOG_FILE_ENABLED=true
 
 # Database
-DATABASE_URL=postgresql+asyncpg://dhafnck:${DB_PASSWORD}@dhafnck-db:5432/dhafnck_mcp
+DATABASE_URL=postgresql+asyncpg://4genthub:${DB_PASSWORD}@4genthub-db:5432/4genthub
 DB_ECHO=false
 DB_POOL_SIZE=50
 DB_MAX_OVERFLOW=100
 
 # Cache
 CACHE_ENABLED=true
-REDIS_URL=redis://:${REDIS_PASSWORD}@dhafnck-redis:6379
+REDIS_URL=redis://:${REDIS_PASSWORD}@4genthub-redis:6379
 CONTEXT_CACHE_TTL=3600
 
 # CORS (restrictive for production)
@@ -442,7 +442,7 @@ LOG_LEVEL=ERROR
 LOG_CONSOLE_ENABLED=false
 
 # Test database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/dhafnck_mcp_test
+DATABASE_URL=postgresql://postgres:password@localhost:5432/4genthub_test
 DB_ECHO=false
 
 # Disable external services
@@ -519,7 +519,7 @@ METRICS_INCLUDE_IN_BODY=false
 
 # Prometheus configuration
 PROMETHEUS_ENABLED=true
-PROMETHEUS_NAMESPACE=dhafnck_mcp
+PROMETHEUS_NAMESPACE=4genthub
 PROMETHEUS_SUBSYSTEM=api
 
 # Custom metrics
@@ -608,10 +608,10 @@ class Settings(BaseSettings):
 ```yaml
 # docker-compose.yml
 services:
-  dhafnck-mcp:
+  4genthub:
     environment:
-      - DATABASE_URL=postgresql+asyncpg://dhafnck:${DB_PASSWORD}@dhafnck-db:5432/dhafnck_mcp
-      - REDIS_URL=redis://dhafnck-redis:6379
+      - DATABASE_URL=postgresql+asyncpg://4genthub:${DB_PASSWORD}@4genthub-db:5432/4genthub
+      - REDIS_URL=redis://4genthub-redis:6379
       - JWT_SECRET_KEY=${JWT_SECRET}
       - LOG_LEVEL=INFO
       - CACHE_ENABLED=true
@@ -626,9 +626,9 @@ services:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dhafnck-mcp-config
+  name: 4genthub-config
 data:
-  DATABASE_URL: "postgresql+asyncpg://dhafnck:password@postgres:5432/dhafnck_mcp"
+  DATABASE_URL: "postgresql+asyncpg://4genthub:password@postgres:5432/4genthub"
   REDIS_URL: "redis://redis:6379"
   LOG_LEVEL: "INFO"
   CACHE_ENABLED: "true"
@@ -745,4 +745,4 @@ def debug_config():
 debug_config()
 ```
 
-This configuration guide provides comprehensive coverage of all configuration options and best practices for deploying and managing the DhafnckMCP system across different environments.
+This configuration guide provides comprehensive coverage of all configuration options and best practices for deploying and managing the 4genthub system across different environments.

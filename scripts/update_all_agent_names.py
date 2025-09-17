@@ -84,12 +84,12 @@ AGENT_NAME_MAPPINGS = {
 
 # Directories to process
 DIRECTORIES_TO_PROCESS = [
-    "dhafnck_mcp_main/src",
-    "dhafnck_mcp_main/scripts",
-    "dhafnck_mcp_main/agent-library",
+    "4genthub_main/src",
+    "4genthub_main/scripts",
+    "4genthub_main/agent-library",
     ".claude",
     "ai_docs",
-    "dhafnck-frontend/src",
+    "4genthub-frontend/src",
 ]
 
 # File extensions to process

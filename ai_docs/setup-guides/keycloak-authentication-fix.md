@@ -147,6 +147,6 @@ EMAIL_VERIFIED_AUTO=true
 ## Related Files
 - `/fix_user_account.sh` - User account fix script
 - `/fix_keycloak_complete.sh` - Complete Keycloak setup
-- `dhafnck_mcp_main/src/fastmcp/auth/interface/auth_endpoints.py` - Auth implementation
+- `4genthub_main/src/fastmcp/auth/interface/auth_endpoints.py` - Auth implementation
 - `.env.keycloak` - Environment configuration (not in git)
 - `.env.keycloak.example` - Configuration template

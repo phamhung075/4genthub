@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Starting DhafnckMCP Frontend with runtime configuration..."
+echo "Starting 4genthub Frontend with runtime configuration..."
 echo "================================================"
 
 # Create env-config.js with actual environment variables
@@ -15,7 +15,7 @@ window._env_ = {
   VITE_KEYCLOAK_CLIENT_ID: '${VITE_KEYCLOAK_CLIENT_ID:-}',
   VITE_ENV: '${VITE_ENV:-production}',
   VITE_DEBUG: '${VITE_DEBUG:-false}',
-  VITE_APP_NAME: '${VITE_APP_NAME:-DhafnckMCP}'
+  VITE_APP_NAME: '${VITE_APP_NAME:-4genthub}'
 };
 EOF
 

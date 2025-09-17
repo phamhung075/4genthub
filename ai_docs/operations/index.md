@@ -1,6 +1,6 @@
 # Operations Documentation
 
-This folder contains operational guides for deployment, configuration, and maintenance of the DhafnckMCP platform.
+This folder contains operational guides for deployment, configuration, and maintenance of the 4genthub platform.
 
 ## 📋 Contents
 

@@ -19,14 +19,14 @@ This document tracks the factory pattern analysis for the task_management module
 ### 1. Application Layer Factories (8 files)
 | File | Status | Purpose | Refactoring Needed | File Link |
 |------|--------|---------|-------------------|-----------|
-| `agent_facade_factory.py` | ⚠️ Needs Refactoring | Creates agent facades | Mock in same file, needs separation | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/agent_facade_factory.py) |
-| `context_response_factory.py` | ⏳ Pending Review | Response object creation | Verify single responsibility | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/context_response_factory.py) |
-| `git_branch_facade_factory.py` | ⏳ Pending Review | Git branch facade creation | Check dependencies | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/git_branch_facade_factory.py) |
-| `project_facade_factory.py` | ✅ Reviewed | Project facade creation with singleton | Good singleton pattern with DI | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/project_facade_factory.py) |
-| `subtask_facade_factory.py` | ⏳ Pending Review | Subtask facade creation | Check for patterns | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/subtask_facade_factory.py) |
-| `task_facade_factory.py` | ✅ Reviewed | Task facade creation with singleton pattern | Good - uses singleton, DI, separation of concerns | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/task_facade_factory.py) |
-| `token_facade_factory.py` | ⏳ Pending Review | Token facade creation | Security review needed | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/token_facade_factory.py) |
-| `unified_context_facade_factory.py` | ⏳ Pending Review | Context facade creation | Complex dependencies | [View](../../dhafnck_mcp_main/src/fastmcp/task_management/application/factories/unified_context_facade_factory.py) |
+| `agent_facade_factory.py` | ⚠️ Needs Refactoring | Creates agent facades | Mock in same file, needs separation | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/agent_facade_factory.py) |
+| `context_response_factory.py` | ⏳ Pending Review | Response object creation | Verify single responsibility | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/context_response_factory.py) |
+| `git_branch_facade_factory.py` | ⏳ Pending Review | Git branch facade creation | Check dependencies | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/git_branch_facade_factory.py) |
+| `project_facade_factory.py` | ✅ Reviewed | Project facade creation with singleton | Good singleton pattern with DI | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/project_facade_factory.py) |
+| `subtask_facade_factory.py` | ⏳ Pending Review | Subtask facade creation | Check for patterns | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/subtask_facade_factory.py) |
+| `task_facade_factory.py` | ✅ Reviewed | Task facade creation with singleton pattern | Good - uses singleton, DI, separation of concerns | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/task_facade_factory.py) |
+| `token_facade_factory.py` | ⏳ Pending Review | Token facade creation | Security review needed | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/token_facade_factory.py) |
+| `unified_context_facade_factory.py` | ⏳ Pending Review | Context facade creation | Complex dependencies | [View](../../4genthub_main/src/fastmcp/task_management/application/factories/unified_context_facade_factory.py) |
 
 ### 2. Infrastructure Layer Factories (11 files)
 | File | Status | Purpose | Refactoring Needed |

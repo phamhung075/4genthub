@@ -10,7 +10,7 @@ This document details the specific changes made to fix MCP parameter type displa
 
 ### 1. manage_task_description.py
 
-**Location:** `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/manage_task_description.py`
+**Location:** `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/manage_task_description.py`
 
 **Changes Made:**
 
@@ -53,7 +53,7 @@ def get_manage_task_parameters():
 
 ### 2. task_mcp_controller.py
 
-**Location:** `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py`
+**Location:** `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller.py`
 
 **Changes Made:**
 
@@ -113,7 +113,7 @@ if offset is not None and not isinstance(offset, int):
 
 ### 3. compliance_mcp_controller.py
 
-**Location:** `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/compliance_mcp_controller.py`
+**Location:** `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/compliance_mcp_controller.py`
 
 **Changes Made:**
 
@@ -130,7 +130,7 @@ limit: Annotated[int, Field(...)] = 100
 
 ### 4. unified_context_controller.py
 
-**Location:** `dhafnck_mcp_main/src/fastmcp/task_management/interface/mcp_controllers/unified_context_controller/unified_context_controller.py`
+**Location:** `4genthub_main/src/fastmcp/task_management/interface/mcp_controllers/unified_context_controller/unified_context_controller.py`
 
 **Changes Made:**
 

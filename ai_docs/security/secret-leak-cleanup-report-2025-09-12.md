@@ -8,7 +8,7 @@
 ### 1. Exposed API Keys and Tokens
 
 #### File: `.mcp.json`
-- **Type**: JWT Bearer Token (dhafnck-mcp)
+- **Type**: JWT Bearer Token (4genthub)
 - **Location**: Root directory
 - **Token**: `Bearer [REDACTED]`
 - **Risk**: Full access token with extensive permissions exposed
@@ -22,7 +22,7 @@
 - **Action Required**: IMMEDIATE - Remove and regenerate key
 
 #### File: `.cursor/mcp.json`
-- **Type**: JWT Bearer Token (dhafnck-mcp)
+- **Type**: JWT Bearer Token (4genthub)
 - **Location**: .cursor directory
 - **Token**: Another Bearer token with full permissions
 - **Risk**: Duplicate exposure in IDE configuration
@@ -64,7 +64,7 @@
 ```
 
 ### 3. Rotate Compromised Credentials
-- [ ] Regenerate dhafnck-mcp JWT tokens
+- [ ] Regenerate 4genthub JWT tokens
 - [ ] Regenerate ElevenLabs API key
 - [ ] Update all services with new credentials
 
@@ -73,7 +73,7 @@
 // .mcp.json should reference environment variables
 {
   "mcpServers": {
-    "dhafnck_mcp_http": {
+    "4genthub_http": {
       "headers": {
         "Authorization": "${MCP_AUTH_TOKEN}"
       },

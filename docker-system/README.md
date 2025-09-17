@@ -1,6 +1,6 @@
-# DhafnckMCP Docker Management System
+# 4genthub Docker Management System
 
-A streamlined Docker management interface for the DhafnckMCP project with unified Docker configuration and multiple deployment modes.
+A streamlined Docker management interface for the 4genthub project with unified Docker configuration and multiple deployment modes.
 
 ## Quick Start
 
@@ -67,8 +67,8 @@ The docker-system works with or without an `.env` file using hardcoded defaults.
 # Core Configuration
 DATABASE_HOST=postgres
 DATABASE_PORT=5432
-DATABASE_NAME=dhafnck_mcp_prod
-DATABASE_USER=dhafnck_user
+DATABASE_NAME=4genthub_prod
+DATABASE_USER=4genthub_user
 DATABASE_PASSWORD=your_secure_password_here
 
 # MCP Configuration  
@@ -78,7 +78,7 @@ FRONTEND_PORT=3800
 
 # Keycloak Authentication
 KEYCLOAK_URL=https://your-keycloak-server.com
-KEYCLOAK_REALM=dhafnck-mcp
+KEYCLOAK_REALM=4genthub
 KEYCLOAK_CLIENT_ID=mcp-backend
 KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 
@@ -147,10 +147,10 @@ docker container prune -f
 The system automatically cleans up existing Docker images before each build because:
 - All builds use `--no-cache` flag (fresh builds every time)
 - Old image versions are unnecessary and waste disk space
-- Each configuration build removes previous dhafnck project images
+- Each configuration build removes previous 4genthub project images
 
 **What gets cleaned automatically**:
-- Previous dhafnck project images (`*dhafnck*`, `docker-*`)
+- Previous 4genthub project images (`*4genthub*`, `docker-*`)
 - Dangling images and build cache
 - Stopped containers using ports 8000/3800
 

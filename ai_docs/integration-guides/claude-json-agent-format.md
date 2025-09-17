@@ -32,7 +32,7 @@ The streamlined `call_agent` response now provides a clean JSON structure that r
   },
   "capabilities": [
     "mcp__browsermcp__browser_navigate",
-    "mcp__dhafnck_mcp_http__manage_task",
+    "mcp__4genthub_http__manage_task",
     "..."
   ],
   "source": "agent-library"
@@ -73,7 +73,7 @@ Simple array of available MCP tools, no nested objects.
 import json
 
 # Get agent from call_agent
-result = mcp__dhafnck_mcp_http__call_agent(name_agent="@test-orchestrator-agent")
+result = mcp__4genthub_http__call_agent(name_agent="@test-orchestrator-agent")
 
 if result['success']:
     # Option 1: Use pre-formatted markdown
@@ -115,7 +115,7 @@ def get_agent_for_task(task_type):
     }
     
     agent_name = agent_map.get(task_type, 'coding-agent')
-    result = mcp__dhafnck_mcp_http__call_agent(name_agent=f"@{agent_name}")
+    result = mcp__4genthub_http__call_agent(name_agent=f"@{agent_name}")
     
     if result['success']:
         return result['agent']
@@ -138,7 +138,7 @@ def process_multiple_agents(agent_names):
     agents = {}
     
     for name in agent_names:
-        result = mcp__dhafnck_mcp_http__call_agent(name_agent=f"@{name}")
+        result = mcp__4genthub_http__call_agent(name_agent=f"@{name}")
         
         if result['success']:
             agents[name] = result['agent']

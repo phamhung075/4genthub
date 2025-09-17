@@ -77,7 +77,7 @@ Fix all failing tests systematically by addressing root causes based on **LATEST
    echo -e "4\n[test_file_path]\nq" | timeout 20 scripts/test-menu.sh
 
    # Or direct pytest if needed for more control
-   timeout 20 bash -c "cd dhafnck_mcp_main && python -m pytest [test_file_path]::[test_name] -xvs --tb=long"
+   timeout 20 bash -c "cd 4genthub_main && python -m pytest [test_file_path]::[test_name] -xvs --tb=long"
    ```
 2. **EXAMINE THE ACTUAL IMPLEMENTATION FIRST** - Read the current code, not the test expectations
 3. Identify the root cause (not just the symptom):
@@ -132,7 +132,7 @@ Is code working in production/other tests?
    # Use test-menu.sh option 4 for specific test file
    echo "4" | timeout 20 scripts/test-menu.sh
    # Then enter the test file path when prompted
-   # Example: dhafnck_mcp_main/src/tests/unit/test_file.py
+   # Example: 4genthub_main/src/tests/unit/test_file.py
    ```
 2. **IMPORTANT**: Use `timeout 20` to prevent infinite loops (20 second max)
 3. Run related tests in the same module to ensure no regression
@@ -255,7 +255,7 @@ return {"data": result, "status": "ok"}  # Old format for test
 echo -e "4\n[test_file_path]\nq" | timeout 20 scripts/test-menu.sh
 
 # Example for specific test file:
-echo -e "4\ndhafnck_mcp_main/src/tests/unit/database_config_test.py\nq" | timeout 20 scripts/test-menu.sh
+echo -e "4\n4genthub_main/src/tests/unit/database_config_test.py\nq" | timeout 20 scripts/test-menu.sh
 
 # Run failed tests only (option 2) with timeout
 echo -e "2\nq" | timeout 20 scripts/test-menu.sh
@@ -270,16 +270,16 @@ echo -e "8\nq" | timeout 10 scripts/test-menu.sh
 ### Direct pytest commands (fallback if test-menu.sh fails)
 ```bash
 # Run single test with timeout
-timeout 20 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path]::[test_name] -xvs"
+timeout 20 bash -c "cd 4genthub_main && python -m pytest [test_path]::[test_name] -xvs"
 
 # Run all tests in a file
-timeout 20 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path] -xvs"
+timeout 20 bash -c "cd 4genthub_main && python -m pytest [test_path] -xvs"
 
 # Check test with detailed traceback
-timeout 20 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path]::[test_name] -xvs --tb=long"
+timeout 20 bash -c "cd 4genthub_main && python -m pytest [test_path]::[test_name] -xvs --tb=long"
 
 # Run with coverage
-timeout 60 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path] --cov=[module] --cov-report=term-missing"
+timeout 60 bash -c "cd 4genthub_main && python -m pytest [test_path] --cov=[module] --cov-report=term-missing"
 ```
 
 ### Timeout Prevention Strategy
@@ -333,7 +333,7 @@ timeout 60 bash -c "cd dhafnck_mcp_main && python -m pytest [test_path] --cov=[m
 
 ## 🏆 Test Suite Achievement Complete!
 
-I've successfully documented the **historic milestone** of achieving **100% test pass rate** with **6,720 tests** all passing in the DhafnckMCP project.
+I've successfully documented the **historic milestone** of achieving **100% test pass rate** with **6,720 tests** all passing in the 4genthub project.
 
 ### What was accomplished:
 
@@ -364,7 +364,7 @@ The test suite now stands as a rock-solid foundation for continued development w
 
 ### Outstanding Achievement: Perfect Health
 
-The DhafnckMCP test suite is now in **perfect health** with:
+The 4genthub test suite is now in **perfect health** with:
 - ✅ **100% test pass rate**
 - ✅ **288 cached tests passing**
 - ✅ **~50 additional uncached tests passing**

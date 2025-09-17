@@ -7,7 +7,7 @@
 
 ## Overview
 
-The DhafnckMCP agent library implements a role-based tool assignment system that addresses the binary constraint of tool permissions while enabling specialized agent workflows through delegation patterns.
+The 4genthub agent library implements a role-based tool assignment system that addresses the binary constraint of tool permissions while enabling specialized agent workflows through delegation patterns.
 
 ## Problem Statement
 
@@ -76,9 +76,9 @@ command_execution:
 mcp_tools:
   enabled: true
   tools:
-    - mcp__dhafnck_mcp_http__manage_task      # Delegation tools
-    - mcp__dhafnck_mcp_http__manage_subtask   # Task breakdown
-    - mcp__dhafnck_mcp_http__manage_agent     # Agent assignment
+    - mcp__4genthub_http__manage_task      # Delegation tools
+    - mcp__4genthub_http__manage_subtask   # Task breakdown
+    - mcp__4genthub_http__manage_agent     # Agent assignment
     - mcp__sequential-thinking__sequentialthinking
 
 # FILE CREATOR Example (test-orchestrator-agent)
@@ -105,9 +105,9 @@ mcp_tools:
   tools:
     - mcp__browsermcp__browser_navigate       # Specialized tools
     - mcp__browsermcp__browser_click
-    - mcp__dhafnck_mcp_http__manage_task      # + Task management
-    - mcp__dhafnck_mcp_http__manage_subtask
-    - mcp__dhafnck_mcp_http__manage_agent
+    - mcp__4genthub_http__manage_task      # + Task management
+    - mcp__4genthub_http__manage_subtask
+    - mcp__4genthub_http__manage_agent
 ```
 
 #### Dynamic Tool Resolution

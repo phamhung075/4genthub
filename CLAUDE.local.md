@@ -1,4 +1,7 @@
-# DhafnckMCP Project - Local AI Agent Rules
+# 4genthub Project - Local AI Agent Rules
+
+DATABASE agenthub
+rolname = 'agenthub_user'
 
 ## About This File
 This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It is NOT checked into version control and complements the main `CLAUDE.md` file.
@@ -15,9 +18,9 @@ Key Points:
   around
 ## Core Project Structure
 **Source Code Paths:**
-- `dhafnck-frontend/` - Frontend (React/TypeScript, port 3800)
-- `dhafnck_mcp_main/src/` - Backend (Python/FastMCP/DDD)
-- `dhafnck_mcp_main/src/tests/` - Test files
+- `4genthub-frontend/` - Frontend (React/TypeScript, port 3800)
+- `4genthub_main/src/` - Backend (Python/FastMCP/DDD)
+- `4genthub_main/src/tests/` - Test files
 
 **Important Paths to Ignore:**
 - `00_RESOURCES/*` - Reference materials only
@@ -35,7 +38,7 @@ GLOBAL → PROJECT → BRANCH → TASK
 **Tech Stack:**
 - **Backend**: Python, FastMCP, SQLAlchemy, DDD patterns
 - **Frontend**: React, TypeScript, Tailwind CSS
-- **Database**: SQLite (dev) / PostgreSQL (prod) (`/data/dhafnck_mcp.db`)
+- **Database**: SQLite (dev) / PostgreSQL (prod) (`/data/4genthub.db`)
 - **Auth**: Keycloak (source of truth) with JWT tokens
 - **Container**: Docker with docker-compose orchestration
 - **Ports**: 8000 (backend), 3800 (frontend)
@@ -70,9 +73,9 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 ### Local System Information
 - **Backend URL**: http://localhost:8000
 - **Frontend URL**: http://localhost:3800
-- **Database Path**: `/data/dhafnck_mcp.db` (Docker volume)
+- **Database Path**: `/data/4genthub.db` (Docker volume)
 - **Documentation**: `ai_docs/`
-- **Tests**: `dhafnck_mcp_main/src/tests/`
+- **Tests**: `4genthub_main/src/tests/`
 - **Docker Menu**: `docker-system/docker-menu.sh`
 - **Environment Config**: `.env` file in project root
 
@@ -135,7 +138,7 @@ ai_docs/
 - **Path mapping**: `ai_docs/_absolute_docs/{path}/file.ext.md` for `/path/file.ext`
 
 ### Documentation Structure Rules
-- **Test files**: Must write in correct location (`dhafnck_mcp_main/src/tests/`)
+- **Test files**: Must write in correct location (`4genthub_main/src/tests/`)
 - **Document files**: Must write in correct location (`ai_docs/`)
 - **Kebab-case folders**: All ai_docs subfolders must use lowercase-with-dashes
 - **Organization**: Create subfolders for easy management
@@ -191,8 +194,8 @@ ai_docs/
 - Always use `git_branch_id` (UUID), not branch names
 
 ### Database Modes
-- Docker/Local Dev: Use Docker database (`/data/dhafnck_mcp.db`)
-- Test Mode: Isolated test database (`dhafnck_mcp_test.db`)
+- Docker/Local Dev: Use Docker database (`/data/4genthub.db`)
+- Test Mode: Isolated test database (`4genthub_test.db`)
 - Rebuild Docker to view code changes
 
 ### Documentation & Changelog Rules
@@ -202,7 +205,7 @@ ai_docs/
   - **Use ONLY ONE CHANGELOG.md in project root** (`/home/daihungpham/agentic-project/CHANGELOG.md`)
   - **NEVER create CHANGELOG.md in subdirectories** (except frontend has its own for frontend-specific changes)
   - All project-wide changes go in root CHANGELOG.md
-  - Frontend maintains separate `dhafnck-frontend/CHANGELOG.md` for frontend-only changes
+  - Frontend maintains separate `4genthub-frontend/CHANGELOG.md` for frontend-only changes
   - CHANGELOG.md is the official project changelog (checked into repository)
   - CLAUDE.local.md is for local AI agent rules and instructions only
   - Never add version history or change logs to CLAUDE.local.md
@@ -212,7 +215,7 @@ ai_docs/
 See CHANGELOG.md for version history and recent changes.
 
 ### Testing
-- Location: `dhafnck_mcp_main/src/tests/`
+- Location: `4genthub_main/src/tests/`
 - Categories: unit/, integration/, e2e/, performance/
 - Run tests before committing changes
 - Write tests for new features
@@ -283,7 +286,7 @@ Follow [Conventional Commits 1.0.0](https://conventionalcommits.org/) specificat
 - **ALL .md files** must be in `ai_docs/` (except allowed root files)
 - **ALL test files** must be in directories listed in `.valid_test_paths`
 - **ALL .sh scripts** must be in `scripts/` or `docker-system/`
-- **Only ONE .venv** allowed at `dhafnck_mcp_main/.venv`
+- **Only ONE .venv** allowed at `4genthub_main/.venv`
 - **Only ONE logs folder** allowed in project root
 - **NO .env* files** can be read or created (security protection)
 

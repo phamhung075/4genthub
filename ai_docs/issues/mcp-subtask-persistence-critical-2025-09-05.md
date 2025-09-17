@@ -75,10 +75,10 @@ MCP Tool → mcp_controllers → SubtaskFacade → SubtaskUseCase → SubtaskRep
 7. ORM model is source of truth
 
 **Files to Check**:
-- `dhafnck_mcp_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
-- `dhafnck_mcp_main/src/fastmcp/task_management/application/facades/subtask_application_facade.py`
-- `dhafnck_mcp_main/src/fastmcp/task_management/application/use_cases/subtask_use_cases.py`
-- `dhafnck_mcp_main/src/fastmcp/shared/infrastructure/persistence/database.py`
+- `4genthub_main/src/fastmcp/task_management/infrastructure/repositories/orm/subtask_repository.py`
+- `4genthub_main/src/fastmcp/task_management/application/facades/subtask_application_facade.py`
+- `4genthub_main/src/fastmcp/task_management/application/use_cases/subtask_use_cases.py`
+- `4genthub_main/src/fastmcp/shared/infrastructure/persistence/database.py`
 
 **Verification Steps**:
 1. Create subtask via MCP tool

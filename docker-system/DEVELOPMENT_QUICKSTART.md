@@ -2,7 +2,7 @@
 
 ## 🚀 Getting Started
 
-This guide helps you quickly start frontend development for DhafnckMCP with the newly fixed development environment.
+This guide helps you quickly start frontend development for 4genthub with the newly fixed development environment.
 
 ## ✅ Prerequisites
 
@@ -38,9 +38,9 @@ docker-compose up frontend
 
 ### Hot Reload
 Changes to these files will automatically trigger browser updates:
-- `dhafnck-frontend/src/**` - All source code
-- `dhafnck-frontend/public/**` - Static assets
-- `dhafnck-frontend/vite.config.ts` - Vite configuration
+- `4genthub-frontend/src/**` - All source code
+- `4genthub-frontend/public/**` - Static assets
+- `4genthub-frontend/vite.config.ts` - Vite configuration
 
 ### Environment Variables
 Development environment automatically loads:
@@ -87,7 +87,7 @@ docker-compose up frontend
 ### Production Build Test
 ```bash
 # Test production build locally
-cd dhafnck-frontend
+cd 4genthub-frontend
 npm run build
 npm run preview
 ```
@@ -124,15 +124,15 @@ docker-compose up
 | File | Purpose |
 |------|---------|
 | `docker-system/docker/Dockerfile.frontend.dev` | Development container |
-| `dhafnck-frontend/vite.config.ts` | Vite configuration |
+| `4genthub-frontend/vite.config.ts` | Vite configuration |
 | `docker-system/docker-compose.yml` | Service orchestration |
 | `.env` | Environment variables |
-| `dhafnck-frontend/package.json` | Dependencies |
+| `4genthub-frontend/package.json` | Dependencies |
 
 ## 🎯 Development Workflow
 
 1. **Start**: `docker-compose up frontend`
-2. **Code**: Edit files in `dhafnck-frontend/src/`
+2. **Code**: Edit files in `4genthub-frontend/src/`
 3. **Test**: Browser auto-refreshes at http://localhost:3800
 4. **Debug**: Use browser DevTools + container logs
 5. **Commit**: Changes persist automatically

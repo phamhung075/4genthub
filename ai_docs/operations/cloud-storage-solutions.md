@@ -31,7 +31,7 @@ Your system currently supports multiple storage configurations:
 **How to Enable**:
 ```bash
 # Use the existing Supabase configuration
-cd dhafnck_mcp_main/docker
+cd 4genthub_main/docker
 docker-compose -f docker-compose.supabase.yml up -d
 ```
 
@@ -106,16 +106,16 @@ For immediate deployment, use **Supabase** (configuration already exists):
 
 ```bash
 # Export current data
-docker exec dhafnck-mcp-server python scripts/export_data.py
+docker exec 4genthub-server python scripts/export_data.py
 
 # Import to cloud
-docker exec dhafnck-mcp-server python scripts/import_to_cloud.py
+docker exec 4genthub-server python scripts/import_to_cloud.py
 ```
 
 ### Step 3: Update Configuration
 
 ```python
-# dhafnck_mcp_main/.env
+# 4genthub_main/.env
 DATABASE_TYPE=supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
@@ -126,7 +126,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 ```bash
 # Using docker-compose with Supabase
-cd dhafnck_mcp_main/docker
+cd 4genthub_main/docker
 docker-compose -f docker-compose.supabase.yml up -d
 ```
 
