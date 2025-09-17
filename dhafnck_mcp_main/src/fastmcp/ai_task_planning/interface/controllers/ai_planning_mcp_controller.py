@@ -39,7 +39,14 @@ class AITaskPlanningMCPController:
             # Validate required parameters
             required_params = ['title', 'description', 'requirements', 'git_branch_id']
             for param in required_params:
-                if param not in kwargs or not kwargs[param]:
+                if param not in kwargs:
+                    return {
+                        'success': False,
+                        'error': f'Missing required parameter: {param}',
+                        'required_parameters': required_params
+                    }
+                # Allow empty string for requirements (will result in 0 requirements)
+                if param != 'requirements' and not kwargs[param]:
                     return {
                         'success': False,
                         'error': f'Missing required parameter: {param}',
@@ -202,7 +209,15 @@ class AITaskPlanningMCPController:
             requirements_data = kwargs['requirements']
             if isinstance(requirements_data, str):
                 if requirements_data.startswith('[') or requirements_data.startswith('{'):
-                    requirements_list = json.loads(requirements_data)
+                    # JSON format - try to parse, fall back to comma-separated on error
+                    try:
+                        requirements_list = json.loads(requirements_data)
+                    except json.JSONDecodeError:
+                        # Fall back to comma-separated parsing
+                        requirements_list = [
+                            {'description': req.strip(), 'priority': 'medium'}
+                            for req in requirements_data.split(',') if req.strip()
+                        ]
                 else:
                     requirements_list = [
                         {'description': req.strip(), 'priority': 'medium'}

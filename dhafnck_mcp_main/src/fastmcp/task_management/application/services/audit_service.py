@@ -104,7 +104,7 @@ class AuditService:
             
             return {
                 "report_id": str(uuid.uuid4()),
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "overall_compliance_rate": compliance_rate,
                 "total_operations": total_ops,
                 "compliant_operations": compliant_ops,
@@ -118,7 +118,7 @@ class AuditService:
             logger.error(f"Failed to generate compliance report: {e}")
             return {
                 "report_id": str(uuid.uuid4()),
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "error": str(e),
                 "overall_compliance_rate": 0.0
             }

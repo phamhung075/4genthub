@@ -279,6 +279,39 @@ def get_current_user_id_alias():
     return get_current_user_id()
 
 
+def get_current_request_context():
+    """
+    Get the current request context with user authentication information.
+
+    Returns:
+        Simple object with user property containing authentication context,
+        or None if not authenticated
+    """
+    try:
+        user_id = get_current_user_id()
+        if not user_id:
+            return None
+
+        auth_info = get_current_auth_info()
+
+        class RequestContext:
+            def __init__(self):
+                self.user = UserContext()
+
+        class UserContext:
+            def __init__(self):
+                self.user_id = user_id
+                self.email = get_current_user_email()
+                self.auth_method = get_current_auth_method()
+                self.token = auth_info or {}
+
+        return RequestContext()
+
+    except Exception as e:
+        logger.error(f"❌ CONTEXT_ACCESS: Error getting current request context: {e}")
+        return None
+
+
 # Backward compatibility context variable
 # This simulates the old current_user_context ContextVar
 current_user_context = _current_user_id

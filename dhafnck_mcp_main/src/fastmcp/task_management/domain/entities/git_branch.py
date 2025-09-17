@@ -2,7 +2,7 @@
 
 import uuid
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 from .task import Task
@@ -37,7 +37,7 @@ class GitBranch:
     @classmethod
     def create(cls, name: str, description: str, project_id: str) -> 'GitBranch':
         """Create a new GitBranch with a generated UUID"""
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         return cls(
             id=str(uuid.uuid4()),
             name=name,
@@ -51,7 +51,7 @@ class GitBranch:
         """Add a root-level task to this branch"""
         self.root_tasks[task.id.value] = task
         self.all_tasks[task.id.value] = task
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def add_child_task(self, parent_task_id: str, child_task: Task) -> None:
         """Add a child task under a parent task"""
@@ -60,7 +60,7 @@ class GitBranch:
             # Add subtask ID to parent task's subtasks list
             parent.add_subtask(child_task.id.value)
             self.all_tasks[child_task.id.value] = child_task
-            self.updated_at = datetime.now()
+            self.updated_at = datetime.now(timezone.utc)
         else:
             raise ValueError(f"Parent task {parent_task_id} not found in branch")
     
@@ -90,7 +90,7 @@ class GitBranch:
         
         # Remove the task itself
         del self.all_tasks[task_id]
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
         return True
     
     def get_task(self, task_id: str) -> Optional[Task]:
@@ -162,7 +162,7 @@ class GitBranch:
             priority_counts[priority_key] = priority_counts.get(priority_key, 0) + 1
         
         return {
-            "tree_name": self.description,
+            "tree_name": self.name,
             "total_tasks": self.get_task_count(),
             "completed_tasks": self.get_completed_task_count(),
             "progress_percentage": self.get_progress_percentage(),
@@ -226,17 +226,17 @@ class GitBranch:
         else:
             self.status = TaskStatus.todo()
         
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def assign_agent(self, agent_id: str) -> None:
         """Assign an agent to this branch"""
         self.assigned_agent_id = agent_id
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def unassign_agent(self) -> None:
         """Remove agent assignment from this branch"""
         self.assigned_agent_id = None
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def is_assigned_to_agent(self, agent_id: str) -> bool:
         """Check if branch is assigned to specific agent"""

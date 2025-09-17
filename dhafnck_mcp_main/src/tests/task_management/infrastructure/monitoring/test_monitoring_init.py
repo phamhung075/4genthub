@@ -112,15 +112,6 @@ class TestMonitoringPackageInit:
 
     def test_package_has_no_import_errors(self):
         """Test that importing the package doesn't raise any unexpected errors"""
-        with pytest.raises(Exception) as exc_info:
-            import fastmcp.task_management.infrastructure.monitoring
-            # If no exception was raised, the context manager should fail
-            pytest.fail("Expected to test for exceptions, but none were raised")
-        
-        # If we get here, an exception was raised, which we don't want for a simple import
-        # So this test should be written differently
-        
-        # Correct version:
         try:
             import fastmcp.task_management.infrastructure.monitoring
             # If we reach here, no exceptions were raised, which is what we want

@@ -55,6 +55,38 @@ TASK
 • Change Propagation: Automatic cascading of updates through hierarchy levels
 • Delegation Queue: Queue-based delegation system for cross-level data movement
 • Backward Compatible: Full compatibility with legacy parameter formats
+
+📊 ADVANCED PARAMETERS:
+• force_refresh: Bypass cache and force fresh data retrieval
+• include_inherited: Access complete inheritance chain from parent levels
+• propagate_changes: Cascade updates down the hierarchy automatically
+• delegate_to: Target level for context delegation operations
+• delegate_data: Specific data to delegate to target level
+• filters: Filter criteria for list operations as JSON string (automatically parsed)
+• data: Context data as JSON string with nested structure support (automatically parsed)
+
+🚀 EXAMPLE USAGE:
+Dictionary format:
+  manage_context(action="create", level="project", context_id="proj123", data={"key": "value"})
+
+JSON string format:
+  manage_context(action="update", level="task", context_id="task456", data='{"progress": 75}')
+
+Legacy parameter format:
+  manage_context(action="get", task_id="task789", include_inherited="true")
+
+⚠️ BACKWARD COMPATIBILITY:
+• Legacy parameters are automatically converted:
+  - task_id → context_id (level inferred from parameter name)
+  - data_title, data_description → merged into data object
+  - project_context_id, branch_context_id → context_id with appropriate level
+• All legacy MCP tool parameters continue to work without changes
+
+🛡️ ERROR HANDLING:
+• Validates level and context_id compatibility before operations
+• Provides clear error messages for invalid parameter combinations
+• Gracefully handles missing contexts with auto-creation options
+• Returns detailed validation errors with suggested corrections
 """
 
 MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION = {
@@ -198,6 +230,15 @@ MANAGE_UNIFIED_CONTEXT_PARAMETERS = {
     "delegation_reason": "Reason for context delegation for audit trails and team communication. Helps track why data was moved between hierarchy levels",
     "content": "Content for insight or progress operations. String content that will be categorized and added to the specified context level",
     "category": "Insight category for add_insight operations. Valid: 'technical', 'business', 'performance', 'risk', 'discovery'. Helps organize and filter insights",
+
+    # Legacy parameters (marked for backward compatibility)
+    "task_id": "Legacy: Context identifier for task-specific contexts. Automatically converted to context_id with level='task'. Use context_id with level parameter instead",
+    "data_title": "Legacy: Context title data. Automatically merged into data object as {'title': value}. Use data parameter with structured content instead",
+    "data_description": "Legacy: Context description data. Automatically merged into data object as {'description': value}. Use data parameter with structured content instead",
+    "data_status": "Legacy: Context status data. Automatically merged into data object as {'status': value}. Use data parameter with structured content instead",
+    "data_priority": "Legacy: Context priority data. Automatically merged into data object as {'priority': value}. Use data parameter with structured content instead",
+    "data_tags": "Legacy: Context tags data. Automatically merged into data object as {'tags': value}. Use data parameter with structured content instead",
+    "data_metadata": "Legacy: Context metadata. Automatically merged into data object as {'metadata': value}. Use data parameter with structured content instead",
     "importance": "Importance level for insights and progress updates. Valid: 'low', 'medium', 'high', 'critical'. Used for prioritization and filtering",
     "agent": "Agent identifier that created the insight or progress update. String identifier for tracking agent contributions and coordination",
     "filters": "Filter criteria for list operations as dictionary object or JSON string. Supports filtering by data fields, creation dates, agents, and other metadata"

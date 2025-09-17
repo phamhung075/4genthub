@@ -141,11 +141,17 @@ class TestAITaskCreationUseCase:
             assert result['success']
             assert result['ai_enhanced']
             assert result['ai_enhanced_features']['breakdown_enabled'] is True
-            mock_enhance.assert_called_with(
-                Mock(),  # CreateTaskRequest
-                enable_ai_breakdown=True,
-                enable_smart_assignment=False
-            )
+            # Verify enhance_task_creation was called with correct parameters
+            mock_enhance.assert_called_once()
+            call_args = mock_enhance.call_args[0]
+            task_request = call_args[0]
+            assert isinstance(task_request, CreateTaskRequest)
+            assert task_request.title == "Complex Task"
+            assert task_request.description == "Task needing breakdown"
+            assert task_request.git_branch_id == "branch_456"
+            # Check kwargs
+            assert mock_enhance.call_args[1]['enable_ai_breakdown'] is True
+            assert mock_enhance.call_args[1]['enable_smart_assignment'] is False
     
     @pytest.mark.asyncio
     async def test_execute_with_smart_assignment(self, use_case):

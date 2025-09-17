@@ -15,12 +15,12 @@ from fastmcp.task_management.domain.entities.subtask import Subtask
 
 def create_mock_with_spec(spec_class):
     """Safely create a Mock with spec, handling already-mocked classes."""
-    from unittest.mock import _MockClass, MagicMock
+    from unittest.mock import MagicMock
 
     # Check if the class is actually a Mock or has been patched
     if (hasattr(spec_class, '_mock_name') or
         hasattr(spec_class, '_spec_class') or
-        isinstance(spec_class, (_MockClass, type(MagicMock)))):
+        str(type(spec_class)).find('Mock') != -1):
         # It's already a Mock, don't use spec
         return Mock()
     else:

@@ -27,7 +27,16 @@ from fastmcp.auth.domain.entities.user import User
 
 class TestGetCurrentMCPUser:
     """Test get_current_mcp_user dependency"""
-    
+
+    @pytest.fixture(autouse=True)
+    def setup_jwt_secret(self):
+        """Set up JWT secret for tests"""
+        with patch.dict(os.environ, {"JWT_SECRET_KEY": "test-secret"}):
+            # Force reload of the constant
+            import fastmcp.auth.mcp_dependencies as module
+            module.FRONTEND_JWT_SECRET = "test-secret"
+            yield
+
     @pytest.fixture
     def valid_token_payload(self):
         """Create valid token payload"""
@@ -45,7 +54,7 @@ class TestGetCurrentMCPUser:
         """Create valid JWT token"""
         return jwt.encode(
             valid_token_payload,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",  # Use same secret as setup_jwt_secret fixture
             algorithm=FRONTEND_JWT_ALGORITHM
         )
     
@@ -89,10 +98,10 @@ class TestGetCurrentMCPUser:
             scheme="Bearer",
             credentials="invalid.jwt.token"
         )
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_current_mcp_user(credentials)
-        
+
         assert exc_info.value.status_code == 401
         assert exc_info.value.detail == "Invalid token"
         assert exc_info.value.headers == {"WWW-Authenticate": "Bearer"}
@@ -108,7 +117,7 @@ class TestGetCurrentMCPUser:
         
         expired_token = jwt.encode(
             expired_payload,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         
@@ -135,7 +144,7 @@ class TestGetCurrentMCPUser:
         
         token = jwt.encode(
             payload_no_id,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         
@@ -162,7 +171,7 @@ class TestGetCurrentMCPUser:
         
         token = jwt.encode(
             payload_with_user_id,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         
@@ -187,7 +196,7 @@ class TestGetCurrentMCPUser:
         
         token = jwt.encode(
             minimal_payload,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         
@@ -217,7 +226,7 @@ class TestGetCurrentMCPUser:
             
             token = jwt.encode(
                 payload,
-                FRONTEND_JWT_SECRET or "test-secret",
+                "test-secret",
                 algorithm=FRONTEND_JWT_ALGORITHM
             )
             
@@ -297,7 +306,16 @@ class TestGetCurrentMCPUser:
 
 class TestGetOptionalMCPUser:
     """Test get_optional_mcp_user dependency"""
-    
+
+    @pytest.fixture(autouse=True)
+    def setup_jwt_secret(self):
+        """Set up JWT secret for tests"""
+        with patch.dict(os.environ, {"JWT_SECRET_KEY": "test-secret"}):
+            # Force reload of the constant
+            import fastmcp.auth.mcp_dependencies as module
+            module.FRONTEND_JWT_SECRET = "test-secret"
+            yield
+
     @pytest.fixture
     def valid_credentials(self):
         """Create valid credentials"""
@@ -309,7 +327,7 @@ class TestGetOptionalMCPUser:
         
         token = jwt.encode(
             payload,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         
@@ -358,7 +376,7 @@ class TestGetOptionalMCPUser:
         
         expired_token = jwt.encode(
             expired_payload,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         
@@ -398,7 +416,16 @@ class TestGetOptionalMCPUser:
 
 class TestIntegration:
     """Integration tests"""
-    
+
+    @pytest.fixture(autouse=True)
+    def setup_jwt_secret(self):
+        """Set up JWT secret for tests"""
+        with patch.dict(os.environ, {"JWT_SECRET_KEY": "test-secret"}):
+            # Force reload of the constant
+            import fastmcp.auth.mcp_dependencies as module
+            module.FRONTEND_JWT_SECRET = "test-secret"
+            yield
+
     @pytest.mark.asyncio
     async def test_full_authentication_flow(self):
         """Test complete authentication flow"""
@@ -414,7 +441,7 @@ class TestIntegration:
         
         token = jwt.encode(
             payload,
-            FRONTEND_JWT_SECRET or "test-secret",
+            "test-secret",
             algorithm=FRONTEND_JWT_ALGORITHM
         )
         

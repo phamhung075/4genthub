@@ -369,12 +369,13 @@ class TestContextNotificationService:
         await notification_service._broadcast_event(event)
         
         # Check who received the event
-        assert len(ws1.messages_sent) == 1  # user_1 subscription
-        assert len(ws2.messages_sent) == 0  # user_2 subscription (no match)
-        assert len(ws3.messages_sent) == 1  # global subscription
-        
-        # Verify event content
-        sent_event = ws1.messages_sent[0]
+        # Each websocket receives: welcome message (during subscribe) + event message (if matches)
+        assert len(ws1.messages_sent) == 2  # user_1 subscription: welcome + event
+        assert len(ws2.messages_sent) == 1  # user_2 subscription: welcome only (no event match)
+        assert len(ws3.messages_sent) == 2  # global subscription: welcome + event
+
+        # Verify event content (event message is the last one sent)
+        sent_event = ws1.messages_sent[-1]  # Get the last message (the event)
         assert sent_event["event_type"] == "context.created"
         assert sent_event["context_id"] == "proj_1"
     
@@ -448,8 +449,8 @@ class TestContextNotificationService:
         # Send heartbeat
         await notification_service.heartbeat()
         
-        # Connected client should receive heartbeat
-        assert len(ws1.messages_sent) == 0  # MockWebSocket doesn't implement heartbeat
+        # Connected client should have received welcome message + heartbeat message
+        assert len(ws1.messages_sent) == 2  # Welcome message during subscribe + heartbeat message
         
         # Disconnected client should be removed
         assert "client_2" not in notification_service.subscriptions

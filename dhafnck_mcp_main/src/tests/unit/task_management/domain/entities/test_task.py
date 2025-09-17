@@ -12,25 +12,8 @@ from fastmcp.task_management.domain.events.task_events import (
     TaskCreated, TaskUpdated, TaskDeleted
 )
 
-
 class TestTaskCreation:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task entity creation."""
+    """Test entity."""
     
     def test_create_task_with_required_fields(self):
         """Test creating task with only required fields."""
@@ -141,25 +124,8 @@ class TestTaskCreation:
         assert dep1 in task.dependencies
         assert dep2 in task.dependencies
 
-
 class TestTaskValidation:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task entity validation."""
+    """Test entity."""
     
     def test_task_title_required(self):
         """Test that task title is required."""
@@ -185,8 +151,8 @@ class TestTaskValidation:
     
     def test_task_description_max_length(self):
         """Test task description maximum length."""
-        long_description = "x" * 1001
-        with pytest.raises(ValueError, match="Task description cannot exceed 1000 characters"):
+        long_description = "x" * 2001
+        with pytest.raises(ValueError, match="Task description cannot exceed 2000 characters"):
             Task(title="Test Task", description=long_description)
     
     def test_task_title_edge_cases(self):
@@ -200,25 +166,8 @@ class TestTaskValidation:
         with pytest.raises(ValueError):
             Task(title="\n\t  \n", description="Test")
 
-
 class TestTaskProperties:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task entity properties."""
+    """Test entity."""
     
     def test_is_blocked_property(self):
         """Test is_blocked property."""
@@ -250,25 +199,8 @@ class TestTaskProperties:
         task.status = TaskStatus.in_progress()
         assert task.can_be_assigned
 
-
 class TestTaskStatusUpdates:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task status update operations."""
+    """Test entity."""
     
     def test_update_status_valid_transition(self):
         """Test valid status transitions."""
@@ -285,10 +217,13 @@ class TestTaskStatusUpdates:
     def test_update_status_invalid_transition(self):
         """Test invalid status transitions."""
         task = Task(title="Test", description="Test")
-        
-        # Todo -> Done (invalid)
+
+        # Set status to cancelled first, then try invalid transition
+        task.status = TaskStatus.cancelled()
+
+        # Cancelled -> In Progress (invalid)
         with pytest.raises(ValueError, match="Cannot transition from"):
-            task.update_status(TaskStatus.done())
+            task.update_status(TaskStatus.in_progress())
     
     def test_update_status_updates_timestamp(self):
         """Test that status update changes updated_at."""
@@ -322,25 +257,8 @@ class TestTaskStatusUpdates:
         update_events = [e for e in task._events if isinstance(e, TaskUpdated)]
         assert len(update_events) == 3
 
-
 class TestTaskFieldUpdates:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task field update operations."""
+    """Test entity."""
     
     def test_update_priority(self):
         """Test updating task priority."""
@@ -405,25 +323,8 @@ class TestTaskFieldUpdates:
         with pytest.raises(ValueError, match="Task description cannot be empty"):
             task.update_description("")
 
-
 class TestTaskAssignees:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task assignee management."""
+    """Test entity."""
     
     def test_add_assignee(self):
         """Test adding assignee to task."""
@@ -472,25 +373,8 @@ class TestTaskAssignees:
         # Check if it was resolved or kept as is
         assert any("@" in assignee for assignee in task.assignees)
 
-
 class TestTaskLabels:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task label management."""
+    """Test entity."""
     
     def test_add_label(self):
         """Test adding label to task."""
@@ -537,25 +421,8 @@ class TestTaskLabels:
         # Should have valid labels
         assert "backend" in task.labels
 
-
 class TestTaskDependencies:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task dependency management."""
+    """Test entity."""
     
     def test_add_dependency(self):
         """Test adding dependency to task."""
@@ -619,25 +486,8 @@ class TestTaskDependencies:
         assert dep1 in deps
         assert dep2 in deps
 
-
 class TestTaskProgress:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task progress tracking."""
+    """Test entity."""
     
     def test_update_progress(self):
         """Test updating task progress."""
@@ -679,25 +529,8 @@ class TestTaskProgress:
         events = task.get_events()
         assert any(hasattr(e, 'milestone_percentage') for e in events)
 
-
 class TestTaskCompletion:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task completion operations."""
+    """Test entity."""
     
     def test_complete_task(self):
         """Test completing a task."""
@@ -744,25 +577,8 @@ class TestTaskCompletion:
         status_events = [e for e in events if hasattr(e, 'field_name') and e.field_name == "status"]
         assert len(status_events) == 1  # Still creates event even for done -> done
 
-
 class TestTaskEquality:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task equality and hashing."""
+    """Test entity."""
     
     def test_task_equality(self):
         """Test task equality based on ID."""
@@ -795,25 +611,8 @@ class TestTaskEquality:
         task_set = {task1, task2, task3}
         assert len(task_set) == 2  # task1 and task2 are considered same
 
-
 class TestTaskTimezoneHandling:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task timezone handling."""
+    """Test entity."""
     
     def test_timezone_aware_timestamps(self):
         """Test that timestamps are timezone aware."""
@@ -839,25 +638,8 @@ class TestTaskTimezoneHandling:
         assert task.created_at.tzinfo == timezone.utc
         assert task.updated_at.tzinfo == timezone.utc
 
-
 class TestTaskDomainEvents:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
-    """Test Task domain event generation."""
+    """Test entity."""
     
     def test_get_events(self):
         """Test getting domain events."""

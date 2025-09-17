@@ -25,12 +25,11 @@ from fastmcp.task_management.domain.exceptions.authentication_exceptions import 
 
 def create_mock_with_spec(spec_class):
     """Safely create a Mock with spec, handling already-mocked classes."""
-    from unittest.mock import _MockClass
-
     # Check if the class is actually a Mock or has been patched
     if (hasattr(spec_class, '_mock_name') or
         hasattr(spec_class, '_spec_class') or
-        isinstance(spec_class, (_MockClass, type(MagicMock)))):
+        isinstance(spec_class, (Mock, MagicMock)) or
+        type(spec_class).__name__ in ('MagicMock', 'Mock', 'NonCallableMock')):
         # It's already a Mock, don't use spec
         return Mock()
     else:

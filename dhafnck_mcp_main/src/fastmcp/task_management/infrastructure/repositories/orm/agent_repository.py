@@ -8,7 +8,7 @@ supporting both SQLite and PostgreSQL databases.
 import logging
 import uuid
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import and_, desc
 
 from ..base_orm_repository import BaseORMRepository
@@ -194,7 +194,7 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             "capabilities": [cap.value for cap in agent.capabilities],
             "status": agent.status.value,
             "availability_score": 1.0 if agent.is_available() else 0.0,
-            "last_active_at": datetime.now() if agent.status == AgentStatus.AVAILABLE else None,
+            "last_active_at": datetime.now(timezone.utc) if agent.status == AgentStatus.AVAILABLE else None,
             "model_metadata": {
                 "specializations": agent.specializations,
                 "preferred_languages": agent.preferred_languages,
@@ -422,8 +422,8 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                             id=actual_agent_id,
                             name=agent_name,
                             description=f"Auto-registered agent {agent_name} for project {project_id}",
-                            created_at=datetime.now(),
-                            updated_at=datetime.now()
+                            created_at=datetime.now(timezone.utc),
+                            updated_at=datetime.now(timezone.utc)
                         )
                         
                         # Convert to model dict
@@ -493,7 +493,7 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             # Update agent
             self.update(actual_agent_id, 
                        model_metadata=model_metadata,
-                       updated_at=datetime.now())
+                       updated_at=datetime.now(timezone.utc))
             
             logger.info(f"Assigned agent {actual_agent_id} to tree {git_branch_id} in project {project_id}")
             return {
@@ -549,7 +549,7 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             # Update agent
             self.update(agent_id, 
                        model_metadata=model_metadata,
-                       updated_at=datetime.now())
+                       updated_at=datetime.now(timezone.utc))
             
             logger.info(f"Unassigned agent {agent_id} from {len(removed_assignments)} tree(s) in project {project_id}")
             return {
@@ -665,7 +665,7 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             
             # Convert entity to model dict
             model_dict = self._entity_to_model_dict(agent)
-            model_dict["updated_at"] = datetime.now()
+            model_dict["updated_at"] = datetime.now(timezone.utc)
             
             # Update agent
             updated_model = self.update(agent.id, **model_dict)

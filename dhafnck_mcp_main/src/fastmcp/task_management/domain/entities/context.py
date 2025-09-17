@@ -34,8 +34,11 @@ class GlobalContext:
         if self._nested_data is None:
             self._ensure_nested_structure()
             # If global_settings contains nested structure data, populate it
-            if self.global_settings and any(key in self.global_settings for key in 
-                                           ["organization", "development", "security", "operations", "preferences"]):
+            # Handle Mock objects in testing scenarios
+            if (self.global_settings and
+                isinstance(self.global_settings, dict) and
+                any(key in self.global_settings for key in
+                    ["organization", "development", "security", "operations", "preferences"])):
                 self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
     def _ensure_nested_structure(self) -> None:
@@ -81,7 +84,8 @@ class GlobalContext:
             nested_data = self.get_nested_data()
             
             # If settings contain nested structure directly
-            if any(key in ["organization", "development", "security", "operations", "preferences"] for key in settings.keys()):
+            if (isinstance(settings, dict) and
+                any(key in ["organization", "development", "security", "operations", "preferences"] for key in settings.keys())):
                 # Direct nested update - deep merge to preserve existing data
                 for category in ["organization", "development", "security", "operations", "preferences"]:
                     if category in settings:
@@ -102,7 +106,8 @@ class GlobalContext:
             # Direct flat structure update
             self.global_settings.update(settings)
             # Also update nested structure from the updated flat structure
-            if any(key in self.global_settings for key in ["organization", "development", "security", "operations", "preferences"]):
+            if (isinstance(self.global_settings, dict) and
+                any(key in self.global_settings for key in ["organization", "development", "security", "operations", "preferences"])):
                 self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
     def get_organization_standards(self) -> Dict[str, Any]:

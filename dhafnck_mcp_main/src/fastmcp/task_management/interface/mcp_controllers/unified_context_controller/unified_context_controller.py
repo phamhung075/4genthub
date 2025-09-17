@@ -322,3 +322,7 @@ class UnifiedContextMCPController:
             logger.error(f"Error checking context permissions for user {user_id}, action {action}: {e}")
             # On error, allow the operation to proceed (fail-open for now)
             return True, None
+
+    def manage_context(self, **kwargs) -> Dict[str, Any]:
+        """Backward compatibility method that delegates to manage_unified_context"""
+        return self.manage_unified_context(**kwargs)

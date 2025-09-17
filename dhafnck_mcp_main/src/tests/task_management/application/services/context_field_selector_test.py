@@ -9,7 +9,8 @@ from typing import Dict, List, Set, Any
 from fastmcp.task_management.application.services.context_field_selector import (
     ContextFieldSelector,
     FieldSet,
-    SelectionProfile
+    SelectionProfile,
+    FieldSelectionConfig
 )
 
 
@@ -248,7 +249,7 @@ class TestContextFieldSelector:
         # Apply size limits
         result = selector.select_fields(
             large_context,
-            profile=SelectionProfile.STANDARD,
+            profile=SelectionProfile.COMPLETE,
             max_field_size=1000
         )
         

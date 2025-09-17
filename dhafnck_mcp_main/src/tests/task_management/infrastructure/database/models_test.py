@@ -11,7 +11,7 @@ This module tests all SQLAlchemy ORM models including:
 
 import pytest
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
@@ -441,7 +441,8 @@ class TestDatabaseModels:
             category="development",
             tags=["coding", "testing"],
             usage_count=5,
-            user_id="user-123"
+            user_id="user-123",
+            created_by="user-123"
         )
         
         session.add(template)
@@ -460,10 +461,12 @@ class TestDatabaseModels:
         global_context = GlobalContext(
             id=context_id,
             organization_id=str(uuid.uuid4()),
-            autonomous_rules={"rule1": "value1"},
+            organization_standards={"standard1": "clean", "rule1": "value1"},
             security_policies={"policy1": "secure"},
-            coding_standards={"standard1": "clean"},
-            workflow_templates={"template1": "workflow"},
+            compliance_requirements={"requirement1": "gdpr"},
+            shared_resources={"resource1": "shared"},
+            reusable_patterns={"template1": "workflow"},
+            global_preferences={"pref1": "value1"},
             delegation_rules={"rule1": "delegate"},
             user_id="user-123"
         )
@@ -473,7 +476,9 @@ class TestDatabaseModels:
         
         retrieved = session.query(GlobalContext).filter_by(id=context_id).first()
         assert retrieved is not None
-        assert retrieved.autonomous_rules == {"rule1": "value1"}
+        assert retrieved.organization_standards == {"standard1": "clean", "rule1": "value1"}
+        assert retrieved.security_policies == {"policy1": "secure"}
+        assert retrieved.delegation_rules == {"rule1": "delegate"}
         assert retrieved.version == 1
         assert retrieved.user_id == "user-123"
     
@@ -790,7 +795,8 @@ class TestDatabaseModels:
             type="test",
             content=complex_data,
             tags=["json", "test"],
-            user_id="user-123"
+            user_id="user-123",
+            created_by="user-123"
         )
         
         session.add(template)
@@ -802,23 +808,23 @@ class TestDatabaseModels:
     
     def test_datetime_fields_auto_population(self, session):
         """Test that datetime fields are automatically populated"""
-        before_create = datetime.now(timezone.utc)
-        
+        before_create = datetime.utcnow().replace(microsecond=0)  # Remove microseconds to match database precision
+
         project = Project(
             id=str(uuid.uuid4()),
             name="Datetime Test Project",
             user_id="user-123"
         )
-        
+
         session.add(project)
         session.commit()
-        
-        after_create = datetime.now(timezone.utc) + timedelta(seconds=2)  # Add buffer
-        
+
+        after_create = datetime.utcnow() + timedelta(seconds=2)  # Add buffer
+
         retrieved = session.query(Project).filter_by(name="Datetime Test Project").first()
         assert retrieved.created_at is not None
         assert retrieved.updated_at is not None
-        # Check that timestamps are within reasonable range
+        # Check that timestamps are within reasonable range (allowing for database precision)
         assert before_create <= retrieved.created_at <= after_create
         assert before_create <= retrieved.updated_at <= after_create
     

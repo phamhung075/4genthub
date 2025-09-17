@@ -89,8 +89,7 @@ class GitBranchService:
                 branch_context_result = self._hierarchical_context_service.create_context(
                     level="branch",
                     context_id=git_branch.id,
-                    data=branch_context_data,
-                    project_id=project_id
+                    data=branch_context_data
                 )
                 
                 if branch_context_result.get("success", False):

@@ -695,7 +695,7 @@ class TestTaskMCPController:
         mock_user.token = {"permissions": ["tasks:read", "tasks:write"]}
         mock_request_context.user = mock_user
         
-        with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_current_request_context') as mock_get_context:
+        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context') as mock_get_context:
             mock_get_context.return_value = mock_request_context
             
             with patch.object(PermissionChecker, 'has_permission') as mock_has_perm:

@@ -626,7 +626,7 @@ class TestComplexIntegrationScenarios:
                     ]),
                     git_branch_id="branch_comprehensive",
                     project_id="proj_comp_123",
-                    context="critical_fix",
+                    context="bug_fix",
                     deadline=(datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
                     preferred_approach="Event-driven architecture",
                     risk_tolerance="low",

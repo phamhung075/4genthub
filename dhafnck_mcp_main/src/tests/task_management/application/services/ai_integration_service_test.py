@@ -130,11 +130,11 @@ class TestAITaskIntegrationService:
                 title="Complex Auth",
                 description="Advanced authentication",
                 git_branch_id="branch_789",
-                context="security_requirement"
+                context="new_feature"
             )
-            
+
             assert result['success']
-            assert result['planning_request']['context'] == "security_requirement"
+            assert result['planning_request']['context'] == "new_feature"
             
             # Verify requirements were parsed correctly
             call_args = mock_plan.call_args[0][0]

@@ -257,10 +257,10 @@ class TestTwoStageValidation:
     def test_two_stage_validation_explained(self):
         """Test that two-stage validation pattern is explained."""
         desc = MANAGE_TASK_DESCRIPTION
-        
+
         assert "TWO-STAGE VALIDATION:" in desc
-        assert "Schema Level:" in desc
-        assert "Business Logic Level:" in desc
+        assert "**Schema Level**:" in desc
+        assert "**Business Logic Level**:" in desc
         assert "Only 'action' is marked as required in JSON schema" in desc
 
     def test_validation_flow_explained(self):
@@ -411,9 +411,14 @@ class TestParameterDefaults:
     def test_status_default(self):
         """Test status parameter default behavior is documented."""
         desc = MANAGE_TASK_DESCRIPTION
-        assert "create→todo" in desc
-        assert "update→in_progress" in desc
-        assert "complete→done" in desc
+        # Check for status transitions in main description
+        assert "todo → in_progress" in desc
+
+        # Also check the parameter description for full status mapping
+        status_desc = MANAGE_TASK_PARAMETERS_DESCRIPTION["status"]
+        assert "create→todo" in status_desc
+        assert "update→in_progress" in status_desc
+        assert "complete→done" in status_desc
 
     def test_priority_default(self):
         """Test priority default is documented."""

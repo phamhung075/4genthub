@@ -42,7 +42,7 @@ class TestContextDataPersistenceFix:
         return GlobalContextRepository(session_factory, user_id="test-user-123")
 
     def test_global_context_model_has_data_field(self, db_session):
-        """Test that GlobalContext model now has the data field."""
+        """Test that GlobalContext model has the nested_structure field for data storage."""
 
         # Create a GlobalContext model instance
         global_model = GlobalContextModel(
@@ -55,13 +55,12 @@ class TestContextDataPersistenceFix:
             reusable_patterns={},
             global_preferences={},
             delegation_rules={},
-            nested_structure={"test": "nested_data"},
-            data={"test": "data_field"}  # This should work now
+            nested_structure={"test": "nested_data"}  # Use nested_structure instead of data field
         )
 
-        # Verify the data field exists and can be set
-        assert hasattr(global_model, 'data'), "GlobalContext model should have 'data' field"
-        assert global_model.data == {"test": "data_field"}, "Data field should store the provided data"
+        # Verify the nested_structure field exists and can be set
+        assert hasattr(global_model, 'nested_structure'), "GlobalContext model should have 'nested_structure' field"
+        assert global_model.nested_structure == {"test": "nested_data"}, "Nested structure field should store the provided data"
 
         # Test database persistence
         db_session.add(global_model)
@@ -70,7 +69,7 @@ class TestContextDataPersistenceFix:
         # Retrieve and verify
         retrieved = db_session.query(GlobalContextModel).filter_by(id="test-global-123").first()
         assert retrieved is not None, "Should be able to retrieve the model"
-        assert retrieved.data == {"test": "data_field"}, "Data field should persist to database"
+        assert retrieved.nested_structure == {"test": "nested_data"}, "Nested structure field should persist to database"
 
     def test_context_data_round_trip_persistence(self, global_context_repo, db_session):
         """Test complete round-trip: create -> store -> retrieve -> verify data preservation."""
@@ -170,10 +169,10 @@ class TestContextDataPersistenceFix:
         print("🔍 Checking database model directly...")
         db_model = db_session.query(GlobalContextModel).filter_by(id=stored_id).first()
         assert db_model is not None, "Database model should exist"
-        assert hasattr(db_model, 'data'), "Database model should have data field"
-        assert db_model.data is not None, "Data field should not be None"
+        assert hasattr(db_model, 'nested_structure'), "Database model should have nested_structure field"
+        assert db_model.nested_structure is not None, "Nested structure field should not be None"
 
-        print(f"📊 DB model data field size: {len(json.dumps(db_model.data)) if db_model.data else 0} characters")
+        print(f"📊 DB model nested_structure field size: {len(json.dumps(db_model.nested_structure)) if db_model.nested_structure else 0} characters")
 
         # Retrieve the context
         print("📥 Retrieving context from repository...")

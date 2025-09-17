@@ -7,7 +7,7 @@ This implementation handles all database operations for tokens using SQLAlchemy.
 
 import logging
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -46,16 +46,16 @@ class TokenRepository(ITokenRepository):
             Created token object or None if failed
         """
         try:
-            # Create new token instance
+            # Create new token instance with None value handling
             db_token = APIToken(
                 id=token_data.get('id'),
                 user_id=token_data.get('user_id'),
                 name=token_data.get('name'),
                 token_hash=token_data.get('token_hash'),
-                scopes=token_data.get('scopes', []),
+                scopes=token_data.get('scopes') or [],
                 expires_at=token_data.get('expires_at'),
-                rate_limit=token_data.get('rate_limit', 1000),
-                token_metadata=token_data.get('token_metadata', {})
+                rate_limit=token_data.get('rate_limit') or 1000,
+                token_metadata=token_data.get('token_metadata') or {}
             )
             
             # Add to session and commit

@@ -576,15 +576,17 @@ def update_context_sync(tool_name: str, tool_input: Dict[str, Any], tool_output:
     
     # Run async operation in event loop
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
+        # Check if we're already in an async event loop
+        try:
+            loop = asyncio.get_running_loop()
             # If already in an event loop, create a new one in a thread
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(asyncio.run, updater.update_context(tool_name, tool_input, tool_output))
                 return future.result(timeout=2.0)  # 2 second timeout
-        else:
-            return loop.run_until_complete(updater.update_context(tool_name, tool_input, tool_output))
+        except RuntimeError:
+            # No event loop is running, create a new one
+            return asyncio.run(updater.update_context(tool_name, tool_input, tool_output))
     except Exception as e:
         logger.error(f"Synchronous context update failed: {e}")
         return False

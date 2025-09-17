@@ -56,16 +56,19 @@ class UnifiedContextFacade:
         """Add scope information to context data if not already present."""
         if not data:
             data = {}
-        
+
+        # Create a copy to avoid modifying the original dictionary
+        result = data.copy()
+
         # Add scope info if available and not already present
-        if self._user_id and "user_id" not in data:
-            data["user_id"] = self._user_id
-        if self._project_id and "project_id" not in data:
-            data["project_id"] = self._project_id
-        if self._git_branch_id and "git_branch_id" not in data:
-            data["git_branch_id"] = self._git_branch_id
-            
-        return data
+        if self._user_id and "user_id" not in result:
+            result["user_id"] = self._user_id
+        if self._project_id and "project_id" not in result:
+            result["project_id"] = self._project_id
+        if self._git_branch_id and "git_branch_id" not in result:
+            result["git_branch_id"] = self._git_branch_id
+
+        return result
     
     def create_context(
         self,

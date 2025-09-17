@@ -71,14 +71,14 @@ class TestWebSocketInit:
         from fastmcp.task_management.infrastructure.websocket.agent_communication_hub import (
             MessageType as DirectMessageType
         )
-        
+
         # Verify same enum reference
         assert MessageType is DirectMessageType
-        
-        # Verify enum has expected values
-        assert hasattr(MessageType, 'HANDOFF_REQUEST')
+
+        # Verify enum has expected values (updated to match current implementation)
+        assert hasattr(MessageType, 'WORK_HANDOFF')  # Updated from HANDOFF_REQUEST
         assert hasattr(MessageType, 'STATUS_UPDATE')
-        assert hasattr(MessageType, 'RESOURCE_REQUEST')
+        assert hasattr(MessageType, 'COORDINATION_REQUEST')  # Updated from RESOURCE_REQUEST
 
     def test_agent_connection_import(self):
         """Test AgentConnection import"""

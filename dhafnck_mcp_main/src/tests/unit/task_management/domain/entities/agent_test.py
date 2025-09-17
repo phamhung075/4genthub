@@ -854,8 +854,10 @@ class TestAgentEdgeCases:
 
     def test_current_workload_never_goes_negative(self):
         """Test that current workload never goes below zero"""
+        # Allow agent to accept multiple tasks for this test
+        self.agent.max_concurrent_tasks = 2
         self.agent.current_workload = 1
-        
+
         # Complete task that would make workload negative
         self.agent.start_task("task_1")
         self.agent.complete_task("task_1")

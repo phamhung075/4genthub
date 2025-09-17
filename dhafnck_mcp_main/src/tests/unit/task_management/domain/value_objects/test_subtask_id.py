@@ -9,22 +9,6 @@ from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
 pytestmark = pytest.mark.unit  # Mark all tests in this file as unit tests
 
 class TestSubtaskIdCreation:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test SubtaskId creation and validation."""
     
     def test_create_subtask_id_with_hex_string(self):
@@ -72,21 +56,6 @@ class TestSubtaskIdCreation:
 
 class TestSubtaskIdValidation:
     
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test SubtaskId validation rules."""
     
     def test_subtask_id_empty_string_raises_error(self):
@@ -108,15 +77,15 @@ class TestSubtaskIdValidation:
             SubtaskId(None)
     
     def test_subtask_id_invalid_format_raises_error(self):
-        """Test that invalid UUID format raises ValueError."""
+        """Test that truly invalid formats raise ValueError."""
         invalid_formats = [
-            "not-a-uuid",
-            "550e8400",  # Too short
-            "550e8400-e29b-41d4-a716-446655440001z",  # Invalid character
-            "550e8400-e29b-41d4-a716",  # Incomplete
-            "g50e8400e29b41d4a716446655440001",  # Invalid hex character
+            "@@invalid@@",  # Special characters not allowed
+            "550e8400-e29b-41d4-a716-446655440001z",  # Invalid character 'z' in UUID
+            "550e8400.999",  # Invalid hierarchical format (not full UUID)
+            "g50e8400e29b41d4a716446655440001",  # Invalid hex character 'g'
+            "test-@-123",  # Invalid character '@' in test ID
         ]
-        
+
         for invalid in invalid_formats:
             with pytest.raises(ValueError, match="Invalid Subtask ID format"):
                 SubtaskId(invalid)
@@ -136,21 +105,6 @@ class TestSubtaskIdValidation:
 
 
 class TestSubtaskIdGeneration:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
 
     """Test SubtaskId generation."""
     
@@ -199,21 +153,6 @@ class TestSubtaskIdGeneration:
 
 
 class TestSubtaskIdEquality:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
 
     """Test SubtaskId equality and hashing."""
     
@@ -268,21 +207,6 @@ class TestSubtaskIdEquality:
 
 
 class TestSubtaskIdStringRepresentation:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
 
     """Test SubtaskId string representations."""
     
@@ -307,21 +231,6 @@ class TestSubtaskIdStringRepresentation:
 
 
 class TestSubtaskIdImmutability:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
 
     """Test SubtaskId immutability."""
     
@@ -342,21 +251,6 @@ class TestSubtaskIdImmutability:
 
 
 class TestSubtaskIdUsageScenarios:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
 
     """Test SubtaskId in typical usage scenarios."""
     

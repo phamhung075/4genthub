@@ -62,51 +62,54 @@ class TestConnectionMCPController:
     def test_health_check_exception_handling(self, controller, mock_connection_facade):
         """Test health check exception handling"""
         mock_connection_facade.check_server_health.side_effect = Exception("Health check failed")
-        
+
         result = controller.health_check()
-        
+
         assert result["success"] is False
-        assert "Health check failed" in result["error"]
+        assert result["message"] == "Health check temporarily unavailable"  # Sanitized message
         assert result["action"] == "health_check"
 
     def test_response_formatting_success(self, controller):
         """Test successful health check response formatting"""
         mock_response = HealthCheckResponse(
             success=True, status="healthy", server_name="DhafnckMCP", version="1.2.3",
-            uptime_seconds=7200, restart_count=1, 
-            authentication={"enabled": True, "type": "JWT"}, 
-            task_management={"active_tasks": 5, "status": "operational"}, 
-            environment="production", 
-            connections={"database": "connected", "cache": "connected"}, 
+            uptime_seconds=7200, restart_count=1,
+            authentication={"enabled": True, "mvp_mode": False},
+            task_management={"task_management_enabled": True, "status": "operational"},
+            environment={"auth_enabled": True, "database_configured": True},
+            connections={"active_connections": 5, "status": "connected"},
             timestamp=1234567890
         )
-        
+
         formatted = controller._format_health_check_response(mock_response)
-        
+
         assert formatted["success"] is True
         assert formatted["status"] == "healthy"
         assert formatted["server_name"] == "DhafnckMCP"
         assert formatted["version"] == "1.2.3"
         assert formatted["authentication"]["enabled"] is True
-        assert formatted["task_management"]["active_tasks"] == 5
-        assert formatted["environment"] == "production"
-        assert formatted["connections"]["database"] == "connected"
+        assert formatted["authentication"]["mvp_mode"] is False
+        assert formatted["task_management"]["enabled"] is True  # Sanitized response only includes "enabled"
+        assert formatted["environment"]["auth_enabled"] is True
+        assert formatted["environment"]["database_configured"] is True
+        assert formatted["connections"]["active_connections"] == 5
+        assert formatted["connections"]["status"] == "connected"
         assert formatted["timestamp"] == 1234567890
 
     def test_response_formatting_error(self, controller):
         """Test error health check response formatting"""
         mock_response = HealthCheckResponse(
             success=False, status="error", server_name="test", version="1.0.0",
-            uptime_seconds=0, restart_count=0, authentication={}, 
-            task_management={}, environment={}, connections={}, 
+            uptime_seconds=0, restart_count=0, authentication={},
+            task_management={}, environment={}, connections={},
             timestamp=123456789, error="Database connection failed"
         )
-        
+
         formatted = controller._format_health_check_response(mock_response)
-        
+
         assert formatted["success"] is False
         assert formatted["status"] == "error"
-        assert formatted["error"] == "Database connection failed"
+        assert formatted["message"] == "Health check failed"  # Sanitized to generic message
         assert formatted["timestamp"] == 123456789
 
     @patch('fastmcp.connection_management.interface.controllers.connection_mcp_controller.logger')

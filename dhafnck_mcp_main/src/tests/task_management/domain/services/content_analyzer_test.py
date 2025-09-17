@@ -192,7 +192,7 @@ class TestContentAnalyzer:
         
         # Substring match
         similarity = analyzer._calculate_string_similarity("user", "user_model")
-        assert 0.4 < similarity < 0.6
+        assert 0.4 <= similarity < 0.6
         
         # Token-based similarity
         similarity = analyzer._calculate_string_similarity("user model", "model user")

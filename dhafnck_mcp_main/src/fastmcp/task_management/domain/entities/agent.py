@@ -1,7 +1,7 @@
 """Agent Domain Entity"""
 
 from typing import Dict, List, Optional, Set
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -67,19 +67,19 @@ class Agent:
     def __post_init__(self):
         """Set default values after initialization"""
         if self.created_at is None:
-            self.created_at = datetime.now()
+            self.created_at = datetime.now(timezone.utc)
         if self.updated_at is None:
-            self.updated_at = datetime.now()
+            self.updated_at = datetime.now(timezone.utc)
     
     def add_capability(self, capability: AgentCapability) -> None:
         """Add a capability to the agent"""
         self.capabilities.add(capability)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def remove_capability(self, capability: AgentCapability) -> None:
         """Remove a capability from the agent"""
         self.capabilities.discard(capability)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def has_capability(self, capability: AgentCapability) -> bool:
         """Check if agent has a specific capability"""
@@ -121,12 +121,12 @@ class Agent:
     def assign_to_project(self, project_id: str) -> None:
         """Assign agent to a project"""
         self.assigned_projects.add(project_id)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def assign_to_tree(self, git_branch_name: str) -> None:
         """Assign agent to a task tree"""
         self.assigned_trees.add(git_branch_name)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def start_task(self, task_id: str) -> None:
         """Start working on a task"""
@@ -139,7 +139,7 @@ class Agent:
         if self.current_workload >= self.max_concurrent_tasks:
             self.status = AgentStatus.BUSY
         
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def complete_task(self, task_id: str, success: bool = True) -> None:
         """Complete a task and update metrics"""
@@ -161,12 +161,12 @@ class Agent:
         if self.current_workload < self.max_concurrent_tasks and self.status == AgentStatus.BUSY:
             self.status = AgentStatus.AVAILABLE
         
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def pause_work(self) -> None:
         """Pause agent work"""
         self.status = AgentStatus.PAUSED
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def resume_work(self) -> None:
         """Resume agent work"""
@@ -174,17 +174,17 @@ class Agent:
             self.status = AgentStatus.BUSY
         else:
             self.status = AgentStatus.AVAILABLE
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def go_offline(self) -> None:
         """Set agent offline"""
         self.status = AgentStatus.OFFLINE
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def go_online(self) -> None:
         """Set agent online and available"""
         self.status = AgentStatus.AVAILABLE
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
     
     def get_workload_percentage(self) -> float:
         """Get current workload as percentage of capacity"""
@@ -269,7 +269,7 @@ class Agent:
             id=agent_id,
             name=name,
             description=description,
-            created_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
             capabilities=set(capabilities or []),
             specializations=specializations or [],
             preferred_languages=preferred_languages or []

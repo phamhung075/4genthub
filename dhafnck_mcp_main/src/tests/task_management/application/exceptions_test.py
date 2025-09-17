@@ -115,12 +115,14 @@ class TestSubtaskNotFoundError:
         """Test SubtaskNotFoundError with subtask ID only"""
         subtask_id = "subtask-123"
         exception = SubtaskNotFoundError(subtask_id)
-        
+
         assert exception.subtask_id == subtask_id
         assert exception.task_id is None
         assert exception.code == "SUBTASK_NOT_FOUND"
         assert "Subtask with ID 'subtask-123' not found" in exception.message
-        assert "task" not in exception.message  # Should not mention task
+        # Should not mention standalone "task" (as opposed to "Subtask")
+        import re
+        assert not re.search(r'\btask\b', exception.message)  # Word boundary check for standalone "task"
     
     def test_subtask_not_found_with_task_id(self):
         """Test SubtaskNotFoundError with both subtask and task ID"""

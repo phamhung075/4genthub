@@ -124,7 +124,8 @@ async def get_optional_mcp_user(
     
     try:
         return await get_current_mcp_user(credentials)
-    except HTTPException:
+    except Exception:
+        # Catch all exceptions (HTTPException and others) for optional auth
         return None
 
 

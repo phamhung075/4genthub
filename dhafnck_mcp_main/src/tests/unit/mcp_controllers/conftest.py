@@ -158,14 +158,13 @@ def mock_facade_service():
     """Mock FacadeService with all facade types."""
     # More robust check for Mock objects - check the type, not isinstance
     # because isinstance won't work properly with Mock classes
-    from unittest.mock import MagicMock, _MockClass
 
     # Helper function to safely create mocks with spec
     def create_mock_with_spec(spec_class):
         # Check if the class is actually a Mock or has been patched
         if (hasattr(spec_class, '_mock_name') or
             hasattr(spec_class, '_spec_class') or
-            isinstance(spec_class, (_MockClass, type(MagicMock)))):
+            hasattr(spec_class, '_mock_methods')):
             # It's already a Mock, don't use spec
             return Mock()
         else:
