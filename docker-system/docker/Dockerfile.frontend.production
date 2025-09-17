@@ -44,14 +44,14 @@ ARG ENV=production
 ARG APP_DEBUG=false
 ARG APP_LOG_LEVEL=INFO
 
-# Build-time environment variables - use placeholders for runtime injection
-# These will be replaced at runtime via env-config.js
-# IMPORTANT: Using placeholders ensures the app relies on runtime config (2025-09-15)
-ENV VITE_API_URL=__RUNTIME_INJECTED__
-ENV VITE_BACKEND_URL=__RUNTIME_INJECTED__
-ENV VITE_KEYCLOAK_URL=__RUNTIME_INJECTED__
-ENV VITE_KEYCLOAK_REALM=__RUNTIME_INJECTED__
-ENV VITE_KEYCLOAK_CLIENT_ID=__RUNTIME_INJECTED__
+# Build-time environment variables - use actual values or defaults
+# These are used during build but can be overridden at runtime via env-config.js
+# IMPORTANT: Use build args if provided, otherwise use production defaults
+ENV VITE_API_URL=${VITE_API_URL:-http://localhost:8001}
+ENV VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8001}
+ENV VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL:-}
+ENV VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM:-}
+ENV VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID:-mcp-frontend}
 ENV VITE_ENV=${VITE_ENV}
 ENV VITE_BUILD_TIME=${VITE_BUILD_TIME}
 ENV VITE_BUILD_SHA=${VITE_BUILD_SHA}
