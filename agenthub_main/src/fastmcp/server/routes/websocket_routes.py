@@ -35,20 +35,22 @@ async def realtime_updates(websocket: WebSocket):
         await websocket.accept()
         logger.info("WebSocket connection accepted")
 
-        # Generate a unique client ID
+        # Generate a unique client ID for THIS connection
         # Try to get token from query params for authentication
         token = websocket.query_params.get("token")
+        connection_id = random.randint(100000, 999999)  # Unique per connection
         if token:
             # For now, just use the token as part of the client ID
             # In production, validate the token properly
-            client_id = f"user_{hash(token) % 1000000}"
+            # Make each connection unique even for the same user
+            client_id = f"user_{hash(token) % 1000000}_{connection_id}"
         else:
             # Anonymous connection
-            client_id = f"anonymous_{random.randint(100000, 999999)}"
+            client_id = f"anonymous_{connection_id}"
 
         logger.info(f"Client connected: {client_id}")
 
-        # Store the connection
+        # Store the connection - now each connection has unique ID
         active_connections[client_id].add(websocket)
         connection_subscriptions[websocket] = {
             "client_id": client_id,
@@ -141,7 +143,7 @@ async def broadcast_data_change(
         data: Optional data about the change
         metadata: Optional metadata
     """
-    logger.info(f"Broadcasting {entity_type} {event_type} event from {user_id}")
+    logger.info(f"Broadcasting {entity_type} {event_type} event from {user_id}, entity_id: {entity_id[:8]}")
 
     # Prepare the message
     message = {
@@ -160,12 +162,16 @@ async def broadcast_data_change(
 
     # Send to all connected clients
     disconnected = []
-    for websocket_set in active_connections.values():
+    total_connections = sum(len(ws_set) for ws_set in active_connections.values())
+    logger.info(f"Broadcasting to {total_connections} total WebSocket connections across {len(active_connections)} clients")
+
+    for client_id, websocket_set in active_connections.items():
         for websocket in websocket_set:
             try:
                 await websocket.send_json(message)
+                logger.debug(f"Sent to client {client_id}")
             except Exception as e:
-                logger.warning(f"Failed to send to client: {e}")
+                logger.warning(f"Failed to send to client {client_id}: {e}")
                 disconnected.append(websocket)
 
     # Clean up disconnected clients

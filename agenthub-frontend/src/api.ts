@@ -110,7 +110,8 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
         description: task.description,
         status: task.status,
         priority: task.priority,
-        git_branch_id: task.git_branch_id
+        git_branch_id: task.git_branch_id,
+        assignees: task.assignees // Add assignees field
     });
     return response.task || response;
 };

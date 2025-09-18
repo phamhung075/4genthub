@@ -206,9 +206,11 @@ class TaskApplicationFacade:
             if task_response and getattr(task_response, "success", False):
                 # Ensure downstream callers get a consistent success message key
                 msg = getattr(task_response, "message", "Task created successfully")
+                task_payload = None
+                warning_msg = None
 
                 # ------------------------------------------------------------------
-                # Create 1:1 context linked to the newly created task               
+                # Create 1:1 context linked to the newly created task
                 # ------------------------------------------------------------------
                 try:
                     # Sync context and retrieve updated task using dedicated service
@@ -234,67 +236,45 @@ class TaskApplicationFacade:
                             task_payload = updated_task_response.task.to_dict()
                         # Apply unified context format
                         task_payload = ContextResponseFactory.apply_to_task_response(task_payload)
-
-                        # Broadcast task creation event
-                        try:
-                            WebSocketNotificationService.sync_broadcast_task_event(
-                                event_type="created",
-                                task_id=task_response.task.id,
-                                user_id=user_id or "system",
-                                task_data=task_payload,
-                                git_branch_id=request.git_branch_id,
-                                project_id=derived_project_id
-                            )
-                        except Exception as e:
-                            logger.warning(f"Failed to broadcast task creation: {e}")
-
-                        return {
-                            "success": True,
-                            "action": "create",
-                            "task": task_payload,
-                            "message": msg,
-                        }
                     else:
                         # Context creation failed - but don't rollback, just log warning
                         logger.warning("Context creation failed for task %s, but task was created successfully", task_response.task.id)
                         # Return task without context data
                         task_payload = task_response.task.to_dict()
+                        warning_msg = "Task created without context synchronization"
 
-                        # Broadcast task creation event even without context
-                        try:
-                            WebSocketNotificationService.sync_broadcast_task_event(
-                                event_type="created",
-                                task_id=task_response.task.id,
-                                user_id=user_id or "system",
-                                task_data=task_payload,
-                                git_branch_id=request.git_branch_id,
-                                project_id=derived_project_id
-                            )
-                        except Exception as e:
-                            logger.warning(f"Failed to broadcast task creation: {e}")
-
-                        return {
-                            "success": True,
-                            "action": "create",
-                            "task": task_payload,
-                            "message": msg,
-                            "warning": "Task created without context synchronization"
-                        }
-                        
                 except Exception as e:
                     logger.error("Failed to create context for task %s: %s", task_response.task.id, e)
                     # Don't rollback - task creation should succeed even without context
                     logger.warning("Continuing with task creation despite context sync failure")
-                    
+
                     # Return task without context data
                     task_payload = task_response.task.to_dict()
-                    return {
-                        "success": True,
-                        "action": "create",
-                        "task": task_payload,
-                        "message": msg,
-                        "warning": f"Task created without context: {str(e)}"
-                    }
+                    warning_msg = f"Task created without context: {str(e)}"
+
+                # Broadcast task creation event ONCE, regardless of context sync status
+                try:
+                    WebSocketNotificationService.sync_broadcast_task_event(
+                        event_type="created",
+                        task_id=task_response.task.id,
+                        user_id=user_id or "system",
+                        task_data=task_payload,
+                        git_branch_id=request.git_branch_id,
+                        project_id=derived_project_id
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to broadcast task creation: {e}")
+
+                # Build and return response
+                result = {
+                    "success": True,
+                    "action": "create",
+                    "task": task_payload,
+                    "message": msg,
+                }
+                if warning_msg:
+                    result["warning"] = warning_msg
+                return result
             else:
                 return {
                     "success": False,

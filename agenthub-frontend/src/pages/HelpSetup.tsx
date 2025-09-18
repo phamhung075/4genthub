@@ -140,7 +140,7 @@ export const HelpSetup: React.FC = () => {
       create: {
         action: "create",
         title: "Implement user authentication",
-        assignees: "coding-agent",
+        assignees: ["coding-agent"],
         details: "Create JWT-based authentication system with login, logout, and session management",
         priority: "high",
         git_branch_id: "550e8400-e29b-41d4-a716-446655440001"

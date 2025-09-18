@@ -1,6 +1,6 @@
 import { Plus, RefreshCw } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
+import { createTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { getFullTask } from "../api-lazy";
 import TaskSearch from "./TaskSearch";
 import TaskRow from "./TaskRow";
@@ -72,6 +72,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Track previous task IDs for detecting new tasks
   const [previousTaskIds, setPreviousTaskIds] = useState<Set<string>>(new Set());
+
+  // Dialog saving state
+  const [saving, setSaving] = useState(false);
 
   // Row animation callback registry
   const rowAnimationCallbacks = useRef<Map<string, {
@@ -437,6 +440,63 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     }
   }, [closeDialog, onTasksChanged]);
 
+  // Handle creating new task
+  const handleCreateTask = useCallback(async (taskData: Partial<Task>) => {
+    console.log('🚀 Creating task with data:', taskData);
+    console.log('🌿 Branch ID:', taskTreeId);
+
+    // Check authentication
+    const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
+    console.log('🔑 Auth token present:', !!token);
+    if (token) {
+      console.log('🔑 Token preview:', token.substring(0, 50) + '...');
+    } else {
+      console.warn('⚠️ No authentication token found! You may need to log in.');
+    }
+
+    setSaving(true);
+
+    try {
+      // Call API to create task
+      const newTask = await createTask({
+        ...taskData,
+        git_branch_id: taskTreeId, // Ensure task is created in current branch
+        assignees: taskData.assignees || [] // Use assignees from form or empty array
+      });
+
+      console.log('✅ Task created successfully:', newTask);
+
+      // Close dialog after successful creation
+      closeDialog();
+
+      // Refresh the task list to show the new task
+      await loadTaskSummaries(1);
+
+      // Notify parent that task was created
+      if (onTasksChanged) {
+        onTasksChanged();
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to create task:', error);
+      console.error('Error details:', error.response || error.message || error);
+
+      // Extract the actual error message
+      let errorMessage = 'Unknown error';
+      if (error.detail) {
+        errorMessage = error.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else {
+        errorMessage = JSON.stringify(error);
+      }
+
+      alert(`Failed to create task: ${errorMessage}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [closeDialog, onTasksChanged, taskTreeId, loadTaskSummaries]);
 
   // Initial load
   useEffect(() => {
@@ -662,7 +722,18 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             saving={false}
           />
         )}
-        
+
+        {activeDialog.type === 'create' && (
+          <TaskEditDialog
+            open={true}
+            onOpenChange={closeDialog}
+            task={null} // null task means create mode
+            onClose={closeDialog}
+            onSave={handleCreateTask}
+            saving={saving}
+          />
+        )}
+
         {activeDialog.type === 'assign' && activeDialog.taskId && (
           <AgentAssignmentDialog
             open={true}

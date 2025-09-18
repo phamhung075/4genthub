@@ -111,6 +111,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
 
             if (prevCount !== newCount && taskCounts[tree.id] !== undefined) {
               // Task count changed!
+              // Task count change notifications are now handled by WebSocket service
+              // to avoid duplicate notifications
+              /*
               if (newCount > prevCount) {
                 const diff = newCount - prevCount;
                 showSuccessToast(
@@ -124,6 +127,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                   `${diff} task${diff > 1 ? 's' : ''} removed from branch "${tree.name}" in project "${project.name}"`
                 );
               }
+              */
             }
           }
         }
