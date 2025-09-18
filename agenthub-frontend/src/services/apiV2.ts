@@ -264,11 +264,11 @@ export const projectApiV2 = {
     description?: string;
   }) => {
     const formData = new URLSearchParams();
-    if (updates.name) {
+    if (updates.name !== undefined) {
       formData.append('name', updates.name);
     }
-    if (updates.description) {
-      formData.append('description', updates.description);
+    if (updates.description !== undefined) {
+      formData.append('description', updates.description || '');
     }
 
     const response = await fetch(`${API_BASE_URL}/api/v2/projects/${projectId}`, {
@@ -277,7 +277,7 @@ export const projectApiV2 = {
         ...getAuthHeaders(),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formData,
+      body: formData.toString(),
       credentials: 'include',
     });
     return handleResponse(response);
