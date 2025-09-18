@@ -592,9 +592,10 @@ def create_agenthub_server() -> FastMCP:
         }
         
         # Add authentication status based on environment configuration
-        auth_status = os.environ.get("AGENTHUB_AUTH_ENABLED", "true")
+        # Check AUTH_ENABLED from .env.dev or .env
+        auth_status = os.environ.get("AUTH_ENABLED", "true")
         supabase_configured = bool(os.environ.get("SUPABASE_URL"))
-        health_data["auth_enabled"] = auth_status.lower() == "true" and supabase_configured
+        health_data["auth_enabled"] = auth_status.lower() in ("true", "1", "yes", "on")
         
         # Add connection manager status if available
         try:
