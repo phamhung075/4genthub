@@ -17,4 +17,4 @@ scikit-learn==1.5.2           # ML utilities and metrics
 numpy==1.26.4                 # Numerical computing (compatible with faiss-cpu<2.0)
 redis==5.2.0                  # Real-time caching
 transformers==4.46.3          # Transformer models
-torch==2.5.1                  # PyTorch backend
+torch==2.5.1                  # PyTorch backendaiohttp==3.9.1

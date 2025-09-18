@@ -63,7 +63,7 @@ class WebSocketService {
                      ((window as any).import?.meta?.env?.VITE_API_URL) ||
                      'http://localhost:8000';
       const backendHost = apiUrl.replace(/^https?:\/\//, '');
-      // WebSocket endpoint is at /ws/realtime (not /api/v2/ws/realtime)
+      // WebSocket endpoint is at /ws/realtime
       const wsUrl = `${wsProtocol}://${backendHost}/ws/realtime`;
 
       // Add auth token to query params if available
