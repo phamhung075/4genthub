@@ -366,7 +366,7 @@
         },
         {
           "hash": "490a88531a9c6c98f75809b5d924cb9d",
-          "modified": "2025-09-18T04:13:51.229255",
+          "modified": "2025-09-18T11:16:33.377658",
           "name": "keycloak-mcp-api-client-config.md",
           "path": "authentication/keycloak-mcp-api-client-config.md",
           "size": 4519
@@ -401,7 +401,7 @@
         },
         {
           "hash": "ef206b2700b38d299bca4471fea6caba",
-          "modified": "2025-09-18T04:05:31.383550",
+          "modified": "2025-09-18T11:16:33.377658",
           "name": "keycloak-setup-guide.md",
           "path": "authentication/keycloak-setup-guide.md",
           "size": 3997
@@ -1988,7 +1988,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 29,
+      "count": 30,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2045,6 +2045,13 @@
           "name": "mcp-hint-system-resolved-issues.md",
           "path": "troubleshooting-guides/mcp-hint-system-resolved-issues.md",
           "size": 7803
+        },
+        {
+          "hash": "277ffbb6a4935e1a293798c40f5b95a6",
+          "modified": "2025-09-18T23:14:19.896165",
+          "name": "hook-path-resolution-fix.md",
+          "path": "troubleshooting-guides/hook-path-resolution-fix.md",
+          "size": 3829
         },
         {
           "hash": "e53cc93a7a391a5826e915c5766bcbe9",
@@ -2210,7 +2217,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-18T04:13:51.307667",
+  "generated_at": "2025-09-18T23:14:19.956412",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2594,6 +2601,7 @@
         "frontend-development-environment-fix.md",
         "frontend-task-listing-fix.md",
         "global-context-singleton-setup-solution.md",
+        "hook-path-resolution-fix.md",
         "index.md",
         "mcp-connection-issues.md",
         "mcp-hint-system-resolved-issues.md",
@@ -2620,5 +2628,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 288
+  "total_files": 289
 }
