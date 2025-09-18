@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
 import { ChevronDown, ChevronRight, Eye, Folder, GitBranchPlus, Globe, Pencil, Plus, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { createBranch, createProject, deleteBranch, deleteProject, listProjects, Project, updateProject } from "../api";
 import { BranchSummary, getBranchSummaries } from "../api-lazy";
 import { cn } from "../lib/utils";
@@ -10,7 +10,7 @@ import { RefreshButton } from "./ui/refresh-button";
 import { ShimmerBadge } from "./ui/shimmer-badge";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { useErrorToast, useSuccessToast } from "./ui/toast";
-import { websocketService } from "../services/websocketService";
+import { useEntityChanges } from "../hooks/useChangeSubscription";
 
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
@@ -90,7 +90,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   };
 
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       const projectsData = await listProjects();
@@ -135,9 +135,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskCounts, showSuccessToast]);
 
-  const refreshOpenBranchSummaries = async () => {
+  const refreshOpenBranchSummaries = useCallback(async () => {
     // Check if user is authenticated
     const token = Cookies.get('access_token');
     if (!token) {
@@ -199,7 +199,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     setTaskCounts(newTaskCounts);
     
     console.log('Branch summaries refreshed successfully with fresh data');
-  };
+  }, [openProjects]);
 
   useEffect(() => {
     console.log('ProjectList refreshKey changed:', refreshKey);
@@ -214,21 +214,18 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     });
   }, [refreshKey]); // Refresh when refreshKey changes
 
-  // Subscribe to WebSocket events for real-time updates
-  useEffect(() => {
-    const unsubscribe = websocketService.on('task', (message) => {
-      console.log('Task event received via WebSocket:', message);
-      // Refresh when task events occur
-      fetchProjects();
-      if (Object.keys(openProjects).some(id => openProjects[id])) {
-        refreshOpenBranchSummaries();
-      }
-    });
+  // Create stable refresh callback for change pool
+  const handleDataChange = useCallback(() => {
+    console.log('📡 ProjectList: Data change detected, refreshing...');
+    // Refresh when entity events occur
+    fetchProjects();
+    if (Object.keys(openProjects).some(id => openProjects[id])) {
+      refreshOpenBranchSummaries();
+    }
+  }, [fetchProjects, openProjects]);
 
-    return () => {
-      unsubscribe();
-    };
-  }, [openProjects]);
+  // Subscribe to centralized change pool for real-time updates
+  useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
 
   const handleCreate = async () => {
     setSaving(true);
