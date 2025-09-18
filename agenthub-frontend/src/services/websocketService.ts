@@ -48,7 +48,10 @@ class WebSocketService {
    * Connect to the WebSocket server
    */
   async connect(token?: string): Promise<void> {
-    if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
+    // Check all possible states that indicate we shouldn't connect
+    if (this.ws?.readyState === WebSocket.OPEN ||
+        this.ws?.readyState === WebSocket.CONNECTING ||
+        this.isConnecting) {
       console.log('WebSocket already connected or connecting');
       return;
     }
@@ -215,6 +218,7 @@ class WebSocketService {
       const entityType = message.metadata?.entity_type || 'unknown';
       const eventType = message.metadata?.event_type || message.event_type || 'updated';
 
+
       // Show notification to user
       this.showNotification(message, entityType, eventType);
 
@@ -310,6 +314,7 @@ class WebSocketService {
       // Still update the UI, but don't show notification
       return;
     }
+
 
     // Show the notification using toast event bus
     this.showToastNotification(
@@ -420,10 +425,17 @@ class WebSocketService {
 // Export singleton instance
 export const websocketService = new WebSocketService();
 
-// Auto-connect when the service is imported
-if (typeof window !== 'undefined') {
+// Track if we've already scheduled auto-connect
+let autoConnectScheduled = false;
+
+// Auto-connect when the service is imported (only once, even with StrictMode)
+if (typeof window !== 'undefined' && !autoConnectScheduled) {
+  autoConnectScheduled = true;
   // Connect after a short delay to ensure auth is initialized
   setTimeout(() => {
-    websocketService.connect().catch(console.error);
+    // Double-check we're not already connected before attempting
+    if (!websocketService.isConnected()) {
+      websocketService.connect().catch(console.error);
+    }
   }, 1000);
 }

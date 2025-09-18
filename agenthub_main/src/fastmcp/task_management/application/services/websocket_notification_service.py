@@ -313,7 +313,7 @@ class WebSocketNotificationService:
                         metadata=metadata
                     ))
                     logger.info(f"✅ Successfully scheduled WebSocket broadcast for task {event_type}")
-                    return
+                    return  # Exit here - broadcast scheduled successfully
                 else:
                     # If no running loop, run until complete
                     loop.run_until_complete(broadcast_data_change(
@@ -325,7 +325,7 @@ class WebSocketNotificationService:
                         metadata=metadata
                     ))
                     logger.info(f"✅ Successfully completed WebSocket broadcast for task {event_type}")
-                    return
+                    return  # Exit here - broadcast completed successfully
             except RuntimeError:
                 # If we can't use the current loop, create a new one
                 new_loop = asyncio.new_event_loop()
@@ -340,11 +340,11 @@ class WebSocketNotificationService:
                         metadata=metadata
                     ))
                     logger.info(f"✅ Successfully completed WebSocket broadcast for task {event_type}")
-                    return
+                    return  # Exit here - broadcast completed successfully
                 finally:
                     new_loop.close()
 
-        except Exception as direct_error:
+        except (ImportError, RuntimeError) as direct_error:
             logger.warning(f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback")
 
         # Fallback to HTTP broadcast for cross-process communication

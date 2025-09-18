@@ -1324,27 +1324,63 @@ restart_dev_mode() {
     pkill -f "python.*mcp_entry_point" 2>/dev/null || true
     pkill -f "python.*fastmcp" 2>/dev/null || true
     pkill -f "uvicorn" 2>/dev/null || true
-    
+    pkill -f "npm.*start" 2>/dev/null || true
+    pkill -f "vite" 2>/dev/null || true
+    pkill -f "node.*3800" 2>/dev/null || true
+
+    # AGGRESSIVE PORT CLEANUP - Force kill ALL processes on ports 8000 and 3800
+    echo -e "${RED}${BOLD}🔥 Force killing ALL processes on ports 8000 and 3800...${RESET}"
+
+    # Kill everything on port 8000 (backend)
+    echo -e "${YELLOW}Liberating port 8000 (backend)...${RESET}"
+    for pid in $(lsof -ti :8000 2>/dev/null); do
+        echo "  Killing PID $pid on port 8000"
+        kill -9 $pid 2>/dev/null || true
+    done
+
+    # Kill everything on port 3800 (frontend)
+    echo -e "${YELLOW}Liberating port 3800 (frontend)...${RESET}"
+    for pid in $(lsof -ti :3800 2>/dev/null); do
+        echo "  Killing PID $pid on port 3800"
+        kill -9 $pid 2>/dev/null || true
+    done
+
+    # Also kill by port using fuser as backup method
+    fuser -k 8000/tcp 2>/dev/null || true
+    fuser -k 3800/tcp 2>/dev/null || true
+
     # Clear Python cache to ensure new code is loaded
     echo -e "${YELLOW}Clearing Python cache...${RESET}"
     find "${PROJECT_ROOT}/agenthub_main" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     find "${PROJECT_ROOT}/agenthub_main" -type f -name "*.pyc" -delete 2>/dev/null || true
     find "${PROJECT_ROOT}/agenthub_main" -type f -name "*.pyo" -delete 2>/dev/null || true
-    
+
+    # Clear Vite cache for frontend
+    echo -e "${YELLOW}Clearing Vite cache...${RESET}"
+    rm -rf "${PROJECT_ROOT}/agenthub-frontend/.vite" 2>/dev/null || true
+    rm -rf "${PROJECT_ROOT}/agenthub-frontend/node_modules/.vite" 2>/dev/null || true
+
     # Wait longer for ports to be fully released and connections to close
     echo -e "${YELLOW}Waiting for ports to be released...${RESET}"
     sleep 3
-    
-    # Ensure ports are free
+
+    # Final check - ensure ports are really free
     if lsof -Pi :${FASTMCP_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
-        echo -e "${YELLOW}Force killing process on port ${FASTMCP_PORT}...${RESET}"
+        echo -e "${RED}WARNING: Port ${FASTMCP_PORT} still occupied after aggressive cleanup!${RESET}"
+        echo -e "${YELLOW}Attempting final force kill...${RESET}"
         kill -9 $(lsof -Pi :${FASTMCP_PORT} -sTCP:LISTEN -t) 2>/dev/null || true
-        sleep 1
+        sleep 2
+    else
+        echo -e "${GREEN}✅ Port ${FASTMCP_PORT} is free${RESET}"
     fi
+
     if lsof -Pi :${FRONTEND_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
-        echo -e "${YELLOW}Force killing process on port ${FRONTEND_PORT}...${RESET}"
+        echo -e "${RED}WARNING: Port ${FRONTEND_PORT} still occupied after aggressive cleanup!${RESET}"
+        echo -e "${YELLOW}Attempting final force kill...${RESET}"
         kill -9 $(lsof -Pi :${FRONTEND_PORT} -sTCP:LISTEN -t) 2>/dev/null || true
-        sleep 1
+        sleep 2
+    else
+        echo -e "${GREEN}✅ Port ${FRONTEND_PORT} is free${RESET}"
     fi
     
     # Clear any log files that might have SSL errors cached

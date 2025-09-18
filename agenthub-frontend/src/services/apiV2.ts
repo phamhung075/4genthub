@@ -170,11 +170,13 @@ export const taskApiV2 = {
     status?: string;
     priority?: string;
     git_branch_id?: string;
+    assignees?: string; // Add assignees field
   }) => {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(taskData),
+      credentials: 'include',
     });
   },
 
