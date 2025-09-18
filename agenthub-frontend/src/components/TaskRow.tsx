@@ -94,7 +94,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
   const playUpdateAnimation = useCallback(() => {
     setAnimationState('updating');
-    setTimeout(() => setAnimationState('none'), 600); // Clear after animation (longer)
+    setTimeout(() => setAnimationState('none'), 5000); // Clear after 5 seconds as requested
   }, []);
 
   // Register animation callbacks with parent
@@ -137,7 +137,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
         };
       case 'updating':
         return {
-          animation: 'pulseUpdate 0.6s ease-in-out'
+          animation: 'shimmerBorder 2s linear infinite'
         };
       default:
         return {};
@@ -154,7 +154,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
       case 'deleting':
         return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
-        return `${baseClasses} border-blue-500 bg-blue-100 dark:bg-blue-950`;
+        return `${baseClasses} relative overflow-hidden border-2`;
       default:
         return baseClasses + (
           isHighlighted
@@ -223,36 +223,54 @@ const TaskRow: React.FC<TaskRowProps> = ({
               scale: 0.8;
             }
           }
-          @keyframes pulseUpdate {
+          @property --shimmer-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+          }
+
+          @keyframes shimmerBorder {
             0% {
-              transform: scale(1);
-              opacity: 1;
-            }
-            25% {
-              transform: scale(1.03);
-              opacity: 0.9;
-            }
-            50% {
-              transform: scale(1.05);
-              opacity: 0.8;
-            }
-            75% {
-              transform: scale(1.02);
-              opacity: 0.9;
+              --shimmer-angle: 0deg;
             }
             100% {
-              transform: scale(1);
-              opacity: 1;
+              --shimmer-angle: 360deg;
+            }
+          }
+
+          @keyframes pulseGlow {
+            0%, 100% {
+              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5),
+                          0 0 20px rgba(59, 130, 246, 0.3),
+                          inset 0 0 10px rgba(59, 130, 246, 0.1);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(59, 130, 246, 0.8),
+                          0 0 30px rgba(59, 130, 246, 0.5),
+                          inset 0 0 15px rgba(59, 130, 246, 0.2);
             }
           }
         `}</style>
 
         <div
-          className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border mb-3 cursor-pointer ${getAnimationClasses()}`}
-          style={getAnimationStyle()}
+          className={`relative rounded-lg mb-3 cursor-pointer ${getAnimationClasses()} ${animationState === 'updating' ? 'p-[2px]' : ''}`}
+          style={{
+            ...getAnimationStyle(),
+            ...(animationState === 'updating' ? {
+              background: `conic-gradient(from var(--shimmer-angle),
+                transparent 25%,
+                #3b82f6 50%,
+                #60a5fa 60%,
+                #93c5fd 70%,
+                transparent 75%)`,
+              animation: 'shimmerBorder 5s linear infinite',
+            } : {})
+          }}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >
+          {/* Inner content with border shimmer effect */}
+          <div className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border ${animationState !== 'updating' ? 'border' : 'border-none'} w-full h-full`}>
           <div className="p-4">
             {/* Task Header */}
             <div className="flex items-start justify-between mb-3">
@@ -373,6 +391,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               </div>
             </div>
           )}
+          </div>
         </div>
       </>
     );
@@ -433,33 +452,51 @@ const TaskRow: React.FC<TaskRowProps> = ({
               scale: 0.8;
             }
           }
-          @keyframes pulseUpdate {
+          @property --shimmer-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+          }
+
+          @keyframes shimmerBorder {
             0% {
-              transform: scale(1);
-              opacity: 1;
-            }
-            25% {
-              transform: scale(1.03);
-              opacity: 0.9;
-            }
-            50% {
-              transform: scale(1.05);
-              opacity: 0.8;
-            }
-            75% {
-              transform: scale(1.02);
-              opacity: 0.9;
+              --shimmer-angle: 0deg;
             }
             100% {
-              transform: scale(1);
-              opacity: 1;
+              --shimmer-angle: 360deg;
+            }
+          }
+
+          @keyframes pulseGlow {
+            0%, 100% {
+              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5),
+                          0 0 20px rgba(59, 130, 246, 0.3),
+                          inset 0 0 10px rgba(59, 130, 246, 0.1);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(59, 130, 246, 0.8),
+                          0 0 30px rgba(59, 130, 246, 0.5),
+                          inset 0 0 15px rgba(59, 130, 246, 0.2);
             }
           }
         `}</style>
 
         <TableRow
           className={`cursor-pointer ${getAnimationClasses()}`}
-          style={getAnimationStyle()}
+          style={{
+            ...getAnimationStyle(),
+            ...(animationState === 'updating' ? {
+              borderTop: `2px solid transparent`,
+              borderBottom: `2px solid transparent`,
+              borderImage: `conic-gradient(from var(--shimmer-angle),
+                transparent 25%,
+                #3b82f6 50%,
+                #60a5fa 60%,
+                #93c5fd 70%,
+                transparent 75%) 1`,
+              animation: 'shimmerBorder 5s linear infinite',
+            } : {})
+          }}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >
