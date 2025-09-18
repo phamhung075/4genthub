@@ -13,6 +13,7 @@ from ..factories.context_response_factory import ContextResponseFactory
 # Note: Infrastructure imports removed - these should be injected via constructor
 
 from ..services.task_application_service import TaskApplicationService
+from ..services.websocket_notification_service import WebSocketNotificationService
 
 from ..use_cases.create_task import CreateTaskUseCase
 from ..use_cases.update_task import UpdateTaskUseCase
@@ -233,6 +234,20 @@ class TaskApplicationFacade:
                             task_payload = updated_task_response.task.to_dict()
                         # Apply unified context format
                         task_payload = ContextResponseFactory.apply_to_task_response(task_payload)
+
+                        # Broadcast task creation event
+                        try:
+                            WebSocketNotificationService.sync_broadcast_task_event(
+                                event_type="created",
+                                task_id=task_response.task.id,
+                                user_id=user_id or "system",
+                                task_data=task_payload,
+                                git_branch_id=request.git_branch_id,
+                                project_id=derived_project_id
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to broadcast task creation: {e}")
+
                         return {
                             "success": True,
                             "action": "create",
@@ -244,6 +259,20 @@ class TaskApplicationFacade:
                         logger.warning("Context creation failed for task %s, but task was created successfully", task_response.task.id)
                         # Return task without context data
                         task_payload = task_response.task.to_dict()
+
+                        # Broadcast task creation event even without context
+                        try:
+                            WebSocketNotificationService.sync_broadcast_task_event(
+                                event_type="created",
+                                task_id=task_response.task.id,
+                                user_id=user_id or "system",
+                                task_data=task_payload,
+                                git_branch_id=request.git_branch_id,
+                                project_id=derived_project_id
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to broadcast task creation: {e}")
+
                         return {
                             "success": True,
                             "action": "create",
@@ -294,10 +323,25 @@ class TaskApplicationFacade:
             task_response = self._update_task_use_case.execute(request)
             
             if task_response and task_response.success:
+                task_dict = task_response.task.to_dict()
+
+                # Broadcast task update event
+                try:
+                    # Get user_id from request or use "system"
+                    user_id = getattr(request, 'user_id', None) or "system"
+                    WebSocketNotificationService.sync_broadcast_task_event(
+                        event_type="updated",
+                        task_id=task_id,
+                        user_id=user_id,
+                        task_data=task_dict
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to broadcast task update: {e}")
+
                 return {
                     "success": True,
                     "action": "update",
-                    "task": task_response.task.to_dict()
+                    "task": task_dict
                 }
             else:
                 return {
@@ -522,6 +566,17 @@ class TaskApplicationFacade:
             success = self._delete_task_use_case.execute(task_id)
             
             if success:
+                # Broadcast task deletion event
+                try:
+                    WebSocketNotificationService.sync_broadcast_task_event(
+                        event_type="deleted",
+                        task_id=task_id,
+                        user_id="system",  # TODO: Get actual user_id from context
+                        task_data=None
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to broadcast task deletion: {e}")
+
                 return {
                     "success": True,
                     "action": "delete",
@@ -574,12 +629,24 @@ class TaskApplicationFacade:
                 "message": result.get("message", ""),
                 "context": result.get("context", {})
             }
-            
+
             # Add all other fields from the use case result to preserve error details
             for key, value in result.items():
                 if key not in response:
                     response[key] = value
-            
+
+            # Broadcast task completion event if successful
+            if response.get("success"):
+                try:
+                    WebSocketNotificationService.sync_broadcast_task_event(
+                        event_type="completed",
+                        task_id=task_id,
+                        user_id="system",  # TODO: Get actual user_id from context
+                        task_data=response.get("task")
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to broadcast task completion: {e}")
+
             return response
             
         except TaskNotFoundError as e:

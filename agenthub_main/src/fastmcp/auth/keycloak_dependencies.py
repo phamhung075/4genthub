@@ -253,3 +253,36 @@ def validate_local_token(token: str) -> User:
         )
 
 
+async def get_current_user_from_ws(websocket, token: str) -> dict:
+    """
+    Validate a JWT token from a WebSocket connection.
+
+    Args:
+        websocket: The WebSocket connection
+        token: The JWT token to validate
+
+    Returns:
+        User information dict
+
+    Raises:
+        HTTPException: If the token is invalid
+    """
+    # Try Keycloak validation first (if configured)
+    if AUTH_PROVIDER == "keycloak" and KEYCLOAK_URL:
+        user = await validate_keycloak_token(token)
+        if user:
+            return {
+                "sub": user.id,
+                "email": user.email,
+                "username": user.username
+            }
+
+    # Fall back to local JWT validation
+    user = await validate_local_jwt(token)
+    return {
+        "sub": user.id,
+        "email": user.email,
+        "username": user.username
+    }
+
+

@@ -418,6 +418,14 @@ def create_sse_app(
             logger.info("Token management routes registered at /api/v2/tokens")
         except ImportError as token_e:
             logger.warning(f"Could not import token routes: {token_e}")
+
+        # Add WebSocket routes for real-time updates
+        try:
+            from .routes.websocket_routes import router as websocket_router
+            v2_app.include_router(websocket_router)
+            logger.info("✅ WebSocket routes registered at /ws/realtime")
+        except ImportError as ws_e:
+            logger.warning(f"Could not import WebSocket routes: {ws_e}")
         
         # Mount the FastAPI app as a sub-application
         server_routes.append(Mount("/", app=v2_app))
@@ -707,6 +715,14 @@ def create_streamable_http_app(
             logger.info("Token management routes registered at /api/v2/tokens")
         except ImportError as token_e:
             logger.warning(f"Could not import token routes: {token_e}")
+
+        # Add WebSocket routes for real-time updates
+        try:
+            from .routes.websocket_routes import router as websocket_router
+            v2_app.include_router(websocket_router)
+            logger.info("✅ WebSocket routes registered at /ws/realtime")
+        except ImportError as ws_e:
+            logger.warning(f"Could not import WebSocket routes: {ws_e}")
 
         # Add simplified MCP registration endpoints directly to FastAPI app
         import uuid
