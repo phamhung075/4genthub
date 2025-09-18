@@ -1,5 +1,5 @@
 import { Check, Eye, Pencil, Plus, Trash2 } from "lucide-react";
-import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense } from "react";
+import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { deleteSubtask, listSubtasks, Subtask } from "../api";
 import { getSubtaskSummaries } from "../api-lazy";
 import { useEntityChanges } from "../hooks/useChangeSubscription";
@@ -8,11 +8,13 @@ import { Button } from "./ui/button";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import SubtaskRow from "./SubtaskRow";
 
 // Lazy load dialogs
 const DeleteConfirmDialog = lazy(() => import("./DeleteConfirmDialog"));
 const SubtaskCompleteDialog = lazy(() => import("./SubtaskCompleteDialog"));
 const SubtaskDetailsDialog = lazy(() => import("./SubtaskDetailsDialog"));
+const SubtaskCreateDialog = lazy(() => import("./SubtaskCreateDialog"));
 const AgentInfoDialog = lazy(() => import("./AgentInfoDialog"));
 
 interface LazySubtaskListProps {
@@ -60,7 +62,17 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   
   // Only load when component is actually rendered (lazy)
   const [hasLoaded, setHasLoaded] = useState(false);
-  
+
+  // Track previous subtask IDs for detecting new subtasks
+  const [previousSubtaskIds, setPreviousSubtaskIds] = useState<Set<string>>(new Set());
+
+  // Row animation callback registry
+  const rowAnimationCallbacks = useRef<Map<string, {
+    playCreateAnimation: () => void;
+    playDeleteAnimation: () => void;
+    playUpdateAnimation: () => void;
+  }>>(new Map());
+
   // Dialog states
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; subtaskId: string | null }>({
     open: false,
@@ -85,11 +97,44 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   const [selectedAgentForInfo, setSelectedAgentForInfo] = useState<string | null>(null);
   const [agentInfoDialogOpen, setAgentInfoDialogOpen] = useState(false);
 
+  // Create subtask dialog state
+  const [createSubtaskDialogOpen, setCreateSubtaskDialogOpen] = useState(false);
+
   // Handle agent info click
   const handleAgentInfoClick = (agentName: string) => {
     setSelectedAgentForInfo(agentName);
     setAgentInfoDialogOpen(true);
   };
+
+  // Handle opening create subtask dialog
+  const handleOpenCreateSubtask = () => {
+    setCreateSubtaskDialogOpen(true);
+  };
+
+  // Handle subtask creation
+  const handleSubtaskCreated = useCallback((newSubtask: Subtask) => {
+    // Add to summaries
+    const newSummary: SubtaskSummary = {
+      id: newSubtask.id,
+      title: newSubtask.title,
+      status: newSubtask.status,
+      priority: newSubtask.priority,
+      assignees_count: newSubtask.assignees?.length || 0,
+      assignees: newSubtask.assignees,
+      progress_percentage: newSubtask.progress_percentage
+    };
+
+    setSubtaskSummaries(prev => [...prev, newSummary]);
+
+    // Add to full subtasks
+    setFullSubtasks(prev => {
+      const newMap = new Map(prev);
+      newMap.set(newSubtask.id, newSubtask);
+      return newMap;
+    });
+
+    setCreateSubtaskDialogOpen(false);
+  }, []);
 
   // Load full subtasks fallback
   const loadFullSubtasksFallback = useCallback(async () => {
@@ -140,14 +185,115 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     }
   }, [parentTaskId, hasLoaded, loadFullSubtasksFallback]);
 
+  // Register row animation callbacks
+  const registerRowCallbacks = useCallback((subtaskId: string, callbacks: {
+    playCreateAnimation: () => void;
+    playDeleteAnimation: () => void;
+    playUpdateAnimation: () => void;
+  }) => {
+    rowAnimationCallbacks.current.set(subtaskId, callbacks);
+  }, []);
+
+  // Unregister row callbacks
+  const unregisterRowCallbacks = useCallback((subtaskId: string) => {
+    rowAnimationCallbacks.current.delete(subtaskId);
+  }, []);
+
   // Stable refresh callback for changePoolService
-  const handleSubtaskChanges = useCallback(() => {
+  const handleSubtaskChanges = useCallback(async () => {
     console.log('📡 LazySubtaskList: Subtask changes detected, refreshing...');
+
+    // Store current subtask IDs and data before refresh for comparison
+    const currentSubtaskIds = new Set(subtaskSummaries.map(s => s.id));
+    const currentSubtaskMap = new Map(subtaskSummaries.map(s => [s.id, s]));
 
     // Force reload of subtasks for this parent task
     setHasLoaded(false); // Reset loaded flag to trigger refresh
-    loadSubtaskSummaries();
-  }, [loadSubtaskSummaries]);
+
+    try {
+      // Use the proper API function that handles authentication and proper URLs
+      const data = await getSubtaskSummaries(parentTaskId);
+      const newSummaries = data.subtasks;
+      const newSubtaskIds = new Set(newSummaries.map(s => s.id));
+
+      // Detect changes and trigger animations
+      // 1. New subtasks (created) - only if we have a previous state to compare
+      if (currentSubtaskIds.size > 0) {
+        const addedSubtasks = new Set([...newSubtaskIds].filter(id => !currentSubtaskIds.has(id)));
+        console.log('🔍 Subtask change detection - currentSubtaskIds:', currentSubtaskIds.size, 'newSubtaskIds:', newSubtaskIds.size, 'addedSubtasks:', addedSubtasks.size);
+
+        if (addedSubtasks.size > 0) {
+          console.log('✨ New subtasks detected:', [...addedSubtasks]);
+          // Wait a bit for SubtaskRow to register callbacks
+          setTimeout(() => {
+            addedSubtasks.forEach(subtaskId => {
+              const callbacks = rowAnimationCallbacks.current.get(subtaskId);
+              if (callbacks) {
+                console.log('🎬 Playing create animation for subtask:', subtaskId);
+                callbacks.playCreateAnimation();
+              } else {
+                console.warn('⚠️ No callbacks found for subtask:', subtaskId);
+              }
+            });
+          }, 100);
+        }
+      } else {
+        console.log('🏁 Initial subtask load - no animation for existing subtasks');
+      }
+
+      // 2. Removed subtasks (deleted) - need to keep them in the list during animation
+      const removedSubtasks = new Set([...currentSubtaskIds].filter(id => !newSubtaskIds.has(id)));
+      if (removedSubtasks.size > 0) {
+        console.log('🗑️ Deleted subtasks detected:', [...removedSubtasks]);
+
+        // Add deleted subtasks back to the summaries temporarily for animation
+        const deletedSubtasksData = subtaskSummaries.filter(subtask => removedSubtasks.has(subtask.id));
+        newSummaries.push(...deletedSubtasksData);
+
+        removedSubtasks.forEach(subtaskId => {
+          const callbacks = rowAnimationCallbacks.current.get(subtaskId);
+          if (callbacks) {
+            console.log('🎬 Playing delete animation for subtask:', subtaskId);
+            callbacks.playDeleteAnimation();
+          } else {
+            console.warn('⚠️ No callbacks found for deleted subtask:', subtaskId);
+          }
+        });
+      }
+
+      // 3. Updated subtasks (modified)
+      const updatedSubtasks = new Set();
+      newSummaries.forEach(newSubtask => {
+        const oldSubtask = currentSubtaskMap.get(newSubtask.id);
+        if (oldSubtask && (
+          oldSubtask.title !== newSubtask.title ||
+          oldSubtask.status !== newSubtask.status ||
+          oldSubtask.priority !== newSubtask.priority ||
+          oldSubtask.progress_percentage !== newSubtask.progress_percentage ||
+          (oldSubtask.assignees && newSubtask.assignees && oldSubtask.assignees.length !== newSubtask.assignees.length)
+        )) {
+          updatedSubtasks.add(newSubtask.id);
+        }
+      });
+      updatedSubtasks.forEach(subtaskId => {
+        const callbacks = rowAnimationCallbacks.current.get(subtaskId as string);
+        if (callbacks) {
+          console.log('🎬 Playing update animation for subtask:', subtaskId);
+          callbacks.playUpdateAnimation();
+        }
+      });
+
+      // Update states
+      setSubtaskSummaries(newSummaries);
+      setPreviousSubtaskIds(newSubtaskIds);
+
+    } catch (e) {
+      console.warn('Lightweight subtask endpoint not available, falling back');
+      await loadFullSubtasksFallback();
+    } finally {
+      setHasLoaded(true);
+    }
+  }, [subtaskSummaries, parentTaskId, loadFullSubtasksFallback]);
 
   // Subscribe to centralized change pool for real-time updates
   // Listen to subtask changes for this specific parent task
@@ -211,24 +357,21 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     loadSubtaskSummaries();
   }, [loadSubtaskSummaries]);
 
-  // Delete subtask handler
+  // Delete subtask handler - row animation handled independently
   const handleDeleteSubtask = useCallback(async (subtaskId: string) => {
+    // Close dialog immediately for better UX
+    setDeleteDialog({ open: false, subtaskId: null });
+
     try {
+      // Call API to delete subtask
       await deleteSubtask(subtaskId);
-      // If no error is thrown, consider it successful
-      // Remove from summaries
-      setSubtaskSummaries(prev => prev.filter(s => s.id !== subtaskId));
-      // Remove from full subtasks
-      setFullSubtasks(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(subtaskId);
-        return newMap;
-      });
+      // Note: The actual row removal will be handled by WebSocket events and animation system
+      // The handleSubtaskChanges function will detect the deletion and trigger the animation
     } catch (error) {
       console.error('Failed to delete subtask:', error);
+      // TODO: Show error toast/notification
     }
-    setDeleteDialog({ open: false, subtaskId: null });
-  }, [parentTaskId]);
+  }, []);
 
   // Handle subtask actions - Fixed double-click issue
   const handleSubtaskAction = useCallback((action: 'details' | 'edit' | 'complete', subtaskId: string) => {
@@ -306,131 +449,38 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     };
   }, [subtaskSummaries]);
 
-  // Render subtask row
+  // Render subtask row using new SubtaskRow component
   const renderSubtaskRow = useCallback((summary: SubtaskSummary) => {
     const isLoadingFull = loadingSubtasks.has(summary.id);
     const isShowingDetails = showDetails === summary.id;
     const fullSubtask = fullSubtasks.get(summary.id);
-    
+
     return (
-      <React.Fragment key={summary.id}>
-        <TableRow className="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors">
-          <TableCell className="pl-8">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-600"></div>
-              <span className="text-gray-700 dark:text-gray-300">{summary.title}</span>
-              {summary.progress_percentage !== undefined && (
-                <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
-                  {summary.status === 'done' ? 100 : summary.progress_percentage}%
-                </Badge>
-              )}
-            </div>
-          </TableCell>
-          
-          <TableCell>
-            <HolographicStatusBadge status={summary.status as any} size="xs" />
-          </TableCell>
-          
-          <TableCell>
-            <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
-          </TableCell>
-          
-          <TableCell>
-            {summary.assignees && summary.assignees.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {summary.assignees.map((assignee, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                    onClick={() => handleAgentInfoClick(assignee)}
-                    title={`View ${assignee} information`}
-                  >
-                    {assignee}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">Unassigned</span>
-            )}
-          </TableCell>
-          
-          <TableCell>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => handleSubtaskAction('details', summary.id)}
-                disabled={isLoadingFull}
-                title="View details"
-              >
-                {isLoadingFull ? (
-                  <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-                ) : (
-                  <Eye className="w-3 h-3" />
-                )}
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => handleSubtaskAction('edit', summary.id)}
-                disabled={isLoadingFull || summary.status === 'done'}
-                title="Edit"
-              >
-                <Pencil className="w-3 h-3" />
-              </Button>
-              
-              {summary.status !== 'done' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleSubtaskAction('complete', summary.id)}
-                  disabled={isLoadingFull}
-                  title="Complete"
-                >
-                  <Check className="w-3 h-3" />
-                </Button>
-              )}
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setDeleteDialog({ open: true, subtaskId: summary.id })}
-                title="Delete subtask"
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-          </TableCell>
-        </TableRow>
-        
-        {/* Subtask Details Row */}
-        {isShowingDetails && fullSubtask && (
-          <TableRow className="bg-blue-50/30 dark:bg-blue-950/10">
-            <TableCell colSpan={5} className="pl-12">
-              <div className="py-2 space-y-2">
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  <strong>Description:</strong> {fullSubtask.description || 'No description'}
-                </div>
-                {fullSubtask.assignees && fullSubtask.assignees.length > 0 && (
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    <strong>Assignees:</strong> {fullSubtask.assignees.join(', ')}
-                  </div>
-                )}
-                {fullSubtask.progress_notes && (
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    <strong>Progress Notes:</strong> {fullSubtask.progress_notes}
-                  </div>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        )}
-        
-      </React.Fragment>
+      <SubtaskRow
+        key={summary.id}
+        summary={summary}
+        fullSubtask={fullSubtask || null}
+        isLoading={isLoadingFull}
+        showDetails={isShowingDetails}
+        onPlayCreateAnimation={() => {}}
+        onPlayDeleteAnimation={() => {}}
+        onPlayUpdateAnimation={() => {}}
+        onSubtaskAction={handleSubtaskAction}
+        onAgentInfoClick={handleAgentInfoClick}
+        onDeleteSubtask={(subtaskId) => setDeleteDialog({ open: true, subtaskId })}
+        onRegisterCallbacks={registerRowCallbacks}
+        onUnregisterCallbacks={unregisterRowCallbacks}
+      />
     );
-  }, [loadingSubtasks, fullSubtasks, showDetails, handleSubtaskAction]);
+  }, [
+    loadingSubtasks,
+    fullSubtasks,
+    showDetails,
+    handleSubtaskAction,
+    handleAgentInfoClick,
+    registerRowCallbacks,
+    unregisterRowCallbacks
+  ]);
 
   if (loading) {
     return (
@@ -458,11 +508,11 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         </div>
         <div className="text-center text-sm text-blue-600/70 dark:text-blue-400/70 py-4">
           No subtasks found.
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="ml-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            onClick={() => {/* TODO: Open create subtask dialog */}}
+            onClick={handleOpenCreateSubtask}
           >
             <Plus className="w-3 h-3 mr-1" />
             Add Subtask
@@ -533,11 +583,11 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       
       {/* Add Subtask Button */}
       <div className="flex justify-end pt-2 border-t border-blue-200/50 dark:border-blue-800/50">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           className="mt-2 border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/50"
-          onClick={() => {/* TODO: Open create subtask dialog */}}
+          onClick={handleOpenCreateSubtask}
         >
           <Plus className="w-3 h-3 mr-1" />
           Add Subtask
@@ -567,6 +617,17 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
             parentTaskId={parentTaskId}
             onClose={() => setActiveDialog({ type: null })}
             onComplete={handleCompleteSubtask}
+          />
+        )}
+
+        {/* Create Subtask Dialog */}
+        {createSubtaskDialogOpen && (
+          <SubtaskCreateDialog
+            open={createSubtaskDialogOpen}
+            onOpenChange={setCreateSubtaskDialogOpen}
+            parentTaskId={parentTaskId}
+            onClose={() => setCreateSubtaskDialogOpen(false)}
+            onCreated={handleSubtaskCreated}
           />
         )}
         
