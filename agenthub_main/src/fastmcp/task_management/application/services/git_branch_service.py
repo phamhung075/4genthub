@@ -109,10 +109,11 @@ class GitBranchService:
             
             # Return format expected by integration test
             return {
-                "success": True, 
+                "success": True,
                 "git_branch": {
                     "id": git_branch.id,
                     "name": git_branch.name,
+                    "git_branch_name": git_branch.name,  # Add this line for frontend compatibility
                     "description": git_branch.description,
                     "project_id": git_branch.project_id
                 },

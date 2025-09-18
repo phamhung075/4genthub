@@ -90,6 +90,19 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   };
 
 
+  // Subscribe to real-time updates for projects and branches
+  useEntityChanges(
+    'ProjectList',
+    ['project', 'branch'],
+    () => {
+      // Refresh projects when any project or branch changes
+      fetchProjects();
+    },
+    {
+      enabled: true
+    }
+  );
+
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
@@ -254,7 +267,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     if (!showCreateBranch) return;
     setSaving(true);
     try {
-      await createBranch(showCreateBranch.id, form.name, form.description);
+      await createBranch(showCreateBranch.id, {
+        git_branch_name: form.name,
+        description: form.description
+      });
       showSuccessToast(
         'Branch created successfully',
         `Branch "${form.name}" has been created in project "${showCreateBranch.name}".`

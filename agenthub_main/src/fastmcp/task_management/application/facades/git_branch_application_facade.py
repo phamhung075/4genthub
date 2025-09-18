@@ -4,6 +4,7 @@ Git Branch Application Facade (for Task Trees)
 from typing import Dict, Any, Optional
 
 from ..services.git_branch_service import GitBranchService
+from ..services.websocket_notification_service import WebSocketNotificationService
 from ...domain.repositories.project_repository import ProjectRepository
 
 class GitBranchApplicationFacade:
@@ -46,17 +47,61 @@ class GitBranchApplicationFacade:
                 thread = threading.Thread(target=run_in_thread)
                 thread.start()
                 thread.join()
-                
+
                 if exception:
                     raise exception
-                    
+
                 logger.info(f"Git branch creation result: {result}")
+
+                # Send WebSocket notification after successful creation
+                if result.get("success") and result.get("git_branch"):
+                    branch_data = result.get("git_branch", {})
+                    try:
+                        WebSocketNotificationService.sync_broadcast_branch_event(
+                            event_type="created",
+                            branch_id=str(branch_data.get("id", "")),
+                            project_id=str(project_id),
+                            user_id=self._user_id or "system",
+                            branch_data={
+                                "id": str(branch_data.get("id", "")),
+                                "git_branch_name": branch_data.get("git_branch_name") or branch_data.get("name", git_branch_name),
+                                "name": branch_data.get("name"),
+                                "description": branch_data.get("description", git_branch_description),
+                                "project_id": str(project_id)
+                            }
+                        )
+                        logger.info(f"✅ WebSocket notification sent for branch creation: {branch_data.get('id')}")
+                    except Exception as ws_error:
+                        logger.warning(f"Failed to send WebSocket notification for branch creation: {ws_error}")
+
                 return result
-                
+
             except RuntimeError:
                 # No event loop is running, use asyncio.run()
                 result = asyncio.run(self.create_tree(project_id, git_branch_name, git_branch_description))
                 logger.info(f"Git branch creation result: {result}")
+
+                # Send WebSocket notification after successful creation
+                if result.get("success") and result.get("git_branch"):
+                    branch_data = result.get("git_branch", {})
+                    try:
+                        WebSocketNotificationService.sync_broadcast_branch_event(
+                            event_type="created",
+                            branch_id=str(branch_data.get("id", "")),
+                            project_id=str(project_id),
+                            user_id=self._user_id or "system",
+                            branch_data={
+                                "id": str(branch_data.get("id", "")),
+                                "git_branch_name": branch_data.get("git_branch_name") or branch_data.get("name", git_branch_name),
+                                "name": branch_data.get("name"),
+                                "description": branch_data.get("description", git_branch_description),
+                                "project_id": str(project_id)
+                            }
+                        )
+                        logger.info(f"✅ WebSocket notification sent for branch creation: {branch_data.get('id')}")
+                    except Exception as ws_error:
+                        logger.warning(f"Failed to send WebSocket notification for branch creation: {ws_error}")
+
                 return result
                 
         except Exception as e:
@@ -75,13 +120,46 @@ class GitBranchApplicationFacade:
         """Update a git branch - synchronous version for MCP controller."""
         try:
             import asyncio
+            import logging
+            logger = logging.getLogger(__name__)
+
             # For simplicity, return success (update functionality would need to be implemented in service layer)
             # project_id is accepted but not used as git_branch_id is unique identifier
-            return {
+            result = {
                 "success": True,
                 "message": f"Git branch {git_branch_id} updated successfully",
                 "git_branch_id": git_branch_id
             }
+
+            # Get the current branch information for WebSocket notification
+            # First, get the branch data to include in the notification
+            try:
+                branch_result = self.get_git_branch_by_id(git_branch_id)
+                if branch_result.get("success"):
+                    branch_data = branch_result.get("git_branch", {})
+                    actual_project_id = branch_data.get("project_id", project_id)
+
+                    # Send WebSocket notification after successful update
+                    WebSocketNotificationService.sync_broadcast_branch_event(
+                        event_type="updated",
+                        branch_id=str(git_branch_id),
+                        project_id=str(actual_project_id),
+                        user_id=self._user_id or "system",
+                        branch_data={
+                            "id": str(git_branch_id),
+                            "git_branch_name": git_branch_name or branch_data.get("git_branch_name") or branch_data.get("name", ""),
+                            "name": branch_data.get("name"),
+                            "description": git_branch_description or branch_data.get("description", ""),
+                            "project_id": str(actual_project_id)
+                        }
+                    )
+                    logger.info(f"✅ WebSocket notification sent for branch update: {git_branch_id}")
+                else:
+                    logger.warning(f"Could not retrieve branch data for WebSocket notification: {git_branch_id}")
+            except Exception as ws_error:
+                logger.warning(f"Failed to send WebSocket notification for branch update: {ws_error}")
+
+            return result
         except Exception as e:
             return {
                 "success": False,
@@ -242,7 +320,16 @@ class GitBranchApplicationFacade:
             # Get actual project_id from the found branch (for validation)
             found_branch = branch_result.get("git_branch", {})
             actual_project_id = found_branch.get("project_id")
-            
+
+            # Store branch data for WebSocket notification before deletion
+            branch_data_for_notification = {
+                "id": str(git_branch_id),
+                "git_branch_name": found_branch.get("git_branch_name") or found_branch.get("name", ""),
+                "name": found_branch.get("name"),
+                "description": found_branch.get("description", ""),
+                "project_id": str(actual_project_id)
+            }
+
             # Validate project_id if provided
             if project_id and actual_project_id != project_id:
                 logger.warning(f"Project ID mismatch for branch {git_branch_id}: expected {project_id}, found {actual_project_id}")
@@ -251,7 +338,7 @@ class GitBranchApplicationFacade:
                     "error": f"Git branch {git_branch_id} belongs to project {actual_project_id}, not {project_id}",
                     "error_code": "PROJECT_MISMATCH"
                 }
-            
+
             # Use the actual project_id from the found branch
             target_project_id = actual_project_id or project_id or self._project_id
             
@@ -278,14 +365,44 @@ class GitBranchApplicationFacade:
                 
                 if exception:
                     raise exception
-                    
+
                 logger.info(f"Git branch deletion result: {result}")
+
+                # Send WebSocket notification after successful deletion
+                if result.get("success"):
+                    try:
+                        WebSocketNotificationService.sync_broadcast_branch_event(
+                            event_type="deleted",
+                            branch_id=str(git_branch_id),
+                            project_id=str(target_project_id),
+                            user_id=self._user_id or "system",
+                            branch_data=branch_data_for_notification
+                        )
+                        logger.info(f"✅ WebSocket notification sent for branch deletion: {git_branch_id}")
+                    except Exception as ws_error:
+                        logger.warning(f"Failed to send WebSocket notification for branch deletion: {ws_error}")
+
                 return result
                 
             except RuntimeError:
                 # No event loop is running, use asyncio.run()
                 result = asyncio.run(self._git_branch_service.delete_git_branch(target_project_id, git_branch_id))
                 logger.info(f"Git branch deletion result: {result}")
+
+                # Send WebSocket notification after successful deletion
+                if result.get("success"):
+                    try:
+                        WebSocketNotificationService.sync_broadcast_branch_event(
+                            event_type="deleted",
+                            branch_id=str(git_branch_id),
+                            project_id=str(target_project_id),
+                            user_id=self._user_id or "system",
+                            branch_data=branch_data_for_notification
+                        )
+                        logger.info(f"✅ WebSocket notification sent for branch deletion: {git_branch_id}")
+                    except Exception as ws_error:
+                        logger.warning(f"Failed to send WebSocket notification for branch deletion: {ws_error}")
+
                 return result
                 
         except Exception as e:
@@ -693,6 +810,7 @@ class GitBranchApplicationFacade:
                 enhanced_branch = {
                     "id": branch_id,
                     "name": branch.get("name"),
+                    "git_branch_name": branch.get("git_branch_name") or branch.get("name"),
                     "description": branch.get("description", ""),
                     "project_id": project_id,
                     "total_tasks": total_tasks,
@@ -884,6 +1002,7 @@ class GitBranchApplicationFacade:
             branch_summary = {
                 "id": branch_id,
                 "name": branch.get("name"),
+                "git_branch_name": branch.get("git_branch_name") or branch.get("name"),
                 "description": branch.get("description", ""),
                 "project_id": branch.get("project_id"),
                 "total_tasks": total_tasks,
