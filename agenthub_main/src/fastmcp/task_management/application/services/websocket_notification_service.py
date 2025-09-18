@@ -394,3 +394,108 @@ class WebSocketNotificationService:
                 )
         except Exception as e:
             logger.error(f"Failed to sync broadcast project event: {e}")
+
+    @staticmethod
+    def sync_broadcast_branch_event(*args, **kwargs):
+        """Synchronous wrapper for broadcast_branch_event - tries direct WebSocket first, then HTTP fallback"""
+        logger.info(f"🔔 sync_broadcast_branch_event called from MCP server")
+
+        # Extract arguments
+        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
+        branch_id = kwargs.get('branch_id', args[1] if len(args) > 1 else 'unknown')
+        project_id = kwargs.get('project_id', args[2] if len(args) > 2 else 'unknown')
+        user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
+        branch_data = kwargs.get('branch_data', args[4] if len(args) > 4 else None)
+
+        # Prepare metadata
+        metadata = {
+            "project_id": project_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        # Try direct WebSocket broadcast first (same process)
+        try:
+            from fastmcp.server.routes.websocket_routes import broadcast_data_change
+            logger.info("✅ Using direct WebSocket broadcast (same process)")
+
+            # Create a task to run the async broadcast
+            import asyncio
+            try:
+                # Get the current event loop
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If there's already a running loop, create a task
+                    asyncio.create_task(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="branch",
+                        entity_id=branch_id,
+                        user_id=user_id,
+                        data=branch_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for branch {event_type}")
+                    return  # Exit here - broadcast scheduled successfully
+                else:
+                    # If no running loop, run until complete
+                    loop.run_until_complete(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="branch",
+                        entity_id=branch_id,
+                        user_id=user_id,
+                        data=branch_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully completed WebSocket broadcast for branch {event_type}")
+                    return  # Exit here - broadcast completed successfully
+            except RuntimeError:
+                # If we can't use the current loop, create a new one
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    new_loop.run_until_complete(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="branch",
+                        entity_id=branch_id,
+                        user_id=user_id,
+                        data=branch_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully completed WebSocket broadcast for branch {event_type}")
+                    return  # Exit here - broadcast completed successfully
+                finally:
+                    new_loop.close()
+
+        except (ImportError, RuntimeError) as direct_error:
+            logger.warning(f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback")
+
+        # Fallback to HTTP broadcast for cross-process communication
+        try:
+            import requests
+            import os
+
+            # MCP server runs on port 8000
+            api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")
+            broadcast_url = f"{api_url}/api/v2/broadcast/notify"
+
+            # Send HTTP request
+            payload = {
+                "event_type": event_type,
+                "entity_type": "branch",
+                "entity_id": branch_id,
+                "user_id": user_id,
+                "data": branch_data,
+                "metadata": metadata
+            }
+
+            logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
+            response = requests.post(broadcast_url, json=payload, timeout=2)
+
+            if response.status_code == 200:
+                logger.info(f"✅ Successfully sent HTTP broadcast for branch {event_type}")
+            else:
+                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
+        except Exception as e:
+            logger.error(f"Failed to sync broadcast branch event: {e}")

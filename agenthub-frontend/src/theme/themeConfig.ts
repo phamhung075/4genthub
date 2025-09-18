@@ -125,7 +125,7 @@ export const themeConfig = {
     textInverse: '#0f172a', // slate-900
     
     // Input Colors
-    inputBackground: '#1e293b', // slate-800
+    inputBackground: '#0f172a', // slate-900 - darker for better dark mode appearance
     inputBorder: '#475569', // slate-600
     inputBorderFocus: '#60a5fa', // blue-400
     inputBorderError: '#f87171', // red-400

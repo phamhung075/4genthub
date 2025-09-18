@@ -109,6 +109,24 @@ export const lightTheme = createTheme({
             '&::placeholder': {
               color: themeConfig.light.inputPlaceholder,
             },
+            // Handle autofill to prevent browser default styles
+            '&:-webkit-autofill': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
+              transition: 'background-color 5000s ease-in-out 0s',
+            },
+            '&:-webkit-autofill:hover': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
+            },
+            '&:-webkit-autofill:focus': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
+            },
+            '&:-webkit-autofill:active': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.light.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.light.inputText,
+            },
           },
         },
       },
@@ -298,6 +316,24 @@ export const darkTheme = createTheme({
             color: themeConfig.dark.inputText,
             '&::placeholder': {
               color: themeConfig.dark.inputPlaceholder,
+            },
+            // Handle autofill to prevent browser default blue background
+            '&:-webkit-autofill': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
+              transition: 'background-color 5000s ease-in-out 0s',
+            },
+            '&:-webkit-autofill:hover': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
+            },
+            '&:-webkit-autofill:focus': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
+            },
+            '&:-webkit-autofill:active': {
+              WebkitBoxShadow: `0 0 0 1000px ${themeConfig.dark.inputBackground} inset`,
+              WebkitTextFillColor: themeConfig.dark.inputText,
             },
           },
           '& .MuiInputLabel-root': {

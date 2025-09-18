@@ -8,8 +8,9 @@ Follows the same pattern as project_routes.py
 
 import logging
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from ...auth.interface.fastapi_auth import get_db
 from ...auth.domain.entities.user import User
@@ -28,9 +29,9 @@ branch_controller = BranchAPIController()
 
 @router.post("/", response_model=dict)
 async def create_branch(
-    project_id: str,
-    name: str,
-    description: str = "",
+    project_id: str = Form(...),
+    git_branch_name: str = Form(...),
+    description: str = Form(""),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -42,12 +43,12 @@ async def create_branch(
     """
     try:
         # Log the access for audit
-        logger.info(f"User {current_user.email} creating branch: {name} in project {project_id}")
-        
+        logger.info(f"User {current_user.email} creating branch: {git_branch_name} in project {project_id}")
+
         # Delegate to API controller
         result = await branch_controller.create_branch(
             project_id=project_id,
-            name=name,
+            name=git_branch_name,
             description=description,
             user_id=current_user.id,
             session=db
