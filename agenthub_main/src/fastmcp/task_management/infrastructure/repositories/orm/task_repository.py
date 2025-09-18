@@ -23,7 +23,7 @@ from ....domain.repositories.task_repository import TaskRepository
 from ....domain.value_objects.priority import Priority
 from ....domain.value_objects.task_id import TaskId
 from ....domain.value_objects.task_status import TaskStatus
-from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, Label
+from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, Label, TaskContext, TaskSubtask
 from ..base_orm_repository import BaseORMRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
@@ -451,20 +451,79 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             raise TaskUpdateError(f"Failed to update task: {str(e)}")
     
     def delete_task(self, task_id: str) -> bool:
-        """Delete a task"""
-        result = super().delete(task_id)
-        
-        if result:
-            # Invalidate cache after delete
-            self.invalidate_cache_for_entity(
-                entity_type="task",
-                entity_id=task_id,
-                operation=CacheOperation.DELETE,
-                user_id=self.user_id,
-                propagate=False
-            )
-        
-        return result
+        """
+        Delete a task with proper cascade deletion.
+
+        This method manually handles cascade deletion to ensure all related
+        data is properly cleaned up, working around database constraint issues.
+        """
+        with self.get_db_session() as session:
+            try:
+                # Check if task exists
+                task = session.query(Task).filter(Task.id == task_id).first()
+                if not task:
+                    return False
+
+                # ===============================================================
+                # MANUAL CASCADE DELETION - Delete related data first
+                # ===============================================================
+
+                # 1. Delete task contexts (this was causing orphaned records)
+                deleted_contexts = session.query(TaskContext).filter(
+                    TaskContext.task_id == task_id
+                ).delete(synchronize_session=False)
+                logger.info(f"Deleted {deleted_contexts} task contexts for task {task_id}")
+
+                # 2. Delete task subtasks (these should cascade automatically, but let's be explicit)
+                deleted_subtasks = session.query(TaskSubtask).filter(
+                    TaskSubtask.task_id == task_id
+                ).delete(synchronize_session=False)
+                logger.info(f"Deleted {deleted_subtasks} subtasks for task {task_id}")
+
+                # 3. Delete task assignees (these should cascade automatically)
+                deleted_assignees = session.query(TaskAssignee).filter(
+                    TaskAssignee.task_id == task_id
+                ).delete(synchronize_session=False)
+                logger.info(f"Deleted {deleted_assignees} assignees for task {task_id}")
+
+                # 4. Delete task dependencies (both as dependent and dependency)
+                deleted_deps_as_dependent = session.query(TaskDependency).filter(
+                    TaskDependency.task_id == task_id
+                ).delete(synchronize_session=False)
+
+                deleted_deps_as_dependency = session.query(TaskDependency).filter(
+                    TaskDependency.depends_on_task_id == task_id
+                ).delete(synchronize_session=False)
+
+                logger.info(f"Deleted {deleted_deps_as_dependent + deleted_deps_as_dependency} dependencies for task {task_id}")
+
+                # 5. Delete task labels (these should cascade automatically)
+                deleted_labels = session.query(TaskLabel).filter(
+                    TaskLabel.task_id == task_id
+                ).delete(synchronize_session=False)
+                logger.info(f"Deleted {deleted_labels} labels for task {task_id}")
+
+                # 6. Finally delete the task itself
+                session.delete(task)
+                session.flush()  # Ensure the deletion is processed
+
+                logger.info(f"Successfully deleted task {task_id} with all related data")
+
+                # Invalidate cache after successful delete
+                self.invalidate_cache_for_entity(
+                    entity_type="task",
+                    entity_id=task_id,
+                    operation=CacheOperation.DELETE,
+                    user_id=self.user_id,
+                    propagate=False
+                )
+
+                return True
+
+            except Exception as e:
+                logger.error(f"Failed to delete task {task_id} with cascade: {e}")
+                session.rollback()
+                return False
     
     def list_tasks(self, status: str | None = None, priority: str | None = None,
                   assignee_id: str | None = None, limit: int = 100,
