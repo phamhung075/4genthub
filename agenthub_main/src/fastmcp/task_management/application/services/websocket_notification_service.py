@@ -37,10 +37,11 @@ class WebSocketNotificationService:
             project_id: Optional project ID for filtering
         """
         logger.info(f"📡 broadcast_task_event called - event: {event_type}, task_id: {task_id}, user: {user_id}")
+
         try:
-            # Import here to avoid circular dependencies
+            # Try direct import first (for when running in same process)
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
-            logger.info("✅ Successfully imported broadcast_data_change")
+            logger.info("✅ Using direct WebSocket broadcast (same process)")
 
             # Prepare metadata
             metadata = {}
@@ -51,7 +52,6 @@ class WebSocketNotificationService:
             metadata["timestamp"] = datetime.utcnow().isoformat()
 
             # Send notification
-            logger.info(f"🚀 Calling broadcast_data_change with entity_type=task, event={event_type}, task_id={task_id}")
             await broadcast_data_change(
                 event_type=event_type,
                 entity_type="task",
@@ -60,11 +60,46 @@ class WebSocketNotificationService:
                 data=task_data,
                 metadata=metadata
             )
-
             logger.info(f"✅ Successfully broadcasted task {event_type} event for {task_id}")
 
-        except ImportError:
-            logger.warning("WebSocket routes not available, skipping broadcast")
+        except (ImportError, RuntimeError) as e:
+            # Fallback to HTTP broadcast for cross-process communication
+            logger.info("📡 Using HTTP broadcast (cross-process)")
+            try:
+                import aiohttp
+                import os
+
+                # Get API server URL from environment
+                api_url = os.getenv("AUTH_API_URL", "http://localhost:8001")
+                broadcast_url = f"{api_url}/api/v2/broadcast/notify"
+
+                # Prepare metadata
+                metadata = {}
+                if git_branch_id:
+                    metadata["git_branch_id"] = git_branch_id
+                if project_id:
+                    metadata["project_id"] = project_id
+                metadata["timestamp"] = datetime.utcnow().isoformat()
+
+                # Send HTTP request to broadcast endpoint
+                async with aiohttp.ClientSession() as session:
+                    payload = {
+                        "event_type": event_type,
+                        "entity_type": "task",
+                        "entity_id": task_id,
+                        "user_id": user_id,
+                        "data": task_data,
+                        "metadata": metadata
+                    }
+                    async with session.post(broadcast_url, json=payload) as resp:
+                        if resp.status == 200:
+                            logger.info(f"✅ Successfully sent HTTP broadcast for task {event_type}")
+                        else:
+                            logger.error(f"HTTP broadcast failed with status {resp.status}")
+
+            except Exception as http_error:
+                logger.error(f"Failed to send HTTP broadcast: {http_error}")
+
         except Exception as e:
             # Don't let notification failures break the main operation
             logger.error(f"Failed to broadcast task event: {e}")
@@ -238,22 +273,109 @@ class WebSocketNotificationService:
 
     @staticmethod
     def sync_broadcast_task_event(*args, **kwargs):
-        """Synchronous wrapper for broadcast_task_event"""
-        logger.info(f"🔔 sync_broadcast_task_event called with args: {args}, kwargs: {kwargs}")
+        """Synchronous wrapper for broadcast_task_event - tries direct WebSocket first, then HTTP fallback"""
+        logger.info(f"🔔 sync_broadcast_task_event called from MCP server")
+
+        # Extract arguments
+        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
+        task_id = kwargs.get('task_id', args[1] if len(args) > 1 else 'unknown')
+        user_id = kwargs.get('user_id', args[2] if len(args) > 2 else 'system')
+        task_data = kwargs.get('task_data', args[3] if len(args) > 3 else None)
+        git_branch_id = kwargs.get('git_branch_id', args[4] if len(args) > 4 else None)
+        project_id = kwargs.get('project_id', args[5] if len(args) > 5 else None)
+
+        # Prepare metadata
+        metadata = {}
+        if git_branch_id:
+            metadata["git_branch_id"] = git_branch_id
+        if project_id:
+            metadata["project_id"] = project_id
+        metadata["timestamp"] = datetime.utcnow().isoformat()
+
+        # Try direct WebSocket broadcast first (same process)
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Schedule as a task if loop is already running
-                logger.info("🔄 Loop is running, creating task")
-                asyncio.create_task(
-                    WebSocketNotificationService.broadcast_task_event(*args, **kwargs)
-                )
+            from fastmcp.server.routes.websocket_routes import broadcast_data_change
+            logger.info("✅ Using direct WebSocket broadcast (same process)")
+
+            # Create a task to run the async broadcast
+            import asyncio
+            try:
+                # Get the current event loop
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If there's already a running loop, create a task
+                    asyncio.create_task(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="task",
+                        entity_id=task_id,
+                        user_id=user_id,
+                        data=task_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for task {event_type}")
+                    return
+                else:
+                    # If no running loop, run until complete
+                    loop.run_until_complete(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="task",
+                        entity_id=task_id,
+                        user_id=user_id,
+                        data=task_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully completed WebSocket broadcast for task {event_type}")
+                    return
+            except RuntimeError:
+                # If we can't use the current loop, create a new one
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    new_loop.run_until_complete(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="task",
+                        entity_id=task_id,
+                        user_id=user_id,
+                        data=task_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully completed WebSocket broadcast for task {event_type}")
+                    return
+                finally:
+                    new_loop.close()
+
+        except Exception as direct_error:
+            logger.warning(f"Direct WebSocket broadcast failed: {direct_error}, trying HTTP fallback")
+
+        # Fallback to HTTP broadcast for cross-process communication
+        try:
+            import requests
+            import os
+
+            # MCP server runs on port 8000
+            api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")
+            broadcast_url = f"{api_url}/api/v2/broadcast/notify"
+
+            # Send HTTP request
+            payload = {
+                "event_type": event_type,
+                "entity_type": "task",
+                "entity_id": task_id,
+                "user_id": user_id,
+                "data": task_data,
+                "metadata": metadata
+            }
+
+            logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
+            response = requests.post(broadcast_url, json=payload, timeout=2)
+
+            if response.status_code == 200:
+                logger.info(f"✅ Successfully sent HTTP broadcast for task {event_type}")
             else:
-                # Run directly if no loop is running
-                logger.info("🏃 No loop running, running until complete")
-                loop.run_until_complete(
-                    WebSocketNotificationService.broadcast_task_event(*args, **kwargs)
-                )
+                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
         except Exception as e:
             logger.error(f"Failed to sync broadcast task event: {e}")
 

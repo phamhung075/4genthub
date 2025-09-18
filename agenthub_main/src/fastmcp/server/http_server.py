@@ -27,6 +27,14 @@ from fastmcp.utilities.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Import WebSocket and broadcast routes if available
+try:
+    from fastmcp.server.routes import websocket_routes, broadcast_routes
+    WEBSOCKET_AVAILABLE = True
+except ImportError:
+    logger.info("WebSocket routes not available - real-time updates disabled")
+    WEBSOCKET_AVAILABLE = False
+
 # Import Keycloak request context middleware
 try:
     from fastmcp.auth.middleware.request_context_middleware import RequestContextMiddleware
@@ -286,6 +294,7 @@ def create_http_server_factory(
     routes: list[BaseRoute] | None = None,
     middleware: list[Middleware] | None = None,
     cors_origins: list[str] | None = None,
+    include_websocket: bool = True,
 ) -> tuple[list[BaseRoute], list[Middleware], list[str]]:
     """Factory function to create common server components for both SSE and Streamable HTTP apps.
     
@@ -312,7 +321,16 @@ def create_http_server_factory(
     # Add custom routes if provided
     if routes:
         server_routes.extend(routes)
-    
+
+    # Add WebSocket and broadcast routes if available and requested
+    if include_websocket and WEBSOCKET_AVAILABLE:
+        try:
+            # Add routes directly to server_routes
+            # These will be mounted properly when creating the Starlette app
+            logger.info("📡 WebSocket support requested, will add routes during app creation")
+        except Exception as e:
+            logger.warning(f"Could not prepare WebSocket routes: {e}")
+
     # Add custom middleware if provided
     if middleware:
         server_middleware.extend(middleware)
@@ -426,7 +444,15 @@ def create_sse_app(
             logger.info("✅ WebSocket routes registered at /ws/realtime")
         except ImportError as ws_e:
             logger.warning(f"Could not import WebSocket routes: {ws_e}")
-        
+
+        # Add broadcast routes for cross-process communication
+        try:
+            from .routes.broadcast_routes import router as broadcast_router
+            v2_app.include_router(broadcast_router)
+            logger.info("✅ Broadcast routes registered at /api/v2/broadcast/notify")
+        except ImportError as br_e:
+            logger.warning(f"Could not import broadcast routes: {br_e}")
+
         # Mount the FastAPI app as a sub-application
         server_routes.append(Mount("/", app=v2_app))
         logger.info("User-scoped V2 routes registered with task summaries at /api/v2/projects, /api/v2/tasks, and /api/tasks")

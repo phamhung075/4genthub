@@ -471,8 +471,6 @@ STANDARD FILES WITHOUT TESTS (419 files):
   Source: fastmcp/auth/api/supabase_endpoints.py
   Test:   unit/auth/api/supabase_endpoints_test.py
 
-  Source: fastmcp/auth/api_server.py
-  Test:   unit/auth/api_server_test.py
 
   Source: fastmcp/auth/dependencies.py
   Test:   unit/auth/dependencies_test.py

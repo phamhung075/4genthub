@@ -10,6 +10,7 @@ import { RefreshButton } from "./ui/refresh-button";
 import { ShimmerBadge } from "./ui/shimmer-badge";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { useErrorToast, useSuccessToast } from "./ui/toast";
+import { websocketService } from "../services/websocketService";
 
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
@@ -36,6 +37,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   const [branchSummaries, setBranchSummaries] = useState<Record<string, BranchSummary[]>>({});
   const [loadingBranches, setLoadingBranches] = useState<Record<string, boolean>>({});
   const [deletingBranches, setDeletingBranches] = useState<Set<string>>(new Set());
+  const [previousTaskCounts, setPreviousTaskCounts] = useState<Record<string, number>>({});
   
   // Toast notifications
   const showSuccessToast = useSuccessToast();
@@ -93,11 +95,8 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     try {
       const projectsData = await listProjects();
       console.log('Fetched projects data:', projectsData);
-      console.log('First project:', projectsData[0]);
-      console.log('First project git_branchs field:', projectsData[0]?.git_branchs);
-      console.log('Type of git_branchs:', typeof projectsData[0]?.git_branchs);
       setProjects(projectsData);
-      
+
       // Extract task counts from the project data directly (no additional API calls needed)
       const counts: Record<string, number> = {};
       for (const project of projectsData) {
@@ -105,7 +104,27 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
           for (const tree of Object.values(project.git_branchs)) {
             // Use task_count from API response if available, otherwise fallback to 0
             counts[tree.id] = tree.task_count ?? 0;
-            console.log(`Branch ${tree.name} (${tree.id}): task_count = ${tree.task_count}`);
+
+            // Check if task count changed and show notification
+            const prevCount = taskCounts[tree.id] ?? 0;
+            const newCount = tree.task_count ?? 0;
+
+            if (prevCount !== newCount && taskCounts[tree.id] !== undefined) {
+              // Task count changed!
+              if (newCount > prevCount) {
+                const diff = newCount - prevCount;
+                showSuccessToast(
+                  '🎉 New task detected!',
+                  `${diff} new task${diff > 1 ? 's' : ''} added to branch "${tree.name}" in project "${project.name}"`
+                );
+              } else if (newCount < prevCount) {
+                const diff = prevCount - newCount;
+                showSuccessToast(
+                  '✅ Task completed or removed',
+                  `${diff} task${diff > 1 ? 's' : ''} removed from branch "${tree.name}" in project "${project.name}"`
+                );
+              }
+            }
           }
         }
       }
@@ -187,13 +206,29 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     // Clear all cached branch summaries to force fresh reload
     setBranchSummaries({});
     setTaskCounts({});
-    
+
     // First fetch projects to update basic data
     fetchProjects().then(() => {
       // Then refresh branch summaries for open projects
       refreshOpenBranchSummaries();
     });
   }, [refreshKey]); // Refresh when refreshKey changes
+
+  // Subscribe to WebSocket events for real-time updates
+  useEffect(() => {
+    const unsubscribe = websocketService.on('task', (message) => {
+      console.log('Task event received via WebSocket:', message);
+      // Refresh when task events occur
+      fetchProjects();
+      if (Object.keys(openProjects).some(id => openProjects[id])) {
+        refreshOpenBranchSummaries();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [openProjects]);
 
   const handleCreate = async () => {
     setSaving(true);
