@@ -38,6 +38,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   const [loadingBranches, setLoadingBranches] = useState<Record<string, boolean>>({});
   const [deletingBranches, setDeletingBranches] = useState<Set<string>>(new Set());
   const [previousTaskCounts, setPreviousTaskCounts] = useState<Record<string, number>>({});
+
+  // Animation states for branch creation and deletion
+  const [newBranches, setNewBranches] = useState<Set<string>>(new Set());
+  const [fadingOutBranches, setFadingOutBranches] = useState<Set<string>>(new Set());
+  const [previousBranchIds, setPreviousBranchIds] = useState<Set<string>>(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Toast notifications
   const showSuccessToast = useSuccessToast();
@@ -90,18 +96,6 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   };
 
 
-  // Subscribe to real-time updates for projects and branches
-  useEntityChanges(
-    'ProjectList',
-    ['project', 'branch'],
-    () => {
-      // Refresh projects when any project or branch changes
-      fetchProjects();
-    },
-    {
-      enabled: true
-    }
-  );
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -152,7 +146,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     } finally {
       setLoading(false);
     }
-  }, [taskCounts, showSuccessToast]);
+  }, [showSuccessToast]);
 
   const refreshOpenBranchSummaries = useCallback(async () => {
     // Check if user is authenticated
@@ -229,7 +223,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
       // Then refresh branch summaries for open projects
       refreshOpenBranchSummaries();
     });
-  }, [refreshKey]); // Refresh when refreshKey changes
+  }, [refreshKey, fetchProjects, refreshOpenBranchSummaries]); // Include all dependencies
 
   // Create stable refresh callback for change pool
   const handleDataChange = useCallback(() => {
@@ -243,6 +237,60 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
 
   // Subscribe to centralized change pool for real-time updates
   useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
+
+  // Detect new branches and trigger fade-in animations
+  useEffect(() => {
+    if (isInitialLoad) {
+      // Don't animate on initial load, just track current branches
+      const currentBranchIds = new Set<string>();
+      projects.forEach(project => {
+        if (project.git_branchs) {
+          Object.keys(project.git_branchs).forEach(branchId => {
+            currentBranchIds.add(branchId);
+          });
+        }
+      });
+      setPreviousBranchIds(currentBranchIds);
+      setIsInitialLoad(false);
+      return;
+    }
+
+    // Get current branch IDs
+    const currentBranchIds = new Set<string>();
+    projects.forEach(project => {
+      if (project.git_branchs) {
+        Object.keys(project.git_branchs).forEach(branchId => {
+          currentBranchIds.add(branchId);
+        });
+      }
+    });
+
+    // Find newly added branches (not in previous set)
+    const newlyAddedBranches = Array.from(currentBranchIds).filter(id => !previousBranchIds.has(id));
+
+    if (newlyAddedBranches.length > 0) {
+      console.log('Detected new branches for animation:', newlyAddedBranches);
+
+      // Add to newBranches for animation
+      setNewBranches(prev => {
+        const updated = new Set(prev);
+        newlyAddedBranches.forEach(id => updated.add(id));
+        return updated;
+      });
+
+      // Remove from newBranches after animation completes
+      setTimeout(() => {
+        setNewBranches(prev => {
+          const updated = new Set(prev);
+          newlyAddedBranches.forEach(id => updated.delete(id));
+          return updated;
+        });
+      }, 300); // Match animation duration
+    }
+
+    // Update previous branch IDs for next comparison
+    setPreviousBranchIds(currentBranchIds);
+  }, [projects, isInitialLoad]); // Remove previousBranchIds from dependencies
 
   const handleCreate = async () => {
     setSaving(true);
@@ -267,17 +315,24 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     if (!showCreateBranch) return;
     setSaving(true);
     try {
-      await createBranch(showCreateBranch.id, {
+      const result = await createBranch(showCreateBranch.id, {
         git_branch_name: form.name,
         description: form.description
       });
+
       showSuccessToast(
         'Branch created successfully',
         `Branch "${form.name}" has been created in project "${showCreateBranch.name}".`
       );
       setShowCreateBranch(null);
       setForm({ name: "", description: "" });
-      fetchProjects();
+
+      // Fetch projects first, then trigger animation
+      await fetchProjects();
+
+      // Note: The animation will be triggered by the useEffect that detects new branches
+      console.log('Branch created, animation will be triggered by branch detection logic');
+
     } catch (e: any) {
       showErrorToast('Failed to create branch', e.message);
       setError(e.message);
@@ -360,19 +415,24 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
 
   const handleDeleteBranch = async () => {
     if (!showDeleteBranch) return;
-    
+
     const projectId = showDeleteBranch.project.id;
     const branchId = showDeleteBranch.branch.id;
     const branchName = showDeleteBranch.branch.git_branch_name || showDeleteBranch.branch.name;
-    
-    // Immediately mark branch as being deleted
-    setDeletingBranches(prev => new Set(prev).add(branchId));
+
+    // Start fade-out animation first
+    setFadingOutBranches(prev => new Set(prev).add(branchId));
     setSaving(true);
-    
-    // Store backup data for rollback
-    const backupProjects = [...projects];
-    const backupBranchSummaries = { ...branchSummaries };
-    const backupTaskCounts = { ...taskCounts };
+
+    // Wait for fade-out animation to complete before proceeding
+    setTimeout(async () => {
+      // Mark branch as being deleted (for loading state)
+      setDeletingBranches(prev => new Set(prev).add(branchId));
+
+      // Store backup data for rollback
+      const backupProjects = [...projects];
+      const backupBranchSummaries = { ...branchSummaries };
+      const backupTaskCounts = { ...taskCounts };
     
     // Optimistically remove the branch from UI
     try {
@@ -458,8 +518,17 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
         updated.delete(branchId);
         return updated;
       });
+
+      // Clean up animation states
+      setFadingOutBranches(prev => {
+        const updated = new Set(prev);
+        updated.delete(branchId);
+        return updated;
+      });
+
       setSaving(false);
     }
+    }, 300); // Animation duration
   };
 
   if (loading && projects.length === 0) return (
@@ -590,9 +659,16 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                     // Use optimized branch summaries if available
                     branchSummaries[project.id].map((branch) => (
                       <li key={branch.id}>
-                        <div className={`group relative flex items-center gap-1 transition-opacity ${
-                          deletingBranches.has(branch.id) ? 'opacity-50 pointer-events-none' : ''
-                        }`}>
+                        <div className={cn(
+                          "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
+                          // Fade-in animation for new branches
+                          newBranches.has(branch.id) && "opacity-0 -translate-x-2.5",
+                          !newBranches.has(branch.id) && "opacity-100 translate-x-0",
+                          // Fade-out animation for deleting branches
+                          fadingOutBranches.has(branch.id) && "opacity-0 -translate-x-2.5 pointer-events-none",
+                          // Loading state for deletion process
+                          deletingBranches.has(branch.id) && !fadingOutBranches.has(branch.id) && "opacity-50 pointer-events-none"
+                        )}>
                           <span className="text-muted-foreground">—</span>
                           <ShimmerButton
                             size="sm"
@@ -654,9 +730,16 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                     // Fallback to original branch data if optimized not loaded
                     Object.values(project.git_branchs).map((tree) => (
                       <li key={tree.id}>
-                        <div className={`group relative flex items-center gap-1 transition-opacity ${
-                          deletingBranches.has(tree.id) ? 'opacity-50 pointer-events-none' : ''
-                        }`}>
+                        <div className={cn(
+                          "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
+                          // Fade-in animation for new branches
+                          newBranches.has(tree.id) && "opacity-0 -translate-x-2.5",
+                          !newBranches.has(tree.id) && "opacity-100 translate-x-0",
+                          // Fade-out animation for deleting branches
+                          fadingOutBranches.has(tree.id) && "opacity-0 -translate-x-2.5 pointer-events-none",
+                          // Loading state for deletion process
+                          deletingBranches.has(tree.id) && !fadingOutBranches.has(tree.id) && "opacity-50 pointer-events-none"
+                        )}>
                           <span className="text-muted-foreground">—</span>
                           <ShimmerButton
                             size="sm"

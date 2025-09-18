@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **ProjectList infinite loop resolved** - 2025-09-18 🔄
+  - Fixed "Maximum update depth exceeded" error in ProjectList component
+  - Removed `taskCounts` from `fetchProjects` useCallback dependencies to break circular dependency chain
+  - Issue was caused by `fetchProjects` → `setTaskCounts` → re-render → `fetchProjects` recreation loop
+  - Component still has access to `taskCounts` through closure for notifications
+  - No functionality lost, improved performance by reducing unnecessary re-renders
+  - File: `agenthub-frontend/src/components/ProjectList.tsx` (line 149)
+
 ### Added
 - **Real-time Data Synchronization** - 2025-09-18 🔄
   - Implemented WebSocket-based real-time updates between backend and frontend
