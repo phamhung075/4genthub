@@ -462,7 +462,14 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 # Check if task exists
                 task = session.query(Task).filter(Task.id == task_id).first()
                 if not task:
+                    logger.warning(f"Task {task_id} not found for deletion")
                     return False
+
+                # Check if user owns the task (data isolation)
+                if not self.is_system_mode() and self.user_id:
+                    if hasattr(task, 'user_id') and task.user_id != self.user_id:
+                        logger.warning(f"User {self.user_id} cannot delete task {task_id} owned by {task.user_id}")
+                        return False
 
                 # ===============================================================
                 # MANUAL CASCADE DELETION - Delete related data first
@@ -505,9 +512,11 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
 
                 # 6. Finally delete the task itself
                 session.delete(task)
-                session.flush()  # Ensure the deletion is processed
 
-                logger.info(f"Successfully deleted task {task_id} with all related data")
+                # CRITICAL: Explicitly commit here to ensure deletion persists
+                session.commit()
+
+                logger.info(f"Successfully deleted and committed task {task_id} with all related data")
 
                 # Invalidate cache after successful delete
                 self.invalidate_cache_for_entity(
@@ -521,7 +530,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 return True
 
             except Exception as e:
-                logger.error(f"Failed to delete task {task_id} with cascade: {e}")
+                logger.error(f"Failed to delete task {task_id}: {e}", exc_info=True)
                 session.rollback()
                 return False
     
