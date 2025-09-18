@@ -168,8 +168,8 @@ async def update_project(
         logger.info(f"User {current_user.email} updating project: {project_id}")
         
         # Create request DTO
-        update_request = UpdateProjectRequest(name=name, description=description)
-        
+        update_request = UpdateProjectRequest(project_id=project_id, name=name, description=description)
+
         # Delegate to API controller
         result = await project_controller.update_project(project_id, update_request, current_user.id, db)
         
