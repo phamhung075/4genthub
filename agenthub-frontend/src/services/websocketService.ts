@@ -298,6 +298,12 @@ class WebSocketService {
       return;
     }
 
+    // Skip notifications for branch creation/deletion - handled by ProjectList component
+    // This prevents duplicate notifications
+    if (entityType === 'branch' && (eventType === 'created' || eventType === 'deleted')) {
+      return;
+    }
+
     // Get entity name from data
     const entityName = message.data?.title ||
                       message.data?.name ||
