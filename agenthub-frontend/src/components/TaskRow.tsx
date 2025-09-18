@@ -1,11 +1,11 @@
 import { ChevronDown, ChevronRight, Eye, FileText, Pencil, Trash2, Users } from "lucide-react";
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { Task } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { TableCell, TableRow } from "./ui/table";
 
 const LazySubtaskList = React.lazy(() => import("./LazySubtaskList"));
 
@@ -137,7 +137,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
         };
       case 'updating':
         return {
-          animation: 'shimmerBorder 2s linear infinite'
+          animation: 'shimmerBackground 2s linear infinite'
         };
       default:
         return {};
@@ -154,13 +154,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
       case 'deleting':
         return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
-        return `${baseClasses} relative overflow-hidden border-2`;
+        return `${baseClasses} task-updating-animation`;
       default:
         return baseClasses + (
           isHighlighted
-            ? ' border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md scale-102'
+            ? ' border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md'
             : isHovered
-            ? ' border-violet-400 shadow-lg scale-102 bg-violet-200 dark:bg-violet-950'
+            ? ' border-violet-400 shadow-lg bg-violet-200 dark:bg-violet-950'
             : ' border-surface-border dark:border-gray-700'
         );
     }
@@ -176,22 +176,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
             0% {
               transform: translateX(100%);
               opacity: 0;
-              scale: 0.9;
             }
             30% {
               transform: translateX(20%);
               opacity: 0.7;
-              scale: 0.95;
             }
             70% {
               transform: translateX(-5%);
               opacity: 1;
-              scale: 1.02;
             }
             100% {
               transform: translateX(0);
               opacity: 1;
-              scale: 1;
             }
           }
           @keyframes slideOutToRight {
@@ -199,18 +195,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
               transform: translateX(0);
               opacity: 1;
               height: auto;
-              scale: 1;
             }
             30% {
               transform: translateX(20%);
               opacity: 0.8;
-              scale: 0.98;
             }
             80% {
               transform: translateX(100%);
               opacity: 0;
               height: auto;
-              scale: 0.9;
             }
             100% {
               transform: translateX(100%);
@@ -220,57 +213,38 @@ const TaskRow: React.FC<TaskRowProps> = ({
               padding: 0;
               border: 0;
               overflow: hidden;
-              scale: 0.8;
             }
           }
-          @property --shimmer-angle {
-            syntax: '<angle>';
-            initial-value: 0deg;
-            inherits: false;
-          }
-
-          @keyframes shimmerBorder {
+          @keyframes shimmerBackground {
             0% {
-              --shimmer-angle: 0deg;
+              background-position: 100% 50%;
             }
             100% {
-              --shimmer-angle: 360deg;
+              background-position: -100% 50%;
             }
           }
 
-          @keyframes pulseGlow {
-            0%, 100% {
-              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5),
-                          0 0 20px rgba(59, 130, 246, 0.3),
-                          inset 0 0 10px rgba(59, 130, 246, 0.1);
-            }
-            50% {
-              box-shadow: 0 0 20px rgba(59, 130, 246, 0.8),
-                          0 0 30px rgba(59, 130, 246, 0.5),
-                          inset 0 0 15px rgba(59, 130, 246, 0.2);
-            }
+          .task-updating-animation {
+            background: linear-gradient(90deg,
+              transparent 0%,
+              transparent 30%,
+              rgba(59, 130, 246, 0.3) 40%,
+              rgba(96, 165, 250, 0.3) 50%,
+              rgba(147, 197, 253, 0.3) 60%,
+              transparent 70%,
+              transparent 100%);
+            background-size: 200% 100%;
+            animation: shimmerBackground 2s linear infinite;
           }
         `}</style>
 
         <div
-          className={`relative rounded-lg mb-3 cursor-pointer ${getAnimationClasses()} ${animationState === 'updating' ? 'p-[2px]' : ''}`}
-          style={{
-            ...getAnimationStyle(),
-            ...(animationState === 'updating' ? {
-              background: `conic-gradient(from var(--shimmer-angle),
-                transparent 25%,
-                #3b82f6 50%,
-                #60a5fa 60%,
-                #93c5fd 70%,
-                transparent 75%)`,
-              animation: 'shimmerBorder 5s linear infinite',
-            } : {})
-          }}
+          className={`rounded-lg mb-3 cursor-pointer ${getAnimationClasses()}`}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >
-          {/* Inner content with border shimmer effect */}
-          <div className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border ${animationState !== 'updating' ? 'border' : 'border-none'} w-full h-full`}>
+          {/* Inner content */}
+          <div className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border w-full h-full`}>
           <div className="p-4">
             {/* Task Header */}
             <div className="flex items-start justify-between mb-3">
@@ -405,22 +379,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
             0% {
               transform: translateX(100%);
               opacity: 0;
-              scale: 0.9;
             }
             30% {
               transform: translateX(20%);
               opacity: 0.7;
-              scale: 0.95;
             }
             70% {
               transform: translateX(-5%);
               opacity: 1;
-              scale: 1.02;
             }
             100% {
               transform: translateX(0);
               opacity: 1;
-              scale: 1;
             }
           }
           @keyframes slideOutToRight {
@@ -428,18 +398,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
               transform: translateX(0);
               opacity: 1;
               height: auto;
-              scale: 1;
             }
             30% {
               transform: translateX(20%);
               opacity: 0.8;
-              scale: 0.98;
             }
             80% {
               transform: translateX(100%);
               opacity: 0;
               height: auto;
-              scale: 0.9;
             }
             100% {
               transform: translateX(100%);
@@ -449,54 +416,34 @@ const TaskRow: React.FC<TaskRowProps> = ({
               padding: 0;
               border: 0;
               overflow: hidden;
-              scale: 0.8;
             }
           }
-          @property --shimmer-angle {
-            syntax: '<angle>';
-            initial-value: 0deg;
-            inherits: false;
-          }
-
-          @keyframes shimmerBorder {
+          @keyframes shimmerBackground {
             0% {
-              --shimmer-angle: 0deg;
+              background-position: 100% 50%;
             }
             100% {
-              --shimmer-angle: 360deg;
+              background-position: -100% 50%;
             }
           }
 
-          @keyframes pulseGlow {
-            0%, 100% {
-              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5),
-                          0 0 20px rgba(59, 130, 246, 0.3),
-                          inset 0 0 10px rgba(59, 130, 246, 0.1);
-            }
-            50% {
-              box-shadow: 0 0 20px rgba(59, 130, 246, 0.8),
-                          0 0 30px rgba(59, 130, 246, 0.5),
-                          inset 0 0 15px rgba(59, 130, 246, 0.2);
-            }
+          .task-updating-animation {
+            background: linear-gradient(90deg,
+              transparent 0%,
+              transparent 30%,
+              rgba(59, 130, 246, 0.3) 40%,
+              rgba(96, 165, 250, 0.3) 50%,
+              rgba(147, 197, 253, 0.3) 60%,
+              transparent 70%,
+              transparent 100%);
+            background-size: 200% 100%;
+            animation: shimmerBackground 2s linear infinite;
           }
         `}</style>
 
         <TableRow
           className={`cursor-pointer ${getAnimationClasses()}`}
-          style={{
-            ...getAnimationStyle(),
-            ...(animationState === 'updating' ? {
-              borderTop: `2px solid transparent`,
-              borderBottom: `2px solid transparent`,
-              borderImage: `conic-gradient(from var(--shimmer-angle),
-                transparent 25%,
-                #3b82f6 50%,
-                #60a5fa 60%,
-                #93c5fd 70%,
-                transparent 75%) 1`,
-              animation: 'shimmerBorder 5s linear infinite',
-            } : {})
-          }}
+          style={getAnimationStyle()}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >
@@ -517,7 +464,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
             </Button>
           </TableCell>
 
-          <TableCell>
+          <TableCell className="">
             <div className="flex items-center gap-2">
               <span>{summary.title}</span>
               {summary.subtask_count > 0 && (
@@ -567,7 +514,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
             )}
           </TableCell>
 
-          <TableCell>
+          <TableCell className="">
             <div className="flex gap-1">
               <Button
                 variant="ghost"
