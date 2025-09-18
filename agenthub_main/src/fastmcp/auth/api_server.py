@@ -18,9 +18,31 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+# Configure logging first
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Import the auth routers
 from fastmcp.auth.interface.auth_endpoints import router as auth_router
-from fastmcp.auth.api.supabase_endpoints import router as supabase_router
+
+# Try to import Supabase endpoints but make it optional
+try:
+    # Check if Supabase credentials are available before importing
+    import os
+    if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_KEY"):
+        from fastmcp.auth.api.supabase_endpoints import router as supabase_router
+        SUPABASE_AVAILABLE = True
+    else:
+        logger.warning("Supabase credentials not found, skipping Supabase endpoints")
+        SUPABASE_AVAILABLE = False
+        supabase_router = None
+except Exception as e:
+    logger.warning(f"Supabase endpoints not available: {e}")
+    SUPABASE_AVAILABLE = False
+    supabase_router = None
 # dev_endpoints not implemented yet - skip for now
 
 # Import the user-scoped task, project, and context routes
@@ -28,6 +50,9 @@ from fastmcp.server.routes.user_scoped_task_routes import router as user_scoped_
 from fastmcp.server.routes.user_scoped_project_routes import router as user_scoped_projects_router
 from fastmcp.server.routes.user_scoped_context_routes import router as user_scoped_contexts_router
 from fastmcp.server.routes.token_router import router as token_router
+
+# Import WebSocket routes for real-time updates
+from fastmcp.server.routes.websocket_routes import router as websocket_router
 
 # Import version configuration
 from fastmcp.config.version import VERSION, VERSION_INFO
@@ -72,7 +97,11 @@ app.add_middleware(
 
 # Include auth routers
 app.include_router(auth_router)  # Custom auth endpoints (legacy)
-app.include_router(supabase_router)  # Supabase auth endpoints (new)
+if SUPABASE_AVAILABLE and supabase_router:
+    app.include_router(supabase_router)  # Supabase auth endpoints (new)
+    logger.info("✅ Supabase auth routes enabled")
+else:
+    logger.warning("⚠️ Supabase auth routes disabled - using Keycloak only")
 
 # Include user-scoped task routes with authentication
 app.include_router(user_scoped_tasks_router)  # User-scoped task endpoints at /api/v2/tasks/
@@ -89,6 +118,10 @@ logger.info("✅ User-scoped context routes enabled at /api/v2/contexts/")
 # Include token management routes with authentication
 app.include_router(token_router)  # Token management endpoints at /api/v2/tokens/
 logger.info("✅ Token management routes enabled at /api/v2/tokens/")
+
+# Include WebSocket routes for real-time updates
+app.include_router(websocket_router)  # WebSocket endpoints at /ws/
+logger.info("✅ WebSocket routes enabled at /ws/realtime")
 
 # Development endpoints can be added later if needed
 # if os.getenv("ENVIRONMENT", "development") == "development":

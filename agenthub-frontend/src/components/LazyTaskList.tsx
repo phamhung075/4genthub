@@ -4,6 +4,7 @@ import { deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../
 import { getFullTask } from "../api-lazy";
 import ClickableAssignees from "./ClickableAssignees";
 import TaskSearch from "./TaskSearch";
+import { useWebSocket } from "../hooks/useWebSocket";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
@@ -71,6 +72,59 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   // Dependency highlighting state
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
+
+  // WebSocket real-time updates
+  const { subscribeToBranch } = useWebSocket({
+    onTaskUpdate: useCallback((taskId: string, data: any) => {
+      console.log(`Task ${taskId} updated via WebSocket`, data);
+
+      // Update the task in our cache if we have it
+      if (fullTasks.has(taskId)) {
+        const updatedTask = { ...fullTasks.get(taskId), ...data };
+        setFullTasks(prev => {
+          const newMap = new Map(prev);
+          newMap.set(taskId, updatedTask);
+          return newMap;
+        });
+      }
+
+      // Update task summary
+      setTaskSummaries(prev => prev.map(summary =>
+        summary.id === taskId
+          ? {
+              ...summary,
+              title: data.title || summary.title,
+              status: data.status || summary.status,
+              priority: data.priority || summary.priority,
+              assignees: data.assignees || summary.assignees,
+            }
+          : summary
+      ));
+    }, [fullTasks]),
+
+    onSubtaskUpdate: useCallback((subtaskId: string, parentTaskId: string, data: any) => {
+      console.log(`Subtask ${subtaskId} of task ${parentTaskId} updated`, data);
+
+      // Update the parent task's subtask count if needed
+      setTaskSummaries(prev => prev.map(summary =>
+        summary.id === parentTaskId
+          ? { ...summary, subtask_count: summary.subtask_count + (data.event_type === 'created' ? 1 : 0) }
+          : summary
+      ));
+    }, []),
+
+    onAnyUpdate: useCallback((message: any) => {
+      // Log all updates for debugging
+      console.log('WebSocket update received:', message);
+    }, [])
+  });
+
+  // Subscribe to branch updates when component mounts
+  useEffect(() => {
+    if (taskTreeId) {
+      subscribeToBranch(taskTreeId);
+    }
+  }, [taskTreeId, subscribeToBranch]);
 
   // Memoized filtered and sorted tasks
   const displayTasks = useMemo(() => {

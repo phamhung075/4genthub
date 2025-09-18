@@ -12,7 +12,10 @@ import ProjectDetailsDialog from './components/ProjectDetailsDialog';
 import ProjectList from './components/ProjectList';
 import ShimmerButton from './components/ui/ShimmerButton';
 import { ToastProvider } from './components/ui/toast';
+import { WebSocketToastBridge } from './components/WebSocketToastBridge';
 import { ThemeProvider } from './contexts/ThemeContext';
+// Import WebSocket service to ensure it auto-connects
+import './services/websocketService';
 import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
@@ -174,6 +177,7 @@ function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
+        <WebSocketToastBridge />
         <AuthWrapper>
         <Routes>
           {/* Public routes */}

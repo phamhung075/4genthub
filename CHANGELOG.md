@@ -7,6 +7,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Added
+- **Real-time Data Synchronization** - 2025-09-18 🔄
+  - Implemented WebSocket-based real-time updates between backend and frontend
+  - Added WebSocket routes at `/ws/realtime` for real-time data streaming
+  - Created `websocket_routes.py` with authentication support via Keycloak JWT tokens
+  - Implemented `WebSocketNotificationService` for broadcasting data changes from MCP operations
+  - Created `websocketService.ts` for managing WebSocket connections on frontend
+  - Added React hook `useWebSocket` for easy integration in components
+  - Added `useAutoRefresh` hook for automatic component updates
+  - Integrated real-time updates in `LazyTaskList` component for automatic UI refresh
+  - Support for task, subtask, project, branch, and context update notifications
+  - Automatic reconnection with exponential backoff
+  - Heartbeat mechanism to keep connections alive
+  - WebSocket authentication via query parameters or initial auth message
+
+- **User Notifications System** - 2025-09-18 🔔
+  - Implemented comprehensive notification system for all CRUD operations
+  - Added toast notifications using `react-hot-toast` for in-app alerts
+  - Implemented browser/desktop notifications for critical events (branch/project deletion, task completion)
+  - Created `notificationService.ts` with support for success, error, warning, and info notifications
+  - Added sound alerts for important events (configurable by user)
+  - Integrated notifications with WebSocket real-time updates
+  - Smart filtering to avoid showing notifications for user's own actions
+  - Created `NotificationSettings` component for user preferences
+  - Notifications show entity name, action taken, and who performed it
+  - Browser notifications require user permission (requested on-demand)
+
+### Added
 - **Keycloak authentication documentation and testing** - 2025-09-18 🔐
   - Created comprehensive Keycloak client configuration guide in `ai_docs/authentication/keycloak-mcp-api-client-config.md`
     - Detailed configuration for `mcp-api` backend client

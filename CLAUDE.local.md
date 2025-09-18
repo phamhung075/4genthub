@@ -1,5 +1,4 @@
 # agenthub Project - Local AI Agent Rules
-
 DATABASE agenthub
 rolname = 'agenthub_user'
 
@@ -11,6 +10,8 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 
 Key Points:
 - On dev, The system should be using Keycloak for authentication and local PostgreSQL docker for the database
+- On dev, for restart after change code Bash(echo "R" | ./docker-system/docker-menu.sh) 
+- The server is started with fastmcp.server.mcp_entry_point
 - Keycloak is the source of truth for user authentication
 - Both frontend and backend trust the same Keycloak user identity
 - docker-menu.sh option R for rebuild
