@@ -1,15 +1,12 @@
-import { ChevronDown, ChevronRight, Eye, FileText, Pencil, Plus, RefreshCw, Trash2, Users } from "lucide-react";
-import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw } from "lucide-react";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { getFullTask } from "../api-lazy";
-import ClickableAssignees from "./ClickableAssignees";
 import TaskSearch from "./TaskSearch";
-import { useWebSocket } from "../hooks/useWebSocket";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
+import TaskRow from "./TaskRow";
+import { useEntityChanges } from "../hooks/useChangeSubscription";
 import { ShimmerButton } from "./ui/shimmer-button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
 
 // Lazy-loaded components
 const LazySubtaskList = lazy(() => import("./LazySubtaskList"));
@@ -73,66 +70,161 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
 
-  // WebSocket real-time updates
-  const { subscribeToBranch } = useWebSocket({
-    onTaskUpdate: useCallback((taskId: string, data: any) => {
-      console.log(`Task ${taskId} updated via WebSocket`, data);
+  // Track previous task IDs for detecting new tasks
+  const [previousTaskIds, setPreviousTaskIds] = useState<Set<string>>(new Set());
 
-      // Update the task in our cache if we have it
-      if (fullTasks.has(taskId)) {
-        const updatedTask = { ...fullTasks.get(taskId), ...data };
-        setFullTasks(prev => {
-          const newMap = new Map(prev);
-          newMap.set(taskId, updatedTask);
-          return newMap;
+  // Row animation callback registry
+  const rowAnimationCallbacks = useRef<Map<string, {
+    playCreateAnimation: () => void;
+    playDeleteAnimation: () => void;
+    playUpdateAnimation: () => void;
+  }>>(new Map());
+
+  // Stable refresh callback for changePoolService
+  const handleTaskChanges = useCallback(async () => {
+    console.log('📡 LazyTaskList: Task changes detected, refreshing...');
+
+    // Store current task IDs and data before refresh for comparison
+    const currentTaskIds = new Set(taskSummaries.map(t => t.id));
+    const currentTaskMap = new Map(taskSummaries.map(t => [t.id, t]));
+
+    // Re-fetch task summaries to get latest data
+    try {
+      const taskList = await listTasks({ git_branch_id: taskTreeId });
+      const validTaskList = Array.isArray(taskList) ? taskList : [];
+
+      // Convert to task summaries
+      const summaries: TaskSummary[] = validTaskList.map(task => {
+        const depFromArray = task.dependencies?.length || 0;
+        const depFromRelationships = task.dependency_relationships?.depends_on?.length || 0;
+        const depFromSummary = task.dependency_summary?.total_dependencies || 0;
+        const dependencyCount = Math.max(depFromArray, depFromRelationships, depFromSummary);
+
+        return {
+          id: task.id,
+          title: task.title,
+          status: task.status,
+          priority: task.priority,
+          subtask_count: task.subtasks?.length || 0,
+          assignees_count: task.assignees?.length || 0,
+          assignees: task.assignees || [],
+          has_dependencies: dependencyCount > 0,
+          dependency_count: dependencyCount,
+          has_context: Boolean(task.context_id || task.context_data)
+        };
+      });
+
+      const newTaskIds = new Set(summaries.map(t => t.id));
+
+      // Detect changes and trigger animations
+      // 1. New tasks (created) - only if we have a previous state to compare
+      if (currentTaskIds.size > 0) {
+        const addedTasks = new Set([...newTaskIds].filter(id => !currentTaskIds.has(id)));
+        console.log('🔍 Change detection - currentTaskIds:', currentTaskIds.size, 'newTaskIds:', newTaskIds.size, 'addedTasks:', addedTasks.size);
+
+        if (addedTasks.size > 0) {
+          console.log('✨ New tasks detected:', [...addedTasks]);
+          // Wait a bit for TaskRow to register callbacks
+          setTimeout(() => {
+            addedTasks.forEach(taskId => {
+              const callbacks = rowAnimationCallbacks.current.get(taskId);
+              if (callbacks) {
+                console.log('🎬 Playing create animation for task:', taskId);
+                callbacks.playCreateAnimation();
+              } else {
+                console.warn('⚠️ No callbacks found for task:', taskId);
+              }
+            });
+          }, 100);
+        }
+      } else {
+        console.log('🏁 Initial load - no animation for existing tasks');
+      }
+
+      // 2. Removed tasks (deleted) - need to keep them in the list during animation
+      const removedTasks = new Set([...currentTaskIds].filter(id => !newTaskIds.has(id)));
+      if (removedTasks.size > 0) {
+        console.log('🗑️ Deleted tasks detected:', [...removedTasks]);
+
+        // Add deleted tasks back to the summaries temporarily for animation
+        const deletedTasksData = taskSummaries.filter(task => removedTasks.has(task.id));
+        summaries.push(...deletedTasksData);
+
+        removedTasks.forEach(taskId => {
+          const callbacks = rowAnimationCallbacks.current.get(taskId);
+          if (callbacks) {
+            console.log('🎬 Playing delete animation for task:', taskId);
+            callbacks.playDeleteAnimation();
+          } else {
+            console.warn('⚠️ No callbacks found for deleted task:', taskId);
+          }
         });
       }
 
-      // Update task summary
-      setTaskSummaries(prev => prev.map(summary =>
-        summary.id === taskId
-          ? {
-              ...summary,
-              title: data.title || summary.title,
-              status: data.status || summary.status,
-              priority: data.priority || summary.priority,
-              assignees: data.assignees || summary.assignees,
-            }
-          : summary
-      ));
-    }, [fullTasks]),
+      // 3. Updated tasks (modified)
+      const updatedTasks = new Set();
+      summaries.forEach(newTask => {
+        const oldTask = currentTaskMap.get(newTask.id);
+        if (oldTask && (
+          oldTask.title !== newTask.title ||
+          oldTask.status !== newTask.status ||
+          oldTask.priority !== newTask.priority ||
+          oldTask.subtask_count !== newTask.subtask_count ||
+          oldTask.assignees.length !== newTask.assignees.length
+        )) {
+          updatedTasks.add(newTask.id);
+        }
+      });
+      updatedTasks.forEach(taskId => {
+        const callbacks = rowAnimationCallbacks.current.get(taskId as string);
+        if (callbacks) {
+          console.log('🎬 Playing update animation for task:', taskId);
+          callbacks.playUpdateAnimation();
+        }
+      });
 
-    onSubtaskUpdate: useCallback((subtaskId: string, parentTaskId: string, data: any) => {
-      console.log(`Subtask ${subtaskId} of task ${parentTaskId} updated`, data);
+      // Update states
+      setTaskSummaries(summaries);
+      setTotalTasks(summaries.length);
+      setPreviousTaskIds(newTaskIds);
 
-      // Update the parent task's subtask count if needed
-      setTaskSummaries(prev => prev.map(summary =>
-        summary.id === parentTaskId
-          ? { ...summary, subtask_count: summary.subtask_count + (data.event_type === 'created' ? 1 : 0) }
-          : summary
-      ));
-    }, []),
+      // Store full tasks for immediate access
+      const taskMap = new Map();
+      validTaskList.forEach(task => taskMap.set(task.id, task));
+      setFullTasks(taskMap);
 
-    onAnyUpdate: useCallback((message: any) => {
-      // Log all updates for debugging
-      console.log('WebSocket update received:', message);
-    }, [])
-  });
+      setError(null);
 
-  // Subscribe to branch updates when component mounts
-  useEffect(() => {
-    if (taskTreeId) {
-      subscribeToBranch(taskTreeId);
+    } catch (e: any) {
+      console.error('Error loading tasks:', e);
+      setError(e.message);
     }
-  }, [taskTreeId, subscribeToBranch]);
 
-  // Memoized filtered and sorted tasks
+    // Trigger parent component refresh if provided
+    if (onTasksChanged) {
+      onTasksChanged();
+    }
+  }, [taskSummaries, previousTaskIds, taskTreeId, onTasksChanged]);
+
+  // Subscribe to centralized change pool for real-time updates
+  // Listen to task and subtask changes for this specific branch
+  useEntityChanges(
+    'LazyTaskList',
+    ['task', 'subtask'],
+    handleTaskChanges,
+    {
+      branchId: taskTreeId, // Filter by specific branch
+      projectId: projectId,  // Filter by specific project
+      enabled: true // Always enabled - each row handles its own animation
+    }
+  );
+
+  // Simple display tasks - each row handles its own animation
   const displayTasks = useMemo(() => {
-    // Defensive check to prevent crashes
-    if (!taskSummaries || !Array.isArray(taskSummaries)) {
-      return [];
+    if (taskSummaries && Array.isArray(taskSummaries)) {
+      return taskSummaries.slice(0, TASKS_PER_PAGE);
     }
-    return taskSummaries.slice(0, TASKS_PER_PAGE);
+    return [];
   }, [taskSummaries]);
 
   // Fallback to current implementation if lightweight endpoint isn't available
@@ -312,41 +404,38 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     setActiveDialog({ type: null });
   }, []);
 
-  // Delete task handler with optimistic updates
+  // Register row animation callbacks
+  const registerRowCallbacks = useCallback((taskId: string, callbacks: {
+    playCreateAnimation: () => void;
+    playDeleteAnimation: () => void;
+    playUpdateAnimation: () => void;
+  }) => {
+    rowAnimationCallbacks.current.set(taskId, callbacks);
+  }, []);
+
+  // Unregister row callbacks
+  const unregisterRowCallbacks = useCallback((taskId: string) => {
+    rowAnimationCallbacks.current.delete(taskId);
+  }, []);
+
+  // Simple delete task handler - row animation handled independently
   const handleDeleteTask = useCallback(async (taskId: string) => {
-    // Store previous state for potential rollback
-    const previousSummaries = taskSummaries;
-    const previousFullTasks = new Map(fullTasks);
-    const previousTotalTasks = totalTasks;
-    
-    // Optimistic update - immediately remove from UI
-    setTaskSummaries(prev => prev.filter(t => t.id !== taskId));
-    setFullTasks(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(taskId);
-      return newMap;
-    });
-    setTotalTasks(prev => Math.max(0, prev - 1));
-    
     // Close dialog immediately for better UX
     closeDialog();
-    
+
     try {
+      // Call API to delete task
       await deleteTask(taskId);
-      
-      // Success! Notify parent (UI already updated optimistically)
+
+      // Notify parent that task was deleted
       if (onTasksChanged) {
         onTasksChanged();
       }
     } catch (error) {
-      console.error('Failed to delete task, restoring UI:', error);
-      
-      // Restore previous state on error
-      setTaskSummaries(previousSummaries);
-      setFullTasks(previousFullTasks);
-      setTotalTasks(previousTotalTasks);
+      console.error('Failed to delete task:', error);
+      // TODO: Show error message to user
     }
-  }, [taskSummaries, fullTasks, totalTasks, onTasksChanged, closeDialog]);
+  }, [closeDialog, onTasksChanged]);
 
 
   // Initial load
@@ -404,309 +493,31 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     }
   }, [fullTasks, taskSummaries]);
 
-  // Render task row for mobile (card view)
-  const renderMobileTaskCard = useCallback((summary: TaskSummary) => {
-    const isExpanded = expandedTasks.has(summary.id);
-    const isLoading = loadingTasks.has(summary.id);
-    const fullTask = fullTasks.get(summary.id) || null;
-    const isHighlighted = highlightedDependencies.has(summary.id);
-    const isHovered = hoveredTaskId === summary.id;
-    
+  // Render task row - unified for mobile and desktop
+  const renderTaskRow = useCallback((summary: TaskSummary, isMobile: boolean) => {
     return (
-      <div 
-        key={summary.id} 
-        className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border mb-3 transition-all duration-200 cursor-pointer ${
-          isHighlighted ? 'border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md scale-102' :
-          isHovered ? 'border-violet-400 shadow-lg scale-102 bg-violet-200 dark:bg-violet-950' :
-          'border-surface-border dark:border-gray-700'
-        }`}
-        onMouseEnter={() => handleTaskHover(summary.id)}
-        onMouseLeave={() => handleTaskHover(null)}
-      >
-        <div className="p-4">
-          {/* Task Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <h3 className="font-medium text-base mb-2 pr-2">{summary.title}</h3>
-              <div className="flex flex-wrap gap-2">
-                <HolographicStatusBadge status={summary.status as any} size="xs" />
-                <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
-                {summary.subtask_count > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {summary.subtask_count} subtasks
-                  </Badge>
-                )}
-                {summary.has_dependencies && (
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs cursor-help" 
-                    title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}. Hover over the task to see dependencies highlighted.`}
-                  >
-                    {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
-                  </Badge>
-                )}
-                {summary.assignees && summary.assignees.length > 0 && (
-                  <ClickableAssignees
-                    assignees={summary.assignees}
-                    task={fullTasks.get(summary.id) || summary as any}
-                    onAgentClick={(agentName, task) => {
-                      openDialog('agent-info', undefined, { agentName, taskTitle: task.title });
-                    }}
-                    variant="secondary"
-                    className="text-xs"
-                  />
-                )}
-              </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8"
-              onClick={() => toggleTaskExpansion(summary.id)}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-              ) : isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-1 flex-wrap">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => openDialog('details', summary.id)}
-              className="flex-1 min-w-[60px]"
-            >
-              <Eye className="w-3 h-3 mr-1" />
-              View
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => openDialog('edit', summary.id)}
-              className="flex-1 min-w-[60px]"
-            >
-              <Pencil className="w-3 h-3 mr-1" />
-              Edit
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => openDialog('assign', summary.id)}
-              className="flex-1 min-w-[60px]"
-            >
-              <Users className="w-3 h-3 mr-1" />
-              Assign
-            </Button>
-            
-            {summary.has_context && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => openDialog('context', summary.id)}
-                title="View context"
-              >
-                <FileText className="w-3 h-3" />
-              </Button>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => openDialog('delete', summary.id)}
-              title="Delete task"
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Expanded Content */}
-        {isExpanded && fullTask && (
-          <div className="border-t border-surface-border dark:border-gray-700">
-            <div className="border-blue-400 dark:border-blue-600">
-              <Suspense fallback={<div className="p-4 text-center text-sm text-muted-foreground">Loading subtasks...</div>}>
-                <LazySubtaskList 
-                  projectId={projectId} 
-                  taskTreeId={taskTreeId} 
-                  parentTaskId={summary.id}
-                />
-              </Suspense>
-            </div>
-          </div>
-        )}
-      </div>
+      <TaskRow
+        key={summary.id}
+        summary={summary}
+        isExpanded={expandedTasks.has(summary.id)}
+        isLoading={loadingTasks.has(summary.id)}
+        fullTask={fullTasks.get(summary.id) || null}
+        isHighlighted={highlightedDependencies.has(summary.id)}
+        isHovered={hoveredTaskId === summary.id}
+        projectId={projectId}
+        taskTreeId={taskTreeId}
+        isMobile={isMobile}
+        onPlayCreateAnimation={() => {}} // Placeholder - TaskRow will register its own callbacks
+        onPlayDeleteAnimation={() => {}} // Placeholder - TaskRow will register its own callbacks
+        onPlayUpdateAnimation={() => {}} // Placeholder - TaskRow will register its own callbacks
+        onToggleExpansion={() => toggleTaskExpansion(summary.id)}
+        onOpenDialog={openDialog}
+        onHover={handleTaskHover}
+        onRegisterCallbacks={registerRowCallbacks}
+        onUnregisterCallbacks={unregisterRowCallbacks}
+      />
     );
-  }, [expandedTasks, loadingTasks, fullTasks, toggleTaskExpansion, openDialog, projectId, taskTreeId, highlightedDependencies, hoveredTaskId, handleTaskHover]);
-
-  // Render task row for desktop (table view)
-  const renderDesktopTaskRow = useCallback((summary: TaskSummary) => {
-    const isExpanded = expandedTasks.has(summary.id);
-    const isLoading = loadingTasks.has(summary.id);
-    const fullTask = fullTasks.get(summary.id) || null;
-    const isHighlighted = highlightedDependencies.has(summary.id);
-    const isHovered = hoveredTaskId === summary.id;
-    
-    return (
-      <React.Fragment key={summary.id}>
-        <TableRow 
-          className={`transition-all duration-200 cursor-pointer ${
-            isHighlighted ? 'bg-orange-100 dark:bg-blue-950 border-l-blue-400' :
-            isHovered ? 'bg-violet-200 dark:bg-violet-950 border-l-violet-400' : ''
-          }`}
-          onMouseEnter={() => handleTaskHover(summary.id)}
-          onMouseLeave={() => handleTaskHover(null)}
-        >
-          <TableCell className="w-[50px]">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => toggleTaskExpansion(summary.id)}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-              ) : isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </Button>
-          </TableCell>
-          
-          <TableCell>
-            <div className="flex items-center gap-2">
-              <span>{summary.title}</span>
-              {summary.subtask_count > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {summary.subtask_count}
-                </Badge>
-              )}
-            </div>
-          </TableCell>
-          
-          <TableCell className="hidden sm:table-cell">
-            <HolographicStatusBadge status={summary.status as any} size="sm" />
-          </TableCell>
-          
-          <TableCell className="hidden md:table-cell">
-            <HolographicPriorityBadge priority={summary.priority as any} size="sm" />
-          </TableCell>
-          
-          <TableCell className="hidden lg:table-cell">
-            {summary.has_dependencies ? (
-              <Badge 
-                variant="outline" 
-                className="text-xs cursor-help" 
-                title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}. Hover over the task to see dependencies highlighted.`}
-              >
-                {summary.dependency_count} {summary.dependency_count === 1 ? 'dependency' : 'dependencies'}
-              </Badge>
-            ) : (
-              <span className="text-xs text-muted-foreground">None</span>
-            )}
-          </TableCell>
-          
-          <TableCell className="hidden md:table-cell max-w-[200px] p-2 align-top">
-            {summary.assignees && summary.assignees.length > 0 ? (
-              <ClickableAssignees
-                assignees={summary.assignees}
-                task={fullTasks.get(summary.id) || summary as any}
-                onAgentClick={(agentName, task) => {
-                  openDialog('agent-info', undefined, { agentName, taskTitle: task.title });
-                }}
-                variant="secondary"
-                className=""
-                compact={true}
-              />
-            ) : (
-              <span className="text-xs text-muted-foreground">Unassigned</span>
-            )}
-          </TableCell>
-          
-          <TableCell>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => openDialog('details', summary.id)}
-                title="View details"
-                className="h-8 w-8"
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-              
-              {summary.has_context && (
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => openDialog('context', summary.id)}
-                  title="View context"
-                  className="h-8 w-8 hidden sm:inline-flex"
-                >
-                  <FileText className="w-4 h-4" />
-                </Button>
-              )}
-              
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => openDialog('assign', summary.id)}
-                title="Assign agents"
-                className="h-8 w-8 hidden sm:inline-flex"
-              >
-                <Users className="w-4 h-4" />
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => openDialog('edit', summary.id)}
-                title="Edit task"
-                className="h-8 w-8"
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => openDialog('delete', summary.id)}
-                title="Delete task"
-                className="h-8 w-8"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </TableCell>
-        </TableRow>
-        
-        {isExpanded && fullTask && (
-          <TableRow className="theme-context-section">
-            <TableCell colSpan={7} className="p-0">
-              <div className="border-blue-400 dark:border-blue-600 ml-8">
-                <Suspense fallback={<div className="p-4 text-center text-sm text-muted-foreground">Loading subtasks...</div>}>
-                  <LazySubtaskList 
-                    projectId={projectId} 
-                    taskTreeId={taskTreeId} 
-                    parentTaskId={summary.id}
-                  />
-                </Suspense>
-              </div>
-            </TableCell>
-          </TableRow>
-        )}
-      </React.Fragment>
-    );
-  }, [expandedTasks, loadingTasks, fullTasks, toggleTaskExpansion, openDialog, projectId, taskTreeId, highlightedDependencies, hoveredTaskId, handleTaskHover]);
+  }, [expandedTasks, loadingTasks, fullTasks, highlightedDependencies, hoveredTaskId, toggleTaskExpansion, openDialog, handleTaskHover, projectId, taskTreeId, registerRowCallbacks, unregisterRowCallbacks]);
 
   if (loading && taskSummaries.length === 0) {
     return <div className="p-4 text-center">Loading tasks...</div>;
@@ -718,6 +529,41 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   return (
     <>
+      {/* Custom CSS for animations */}
+      <style jsx>{`
+        @keyframes slideInFromRight {
+          0% {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideOutToRight {
+          0% {
+            transform: translateX(0);
+            opacity: 1;
+            height: auto;
+          }
+          70% {
+            transform: translateX(100%);
+            opacity: 0;
+            height: auto;
+          }
+          100% {
+            transform: translateX(100%);
+            opacity: 0;
+            height: 0;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            overflow: hidden;
+          }
+        }
+      `}</style>
       <div className="space-y-2">
         {/* Search Bar */}
         <div className="w-full">
@@ -766,7 +612,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       {isMobile ? (
         // Mobile Card View
         <div className="space-y-2">
-          {displayTasks.map(renderMobileTaskCard)}
+          {displayTasks.map(task => renderTaskRow(task, true))}
         </div>
       ) : (
         // Desktop Table View
@@ -784,7 +630,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayTasks.map(renderDesktopTaskRow)}
+              {displayTasks.map(task => renderTaskRow(task, false))}
             </TableBody>
           </Table>
         </div>
