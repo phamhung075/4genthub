@@ -76,18 +76,18 @@
           "size": 13404
         },
         {
-          "hash": "45b660ec0976c99efab646e369c9d88f",
-          "modified": "2025-09-17T14:11:39.075923",
+          "hash": "85e9fe7336c871bf30cd3a68d47cdd72",
+          "modified": "2025-09-17T22:01:33.017635",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 482301
+          "size": 13581
         },
         {
-          "hash": "c746a4f9110ffbebbb50999b1070dec9",
-          "modified": "2025-09-17T14:11:39.075923",
+          "hash": "5efc41411c1c90aacef81d9bfb661d61",
+          "modified": "2025-09-17T22:01:33.017635",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 53760
+          "size": 13555
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -306,7 +306,7 @@
       "path": "architecture-design"
     },
     "authentication": {
-      "count": 12,
+      "count": 14,
       "files": [
         {
           "hash": "164570188509123f5999f7aee57e9478",
@@ -365,6 +365,13 @@
           "size": 9973
         },
         {
+          "hash": "490a88531a9c6c98f75809b5d924cb9d",
+          "modified": "2025-09-18T04:13:51.229255",
+          "name": "keycloak-mcp-api-client-config.md",
+          "path": "authentication/keycloak-mcp-api-client-config.md",
+          "size": 4519
+        },
+        {
           "hash": "ada4f60dfd69f53b2fe40abfcbc31c5e",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "KEYCLOAK_CONFIGURATION.md",
@@ -391,6 +398,13 @@
           "name": "TOKEN_SECURITY_GUIDE.md",
           "path": "authentication/TOKEN_SECURITY_GUIDE.md",
           "size": 4904
+        },
+        {
+          "hash": "ef206b2700b38d299bca4471fea6caba",
+          "modified": "2025-09-18T04:05:31.383550",
+          "name": "keycloak-setup-guide.md",
+          "path": "authentication/keycloak-setup-guide.md",
+          "size": 3997
         }
       ],
       "path": "authentication"
@@ -766,11 +780,11 @@
           "size": 7604
         },
         {
-          "hash": "1e49e71e05398459233696cf7343bb56",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "780e47ac4283a3a75954a50a187f09ca",
+          "modified": "2025-09-17T16:36:28.613205",
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
-          "size": 6309
+          "size": 6264
         },
         {
           "hash": "1164b62c5119ebd9364fb0e0c8d5e36a",
@@ -1238,11 +1252,11 @@
           "size": 10205
         },
         {
-          "hash": "a6cbb647351b948232f57aad00b5f1f7",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "4afbb9b8aa3e214656bdc1327920a2fc",
+          "modified": "2025-09-17T16:36:28.613205",
           "name": "task-creation-assignees-bug.md",
           "path": "issues/task-creation-assignees-bug.md",
-          "size": 7249
+          "size": 7114
         },
         {
           "hash": "d239f7de6a3cec7103abf79b84a24475",
@@ -1460,11 +1474,11 @@
           "size": 12283
         },
         {
-          "hash": "98aeb8db098a17de6a458457a6c53507",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "0dcf3b395feb945b989e801670796a5b",
+          "modified": "2025-09-17T16:36:28.613205",
           "name": "QUICK_DEPLOY_CAPROVER.md",
           "path": "operations/QUICK_DEPLOY_CAPROVER.md",
-          "size": 2900
+          "size": 2855
         },
         {
           "hash": "e6f5e575b2f3596f9553e60e5241b2ab",
@@ -1495,11 +1509,11 @@
           "size": 12101
         },
         {
-          "hash": "edd70918d02f81b8699af7a68a4ff1a1",
-          "modified": "2025-09-17T14:11:39.091842",
+          "hash": "ab41f47a6f6d730f90deb81eec41158e",
+          "modified": "2025-09-17T16:36:28.617195",
           "name": "runtime-env-configuration-fix.md",
           "path": "operations/runtime-env-configuration-fix.md",
-          "size": 4325
+          "size": 4280
         },
         {
           "hash": "d5e4871e62194e5b694eb4608f3ba63b",
@@ -1516,11 +1530,11 @@
           "size": 2892
         },
         {
-          "hash": "242bb360f42f402b49340dc72680d0ff",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "a386c0ca769b8df395746b378bab1507",
+          "modified": "2025-09-17T16:36:28.613205",
           "name": "deploy-mixed-content-fix.md",
           "path": "operations/deploy-mixed-content-fix.md",
-          "size": 2434
+          "size": 2344
         },
         {
           "hash": "6ab0d4d39adf1be7c0984b48448a94bc",
@@ -1833,7 +1847,7 @@
       "files": [
         {
           "hash": "5a500991c6169cd0be729d06373d0a60",
-          "modified": "2025-09-17T14:20:15.028544",
+          "modified": "2025-09-17T16:36:28.617195",
           "name": "mcp-tools-test-report-2025-09-17.md",
           "path": "testing-qa/mcp-tools-test-report-2025-09-17.md",
           "size": 6064
@@ -1923,11 +1937,11 @@
           "size": 6225
         },
         {
-          "hash": "05545b11bc012e256462a8512ad5d902",
-          "modified": "2025-09-17T14:11:39.091842",
+          "hash": "9165d8ab98d858ce9f05910300234a3c",
+          "modified": "2025-09-17T16:36:28.617195",
           "name": "iteration-25-test-fixes.md",
           "path": "testing-qa/iteration-25-test-fixes.md",
-          "size": 2312
+          "size": 2267
         },
         {
           "hash": "b81aae68a7f9663ca9d3db5239614fc9",
@@ -2047,11 +2061,11 @@
           "size": 5206
         },
         {
-          "hash": "f249e63e907ab6a97191072de8ec6e22",
-          "modified": "2025-09-17T14:11:39.095822",
+          "hash": "56b4e13c7a940e32294fe2e0d7f99002",
+          "modified": "2025-09-17T16:36:28.617195",
           "name": "global-context-singleton-setup-solution.md",
           "path": "troubleshooting-guides/global-context-singleton-setup-solution.md",
-          "size": 6497
+          "size": 6452
         },
         {
           "hash": "d4e33195fe250d2c9d246ea39ef39f02",
@@ -2089,11 +2103,11 @@
           "size": 20173
         },
         {
-          "hash": "fce081e12567f2d678a7f526f32f89a8",
-          "modified": "2025-09-17T14:11:39.091842",
+          "hash": "3ad6ba6bac7df863ed318ca085fc1c42",
+          "modified": "2025-09-17T16:36:28.617195",
           "name": "FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
           "path": "troubleshooting-guides/FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
-          "size": 7217
+          "size": 7172
         },
         {
           "hash": "e47de53b7a91ce348fa5e551cee6baa0",
@@ -2103,11 +2117,11 @@
           "size": 12651
         },
         {
-          "hash": "a273f602b42150fe3b138241911fd6bd",
-          "modified": "2025-09-17T14:11:39.095822",
+          "hash": "1651a2b4475d483aefc0e8162779fe52",
+          "modified": "2025-09-17T16:36:28.617195",
           "name": "frontend-task-listing-fix.md",
           "path": "troubleshooting-guides/frontend-task-listing-fix.md",
-          "size": 5830
+          "size": 5785
         },
         {
           "hash": "f943ae81414922c1bf9b3f1203faf7c0",
@@ -2196,7 +2210,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-17T14:20:15.124194",
+  "generated_at": "2025-09-18T04:13:51.307667",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2280,7 +2294,9 @@
         "TOKEN_SECURITY_GUIDE.md",
         "authentication-system-current.md",
         "authentication-system.md",
+        "keycloak-mcp-api-client-config.md",
         "keycloak-service-account-setup.md",
+        "keycloak-setup-guide.md",
         "token-flow.md"
       ]
     },
@@ -2604,5 +2620,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 286
+  "total_files": 288
 }

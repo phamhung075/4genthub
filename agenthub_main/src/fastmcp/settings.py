@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import inspect
+import os
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -57,9 +58,21 @@ class ExtendedSettingsConfigDict(SettingsConfigDict, total=False):
 class Settings(BaseSettings):
     """FastMCP settings."""
 
+    # Find project root and determine which env file to use
+    _project_root = Path(__file__).parent.parent.parent.parent
+    _env_dev_path = _project_root / ".env.dev"
+    _env_path = _project_root / ".env"
+
+    # Use .env.dev if it exists, otherwise .env
+    _env_file = str(_env_dev_path) if _env_dev_path.exists() else str(_env_path)
+
+    # Log which file is being used (only if .env.dev exists)
+    if _env_dev_path.exists():
+        logger.info(f"Loading configuration from .env.dev (development mode)")
+
     model_config = ExtendedSettingsConfigDict(
         env_prefixes=["FASTMCP_", "FASTMCP_SERVER_"],
-        env_file=".env",
+        env_file=_env_file,
         extra="ignore",
         env_nested_delimiter="__",
         nested_model_default_partial_update=True,

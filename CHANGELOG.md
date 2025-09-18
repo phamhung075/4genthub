@@ -6,6 +6,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **Keycloak authentication documentation and testing** - 2025-09-18 🔐
+  - Created comprehensive Keycloak client configuration guide in `ai_docs/authentication/keycloak-mcp-api-client-config.md`
+    - Detailed configuration for `mcp-api` backend client
+    - Valid redirect URIs for all environments (local, staging, production)
+    - Web origins (CORS) configuration
+    - Authentication flow settings (Standard flow, Direct grants, Service accounts)
+    - Troubleshooting guide and common issues
+  - Created Python test script in `scripts/test-keycloak-auth.py`
+    - Tests client credentials grant (service account authentication)
+    - Tests password grant (user authentication)
+    - Tests token introspection endpoint
+    - Tests backend API calls with Bearer tokens
+    - Automatic environment variable loading from `.env`
+    - SSL warning suppression for development
+
+### Fixed
+- **Authentication configuration fixes** - 2025-09-18 🔐
+  - Fixed `auth_enabled` to properly load from `AUTH_ENABLED` environment variable
+  - Changed from checking `AGENTHUB_AUTH_ENABLED` to `AUTH_ENABLED` in health endpoint
+  - Updated `/health` endpoint in `mcp_entry_point.py` to correctly read auth status
+  - Authentication now properly respects `.env.dev` configuration with `AUTH_ENABLED=true`
+  - Login endpoint (`/api/auth/login`) correctly returns 401 for invalid credentials
+  - Keycloak integration working with proper error messages
+  - Note: Login expects `email` field, not `username` in request body
+  - Added `toggle_auth.py` script to easily enable/disable authentication for development
+  - Created comprehensive Keycloak setup guide in `ai_docs/authentication/keycloak-setup-guide.md`
+  - Frontend correctly stores tokens in cookies and sends Authorization headers
+  - All `/api/v2/` endpoints require valid JWT tokens when `AUTH_ENABLED=true`
+
+### Fixed
+- **Environment file loading with .env.dev priority** - 2025-09-18 🔧
+  - Implemented proper priority: `.env.dev` (development) takes precedence over `.env` (production)
+  - Updated `agenthub_main/src/fastmcp/settings.py` to check for `.env.dev` first, falling back to `.env`
+  - Database configuration (`database_config.py`) already had correct priority implementation
+  - Added comprehensive TDD test suites:
+    - `src/tests/unit/test_env_loading_tdd.py`: 17 tests for environment loading fundamentals
+    - `src/tests/unit/test_env_priority_tdd.py`: 13 tests for `.env.dev` priority behavior
+  - All 30 tests passing, confirming:
+    - `.env.dev` is used in development when present
+    - Falls back to `.env` when `.env.dev` is missing
+    - Database connections work with Docker PostgreSQL
+    - Environment variables load correctly with proper type conversion
+  - This allows separation of development and production configurations
+
 ### Fixed
 - **Production Docker configuration for MCP backend URL** - 2025-09-17 🐳
   - Fixed `__RUNTIME_INJECTED__` placeholder appearing in MCP configuration

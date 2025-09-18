@@ -50,7 +50,8 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
             
             const retryResponse = await fetch(originalUrl, {
               ...originalInit,
-              headers: newHeaders
+              headers: newHeaders,
+              credentials: 'include', // Include cookies for CORS
             });
             
             if (retryResponse.ok) {
@@ -128,7 +129,10 @@ const refreshTokenAndRetry = async (): Promise<void> => {
 
 // Enhanced fetch with automatic retry
 const fetchWithRetry = async (url: string, init?: RequestInit) => {
-  const response = await fetch(url, init);
+  const response = await fetch(url, {
+    ...init,
+    credentials: 'include', // Include cookies for CORS
+  });
   return handleResponse(response, url, init);
 };
 
@@ -146,6 +150,7 @@ export const taskApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -154,6 +159,7 @@ export const taskApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -192,6 +198,7 @@ export const taskApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -224,6 +231,7 @@ export const projectApiV2 = {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/projects/`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -268,6 +276,7 @@ export const projectApiV2 = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -277,6 +286,7 @@ export const projectApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/projects/${projectId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -303,6 +313,7 @@ export const subtaskApiV2 = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -312,6 +323,7 @@ export const subtaskApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -338,6 +350,7 @@ export const subtaskApiV2 = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -347,6 +360,7 @@ export const subtaskApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -356,6 +370,7 @@ export const subtaskApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/task/${taskId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -391,6 +406,7 @@ export const contextApiV2 = {
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
   },
 
@@ -400,6 +416,7 @@ export const contextApiV2 = {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -409,6 +426,7 @@ export const contextApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -418,6 +436,7 @@ export const contextApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}/resolve`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -430,6 +449,7 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/project/${projectId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -439,6 +459,7 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -495,6 +516,7 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -520,6 +542,7 @@ export const branchApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/health`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -532,6 +555,7 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/connections/health`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -541,6 +565,7 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/connections/status`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -550,6 +575,7 @@ export const connectionApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/connections/test`, {
       method: 'POST',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -562,6 +588,7 @@ export const agentApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/metadata`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -571,6 +598,7 @@ export const agentApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/${agentName}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -597,6 +625,7 @@ export const agentApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/unassign/${branchId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -606,6 +635,7 @@ export const agentApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/branch/${branchId}/assignment`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -615,6 +645,7 @@ export const agentApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/project/${projectId}/assignments`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },
@@ -624,6 +655,7 @@ export const agentApiV2 = {
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/capabilities`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     return handleResponse(response);
   },

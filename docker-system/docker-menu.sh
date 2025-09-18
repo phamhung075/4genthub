@@ -203,6 +203,7 @@ load_env_config() {
         
         # Set defaults for missing variables
         export FASTMCP_PORT=${FASTMCP_PORT:-8000}
+        export MCP_PORT=${MCP_PORT:-${FASTMCP_PORT:-8000}}
         export FRONTEND_PORT=${FRONTEND_PORT:-3800}
         export DATABASE_HOST=${DATABASE_HOST:-localhost}
         export DATABASE_PORT=${DATABASE_PORT:-5432}
@@ -225,6 +226,7 @@ load_env_config() {
         
         # Set defaults for missing variables
         export FASTMCP_PORT=${FASTMCP_PORT:-8000}
+        export MCP_PORT=${MCP_PORT:-${FASTMCP_PORT:-8000}}
         export FRONTEND_PORT=${FRONTEND_PORT:-3800}
         export DATABASE_HOST=${DATABASE_HOST:-localhost}
         export DATABASE_PORT=${DATABASE_PORT:-5432}
@@ -242,8 +244,8 @@ load_env_config() {
         echo -e "${YELLOW}Using hardcoded default values${RESET}"
         
         # Set hardcoded defaults
-        export MCP_PORT=8001
         export FASTMCP_PORT=8000
+        export MCP_PORT=8000
         export FRONTEND_PORT=3800
         export DATABASE_HOST=localhost
         export DATABASE_PORT=5432
@@ -261,6 +263,68 @@ load_env_config() {
 # Load environment configuration at startup
 load_env_config
 
+# Function to display all loaded environment variables
+display_env_config() {
+    echo ""
+    echo -e "${CYAN}${BOLD}📋 Loaded Environment Configuration:${RESET}"
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
+    # Database Configuration
+    echo -e "${YELLOW}🗄️  Database Configuration:${RESET}"
+    echo -e "  DATABASE_TYPE: ${BLUE}${DATABASE_TYPE:-not set}${RESET}"
+    echo -e "  DATABASE_HOST: ${BLUE}${DATABASE_HOST:-not set}${RESET}"
+    echo -e "  DATABASE_PORT: ${BLUE}${DATABASE_PORT:-not set}${RESET}"
+    echo -e "  DATABASE_NAME: ${BLUE}${DATABASE_NAME:-not set}${RESET}"
+    echo -e "  DATABASE_USER: ${BLUE}${DATABASE_USER:-not set}${RESET}"
+    if [[ -n "$DATABASE_PASSWORD" ]]; then
+        echo -e "  DATABASE_PASSWORD: ${BLUE}[SET]${RESET}"
+    else
+        echo -e "  DATABASE_PASSWORD: ${RED}[NOT SET]${RESET}"
+    fi
+
+    # Service Ports
+    echo ""
+    echo -e "${YELLOW}🚀 Service Ports:${RESET}"
+    echo -e "  FASTMCP_PORT: ${BLUE}${FASTMCP_PORT:-not set}${RESET}"
+    echo -e "  FRONTEND_PORT: ${BLUE}${FRONTEND_PORT:-not set}${RESET}"
+    echo -e "  MCP_PORT: ${BLUE}${MCP_PORT:-${FASTMCP_PORT:-not set}}${RESET}"
+
+    # Authentication Settings
+    echo ""
+    echo -e "${YELLOW}🔐 Authentication Settings:${RESET}"
+    echo -e "  AUTH_PROVIDER: ${BLUE}${AUTH_PROVIDER:-not set}${RESET}"
+    echo -e "  AUTH_ENABLED: ${BLUE}${AUTH_ENABLED:-not set}${RESET}"
+    echo -e "  EMAIL_VERIFIED_AUTO: ${BLUE}${EMAIL_VERIFIED_AUTO:-not set}${RESET}"
+
+    # API URLs
+    echo ""
+    echo -e "${YELLOW}🌐 API URLs:${RESET}"
+    echo -e "  VITE_API_URL: ${BLUE}${VITE_API_URL:-not set}${RESET}"
+    echo -e "  VITE_BACKEND_URL: ${BLUE}${VITE_BACKEND_URL:-not set}${RESET}"
+
+    # Supabase Configuration (if applicable)
+    if [[ "$DATABASE_TYPE" == "supabase" ]] || [[ -n "${SUPABASE_URL:-}" ]]; then
+        echo ""
+        echo -e "${YELLOW}☁️  Supabase Configuration:${RESET}"
+        echo -e "  SUPABASE_URL: ${BLUE}${SUPABASE_URL:-not set}${RESET}"
+        if [[ -n "${SUPABASE_ANON_KEY:-}" ]]; then
+            echo -e "  SUPABASE_ANON_KEY: ${BLUE}[SET]${RESET}"
+        else
+            echo -e "  SUPABASE_ANON_KEY: ${RED}[NOT SET]${RESET}"
+        fi
+    fi
+
+    # Additional Environment Variables
+    echo ""
+    echo -e "${YELLOW}⚙️  Additional Settings:${RESET}"
+    echo -e "  CONTAINER_ENV: ${BLUE}${CONTAINER_ENV:-not set}${RESET}"
+    echo -e "  ENV: ${BLUE}${ENV:-not set}${RESET}"
+    echo -e "  PYTHONDONTWRITEBYTECODE: ${BLUE}${PYTHONDONTWRITEBYTECODE:-not set}${RESET}"
+
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo ""
+}
+
 # Clear screen and show header
 show_header() {
     clear
@@ -270,9 +334,9 @@ show_header() {
     echo "║           Build System v3.0                   ║"
     echo "╚════════════════════════════════════════════════╝"
     echo -e "${RESET}"
-    echo -e "${YELLOW}Backend: Port ${FASTMCP_PORT} | Frontend: Port ${FRONTEND_PORT}${RESET}"
-    echo -e "${YELLOW}Database: ${DATABASE_TYPE} (${DATABASE_HOST}:${DATABASE_PORT})${RESET}"
-    echo -e "${YELLOW}Auth: ${AUTH_PROVIDER} (enabled: ${AUTH_ENABLED})${RESET}"
+    echo -e "${YELLOW}Backend: Port ${FASTMCP_PORT:-8000} | Frontend: Port ${FRONTEND_PORT:-3800}${RESET}"
+    echo -e "${YELLOW}Database: ${DATABASE_TYPE:-postgresql} (${DATABASE_HOST:-localhost}:${DATABASE_PORT:-5432})${RESET}"
+    echo -e "${YELLOW}Auth: ${AUTH_PROVIDER:-keycloak} (enabled: ${AUTH_ENABLED:-true})${RESET}"
     echo -e "${YELLOW}All builds use --no-cache (provenance optimized)${RESET}"
     echo ""
 }
@@ -308,6 +372,7 @@ show_main_menu() {
     echo "  7) 🗄️  Database Shell"
     echo "  8) 🧹 Clean Docker System"
     echo "  9) 🔄 Force Complete Rebuild (removes all images)"
+    echo "  E) 📋 Show Environment Configuration"
     echo "  0) 🚪 Exit"
     echo "────────────────────────────────────────────────"
 }
@@ -1332,6 +1397,7 @@ main() {
             stop-dev) stop_dev_mode; exit 0 ;;
             restart-dev) restart_dev_mode; exit 0 ;;
             start-dev) start_dev_mode; exit 0 ;;
+            0) exit 0 ;;  # Quick exit without menu
             *) echo "Unknown argument: $1"; exit 1 ;;
         esac
     fi
@@ -1358,11 +1424,12 @@ main() {
             7) database_shell ;;
             8) clean_docker ;;
             9) force_complete_rebuild ;;
-            0) 
+            [Ee]) display_env_config ;;
+            0)
                 echo -e "\n${GREEN}👋 Goodbye!${RESET}\n"
                 exit 0
                 ;;
-            *) 
+            *)
                 echo -e "${RED}Invalid option!${RESET}"
                 sleep 1
                 ;;
