@@ -578,17 +578,31 @@ def create_agenthub_server() -> FastMCP:
     @server.custom_route("/health", methods=["GET"])
     async def health_endpoint(request) -> JSONResponse:
         """HTTP health check endpoint for container health checks.
-        
+
         Returns:
             Simple health status for load balancers and container orchestration
         """
-        
+
+        # Try to read version from pyproject.toml
+        version = "0.0.0"  # default fallback
+        try:
+            import toml
+            pyproject_path = Path(__file__).parent.parent.parent.parent / "pyproject.toml"
+            if pyproject_path.exists():
+                with open(pyproject_path, 'r') as f:
+                    pyproject_data = toml.load(f)
+                    # Try to get version from tool.uv-dynamic-versioning.fallback-version
+                    if "tool" in pyproject_data and "uv-dynamic-versioning" in pyproject_data["tool"]:
+                        version = pyproject_data["tool"]["uv-dynamic-versioning"].get("fallback-version", "0.0.0")
+        except Exception as e:
+            logger.debug(f"Could not read version from pyproject.toml: {e}")
+
         # Get basic health status
         health_data = {
             "status": "healthy",
             "timestamp": time.time(),
             "server": server.name,
-            "version": "2.1.0"
+            "version": version
         }
         
         # Add authentication status based on environment configuration
