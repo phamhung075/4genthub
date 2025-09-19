@@ -1,5 +1,5 @@
 import { Folder, Menu, X } from 'lucide-react';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Project } from './api';
 import './App.css';
@@ -22,7 +22,7 @@ import { TokenManagement } from './pages/TokenManagement';
 import { HelpSetup } from './pages/HelpSetup';
 
 // Use lazy loading for TaskList component for better performance
-const LazyTaskList = lazy(() => import('./components/LazyTaskList'));
+import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
 function Dashboard() {
@@ -113,24 +113,13 @@ function Dashboard() {
            {/* Add padding top on mobile to account for menu button */}
           <div className="flex-1 overflow-y-auto pt-16 lg:pt-0">
             {selection ? (
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mx-auto mb-6"></div>
-                    <p className="text-base-secondary text-lg font-medium">Loading tasks...</p>
-                    <p className="text-base-tertiary text-sm mt-2">Please wait while we fetch your data</p>
-                  </div>
-                </div>
-              }>
-                <LazyTaskList 
-                key={`${selection.projectId}-${selection.branchId}`} 
-                projectId={selection.projectId} 
-                taskTreeId={selection.branchId} 
+              <LazyTaskList
+                projectId={selection.projectId}
+                taskTreeId={selection.branchId}
                 onTasksChanged={() => {
-                setProjectListRefreshKey(prev => prev + 1);
-              }}
-            />
-              </Suspense>
+                  setProjectListRefreshKey(prev => prev + 1);
+                }}
+              />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center p-8">

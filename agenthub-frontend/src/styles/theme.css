@@ -260,7 +260,7 @@ body {
   
   /* Modal/Dialog Components */
   .theme-modal-overlay {
-    @apply fixed inset-0 z-[1000];
+    @apply fixed inset-0 z-[1001];
     background-color: var(--color-overlay);
   }
   

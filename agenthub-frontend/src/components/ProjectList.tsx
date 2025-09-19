@@ -49,50 +49,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   const showSuccessToast = useSuccessToast();
   const showErrorToast = useErrorToast();
 
-  const toggleProject = async (projectId: string) => {
+  const toggleProject = (projectId: string) => {
     const isOpening = !openProjects[projectId];
+    // Simply toggle - branches are already preloaded
     setOpenProjects(prev => ({ ...prev, [projectId]: isOpening }));
-    
-    // Load branch summaries with optimized endpoint when opening
-    if (isOpening && !branchSummaries[projectId]) {
-      // Check if user is authenticated before trying to fetch branch summaries
-      const token = Cookies.get('access_token');
-      
-      if (token) {
-        // User is authenticated, fetch branch summaries
-        setLoadingBranches(prev => ({ ...prev, [projectId]: true }));
-        try {
-          const summaries = await getBranchSummaries(projectId);
-          console.log('ProjectList: Received branch summaries:', summaries);
-          // Only use the summaries if they're valid, otherwise keep the fallback
-          if (summaries.branches && summaries.branches.length > 0) {
-            setBranchSummaries(prev => ({ ...prev, [projectId]: summaries.branches }));
-          } else {
-            console.warn('getBranchSummaries returned empty or invalid data, using fallback');
-          }
-          
-          // Update task counts from the optimized response
-          const counts: Record<string, number> = {};
-          for (const branch of summaries.branches) {
-            // Use task_count field which is set by getBranchSummaries
-            counts[branch.id] = branch.task_count || branch.task_counts?.total || 0;
-          }
-          setTaskCounts(prev => ({ ...prev, ...counts }));
-        } catch (error) {
-          console.error('Error loading branch summaries:', error);
-          // If the error is authentication-related, we might want to clear the token
-          if (error instanceof Error && error.message?.includes('authentication')) {
-            console.log('Authentication error detected, user may need to log in again');
-          }
-        } finally {
-          setLoadingBranches(prev => ({ ...prev, [projectId]: false }));
-        }
-      } else {
-        // User is not authenticated, skip fetching branch summaries
-        console.log('User not authenticated, skipping branch summaries fetch');
-        // You can still show the project structure without the summaries
-      }
-    }
   };
 
 
@@ -141,6 +101,35 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
       }
       setTaskCounts(counts);
       console.log('Updated task counts:', counts);
+
+      // Preload branch summaries for all projects to avoid loading flash
+      const token = Cookies.get('access_token');
+      if (token) {
+        const branchPromises = projectsData.map(async (project) => {
+          try {
+            const summaries = await getBranchSummaries(project.id);
+            if (summaries.branches && summaries.branches.length > 0) {
+              return { projectId: project.id, branches: summaries.branches };
+            }
+            return null;
+          } catch (error) {
+            console.error(`Failed to load branches for project ${project.id}:`, error);
+            return null;
+          }
+        });
+
+        const branchResults = await Promise.all(branchPromises);
+        const newBranchSummaries: Record<string, BranchSummary[]> = {};
+
+        branchResults.forEach(result => {
+          if (result) {
+            newBranchSummaries[result.projectId] = result.branches;
+          }
+        });
+
+        setBranchSummaries(newBranchSummaries);
+        console.log('Preloaded branch summaries for all projects');
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -218,22 +207,17 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     setBranchSummaries({});
     setTaskCounts({});
 
-    // First fetch projects to update basic data
-    fetchProjects().then(() => {
-      // Then refresh branch summaries for open projects
-      refreshOpenBranchSummaries();
-    });
-  }, [refreshKey, fetchProjects, refreshOpenBranchSummaries]); // Include all dependencies
+    // Fetch projects which also preloads all branches
+    fetchProjects();
+  }, [refreshKey, fetchProjects]);
 
   // Create stable refresh callback for change pool
   const handleDataChange = useCallback(() => {
     console.log('📡 ProjectList: Data change detected, refreshing...');
     // Refresh when entity events occur
     fetchProjects();
-    if (Object.keys(openProjects).some(id => openProjects[id])) {
-      refreshOpenBranchSummaries();
-    }
-  }, [fetchProjects, openProjects]);
+    // Note: We don't need to check openProjects here since branches are preloaded
+  }, [fetchProjects]);
 
   // Subscribe to centralized change pool for real-time updates
   useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
@@ -651,11 +635,8 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                   </ShimmerButton>
                 </div>
               </div>
-              {openProjects[project.id] && (
-                <ul className="flex flex-col gap-1 ml-8 mt-1">
-                  {loadingBranches[project.id] ? (
-                    <li className="text-xs text-muted-foreground pl-4">Loading branches...</li>
-                  ) : branchSummaries[project.id] ? (
+              <ul className="flex flex-col gap-1 ml-8 mt-1" style={{ display: openProjects[project.id] ? 'flex' : 'none' }}>
+                  {branchSummaries[project.id] ? (
                     // Use optimized branch summaries if available
                     branchSummaries[project.id].map((branch) => (
                       <li key={branch.id}>
@@ -788,7 +769,6 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                     ))
                   ) : null}
                 </ul>
-              )}
             </li>
           ))}
         </ul>
