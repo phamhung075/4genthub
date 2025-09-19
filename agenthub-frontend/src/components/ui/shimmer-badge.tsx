@@ -46,16 +46,16 @@ export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
   return (
     <>
       <style>{customCss}</style>
-      <div 
+      <div
         className={cn(
-          "relative inline-flex items-center p-[1.5px] rounded-full overflow-hidden group",
+          "relative inline-flex items-center p-[1.5px] rounded-full overflow-hidden group whitespace-nowrap",
           variantClasses[variant],
           className
         )}
         {...props}
       >
         {(variant === 'default' || variant === 'destructive') && (
-          <div 
+          <div
             className="absolute inset-0"
             style={{
               background: `conic-gradient(from var(--angle), transparent 25%, ${shimmerColor}, transparent 50%)`,
@@ -64,7 +64,7 @@ export const ShimmerBadge: React.FC<ShimmerBadgeProps> = ({
           />
         )}
         <span className={cn(
-          "relative z-10 inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-semibold rounded-full transition-colors",
+          "relative z-10 inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-semibold rounded-full transition-colors whitespace-nowrap",
           innerVariantClasses[variant]
         )}>
           {children}
