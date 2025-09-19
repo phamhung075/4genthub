@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { Separator } from "./ui/separator";
+import logger from "../utils/logger";
 
 interface BranchDetailsDialogProps {
   open: boolean;
@@ -37,7 +38,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
       // Fetch branch context
       getBranchContext(branch.id)
         .then(context => {
-          console.log('Raw branch context response:', context);
+          logger.debug('Raw branch context response:', context);
           
           // Store the full response to ensure we capture ALL data including custom fields
           if (context) {
@@ -60,15 +61,15 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               _originalResponse: context
             };
             
-            console.log('Processed full context with all nested data:', fullContext);
+            logger.debug('Processed full context with all nested data:', fullContext);
             setBranchContext(fullContext);
           } else {
-            console.log('No context data received');
+            logger.debug('No context data received');
             setBranchContext(null);
           }
         })
         .catch(error => {
-          console.error('Error fetching branch context:', error);
+          logger.error('Error fetching branch context:', error);
           setBranchContext(null);
         })
         .finally(() => {
@@ -723,7 +724,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
                       setJsonCopied(true);
                       setTimeout(() => setJsonCopied(false), 2000);
                     }).catch(err => {
-                      console.error('Failed to copy JSON:', err);
+                      logger.error('Failed to copy JSON:', err);
                     });
                   }
                 }}

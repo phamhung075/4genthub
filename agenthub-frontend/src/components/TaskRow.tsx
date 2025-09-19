@@ -6,6 +6,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
+import logger from "../utils/logger";
 
 import LazySubtaskList from "./LazySubtaskList";
 
@@ -83,11 +84,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
   }, []);
 
   const playDeleteAnimation = useCallback(() => {
-    console.log('🎬 TaskRow starting delete animation for:', summary.id);
+    logger.debug('TaskRow starting delete animation', { component: 'TaskRow', taskId: summary.id });
     setAnimationState('deleting');
     // After animation completes, hide the row
     setTimeout(() => {
-      console.log('🎬 TaskRow delete animation complete, hiding:', summary.id);
+      logger.debug('TaskRow delete animation complete, hiding', { component: 'TaskRow', taskId: summary.id });
       setIsVisible(false);
     }, 800); // Animation duration (longer)
   }, [summary.id]);
@@ -100,20 +101,20 @@ const TaskRow: React.FC<TaskRowProps> = ({
   // Register animation callbacks with parent
   useEffect(() => {
     if (onRegisterCallbacks) {
-      console.log('📝 TaskRow registering callbacks for task:', summary.id);
+      logger.debug('TaskRow registering callbacks for task', { component: 'TaskRow', taskId: summary.id });
       onRegisterCallbacks(summary.id, {
         playCreateAnimation,
         playDeleteAnimation,
         playUpdateAnimation
       });
     } else {
-      console.warn('⚠️ TaskRow: No onRegisterCallbacks provided for task:', summary.id);
+      logger.warn('TaskRow: No onRegisterCallbacks provided for task', { component: 'TaskRow', taskId: summary.id });
     }
 
     // Cleanup on unmount
     return () => {
       if (onUnregisterCallbacks) {
-        console.log('🧹 TaskRow unregistering callbacks for task:', summary.id);
+        logger.debug('TaskRow unregistering callbacks for task', { component: 'TaskRow', taskId: summary.id });
         onUnregisterCallbacks(summary.id);
       }
     };

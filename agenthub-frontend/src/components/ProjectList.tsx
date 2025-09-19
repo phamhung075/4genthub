@@ -11,6 +11,7 @@ import { ShimmerBadge } from "./ui/shimmer-badge";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { useErrorToast, useSuccessToast } from "./ui/toast";
 import { useEntityChanges } from "../hooks/useChangeSubscription";
+import logger from "../utils/logger";
 
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
@@ -61,7 +62,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     setLoading(true);
     try {
       const projectsData = await listProjects();
-      console.log('Fetched projects data:', projectsData);
+      logger.debug('Fetched projects data:', projectsData);
       setProjects(projectsData);
 
       // Extract task counts from the project data directly (no additional API calls needed)
@@ -100,7 +101,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
         }
       }
       setTaskCounts(counts);
-      console.log('Updated task counts:', counts);
+      logger.debug('Updated task counts:', counts);
 
       // Preload branch summaries for all projects to avoid loading flash
       const token = Cookies.get('access_token');
@@ -113,7 +114,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
             }
             return null;
           } catch (error) {
-            console.error(`Failed to load branches for project ${project.id}:`, error);
+            logger.error(`Failed to load branches for project ${project.id}:`, error);
             return null;
           }
         });
@@ -128,7 +129,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
         });
 
         setBranchSummaries(newBranchSummaries);
-        console.log('Preloaded branch summaries for all projects');
+        logger.debug('Preloaded branch summaries for all projects');
       }
     } catch (e: any) {
       setError(e.message);
@@ -141,7 +142,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     // Check if user is authenticated
     const token = Cookies.get('access_token');
     if (!token) {
-      console.log('User not authenticated, skipping branch summaries refresh');
+      logger.debug('User not authenticated, skipping branch summaries refresh');
       return;
     }
 
@@ -154,7 +155,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
       return; // No open projects to refresh
     }
 
-    console.log('Refreshing branch summaries for open projects:', openProjectIds);
+    logger.debug('Refreshing branch summaries for open projects:', openProjectIds);
     
     // Clear existing branch summaries for open projects to force fresh data
     const clearedSummaries: Record<string, BranchSummary[]> = {};
@@ -169,7 +170,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
         const summaries = await getBranchSummaries(projectId);
         return { projectId, summaries };
       } catch (error) {
-        console.error(`Error refreshing branch summaries for project ${projectId}:`, error);
+        logger.error(`Error refreshing branch summaries for project ${projectId}:`, error);
         return null;
       }
     });
@@ -189,7 +190,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
           // Use task_count field which is set by getBranchSummaries
           const taskCount = branch.task_count || branch.task_counts?.total || 0;
           newTaskCounts[branch.id] = taskCount;
-          console.log(`Updated task count for branch ${branch.git_branch_name || branch.name} (${branch.id}): ${taskCount}`);
+          logger.debug(`Updated task count for branch ${branch.git_branch_name || branch.name} (${branch.id}): ${taskCount}`);
         }
       }
     }
@@ -198,11 +199,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     setBranchSummaries(newBranchSummaries);
     setTaskCounts(newTaskCounts);
     
-    console.log('Branch summaries refreshed successfully with fresh data');
+    logger.debug('Branch summaries refreshed successfully with fresh data');
   }, [openProjects]);
 
   useEffect(() => {
-    console.log('ProjectList refreshKey changed:', refreshKey);
+    logger.debug('ProjectList refreshKey changed:', refreshKey);
     // Clear all cached branch summaries to force fresh reload
     setBranchSummaries({});
     setTaskCounts({});
@@ -213,7 +214,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
 
   // Create stable refresh callback for change pool
   const handleDataChange = useCallback(() => {
-    console.log('📡 ProjectList: Data change detected, refreshing...');
+    logger.debug('📡 ProjectList: Data change detected, refreshing...');
     // Refresh when entity events occur
     fetchProjects();
     // Note: We don't need to check openProjects here since branches are preloaded
@@ -253,7 +254,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
     const newlyAddedBranches = Array.from(currentBranchIds).filter(id => !previousBranchIds.has(id));
 
     if (newlyAddedBranches.length > 0) {
-      console.log('Detected new branches for animation:', newlyAddedBranches);
+      logger.debug('Detected new branches for animation:', newlyAddedBranches);
 
       // Add to newBranches for animation
       setNewBranches(prev => {
@@ -315,7 +316,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
       await fetchProjects();
 
       // Note: The animation will be triggered by the useEffect that detects new branches
-      console.log('Branch created, animation will be triggered by branch detection logic');
+      logger.debug('Branch created, animation will be triggered by branch detection logic');
 
     } catch (e: any) {
       showErrorToast('Failed to create branch', e.message);
@@ -388,7 +389,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
       // Restore the project on error
       setProjects(previousProjects);
       // Handle the case where the API call fails
-      console.error('Delete project error:', e);
+      logger.error('Delete project error:', e);
       const errorMessage = e.message || "Failed to delete project";
       showErrorToast('Network error', errorMessage);
       setError(errorMessage);
@@ -443,11 +444,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
         return updated;
       });
       
-      console.log('Optimistically removed branch from UI, attempting deletion:', branchId);
+      logger.debug('Optimistically removed branch from UI, attempting deletion:', branchId);
       
       // Attempt actual deletion
       const result = await deleteBranch(branchId);
-      console.log('Delete result:', result);
+      logger.debug('Delete result:', result);
       
       if (result.success) {
         // Success! Show success message
@@ -459,10 +460,10 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
         
         // Optionally refresh data from server to ensure consistency
         // But we don't need to since we've already optimistically updated
-        console.log('Branch deletion successful - UI already updated');
+        logger.debug('Branch deletion successful - UI already updated');
       } else {
         // Backend deletion failed - rollback UI changes
-        console.error('Backend deletion failed, rolling back:', result);
+        logger.error('Backend deletion failed, rolling back:', result);
         setProjects(backupProjects);
         setBranchSummaries(backupBranchSummaries);
         setTaskCounts(backupTaskCounts);
@@ -480,7 +481,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
       }
     } catch (e: any) {
       // Network/API error - rollback UI changes
-      console.error('Delete branch error, rolling back:', e);
+      logger.error('Delete branch error, rolling back:', e);
       setProjects(backupProjects);
       setBranchSummaries(backupBranchSummaries);
       setTaskCounts(backupTaskCounts);

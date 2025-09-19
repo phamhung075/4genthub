@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
+import logger from '../utils/logger';
 
 // Types for authentication
 export interface User {
@@ -75,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         roles: decoded.roles || ['user']
       };
     } catch (error) {
-      console.error('Error decoding token:', error);
+      logger.error('Error decoding token:', error);
       return null;
     }
   };
@@ -145,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No tokens received from server');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       throw error;
     }
   };
@@ -200,7 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return data;
     } catch (error) {
-      console.error('Signup error:', error);
+      logger.error('Signup error:', error);
       throw error;
     }
   };
@@ -235,7 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!response.ok) {
         // If refresh token is invalid or expired, clear tokens
         if (response.status === 401) {
-          console.error('Refresh token expired or invalid');
+          logger.error('Refresh token expired or invalid');
           Cookies.remove('access_token');
           Cookies.remove('refresh_token');
           logout();
@@ -260,7 +261,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
     } catch (error) {
-      console.error('Token refresh error:', error);
+      logger.error('Token refresh error:', error);
       logout();
       throw error;
     }

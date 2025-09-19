@@ -1,5 +1,5 @@
-import { Home, HelpCircle, Key, Moon, Settings, Sun } from 'lucide-react';
-import React, { useContext } from 'react';
+import { Home, HelpCircle, Key, Moon, Settings, Sun, Menu, X } from 'lucide-react';
+import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTheme } from '../hooks/useTheme';
@@ -12,6 +12,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!authContext) {
     return null;
@@ -87,81 +88,166 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="theme-nav px-6 py-4 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-6">
-          <Link to="/dashboard" className="flex items-center space-x-3 group">
+    <>
+      <header className="theme-nav px-4 sm:px-6 py-3 sm:py-4 shadow-lg backdrop-blur-xl bg-surface/95 border-b border-surface-border transition-theme relative z-[1000]">
+        <div className="flex items-center justify-between">
+          {/* Brand Section - Responsive */}
+          <div className="flex items-center">
+            <Link to="/dashboard" className="flex items-center space-x-2 sm:space-x-3 group">
+              <div className="flex flex-col">
+                <Brand variant="header" />
+                <span className="text-xs text-black-600 dark:text-black-200 -mt-1 hidden sm:block">
+                  AI Orchestration Platform
+                </span>
+              </div>
+            </Link>
+          </div>
 
-            <div className="flex flex-col">
-              <Brand variant="header" />
-              <span className="text-xs text-black-600 dark:text-black-200 -mt-1">AI Orchestration Platform</span>
+          {user ? (
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Desktop/Tablet Glow Menu Navigation */}
+              <div className="hidden lg:block">
+                <MenuBar
+                  items={menuItems}
+                  activeItem={getActiveItem()}
+                  onItemClick={handleMenuClick}
+                />
+              </div>
+
+              {/* Tablet Navigation - Condensed */}
+              <div className="hidden md:block lg:hidden">
+                <nav className="flex items-center space-x-1">
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Dashboard"
+                  >
+                    <Home className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/tokens"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Tokens"
+                  >
+                    <Key className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/help"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Help & Setup"
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Settings"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Link>
+                  <button
+                    onClick={toggleTheme}
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title={theme === 'dark' ? "Light Mode" : "Dark Mode"}
+                  >
+                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </button>
+                </nav>
+              </div>
+
+              {/* Mobile Hamburger Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                aria-label="Toggle mobile menu"
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+
+              {/* User Profile Dropdown */}
+              <UserProfileDropdown />
             </div>
-          </Link>
+          ) : (
+            /* Show theme toggle for non-authenticated users */
+            <div className="flex items-center space-x-2">
+              <div className="hidden md:block">
+                <MenuBar
+                  items={[{
+                    icon: theme === 'dark' ? Sun : Moon,
+                    label: theme === 'dark' ? "Light" : "Dark",
+                    href: "#theme-toggle",
+                    gradient: "radial-gradient(circle, rgba(139,69,19,0.15) 0%, rgba(120,53,15,0.06) 50%, rgba(101,38,10,0) 100%)",
+                    iconColor: theme === 'dark' ? "text-yellow-500" : "text-indigo-500",
+                  }]}
+                  activeItem=""
+                  onItemClick={handleMenuClick}
+                />
+              </div>
+              {/* Mobile theme toggle for non-authenticated users */}
+              <button
+                onClick={toggleTheme}
+                className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+            </div>
+          )}
         </div>
-        
-        {user ? (
-          <div className="flex items-center space-x-4">
-            {/* Glow Menu Navigation */}
-            <div className="hidden md:block">
-              <MenuBar
-                items={menuItems}
-                activeItem={getActiveItem()}
-                onItemClick={handleMenuClick}
-              />
-            </div>
+      </header>
 
-            {/* Mobile fallback navigation */}
-            <nav className="flex md:hidden items-center space-x-2">
-              <Link 
-                to="/dashboard" 
-                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-              >
-                <Home className="h-5 w-5" />
-                <span className="font-medium">Dashboard</span>
-              </Link>
-              <Link
-                to="/tokens"
-                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-              >
-                <Key className="h-5 w-5" />
-                <span className="font-medium">Tokens</span>
-              </Link>
-              <Link
-                to="/help"
-                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-              >
-                <HelpCircle className="h-5 w-5" />
-                <span className="font-medium">Help & Setup</span>
-              </Link>
-              <Link 
-                to="/profile" 
-                className="flex items-center space-x-2 px-4 py-2 rounded-xl theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-              >
-                <Settings className="h-5 w-5" />
-                <span className="font-medium">Settings</span>
-              </Link>
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && user && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[999] md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Mobile Menu */}
+          <div className="fixed top-[73px] left-0 right-0 bg-surface/95 backdrop-blur-xl border-b border-surface-border shadow-lg z-[999] md:hidden animate-slide-in">
+            <nav className="px-4 py-6 space-y-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.label === getActiveItem();
+
+                if (item.href === "#theme-toggle") {
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={() => {
+                        toggleTheme();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/10 hover:text-primary ${
+                        isActive ? 'bg-primary/10 text-primary' : 'theme-nav-item'
+                      }`}
+                    >
+                      <Icon className={`h-5 w-5 ${item.iconColor}`} />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-primary/10 hover:text-primary ${
+                      isActive ? 'bg-primary/10 text-primary' : 'theme-nav-item'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 ${item.iconColor}`} />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
-
-            {/* User Profile Dropdown */}
-            <UserProfileDropdown />
           </div>
-        ) : (
-          /* Show theme toggle for non-authenticated users */
-          <div className="hidden md:block">
-            <MenuBar
-              items={[{
-                icon: theme === 'dark' ? Sun : Moon,
-                label: theme === 'dark' ? "Light" : "Dark",
-                href: "#theme-toggle",
-                gradient: "radial-gradient(circle, rgba(139,69,19,0.15) 0%, rgba(120,53,15,0.06) 50%, rgba(101,38,10,0) 100%)",
-                iconColor: theme === 'dark' ? "text-yellow-500" : "text-indigo-500",
-              }]}
-              activeItem=""
-              onItemClick={handleMenuClick}
-            />
-          </div>
-        )}
-      </div>
-    </header>
+        </>
+      )}
+    </>
   );
 };

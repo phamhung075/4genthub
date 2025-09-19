@@ -9,6 +9,7 @@ import {
 } from './services/apiV2';
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from './config/environment';
+import logger from './utils/logger';
 
 // --- Lazy Loading Interfaces ---
 export interface TaskSummary {
@@ -142,7 +143,7 @@ export const getBranchSummaries = async (project_id: string): Promise<{
   });
 
   if (!response.ok) {
-    console.error(`Failed to fetch branch summaries: ${response.status}`);
+    logger.error(`Failed to fetch branch summaries: ${response.status}`);
     return { branches: [], total: 0 };
   }
 

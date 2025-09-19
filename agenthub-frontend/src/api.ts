@@ -12,6 +12,7 @@ import {
     subtaskApiV2,
     taskApiV2
 } from './services/apiV2';
+import logger from './utils/logger';
 
 // --- Interfaces for Type Safety ---
 export interface Task {
@@ -197,7 +198,7 @@ export const listProjects = async (): Promise<Project[]> => {
         const response = await projectApiV2.getProjects();
         return response.projects || [];
     } catch (error) {
-        console.error('listProjects: Error fetching projects:', error);
+        logger.error('listProjects: Error fetching projects:', error);
         throw error;
     }
 };
@@ -269,7 +270,7 @@ export const deleteBranch = async (branch_id: string): Promise<{ success: boolea
         // For any other response type, assume success
         return { success: true, message: 'Branch deleted successfully' };
     } catch (error: any) {
-        console.error('Delete branch error:', error);
+        logger.error('Delete branch error:', error);
         return { 
             success: false, 
             error: error.message || 'Failed to delete branch' 
@@ -283,7 +284,7 @@ export const getTaskContext = async (task_id: string): Promise<any> => {
         const response = await contextApiV2.getContext('task', task_id, true);
         return response.context || response;
     } catch (error) {
-        console.error('Error getting task context:', error);
+        logger.error('Error getting task context:', error);
         return null;
     }
 };
@@ -293,7 +294,7 @@ export const getBranchContext = async (branch_id: string): Promise<any> => {
         const response = await contextApiV2.getContext('branch', branch_id, true);
         return response.context || response;
     } catch (error) {
-        console.error('Error getting branch context:', error);
+        logger.error('Error getting branch context:', error);
         return null;
     }
 };
@@ -303,7 +304,7 @@ export const getProjectContext = async (project_id: string): Promise<any> => {
         const response = await contextApiV2.getContext('project', project_id, true);
         return response.context || response;
     } catch (error) {
-        console.error('Error getting project context:', error);
+        logger.error('Error getting project context:', error);
         return null;
     }
 };
@@ -314,7 +315,7 @@ export const getGlobalContext = async (): Promise<any> => {
         const response = await contextApiV2.getContext('global', 'global', false);
         return response.context || response;
     } catch (error) {
-        console.error('Error getting global context:', error);
+        logger.error('Error getting global context:', error);
         return null;
     }
 };
@@ -325,7 +326,7 @@ export const updateGlobalContext = async (data: any): Promise<any> => {
         const response = await contextApiV2.updateContext('global', 'global', data);
         return response.context || response;
     } catch (error) {
-        console.error('Error updating global context:', error);
+        logger.error('Error updating global context:', error);
         return null;
     }
 };
@@ -335,7 +336,7 @@ export const updateProjectContext = async (project_id: string, data: any): Promi
         const response = await contextApiV2.updateContext('project', project_id, data);
         return response.context || response;
     } catch (error) {
-        console.error('Error updating project context:', error);
+        logger.error('Error updating project context:', error);
         return null;
     }
 };
@@ -345,7 +346,7 @@ export const updateBranchContext = async (branch_id: string, data: any): Promise
         const response = await contextApiV2.updateContext('branch', branch_id, data);
         return response.context || response;
     } catch (error) {
-        console.error('Error updating branch context:', error);
+        logger.error('Error updating branch context:', error);
         return null;
     }
 };
@@ -355,7 +356,7 @@ export const updateTaskContext = async (task_id: string, data: any): Promise<any
         const response = await contextApiV2.updateContext('task', task_id, data);
         return response.context || response;
     } catch (error) {
-        console.error('Error updating task context:', error);
+        logger.error('Error updating task context:', error);
         return null;
     }
 };
@@ -366,7 +367,7 @@ export const listAgents = async (): Promise<any[]> => {
         const response = await agentApiV2.getAgentsMetadata();
         return response.agents || [];
     } catch (error) {
-        console.error('Error listing agents:', error);
+        logger.error('Error listing agents:', error);
         return [];
     }
 };
@@ -424,7 +425,7 @@ export const callAgent = async (agent_name: string, params?: any): Promise<any> 
         const response = await agentApiV2.callAgent(agent_name, params);
         return response;
     } catch (error: any) {
-        console.error('Error calling agent:', error);
+        logger.error('Error calling agent:', error);
         const errorMessage = error?.message || error?.detail || 'Failed to call agent';
         return { 
             success: false, 
@@ -436,27 +437,27 @@ export const callAgent = async (agent_name: string, params?: any): Promise<any> 
 
 // --- Rule Operations (Placeholder) ---
 export const listRules = async (): Promise<Rule[]> => {
-    console.warn('Rule operations not yet implemented in V2 API');
+    logger.warn('Rule operations not yet implemented in V2 API');
     return [];
 };
 
 export const createRule = async (rule: Partial<Rule>): Promise<Rule> => {
-    console.warn('Rule operations not yet implemented in V2 API');
+    logger.warn('Rule operations not yet implemented in V2 API');
     throw new Error('Rule operations not available');
 };
 
 export const updateRule = async (rule_id: string, updates: Partial<Rule>): Promise<Rule> => {
-    console.warn('Rule operations not yet implemented in V2 API');
+    logger.warn('Rule operations not yet implemented in V2 API');
     throw new Error('Rule operations not available');
 };
 
 export const deleteRule = async (rule_id: string): Promise<void> => {
-    console.warn('Rule operations not yet implemented in V2 API');
+    logger.warn('Rule operations not yet implemented in V2 API');
     throw new Error('Rule operations not available');
 };
 
 export const validateRule = async (rule: Partial<Rule>): Promise<any> => {
-    console.warn('Rule operations not yet implemented in V2 API');
+    logger.warn('Rule operations not yet implemented in V2 API');
     return { valid: false, errors: ['Rule operations not available'] };
 };
 
@@ -466,7 +467,7 @@ export const checkHealth = async (): Promise<boolean> => {
         const response = await connectionApiV2.healthCheck();
         return response.status === 'healthy';
     } catch (error) {
-        console.error('Health check failed:', error);
+        logger.error('Health check failed:', error);
         return false;
     }
 };
