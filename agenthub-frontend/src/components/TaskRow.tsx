@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Eye, FileText, Pencil, Trash2, Users } from "lucide-react";
-import React, { Suspense, useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Task } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
 
-const LazySubtaskList = React.lazy(() => import("./LazySubtaskList"));
+import LazySubtaskList from "./LazySubtaskList";
 
 // Lightweight task summary interface
 interface TaskSummary {
@@ -171,7 +171,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     return (
       <>
         {/* Animation CSS */}
-        <style jsx>{`
+        <style>{`
           @keyframes slideInFromRight {
             0% {
               transform: translateX(100%);
@@ -351,20 +351,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
             </div>
           </div>
 
-          {/* Expanded Content */}
-          {isExpanded && fullTask && (
+          {/* Expanded Content - Always render but control visibility */}
+          <div style={{ display: isExpanded && fullTask ? 'block' : 'none' }}>
             <div className="border-t border-surface-border dark:border-gray-700">
               <div className="border-blue-400 dark:border-blue-600">
-                <Suspense fallback={<div className="p-4 text-center text-sm text-muted-foreground">Loading subtasks...</div>}>
-                  <LazySubtaskList
-                    projectId={projectId}
-                    taskTreeId={taskTreeId}
-                    parentTaskId={summary.id}
-                  />
-                </Suspense>
+                <LazySubtaskList
+                  projectId={projectId}
+                  taskTreeId={taskTreeId}
+                  parentTaskId={summary.id}
+                />
               </div>
             </div>
-          )}
+          </div>
           </div>
         </div>
       </>
@@ -374,7 +372,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     return (
       <>
         {/* Animation CSS */}
-        <style jsx>{`
+        <style>{`
           @keyframes slideInFromRight {
             0% {
               transform: translateX(100%);
@@ -571,21 +569,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
         </TableRow>
 
-        {isExpanded && fullTask && (
-          <TableRow className="theme-context-section">
-            <TableCell colSpan={7} className="p-0">
-              <div className="border-blue-400 dark:border-blue-600 ml-8">
-                <Suspense fallback={<div className="p-4 text-center text-sm text-muted-foreground">Loading subtasks...</div>}>
-                  <LazySubtaskList
-                    projectId={projectId}
-                    taskTreeId={taskTreeId}
-                    parentTaskId={summary.id}
-                  />
-                </Suspense>
-              </div>
-            </TableCell>
-          </TableRow>
-        )}
+        {/* Always render but control visibility */}
+        <TableRow className="theme-context-section" style={{ display: isExpanded && fullTask ? 'table-row' : 'none' }}>
+          <TableCell colSpan={7} className="p-0">
+            <div className="border-blue-400 dark:border-blue-600 ml-8">
+              <LazySubtaskList
+                projectId={projectId}
+                taskTreeId={taskTreeId}
+                parentTaskId={summary.id}
+              />
+            </div>
+          </TableCell>
+        </TableRow>
       </>
     );
   }

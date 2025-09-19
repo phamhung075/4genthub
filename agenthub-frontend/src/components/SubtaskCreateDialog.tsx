@@ -13,7 +13,7 @@ interface SubtaskCreateDialogProps {
   onCreated: (subtask: Subtask) => void;
 }
 
-export const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
+const SubtaskCreateDialog: React.FC<SubtaskCreateDialogProps> = ({
   open,
   onOpenChange,
   parentTaskId,

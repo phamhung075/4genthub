@@ -14,7 +14,8 @@ import SubtaskRow from "./SubtaskRow";
 const DeleteConfirmDialog = lazy(() => import("./DeleteConfirmDialog"));
 const SubtaskCompleteDialog = lazy(() => import("./SubtaskCompleteDialog"));
 const SubtaskDetailsDialog = lazy(() => import("./SubtaskDetailsDialog"));
-const SubtaskCreateDialog = lazy(() => import("./SubtaskCreateDialog"));
+// Import SubtaskCreateDialog directly without lazy loading
+import SubtaskCreateDialog from "./SubtaskCreateDialog";
 const AgentInfoDialog = lazy(() => import("./AgentInfoDialog"));
 
 interface LazySubtaskListProps {
@@ -100,6 +101,8 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   // Create subtask dialog state
   const [createSubtaskDialogOpen, setCreateSubtaskDialogOpen] = useState(false);
 
+
+
   // Handle agent info click
   const handleAgentInfoClick = (agentName: string) => {
     setSelectedAgentForInfo(agentName);
@@ -107,12 +110,13 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   };
 
   // Handle opening create subtask dialog
-  const handleOpenCreateSubtask = () => {
+  const handleOpenCreateSubtask = useCallback(() => {
     setCreateSubtaskDialogOpen(true);
-  };
+  }, []);
 
   // Handle subtask creation
   const handleSubtaskCreated = useCallback((newSubtask: Subtask) => {
+
     // Add to summaries
     const newSummary: SubtaskSummary = {
       id: newSubtask.id,
@@ -133,6 +137,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       return newMap;
     });
 
+    // Ensure dialog is closed
     setCreateSubtaskDialogOpen(false);
   }, []);
 
@@ -501,18 +506,21 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   if (subtaskSummaries.length === 0) {
     return (
       <div className="p-6 bg-gradient-to-r from-blue-50/30 to-transparent dark:from-blue-950/20 dark:to-transparent">
+
         <div className="flex items-center gap-2 mb-4">
           <div className="h-px flex-1 bg-gradient-to-r from-blue-300 to-transparent dark:from-blue-700"></div>
           <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Subtasks</span>
           <div className="h-px flex-1 bg-gradient-to-l from-blue-300 to-transparent dark:from-blue-700"></div>
         </div>
         <div className="text-center text-sm text-blue-600/70 dark:text-blue-400/70 py-4">
-          No subtasks found.
+          <div className="mb-3">No subtasks found.</div>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="ml-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            onClick={handleOpenCreateSubtask}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border-blue-300 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/50 relative z-20"
+            onClick={() => {
+              handleOpenCreateSubtask();
+            }}
           >
             <Plus className="w-3 h-3 mr-1" />
             Add Subtask
@@ -524,6 +532,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   return (
     <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50/30 to-transparent dark:from-blue-950/20 dark:to-transparent">
+
       {/* Subtask Section Header */}
       <div className="flex items-center gap-2 mb-2">
         <div className="h-px flex-1 bg-gradient-to-r from-blue-300 to-transparent dark:from-blue-700"></div>
@@ -586,7 +595,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         <Button
           variant="outline"
           size="sm"
-          className="mt-2 border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/50"
+          className="mt-2 border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/50 relative z-20"
           onClick={handleOpenCreateSubtask}
         >
           <Plus className="w-3 h-3 mr-1" />
@@ -594,6 +603,15 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         </Button>
       </div>
       
+      {/* Create Subtask Dialog - Not lazy loaded */}
+      <SubtaskCreateDialog
+        open={createSubtaskDialogOpen}
+        onOpenChange={setCreateSubtaskDialogOpen}
+        parentTaskId={parentTaskId}
+        onClose={() => setCreateSubtaskDialogOpen(false)}
+        onCreated={handleSubtaskCreated}
+      />
+
       {/* Dialogs */}
       <Suspense fallback={null}>
         {/* Delete Confirmation Dialog */}
@@ -607,7 +625,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
             itemName={subtaskSummaries.find(s => s.id === deleteDialog.subtaskId)?.title}
           />
         )}
-        
+
         {/* Complete Subtask Dialog */}
         {activeDialog.type === 'complete' && activeDialog.subtask && (
           <SubtaskCompleteDialog
@@ -617,17 +635,6 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
             parentTaskId={parentTaskId}
             onClose={() => setActiveDialog({ type: null })}
             onComplete={handleCompleteSubtask}
-          />
-        )}
-
-        {/* Create Subtask Dialog */}
-        {createSubtaskDialogOpen && (
-          <SubtaskCreateDialog
-            open={createSubtaskDialogOpen}
-            onOpenChange={setCreateSubtaskDialogOpen}
-            parentTaskId={parentTaskId}
-            onClose={() => setCreateSubtaskDialogOpen(false)}
-            onCreated={handleSubtaskCreated}
           />
         )}
         
