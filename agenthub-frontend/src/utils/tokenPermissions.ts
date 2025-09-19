@@ -1,6 +1,8 @@
 // Token Permission Utilities
 // Parse and validate CRUD permissions from JWT tokens
 
+import logger from './logger';
+
 export interface TokenPermissions {
   create: boolean;
   read: boolean;
@@ -60,7 +62,7 @@ export class TokenPermissionParser {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
-        console.error('Invalid JWT format');
+        logger.error('Invalid JWT format');
         return null;
       }
       
@@ -68,7 +70,7 @@ export class TokenPermissionParser {
       const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
       return decoded;
     } catch (error) {
-      console.error('Error decoding token:', error);
+      logger.error('Error decoding token:', error);
       return null;
     }
   }

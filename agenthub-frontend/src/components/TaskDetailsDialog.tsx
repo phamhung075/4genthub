@@ -6,6 +6,7 @@ import { Separator } from "./ui/separator";
 import { Task, Subtask, getTask, getTaskContext } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
+import logger from "../utils/logger";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Settings, Shield, Database, Globe, FolderOpen, Code, GitBranch } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
@@ -34,14 +35,14 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
   // Set initial task when it changes - but don't clear if null
   useEffect(() => {
-    console.log('[TaskDetailsDialog] Task prop changed:', task);
+    logger.debug('[TaskDetailsDialog] Task prop changed:', task);
     // Check if task is the full response object or just the task
     const taskData = task?.task || task;
     if (taskData && taskData.id) {
-      console.log('[TaskDetailsDialog] Setting fullTask from prop:', taskData);
+      logger.debug('[TaskDetailsDialog] Setting fullTask from prop:', taskData);
       setFullTask(taskData);
     } else {
-      console.log('[TaskDetailsDialog] Task prop is null or has no ID, not clearing fullTask');
+      logger.debug('[TaskDetailsDialog] Task prop is null or has no ID, not clearing fullTask');
     }
   }, [task]);
 
@@ -49,29 +50,29 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   useEffect(() => {
     // Only fetch if we have a task ID, either from prop or from fullTask
     const taskId = task?.id || fullTask?.id;
-    console.log('[TaskDetailsDialog] Dialog open:', open, 'TaskID:', taskId, 'Task prop:', task, 'FullTask:', fullTask);
+    logger.debug('[TaskDetailsDialog] Dialog open:', open, 'TaskID:', taskId, 'Task prop:', task, 'FullTask:', fullTask);
     
     if (open && taskId) {
       setLoading(true);
       setContextLoading(true);
       
-      console.log('[TaskDetailsDialog] Fetching task details for ID:', taskId);
+      logger.debug('[TaskDetailsDialog] Fetching task details for ID:', taskId);
       // Fetch task details
       getTask(taskId) // Fixed: removed invalid second parameter
         .then(fetchedTask => {
-          console.log('[TaskDetailsDialog] Fetched task:', fetchedTask);
+          logger.debug('[TaskDetailsDialog] Fetched task:', fetchedTask);
           // Extract the task from the response structure
           const taskData = fetchedTask?.task || fetchedTask;
           if (taskData && taskData.id) {
-            console.log('[TaskDetailsDialog] Setting fullTask to:', taskData);
+            logger.debug('[TaskDetailsDialog] Setting fullTask to:', taskData);
             setFullTask(taskData);
           } else {
-            console.log('[TaskDetailsDialog] No valid task data in response');
+            logger.warn('[TaskDetailsDialog] No valid task data in response');
           }
           // Don't clear on failure - keep the initial task data
         })
         .catch(error => {
-          console.error('[TaskDetailsDialog] Error fetching task:', error);
+          logger.error('[TaskDetailsDialog] Error fetching task:', error);
           // Don't overwrite with null - keep existing data
         })
         .finally(() => {
@@ -81,34 +82,34 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
       // Fetch task context separately
       getTaskContext(taskId)
         .then(context => {
-          console.log('Raw context response:', context);
+          logger.debug('Raw context response:', context);
           
           // Extract the actual context data from the response
           if (context) {
             if (context.data && context.data.resolved_context) {
               // New format: data.resolved_context contains the actual context
-              console.log('Using resolved_context from data:', context.data.resolved_context);
+              logger.debug('Using resolved_context from data:', context.data.resolved_context);
               setTaskContext(context.data.resolved_context);
             } else if (context.resolved_context) {
               // Alternative format: resolved_context at root level
-              console.log('Using resolved_context from root:', context.resolved_context);
+              logger.debug('Using resolved_context from root:', context.resolved_context);
               setTaskContext(context.resolved_context);
             } else if (context.data) {
               // Fallback: use data object if it exists
-              console.log('Using data object:', context.data);
+              logger.debug('Using data object:', context.data);
               setTaskContext(context.data);
             } else {
               // Last resort: use the whole response
-              console.log('Using full response:', context);
+              logger.debug('Using full response:', context);
               setTaskContext(context);
             }
           } else {
-            console.log('No context data received');
+            logger.warn('No context data received');
             setTaskContext(null);
           }
         })
         .catch(error => {
-          console.error('Error fetching task context:', error);
+          logger.error('Error fetching task context:', error);
           setTaskContext(null);
         })
         .finally(() => {
@@ -134,7 +135,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   // Handle both response object and direct task object
   const rawDisplayTask = fullTask || task;
   const displayTask = rawDisplayTask?.task || rawDisplayTask;
-  console.log('[TaskDetailsDialog] DisplayTask being used:', displayTask, 'RawDisplayTask:', rawDisplayTask, 'FullTask:', fullTask, 'Task:', task);
+  logger.debug('[TaskDetailsDialog] DisplayTask being used:', displayTask, 'RawDisplayTask:', rawDisplayTask, 'FullTask:', fullTask, 'Task:', task);
   
   // Format context data using helper functions
   const contextDisplay = formatContextDisplay(displayTask?.context_data);
@@ -148,7 +149,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
         setJsonCopied(true);
         setTimeout(() => setJsonCopied(false), 2000);
       }).catch(err => {
-        console.error('Failed to copy JSON:', err);
+        logger.error('Failed to copy JSON:', err);
       });
     }
   };

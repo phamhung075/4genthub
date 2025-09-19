@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { TokenPermissionParser, TokenPermissions } from '../utils/tokenPermissions';
+import logger from '../utils/logger';
 
 export interface UsePermissionsReturn {
   permissions: TokenPermissions;
@@ -69,7 +70,7 @@ export function usePermissions(): UsePermissionsReturn {
       setUserRoles(roles);
 
     } catch (err) {
-      console.error('Error loading permissions:', err);
+      logger.error('Error loading permissions:', err);
       setError(err instanceof Error ? err.message : 'Failed to load permissions');
     } finally {
       setIsLoading(false);

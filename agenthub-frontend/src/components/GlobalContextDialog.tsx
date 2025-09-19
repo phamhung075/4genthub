@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "./ui/textarea";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
+import logger from "../utils/logger";
 
 interface GlobalContextDialogProps {
   open: boolean;
@@ -52,7 +53,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     setLoading(true);
     try {
       const response = await getGlobalContext();
-      console.log('Fetched global context response:', response);
+      logger.debug('Fetched global context response:', response);
       
       // Extract the actual context data from the nested structure
       let contextData = {};
@@ -67,7 +68,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
         contextData = response;
       }
       
-      console.log('Extracted context data:', contextData);
+      logger.debug('Extracted context data:', contextData);
       
       // Set a default structure if context is empty
       const defaultContext = {
@@ -95,9 +96,9 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       // Initialize raw JSON text for editing
       setRawJsonText(JSON.stringify(finalContextData, null, 2));
 
-      console.log('Final context data:', finalContextData);
+      logger.debug('Final context data:', finalContextData);
     } catch (error) {
-      console.error('Error fetching global context:', error);
+      logger.error('Error fetching global context:', error);
       // Initialize with empty structure on error
       const emptyContext = {
         user_preferences: {},
@@ -161,7 +162,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       setActiveTab('view');
       setJsonValidationError('');
     } catch (error) {
-      console.error('Error saving global context:', error);
+      logger.error('Error saving global context:', error);
       alert('Failed to save global context. Please try again.');
     } finally {
       setSaving(false);
@@ -629,7 +630,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                         setJsonCopied(true);
                         setTimeout(() => setJsonCopied(false), 2000);
                       }).catch(err => {
-                        console.error('Failed to copy JSON:', err);
+                        logger.error('Failed to copy JSON:', err);
                       });
                     }
                   }}

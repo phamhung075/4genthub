@@ -7,6 +7,8 @@
  * when those entities change.
  */
 
+import logger from '../utils/logger';
+
 export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
 export type EventType = 'created' | 'updated' | 'deleted' | 'completed' | 'archived' | 'restored';
 
@@ -45,13 +47,13 @@ class ChangePoolService {
    * Register a component to receive updates when entities change
    */
   subscribe(subscription: ComponentSubscription): () => void {
-    console.log(`📡 ChangePool: Subscribing ${subscription.componentId} to ${subscription.entityTypes.join(', ')}`);
+    logger.debug(`📡 ChangePool: Subscribing ${subscription.componentId} to ${subscription.entityTypes.join(', ')}`);
 
     this.subscriptions.set(subscription.componentId, subscription);
 
     // Return unsubscribe function
     return () => {
-      console.log(`📡 ChangePool: Unsubscribing ${subscription.componentId}`);
+      logger.debug(`📡 ChangePool: Unsubscribing ${subscription.componentId}`);
       this.subscriptions.delete(subscription.componentId);
     };
   }
@@ -60,7 +62,7 @@ class ChangePoolService {
    * Process incoming change notification and refresh relevant components
    */
   processChange(notification: ChangeNotification): void {
-    console.log(`📡 ChangePool: Processing ${notification.entityType} ${notification.eventType} for ${notification.entityId}`);
+    logger.debug(`📡 ChangePool: Processing ${notification.entityType} ${notification.eventType} for ${notification.entityId}`);
 
     // Add to history
     this.changeHistory.unshift(notification);
@@ -78,17 +80,17 @@ class ChangePoolService {
         // Execute the refresh callback
         try {
           subscription.refreshCallback();
-          console.log(`✅ ChangePool: Refreshed ${componentId} for ${notification.entityType} ${notification.eventType}`);
+          logger.debug(`✅ ChangePool: Refreshed ${componentId} for ${notification.entityType} ${notification.eventType}`);
         } catch (error) {
-          console.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error);
+          logger.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error);
         }
       }
     });
 
     if (componentsToRefresh.length > 0) {
-      console.log(`📊 ChangePool: Refreshed ${componentsToRefresh.length} components:`, componentsToRefresh);
+      logger.debug(`📊 ChangePool: Refreshed ${componentsToRefresh.length} components:`, componentsToRefresh);
     } else {
-      console.log(`📊 ChangePool: No components needed refresh for ${notification.entityType} ${notification.eventType}`);
+      logger.debug(`📊 ChangePool: No components needed refresh for ${notification.entityType} ${notification.eventType}`);
     }
   }
 
@@ -151,7 +153,7 @@ class ChangePoolService {
    * Clear all subscriptions (useful for cleanup)
    */
   clearAllSubscriptions(): void {
-    console.log(`📡 ChangePool: Clearing all ${this.subscriptions.size} subscriptions`);
+    logger.debug(`📡 ChangePool: Clearing all ${this.subscriptions.size} subscriptions`);
     this.subscriptions.clear();
   }
 
@@ -159,7 +161,7 @@ class ChangePoolService {
    * Force refresh all components subscribed to specific entity types
    */
   forceRefresh(entityTypes: EntityType[]): void {
-    console.log(`📡 ChangePool: Force refreshing components for ${entityTypes.join(', ')}`);
+    logger.debug(`📡 ChangePool: Force refreshing components for ${entityTypes.join(', ')}`);
 
     this.subscriptions.forEach((subscription, componentId) => {
       const hasMatchingType = subscription.entityTypes.some(type => entityTypes.includes(type));
@@ -167,9 +169,9 @@ class ChangePoolService {
       if (hasMatchingType) {
         try {
           subscription.refreshCallback();
-          console.log(`✅ ChangePool: Force refreshed ${componentId}`);
+          logger.debug(`✅ ChangePool: Force refreshed ${componentId}`);
         } catch (error) {
-          console.error(`❌ ChangePool: Failed to force refresh ${componentId}:`, error);
+          logger.error(`❌ ChangePool: Failed to force refresh ${componentId}:`, error);
         }
       }
     });
@@ -200,12 +202,12 @@ if (typeof window !== 'undefined') {
       }
     });
 
-    console.log('📡 ChangePool: Connected to WebSocket service');
+    logger.info('📡 ChangePool: Connected to WebSocket service');
 
     // Cleanup on window unload
     window.addEventListener('beforeunload', () => {
       unsubscribe();
       changePoolService.clearAllSubscriptions();
     });
-  }).catch(console.error);
+  }).catch(logger.error);
 }

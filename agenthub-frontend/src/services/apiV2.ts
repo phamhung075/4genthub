@@ -1,6 +1,7 @@
 // API V2 Service - User-Isolated Endpoints with JWT Authentication
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../config/environment';
+import logger from '../utils/logger';
 
 // Get current auth token
 const getAuthToken = (): string | null => {
@@ -16,9 +17,9 @@ const getAuthHeaders = (): HeadersInit => {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('API V2: Adding auth header with token starting:', token.substring(0, 50) + '...');
+    logger.debug('API V2: Adding auth header with token starting:', token.substring(0, 50) + '...');
   } else {
-    console.warn('API V2: No auth token found in cookies!');
+    logger.warn('API V2: No auth token found in cookies!');
   }
   
   return headers;
@@ -35,7 +36,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
     
     if (response.status === 401) {
-      console.log('V2 API: Got 401, attempting token refresh...');
+      logger.info('V2 API: Got 401, attempting token refresh...');
       
       // Try to refresh the token
       try {
@@ -60,7 +61,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
           }
         }
       } catch (refreshError) {
-        console.log('V2 API: Token refresh failed, clearing tokens...');
+        logger.info('V2 API: Token refresh failed, clearing tokens...');
         Cookies.remove('access_token');
         Cookies.remove('refresh_token');
         // Dispatch event to notify AuthContext to logout
@@ -98,7 +99,7 @@ const refreshTokenAndRetry = async (): Promise<void> => {
   if (!response.ok) {
     // If refresh fails, clear tokens and redirect to login
     if (response.status === 401) {
-      console.error('V2 API: Refresh token expired or invalid, clearing tokens');
+      logger.error('V2 API: Refresh token expired or invalid, clearing tokens');
       Cookies.remove('access_token');
       Cookies.remove('refresh_token');
       // The handleResponse function will redirect to login
@@ -123,8 +124,8 @@ const refreshTokenAndRetry = async (): Promise<void> => {
       secure: import.meta.env.MODE === 'production'
     });
   }
-  
-  console.log('V2 API: Token refreshed successfully');
+
+  logger.info('V2 API: Token refreshed successfully');
 };
 
 // Enhanced fetch with automatic retry
@@ -700,7 +701,7 @@ export const getCurrentUserId = (): string | null => {
     const payload = JSON.parse(atob(parts[1]));
     return payload.sub || payload.user_id || null;
   } catch (error) {
-    console.error('Error decoding token:', error);
+    logger.error('Error decoding token:', error);
     return null;
   }
 };

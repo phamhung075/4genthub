@@ -6,6 +6,7 @@
  */
 
 import { toastEventBus } from './toastEventBus';
+import logger from '../utils/logger';
 
 // Entity and event types for WebSocket messages
 type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
@@ -52,7 +53,7 @@ class WebSocketService {
     if (this.ws?.readyState === WebSocket.OPEN ||
         this.ws?.readyState === WebSocket.CONNECTING ||
         this.isConnecting) {
-      console.log('WebSocket already connected or connecting');
+      logger.debug('WebSocket already connected or connecting');
       return;
     }
 
@@ -81,18 +82,18 @@ class WebSocketService {
         }
       }
 
-      console.log('Connecting to WebSocket:', wsUrl);
+      logger.info('Connecting to WebSocket:', wsUrl);
       this.ws = new WebSocket(finalUrl);
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
+        logger.info('WebSocket connected');
         this.isConnecting = false;
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
 
         // Log connection status
         if (!token && !localStorage.getItem('access_token')) {
-          console.log('Connected as anonymous user');
+          logger.info('Connected as anonymous user');
         }
 
         // Start heartbeat
@@ -107,17 +108,17 @@ class WebSocketService {
           const message = JSON.parse(event.data) as WebSocketMessage;
           this.handleMessage(message);
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          logger.error('Failed to parse WebSocket message:', error);
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        logger.error('WebSocket error:', error);
         this.isConnecting = false;
       };
 
       this.ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+        logger.info('WebSocket disconnected:', event.code, event.reason);
         this.isConnecting = false;
         this.stopHeartbeat();
 
@@ -127,7 +128,7 @@ class WebSocketService {
         }
       };
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
+      logger.error('Failed to create WebSocket connection:', error);
       this.isConnecting = false;
       this.scheduleReconnect();
     }
@@ -155,7 +156,7 @@ class WebSocketService {
    */
   private subscribe(scope: 'global' | 'user' | 'project' | 'branch' | 'task', filters?: any): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('Cannot subscribe: WebSocket not connected');
+      logger.warn('Cannot subscribe: WebSocket not connected');
       return;
     }
 
@@ -166,7 +167,7 @@ class WebSocketService {
     };
 
     this.ws.send(JSON.stringify(message));
-    console.log('Subscribed to', scope, 'updates');
+    logger.debug('Subscribed to', scope, 'updates');
   }
 
   /**
@@ -195,7 +196,7 @@ class WebSocketService {
    * Handle incoming WebSocket messages
    */
   private handleMessage(message: WebSocketMessage): void {
-    console.log('WebSocket message received:', message);
+    logger.debug('WebSocket message received:', message);
 
     // Handle system messages
     switch (message.type) {
@@ -208,7 +209,7 @@ class WebSocketService {
         // System messages, no need to forward to handlers
         return;
       case 'error':
-        console.error('WebSocket error:', message);
+        logger.error('WebSocket error:', message);
         return;
     }
 
@@ -274,14 +275,14 @@ class WebSocketService {
     }
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      logger.error('Max reconnection attempts reached');
       return;
     }
 
     this.reconnectAttempts++;
     const delay = Math.min(this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1), this.maxReconnectDelay);
 
-    console.log(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
+    logger.debug(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
 
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
@@ -441,7 +442,7 @@ if (typeof window !== 'undefined' && !autoConnectScheduled) {
   setTimeout(() => {
     // Double-check we're not already connected before attempting
     if (!websocketService.isConnected()) {
-      websocketService.connect().catch(console.error);
+      websocketService.connect().catch(logger.error);
     }
   }, 1000);
 }

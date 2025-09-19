@@ -1,9 +1,10 @@
 import { authenticatedFetch } from '../hooks/useAuthenticatedFetch';
 import { API_BASE_URL, DEBUG_MODE } from '../config/environment';
+import logger from '../utils/logger';
 
 // Log API URL only in debug mode
 if (DEBUG_MODE) {
-  console.log('TokenService - API_BASE_URL:', API_BASE_URL);
+  logger.debug('TokenService - API_BASE_URL:', API_BASE_URL);
 }
 
 interface GenerateTokenRequest {
@@ -37,11 +38,11 @@ class TokenService {
   private baseUrl = `${API_BASE_URL}/api/v2/tokens`;
 
   constructor() {
-    console.log('TokenService initialized with baseUrl:', this.baseUrl);
+    logger.debug('TokenService initialized with baseUrl:', this.baseUrl);
   }
 
   async generateToken(request: GenerateTokenRequest): Promise<{ data: TokenResponse }> {
-    console.log('TokenService.generateToken - calling:', `${this.baseUrl}/generate`);
+    logger.debug('TokenService.generateToken - calling:', `${this.baseUrl}/generate`);
     const response = await authenticatedFetch(`${this.baseUrl}/generate`, {
       method: 'POST',
       headers: {
@@ -61,21 +62,21 @@ class TokenService {
   }
 
   async listTokens(): Promise<TokenListResponse> {
-    console.log('Fetching tokens from:', this.baseUrl);
+    logger.debug('Fetching tokens from:', this.baseUrl);
     const response = await authenticatedFetch(this.baseUrl, {
       method: 'GET',
     });
 
-    console.log('Response status:', response.status);
-    
+    logger.debug('Response status:', response.status);
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Failed to fetch tokens' }));
-      console.error('Token fetch error:', error);
+      logger.error('Token fetch error:', error);
       throw new Error(error.message || error.error || 'Failed to fetch tokens');
     }
 
     const data = await response.json();
-    console.log('Token list response:', data);
+    logger.debug('Token list response:', data);
     return data;
   }
 

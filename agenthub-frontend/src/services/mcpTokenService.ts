@@ -2,6 +2,7 @@
 import Cookies from 'js-cookie';
 import { taskApiV2 } from './apiV2';
 import { API_BASE_URL } from '../config/environment';
+import logger from '../utils/logger';
 
 interface MCPToken {
   success: boolean;
@@ -80,12 +81,12 @@ class MCPTokenService {
         this.cachedToken = result.token;
         this.tokenExpiry = result.expires_at ? new Date(result.expires_at) : null;
         
-        console.log('MCP token generated successfully, expires:', result.expires_at);
+        logger.info('MCP token generated successfully, expires:', result.expires_at);
       }
 
       return result;
     } catch (error) {
-      console.error('Failed to generate MCP token:', error);
+      logger.error('Failed to generate MCP token:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -109,7 +110,7 @@ class MCPTokenService {
       return result.token;
     }
 
-    console.error('Failed to obtain MCP token:', result.message);
+    logger.error('Failed to obtain MCP token:', result.message);
     return null;
   }
 
@@ -129,12 +130,12 @@ class MCPTokenService {
         // Clear cached token
         this.cachedToken = null;
         this.tokenExpiry = null;
-        console.log('MCP tokens revoked successfully');
+        logger.info('MCP tokens revoked successfully');
       }
 
       return result.success;
     } catch (error) {
-      console.error('Failed to revoke MCP tokens:', error);
+      logger.error('Failed to revoke MCP tokens:', error);
       return false;
     }
   }
@@ -155,7 +156,7 @@ class MCPTokenService {
 
       return await response.json();
     } catch (error) {
-      console.error('Failed to get token stats:', error);
+      logger.error('Failed to get token stats:', error);
       return null;
     }
   }
@@ -231,7 +232,7 @@ class MCPTokenService {
   clearCache(): void {
     this.cachedToken = null;
     this.tokenExpiry = null;
-    console.log('MCP token cache cleared');
+    logger.debug('MCP token cache cleared');
   }
 
   /**
