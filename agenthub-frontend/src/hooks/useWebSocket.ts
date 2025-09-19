@@ -4,6 +4,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { websocketService, WebSocketMessage, DataChangeHandler } from '../services/websocketService';
+import logger from '../utils/logger';
 
 interface UseWebSocketOptions {
   onTaskUpdate?: (taskId: string, data: any) => void;
@@ -147,13 +148,13 @@ export function useAutoRefresh(
 
       // Check if this update is for our entity
       if (messageEntityId === entityId) {
-        console.log(`Auto-refreshing ${entityType} ${entityId} due to update`);
+        logger.debug(`Auto-refreshing ${entityType} ${entityId} due to update`);
         refreshFunctionRef.current();
       }
 
       // Also refresh if this is a parent entity update that affects us
       if (entityType === 'subtask' && message.metadata?.parent_task_id === entityId) {
-        console.log(`Auto-refreshing task ${entityId} due to subtask update`);
+        logger.debug(`Auto-refreshing task ${entityId} due to subtask update`);
         refreshFunctionRef.current();
       }
     };

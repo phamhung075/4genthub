@@ -156,16 +156,69 @@ describe('Header', () => {
 
   it('renders navigation icons on desktop', () => {
     renderWithAuth();
-    
+
     // Should have home, tokens, and settings icons
     const navLinks = screen.getAllByRole('link');
     const homeLink = navLinks.find(link => link.getAttribute('href') === '/dashboard');
     const tokensLink = navLinks.find(link => link.getAttribute('href') === '/tokens');
     const profileLink = navLinks.find(link => link.getAttribute('href') === '/profile');
-    
+
     expect(homeLink).toBeInTheDocument();
     expect(tokensLink).toBeInTheDocument();
     expect(profileLink).toBeInTheDocument();
+  });
+
+  it('shows hamburger menu button on mobile', () => {
+    renderWithAuth();
+
+    // Should have hamburger menu button for mobile
+    const hamburgerButton = screen.getByLabelText('Toggle mobile menu');
+    expect(hamburgerButton).toBeInTheDocument();
+  });
+
+  it('toggles mobile menu when hamburger is clicked', () => {
+    renderWithAuth();
+
+    // Click hamburger to open mobile menu
+    const hamburgerButton = screen.getByLabelText('Toggle mobile menu');
+
+    // Initially should show hamburger (Menu) icon
+    expect(hamburgerButton.querySelector('svg')).toBeInTheDocument();
+
+    fireEvent.click(hamburgerButton);
+
+    // After clicking, should show X (close) icon and mobile menu backdrop
+    const backdrop = document.querySelector('[class*="fixed"][class*="inset-0"][class*="bg-black"]');
+    expect(backdrop).toBeInTheDocument();
+  });
+
+  it('closes mobile menu when backdrop is clicked', () => {
+    renderWithAuth();
+
+    // Open mobile menu
+    const hamburgerButton = screen.getByLabelText('Toggle mobile menu');
+    fireEvent.click(hamburgerButton);
+
+    // Verify backdrop is visible
+    let backdrop = document.querySelector('[class*="fixed"][class*="inset-0"][class*="bg-black"]');
+    expect(backdrop).toBeInTheDocument();
+
+    // Click backdrop to close
+    if (backdrop) {
+      fireEvent.click(backdrop);
+    }
+
+    // Mobile menu should be closed - backdrop should be gone
+    backdrop = document.querySelector('[class*="fixed"][class*="inset-0"][class*="bg-black"]');
+    expect(backdrop).not.toBeInTheDocument();
+  });
+
+  it('hides tagline on small screens', () => {
+    renderWithAuth();
+
+    // Tagline should have hidden sm:block class
+    const tagline = screen.getByText('AI Orchestration Platform');
+    expect(tagline).toHaveClass('hidden', 'sm:block');
   });
 
   it('shows mobile dashboard link in dropdown on small screens', () => {

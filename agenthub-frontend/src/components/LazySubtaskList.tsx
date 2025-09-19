@@ -9,6 +9,7 @@ import { ShimmerButton } from "./ui/shimmer-button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import SubtaskRow from "./SubtaskRow";
+import logger from "../utils/logger";
 
 // Lazy load dialogs
 const DeleteConfirmDialog = lazy(() => import("./DeleteConfirmDialog"));
@@ -105,12 +106,12 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Handle agent info click
   const handleAgentInfoClick = (agentName: string) => {
-    console.log('🎯 Agent info clicked:', agentName);
-    console.log('📋 Current subtask summaries:', subtaskSummaries);
-    console.log('👥 All assignees:', subtaskSummaries.map(s => s.assignees));
+    logger.debug('🎯 Agent info clicked:', agentName);
+    logger.debug('📋 Current subtask summaries:', subtaskSummaries);
+    logger.debug('👥 All assignees:', subtaskSummaries.map(s => s.assignees));
     setSelectedAgentForInfo(agentName);
     setAgentInfoDialogOpen(true);
-    console.log('🔓 Dialog state after click:', {
+    logger.debug('🔓 Dialog state after click:', {
       agent: agentName,
       dialogOpen: true
     });
@@ -118,9 +119,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Handle opening create subtask dialog
   const handleOpenCreateSubtask = useCallback(() => {
-    console.log('🎬 handleOpenCreateSubtask called');
+    logger.debug('🎬 handleOpenCreateSubtask called');
     setCreateSubtaskDialogOpen(true);
-    console.log('✅ Dialog state set to open');
+    logger.debug('✅ Dialog state set to open');
   }, []);
 
   // Handle subtask creation
@@ -191,7 +192,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       setSubtaskSummaries(data.subtasks);
 
     } catch (e) {
-      console.warn('Lightweight subtask endpoint not available, falling back');
+      logger.warn('Lightweight subtask endpoint not available, falling back');
       await loadFullSubtasksFallback();
     } finally {
       setLoading(false);
@@ -215,7 +216,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Stable refresh callback for changePoolService
   const handleSubtaskChanges = useCallback(async () => {
-    console.log('📡 LazySubtaskList: Subtask changes detected, refreshing...');
+    logger.debug('📡 LazySubtaskList: Subtask changes detected, refreshing...');
 
     // Store current subtask IDs and data before refresh for comparison
     const currentSubtaskIds = new Set(subtaskSummaries.map(s => s.id));
@@ -234,31 +235,31 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       // 1. New subtasks (created) - only if we have a previous state to compare
       if (currentSubtaskIds.size > 0) {
         const addedSubtasks = new Set([...newSubtaskIds].filter(id => !currentSubtaskIds.has(id)));
-        console.log('🔍 Subtask change detection - currentSubtaskIds:', currentSubtaskIds.size, 'newSubtaskIds:', newSubtaskIds.size, 'addedSubtasks:', addedSubtasks.size);
+        logger.debug('🔍 Subtask change detection - currentSubtaskIds:', currentSubtaskIds.size, 'newSubtaskIds:', newSubtaskIds.size, 'addedSubtasks:', addedSubtasks.size);
 
         if (addedSubtasks.size > 0) {
-          console.log('✨ New subtasks detected:', [...addedSubtasks]);
+          logger.debug('✨ New subtasks detected:', [...addedSubtasks]);
           // Wait a bit for SubtaskRow to register callbacks
           setTimeout(() => {
             addedSubtasks.forEach(subtaskId => {
               const callbacks = rowAnimationCallbacks.current.get(subtaskId);
               if (callbacks) {
-                console.log('🎬 Playing create animation for subtask:', subtaskId);
+                logger.debug('🎬 Playing create animation for subtask:', subtaskId);
                 callbacks.playCreateAnimation();
               } else {
-                console.warn('⚠️ No callbacks found for subtask:', subtaskId);
+                logger.warn('⚠️ No callbacks found for subtask:', subtaskId);
               }
             });
           }, 100);
         }
       } else {
-        console.log('🏁 Initial subtask load - no animation for existing subtasks');
+        logger.debug('🏁 Initial subtask load - no animation for existing subtasks');
       }
 
       // 2. Removed subtasks (deleted) - need to keep them in the list during animation
       const removedSubtasks = new Set([...currentSubtaskIds].filter(id => !newSubtaskIds.has(id)));
       if (removedSubtasks.size > 0) {
-        console.log('🗑️ Deleted subtasks detected:', [...removedSubtasks]);
+        logger.debug('🗑️ Deleted subtasks detected:', [...removedSubtasks]);
 
         // Add deleted subtasks back to the summaries temporarily for animation
         const deletedSubtasksData = subtaskSummaries.filter(subtask => removedSubtasks.has(subtask.id));
@@ -267,10 +268,10 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         removedSubtasks.forEach(subtaskId => {
           const callbacks = rowAnimationCallbacks.current.get(subtaskId);
           if (callbacks) {
-            console.log('🎬 Playing delete animation for subtask:', subtaskId);
+            logger.debug('🎬 Playing delete animation for subtask:', subtaskId);
             callbacks.playDeleteAnimation();
           } else {
-            console.warn('⚠️ No callbacks found for deleted subtask:', subtaskId);
+            logger.warn('⚠️ No callbacks found for deleted subtask:', subtaskId);
           }
         });
       }
@@ -292,7 +293,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       updatedSubtasks.forEach(subtaskId => {
         const callbacks = rowAnimationCallbacks.current.get(subtaskId as string);
         if (callbacks) {
-          console.log('🎬 Playing update animation for subtask:', subtaskId);
+          logger.debug('🎬 Playing update animation for subtask:', subtaskId);
           callbacks.playUpdateAnimation();
         }
       });
@@ -302,7 +303,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       setPreviousSubtaskIds(newSubtaskIds);
 
     } catch (e) {
-      console.warn('Lightweight subtask endpoint not available, falling back');
+      logger.warn('Lightweight subtask endpoint not available, falling back');
       await loadFullSubtasksFallback();
     } finally {
       setHasLoaded(true);
@@ -356,7 +357,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       return subtask;
       
     } catch (e) {
-      console.error(`Failed to load subtask ${subtaskId}:`, e);
+      logger.error(`Failed to load subtask ${subtaskId}:`, e);
       setLoadingSubtasks(prev => {
         const newSet = new Set(prev);
         newSet.delete(subtaskId);
@@ -382,7 +383,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       // Note: The actual row removal will be handled by WebSocket events and animation system
       // The handleSubtaskChanges function will detect the deletion and trigger the animation
     } catch (error) {
-      console.error('Failed to delete subtask:', error);
+      logger.error('Failed to delete subtask:', error);
       // TODO: Show error toast/notification
     }
   }, []);
@@ -423,7 +424,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           }
         }
       }).catch(error => {
-        console.error('Failed to load subtask for action:', action, error);
+        logger.error('Failed to load subtask for action:', action, error);
       });
     }
   }, [loadFullSubtask, fullSubtasks]);
@@ -531,9 +532,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🔘 Empty state Add Subtask button clicked');
+                logger.debug('🔘 Empty state Add Subtask button clicked');
                 handleOpenCreateSubtask();
-                console.log('📂 Create dialog state:', { createSubtaskDialogOpen: true });
+                logger.debug('📂 Create dialog state:', { createSubtaskDialogOpen: true });
               }}
             >
               <Plus className="w-3 h-3 mr-1" />
@@ -703,7 +704,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       <Suspense fallback={null}>
         {selectedAgentForInfo && (
           <>
-            {console.log('🚀 Rendering AgentInfoDialog:', {
+            {logger.debug('🚀 Rendering AgentInfoDialog:', {
               agentName: selectedAgentForInfo,
               open: agentInfoDialogOpen,
               taskTitle: `Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`
@@ -714,7 +715,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
               agentName={selectedAgentForInfo}
               taskTitle={`Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`}
               onClose={() => {
-                console.log('🔒 Closing AgentInfoDialog');
+                logger.debug('🔒 Closing AgentInfoDialog');
                 setAgentInfoDialogOpen(false);
                 setSelectedAgentForInfo(null);
               }}

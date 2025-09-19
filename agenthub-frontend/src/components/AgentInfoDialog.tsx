@@ -6,6 +6,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
+import logger from "../utils/logger";
 
 interface AgentInfoDialogProps {
   open: boolean;
@@ -216,22 +217,22 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
     setAgentResponse(null);
     
     try {
-      console.log('Calling agent:', agentName);
+      logger.info('Calling agent:', agentName);
       const result = await callAgent(agentName);
-      console.log('Agent response:', result);
+      logger.debug('Agent response:', result);
       
       // Check if we have a successful response
       if (result && result.success) {
-        console.log('Successfully received agent data');
+        logger.debug('Successfully received agent data');
         setAgentResponse(result);
         setError(null);
       } else if (result && result.success === false) {
-        console.log('Agent call failed:', result.message);
+        logger.warn('Agent call failed:', result.message);
         setError(result.message || 'Failed to fetch agent information');
         setAgentResponse(result);
       } else if (result !== undefined && result !== null) {
         // Response without explicit success field - treat as success
-        console.log('Response without success field, treating as valid');
+        logger.debug('Response without success field, treating as valid');
         setAgentResponse(result);
         setError(null);
       } else {
@@ -243,7 +244,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
         setError('No response from agent');
       }
     } catch (e: any) {
-      console.error('Error calling agent:', e);
+      logger.error('Error calling agent:', e);
       setError(e.message || 'Failed to call agent');
       setAgentResponse({ 
         success: false,
@@ -296,7 +297,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
         });
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      logger.error('Failed to copy:', err);
     }
   };
 

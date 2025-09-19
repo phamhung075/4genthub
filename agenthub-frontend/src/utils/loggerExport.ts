@@ -1,25 +1,18 @@
 /**
- * Safe logger export that can be used throughout the application
+ * Safe logger export that provides the comprehensive logger system
+ *
+ * This file provides a simple, backward-compatible interface for importing
+ * the logger throughout the application.
  */
 
-import { FrontendLogger } from './logger';
+import logger from './logger';
 
-// Create a singleton logger instance
-let loggerInstance: FrontendLogger | null = null;
+// Re-export the singleton logger instance
+export default logger;
 
-// Safe logger getter with fallback to console
-export const getLogger = (): FrontendLogger | Console => {
-  if (!loggerInstance) {
-    try {
-      loggerInstance = new FrontendLogger();
-      return loggerInstance;
-    } catch (error) {
-      console.warn('Failed to create logger, using console fallback:', error);
-      return console;
-    }
-  }
-  return loggerInstance;
-};
+// Named export for explicit imports
+export { logger };
 
-// Export logger instance for direct use
-export const logger = getLogger();
+// Re-export the class and types for advanced usage
+export { ComprehensiveLogger } from './logger';
+export type { LogLevel, LogEntry, LoggerConfig, LoggerMetadata } from './logger';

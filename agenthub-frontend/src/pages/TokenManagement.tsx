@@ -13,6 +13,7 @@ import { Separator } from '../components/ui/separator';
 import { SparklesText } from '../components/ui/SparklesText';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useAuth } from '../hooks/useAuth';
+import logger from '../utils/logger';
 import { tokenService } from '../services/tokenService';
 
 interface APIToken {
@@ -200,19 +201,19 @@ export function TokenManagement() {
     try {
       setLoading(true);
       setError(null);
-      console.log('Starting token fetch...');
+      logger.debug('Starting token fetch...');
       const response = await tokenService.listTokens();
-      console.log('Fetched tokens response:', response);
+      logger.debug('Fetched tokens response:', response);
       
       if (response && response.data) {
         setTokens(response.data);
-        console.log('Set tokens state with:', response.data);
+        logger.debug('Set tokens state with:', response.data);
       } else {
         setTokens([]);
-        console.log('No data in response, setting empty array');
+        logger.debug('No data in response, setting empty array');
       }
     } catch (err) {
-      console.error('Error fetching tokens:', err);
+      logger.error('Error fetching tokens:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch tokens';
       setError(errorMessage);
       setTokens([]);
@@ -255,7 +256,7 @@ export function TokenManagement() {
       // Refresh token list
       await fetchTokens();
     } catch (err) {
-      console.error('Error generating token:', err);
+      logger.error('Error generating token:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate token');
     } finally {
       setLoading(false);

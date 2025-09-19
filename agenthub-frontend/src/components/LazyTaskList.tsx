@@ -7,6 +7,7 @@ import TaskRow from "./TaskRow";
 import { useEntityChanges } from "../hooks/useChangeSubscription";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
+import logger from "../utils/logger";
 
 // Lazy-loaded components
 const LazySubtaskList = lazy(() => import("./LazySubtaskList"));
@@ -85,7 +86,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Stable refresh callback for changePoolService
   const handleTaskChanges = useCallback(async () => {
-    console.log('📡 LazyTaskList: Task changes detected, refreshing...');
+    logger.info('LazyTaskList: Task changes detected, refreshing...', { component: 'LazyTaskList' });
 
     // Store current task IDs and data before refresh for comparison
     const currentTaskIds = new Set(taskSummaries.map(t => t.id));
@@ -123,31 +124,36 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       // 1. New tasks (created) - only if we have a previous state to compare
       if (currentTaskIds.size > 0) {
         const addedTasks = new Set([...newTaskIds].filter(id => !currentTaskIds.has(id)));
-        console.log('🔍 Change detection - currentTaskIds:', currentTaskIds.size, 'newTaskIds:', newTaskIds.size, 'addedTasks:', addedTasks.size);
+        logger.debug('Change detection statistics', {
+          component: 'LazyTaskList',
+          currentTaskIds: currentTaskIds.size,
+          newTaskIds: newTaskIds.size,
+          addedTasks: addedTasks.size
+        });
 
         if (addedTasks.size > 0) {
-          console.log('✨ New tasks detected:', [...addedTasks]);
+          logger.info('New tasks detected', { component: 'LazyTaskList', addedTasks: [...addedTasks] });
           // Wait a bit for TaskRow to register callbacks
           setTimeout(() => {
             addedTasks.forEach(taskId => {
               const callbacks = rowAnimationCallbacks.current.get(taskId);
               if (callbacks) {
-                console.log('🎬 Playing create animation for task:', taskId);
+                logger.debug('Playing create animation for task', { component: 'LazyTaskList', taskId });
                 callbacks.playCreateAnimation();
               } else {
-                console.warn('⚠️ No callbacks found for task:', taskId);
+                logger.warn('No callbacks found for task', { component: 'LazyTaskList', taskId });
               }
             });
           }, 100);
         }
       } else {
-        console.log('🏁 Initial load - no animation for existing tasks');
+        logger.info('Initial load - no animation for existing tasks', { component: 'LazyTaskList' });
       }
 
       // 2. Removed tasks (deleted) - need to keep them in the list during animation
       const removedTasks = new Set([...currentTaskIds].filter(id => !newTaskIds.has(id)));
       if (removedTasks.size > 0) {
-        console.log('🗑️ Deleted tasks detected:', [...removedTasks]);
+        logger.info('Deleted tasks detected', { component: 'LazyTaskList', removedTasks: [...removedTasks] });
 
         // Add deleted tasks back to the summaries temporarily for animation
         const deletedTasksData = taskSummaries.filter(task => removedTasks.has(task.id));
@@ -156,10 +162,10 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         removedTasks.forEach(taskId => {
           const callbacks = rowAnimationCallbacks.current.get(taskId);
           if (callbacks) {
-            console.log('🎬 Playing delete animation for task:', taskId);
+            logger.debug('Playing delete animation for task', { component: 'LazyTaskList', taskId });
             callbacks.playDeleteAnimation();
           } else {
-            console.warn('⚠️ No callbacks found for deleted task:', taskId);
+            logger.warn('No callbacks found for deleted task', { component: 'LazyTaskList', taskId });
           }
         });
       }
@@ -181,7 +187,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       updatedTasks.forEach(taskId => {
         const callbacks = rowAnimationCallbacks.current.get(taskId as string);
         if (callbacks) {
-          console.log('🎬 Playing update animation for task:', taskId);
+          logger.debug('Playing update animation for task', { component: 'LazyTaskList', taskId });
           callbacks.playUpdateAnimation();
         }
       });
@@ -199,7 +205,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       setError(null);
 
     } catch (e: any) {
-      console.error('Error loading tasks:', e);
+      logger.error('Error loading tasks in handleTaskChanges', { component: 'LazyTaskList', error: e });
       setError(e.message);
     }
 
@@ -274,9 +280,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       
       // Clear any existing errors on successful load
       setError(null);
-      
+
     } catch (e: any) {
-      console.error('Error loading tasks:', e);
+      logger.error('Error loading tasks in loadFullTasksFallback', { component: 'LazyTaskList', error: e });
       setError(e.message);
       // Ensure we clear the loading state even on error
       throw e;
@@ -293,7 +299,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       // TODO: Implement /api/tasks/summaries endpoint for better performance
       await loadFullTasksFallback();
     } catch (error) {
-      console.error('Failed to load task summaries:', error);
+      logger.error('Failed to load task summaries', { component: 'LazyTaskList', error });
       // Error is already set by loadFullTasksFallback
     } finally {
       setLoading(false);
@@ -335,9 +341,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       });
       
       return task;
-      
+
     } catch (e) {
-      console.error(`Failed to load task ${taskId}:`, e);
+      logger.error('Failed to load task', { component: 'LazyTaskList', taskId, error: e });
       setLoadingTasks(prev => {
         const newSet = new Set(prev);
         newSet.delete(taskId);
@@ -360,7 +366,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       setAvailableAgents(availableAgentsList);
       setLoadedAgents(true);
     } catch (e) {
-      console.error('Error loading agents:', e);
+      logger.error('Error loading agents', { component: 'LazyTaskList', error: e });
     }
   }, [projectId, loadedAgents]);
 
@@ -435,23 +441,22 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         onTasksChanged();
       }
     } catch (error) {
-      console.error('Failed to delete task:', error);
+      logger.error('Failed to delete task', { component: 'LazyTaskList', error });
       // TODO: Show error message to user
     }
   }, [closeDialog, onTasksChanged]);
 
   // Handle creating new task
   const handleCreateTask = useCallback(async (taskData: Partial<Task>) => {
-    console.log('🚀 Creating task with data:', taskData);
-    console.log('🌿 Branch ID:', taskTreeId);
+    logger.info('Creating task', { component: 'LazyTaskList', taskData, taskTreeId });
 
     // Check authentication
     const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
-    console.log('🔑 Auth token present:', !!token);
+    logger.debug('Auth token status', { component: 'LazyTaskList', hasToken: !!token });
     if (token) {
-      console.log('🔑 Token preview:', token.substring(0, 50) + '...');
+      logger.debug('Token preview available', { component: 'LazyTaskList', tokenPreview: token.substring(0, 50) + '...' });
     } else {
-      console.warn('⚠️ No authentication token found! You may need to log in.');
+      logger.warn('No authentication token found! You may need to log in', { component: 'LazyTaskList' });
     }
 
     setSaving(true);
@@ -464,7 +469,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         assignees: taskData.assignees || [] // Use assignees from form or empty array
       });
 
-      console.log('✅ Task created successfully:', newTask);
+      logger.info('Task created successfully', { component: 'LazyTaskList', newTask });
 
       // Close dialog after successful creation
       closeDialog();
@@ -477,8 +482,11 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         onTasksChanged();
       }
     } catch (error: any) {
-      console.error('❌ Failed to create task:', error);
-      console.error('Error details:', error.response || error.message || error);
+      logger.error('Failed to create task', {
+        component: 'LazyTaskList',
+        error,
+        errorDetails: error.response || error.message || error
+      });
 
       // Extract the actual error message
       let errorMessage = 'Unknown error';
