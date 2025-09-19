@@ -1,10 +1,13 @@
 /**
  * Version configuration for agenthub Frontend
- * Update DEFAULT_VERSION when releasing new frontend versions
+ * Automatically loads version from package.json
  */
 
-// Frontend version
-export const DEFAULT_VERSION = "0.0.2";
+// Import version from package.json
+import packageJson from '../../package.json';
+
+// Frontend version - loaded from package.json
+export const DEFAULT_VERSION = packageJson.version || "0.0.0";
 
 // Version metadata
 export const VERSION_INFO = {

@@ -40,6 +40,8 @@ dependencies = [
     "aiohttp>=3.12.15",
     # Email service dependencies
     "jinja2>=3.1.0", # Email template engine
+    # Configuration parsing
+    "toml>=0.10.2", # For reading pyproject.toml version
 ]
 requires-python = ">=3.10"
 readme = "README.md"
@@ -115,7 +117,7 @@ source = "uv-dynamic-versioning"
 vcs = "git"
 style = "pep440"
 bump = true
-fallback-version = "0.0.0"
+fallback-version = "0.0.3b"
 
 
 [tool.pytest.ini_options]
