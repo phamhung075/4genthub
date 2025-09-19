@@ -1693,8 +1693,15 @@
       "path": ""
     },
     "security": {
-      "count": 3,
+      "count": 4,
       "files": [
+        {
+          "hash": "07ae1c620ebee60304807ac265fd56db",
+          "modified": "2025-09-20T00:34:55.764397",
+          "name": "websocket-auth-fix.md",
+          "path": "security/websocket-auth-fix.md",
+          "size": 35037
+        },
         {
           "hash": "7795897afab023ce463198c1e372a3ca",
           "modified": "2025-09-13T23:31:32.158985",
@@ -2233,7 +2240,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-19T23:56:17.758046",
+  "generated_at": "2025-09-20T00:34:55.834919",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2546,7 +2553,8 @@
       "files": [
         "hook-authentication-setup.md",
         "markdown-secret-cleanup-2025-09-12.md",
-        "secret-leak-cleanup-report-2025-09-12.md"
+        "secret-leak-cleanup-report-2025-09-12.md",
+        "websocket-auth-fix.md"
       ]
     },
     "setup-guides": {
@@ -2640,5 +2648,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 293
+  "total_files": 294
 }

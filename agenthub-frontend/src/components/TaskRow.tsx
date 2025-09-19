@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronRight, Eye, FileText, Pencil, Trash2, Users } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, Pencil, Trash2, Users } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Task } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
@@ -21,7 +22,6 @@ interface TaskSummary {
   assignees: string[];
   has_dependencies: boolean;
   dependency_count: number;
-  has_context: boolean;
 }
 
 interface TaskRowProps {
@@ -73,6 +73,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
   onRegisterCallbacks,
   onUnregisterCallbacks
 }) => {
+  // Navigation hook for task detail URLs
+  const navigate = useNavigate();
+
   // Internal animation state
   const [animationState, setAnimationState] = useState<'none' | 'creating' | 'deleting' | 'updating'>('none');
   const [isVisible, setIsVisible] = useState(true);
@@ -310,7 +313,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onOpenDialog('details', summary.id)}
+                onClick={() => navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`)}
                 className="flex-1 min-w-[60px]"
               >
                 <Eye className="w-3 h-3 mr-1" />
@@ -336,17 +339,6 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 <Users className="w-3 h-3 mr-1" />
                 Assign
               </Button>
-
-              {summary.has_context && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onOpenDialog('context', summary.id)}
-                  title="View context"
-                >
-                  <FileText className="w-3 h-3" />
-                </Button>
-              )}
 
               <Button
                 variant="outline"
@@ -525,24 +517,12 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onOpenDialog('details', summary.id)}
+                onClick={() => navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`)}
                 title="View details"
                 className="h-8 w-8"
               >
                 <Eye className="w-4 h-4" />
               </Button>
-
-              {summary.has_context && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onOpenDialog('context', summary.id)}
-                  title="View context"
-                  className="h-8 w-8 hidden sm:inline-flex"
-                >
-                  <FileText className="w-4 h-4" />
-                </Button>
-              )}
 
               <Button
                 variant="ghost"

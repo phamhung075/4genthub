@@ -151,6 +151,23 @@ class WebSocketService {
   }
 
   /**
+   * Reconnect with a new authentication token
+   * This is useful when the access token is refreshed
+   */
+  async reconnectWithNewToken(newToken: string): Promise<void> {
+    logger.info('Reconnecting WebSocket with new authentication token');
+
+    // Disconnect existing connection
+    this.disconnect();
+
+    // Wait a brief moment for cleanup
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Connect with new token
+    await this.connect(newToken);
+  }
+
+  /**
    * Subscribe to a specific scope of updates
    */
   private subscribe(scope: 'global' | 'user' | 'project' | 'branch' | 'task', filters?: any): void {
