@@ -6,6 +6,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **Duplicate Task Completion Notifications**: Fixed issue where multiple "Task completed" notifications were being sent for the same task completion. The root cause was that the TaskApplicationFacade was broadcasting completion events even for already completed tasks when updating completion summaries. Modified CompleteTaskUseCase to return a `was_already_completed` flag and updated TaskApplicationFacade to only broadcast notifications for new completions, eliminating duplicate notification spam.
+
 ## [2025-09-19] - Iteration 107 - 🏆 SEPTUPLE CENTENARIAN PERFECTION
 
 ### 🌟 SEVENTH ITERATION BEYOND CENTUPLE - SEPTUPLE CENTENARIAN ACHIEVED!

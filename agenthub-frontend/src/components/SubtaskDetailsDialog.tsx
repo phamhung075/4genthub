@@ -46,7 +46,15 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
   useEffect(() => {
     const taskId = subtask?.id || fullSubtask?.id;
     if (open && taskId && parentTaskId) {
-      fetchFullSubtask(parentTaskId, taskId);
+      // Validate subtask ID format (should be a valid UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(taskId)) {
+        fetchFullSubtask(parentTaskId, taskId);
+      } else {
+        logger.warn('Invalid subtask ID format, closing dialog', { subtaskId: taskId, parentTaskId });
+        setFullSubtask(null);
+        handleCloseDialog();
+      }
     }
   }, [open, subtask?.id, fullSubtask?.id, parentTaskId]);
 
@@ -57,6 +65,34 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
       setFullSubtask(data);
     } catch (error) {
       logger.error('Failed to fetch subtask details', { error, parentTaskId: parentId, subtaskId, component: 'SubtaskDetailsDialog' });
+
+      // Handle 404 errors (subtask not found)
+      if (error instanceof Error && (
+        error.message.includes('404') ||
+        error.message.includes('Not Found') ||
+        error.message.includes('Subtask not found')
+      )) {
+        logger.info('Subtask not found, closing dialog', { subtaskId, parentTaskId: parentId });
+
+        // Enhanced user feedback: Log detailed info for debugging
+        logger.warn('Subtask access attempt failed - subtask may have been deleted or never existed', {
+          subtaskId,
+          parentTaskId: parentId,
+          errorType: '404_NOT_FOUND',
+          userAction: 'dialog_auto_closed',
+          recommendation: 'Check if subtask was recently deleted or refresh task list'
+        });
+
+        // Clear the subtask state
+        setFullSubtask(null);
+        // Close the dialog
+        handleCloseDialog();
+        return;
+      }
+
+      // For other errors, clear the subtask state but don't auto-close
+      // This allows users to see that something went wrong
+      setFullSubtask(null);
     } finally {
       setLoading(false);
     }
@@ -87,7 +123,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     onClose();
   };
 
-  if (!fullSubtask) {
+  if (!fullSubtask && !loading) {
     return null;
   }
 
@@ -145,7 +181,14 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
         <Separator className="my-2" />
 
         <div className="flex-1 overflow-y-auto p-4">
-          {activeTab === 'details' ? (
+          {loading && !fullSubtask ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Loading subtask details...</p>
+              </div>
+            </div>
+          ) : activeTab === 'details' ? (
             <div className="space-y-4">
               {/* Basic Information */}
               <div>
@@ -327,6 +370,13 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                 )}
               </div>
             </div>
+          ) : loading && !fullSubtask ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Loading subtask data...</p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
@@ -336,6 +386,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                   size="sm"
                   onClick={copyJson}
                   className="flex items-center gap-2"
+                  disabled={!fullSubtask}
                 >
                   {jsonCopied ? (
                     <>
@@ -350,11 +401,13 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                   )}
                 </Button>
               </div>
-              <RawJSONDisplay 
-                jsonData={fullSubtask}
-                title={`Subtask: ${fullSubtask.title}`}
-                fileName={`subtask_${fullSubtask.id.slice(0, 8)}.json`}
-              />
+              {fullSubtask && (
+                <RawJSONDisplay
+                  jsonData={fullSubtask}
+                  title={`Subtask: ${fullSubtask.title}`}
+                  fileName={`subtask_${fullSubtask.id.slice(0, 8)}.json`}
+                />
+              )}
             </div>
           )}
         </div>

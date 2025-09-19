@@ -6,8 +6,43 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
+import hashlib
+import time
 
 logger = logging.getLogger(__name__)
+
+# Global deduplication cache to prevent duplicate notifications
+_notification_cache = {}
+_cache_ttl = 5  # 5 seconds TTL for deduplication
+
+
+def _is_duplicate_notification(event_type: str, entity_type: str, entity_id: str, user_id: str) -> bool:
+    """
+    Check if this notification is a duplicate based on recent cache.
+    Returns True if this is a duplicate that should be skipped.
+    """
+    global _notification_cache
+
+    # Create a unique key for this notification
+    notification_key = f"{event_type}:{entity_type}:{entity_id}:{user_id}"
+    current_time = time.time()
+
+    # Clean expired entries from cache
+    expired_keys = [k for k, timestamp in _notification_cache.items() if current_time - timestamp > _cache_ttl]
+    for key in expired_keys:
+        del _notification_cache[key]
+
+    # Check if this notification was recently sent
+    if notification_key in _notification_cache:
+        time_since_last = current_time - _notification_cache[notification_key]
+        if time_since_last < _cache_ttl:
+            logger.warning(f"🚫 DUPLICATE NOTIFICATION BLOCKED: {notification_key} (last sent {time_since_last:.2f}s ago)")
+            return True
+
+    # Record this notification
+    _notification_cache[notification_key] = current_time
+    logger.info(f"✅ NOTIFICATION ALLOWED: {notification_key}")
+    return False
 
 
 class WebSocketNotificationService:
@@ -184,6 +219,11 @@ class WebSocketNotificationService:
             project_id: Optional project ID for filtering
         """
         logger.info(f"📡 broadcast_task_event called - event: {event_type}, task_id: {task_id}, user: {user_id}")
+
+        # DUPLICATE DETECTION: Check if this is a duplicate notification
+        if _is_duplicate_notification(event_type, "task", task_id, user_id):
+            logger.info(f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}")
+            return  # Skip this notification
 
         try:
             # Try direct import first (for when running in same process)
@@ -457,6 +497,11 @@ class WebSocketNotificationService:
         task_data = kwargs.get('task_data', args[3] if len(args) > 3 else None)
         git_branch_id = kwargs.get('git_branch_id', args[4] if len(args) > 4 else None)
         project_id = kwargs.get('project_id', args[5] if len(args) > 5 else None)
+
+        # DUPLICATE DETECTION: Check if this is a duplicate notification
+        if _is_duplicate_notification(event_type, "task", task_id, user_id):
+            logger.info(f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}")
+            return  # Skip this notification
 
         # Get enhanced task context (title and parent branch info)
         task_context = WebSocketNotificationService._get_task_context(task_id, user_id)

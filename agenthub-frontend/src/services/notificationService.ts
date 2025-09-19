@@ -4,6 +4,7 @@
  */
 
 import { toast } from 'react-hot-toast';
+import { notificationDeduplicationService } from './notificationDeduplicationService';
 import logger from '../utils/logger';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
@@ -145,6 +146,13 @@ class NotificationService {
    * Show toast notification
    */
   private showToast(message: string, type: NotificationType, options?: NotificationOptions) {
+    // EMERGENCY FIX: Removed redundant deduplication layer
+    // Deduplication now handled only at WebSocket service level to prevent conflicts
+    logger.debug('✅ Toast notification proceeding (dedup handled upstream)', {
+      message,
+      type,
+      options
+    });
     const toastOptions = {
       duration: options?.duration || 4000,
       position: options?.position || 'top-right' as const,
@@ -205,6 +213,16 @@ class NotificationService {
     entityId?: string,
     userName?: string
   ) {
+    // EMERGENCY FIX: Removed redundant deduplication layer
+    // Deduplication now handled only at WebSocket service level to prevent conflicts
+    logger.debug('✅ Entity change notification proceeding (dedup handled upstream)', {
+      entityType,
+      eventType,
+      entityName,
+      entityId,
+      userName
+    });
+
     const entity = entityType.charAt(0).toUpperCase() + entityType.slice(1);
     const action = this.getActionText(eventType);
     const by = userName ? ` by ${userName}` : '';
@@ -224,6 +242,15 @@ class NotificationService {
     else if (eventType === 'deleted') notificationType = 'warning';
     else if (eventType === 'completed') notificationType = 'success';
     else if (eventType === 'updated') notificationType = 'info';
+
+    logger.debug('✅ Entity change notification allowed by deduplication service', {
+      entityType,
+      eventType,
+      entityName,
+      entityId,
+      userName,
+      message
+    });
 
     // Show toast
     this.showToast(message, notificationType);

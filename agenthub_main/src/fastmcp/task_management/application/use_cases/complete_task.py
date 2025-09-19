@@ -125,7 +125,8 @@ class CompleteTaskUseCase:
                 "success": True,
                 "task_id": str(task_id),
                 "message": "Task already completed, summary updated" if completion_summary else "Task already completed",
-                "status": str(task.status)
+                "status": str(task.status),
+                "was_already_completed": True  # Flag to prevent duplicate notifications
             }
         
         try:
@@ -513,7 +514,8 @@ class CompleteTaskUseCase:
             "task_id": str(task_id),
             "status": str(task.status),
             "subtask_progress": legacy_progress,
-            "message": f"task {task_id} done, can next_task"
+            "message": f"task {task_id} done, can next_task",
+            "was_already_completed": False  # Flag indicating this is a new completion
         }
         
         # Add subtask summary if available
