@@ -301,20 +301,19 @@ export const subtaskApiV2 = {
     title: string;
     description?: string;
   }) => {
-    const formData = new URLSearchParams();
-    formData.append('task_id', taskId);
-    formData.append('title', subtaskData.title);
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('task_id', taskId);
+    params.append('title', subtaskData.title);
     if (subtaskData.description) {
-      formData.append('description', subtaskData.description);
+      params.append('description', subtaskData.description);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks`, {
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks?${params.toString()}`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formData,
       credentials: 'include',
     });
     return handleResponse(response);
