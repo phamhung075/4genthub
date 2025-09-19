@@ -256,12 +256,12 @@ run_smart_tests() {
         python -m pytest $tests_to_run -v --tb=short 2>&1 | tee "${RUN_LOG}" | while IFS= read -r line; do
             # Parse test results
             if echo "$line" | grep -q "PASSED"; then
-                local test_name=$(echo "$line" | sed -n 's/.*\(src\/tests\/.*\.py\).*/\1/p')
+                local test_name=$(echo "$line" | sed -n 's/.*\(agenthub_main\/src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
                     echo "PASSED:${PROJECT_ROOT}/${test_name}" >> "$temp_results"
                 fi
             elif echo "$line" | grep -q "FAILED"; then
-                local test_name=$(echo "$line" | sed -n 's/.*\(src\/tests\/.*\.py\).*/\1/p')
+                local test_name=$(echo "$line" | sed -n 's/.*\(agenthub_main\/src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
                     echo "FAILED:${PROJECT_ROOT}/${test_name}" >> "$temp_results"
                 fi
