@@ -105,13 +105,22 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Handle agent info click
   const handleAgentInfoClick = (agentName: string) => {
+    console.log('🎯 Agent info clicked:', agentName);
+    console.log('📋 Current subtask summaries:', subtaskSummaries);
+    console.log('👥 All assignees:', subtaskSummaries.map(s => s.assignees));
     setSelectedAgentForInfo(agentName);
     setAgentInfoDialogOpen(true);
+    console.log('🔓 Dialog state after click:', {
+      agent: agentName,
+      dialogOpen: true
+    });
   };
 
   // Handle opening create subtask dialog
   const handleOpenCreateSubtask = useCallback(() => {
+    console.log('🎬 handleOpenCreateSubtask called');
     setCreateSubtaskDialogOpen(true);
+    console.log('✅ Dialog state set to open');
   }, []);
 
   // Handle subtask creation
@@ -505,28 +514,43 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   
   if (subtaskSummaries.length === 0) {
     return (
-      <div className="p-6 bg-gradient-to-r from-blue-50/30 to-transparent dark:from-blue-950/20 dark:to-transparent">
+      <>
+        <div className="p-6 bg-gradient-to-r from-blue-50/30 to-transparent dark:from-blue-950/20 dark:to-transparent">
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="h-px flex-1 bg-gradient-to-r from-blue-300 to-transparent dark:from-blue-700"></div>
-          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Subtasks</span>
-          <div className="h-px flex-1 bg-gradient-to-l from-blue-300 to-transparent dark:from-blue-700"></div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-blue-300 to-transparent dark:from-blue-700"></div>
+            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Subtasks</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-blue-300 to-transparent dark:from-blue-700"></div>
+          </div>
+          <div className="text-center text-sm text-blue-600/70 dark:text-blue-400/70 py-4">
+            <div className="mb-3">No subtasks found.</div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border-blue-300 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/50 relative z-20"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔘 Empty state Add Subtask button clicked');
+                handleOpenCreateSubtask();
+                console.log('📂 Create dialog state:', { createSubtaskDialogOpen: true });
+              }}
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Subtask
+            </Button>
+          </div>
         </div>
-        <div className="text-center text-sm text-blue-600/70 dark:text-blue-400/70 py-4">
-          <div className="mb-3">No subtasks found.</div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 border-blue-300 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950/50 relative z-20"
-            onClick={() => {
-              handleOpenCreateSubtask();
-            }}
-          >
-            <Plus className="w-3 h-3 mr-1" />
-            Add Subtask
-          </Button>
-        </div>
-      </div>
+
+        {/* Create Subtask Dialog - Must be rendered even in empty state */}
+        <SubtaskCreateDialog
+          open={createSubtaskDialogOpen}
+          onOpenChange={setCreateSubtaskDialogOpen}
+          parentTaskId={parentTaskId}
+          onClose={() => setCreateSubtaskDialogOpen(false)}
+          onCreated={handleSubtaskCreated}
+        />
+      </>
     );
   }
 
@@ -678,16 +702,24 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       {/* Agent Info Dialog */}
       <Suspense fallback={null}>
         {selectedAgentForInfo && (
-          <AgentInfoDialog
-            open={agentInfoDialogOpen}
-            onOpenChange={setAgentInfoDialogOpen}
-            agentName={selectedAgentForInfo}
-            taskTitle={`Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`}
-            onClose={() => {
-              setAgentInfoDialogOpen(false);
-              setSelectedAgentForInfo(null);
-            }}
-          />
+          <>
+            {console.log('🚀 Rendering AgentInfoDialog:', {
+              agentName: selectedAgentForInfo,
+              open: agentInfoDialogOpen,
+              taskTitle: `Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`
+            })}
+            <AgentInfoDialog
+              open={agentInfoDialogOpen}
+              onOpenChange={setAgentInfoDialogOpen}
+              agentName={selectedAgentForInfo}
+              taskTitle={`Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`}
+              onClose={() => {
+                console.log('🔒 Closing AgentInfoDialog');
+                setAgentInfoDialogOpen(false);
+                setSelectedAgentForInfo(null);
+              }}
+            />
+          </>
         )}
       </Suspense>
     </div>
