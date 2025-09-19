@@ -59,7 +59,7 @@ mcp__agenthub_http__call_agent("security-auditor-agent")
 | Testing/QA | `test-orchestrator-agent` | `mcp__agenthub_http__call_agent("test-orchestrator-agent")` |
 | Security audit | `security-auditor-agent` | `mcp__agenthub_http__call_agent("security-auditor-agent")` |
 | Documentation | `documentation-agent` | `mcp__agenthub_http__call_agent("documentation-agent")` |
-| UI/Frontend | `ui-specialist-agent` | `mcp__agenthub_http__call_agent("ui-specialist-agent")` |
+| UI/Frontend | `shadcn-ui-expert-agent` | `mcp__agenthub_http__call_agent("shadcn-ui-expert-agent")` |
 | DevOps/Deploy | `devops-agent` | `mcp__agenthub_http__call_agent("devops-agent")` |
 | Architecture | `system-architect-agent` | `mcp__agenthub_http__call_agent("system-architect-agent")` |
 | Research | `deep-research-agent` | `mcp__agenthub_http__call_agent("deep-research-agent")` |
@@ -102,7 +102,7 @@ master-orchestrator-agent, ml-specialist-agent, performance-load-tester-agent,
 project-initiator-agent, prototyping-agent, root-cause-analysis-agent,
 security-auditor-agent, system-architect-agent, task-planning-agent,
 technology-advisor-agent, test-orchestrator-agent, uat-coordinator-agent,
-ui-specialist-agent
+shadcn-ui-expert-agent
 ```
 
 ## Migration Guide

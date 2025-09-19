@@ -113,7 +113,7 @@ task-planning-agent (breaks down into subtasks)
 Parallel Execution:
 ├── system-architect-agent (design)
 ├── coding-agent (implementation)
-├── ui-specialist-agent (frontend)
+├── shadcn-ui-expert-agent (frontend)
 ├── test-orchestrator-agent (testing)
 └── documentation-agent (ai_docs)
     ↓
@@ -177,7 +177,7 @@ When a complex task requires multiple specialists, the orchestrator spawns paral
 master_orchestrator.delegate([
     ('system-architect-agent', 'Design database schema'),
     ('coding-agent', 'Build backend API'),
-    ('ui-specialist-agent', 'Create frontend'),
+    ('shadcn-ui-expert-agent', 'Create frontend'),
     ('test-orchestrator-agent', 'Write test suite'),
     ('documentation-agent', 'Create documentation'),
     ('devops-agent', 'Setup deployment'),

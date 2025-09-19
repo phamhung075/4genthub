@@ -19,7 +19,7 @@ This document outlines the complete non-stop workflow utilizing all 33 available
 ### Architecture & Design (4)
 - `system-architect-agent` - System design and architecture
 - `design-system-agent` - Design system and UI patterns
-- `ui-specialist-agent` - UI/UX design and frontend development
+- `shadcn-ui-expert-agent` - UI/UX design and frontend development
 - `core-concept-agent` - Core concepts and fundamentals
 
 ### DevOps & Infrastructure (1)
@@ -153,7 +153,7 @@ agents:
 #### Group B: UI/UX Design (Hour 2-12)
 ```yaml
 agents:
-  - ui-specialist-agent:
+  - shadcn-ui-expert-agent:
       task: "Design complete UI/UX"
       output: "Wireframes, mockups, user flows"
       
@@ -204,7 +204,7 @@ agents:
 #### Group B: Frontend Development (Continuous)
 ```yaml
 agents:
-  - ui-specialist-agent:
+  - shadcn-ui-expert-agent:
       task: "Implement frontend components"
       output: "React/Vue/Angular components"
       
@@ -450,7 +450,7 @@ def execute_non_stop_workflow():
             "system-architect-agent",
             "core-concept-agent",
             "efficiency-optimization-agent",
-            "ui-specialist-agent",
+            "shadcn-ui-expert-agent",
             "design-system-agent",
             "prototyping-agent",
             "security-auditor-agent"
@@ -460,7 +460,7 @@ def execute_non_stop_workflow():
     on_event("architecture_complete"):
         spawn_parallel_group([
             "coding-agent[1-7]",  # 7 instances
-            "ui-specialist-agent",
+            "shadcn-ui-expert-agent",
             "devops-agent",
             "analytics-setup-agent",
             "ml-specialist-agent",

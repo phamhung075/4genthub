@@ -532,7 +532,7 @@ if "bug" in title:
 elif "test" in title:
     assignees="@test-orchestrator-agent"
 elif "UI" in title:
-    assignees="@ui-specialist-agent"
+    assignees="@shadcn-ui-expert-agent"
 ```
 
 ### 3. Track Progress Properly

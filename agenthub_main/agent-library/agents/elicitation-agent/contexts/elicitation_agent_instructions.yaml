@@ -177,7 +177,7 @@ custom_instructions: |-
   Architecture & Design:
   - system-architect-agent - System design, architecture, technical blueprints
   - @design-system-agent - Design systems, UI patterns
-  - @ui-specialist-agent - UI/UX design, frontend development
+  - @shadcn-ui-expert-agent - UI/UX design, frontend development
   - @core-concept-agent - Core concepts, fundamentals
 
   DevOps & Infrastructure:

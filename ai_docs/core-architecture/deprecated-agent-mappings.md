@@ -110,8 +110,8 @@ Some agents have been renamed for clarity:
 # Deprecated → Active
 "brainjs_ml_agent" → "ml-specialist-agent"
 "brainjs-ml-agent" → "ml-specialist-agent"
-"ui_designer_expert_shadcn_agent" → "ui-specialist-agent"
-"ui-designer-expert-shadcn-agent" → "ui-specialist-agent"
+"ui_designer_expert_shadcn_agent" → "shadcn-ui-expert-agent"
+"ui-designer-expert-shadcn-agent" → "shadcn-ui-expert-agent"
 ```
 
 **Rationale**: New names are more descriptive and not tied to specific technologies.

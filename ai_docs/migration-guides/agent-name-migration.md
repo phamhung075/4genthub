@@ -59,8 +59,8 @@
 |-----------------|-------------|------------------|
 | `brainjs_ml_agent` | `ml-specialist-agent` | ✅ Use `ml-specialist-agent` |
 | `brainjs-ml-agent` | `ml-specialist-agent` | ✅ Use `ml-specialist-agent` |
-| `ui_designer_expert_shadcn_agent` | `ui-specialist-agent` | ✅ Use `ui-specialist-agent` |
-| `ui-designer-expert-shadcn-agent` | `ui-specialist-agent` | ✅ Use `ui-specialist-agent` |
+| `ui_designer_expert_shadcn_agent` | `shadcn-ui-expert-agent` | ✅ Use `shadcn-ui-expert-agent` |
+| `ui-designer-expert-shadcn-agent` | `shadcn-ui-expert-agent` | ✅ Use `shadcn-ui-expert-agent` |
 
 ## Migration Steps
 

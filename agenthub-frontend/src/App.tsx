@@ -1,6 +1,6 @@
 import { Folder, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams, useNavigate } from 'react-router-dom';
 import { Project } from './api';
 import './App.css';
 import { AppLayout } from './components/AppLayout';
@@ -25,7 +25,17 @@ import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
 function Dashboard() {
-  const [selection, setSelection] = useState<{ projectId: string, branchId: string } | null>(null);
+  const { projectId, branchId, taskId, subtaskId } = useParams<{
+    projectId?: string;
+    branchId?: string;
+    taskId?: string;
+    subtaskId?: string;
+  }>();
+  const navigate = useNavigate();
+
+  // Derive selection from URL parameters
+  const selection = projectId && branchId ? { projectId, branchId } : null;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [projectListRefreshKey, setProjectListRefreshKey] = useState(0);
@@ -73,15 +83,17 @@ function Dashboard() {
         md:translate-x-0
         shadow-xl md:shadow-none
       `}>
-        <ProjectList 
+        <ProjectList
           refreshKey={projectListRefreshKey}
           onSelect={(projectId: string, branchId: string) => {
-            setSelection({ projectId, branchId });
+            navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
             // Auto-close sidebar on mobile after selection
             if (!isLargeScreen) {
               setSidebarOpen(false);
             }
           }}
+          selectedProjectId={projectId}
+          selectedBranchId={branchId}
           onShowGlobalContext={() => setShowGlobalContext(true)}
           onShowProjectDetails={(project) => setShowProjectDetails(project)}
           onShowBranchDetails={(project, branch) => setShowBranchDetails({ project, branch })} />
@@ -177,6 +189,38 @@ function App() {
           {/* Protected routes */}
           <Route
             path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/project/:projectId"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/project/:projectId/branch/:branchId"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/project/:projectId/branch/:branchId/task/:taskId"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/project/:projectId/branch/:branchId/task/:taskId/subtask/:subtaskId"
             element={
               <ProtectedRoute>
                 <Dashboard />

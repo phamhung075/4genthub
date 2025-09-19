@@ -290,11 +290,11 @@
           "size": 13684
         },
         {
-          "hash": "cf7076927bef487cc12bcc0ae4ae8626",
-          "modified": "2025-09-17T14:11:39.075923",
+          "hash": "fd08fb2bd47bda1c8a8499d843aa5b20",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "call-agent-api.md",
           "path": "api-integration/controllers/call-agent-api.md",
-          "size": 11220
+          "size": 11226
         }
       ],
       "path": "api-integration/controllers"
@@ -303,11 +303,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "e197c0102085a007c552f4818e442c81",
-          "modified": "2025-09-17T14:11:39.079903",
+          "hash": "e7c58889a651944a23dd0f123d0a2dc8",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-correspondence-map.md",
           "path": "architecture-design/agent-correspondence-map.md",
-          "size": 5358
+          "size": 5364
         }
       ],
       "path": "architecture-design"
@@ -597,8 +597,15 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 25,
+      "count": 26,
       "files": [
+        {
+          "hash": "5ae84e6e149566182a3bb71eecf66956",
+          "modified": "2025-09-19T23:56:17.692409",
+          "name": "task-versioning-analysis.md",
+          "path": "core-architecture/task-versioning-analysis.md",
+          "size": 22924
+        },
         {
           "hash": "98913a14d2a297a49e49caac996604a4",
           "modified": "2025-09-17T14:11:39.083883",
@@ -663,11 +670,11 @@
           "size": 2315
         },
         {
-          "hash": "42b688fb88fab4daabc238fe423f0ae2",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "a55a9ddeb2c4784dc92e98aa56ea7d58",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "deprecated-agent-mappings.md",
           "path": "core-architecture/deprecated-agent-mappings.md",
-          "size": 12541
+          "size": 12547
         },
         {
           "hash": "d7331d162d9cdc48de9fbf4a31bff66d",
@@ -712,11 +719,11 @@
           "size": 7604
         },
         {
-          "hash": "780e47ac4283a3a75954a50a187f09ca",
-          "modified": "2025-09-17T16:36:28.613205",
+          "hash": "f4a833cbce5808865e4222ae40591c1a",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
-          "size": 6264
+          "size": 6273
         },
         {
           "hash": "1164b62c5119ebd9364fb0e0c8d5e36a",
@@ -726,18 +733,18 @@
           "size": 18952
         },
         {
-          "hash": "31c648305590ed953e55812c51c7d2c2",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "e0483c7ac4e33e1819c982c82c0411ae",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "implementation-methodology-pattern.md",
           "path": "core-architecture/implementation-methodology-pattern.md",
-          "size": 4263
+          "size": 4266
         },
         {
-          "hash": "dcf98b7f72ff6d004d8cdb91f4cd2517",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "e96492f66db3eb21b0d744f7e1c7520b",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-orchestration-architecture.md",
           "path": "core-architecture/agent-orchestration-architecture.md",
-          "size": 30619
+          "size": 30637
         },
         {
           "hash": "3e8655875e5419e4816635dccf2f33d4",
@@ -808,11 +815,11 @@
           "size": 9387
         },
         {
-          "hash": "40a374101e9f5060f372e94e8895c878",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "75e823852b23cf2187bd63f5b275c7c9",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "complete-agent-workflow-phases.md",
           "path": "development-guides/complete-agent-workflow-phases.md",
-          "size": 18723
+          "size": 18738
         },
         {
           "hash": "fdd834643a750eac6c08335217e766a8",
@@ -822,11 +829,11 @@
           "size": 15972
         },
         {
-          "hash": "5d3ce04bb9d7840b6e83fa8b08f15f53",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "9da32836e7aafe9b9078cedafa45d58e",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-optimization-implementation-plan.md",
           "path": "development-guides/agent-optimization-implementation-plan.md",
-          "size": 7742
+          "size": 7748
         },
         {
           "hash": "9f5c9f5793d0d33b6cb61267ce62749d",
@@ -879,7 +886,7 @@
         },
         {
           "hash": "e5bcba1e077c1974ec9197cbcfda9b14",
-          "modified": "2025-09-19T19:16:48.496263",
+          "modified": "2025-09-19T22:27:16.483009",
           "name": "logger-environment-variables.md",
           "path": "development-guides/logger-environment-variables.md",
           "size": 5313
@@ -892,11 +899,11 @@
           "size": 2763
         },
         {
-          "hash": "fdf8e55a2c68662685619902aaaf0462",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "6a8b01c0c913679a3e268927dd8ab678",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-interaction-patterns.md",
           "path": "development-guides/agent-interaction-patterns.md",
-          "size": 10508
+          "size": 10514
         },
         {
           "hash": "7d696f5efd5abd05be9676fcfdbad321",
@@ -1032,11 +1039,11 @@
           "size": 12252
         },
         {
-          "hash": "ab6a654e393d6812a4a2bfe389f71f6a",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "590acb3e83ab841b71abb3cf275eca31",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "mcp-task-creation-guide.md",
           "path": "development-guides/mcp-task-creation-guide.md",
-          "size": 17993
+          "size": 17996
         },
         {
           "hash": "6b22afe63974f5ccced52d263b74a7cc",
@@ -1088,11 +1095,11 @@
           "size": 14397
         },
         {
-          "hash": "acbdaeed3f6d2fb8e4bcd2ba6ef69369",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "846ec5659723aa3c5875ea64039e0264",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "ai-task-planning-prompt.md",
           "path": "development-guides/ai-task-planning-prompt.md",
-          "size": 15614
+          "size": 15620
         },
         {
           "hash": "4f9c553bb7edf206d60d8fa673dfb49e",
@@ -1123,11 +1130,11 @@
           "size": 18406
         },
         {
-          "hash": "d144b1c69d4706ab73e117f55685bed8",
-          "modified": "2025-09-13T23:31:32.155125",
+          "hash": "64f7de4500844ac3cf9cbe8855bf509c",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "automated-agent-workflow-patterns.md",
           "path": "development-guides/automated-agent-workflow-patterns.md",
-          "size": 24335
+          "size": 24338
         },
         {
           "hash": "f07f0c600b60d5fed55ec93d4eb2bcc7",
@@ -1144,11 +1151,11 @@
           "size": 7919
         },
         {
-          "hash": "08e95fda42aa76e063bfc86c2d00e2fa",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "fc679e010acdea1b543f7a64af47bbd6",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-capability-matrix.md",
           "path": "development-guides/agent-capability-matrix.md",
-          "size": 8082
+          "size": 8097
         },
         {
           "hash": "8415bda4c23aff6bbab39d9192e606f8",
@@ -1330,11 +1337,11 @@
           "size": 9288
         },
         {
-          "hash": "f1e6ba0cbab3a7e437d8198de5426566",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "035583693a6d49d2474e6c1de3f8bb91",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "agent-name-migration.md",
           "path": "migration-guides/agent-name-migration.md",
-          "size": 10415
+          "size": 10427
         },
         {
           "hash": "bd20b6dc020912ec4c944dd7a19ae820",
@@ -1586,11 +1593,11 @@
           "size": 3099
         },
         {
-          "hash": "220205d9a8bc8aceb9e3e56cbdd32a46",
-          "modified": "2025-09-17T14:11:39.091842",
+          "hash": "27ba0e63b62340e4026a9c3dcf3e0afb",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "uat-comprehensive-report-2025-09-12.md",
           "path": "reports-status/uat-comprehensive-report-2025-09-12.md",
-          "size": 12683
+          "size": 12686
         },
         {
           "hash": "e5aeae1769b7a365e2ddc54e638e0059",
@@ -1614,11 +1621,11 @@
           "size": 20176
         },
         {
-          "hash": "da9be679ccd96a67fe4cb9858b420d97",
-          "modified": "2025-09-17T14:11:39.091842",
+          "hash": "c6737d99182760bf19ab0f8752b71905",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "ai-task-planning-system-complete-2025-09-12.md",
           "path": "reports-status/ai-task-planning-system-complete-2025-09-12.md",
-          "size": 12811
+          "size": 12814
         }
       ],
       "path": "reports-status"
@@ -2161,11 +2168,11 @@
           "size": 6240
         },
         {
-          "hash": "bf3508ce2ded7a66846e65c43b269fa6",
-          "modified": "2025-09-17T14:11:39.095822",
+          "hash": "f6cf4d9176fa7d302cd4c5cfa504a970",
+          "modified": "2025-09-19T23:23:37.395855",
           "name": "task-delegation-fix.md",
           "path": "troubleshooting-guides/task-delegation-fix.md",
-          "size": 5966
+          "size": 5975
         },
         {
           "hash": "f8992d46220dc3202a5a3c844fa94a7e",
@@ -2226,7 +2233,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-19T21:16:09.035236",
+  "generated_at": "2025-09-19T23:56:17.758046",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2375,7 +2382,8 @@
         "real-time-injection-system.md",
         "session-type-detection.md",
         "sub-agent-instructions.md",
-        "system-architecture-overview.md"
+        "system-architecture-overview.md",
+        "task-versioning-analysis.md"
       ]
     },
     "deployment": {
@@ -2632,5 +2640,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 292
+  "total_files": 293
 }

@@ -429,7 +429,7 @@ class TestEdgeCasesAndErrorHandling:
         # Create list of 10 valid assignees - note: ui-designer-agent may not be valid
         large_assignee_list = [
             "coding-agent", "test-orchestrator-agent", "documentation-agent",
-            "security-auditor-agent", "devops-agent", "ui-specialist-agent",  # Fixed agent name
+            "security-auditor-agent", "devops-agent", "shadcn-ui-expert-agent",  # Fixed agent name
             "system-architect-agent", "performance-load-tester-agent",
             "code-reviewer-agent", "debugger-agent"
         ]

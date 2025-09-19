@@ -63,8 +63,8 @@ class TestAgentMappings:
             "master-orchestrator-agent": "master-orchestrator-agent",
             "brainjs_ml_agent": "ml-specialist-agent",
             "brainjs-ml-agent": "ml-specialist-agent",
-            "ui_designer_expert_shadcn_agent": "ui-specialist-agent",
-            "ui-designer-expert-shadcn-agent": "ui-specialist-agent",
+            "ui_designer_expert_shadcn_agent": "shadcn-ui-expert-agent",
+            "ui-designer-expert-shadcn-agent": "shadcn-ui-expert-agent",
         }
         
         for old_name, new_name in expected_mappings.items():
@@ -91,7 +91,7 @@ class TestResolveAgentName:
             ("remediation_agent", "debugger-agent"),
             ("master-orchestrator-agent", "master-orchestrator-agent"),
             ("brainjs_ml_agent", "ml-specialist-agent"),
-            ("ui_designer_expert_shadcn_agent", "ui-specialist-agent"),
+            ("ui_designer_expert_shadcn_agent", "shadcn-ui-expert-agent"),
         ]
         
         for old_name, expected in test_cases:
@@ -114,7 +114,7 @@ class TestResolveAgentName:
             ("remediation-agent", "debugger-agent"),
             ("master-orchestrator-agent", "master-orchestrator-agent"),
             ("brainjs-ml-agent", "ml-specialist-agent"),
-            ("ui-designer-expert-shadcn-agent", "ui-specialist-agent"),
+            ("ui-designer-expert-shadcn-agent", "shadcn-ui-expert-agent"),
         ]
         
         for old_name, expected in test_cases:
@@ -130,7 +130,7 @@ class TestResolveAgentName:
             ("devops-agent", "devops-agent"),
             ("debugger-agent", "debugger-agent"),
             ("ml-specialist-agent", "ml-specialist-agent"),
-            ("ui-specialist-agent", "ui-specialist-agent"),
+            ("shadcn-ui-expert-agent", "shadcn-ui-expert-agent"),
             # Note: The function adds -agent suffix if not present
             ("some_new_agent", "some-new-agent"),  # Underscore converted to hyphen, already has agent suffix
             ("some-new-agent", "some-new-agent"),
@@ -233,8 +233,8 @@ class TestIsDeprecatedAgent:
             "debugger-agent",
             "ml-specialist-agent",
             "ml-specialist-agent",
-            "ui-specialist-agent",
-            "ui-specialist-agent",
+            "shadcn-ui-expert-agent",
+            "shadcn-ui-expert-agent",
             "coding-agent",
             "test-orchestrator-agent",
             "security-auditor-agent",

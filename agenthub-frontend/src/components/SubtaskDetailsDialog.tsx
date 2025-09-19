@@ -9,6 +9,8 @@ import ClickableAssignees from "./ClickableAssignees";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
+import { CopyableId } from "./ui/CopyableId";
+import { ParentTaskReference } from "./ui/ParentTaskReference";
 
 interface SubtaskDetailsDialogProps {
   open: boolean;
@@ -93,28 +95,50 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-blue-500" />
-              <span className="text-lg font-semibold">Subtask Details</span>
-              {loading && <Badge variant="secondary">Loading...</Badge>}
+          <DialogTitle className="space-y-3">
+            {/* Main title row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-blue-500" />
+                <span className="text-lg font-semibold">{fullSubtask?.title || 'Subtask Details'}</span>
+                {loading && <Badge variant="secondary">Loading...</Badge>}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={activeTab === 'details' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveTab('details')}
+                >
+                  Details
+                </Button>
+                <Button
+                  variant={activeTab === 'json' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveTab('json')}
+                >
+                  JSON
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant={activeTab === 'details' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveTab('details')}
-              >
-                Details
-              </Button>
-              <Button
-                variant={activeTab === 'json' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setActiveTab('json')}
-              >
-                JSON
-              </Button>
-            </div>
+
+            {/* ID and Parent Task Information */}
+            {fullSubtask && (
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <CopyableId
+                  id={fullSubtask.id}
+                  label="Subtask ID:"
+                  variant="inline"
+                  size="sm"
+                  abbreviated={true}
+                  showCopyButton={true}
+                />
+                <ParentTaskReference
+                  parentTaskId={parentTaskId}
+                  variant="inline"
+                  showId={false}
+                />
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -141,10 +165,23 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                   <div className="pl-8 space-y-3 mt-2">
                     <div className="flex items-center gap-2">
                       <Hash className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">ID:</span>
-                      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                        {fullSubtask.id}
-                      </code>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Subtask ID:</span>
+                      <CopyableId
+                        id={fullSubtask.id}
+                        variant="badge"
+                        size="xs"
+                        abbreviated={true}
+                        showCopyButton={true}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Parent Task:</span>
+                      <ParentTaskReference
+                        parentTaskId={parentTaskId}
+                        variant="badge"
+                        showId={true}
+                      />
                     </div>
                     <div>
                       <span className="text-sm font-medium">Title:</span>

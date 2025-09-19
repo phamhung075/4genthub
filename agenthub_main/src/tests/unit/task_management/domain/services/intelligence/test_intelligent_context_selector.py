@@ -51,7 +51,7 @@ class TestIntelligentContextSelector:
                 'description': 'Create user profile editing interface with validation',
                 'status': 'todo',
                 'priority': 'medium',
-                'assignees': ['ui-specialist-agent'],
+                'assignees': ['shadcn-ui-expert-agent'],
                 'git_branch_id': 'branch_1', 
                 'project_id': 'project_1'
             },

@@ -69,7 +69,7 @@ implementation_process:
 3. **prototyping-agent** - Rapid prototypes
 
 ### Specialized Agents
-4. **ui-specialist-agent** - Frontend UI components
+4. **shadcn-ui-expert-agent** - Frontend UI components
 5. **design-system-agent** - Design system implementation
 6. **devops-agent** - Infrastructure and CI/CD
 7. **ml-specialist-agent** - Machine learning code

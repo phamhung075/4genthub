@@ -27,7 +27,7 @@ Testing & QA (3):
 Architecture & Design (4):
   • system-architect-agent - System design and architecture
   • design-system-agent - Design system and UI patterns
-  • ui-specialist-agent - UI/UX design and frontend development
+  • shadcn-ui-expert-agent - UI/UX design and frontend development
   • core-concept-agent - Core concepts and fundamentals
 
 DevOps & Infrastructure (1):

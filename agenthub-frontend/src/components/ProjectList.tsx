@@ -16,16 +16,21 @@ import logger from "../utils/logger";
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
   refreshKey?: number; // Add refresh trigger
+  selectedProjectId?: string; // Currently selected project ID from URL
+  selectedBranchId?: string; // Currently selected branch ID from URL
   onShowGlobalContext?: () => void; // Handler for showing global context
   onShowProjectDetails?: (project: Project) => void; // Handler for showing project details
   onShowBranchDetails?: (project: Project, branch: any) => void; // Handler for showing branch details
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selectedProjectId, selectedBranchId, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  // Derive selection from URL params instead of local state
+  const selected = selectedProjectId && selectedBranchId ? `${selectedProjectId}:${selectedBranchId}` : null;
+
+  // State declarations - moved openProjects before useEffect that uses it
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState<Project | null>(null);
   const [showDelete, setShowDelete] = useState<Project | null>(null);
@@ -34,6 +39,13 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
   const [form, setForm] = useState<{ name: string; description: string }>({ name: "", description: "" });
   const [saving, setSaving] = useState(false);
   const [openProjects, setOpenProjects] = useState<Record<string, boolean>>({});
+
+  // Auto-expand project when it's selected from URL
+  useEffect(() => {
+    if (selectedProjectId && !openProjects[selectedProjectId]) {
+      setOpenProjects(prev => ({ ...prev, [selectedProjectId]: true }));
+    }
+  }, [selectedProjectId, openProjects]);
   const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
   const [branchSummaries, setBranchSummaries] = useState<Record<string, BranchSummary[]>>({});
   const [loadingBranches, setLoadingBranches] = useState<Record<string, boolean>>({});
@@ -660,7 +672,6 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                               selected === `${project.id}:${branch.id}` && "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700"
                             )}
                             onClick={() => {
-                              setSelected(`${project.id}:${branch.id}`);
                               onSelect && onSelect(project.id, branch.id);
                             }}
                           >
@@ -728,7 +739,6 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, onShowG
                             variant={selected === `${project.id}:${tree.id}` ? "secondary" : "ghost"}
                             className="flex-1 justify-start text-xs text-left"
                             onClick={() => {
-                              setSelected(`${project.id}:${tree.id}`);
                               onSelect && onSelect(project.id, tree.id);
                             }}
                           >

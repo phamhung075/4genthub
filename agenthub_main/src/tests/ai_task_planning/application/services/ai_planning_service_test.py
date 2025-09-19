@@ -31,7 +31,7 @@ class TestAITaskPlanningService:
             project_id="proj_123",
             git_branch_id="branch_456",
             user_id="user_789",
-            available_agents=["coding-agent", "ui-specialist-agent", "test-orchestrator-agent"]
+            available_agents=["coding-agent", "shadcn-ui-expert-agent", "test-orchestrator-agent"]
         )
         
         # Add requirements
@@ -113,7 +113,7 @@ class TestAITaskPlanningService:
         
         # Should have assigned appropriate agents based on patterns
         assert 'coding-agent' in assigned_agents  # For auth implementation
-        assert 'ui-specialist-agent' in assigned_agents  # For UI work
+        assert 'shadcn-ui-expert-agent' in assigned_agents  # For UI work
         assert 'test-orchestrator-agent' in assigned_agents  # For testing
     
     @pytest.mark.asyncio

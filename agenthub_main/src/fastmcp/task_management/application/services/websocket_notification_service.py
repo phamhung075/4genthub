@@ -17,6 +17,153 @@ class WebSocketNotificationService:
     """
 
     @staticmethod
+    def _get_task_context(task_id: str, user_id: str = None) -> Dict[str, Any]:
+        """
+        Fetch task context including task title and parent branch information.
+
+        Args:
+            task_id: ID of the task
+            user_id: User ID for multi-tenant filtering
+
+        Returns:
+            Dict containing task_title, parent_branch_id, parent_branch_title
+        """
+        try:
+            from ...infrastructure.database.database_config import get_session
+            from ...infrastructure.database.models import Task, ProjectGitBranch
+
+            with get_session() as session:
+                # Query with proper relationships
+                query = session.query(Task, ProjectGitBranch).join(
+                    ProjectGitBranch, Task.git_branch_id == ProjectGitBranch.id
+                ).filter(Task.id == task_id)
+
+                # Add user filtering if provided
+                if user_id:
+                    query = query.filter(Task.user_id == user_id)
+
+                result = query.first()
+
+                if result:
+                    task, branch = result
+                    return {
+                        "task_title": task.title,
+                        "parent_branch_id": branch.id,
+                        "parent_branch_title": branch.name
+                    }
+                else:
+                    logger.warning(f"Task {task_id} not found for context lookup")
+                    return {
+                        "task_title": f"Task {task_id[:8]}",
+                        "parent_branch_id": None,
+                        "parent_branch_title": "Unknown Branch"
+                    }
+
+        except Exception as e:
+            logger.error(f"Failed to get task context for {task_id}: {e}")
+            return {
+                "task_title": f"Task {task_id[:8]}",
+                "parent_branch_id": None,
+                "parent_branch_title": "Unknown Branch"
+            }
+
+    @staticmethod
+    def _get_subtask_context(subtask_id: str, task_id: str, user_id: str = None) -> Dict[str, Any]:
+        """
+        Fetch subtask context including subtask title and parent task information.
+
+        Args:
+            subtask_id: ID of the subtask
+            task_id: ID of the parent task
+            user_id: User ID for multi-tenant filtering
+
+        Returns:
+            Dict containing subtask_title, parent_task_id, parent_task_title
+        """
+        try:
+            from ...infrastructure.database.database_config import get_session
+            from ...infrastructure.database.models import TaskSubtask, Task
+
+            with get_session() as session:
+                # Query with proper relationships
+                query = session.query(TaskSubtask, Task).join(
+                    Task, TaskSubtask.task_id == Task.id
+                ).filter(
+                    TaskSubtask.id == subtask_id,
+                    TaskSubtask.task_id == task_id
+                )
+
+                # Add user filtering if provided
+                if user_id:
+                    query = query.filter(TaskSubtask.user_id == user_id)
+
+                result = query.first()
+
+                if result:
+                    subtask, task = result
+                    return {
+                        "subtask_title": subtask.title,
+                        "parent_task_id": task.id,
+                        "parent_task_title": task.title
+                    }
+                else:
+                    logger.warning(f"Subtask {subtask_id} not found for context lookup")
+                    return {
+                        "subtask_title": f"Subtask {subtask_id[:8]}",
+                        "parent_task_id": task_id,
+                        "parent_task_title": f"Task {task_id[:8]}"
+                    }
+
+        except Exception as e:
+            logger.error(f"Failed to get subtask context for {subtask_id}: {e}")
+            return {
+                "subtask_title": f"Subtask {subtask_id[:8]}",
+                "parent_task_id": task_id,
+                "parent_task_title": f"Task {task_id[:8]}"
+            }
+
+    @staticmethod
+    def _get_branch_context(branch_id: str, user_id: str = None) -> Dict[str, Any]:
+        """
+        Fetch branch context including branch title.
+
+        Args:
+            branch_id: ID of the branch
+            user_id: User ID for multi-tenant filtering
+
+        Returns:
+            Dict containing branch_title
+        """
+        try:
+            from ...infrastructure.database.database_config import get_session
+            from ...infrastructure.database.models import ProjectGitBranch
+
+            with get_session() as session:
+                query = session.query(ProjectGitBranch).filter(ProjectGitBranch.id == branch_id)
+
+                # Add user filtering if provided
+                if user_id:
+                    query = query.filter(ProjectGitBranch.user_id == user_id)
+
+                branch = query.first()
+
+                if branch:
+                    return {
+                        "branch_title": branch.name
+                    }
+                else:
+                    logger.warning(f"Branch {branch_id} not found for context lookup")
+                    return {
+                        "branch_title": f"Branch {branch_id[:8]}"
+                    }
+
+        except Exception as e:
+            logger.error(f"Failed to get branch context for {branch_id}: {e}")
+            return {
+                "branch_title": f"Branch {branch_id[:8]}"
+            }
+
+    @staticmethod
     async def broadcast_task_event(
         event_type: str,
         task_id: str,
@@ -43,13 +190,21 @@ class WebSocketNotificationService:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
             logger.info("✅ Using direct WebSocket broadcast (same process)")
 
-            # Prepare metadata
+            # Get enhanced task context (title and parent branch info)
+            task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+
+            # Prepare enhanced metadata with titles and parent context
             metadata = {}
             if git_branch_id:
                 metadata["git_branch_id"] = git_branch_id
             if project_id:
                 metadata["project_id"] = project_id
             metadata["timestamp"] = datetime.utcnow().isoformat()
+
+            # Enhanced payload with titles and parent context
+            metadata["task_title"] = task_context["task_title"]
+            metadata["parent_branch_id"] = task_context["parent_branch_id"]
+            metadata["parent_branch_title"] = task_context["parent_branch_title"]
 
             # Send notification
             await broadcast_data_change(
@@ -73,13 +228,21 @@ class WebSocketNotificationService:
                 api_url = os.getenv("AUTH_API_URL", "http://localhost:8001")
                 broadcast_url = f"{api_url}/api/v2/broadcast/notify"
 
-                # Prepare metadata
+                # Get enhanced task context (title and parent branch info)
+                task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+
+                # Prepare enhanced metadata with titles and parent context
                 metadata = {}
                 if git_branch_id:
                     metadata["git_branch_id"] = git_branch_id
                 if project_id:
                     metadata["project_id"] = project_id
                 metadata["timestamp"] = datetime.utcnow().isoformat()
+
+                # Enhanced payload with titles and parent context
+                metadata["task_title"] = task_context["task_title"]
+                metadata["parent_branch_id"] = task_context["parent_branch_id"]
+                metadata["parent_branch_title"] = task_context["parent_branch_title"]
 
                 # Send HTTP request to broadcast endpoint
                 async with aiohttp.ClientSession() as session:
@@ -125,9 +288,15 @@ class WebSocketNotificationService:
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
+            # Get enhanced subtask context (subtask title and parent task info)
+            subtask_context = WebSocketNotificationService._get_subtask_context(subtask_id, task_id, user_id)
+
             metadata = {
                 "parent_task_id": task_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
+                # Enhanced payload with titles and parent context
+                "subtask_title": subtask_context["subtask_title"],
+                "parent_task_title": subtask_context["parent_task_title"]
             }
 
             await broadcast_data_change(
@@ -206,9 +375,14 @@ class WebSocketNotificationService:
         try:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
+            # Get enhanced branch context (branch title)
+            branch_context = WebSocketNotificationService._get_branch_context(branch_id, user_id)
+
             metadata = {
                 "project_id": project_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
+                # Enhanced payload with branch title
+                "branch_title": branch_context["branch_title"]
             }
 
             await broadcast_data_change(
@@ -284,13 +458,21 @@ class WebSocketNotificationService:
         git_branch_id = kwargs.get('git_branch_id', args[4] if len(args) > 4 else None)
         project_id = kwargs.get('project_id', args[5] if len(args) > 5 else None)
 
-        # Prepare metadata
+        # Get enhanced task context (title and parent branch info)
+        task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+
+        # Prepare enhanced metadata with titles and parent context
         metadata = {}
         if git_branch_id:
             metadata["git_branch_id"] = git_branch_id
         if project_id:
             metadata["project_id"] = project_id
         metadata["timestamp"] = datetime.utcnow().isoformat()
+
+        # Enhanced payload with titles and parent context
+        metadata["task_title"] = task_context["task_title"]
+        metadata["parent_branch_id"] = task_context["parent_branch_id"]
+        metadata["parent_branch_title"] = task_context["parent_branch_title"]
 
         # Try direct WebSocket broadcast first (same process)
         try:
@@ -407,10 +589,15 @@ class WebSocketNotificationService:
         user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
         branch_data = kwargs.get('branch_data', args[4] if len(args) > 4 else None)
 
-        # Prepare metadata
+        # Get enhanced branch context (branch title)
+        branch_context = WebSocketNotificationService._get_branch_context(branch_id, user_id)
+
+        # Prepare enhanced metadata with branch title
         metadata = {
             "project_id": project_id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            # Enhanced payload with branch title
+            "branch_title": branch_context["branch_title"]
         }
 
         # Try direct WebSocket broadcast first (same process)
@@ -512,10 +699,16 @@ class WebSocketNotificationService:
         user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
         subtask_data = kwargs.get('subtask_data', args[4] if len(args) > 4 else None)
 
-        # Prepare metadata
+        # Get enhanced subtask context (subtask title and parent task info)
+        subtask_context = WebSocketNotificationService._get_subtask_context(subtask_id, task_id, user_id)
+
+        # Prepare enhanced metadata with titles and parent context
         metadata = {
             "parent_task_id": task_id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            # Enhanced payload with titles and parent context
+            "subtask_title": subtask_context["subtask_title"],
+            "parent_task_title": subtask_context["parent_task_title"]
         }
 
         # Try direct WebSocket broadcast first (same process)

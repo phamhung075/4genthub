@@ -1,14 +1,14 @@
+import {
+    ChevronRight,
+    Code,
+    Cpu,
+    Globe,
+    Settings,
+    Terminal
+} from 'lucide-react';
 import React from 'react';
 import { Card } from '../../ui/card';
 import RawJSONDisplay from '../../ui/RawJSONDisplay';
-import {
-  Cpu,
-  Globe,
-  ChevronRight,
-  Code,
-  Settings,
-  Terminal
-} from 'lucide-react';
 
 interface UsingMCPToolsProps {
   expandedSections: Record<string, boolean>;
@@ -87,7 +87,7 @@ const UsingMCPTools: React.FC<UsingMCPToolsProps> = ({ expandedSections, toggleS
               {[
                 { category: "Development & Coding", count: 4, color: "blue", agents: ["coding-agent", "debugger-agent", "code-reviewer-agent", "prototyping-agent"] },
                 { category: "Testing & QA", count: 3, color: "green", agents: ["test-orchestrator-agent", "uat-coordinator-agent", "performance-load-tester-agent"] },
-                { category: "Architecture & Design", count: 4, color: "purple", agents: ["system-architect-agent", "design-system-agent", "ui-specialist-agent", "core-concept-agent"] },
+                { category: "Architecture & Design", count: 4, color: "purple", agents: ["system-architect-agent", "design-system-agent", "shadcn-ui-expert-agent", "core-concept-agent"] },
                 { category: "Project & Planning", count: 4, color: "orange", agents: ["project-initiator-agent", "task-planning-agent", "master-orchestrator-agent", "elicitation-agent"] },
                 { category: "Security & Compliance", count: 3, color: "red", agents: ["security-auditor-agent", "compliance-scope-agent", "ethical-review-agent"] },
                 { category: "Research & Analysis", count: 4, color: "teal", agents: ["deep-research-agent", "llm-ai-agents-research", "root-cause-analysis-agent", "technology-advisor-agent"] }

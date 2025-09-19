@@ -636,7 +636,7 @@ mcp__agenthub_http__manage_subtask(
 # ✅ CORRECT: Planning parallel agent work
 TodoWrite(todos=[
     {"content": "Delegate auth task to coding-agent", "status": "pending"},
-    {"content": "Delegate UI task to ui-specialist-agent", "status": "pending"},
+    {"content": "Delegate UI task to shadcn-ui-expert-agent", "status": "pending"},
     {"content": "Delegate test task to test-orchestrator-agent", "status": "pending"}
 ])
 ```
@@ -808,7 +808,7 @@ test_task = mcp__agenthub_http__manage_task(...)
 
 # 3. Delegate in parallel using single message with multiple Task calls
 Task(subagent_type="coding-agent", prompt=f"task_id: {backend_task['id']}")
-Task(subagent_type="@ui-specialist-agent", prompt=f"task_id: {frontend_task['id']}")
+Task(subagent_type="@shadcn-ui-expert-agent", prompt=f"task_id: {frontend_task['id']}")
 Task(subagent_type="@test-orchestrator-agent", prompt=f"task_id: {test_task['id']}")
 ```
 

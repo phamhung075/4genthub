@@ -45,7 +45,7 @@ implementation_methodology:
     sub_agent_allocation:
       example:
         - backend_api: "coding-agent with API context only"
-        - frontend_ui: "@ui-specialist-agent with UI context only"
+        - frontend_ui: "@shadcn-ui-expert-agent with UI context only"
         - database_layer: "coding-agent with DB schema only"
         - tests: "@test-orchestrator-agent with interfaces only"
         - deployment: "devops-agent with config context only"

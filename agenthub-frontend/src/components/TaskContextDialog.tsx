@@ -567,25 +567,25 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
-              <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading task context...</p>
+              <div className="inline-block w-8 h-8 border-3 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Loading task context...</p>
             </div>
           ) : taskContext || editMode ? (
             <div className="h-full flex flex-col p-4">
               {editMode ? (
                 // Edit Mode - Markdown Editor for active tab
                 <>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-                    <h3 className="font-semibold text-sm mb-2 dark:text-gray-200">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 mb-4">
+                    <h3 className="font-semibold text-sm mb-2 text-indigo-800 dark:text-indigo-200">
                       {getTabLabel(activeTab)} Format
                     </h3>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-indigo-600 dark:text-indigo-400">
                       {activeTab === 'completion_summary' ? (
                         <p>Write a detailed summary of what was accomplished.</p>
                       ) : activeTab === 'blockers' || activeTab === 'insights' || activeTab === 'next_steps' || activeTab === 'testing_notes' ? (
-                        <p>Use bullet points (<code className="bg-white dark:bg-gray-700 px-1 rounded">-</code>) for list items.</p>
+                        <p>Use bullet points (<code className="bg-indigo-100 dark:bg-indigo-800 px-1 rounded text-indigo-900 dark:text-indigo-100">-</code>) for list items.</p>
                       ) : (
-                        <p>Use <code className="bg-white dark:bg-gray-700 px-1 rounded">key: value</code> format. Each setting on a new line.</p>
+                        <p>Use <code className="bg-indigo-100 dark:bg-indigo-800 px-1 rounded text-indigo-900 dark:text-indigo-100">key: value</code> format. Each setting on a new line.</p>
                       )}
                     </div>
                   </div>
@@ -605,8 +605,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                       {/* Global Context */}
                       <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <summary className="cursor-pointer">
-                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-3 border-l-4 border-blue-400 dark:border-blue-600">
-                            <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 border-l-4 border-blue-500 dark:border-blue-400">
+                            <h3 className="text-blue-800 dark:text-blue-200 font-semibold flex items-center gap-2">
                               <Globe className="w-5 h-5" />
                               Global Context
                             </h3>
@@ -624,8 +624,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                       {/* Project Context */}
                       <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <summary className="cursor-pointer">
-                          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
-                            <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 border-l-4 border-emerald-500 dark:border-emerald-400">
+                            <h3 className="text-emerald-800 dark:text-emerald-200 font-semibold flex items-center gap-2">
                               <FolderOpen className="w-5 h-5" />
                               Project Context
                             </h3>
@@ -643,8 +643,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                       {/* Branch Context */}
                       <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <summary className="cursor-pointer">
-                          <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
-                            <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <div className="bg-purple-50 dark:bg-purple-900/20 p-3 border-l-4 border-purple-500 dark:border-purple-400">
+                            <h3 className="text-purple-800 dark:text-purple-200 font-semibold flex items-center gap-2">
                               <GitBranch className="w-5 h-5" />
                               Branch Context
                             </h3>
@@ -662,8 +662,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                       {/* Task Context (Current) */}
                       <details open className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <summary className="cursor-pointer">
-                          <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
-                            <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                          <div className="bg-amber-50 dark:bg-amber-900/20 p-3 border-l-4 border-amber-500 dark:border-amber-400">
+                            <h3 className="text-amber-800 dark:text-amber-200 font-semibold flex items-center gap-2">
                               <FileText className="w-5 h-5" />
                               Task Context (Current Level)
                             </h3>
@@ -679,8 +679,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                       {/* Information about inheritance */}
                       <details open className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <summary className="cursor-pointer">
-                          <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600">
-                            <h4 className="text-gray-700 dark:text-gray-300 font-semibold text-sm flex items-center gap-2">
+                          <div className="bg-slate-50 dark:bg-slate-800/50 p-3 border-l-4 border-slate-400 dark:border-slate-500">
+                            <h4 className="text-slate-700 dark:text-slate-300 font-semibold text-sm flex items-center gap-2">
                               <Layers className="w-4 h-4" />
                               How Inheritance Works
                             </h4>
@@ -700,8 +700,8 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
                     // Regular tab content - Show nested data visualization
                     <div className="space-y-4">
                       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
-                          <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 border-l-4 border-indigo-500 dark:border-indigo-400">
+                          <h3 className="text-indigo-800 dark:text-indigo-200 font-semibold flex items-center gap-2">
                             {getTabIcon(activeTab)}
                             {getTabLabel(activeTab)}
                           </h3>
@@ -796,13 +796,13 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
               )}
             </div>
           ) : (
-            <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg m-4">
-              <FileText className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Task Context Available</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-lg m-4">
+              <FileText className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No Task Context Available</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
                 Task context has not been initialized yet.
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Task: {task?.title} (ID: {task?.id})
               </p>
               <Button 

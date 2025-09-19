@@ -119,7 +119,7 @@ class TestRequirementAnalyzer:
         result = analyzer.analyze_requirement(requirement)
         
         assert RequirementPattern.UI_COMPONENT in result.detected_patterns
-        assert 'ui-specialist-agent' in result.suggested_agents
+        assert 'shadcn-ui-expert-agent' in result.suggested_agents
         assert 'design-system-agent' in result.suggested_agents
     
     def test_database_schema_pattern(self, analyzer):

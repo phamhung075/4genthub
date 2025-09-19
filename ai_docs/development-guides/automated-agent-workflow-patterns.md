@@ -690,7 +690,7 @@ def fully_automated_project():
     # Phase 2: Automatic Architecture & Design (4-12 hours)
     with parallel_execution():
         architecture = system-architect-agent.design_system(requirements, tech_stack)
-        ui_design = ui-specialist-agent.create_designs(brand, requirements)
+        ui_design = shadcn-ui-expert-agent.create_designs(brand, requirements)
         prototypes = prototyping-agent.build_prototypes(ui_design)
         security_design = security-auditor-agent.design_security(architecture)
     

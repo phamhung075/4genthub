@@ -59,10 +59,10 @@ DEPRECATED_AGENT_MAPPINGS = {
     "brainjs-ml-agent": "ml-specialist-agent",
     "ml-specialist-agent": "ml-specialist-agent",
     "ml-specialist-agent": "ml-specialist-agent",
-    "ui_designer_expert_shadcn_agent": "ui-specialist-agent",
-    "ui-designer-expert-shadcn-agent": "ui-specialist-agent",
-    "ui-specialist-agent": "ui-specialist-agent",
-    "ui-specialist-agent": "ui-specialist-agent",
+    "ui_designer_expert_shadcn_agent": "shadcn-ui-expert-agent",
+    "ui-designer-expert-shadcn-agent": "shadcn-ui-expert-agent",
+    "shadcn-ui-expert-agent": "shadcn-ui-expert-agent",
+    "shadcn-ui-expert-agent": "shadcn-ui-expert-agent",
     
     # Map all other agents from underscore/@ to kebab-case
     "master-orchestrator-agent": "master-orchestrator-agent",

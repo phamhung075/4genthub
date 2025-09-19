@@ -168,7 +168,7 @@ agent_assignment_rules:
     keywords: ["design", "architecture", "structure", "pattern"]
     
   ui_tasks:
-    agents: ["@ui-specialist-agent"]
+    agents: ["@shadcn-ui-expert-agent"]
     keywords: ["UI", "frontend", "component", "interface", "UX"]
     
   documentation_tasks:
@@ -384,7 +384,7 @@ backend_task = mcp__agenthub_http__manage_task(
 frontend_task = mcp__agenthub_http__manage_task(
     action="create",
     title="Create Frontend Components",
-    assignees="@ui-specialist-agent",
+    assignees="@shadcn-ui-expert-agent",
     # ... full context
 )
 

@@ -52,7 +52,7 @@ class AgentConsolidator:
         self.rename_map = {
             "master-orchestrator-agent": "master-orchestrator-agent",
             "brainjs_ml_agent": "ml-specialist-agent",
-            "ui_designer_expert_shadcn_agent": "ui-specialist-agent",
+            "ui_designer_expert_shadcn_agent": "shadcn-ui-expert-agent",
         }
         
         self.migration_log = []
@@ -163,7 +163,7 @@ class AgentConsolidator:
             config['agent_info']['name'] = "🎯 Master Orchestrator Agent"
         elif new_name == "ml-specialist-agent":
             config['agent_info']['name'] = "🤖 ML Specialist Agent"
-        elif new_name == "ui-specialist-agent":
+        elif new_name == "shadcn-ui-expert-agent":
             config['agent_info']['name'] = "🎨 UI Specialist Agent"
         
         with open(config_path, 'w') as f:

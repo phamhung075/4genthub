@@ -134,7 +134,7 @@ def main():
     renamed_agents = {
         'master-orchestrator-agent': 'master-orchestrator-agent',
         'brainjs_ml_agent': 'ml-specialist-agent',
-        'ui_designer_expert_shadcn_agent': 'ui-specialist-agent'
+        'ui_designer_expert_shadcn_agent': 'shadcn-ui-expert-agent'
     }
     
     print("\n3. Testing Renamed Agents:")

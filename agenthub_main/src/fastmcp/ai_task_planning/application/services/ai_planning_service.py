@@ -33,7 +33,7 @@ class AITaskPlanningService:
                 'max_concurrent_tasks': 3,
                 'specializations': ['backend', 'api', 'database']
             },
-            'ui-specialist-agent': {
+            'shadcn-ui-expert-agent': {
                 'patterns': ['ui_component'],
                 'phases': [ExecutionPhase.IMPLEMENTATION, ExecutionPhase.ARCHITECTURE],
                 'max_concurrent_tasks': 2,
@@ -190,8 +190,8 @@ class AITaskPlanningService:
                 ('Authentication Testing', ExecutionPhase.TESTING, 'test-orchestrator-agent', 3.0)
             ],
             'ui_component': [
-                ('Design Component Structure', ExecutionPhase.ARCHITECTURE, 'ui-specialist-agent', 2.0),
-                ('Implement UI Component', ExecutionPhase.IMPLEMENTATION, 'ui-specialist-agent', 3.0),
+                ('Design Component Structure', ExecutionPhase.ARCHITECTURE, 'shadcn-ui-expert-agent', 2.0),
+                ('Implement UI Component', ExecutionPhase.IMPLEMENTATION, 'shadcn-ui-expert-agent', 3.0),
                 ('Add Component Tests', ExecutionPhase.TESTING, 'test-orchestrator-agent', 2.0),
                 ('Component Documentation', ExecutionPhase.REVIEW, 'documentation-agent', 1.0)
             ],

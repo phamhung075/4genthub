@@ -28,7 +28,7 @@ def test_agent_role_mapping():
         ('debugger-agent', 'Debugging'),
         ('test-orchestrator-agent', 'Testing'),
         ('master-orchestrator-agent', 'Orchestrating'),
-        ('ui-specialist-agent', 'UI/UX'),
+        ('shadcn-ui-expert-agent', 'UI/UX'),
         ('security-auditor-agent', 'Security'),
         ('documentation-agent', 'Documentation'),
         ('unknown-agent', 'Assistant')  # Should default to Assistant

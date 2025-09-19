@@ -28,7 +28,7 @@
 |-------------|----------|---------|
 | `master-orchestrator-agent` | `master-orchestrator-agent` | "Uber" is unclear |
 | `brainjs_ml_agent` | `ml-specialist-agent` | Too library-specific |
-| `ui_designer_expert_shadcn_agent` | `ui-specialist-agent` | Too framework-specific |
+| `ui_designer_expert_shadcn_agent` | `shadcn-ui-expert-agent` | Too framework-specific |
 
 ### ✅ AGENTS TO KEEP (Core specialists - 27 agents)
 
@@ -54,7 +54,7 @@
 | `code-reviewer-agent` | Code quality | Reviews |
 | `prototyping-agent` | Rapid prototypes | POCs |
 | `documentation-agent` | All documentation | Docs, specs, PRDs |
-| `ui-specialist-agent` | UI/UX implementation | UI components |
+| `shadcn-ui-expert-agent` | UI/UX implementation | UI components |
 | `design-system-agent` | Design patterns | Design systems |
 | `ml-specialist-agent` | Machine learning | ML models |
 | `devops-agent` | Infrastructure + deployment | CI/CD, configs |
@@ -107,7 +107,7 @@ IMPLEMENTATION SPECIALISTS
 │   └── documentation-agent (absorbs tech_spec, prd_architect)
 │
 ├── UI/Design Team
-│   ├── ui-specialist-agent (formerly shadcn-specific)
+│   ├── shadcn-ui-expert-agent (formerly shadcn-specific)
 │   └── design-system-agent
 │
 ├── Infrastructure Team
@@ -141,7 +141,7 @@ ANALYSIS SPECIALISTS
 **FILE CREATORS** (Can write/edit):
 - `coding-agent` - Source code
 - `documentation-agent` - All ai_docs
-- `ui-specialist-agent` - UI components
+- `shadcn-ui-expert-agent` - UI components
 - `test-orchestrator-agent` - Test files
 - `devops-agent` - Config files
 - `ml-specialist-agent` - ML models
@@ -157,7 +157,7 @@ ANALYSIS SPECIALISTS
 
 ### Who Has Domain Tools?
 **SPECIALISTS** with unique MCP tools:
-- `ui-specialist-agent` - shadcn tools
+- `shadcn-ui-expert-agent` - shadcn tools
 - `test-orchestrator-agent` - browser tools
 - `ml-specialist-agent` - ML frameworks
 - `marketing_orchestrator_agent` - marketing tools
