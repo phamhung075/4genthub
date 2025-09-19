@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { X, CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -64,16 +64,49 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
 }) => {
   const variant = toastVariants[toast.type];
   const Icon = variant.icon;
+  const [isHovered, setIsHovered] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+  const remainingTimeRef = useRef<number>(toast.duration ?? 5000);
 
   useEffect(() => {
     const duration = toast.duration ?? 5000; // Default 5 seconds
     if (duration > 0) {
-      const timer = setTimeout(() => {
-        onDismiss(toast.id);
-      }, duration);
-      return () => clearTimeout(timer);
+      startTimeRef.current = Date.now();
+      remainingTimeRef.current = duration;
+
+      const startTimer = () => {
+        timerRef.current = setTimeout(() => {
+          onDismiss(toast.id);
+        }, remainingTimeRef.current);
+      };
+
+      if (!isHovered) {
+        startTimer();
+      }
+
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+      };
     }
-  }, [toast.id, toast.duration, onDismiss]);
+  }, [toast.id, toast.duration, onDismiss, isHovered]);
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      // Calculate remaining time
+      const elapsed = Date.now() - startTimeRef.current;
+      remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    startTimeRef.current = Date.now();
+  };
 
   return (
     <div
@@ -83,6 +116,8 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
         variant.className
       )}
       role="alert"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <Icon className={cn("h-5 w-5 flex-shrink-0 mt-0.5", variant.iconClassName)} />
       <div className="flex-1 space-y-1">

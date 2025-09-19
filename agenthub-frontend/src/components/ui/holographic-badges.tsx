@@ -77,19 +77,19 @@ export const HolographicStatusBadge: React.FC<HolographicStatusBadgeProps> = ({
   return (
     <div
       className={`
-        inline-flex items-center font-medium rounded-full 
+        inline-flex items-center font-medium rounded-full
         backdrop-blur-md bg-gradient-to-r ${config.gradient}
         border ${config.borderColor} ${config.textColor}
-        shadow-lg ${config.glow} hover:shadow-xl 
-        transition-all duration-300 hover:scale-105 
-        animate-gradient-x ${sizeClasses[size]} ${className}
+        shadow-lg ${config.glow} hover:shadow-xl
+        transition-all duration-300 hover:scale-105
+        animate-gradient-x whitespace-nowrap ${sizeClasses[size]} ${className}
       `}
       style={{
         backgroundSize: '200% 200%',
         animation: 'holographic 3s ease infinite'
       }}
     >
-      <span className="relative z-10">{config.label}</span>
+      <span className="relative z-10 whitespace-nowrap">{config.label}</span>
     </div>
   )
 }
@@ -163,12 +163,12 @@ export const HolographicPriorityBadge: React.FC<HolographicPriorityBadgeProps> =
   return (
     <div
       className={`
-        inline-flex items-center font-medium rounded-full 
+        inline-flex items-center font-medium rounded-full
         backdrop-blur-md bg-gradient-to-r ${config.gradient}
         border ${config.borderColor} ${config.textColor}
-        shadow-lg ${config.glow} hover:shadow-xl 
-        transition-all duration-300 hover:scale-105 
-        animate-gradient-x ${sizeClasses[size]} ${className}
+        shadow-lg ${config.glow} hover:shadow-xl
+        transition-all duration-300 hover:scale-105
+        animate-gradient-x whitespace-nowrap ${sizeClasses[size]} ${className}
       `}
       style={{
         backgroundSize: '200% 200%',
@@ -176,7 +176,7 @@ export const HolographicPriorityBadge: React.FC<HolographicPriorityBadgeProps> =
       }}
     >
       {showIcon && <span className="relative z-10">{config.icon}</span>}
-      <span className="relative z-10">{config.label}</span>
+      <span className="relative z-10 whitespace-nowrap">{config.label}</span>
     </div>
   )
 }
