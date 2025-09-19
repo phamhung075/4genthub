@@ -30,17 +30,17 @@ implementation_methodology:
       
     component_delegation:
       header_navigation:
-        agent: "@ui-specialist-agent"
+        agent: "@shadcn-ui-expert-agent"
         context: "Nav specs, routes, auth state"
         size: "8,000 tokens"
         
       form_components:
-        agent: "@ui-specialist-agent"
+        agent: "@shadcn-ui-expert-agent"
         context: "Form validation, field specs"
         size: "10,000 tokens"
         
       data_display:
-        agent: "@ui-specialist-agent"
+        agent: "@shadcn-ui-expert-agent"
         context: "Table/list specs, data models"
         size: "9,000 tokens"
         

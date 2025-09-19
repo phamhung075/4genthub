@@ -23,19 +23,19 @@ class TestAgentAssignment:
         """Test creating agent assignment with supporting agents"""
         assignment = AgentAssignment(
             primary_agent="frontend-agent",
-            supporting_agents=["ui-specialist-agent", "css-expert-agent"],
+            supporting_agents=["shadcn-ui-expert-agent", "css-expert-agent"],
             effort_percentage={
                 "frontend-agent": 70.0,
-                "ui-specialist-agent": 20.0,
+                "shadcn-ui-expert-agent": 20.0,
                 "css-expert-agent": 10.0
             }
         )
         
         assert assignment.primary_agent == "frontend-agent"
         assert len(assignment.supporting_agents) == 2
-        assert "ui-specialist-agent" in assignment.supporting_agents
+        assert "shadcn-ui-expert-agent" in assignment.supporting_agents
         assert assignment.effort_percentage["frontend-agent"] == 70.0
-        assert assignment.effort_percentage["ui-specialist-agent"] == 20.0
+        assert assignment.effort_percentage["shadcn-ui-expert-agent"] == 20.0
     
     def test_agent_assignment_to_dict(self):
         """Test converting agent assignment to dictionary"""

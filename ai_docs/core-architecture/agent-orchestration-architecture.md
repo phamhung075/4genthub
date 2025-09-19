@@ -39,7 +39,7 @@ graph TD
         
         TEST_AGENTS[Testing & QA Agents<br/>test-orchestrator-agent<br/>uat-coordinator-agent<br/>performance-load-tester-agent]
         
-        ARCH_AGENTS[Architecture Agents<br/>system-architect-agent<br/>design-system-agent<br/>ui-specialist-agent]
+        ARCH_AGENTS[Architecture Agents<br/>system-architect-agent<br/>design-system-agent<br/>shadcn-ui-expert-agent]
         
         PROJECT_AGENTS[Project Management<br/>project-initiator-agent<br/>task-planning-agent<br/>elicitation-agent]
         
@@ -217,7 +217,7 @@ The Master Orchestrator operates as a **Professional Enterprise Employee**, not 
 - **Use Cases**: Design system creation, component libraries, UI standardization
 - **Decision Criteria**: `work_type matches "design system|component library|ui patterns"`
 
-#### 10. ui-specialist-agent
+#### 10. shadcn-ui-expert-agent
 - **Specialization**: UI/UX design and frontend development
 - **Capabilities**: User interface design, frontend implementation, user experience
 - **Use Cases**: UI development, UX improvements, frontend features
@@ -391,7 +391,7 @@ def select_agent(work_type: str, context: Dict) -> str:
     elif re.match(r"plan|analyze|breakdown|organize", work_type, re.IGNORECASE):
         return "task-planning-agent"
     elif re.match(r"design|ui|interface|ux|frontend", work_type, re.IGNORECASE):
-        return "ui-specialist-agent"
+        return "shadcn-ui-expert-agent"
     elif re.match(r"security|audit|vulnerability", work_type, re.IGNORECASE):
         return "security-auditor-agent"
     elif re.match(r"deploy|infrastructure|devops|ci/cd", work_type, re.IGNORECASE):
@@ -442,7 +442,7 @@ agents = [
 # For independent tasks that can run simultaneously
 parallel_agents = {
     "backend": "coding-agent",
-    "frontend": "ui-specialist-agent", 
+    "frontend": "shadcn-ui-expert-agent", 
     "testing": "test-orchestrator-agent",
     "documentation": "documentation-agent"
 }
@@ -458,7 +458,7 @@ workflow = {
     ],
     "phase_2_parallel": [
         "coding-agent",
-        "ui-specialist-agent",
+        "shadcn-ui-expert-agent",
         "test-orchestrator-agent"
     ],
     "phase_3_sequential": [
@@ -786,7 +786,7 @@ class AgentErrorRecovery:
         
         fallback_mapping = {
             "coding-agent": ["debugger-agent", "prototyping-agent"],
-            "ui-specialist-agent": ["design-system-agent", "coding-agent"],
+            "shadcn-ui-expert-agent": ["design-system-agent", "coding-agent"],
             "test-orchestrator-agent": ["performance-load-tester-agent", "uat-coordinator-agent"]
         }
         

@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  DockerSetup,
+  GettingStartedGuide,
+  HelpSection,
+  MCPConfiguration,
+  Troubleshooting,
+  UsingMCPTools,
+  WhatIs4genthub
+} from '../components/help';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import {
-  HelpSection,
-  WhatIs4genthub,
-  MCPConfiguration,
-  GettingStartedGuide,
-  UsingMCPTools,
-  DockerSetup,
-  Troubleshooting
-} from '../components/help';
 
 export const HelpSetup: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -26,8 +26,8 @@ export const HelpSetup: React.FC = () => {
   // Create section data from components
   const helpSections = [
     WhatIs4genthub({ expandedSections, toggleSection }),
-    MCPConfiguration({ expandedSections, toggleSection }),
     GettingStartedGuide({ expandedSections, toggleSection }),
+    MCPConfiguration({ expandedSections, toggleSection }),
     UsingMCPTools({ expandedSections, toggleSection }),
     DockerSetup({ expandedSections, toggleSection }),
     Troubleshooting({ expandedSections, toggleSection })

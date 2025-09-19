@@ -69,7 +69,7 @@ recommendation = quick_agent_help('Fix authentication bug')
 | Write code | `coding-agent` | `mcp__agenthub_http__call_agent('coding-agent')` |
 | Testing | `test-orchestrator-agent` | `mcp__agenthub_http__call_agent('test-orchestrator-agent')` |
 | Security | `security-auditor-agent` | `mcp__agenthub_http__call_agent('security-auditor-agent')` |
-| UI/Frontend | `ui-specialist-agent` | `mcp__agenthub_http__call_agent('ui-specialist-agent')` |
+| UI/Frontend | `shadcn-ui-expert-agent` | `mcp__agenthub_http__call_agent('shadcn-ui-expert-agent')` |
 | DevOps | `devops-agent` | `mcp__agenthub_http__call_agent('devops-agent')` |
 | Documentation | `documentation-agent` | `mcp__agenthub_http__call_agent('documentation-agent')` |
 
@@ -192,7 +192,7 @@ All agents support direct calling:
 - technology-advisor-agent
 - test-orchestrator-agent
 - uat-coordinator-agent
-- ui-specialist-agent
+- shadcn-ui-expert-agent
 
 ## Summary
 

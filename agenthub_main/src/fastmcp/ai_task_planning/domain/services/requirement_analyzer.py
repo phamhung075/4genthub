@@ -106,7 +106,7 @@ class RequirementAnalyzer:
             RequirementPattern.CRUD_OPERATIONS: ['coding-agent'],
             RequirementPattern.USER_AUTHENTICATION: ['coding-agent', 'security-auditor-agent'],
             RequirementPattern.API_INTEGRATION: ['coding-agent', 'system-architect-agent'],
-            RequirementPattern.UI_COMPONENT: ['ui-specialist-agent', 'design-system-agent'],
+            RequirementPattern.UI_COMPONENT: ['shadcn-ui-expert-agent', 'design-system-agent'],
             RequirementPattern.DATABASE_SCHEMA: ['coding-agent', 'system-architect-agent'],
             RequirementPattern.TESTING_REQUIREMENT: ['test-orchestrator-agent'],
             RequirementPattern.SECURITY_REQUIREMENT: ['security-auditor-agent'],

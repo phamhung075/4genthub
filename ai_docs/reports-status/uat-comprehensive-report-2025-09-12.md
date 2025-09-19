@@ -119,7 +119,7 @@ The AI Task Planning System has been successfully validated through comprehensiv
 - ✅ Multi-agent orchestration architecture
 
 **Specialized Agents Available**:
-- coding-agent, ui-specialist-agent, system-architect-agent
+- coding-agent, shadcn-ui-expert-agent, system-architect-agent
 - test-orchestrator-agent, security-auditor, compliance-scope
 - ethical-review, debugger-agent, and 20+ other specialized agents
 

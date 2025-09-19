@@ -293,7 +293,7 @@ class TestAITaskPlanningMCPController:
         assert 'recommended_agents' in result['agent_suggestions']
         assert 'primary_agents' in result['agent_suggestions']
         assert 'workload_distribution' in result['agent_suggestions']
-        assert 'ui-specialist-agent' in result['agent_suggestions']['recommended_agents']
+        assert 'shadcn-ui-expert-agent' in result['agent_suggestions']['recommended_agents']
     
     @pytest.mark.asyncio
     async def test_suggest_agents_with_filter(self, controller):

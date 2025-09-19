@@ -219,7 +219,7 @@ class TestAITaskIntegrationService:
         assert result['success']
         assert 'ai_enhancements' in result
         assert 'agent_suggestions' in result['ai_enhancements']
-        assert 'ui-specialist-agent' in result['ai_enhancements']['agent_suggestions']['suggested_agents']
+        assert 'shadcn-ui-expert-agent' in result['ai_enhancements']['agent_suggestions']['suggested_agents']
     
     @pytest.mark.asyncio
     async def test_enhance_task_creation_failure(self, service, mock_task_facade):
@@ -415,7 +415,7 @@ class TestAITaskIntegrationService:
         """Test optimal agent suggestions"""
         # UI task
         result = await service._suggest_optimal_agents("Create dashboard UI component")
-        assert 'ui-specialist-agent' in result['suggested_agents']
+        assert 'shadcn-ui-expert-agent' in result['suggested_agents']
         
         # Testing task
         result = await service._suggest_optimal_agents("Write comprehensive test suite")

@@ -170,7 +170,7 @@ class TestAITaskCreationUseCase:
                 'ai_enhanced': True,
                 'ai_enhancements': {
                     'agent_suggestions': {
-                        'suggested_agents': ['ui-specialist-agent'],
+                        'suggested_agents': ['shadcn-ui-expert-agent'],
                         'confidence': 0.85
                     }
                 }

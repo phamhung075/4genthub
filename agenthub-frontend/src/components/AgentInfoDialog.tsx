@@ -1,12 +1,12 @@
 import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, Copy, FileText, Info, Loader2, Play, Wrench } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { callAgent } from "../api";
+import logger from "../utils/logger";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
-import logger from "../utils/logger";
 
 interface AgentInfoDialogProps {
   open: boolean;
@@ -96,7 +96,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
       category: 'Architecture & Design',
       skills: ['Design systems', 'Component libraries', 'UI patterns', 'Design tokens']
     },
-    'ui-specialist-agent': {
+    'shadcn-ui-expert-agent': {
       description: 'UI/UX design and frontend development specialist.',
       category: 'Architecture & Design',
       skills: ['React components', 'Tailwind CSS', 'Responsive design', 'User experience']

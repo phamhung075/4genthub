@@ -541,6 +541,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         fullSubtask={fullSubtask || null}
         isLoading={isLoadingFull}
         showDetails={isShowingDetails}
+        parentTaskId={parentTaskId}
         onPlayCreateAnimation={() => {}}
         onPlayDeleteAnimation={() => {}}
         onPlayUpdateAnimation={() => {}}
@@ -555,6 +556,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     loadingSubtasks,
     fullSubtasks,
     showDetails,
+    parentTaskId,
     handleSubtaskAction,
     handleAgentInfoClick,
     registerRowCallbacks,

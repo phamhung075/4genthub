@@ -61,7 +61,7 @@ ELIF work_type matches "test|verify|validate|qa":
 ELIF work_type matches "plan|analyze|breakdown|organize":
     USE task-planning-agent
 ELIF work_type matches "design|ui|interface|ux|frontend":
-    USE ui-specialist-agent
+    USE shadcn-ui-expert-agent
 ELIF work_type matches "security|audit|vulnerability|penetration":
     USE security-auditor-agent
 ELIF work_type matches "deploy|infrastructure|devops|ci/cd":
@@ -175,7 +175,7 @@ ELSE:
   Architecture & Design (4):
     system-architect-agent - System design and architecture
     design-system-agent - Design system and UI patterns
-    ui-specialist-agent - UI/UX design and frontend development
+    shadcn-ui-expert-agent - UI/UX design and frontend development
     core-concept-agent - Core concepts and fundamentals
     
   DevOps & Infrastructure (1):

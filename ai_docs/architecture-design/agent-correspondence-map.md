@@ -40,7 +40,7 @@ This document maps the correspondence between:
 | technology-advisor-agent.md | technology-advisor-agent/ | ✅ Match |
 | test-orchestrator-agent.md | test-orchestrator-agent/ | ✅ Match |
 | uat-coordinator-agent.md | uat-coordinator-agent/ | ✅ Match |
-| ui-specialist-agent.md | ui-specialist-agent/ | ✅ Match (renamed from ui_designer_expert_shadcn) |
+| shadcn-ui-expert-agent.md | shadcn-ui-expert-agent/ | ✅ Match (renamed from ui_designer_expert_shadcn) |
 
 ### 📝 Agents with Description Only (No Implementation)
 

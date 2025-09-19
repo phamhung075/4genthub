@@ -26,7 +26,7 @@ class AgentRole(Enum):
     CORE_CONCEPT = "core-concept-agent"
     DESIGN_SYSTEM = "design-system-agent"
     SYSTEM_ARCHITECT = "system-architect-agent"
-    UI_SPECIALIST = "ui-specialist-agent"
+    UI_SPECIALIST = "shadcn-ui-expert-agent"
     
     # Testing & QA (3)
     PERFORMANCE_LOAD_TESTER = "performance-load-tester-agent"

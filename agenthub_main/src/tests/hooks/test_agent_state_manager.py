@@ -108,7 +108,7 @@ class TestAgentStateManager:
     def test_persistent_storage(self):
         """Test that state persists across manager instances."""
         session_id = str(uuid.uuid4())
-        agent_name = 'ui-specialist-agent'
+        agent_name = 'shadcn-ui-expert-agent'
 
         # Set agent in first manager instance
         self.manager.set_current_agent(session_id, agent_name)
@@ -277,7 +277,7 @@ class TestAgentRoleMapping:
             ('test-orchestrator-agent', 'Testing'),
             ('documentation-agent', 'Documentation'),
             ('master-orchestrator-agent', 'Orchestrating'),
-            ('ui-specialist-agent', 'UI/UX'),
+            ('shadcn-ui-expert-agent', 'UI/UX'),
             ('security-auditor-agent', 'Security'),
             ('devops-agent', 'DevOps'),
             ('deep-research-agent', 'Research'),
@@ -381,7 +381,7 @@ class TestCallAgentIntegration:
         """Test updating agent state with @ prefix in agent name."""
         session_id = str(uuid.uuid4())
         tool_input = {
-            'name_agent': '@ui-specialist-agent'
+            'name_agent': '@shadcn-ui-expert-agent'
         }
 
         # Patch get_ai_data_path for both update and verification
@@ -392,7 +392,7 @@ class TestCallAgentIntegration:
             manager = AgentStateManager()
             agent = manager.get_current_agent(session_id)
 
-        assert agent == 'ui-specialist-agent'
+        assert agent == 'shadcn-ui-expert-agent'
 
     def test_update_agent_state_empty_input(self):
         """Test updating agent state with empty or missing agent name."""

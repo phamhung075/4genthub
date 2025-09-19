@@ -10,6 +10,7 @@ import logger from "../utils/logger";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon, Settings, Shield, Database, Globe, FolderOpen, Code, GitBranch } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
+import { CopyableId } from "./ui/CopyableId";
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -223,7 +224,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
           {activeTab === 'details' && (
-            <div className="space-y-4 overflow-y-auto flex-1 p-4">
+            <div className="space-y-4 overflow-y-auto flex-1 p-4 bg-white dark:bg-gray-800">
               {/* Task Information Header */}
               <div className="theme-context-section p-4 rounded-lg">
                 <div className="flex gap-2 mt-3 flex-wrap">
@@ -254,18 +255,36 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm theme-context-metadata">
                       <div className="space-y-1">
                         <span className="text-muted-foreground font-medium">Task ID:</span>
-                        <p className="font-mono text-xs break-all">{displayTask.id}</p>
+                        <CopyableId
+                          id={displayTask.id}
+                          variant="block"
+                          size="xs"
+                          abbreviated={false}
+                          showCopyButton={true}
+                        />
                       </div>
                       {displayTask.git_branch_id && (
                         <div className="space-y-1">
                           <span className="text-muted-foreground font-medium">Git Branch ID:</span>
-                          <p className="font-mono text-xs break-all">{displayTask.git_branch_id}</p>
+                          <CopyableId
+                            id={displayTask.git_branch_id}
+                            variant="block"
+                            size="xs"
+                            abbreviated={true}
+                            showCopyButton={true}
+                          />
                         </div>
                       )}
                       {displayTask.context_id && (
                         <div className="space-y-1">
                           <span className="text-muted-foreground font-medium">Context ID:</span>
-                          <p className="font-mono text-xs break-all">{displayTask.context_id}</p>
+                          <CopyableId
+                            id={displayTask.context_id}
+                            variant="block"
+                            size="xs"
+                            abbreviated={true}
+                            showCopyButton={true}
+                          />
                         </div>
                       )}
                     </div>
@@ -380,15 +399,22 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                               <p className="text-xs text-muted-foreground mt-1">
                                 View full subtask details in the Subtasks tab
                               </p>
-                              {/* Only show subtask IDs if they are valid strings */}
+                              {/* Enhanced subtask ID display with copy functionality */}
                               {displayTask.subtasks.filter((id: any) => typeof id === 'string' && id.length > 0).length > 0 ? (
-                                <div className="mt-2 space-y-1">
+                                <div className="mt-3 space-y-2">
                                   {displayTask.subtasks
                                     .filter((id: any) => typeof id === 'string' && id.length > 0)
                                     .map((subtaskId: string, index: number) => (
-                                      <div key={index} className="text-sm">
-                                        <span className="text-muted-foreground">#{index + 1}:</span> 
-                                        <span className="font-mono text-xs ml-1">{subtaskId}</span>
+                                      <div key={index} className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">#{index + 1}:</span>
+                                        <CopyableId
+                                          id={subtaskId}
+                                          variant="badge"
+                                          size="xs"
+                                          abbreviated={true}
+                                          showCopyButton={true}
+                                          className="flex-1"
+                                        />
                                       </div>
                                     ))}
                                 </div>
@@ -495,18 +521,18 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             <div className="space-y-4 overflow-y-auto flex-1 p-4">
               {contextLoading ? (
                 <div className="text-center py-8">
-                  <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="mt-2 text-sm text-gray-500">Loading context...</p>
+                  <div className="inline-block w-8 h-8 border-3 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Loading context...</p>
                 </div>
               ) : taskContext ? (
                 <>
                   {/* Context Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                       <Layers className="w-5 h-5" />
                       Task Context Data
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                       Complete hierarchical view of task context and inherited data
                     </p>
                   </div>
@@ -514,8 +540,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {/* Task Execution Section */}
                   {(taskContext.task_data || taskContext.execution_context || taskContext.discovered_patterns || taskContext.local_decisions) && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 border-l-4 border-emerald-500 dark:border-emerald-400">
+                        <h3 className="text-emerald-800 dark:text-emerald-200 font-semibold flex items-center gap-2">
                           <Settings className="w-4 h-4" />
                           Task Execution Details
                         </h3>
@@ -524,7 +550,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Task Data */}
                         {taskContext.task_data && Object.keys(taskContext.task_data).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Task Data
                             </summary>
@@ -537,7 +563,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Execution Context */}
                         {taskContext.execution_context && Object.keys(taskContext.execution_context).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Execution Context
                             </summary>
@@ -550,7 +576,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Discovered Patterns */}
                         {taskContext.discovered_patterns && Object.keys(taskContext.discovered_patterns).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Discovered Patterns
                             </summary>
@@ -563,7 +589,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Local Decisions */}
                         {taskContext.local_decisions && Object.keys(taskContext.local_decisions).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Local Decisions
                             </summary>
@@ -579,8 +605,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {/* Implementation Notes Section */}
                   {taskContext.implementation_notes && Object.keys(taskContext.implementation_notes).length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-3 border-l-4 border-purple-500 dark:border-purple-400">
+                        <h3 className="text-purple-800 dark:text-purple-200 font-semibold flex items-center gap-2">
                           <FileText className="w-4 h-4" />
                           Implementation Notes
                         </h3>
@@ -594,8 +620,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {/* Metadata Section */}
                   {taskContext.metadata && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="bg-amber-50 dark:bg-amber-900/20 p-3 border-l-4 border-amber-500 dark:border-amber-400">
+                        <h3 className="text-amber-800 dark:text-amber-200 font-semibold flex items-center gap-2">
                           <Info className="w-4 h-4" />
                           Metadata & System Information
                         </h3>
@@ -609,8 +635,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   {/* Inheritance Information */}
                   {(taskContext._inheritance || taskContext.inheritance_metadata || taskContext.inheritance_disabled !== undefined) && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
+                      <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 border-l-4 border-indigo-500 dark:border-indigo-400">
+                        <h3 className="text-indigo-800 dark:text-indigo-200 font-semibold flex items-center gap-2">
                           <Layers className="w-4 h-4" />
                           Context Inheritance
                         </h3>

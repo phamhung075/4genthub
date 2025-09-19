@@ -128,7 +128,7 @@ domains:
 |----------|----------|------------------|
 | `master-orchestrator-agent` | `master-orchestrator-agent` | All references |
 | `brainjs_ml_agent` | `ml-specialist-agent` | Generalize ML |
-| `ui_designer_expert_shadcn_agent` | `ui-specialist-agent` | Simplify name |
+| `ui_designer_expert_shadcn_agent` | `shadcn-ui-expert-agent` | Simplify name |
 
 ### 4.2 Code Reference Updates
 
@@ -256,7 +256,7 @@ agent-library/
 
 ### Creative Team (3)
 11. documentation-agent
-12. ui-specialist-agent
+12. shadcn-ui-expert-agent
 13. design-system-agent
 14. creative-ideation-agent
 

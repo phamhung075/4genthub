@@ -35,7 +35,7 @@ The agenthub Agent Library provides a comprehensive suite of 31 specialized AI a
 - **performance-load-tester-agent** - Performance and load testing
 
 ### 🎨 Design & UI (3 agents)
-- **ui-specialist-agent** - Shadcn/UI components (renamed from ui_designer_expert_shadcn)
+- **shadcn-ui-expert-agent** - Shadcn/UI components (renamed from ui_designer_expert_shadcn)
 - **design-system-agent** - Design system and UI patterns
 - **core-concept-agent** - Core concepts and fundamentals
 
@@ -120,7 +120,7 @@ All deprecated agent names automatically resolve to their consolidated replaceme
 # Renamings
 'master-orchestrator-agent' → 'master-orchestrator-agent'
 'brainjs_ml_agent' → 'ml-specialist-agent'
-'ui_designer_expert_shadcn_agent' → 'ui-specialist-agent'
+'ui_designer_expert_shadcn_agent' → 'shadcn-ui-expert-agent'
 ```
 
 ## 🚀 Usage
@@ -155,7 +155,7 @@ result = use_case.execute('coding-agent', format='markdown')
 # Spawn multiple agents for parallel work
 agents = [
     ('coding-agent', 'Implement backend API'),
-    ('ui-specialist-agent', 'Build frontend UI'),
+    ('shadcn-ui-expert-agent', 'Build frontend UI'),
     ('test-orchestrator-agent', 'Create test suite'),
     ('documentation-agent', 'Write documentation'),
     ('devops-agent', 'Setup deployment')

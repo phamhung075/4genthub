@@ -5,6 +5,8 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
+import { CopyableId } from "./ui/CopyableId";
+import { ParentTaskReference } from "./ui/ParentTaskReference";
 import logger from "../utils/logger";
 
 // Lightweight subtask summary interface
@@ -23,6 +25,7 @@ interface SubtaskRowProps {
   fullSubtask: Subtask | null;
   isLoading: boolean;
   showDetails: boolean;
+  parentTaskId: string; // Add parent task ID for context display
 
   // Animation event callbacks from parent (placeholders)
   onPlayCreateAnimation: () => void;
@@ -48,6 +51,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   fullSubtask,
   isLoading,
   showDetails,
+  parentTaskId,
   onPlayCreateAnimation,
   onPlayDeleteAnimation,
   onPlayUpdateAnimation,
@@ -220,14 +224,36 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
         style={getAnimationStyle()}
       >
         <TableCell className="pl-8">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-600"></div>
-            <span className="text-gray-700 dark:text-gray-300">{summary.title}</span>
-            {summary.progress_percentage !== undefined && (
-              <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
-                {summary.status === 'done' ? 100 : summary.progress_percentage}%
-              </Badge>
-            )}
+          <div className="space-y-1">
+            {/* Main title row with indicator */}
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-600"></div>
+              <span className="text-gray-700 dark:text-gray-300 font-medium">{summary.title}</span>
+              {summary.progress_percentage !== undefined && (
+                <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
+                  {summary.status === 'done' ? 100 : summary.progress_percentage}%
+                </Badge>
+              )}
+            </div>
+
+            {/* Subtask ID and Parent Task Reference */}
+            <div className="flex items-center gap-3 ml-4">
+              <CopyableId
+                id={summary.id}
+                label="ID:"
+                variant="inline"
+                size="xs"
+                abbreviated={true}
+                showCopyButton={false}
+                className="text-gray-500 dark:text-gray-400"
+              />
+              <ParentTaskReference
+                parentTaskId={parentTaskId}
+                variant="inline"
+                showId={false}
+                className="text-gray-500 dark:text-gray-400"
+              />
+            </div>
           </div>
         </TableCell>
 

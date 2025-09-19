@@ -203,7 +203,7 @@ custom_instructions: |
   ### DESIGN (4)
   - `system-architect-agent` → Architecture, system design
   - `design-system-agent` → UI patterns, components
-  - `ui-specialist-agent` → UI/UX, frontend
+  - `shadcn-ui-expert-agent` → UI/UX, frontend
   - `core-concept-agent` → Domain concepts
   
   ### PLANNING (2)
@@ -317,7 +317,7 @@ custom_instructions: |
   
   # Delegate all at once (single message, multiple Task calls)
   Task(subagent_type="coding-agent", prompt=f"task_id: {backend_task.id}")
-  Task(subagent_type="@ui-specialist-agent", prompt=f"task_id: {frontend_task.id}")
+  Task(subagent_type="@shadcn-ui-expert-agent", prompt=f"task_id: {frontend_task.id}")
   Task(subagent_type="@test-orchestrator-agent", prompt=f"task_id: {test_task.id}")
   
   # Wait for all results, then consolidate

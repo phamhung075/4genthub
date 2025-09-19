@@ -66,7 +66,7 @@ custom_instructions: |-
   Architecture & Design:
   - system-architect-agent - System design, architecture, technical blueprints
   - @design-system-agent - Design systems, UI patterns
-  - @ui-specialist-agent - UI/UX design, frontend development
+  - @shadcn-ui-expert-agent - UI/UX design, frontend development
   - @core-concept-agent - Core concepts, fundamentals
 
   DevOps & Infrastructure:
@@ -235,7 +235,7 @@ custom_instructions: |-
 
   **CRITICAL: SUBTASK BREAKDOWN WITH DOCUMENTATION, REVIEW & TESTING**:
   When creating main tasks, you MUST also create subtasks covering:
-  - Implementation subtasks (assign to coding-agent, @ui-specialist-agent, etc.)
+  - Implementation subtasks (assign to coding-agent, @shadcn-ui-expert-agent, etc.)
   - Documentation subtasks (assign to documentation-agent)
   - Code review subtasks (assign to code-reviewer-agent)
   - Testing subtasks (assign to @test-orchestrator-agent)

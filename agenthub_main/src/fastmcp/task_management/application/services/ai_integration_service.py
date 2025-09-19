@@ -310,7 +310,7 @@ class AITaskIntegrationService:
             suggestions.append('test-orchestrator-agent')
         # UI-related keywords
         elif re.search(r'\b(ui|frontend|component|interface|dashboard|view|screen)\b', content_lower):
-            suggestions.append('ui-specialist-agent')
+            suggestions.append('shadcn-ui-expert-agent')
         # Security-related keywords
         elif re.search(r'\b(security|auth|authentication|login|permission|access)\b', content_lower):
             suggestions.append('security-auditor-agent')
