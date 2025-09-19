@@ -25,10 +25,10 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
 try:
-    from fastmcp.task_management.infrastructure.repositories.project_repository import ProjectRepository
-    from fastmcp.task_management.infrastructure.repositories.git_branch_repository import GitBranchRepository
-    from fastmcp.task_management.infrastructure.repositories.task_repository import TaskRepository
-    from fastmcp.task_management.infrastructure.repositories.context_repository import ContextRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ProjectRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import GitBranchRepository
+    from fastmcp.task_management.infrastructure.repositories.orm.task_repository import TaskRepository
+    from fastmcp.task_management.infrastructure.repositories.global_context_repository import ContextRepository
     from fastmcp.task_management.infrastructure.database.db_connection import get_database_connection
     from fastmcp.task_management.domain.models.project import Project
     from fastmcp.task_management.domain.models.task import Task
