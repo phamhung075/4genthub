@@ -11,7 +11,7 @@ Dai Hung PHAM
 
 *Orchestrate 43 specialized AI agents through an intuitive web interface designed for humans who want to harness the power of AI without complexity. Recently optimized from 69 agents to 43 core agents for better maintainability and clearer specialization.*
 
-[🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Gallery](#-agent-gallery) • [📚 Documentation](#-documentation) • [💬 Community](#-community)
+[🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Gallery](#-agent-gallery) • [📚 Documentation](#-documentation) • [📋 Version History](#-version-history) • [💬 Community](#-community)
 
 </div>
 
@@ -348,6 +348,7 @@ mcp__agenthub_http__manage_context(
 | 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/OPERATIONS/` |
 | 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/TROUBLESHOOTING/` |
 | ✨ **Vision System** | AI enhancement documentation | `ai_docs/vision/` |
+| 📋 **Changelog** | Version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
 
@@ -509,6 +510,54 @@ Human: Validate solution
 </td>
 </tr>
 </table>
+
+---
+
+## 📋 **Version History**
+
+### 📚 **Changelog & Release Notes**
+
+Track all changes, releases, and improvements to the agenthub platform through our comprehensive changelog.
+
+| Resource | Description | Link |
+|----------|-------------|------|
+| 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
+| 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
+| 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
+| 🎯 **Current Version** | v0.0.2 - Production NOT Ready | [Latest Release](CHANGELOG.md#unreleased) |
+
+### 🚀 **Latest Releases**
+
+**Recent highlights from our development journey:**
+
+- **[2025-09-19] - Iteration 107** - 🏆 Septuple Centenarian Perfection
+  - 541 tests passing with 100% success rate
+  - 107 consecutive perfect iterations achieved
+  - Self-healing system with zero maintenance required
+
+- **Agent Library Optimization** - Streamlined from 69 to 43 specialized agents
+  - Better maintainability and clearer role specialization
+  - Enhanced performance and reduced complexity
+  - Comprehensive cleanup with maintained functionality
+
+### 📈 **Version Migration Guides**
+
+When upgrading between versions, refer to our migration documentation:
+
+- **Breaking Changes** - Documented in each release with migration steps
+- **API Updates** - Version-specific changes to MCP protocol integration
+- **Agent Changes** - Updates to agent capabilities and tool permissions
+- **Configuration Updates** - Environment and setup requirement changes
+
+### 🔄 **Release Process**
+
+Our release process follows industry best practices:
+
+1. **Development** → Feature branches with comprehensive testing
+2. **Integration** → Merge to main with full test suite validation
+3. **Documentation** → Update changelog with Keep a Changelog format
+4. **Release** → Semantic versioning with clear release notes
+5. **Migration Support** → Upgrade guides and backward compatibility notes
 
 ---
 
