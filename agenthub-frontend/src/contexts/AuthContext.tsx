@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback } fro
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
 import logger from '../utils/logger';
+import { websocketService } from '../services/websocketService';
 
 // Types for authentication
 export interface User {
@@ -141,6 +142,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = decodeToken(data.access_token);
         if (userData) {
           setUser(userData);
+
+          // Connect WebSocket with the new access token for real-time updates
+          try {
+            if (!websocketService.isConnected()) {
+              await websocketService.connect(data.access_token);
+              logger.info('WebSocket connected after successful login');
+            }
+          } catch (error) {
+            logger.error('Failed to connect WebSocket after login:', error);
+          }
         }
       } else {
         throw new Error('No tokens received from server');
@@ -206,13 +217,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Logout function
-  const logout = () => {
+  // Logout function with WebSocket cleanup
+  const logout = useCallback(() => {
+    logger.info('Logging out user and cleaning up all connections');
+
+    // Disconnect WebSocket BEFORE clearing authentication state
+    try {
+      if (websocketService.isConnected()) {
+        websocketService.disconnect();
+        logger.info('WebSocket connection closed during logout');
+      }
+    } catch (error) {
+      logger.error('Error closing WebSocket during logout:', error);
+    }
+
+    // Clear authentication state
     setUser(null);
     setTokensState(null);
     Cookies.remove('access_token');
     Cookies.remove('refresh_token');
-  };
+
+    logger.info('Logout complete - user session cleared');
+  }, []);
 
   // Refresh token function
   const refreshToken = useCallback(async () => {
@@ -234,9 +260,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        // If refresh token is invalid or expired, clear tokens
+        // If refresh token is invalid or expired, clear tokens and disconnect WebSocket
         if (response.status === 401) {
-          logger.error('Refresh token expired or invalid');
+          logger.error('Refresh token expired or invalid - logging out');
+
+          // Disconnect WebSocket before clearing tokens
+          try {
+            if (websocketService.isConnected()) {
+              websocketService.disconnect();
+              logger.info('WebSocket disconnected due to token refresh failure');
+            }
+          } catch (error) {
+            logger.error('Error disconnecting WebSocket during token refresh failure:', error);
+          }
+
+          // Clear cookies first
           Cookies.remove('access_token');
           Cookies.remove('refresh_token');
           logout();
@@ -258,10 +296,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userData = decodeToken(data.access_token);
       if (userData) {
         setUser(userData);
+
+        // Reconnect WebSocket with new token for continued real-time updates
+        try {
+          if (websocketService.isConnected()) {
+            await websocketService.reconnectWithNewToken(data.access_token);
+            logger.info('WebSocket reconnected with refreshed token');
+          }
+        } catch (error) {
+          logger.error('Failed to reconnect WebSocket with new token:', error);
+        }
       }
       
     } catch (error) {
       logger.error('Token refresh error:', error);
+
+      // Disconnect WebSocket on any refresh failure
+      try {
+        if (websocketService.isConnected()) {
+          websocketService.disconnect();
+          logger.info('WebSocket disconnected due to token refresh error');
+        }
+      } catch (wsError) {
+        logger.error('Error disconnecting WebSocket during token refresh error:', wsError);
+      }
+
       logout();
       throw error;
     }

@@ -1,5 +1,6 @@
 import { Plus, RefreshCw } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { createTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { getFullTask } from "../api-lazy";
 import TaskSearch from "./TaskSearch";
@@ -43,6 +44,10 @@ interface TaskSummary {
 }
 
 const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTasksChanged }) => {
+  // Get URL parameters to handle automatic dialog opening
+  const { taskId: urlTaskId } = useParams<{ taskId?: string }>();
+  const navigate = useNavigate();
+
   // Core state - minimal for performance
   const [taskSummaries, setTaskSummaries] = useState<TaskSummary[]>([]);
   const [fullTasks, setFullTasks] = useState<Map<string, Task>>(new Map());
@@ -422,8 +427,15 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   }, [loadFullTask, loadAgentsOnDemand]);
 
   const closeDialog = useCallback(() => {
-    setActiveDialog({ type: null });
-  }, []);
+    // If there's a taskId in URL (meaning we opened via URL), navigate back to branch
+    if (urlTaskId) {
+      navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}`);
+      // Don't call setActiveDialog here - let the useEffect handle it when URL changes
+    } else {
+      // Direct dialog opening (not via URL), close normally
+      setActiveDialog({ type: null });
+    }
+  }, [urlTaskId, projectId, taskTreeId, navigate]);
 
   // Register row animation callbacks
   const registerRowCallbacks = useCallback((taskId: string, callbacks: {
@@ -534,6 +546,37 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Auto-open TaskDetailsDialog when taskId is in URL, auto-close when removed
+  useEffect(() => {
+    if (urlTaskId && taskSummaries.length > 0) {
+      // Check if the taskId exists in our current task summaries
+      const taskExists = taskSummaries.some(task => task.id === urlTaskId);
+
+      if (taskExists) {
+        // Only open dialog if it's not already open for this task
+        if (activeDialog.type !== 'details' || activeDialog.taskId !== urlTaskId) {
+          logger.info('Auto-opening TaskDetailsDialog for URL taskId', {
+            component: 'LazyTaskList',
+            taskId: urlTaskId
+          });
+          openDialog('details', urlTaskId);
+        }
+      } else {
+        logger.warn('TaskId in URL not found in current task list', {
+          component: 'LazyTaskList',
+          taskId: urlTaskId,
+          availableTaskIds: taskSummaries.map(t => t.id)
+        });
+      }
+    } else if (!urlTaskId && activeDialog.type === 'details') {
+      // TaskId removed from URL - close details dialog
+      logger.info('TaskId removed from URL, closing TaskDetailsDialog', {
+        component: 'LazyTaskList'
+      });
+      setActiveDialog({ type: null });
+    }
+  }, [urlTaskId, taskSummaries, activeDialog, openDialog]);
 
   // Handle task hover for dependency highlighting
   const handleTaskHover = useCallback((taskId: string | null) => {
