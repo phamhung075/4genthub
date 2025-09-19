@@ -33,6 +33,7 @@
 !.cursor/mcp.json.template
 
 # Claude session and runtime data
+# .claude is now a submodule - only ignore data and runtime files
 .claude/data/sessions/
 .claude/data/*.json
 .claude/runtime_agent_context.json
@@ -481,13 +482,14 @@ jspm_packages/
 .vscode-test/
 
 .mcp.json
+# .claude/data is still ignored for runtime data
 .claude/data
 
 # Backup folders - ignore all backup directories and their contents
 # This includes folders like backup_20250116_refactor, backup_hint_consolidation_20250916, etc.
 backup_*/
 **/backup_*/
-.claude
+# .claude is now a submodule - removed from gitignore
 
 marketing-solution/*
 # =============================================================================
