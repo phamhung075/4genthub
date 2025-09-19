@@ -36,9 +36,9 @@ function Dashboard() {
   // Initialize sidebar state based on screen size
   useEffect(() => {
     const handleResize = () => {
-      const large = window.innerWidth >= 1024;
+      const large = window.innerWidth >= 768; // Changed from 1024 to 768 for better tablet support
       setIsLargeScreen(large);
-      // Only auto-open on large screens
+      // Only auto-open on medium and large screens
       if (large) {
         setSidebarOpen(true);
       }
@@ -61,17 +61,17 @@ function Dashboard() {
       <div className="flex flex-1 relative overflow-hidden">
         {/* Modern Sidebar */}
         <aside className={`
-        fixed lg:static
+        fixed md:static
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         left-0
-        w-full sm:w-96 lg:w-1/3 lg:min-w-[400px] lg:max-w-[500px]
+        w-full sm:w-80 md:w-1/3 md:min-w-[320px] md:max-w-[400px]
         h-full
-        border-r border-surface-border-hover p-4 sm:p-6 overflow-y-auto
+        border-r border-surface-border-hover p-3 md:p-4 overflow-y-auto
         bg-surface/95 backdrop-blur-xl
         transition-transform duration-300 ease-in-out
         z-30
-        lg:translate-x-0
-        shadow-xl lg:shadow-none
+        md:translate-x-0
+        shadow-xl md:shadow-none
       `}>
         <ProjectList 
           refreshKey={projectListRefreshKey}
@@ -89,8 +89,8 @@ function Dashboard() {
 
       {/* Mobile overlay */}
       {sidebarOpen && !isLargeScreen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-10 lg:hidden"
+        <div
+          className="fixed inset-0 bg-black/50 z-10 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -108,9 +108,9 @@ function Dashboard() {
       </ShimmerButton>
 
         {/* Modern Main content */}
-        <main className="flex-1 flex flex-col p-6 w-full">
+        <main className="flex-1 flex flex-col p-3 md:p-4 lg:p-6 w-full">
            {/* Add padding top on mobile to account for menu button */}
-          <div className="flex-1 overflow-y-auto pt-16 lg:pt-0">
+          <div className="flex-1 overflow-y-auto pt-16 md:pt-0">
             {selection ? (
               <LazyTaskList
                 projectId={selection.projectId}

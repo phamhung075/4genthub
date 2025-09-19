@@ -60,9 +60,9 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
   return (
     <>
       <style>{customCss}</style>
-      <button 
+      <button
         className={cn(
-          "relative inline-flex items-center justify-center p-[1.5px] rounded-full overflow-hidden group transition-all",
+          "relative inline-flex items-center justify-center p-[1.5px] rounded-full overflow-hidden group transition-all outline-none focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 focus-visible:ring-offset-0",
           variantClasses[variant],
           className
         )}
@@ -72,7 +72,7 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
           <div 
             className="absolute inset-0"
             style={{
-              background: `conic-gradient(from var(--angle), transparent 25%, ${shimmerColor}, transparent 50%)`,
+              background: `conic-gradient(from var(--angle), transparent 15%, ${shimmerColor}, transparent 60%)`,
               animation: 'shimmer-spin 2.5s linear infinite',
             }}
           />
