@@ -698,6 +698,39 @@ async def login(request: LoginRequest):
                     
         except httpx.RequestError as e:
             logger.error(f"Failed to connect to Keycloak: {e}")
+
+            # Development fallback when Keycloak is not accessible
+            env = os.getenv("ENV", "production").lower()
+            if env in ["local", "development", "dev"]:
+                logger.warning("Keycloak unavailable in development mode, issuing local JWT token")
+
+                # Issue a local JWT token for development
+                import jwt
+                from datetime import datetime, timedelta
+
+                jwt_secret = os.getenv("JWT_SECRET_KEY")
+                if jwt_secret:
+                    # Create a development JWT token
+                    payload = {
+                        "sub": f"dev-user-{hash(request.email) % 10000}",  # Consistent user ID for same email
+                        "email": request.email,
+                        "username": request.email.split('@')[0],
+                        "iat": datetime.utcnow(),
+                        "exp": datetime.utcnow() + timedelta(hours=24),  # 24-hour expiry for development
+                        "type": "local_dev"
+                    }
+
+                    dev_token = jwt.encode(payload, jwt_secret, algorithm="HS256")
+
+                    return LoginResponse(
+                        access_token=dev_token,
+                        user_id=payload["sub"],
+                        email=request.email,
+                        expires_in=86400  # 24 hours
+                    )
+                else:
+                    logger.error("JWT_SECRET_KEY not configured for development fallback")
+
             raise HTTPException(status_code=503, detail="Authentication service unavailable")
     
     elif AUTH_PROVIDER == "supabase":
@@ -1077,6 +1110,45 @@ async def setup_user_roles(client, admin_token: str, user_id: str, user_email: s
     except Exception as e:
         logger.error(f"❌ Error setting up user roles for {user_email}: {e}")
         raise
+
+@router.post("/dev-login")
+async def dev_login():
+    """
+    Development-only login endpoint that issues local JWT tokens.
+    Only works when ENV=development.
+    """
+    env = os.getenv("ENV", "production").lower()
+    if env not in ["local", "development", "dev"]:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    logger.info("Development login endpoint accessed")
+
+    # Issue a local JWT token for development
+    import jwt
+    from datetime import datetime, timedelta
+
+    jwt_secret = os.getenv("JWT_SECRET_KEY")
+    if not jwt_secret:
+        raise HTTPException(status_code=500, detail="JWT_SECRET_KEY not configured")
+
+    # Create a development JWT token
+    payload = {
+        "sub": "dev-user-001",
+        "email": "dev@example.com",
+        "username": "dev-user",
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(hours=24),  # 24-hour expiry for development
+        "type": "local_dev"
+    }
+
+    dev_token = jwt.encode(payload, jwt_secret, algorithm="HS256")
+
+    return LoginResponse(
+        access_token=dev_token,
+        user_id=payload["sub"],
+        email="dev@example.com",
+        expires_in=86400  # 24 hours
+    )
 
 @router.post("/logout")
 async def logout(refresh_token: Optional[str] = None):

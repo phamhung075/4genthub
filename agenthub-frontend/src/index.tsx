@@ -6,6 +6,11 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import './theme/global.scss';
 
+// Initialize extension error filter at the earliest possible point
+// This must happen before any other code to catch all extension errors
+import { initializeExtensionErrorFilter } from './utils/extensionErrorFilter';
+initializeExtensionErrorFilter();
+
 // Initialize logging system safely - only for errors
 try {
   import('./utils/loggerExport').then(({ logger }) => {

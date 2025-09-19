@@ -4,10 +4,23 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 import LazyTaskList from '../../components/LazyTaskList';
 import * as api from '../../api';
+import { changePoolService } from '../../services/changePoolService';
 import { act } from 'react-dom/test-utils';
 
 // Mock the api module
 vi.mock('../../api');
+
+// Mock the changePoolService
+vi.mock('../../services/changePoolService', () => ({
+  changePoolService: {
+    forceRefresh: vi.fn(),
+    subscribe: vi.fn(() => vi.fn()), // Returns unsubscribe function
+    processChange: vi.fn(),
+    getChangeHistory: vi.fn(() => []),
+    getSubscriptions: vi.fn(() => []),
+    clearAllSubscriptions: vi.fn()
+  }
+}));
 
 // Mock lazy-loaded components
 vi.mock('../../components/LazySubtaskList', () => ({
@@ -132,6 +145,8 @@ describe('LazyTaskList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Clear changePoolService mock
+    vi.mocked(changePoolService.forceRefresh).mockClear();
     // Mock window dimensions for responsive testing
     Object.defineProperty(window, 'innerWidth', {
       writable: true,
@@ -571,6 +586,33 @@ describe('LazyTaskList', () => {
       });
 
       expect(api.listTasks).toHaveBeenCalledTimes(2);
+    });
+
+    it('should force refresh subtasks when refresh button is clicked', async () => {
+      render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Tasks (2)')).toBeInTheDocument();
+      });
+
+      // Find and click refresh button - look for button with Refresh text
+      const refreshButton = screen.getByText('Refresh');
+      fireEvent.click(refreshButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Tasks (3)')).toBeInTheDocument();
+        expect(screen.getByText('New Task 3')).toBeInTheDocument();
+      });
+
+      // Verify that both task refresh and subtask force refresh were called
+      expect(api.listTasks).toHaveBeenCalledTimes(2);
+      expect(changePoolService.forceRefresh).toHaveBeenCalledWith(['subtask']);
     });
   });
 

@@ -499,3 +499,107 @@ class WebSocketNotificationService:
             logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
         except Exception as e:
             logger.error(f"Failed to sync broadcast branch event: {e}")
+
+    @staticmethod
+    def sync_broadcast_subtask_event(*args, **kwargs):
+        """Synchronous wrapper for broadcast_subtask_event - tries direct WebSocket first, then HTTP fallback"""
+        logger.info(f"🔔 sync_broadcast_subtask_event called from MCP server")
+
+        # Extract arguments
+        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
+        subtask_id = kwargs.get('subtask_id', args[1] if len(args) > 1 else 'unknown')
+        task_id = kwargs.get('task_id', args[2] if len(args) > 2 else 'unknown')
+        user_id = kwargs.get('user_id', args[3] if len(args) > 3 else 'system')
+        subtask_data = kwargs.get('subtask_data', args[4] if len(args) > 4 else None)
+
+        # Prepare metadata
+        metadata = {
+            "parent_task_id": task_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        # Try direct WebSocket broadcast first (same process)
+        try:
+            from fastmcp.server.routes.websocket_routes import broadcast_data_change
+            logger.info("✅ Using direct WebSocket broadcast (same process)")
+
+            # Create a task to run the async broadcast
+            import asyncio
+            try:
+                # Get the current event loop
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If there's already a running loop, create a task
+                    asyncio.create_task(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="subtask",
+                        entity_id=subtask_id,
+                        user_id=user_id,
+                        data=subtask_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully scheduled WebSocket broadcast for subtask {event_type}")
+                    return  # Exit here - broadcast scheduled successfully
+                else:
+                    # If no running loop, run until complete
+                    loop.run_until_complete(broadcast_data_change(
+                        event_type=event_type,
+                        entity_type="subtask",
+                        entity_id=subtask_id,
+                        user_id=user_id,
+                        data=subtask_data,
+                        metadata=metadata
+                    ))
+                    logger.info(f"✅ Successfully completed WebSocket broadcast for subtask {event_type}")
+                    return  # Exit here - broadcast completed successfully
+
+            except RuntimeError:
+                # No event loop in current thread, create new one
+                import asyncio
+                asyncio.run(broadcast_data_change(
+                    event_type=event_type,
+                    entity_type="subtask",
+                    entity_id=subtask_id,
+                    user_id=user_id,
+                    data=subtask_data,
+                    metadata=metadata
+                ))
+                logger.info(f"✅ Successfully created new loop and broadcast subtask {event_type}")
+                return  # Exit here - broadcast completed successfully
+
+        except ImportError:
+            logger.warning("WebSocket routes not available, falling back to HTTP broadcast")
+        except Exception as e:
+            logger.warning(f"Direct WebSocket broadcast failed: {e}, falling back to HTTP")
+
+        # Fallback to HTTP broadcast for cross-process communication
+        try:
+            import requests
+            import os
+
+            # MCP server runs on port 8000
+            api_url = os.getenv("AUTH_API_URL", "http://localhost:8000")
+            broadcast_url = f"{api_url}/api/v2/broadcast/notify"
+
+            # Send HTTP request
+            payload = {
+                "event_type": event_type,
+                "entity_type": "subtask",
+                "entity_id": subtask_id,
+                "user_id": user_id,
+                "data": subtask_data,
+                "metadata": metadata
+            }
+
+            logger.info(f"📡 Sending HTTP broadcast to {broadcast_url}")
+            response = requests.post(broadcast_url, json=payload, timeout=2)
+
+            if response.status_code == 200:
+                logger.info(f"✅ Successfully sent HTTP broadcast for subtask {event_type}")
+            else:
+                logger.error(f"HTTP broadcast failed with status {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Could not send HTTP broadcast (API server may be down): {e}")
+        except Exception as e:
+            logger.error(f"Failed to sync broadcast subtask event: {e}")

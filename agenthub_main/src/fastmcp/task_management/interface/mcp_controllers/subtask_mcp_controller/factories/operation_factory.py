@@ -119,8 +119,12 @@ class SubtaskOperationFactory:
             allowed_params = {'task_id', 'subtask_id', 'title', 'description', 'status',
                             'priority', 'assignees', 'progress_percentage', 'progress_notes'}
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
-        elif operation in ['delete', 'complete']:
-            # These operations require subtask_id, exclude only user_id
+        elif operation == 'delete':
+            # delete_subtask only accepts: task_id, subtask_id, progress_notes
+            allowed_params = {'task_id', 'subtask_id', 'progress_notes'}
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+        elif operation == 'complete':
+            # complete_subtask operations require subtask_id, exclude only user_id for other params
             excluded_params = {'user_id'}
             filtered_kwargs = {k: v for k, v in kwargs.items() if k not in excluded_params}
         else:

@@ -62,10 +62,8 @@ class WebSocketService {
     try {
       // Get the backend URL from environment or use default
       const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      // Try to get API URL from various sources
-      const apiUrl = (window as any).REACT_APP_API_URL ||
-                     ((window as any).import?.meta?.env?.VITE_API_URL) ||
-                     'http://localhost:8000';
+      // Use Vite environment variables consistently
+      const apiUrl = import.meta.env?.VITE_BACKEND_URL || 'http://localhost:8000';
       const backendHost = apiUrl.replace(/^https?:\/\//, '');
       // WebSocket endpoint is at /ws/realtime
       const wsUrl = `${wsProtocol}://${backendHost}/ws/realtime`;
@@ -106,6 +104,7 @@ class WebSocketService {
       this.ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage;
+          logger.debug('🔔 WebSocket message received:', message);
           this.handleMessage(message);
         } catch (error) {
           logger.error('Failed to parse WebSocket message:', error);

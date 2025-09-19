@@ -2,7 +2,7 @@ import { Check, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { deleteSubtask, listSubtasks, Subtask } from "../api";
 import { getSubtaskSummaries } from "../api-lazy";
-import { useEntityChanges } from "../hooks/useChangeSubscription";
+import { useChangeSubscription } from "../hooks/useChangeSubscription";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { ShimmerButton } from "./ui/shimmer-button";
@@ -67,6 +67,14 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Track previous subtask IDs for detecting new subtasks
   const [previousSubtaskIds, setPreviousSubtaskIds] = useState<Set<string>>(new Set());
+
+  // Track previous subtasks for change detection and animation triggering
+  const previousSubtasksRef = useRef<Map<string, SubtaskSummary>>(new Map());
+  const [animationTriggers, setAnimationTriggers] = useState<{
+    created: Set<string>;
+    updated: Set<string>;
+    deleted: Set<string>;
+  }>({ created: new Set(), updated: new Set(), deleted: new Set() });
 
   // Row animation callback registry
   const rowAnimationCallbacks = useRef<Map<string, {
@@ -175,7 +183,14 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       setFullSubtasks(subtaskMap);
 
     } catch (e: any) {
-      setError(e.message);
+      // Silently handle 400 errors for non-existent tasks
+      if (e.status === 400 || e.response?.status === 400) {
+        // Task might not exist or have been deleted, just show empty subtasks
+        setSubtaskSummaries([]);
+        setFullSubtasks(new Map());
+      } else {
+        setError(e.message);
+      }
     }
   }, [parentTaskId]);
 
@@ -191,8 +206,11 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       const data = await getSubtaskSummaries(parentTaskId);
       setSubtaskSummaries(data.subtasks);
 
-    } catch (e) {
-      logger.warn('Lightweight subtask endpoint not available, falling back');
+    } catch (e: any) {
+      // Only log warning for non-400 errors
+      if (e.status !== 400 && e.response?.status !== 400) {
+        logger.warn('Lightweight subtask endpoint not available, falling back');
+      }
       await loadFullSubtasksFallback();
     } finally {
       setLoading(false);
@@ -218,9 +236,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   const handleSubtaskChanges = useCallback(async () => {
     logger.debug('📡 LazySubtaskList: Subtask changes detected, refreshing...');
 
-    // Store current subtask IDs and data before refresh for comparison
-    const currentSubtaskIds = new Set(subtaskSummaries.map(s => s.id));
+    // Store current subtask data for comparison
     const currentSubtaskMap = new Map(subtaskSummaries.map(s => [s.id, s]));
+    const currentSubtaskIds = new Set(subtaskSummaries.map(s => s.id));
 
     // Force reload of subtasks for this parent task
     setHasLoaded(false); // Reset loaded flag to trigger refresh
@@ -231,53 +249,39 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       const newSummaries = data.subtasks;
       const newSubtaskIds = new Set(newSummaries.map(s => s.id));
 
-      // Detect changes and trigger animations
+      // Detect changes for animation triggering
+      const newAnimationTriggers = {
+        created: new Set<string>(),
+        updated: new Set<string>(),
+        deleted: new Set<string>()
+      };
+
       // 1. New subtasks (created) - only if we have a previous state to compare
       if (currentSubtaskIds.size > 0) {
-        const addedSubtasks = new Set([...newSubtaskIds].filter(id => !currentSubtaskIds.has(id)));
-        logger.debug('🔍 Subtask change detection - currentSubtaskIds:', currentSubtaskIds.size, 'newSubtaskIds:', newSubtaskIds.size, 'addedSubtasks:', addedSubtasks.size);
+        const addedSubtasks = [...newSubtaskIds].filter(id => !currentSubtaskIds.has(id));
+        logger.debug('🔍 Subtask change detection - currentSubtaskIds:', currentSubtaskIds.size, 'newSubtaskIds:', newSubtaskIds.size, 'addedSubtasks:', addedSubtasks.length);
 
-        if (addedSubtasks.size > 0) {
-          logger.debug('✨ New subtasks detected:', [...addedSubtasks]);
-          // Wait a bit for SubtaskRow to register callbacks
-          setTimeout(() => {
-            addedSubtasks.forEach(subtaskId => {
-              const callbacks = rowAnimationCallbacks.current.get(subtaskId);
-              if (callbacks) {
-                logger.debug('🎬 Playing create animation for subtask:', subtaskId);
-                callbacks.playCreateAnimation();
-              } else {
-                logger.warn('⚠️ No callbacks found for subtask:', subtaskId);
-              }
-            });
-          }, 100);
+        if (addedSubtasks.length > 0) {
+          logger.debug('✨ New subtasks detected:', addedSubtasks);
+          addedSubtasks.forEach(subtaskId => newAnimationTriggers.created.add(subtaskId));
         }
       } else {
         logger.debug('🏁 Initial subtask load - no animation for existing subtasks');
       }
 
       // 2. Removed subtasks (deleted) - need to keep them in the list during animation
-      const removedSubtasks = new Set([...currentSubtaskIds].filter(id => !newSubtaskIds.has(id)));
-      if (removedSubtasks.size > 0) {
-        logger.debug('🗑️ Deleted subtasks detected:', [...removedSubtasks]);
+      const removedSubtasks = [...currentSubtaskIds].filter(id => !newSubtaskIds.has(id));
+      if (removedSubtasks.length > 0) {
+        logger.debug('🗑️ Deleted subtasks detected:', removedSubtasks);
 
         // Add deleted subtasks back to the summaries temporarily for animation
-        const deletedSubtasksData = subtaskSummaries.filter(subtask => removedSubtasks.has(subtask.id));
+        const deletedSubtasksData = subtaskSummaries.filter(subtask => removedSubtasks.includes(subtask.id));
         newSummaries.push(...deletedSubtasksData);
 
-        removedSubtasks.forEach(subtaskId => {
-          const callbacks = rowAnimationCallbacks.current.get(subtaskId);
-          if (callbacks) {
-            logger.debug('🎬 Playing delete animation for subtask:', subtaskId);
-            callbacks.playDeleteAnimation();
-          } else {
-            logger.warn('⚠️ No callbacks found for deleted subtask:', subtaskId);
-          }
-        });
+        removedSubtasks.forEach(subtaskId => newAnimationTriggers.deleted.add(subtaskId));
       }
 
       // 3. Updated subtasks (modified)
-      const updatedSubtasks = new Set();
       newSummaries.forEach(newSubtask => {
         const oldSubtask = currentSubtaskMap.get(newSubtask.id);
         if (oldSubtask && (
@@ -287,23 +291,30 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           oldSubtask.progress_percentage !== newSubtask.progress_percentage ||
           (oldSubtask.assignees && newSubtask.assignees && oldSubtask.assignees.length !== newSubtask.assignees.length)
         )) {
-          updatedSubtasks.add(newSubtask.id);
+          logger.debug('🔄 Updated subtask detected:', newSubtask.id);
+          newAnimationTriggers.updated.add(newSubtask.id);
         }
       });
-      updatedSubtasks.forEach(subtaskId => {
-        const callbacks = rowAnimationCallbacks.current.get(subtaskId as string);
-        if (callbacks) {
-          logger.debug('🎬 Playing update animation for subtask:', subtaskId);
-          callbacks.playUpdateAnimation();
-        }
-      });
+
+      // Update previous subtasks reference for next comparison
+      previousSubtasksRef.current = new Map(newSummaries.map(s => [s.id, s]));
 
       // Update states
       setSubtaskSummaries(newSummaries);
       setPreviousSubtaskIds(newSubtaskIds);
 
-    } catch (e) {
-      logger.warn('Lightweight subtask endpoint not available, falling back');
+      // Set animation triggers to trigger animations in useEffect
+      if (newAnimationTriggers.created.size > 0 ||
+          newAnimationTriggers.updated.size > 0 ||
+          newAnimationTriggers.deleted.size > 0) {
+        setAnimationTriggers(newAnimationTriggers);
+      }
+
+    } catch (e: any) {
+      // Only log warning for non-400 errors
+      if (e.status !== 400 && e.response?.status !== 400) {
+        logger.warn('Lightweight subtask endpoint not available, falling back');
+      }
       await loadFullSubtasksFallback();
     } finally {
       setHasLoaded(true);
@@ -312,16 +323,18 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Subscribe to centralized change pool for real-time updates
   // Listen to subtask changes for this specific parent task
-  useEntityChanges(
-    'LazySubtaskList',
-    ['subtask'],
-    handleSubtaskChanges,
-    {
-      branchId: taskTreeId,   // Filter by specific branch
-      projectId: projectId,   // Filter by specific project
-      entityIds: [parentTaskId] // Listen to changes affecting this parent task
+  useChangeSubscription({
+    componentId: `LazySubtaskList-${parentTaskId}`,
+    entityTypes: ['subtask'],
+    refreshCallback: handleSubtaskChanges,
+    branchId: taskTreeId,   // Filter by specific branch
+    projectId: projectId,   // Filter by specific project
+    // Custom filter to only refresh when the subtask belongs to this parent task
+    shouldRefresh: (notification) => {
+      // Only refresh if the subtask belongs to this parent task
+      return notification.metadata?.parent_task_id === parentTaskId;
     }
-  );
+  });
 
 
   // Load full subtask data on demand
@@ -371,6 +384,57 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   useEffect(() => {
     loadSubtaskSummaries();
   }, [loadSubtaskSummaries]);
+
+  // Animation effect - triggers animations after state updates
+  useEffect(() => {
+    // Only trigger animations if we have animation triggers set
+    if (animationTriggers.created.size === 0 &&
+        animationTriggers.updated.size === 0 &&
+        animationTriggers.deleted.size === 0) {
+      return;
+    }
+
+    // Give SubtaskRow components time to register their callbacks after re-render
+    const timeoutId = setTimeout(() => {
+      // Trigger create animations
+      animationTriggers.created.forEach(subtaskId => {
+        const callbacks = rowAnimationCallbacks.current.get(subtaskId);
+        if (callbacks) {
+          logger.debug('🎬 Playing create animation for subtask:', subtaskId);
+          callbacks.playCreateAnimation();
+        } else {
+          logger.debug('No callbacks found for created subtask:', subtaskId);
+        }
+      });
+
+      // Trigger update animations
+      animationTriggers.updated.forEach(subtaskId => {
+        const callbacks = rowAnimationCallbacks.current.get(subtaskId);
+        if (callbacks) {
+          logger.debug('🎬 Playing update animation for subtask:', subtaskId);
+          callbacks.playUpdateAnimation();
+        } else {
+          logger.debug('No callbacks found for updated subtask:', subtaskId);
+        }
+      });
+
+      // Trigger delete animations
+      animationTriggers.deleted.forEach(subtaskId => {
+        const callbacks = rowAnimationCallbacks.current.get(subtaskId);
+        if (callbacks) {
+          logger.debug('🎬 Playing delete animation for subtask:', subtaskId);
+          callbacks.playDeleteAnimation();
+        } else {
+          logger.debug('No callbacks found for deleted subtask:', subtaskId);
+        }
+      });
+
+      // Clear animation triggers after processing
+      setAnimationTriggers({ created: new Set(), updated: new Set(), deleted: new Set() });
+    }, 100); // Shorter timeout since this runs after state update
+
+    return () => clearTimeout(timeoutId);
+  }, [animationTriggers]);
 
   // Delete subtask handler - row animation handled independently
   const handleDeleteSubtask = useCallback(async (subtaskId: string) => {
@@ -497,13 +561,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     unregisterRowCallbacks
   ]);
 
-  if (loading) {
-    return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
-        Loading subtasks...
-      </div>
-    );
-  }
+  // Removed global loading state that caused flickering
+  // Individual rows now handle their own loading states
+  // Keep existing subtasks visible during refresh
   
   if (error) {
     return (
@@ -513,6 +573,15 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     );
   }
   
+  // Show loading only during initial load when we have no data
+  if (loading && !hasLoaded && subtaskSummaries.length === 0) {
+    return (
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        Loading subtasks...
+      </div>
+    );
+  }
+
   if (subtaskSummaries.length === 0) {
     return (
       <>
