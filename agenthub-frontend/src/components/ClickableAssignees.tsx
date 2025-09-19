@@ -1,6 +1,7 @@
 import React from "react";
 import { Badge } from "./ui/badge";
 import { Task, Subtask } from "../api";
+import logger from "../utils/logger";
 
 interface ClickableAssigneesProps {
   assignees: string[];
@@ -22,7 +23,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
   compact = false
 }) => {
   // Debug logging
-  console.log('ClickableAssignees received:', {
+  logger.debug('ClickableAssignees received:', {
     assignees,
     isArray: Array.isArray(assignees),
     length: assignees?.length,

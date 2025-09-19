@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
+import logger from "../utils/logger";
 
 // Lightweight subtask summary interface
 interface SubtaskSummary {
@@ -67,11 +68,11 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   }, []);
 
   const playDeleteAnimation = useCallback(() => {
-    console.log('🎬 SubtaskRow starting delete animation for:', summary.id);
+    logger.debug('🎬 SubtaskRow starting delete animation for:', summary.id);
     setAnimationState('deleting');
     // After animation completes, hide the row
     setTimeout(() => {
-      console.log('🎬 SubtaskRow delete animation complete, hiding:', summary.id);
+      logger.debug('🎬 SubtaskRow delete animation complete, hiding:', summary.id);
       setIsVisible(false);
     }, 800); // Animation duration (longer)
   }, [summary.id]);
@@ -84,20 +85,20 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   // Register animation callbacks with parent
   useEffect(() => {
     if (onRegisterCallbacks) {
-      console.log('📝 SubtaskRow registering callbacks for subtask:', summary.id);
+      logger.debug('📝 SubtaskRow registering callbacks for subtask:', summary.id);
       onRegisterCallbacks(summary.id, {
         playCreateAnimation,
         playDeleteAnimation,
         playUpdateAnimation
       });
     } else {
-      console.warn('⚠️ SubtaskRow: No onRegisterCallbacks provided for subtask:', summary.id);
+      logger.warn('⚠️ SubtaskRow: No onRegisterCallbacks provided for subtask:', summary.id);
     }
 
     // Cleanup on unmount
     return () => {
       if (onUnregisterCallbacks) {
-        console.log('🧹 SubtaskRow unregistering callbacks for subtask:', summary.id);
+        logger.debug('🧹 SubtaskRow unregistering callbacks for subtask:', summary.id);
         onUnregisterCallbacks(summary.id);
       }
     };

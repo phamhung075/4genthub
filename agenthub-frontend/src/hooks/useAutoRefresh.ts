@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import logger from '../utils/logger';
 
 /**
  * Hook that automatically refreshes data at a specified interval
@@ -17,7 +18,7 @@ export function useAutoRefresh(
 
     // Set up polling interval
     intervalRef.current = setInterval(() => {
-      console.log('Auto-refreshing data...');
+      logger.debug('Auto-refreshing data...');
       refreshCallback();
     }, intervalMs);
 

@@ -1,6 +1,8 @@
 // Keycloak Authentication Service
 // Direct authentication with Keycloak server using resource owner password credentials flow
 
+import logger from '../utils/logger';
+
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'https://your-keycloak-server.com';
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM || 'your-realm';
 const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'your-client-id';
@@ -22,8 +24,8 @@ export class KeycloakAuthService {
   }
 
   async login(username: string, password: string): Promise<KeycloakTokenResponse> {
-    console.log('Attempting Keycloak login for:', username);
-    console.log('Token endpoint:', this.tokenEndpoint);
+    logger.debug('Attempting Keycloak login for:', username);
+    logger.debug('Token endpoint:', this.tokenEndpoint);
     
     const formData = new URLSearchParams();
     formData.append('grant_type', 'password');
@@ -35,7 +37,7 @@ export class KeycloakAuthService {
     // Request all CRUD scopes and additional permissions
     formData.append('scope', 'openid profile email offline_access mcp-api mcp-roles mcp-profile mcp-crud-create mcp-crud-read mcp-crud-update mcp-crud-delete');
 
-    console.log('Request body:', formData.toString());
+    logger.debug('Request body:', formData.toString());
 
     try {
       const response = await fetch(this.tokenEndpoint, {
@@ -46,19 +48,19 @@ export class KeycloakAuthService {
         body: formData,
       });
 
-      console.log('Response status:', response.status);
+      logger.debug('Response status:', response.status);
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Login failed' }));
-        console.error('Keycloak error response:', error);
+        logger.error('Keycloak error response:', error);
         throw new Error(error.error_description || error.error || 'Login failed');
       }
 
       const result = await response.json();
-      console.log('Login successful, received tokens');
+      logger.info('Login successful, received tokens');
       return result;
     } catch (err) {
-      console.error('Keycloak login error:', err);
+      logger.error('Keycloak login error:', err);
       throw err;
     }
   }

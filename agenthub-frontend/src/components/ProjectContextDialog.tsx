@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "./ui/textarea";
 import { FolderOpen, Save, Edit, X, Copy, Check as CheckIcon, Settings, Code, Users, Workflow, FileText, Cog, Wrench, Globe, Layers } from "lucide-react";
 import { getProjectContext, updateProjectContext, getGlobalContext } from "../api";
+import logger from "../utils/logger";
 
 interface ProjectContextDialogProps {
   open: boolean;
@@ -157,7 +158,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
         setGlobalContext(context.data || context);
       }
     } catch (error) {
-      console.error('Error fetching global context:', error);
+      logger.error('Error fetching global context:', error);
     }
   };
 
@@ -165,7 +166,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
     setLoading(true);
     try {
       const context = await getProjectContext(projectId);
-      console.log('Fetched project context:', context);
+      logger.debug('Fetched project context:', context);
       
       if (context) {
         setProjectContext(context);
@@ -192,7 +193,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
         setTechnicalSpecificationsMarkdown(keyValueToMarkdown(technicalSpecifications));
       }
     } catch (error) {
-      console.error('Error fetching project context:', error);
+      logger.error('Error fetching project context:', error);
     } finally {
       setLoading(false);
     }
@@ -230,7 +231,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
       // Exit edit mode
       setEditMode(false);
     } catch (error) {
-      console.error('Error saving project context:', error);
+      logger.error('Error saving project context:', error);
       alert('Failed to save project context. Please try again.');
     } finally {
       setSaving(false);
@@ -259,7 +260,7 @@ export const ProjectContextDialog: React.FC<ProjectContextDialogProps> = ({
         setJsonCopied(true);
         setTimeout(() => setJsonCopied(false), 2000);
       }).catch(err => {
-        console.error('Failed to copy JSON:', err);
+        logger.error('Failed to copy JSON:', err);
       });
     }
   };

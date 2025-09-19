@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "./ui/textarea";
 import { GitBranch, Save, Edit, X, Copy, Check as CheckIcon, Info, Workflow, Flag, Lightbulb, FileCheck, Settings, Layers, ArrowUpDown, Zap, Globe, FolderOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { getBranchContext, updateBranchContext, getGlobalContext, getProjectContext } from "../api";
+import logger from "../utils/logger";
 
 interface BranchContextDialogProps {
   open: boolean;
@@ -177,7 +178,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
     setLoading(true);
     try {
       const context = await getBranchContext(branchId);
-      console.log('Fetched branch context:', context);
+      logger.debug('Fetched branch context:', context);
       
       if (context) {
         setBranchContext(context);
@@ -208,7 +209,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
         setDelegationRulesMarkdown(keyValueToMarkdown(delegationRules));
       }
     } catch (error) {
-      console.error('Error fetching branch context:', error);
+      logger.error('Error fetching branch context:', error);
     } finally {
       setLoading(false);
     }
@@ -250,7 +251,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
       // Exit edit mode
       setEditMode(false);
     } catch (error) {
-      console.error('Error saving branch context:', error);
+      logger.error('Error saving branch context:', error);
       alert('Failed to save branch context. Please try again.');
     } finally {
       setSaving(false);
@@ -281,7 +282,7 @@ export const BranchContextDialog: React.FC<BranchContextDialogProps> = ({
         setJsonCopied(true);
         setTimeout(() => setJsonCopied(false), 2000);
       }).catch(err => {
-        console.error('Failed to copy JSON:', err);
+        logger.error('Failed to copy JSON:', err);
       });
     }
   };

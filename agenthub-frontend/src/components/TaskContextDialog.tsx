@@ -6,6 +6,7 @@ import { FileText, Save, Edit, X, Copy, Check as CheckIcon, Info, CheckSquare, G
 import { Task } from "../api";
 import { getTaskContext, updateTaskContext, getBranchContext, getProjectContext, getGlobalContext } from "../api";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
+import logger from "../utils/logger";
 
 interface TaskContextDialogProps {
   open: boolean;
@@ -174,7 +175,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
       const global = await getGlobalContext();
       if (global) setGlobalContext(global.data || global);
     } catch (error) {
-      console.error('Error fetching inherited contexts:', error);
+      logger.error('Error fetching inherited contexts:', error);
     }
   };
 
@@ -184,7 +185,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
     setLoading(true);
     try {
       const context = await getTaskContext(task.id);
-      console.log('Fetched task context:', context);
+      logger.debug('Fetched task context:', context);
       
       if (context) {
         setTaskContext(context);
@@ -226,7 +227,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
         setTaskMetadataMarkdown(keyValueToMarkdown(contextData.task_metadata || contextData.metadata || {}));
       }
     } catch (error) {
-      console.error('Error fetching task context:', error);
+      logger.error('Error fetching task context:', error);
     } finally {
       setLoading(false);
     }
@@ -268,7 +269,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
       // Exit edit mode
       setEditMode(false);
     } catch (error) {
-      console.error('Error saving task context:', error);
+      logger.error('Error saving task context:', error);
       alert('Failed to save task context. Please try again.');
     } finally {
       setSaving(false);
@@ -298,7 +299,7 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
         setJsonCopied(true);
         setTimeout(() => setJsonCopied(false), 2000);
       }).catch(err => {
-        console.error('Failed to copy JSON:', err);
+        logger.error('Failed to copy JSON:', err);
       });
     }
   };

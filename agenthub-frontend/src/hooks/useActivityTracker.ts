@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import logger from '../utils/logger';
 
 interface ActivityTrackerOptions {
   idleTimeoutMinutes?: number;
@@ -39,16 +40,16 @@ export const useActivityTracker = (options: ActivityTrackerOptions = {}) => {
 
       refreshTimerRef.current = setTimeout(async () => {
         try {
-          console.log('🔄 Activity-based token refresh triggered');
+          logger.info('🔄 Activity-based token refresh triggered');
           await refreshToken();
         } catch (error) {
-          console.error('❌ Activity-based token refresh failed:', error);
+          logger.error('❌ Activity-based token refresh failed:', error);
         }
       }, timeUntilRefresh);
 
-      console.log(`⏰ Token refresh scheduled in ${Math.round(timeUntilRefresh / 1000 / 60)} minutes`);
+      logger.debug(`⏰ Token refresh scheduled in ${Math.round(timeUntilRefresh / 1000 / 60)} minutes`);
     } catch (error) {
-      console.error('❌ Failed to schedule token refresh:', error);
+      logger.error('❌ Failed to schedule token refresh:', error);
     }
   }, [tokens, refreshToken, isAuthenticated, refreshBeforeExpiryMinutes]);
 

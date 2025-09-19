@@ -4,6 +4,7 @@
  */
 
 import { toast } from 'react-hot-toast';
+import logger from '../utils/logger';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
@@ -47,7 +48,7 @@ class NotificationService {
       // Store audio context for later use
       (this as any).audioContext = audioContext;
     } catch (error) {
-      console.warn('Could not initialize notification sound:', error);
+      logger.warn('Could not initialize notification sound:', error);
     }
   }
 
@@ -83,7 +84,7 @@ class NotificationService {
    */
   async checkBrowserNotificationPermission() {
     if (!('Notification' in window)) {
-      console.log('This browser does not support desktop notification');
+      logger.info('This browser does not support desktop notification');
       return;
     }
 
@@ -136,7 +137,7 @@ class NotificationService {
         notification.close();
       };
     } catch (error) {
-      console.error('Failed to show browser notification:', error);
+      logger.error('Failed to show browser notification:', error);
     }
   }
 
