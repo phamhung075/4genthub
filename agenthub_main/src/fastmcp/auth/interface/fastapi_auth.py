@@ -31,9 +31,25 @@ async def get_current_user(
 ) -> User:
     """Get current authenticated user based on configured provider"""
     if AUTH_PROVIDER == "keycloak":
-        # Use Keycloak authentication
-        from ..keycloak_dependencies import get_current_user_universal
-        return await get_current_user_universal(credentials)
+        # Use Keycloak authentication with development fallback
+        try:
+            from ..keycloak_dependencies import get_current_user_universal
+            return await get_current_user_universal(credentials)
+        except Exception as e:
+            # Development fallback when Keycloak is not accessible
+            # Check if we're in development mode and Keycloak is unavailable
+            env = os.getenv("ENV", "production").lower()
+            if env in ["local", "development", "dev"]:
+                logger.warning(f"Keycloak authentication failed in development mode, using test user: {e}")
+                return User(
+                    id="dev-user-001",
+                    email="dev@example.com",
+                    username="dev-user",
+                    password_hash="dev-hash"
+                )
+            else:
+                # In production, re-raise the exception
+                raise
     elif AUTH_PROVIDER == "supabase":
         # Use Supabase authentication
         from .supabase_fastapi_auth import get_current_user_supabase

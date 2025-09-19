@@ -20,7 +20,6 @@ import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
 import { HelpSetup } from './pages/HelpSetup';
-
 // Use lazy loading for TaskList component for better performance
 import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));

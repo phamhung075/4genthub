@@ -16,6 +16,7 @@ import {
   Users
 } from 'lucide-react';
 import { api } from '../api';
+import logger from '../utils/logger';
 
 // Types for performance data
 interface PerformanceMetrics {
@@ -103,7 +104,7 @@ const PerformanceDashboard: React.FC = () => {
       setAlerts(alertsResponse.data);
       setLastUpdated(new Date());
     } catch (error) {
-      console.error('Error fetching performance metrics:', error);
+      logger.error('Failed to fetch performance metrics', { error, component: 'PerformanceDashboard' });
     } finally {
       setLoading(false);
     }

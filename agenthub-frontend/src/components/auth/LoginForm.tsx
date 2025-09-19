@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
+import logger from '../../utils/logger';
 import {
   Box,
   Button,
@@ -71,7 +72,7 @@ export const LoginForm: React.FC = () => {
         }
       } catch (err) {
         // Backend is not reachable
-        console.debug('Backend not connected:', err);
+        logger.debug('Backend not connected:', err);
         setBackendVersion(undefined);
       }
     };

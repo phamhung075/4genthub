@@ -22,6 +22,7 @@ from ..use_cases.complete_subtask import CompleteSubtaskUseCase
 from ...domain.interfaces.repository_factory import ITaskRepositoryFactory
 from ...infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
 from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
+from ..services.websocket_notification_service import WebSocketNotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -314,7 +315,26 @@ class SubtaskApplicationFacade:
             result["agent_inheritance_applied"] = True
             result["inherited_assignees"] = response.inherited_assignees
             result["message"] = f"Subtask '{subtask_data['title']}' created for task {task_id} with {len(response.inherited_assignees)} agent(s) inherited from parent"
-        
+
+        # Broadcast subtask creation event via WebSocket
+        try:
+            # Get user_id from context derivation
+            context = self._derive_context_from_task(task_id)
+            user_id = context.get("user_id", "system")
+
+            # Convert subtask response to dict for broadcasting
+            subtask_dict = response.subtask if isinstance(response.subtask, dict) else response.subtask.__dict__
+
+            WebSocketNotificationService.sync_broadcast_subtask_event(
+                event_type="created",
+                subtask_id=subtask_dict.get("id"),
+                task_id=task_id,
+                user_id=user_id,
+                subtask_data=subtask_dict
+            )
+        except Exception as e:
+            logger.warning(f"Failed to broadcast subtask creation: {e}")
+
         return result
     
     def _handle_update_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
@@ -338,12 +358,33 @@ class SubtaskApplicationFacade:
             progress_percentage=subtask_data.get("progress_percentage") if subtask_data else None
         )
         response = update_subtask_use_case.execute(request)
-        return {
+        result = {
             "success": True,
             "action": "update",
             "message": f"Subtask {actual_subtask_id} updated",
             "subtask": response.to_dict()
         }
+
+        # Broadcast subtask update event via WebSocket
+        try:
+            # Get user_id from context derivation
+            context = self._derive_context_from_task(task_id)
+            user_id = context.get("user_id", "system")
+
+            # Convert subtask response to dict for broadcasting
+            subtask_dict = response.to_dict()
+
+            WebSocketNotificationService.sync_broadcast_subtask_event(
+                event_type="updated",
+                subtask_id=actual_subtask_id,
+                task_id=task_id,
+                user_id=user_id,
+                subtask_data=subtask_dict
+            )
+        except Exception as e:
+            logger.warning(f"Failed to broadcast subtask update: {e}")
+
+        return result
     
     def _handle_delete_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
         """Handle subtask deletion"""
@@ -356,12 +397,31 @@ class SubtaskApplicationFacade:
         remove_subtask_use_case = self._remove_subtask_use_case or RemoveSubtaskUseCase(task_repository, subtask_repository)
         
         result = remove_subtask_use_case.execute(task_id, actual_subtask_id)
-        return {
+        response = {
             "success": result["success"],
             "action": "delete",
             "message": f"Subtask {actual_subtask_id} deleted from task {task_id}",
             "progress": result.get("progress", {})
         }
+
+        # Broadcast subtask deletion event via WebSocket (only if successful)
+        if result["success"]:
+            try:
+                # Get user_id from context derivation
+                context = self._derive_context_from_task(task_id)
+                user_id = context.get("user_id", "system")
+
+                WebSocketNotificationService.sync_broadcast_subtask_event(
+                    event_type="deleted",
+                    subtask_id=actual_subtask_id,
+                    task_id=task_id,
+                    user_id=user_id,
+                    subtask_data={"id": actual_subtask_id, "deleted": True}
+                )
+            except Exception as e:
+                logger.warning(f"Failed to broadcast subtask deletion: {e}")
+
+        return response
     
     def _handle_list_subtasks(self, task_id: str, task_repository: TaskRepository, subtask_repository: SubtaskRepository) -> Dict[str, Any]:
         """Handle listing subtasks for a task"""
@@ -407,13 +467,32 @@ class SubtaskApplicationFacade:
         complete_subtask_use_case = self._complete_subtask_use_case or CompleteSubtaskUseCase(task_repository, subtask_repository)
         
         result = complete_subtask_use_case.execute(task_id, actual_subtask_id)
-        return {
+        response = {
             "success": result["success"],
             "action": "complete",
             "message": f"Subtask {actual_subtask_id} completed",
             "subtask": {"id": actual_subtask_id, "completed": True},
             "progress": result["progress"]
         }
+
+        # Broadcast subtask completion event via WebSocket (only if successful)
+        if result["success"]:
+            try:
+                # Get user_id from context derivation
+                context = self._derive_context_from_task(task_id)
+                user_id = context.get("user_id", "system")
+
+                WebSocketNotificationService.sync_broadcast_subtask_event(
+                    event_type="completed",
+                    subtask_id=actual_subtask_id,
+                    task_id=task_id,
+                    user_id=user_id,
+                    subtask_data={"id": actual_subtask_id, "completed": True}
+                )
+            except Exception as e:
+                logger.warning(f"Failed to broadcast subtask completion: {e}")
+
+        return response
     
     def _create_inheritance_service(self, task_repository: TaskRepository, subtask_repository: SubtaskRepository):
         """Create agent inheritance service for operations."""

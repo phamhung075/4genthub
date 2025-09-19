@@ -2,6 +2,7 @@
 import { AlertCircle, CheckCircle, Clock, Layers, ListTodo, Search as SearchIcon, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listSubtasks, listTasks, searchTasks, Subtask, Task } from '../api';
+import logger from '../utils/logger';
 import { debounce } from '../lib/utils';
 import { Badge } from './ui/badge';
 
@@ -91,7 +92,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
         const parsed = JSON.parse(stored);
         setRecentSearches(parsed.slice(0, 5));
       } catch (e) {
-        console.error('Error loading recent searches:', e);
+        logger.error('Failed to load recent searches from localStorage', { error: e, taskTreeId, component: 'TaskSearch' });
       }
     }
   }, [taskTreeId]);
@@ -133,7 +134,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
               subtaskResults.push({ subtask, parentTask: task });
             });
           } catch (error) {
-            console.error(`Error fetching subtasks for task ${task.id}:`, error);
+            logger.error('Failed to fetch subtasks for task', { error, taskId: task.id, component: 'TaskSearch' });
           }
         }
       }
@@ -143,7 +144,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
         subtasksWithParent: subtaskResults
       });
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Task search operation failed', { error, query, taskTreeId, component: 'TaskSearch' });
       setSearchResults({ tasks: [], subtasksWithParent: [] });
     } finally {
       setIsSearching(false);

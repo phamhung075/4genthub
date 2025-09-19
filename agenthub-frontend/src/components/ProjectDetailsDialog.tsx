@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { getProjectContext, Project } from "../api";
+import logger from "../utils/logger";
 import { FileText, Info, ChevronDown, ChevronRight, Copy, Check as CheckIcon, Folder, Code, Settings, Shield, Database, GitBranch } from "lucide-react";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
@@ -34,34 +35,34 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
       // Fetch project context
       getProjectContext(project.id)
         .then(context => {
-          console.log('Raw project context response:', context);
+          logger.debug('Raw project context response received', { context, component: 'ProjectDetailsDialog' });
           
           // Extract the actual context data from the response
           if (context) {
             if (context.data && context.data.resolved_context) {
               // New format: data.resolved_context contains the actual context
-              console.log('Using resolved_context from data:', context.data.resolved_context);
+              logger.debug('Using resolved_context from data', { resolvedContext: context.data.resolved_context, component: 'ProjectDetailsDialog' });
               setProjectContext(context.data.resolved_context);
             } else if (context.resolved_context) {
               // Alternative format: resolved_context at root level
-              console.log('Using resolved_context from root:', context.resolved_context);
+              logger.debug('Using resolved_context from root', { resolvedContext: context.resolved_context, component: 'ProjectDetailsDialog' });
               setProjectContext(context.resolved_context);
             } else if (context.data) {
               // Fallback: use data object if it exists
-              console.log('Using data object:', context.data);
+              logger.debug('Using data object as fallback', { data: context.data, component: 'ProjectDetailsDialog' });
               setProjectContext(context.data);
             } else {
               // Last resort: use the whole response
-              console.log('Using full response:', context);
+              logger.debug('Using full response as fallback', { context, component: 'ProjectDetailsDialog' });
               setProjectContext(context);
             }
           } else {
-            console.log('No context data received');
+            logger.warn('No context data received from API', { projectId: project.id, component: 'ProjectDetailsDialog' });
             setProjectContext(null);
           }
         })
         .catch(error => {
-          console.error('Error fetching project context:', error);
+          logger.error('Failed to fetch project context', { error, projectId: project?.id, component: 'ProjectDetailsDialog' });
           setProjectContext(null);
         })
         .finally(() => {
@@ -513,7 +514,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       setJsonCopied(true);
                       setTimeout(() => setJsonCopied(false), 2000);
                     }).catch(err => {
-                      console.error('Failed to copy JSON:', err);
+                      logger.error('Failed to copy JSON to clipboard', { error: err, component: 'ProjectDetailsDialog' });
                     });
                   }
                 }}

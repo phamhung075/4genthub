@@ -5,6 +5,7 @@ import { getFullTask } from "../api-lazy";
 import TaskSearch from "./TaskSearch";
 import TaskRow from "./TaskRow";
 import { useEntityChanges } from "../hooks/useChangeSubscription";
+import { changePoolService } from "../services/changePoolService";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
 import logger from "../utils/logger";
@@ -133,7 +134,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
         if (addedTasks.size > 0) {
           logger.info('New tasks detected', { component: 'LazyTaskList', addedTasks: [...addedTasks] });
-          // Wait a bit for TaskRow to register callbacks
+          // Wait longer for TaskRow to register callbacks (increased from 100ms to 300ms)
           setTimeout(() => {
             addedTasks.forEach(taskId => {
               const callbacks = rowAnimationCallbacks.current.get(taskId);
@@ -141,10 +142,16 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
                 logger.debug('Playing create animation for task', { component: 'LazyTaskList', taskId });
                 callbacks.playCreateAnimation();
               } else {
-                logger.warn('No callbacks found for task', { component: 'LazyTaskList', taskId });
+                // Reduce noise - only log at debug level and include available callbacks for debugging
+                logger.debug('No callbacks found for task', {
+                  component: 'LazyTaskList',
+                  taskId,
+                  availableCallbacks: [...rowAnimationCallbacks.current.keys()],
+                  note: 'This is normal if TaskRow is still rendering'
+                });
               }
             });
-          }, 100);
+          }, 300);
         }
       } else {
         logger.info('Initial load - no animation for existing tasks', { component: 'LazyTaskList' });
@@ -165,7 +172,12 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             logger.debug('Playing delete animation for task', { component: 'LazyTaskList', taskId });
             callbacks.playDeleteAnimation();
           } else {
-            logger.warn('No callbacks found for deleted task', { component: 'LazyTaskList', taskId });
+            // Reduce noise - only log at debug level since row may already be unmounted
+            logger.debug('No callbacks found for deleted task', {
+              component: 'LazyTaskList',
+              taskId,
+              note: 'This is normal if TaskRow was already unmounted'
+            });
           }
         });
       }
@@ -598,7 +610,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   return (
     <>
       {/* Custom CSS for animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes slideInFromRight {
           0% {
             transform: translateX(100%);
@@ -654,6 +666,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             <ShimmerButton
               onClick={async () => {
                 await loadTaskSummaries(1);
+                // Also force refresh all subtask lists
+                changePoolService.forceRefresh(['subtask']);
               }}
               size="sm"
               variant="outline"

@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
 import { Subtask, getSubtask } from "../api";
+import logger from "../utils/logger";
 import ClickableAssignees from "./ClickableAssignees";
 import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers, Copy, Check as CheckIcon } from "lucide-react";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
@@ -53,7 +54,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
       const data = await getSubtask(parentId, subtaskId);
       setFullSubtask(data);
     } catch (error) {
-      console.error('[SubtaskDetailsDialog] Failed to fetch subtask:', error);
+      logger.error('Failed to fetch subtask details', { error, parentTaskId: parentId, subtaskId, component: 'SubtaskDetailsDialog' });
     } finally {
       setLoading(false);
     }
