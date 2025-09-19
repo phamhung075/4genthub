@@ -57,7 +57,7 @@ const priorityColor: Record<string, "default" | "secondary" | "destructive" | "o
 
 export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }: LazySubtaskListProps) {
   // URL parameter monitoring
-  const { subtaskId } = useParams<{ subtaskId?: string }>();
+  const { subtaskId, taskId } = useParams<{ subtaskId?: string, taskId?: string }>();
   const navigate = useNavigate();
 
   // Lightweight state for performance
@@ -398,37 +398,34 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Monitor subtaskId URL parameter and auto-open dialog
   useEffect(() => {
-    if (subtaskId && hasLoaded) {
-      // ✅ First check if subtaskId belongs to this parent task
-      const subtaskBelongsToThisTask = subtaskSummaries.some(s => s.id === subtaskId);
+    // 🚀 PERFORMANCE FIX: Only react to URL changes if the taskId in URL matches this component's parentTaskId
+    // This prevents ALL LazySubtaskList components from reacting to ANY subtask URL change
+    if (subtaskId && hasLoaded && taskId === parentTaskId) {
+      logger.debug('🔗 URL taskId matches parentTaskId, loading subtask:', subtaskId, 'for parent:', parentTaskId);
 
-      if (subtaskBelongsToThisTask) {
-        logger.debug('🔗 Subtask belongs to this parent task, loading:', subtaskId, 'for parent:', parentTaskId);
-        // Only load if subtask belongs to this parent task
-        loadFullSubtask(subtaskId).then(subtask => {
-          if (subtask) {
-            logger.debug('🔗 Auto-opening SubtaskDetailsDialog for URL subtaskId:', subtaskId);
-            setDetailsDialog({ open: true, subtask });
-          } else {
-            logger.warn('⚠️ Subtask not found for URL subtaskId:', subtaskId);
-            // Navigate back to task URL if subtask not found
-            handleSubtaskDialogClose();
-          }
-        }).catch(error => {
-          logger.error('❌ Failed to load subtask for URL:', subtaskId, error);
-          // Navigate back to task URL on error
+      // Load the subtask directly since we know it belongs to this parent task
+      loadFullSubtask(subtaskId).then(subtask => {
+        if (subtask) {
+          logger.debug('🔗 Auto-opening SubtaskDetailsDialog for URL subtaskId:', subtaskId);
+          setDetailsDialog({ open: true, subtask });
+        } else {
+          logger.warn('⚠️ Subtask not found for URL subtaskId:', subtaskId);
+          // Navigate back to task URL if subtask not found
           handleSubtaskDialogClose();
-        });
-      } else {
-        logger.debug('🚫 Subtask does not belong to this parent task, ignoring:', subtaskId, 'for parent:', parentTaskId);
-        // Don't call handleSubtaskDialogClose() if subtask doesn't belong here
-        // This prevents multiple LazySubtaskList components from interfering with each other
-      }
+        }
+      }).catch(error => {
+        logger.error('❌ Failed to load subtask for URL:', subtaskId, error);
+        // Navigate back to task URL on error
+        handleSubtaskDialogClose();
+      });
+    } else if (subtaskId && taskId !== parentTaskId) {
+      logger.debug('🚫 URL taskId does not match parentTaskId, ignoring subtask:', subtaskId, 'URL taskId:', taskId, 'parentTaskId:', parentTaskId);
+      // This LazySubtaskList component ignores the URL change since it's not relevant
     } else if (!subtaskId && detailsDialog.open) {
       // Close dialog if subtaskId is removed from URL
       setDetailsDialog({ open: false, subtask: null });
     }
-  }, [subtaskId, hasLoaded, subtaskSummaries, loadFullSubtask, detailsDialog.open, handleSubtaskDialogClose, parentTaskId]);
+  }, [subtaskId, taskId, hasLoaded, loadFullSubtask, detailsDialog.open, handleSubtaskDialogClose, parentTaskId]);
 
   // Animation effect - triggers animations after state updates
   useEffect(() => {

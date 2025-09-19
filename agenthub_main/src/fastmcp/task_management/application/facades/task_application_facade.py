@@ -200,9 +200,12 @@ class TaskApplicationFacade:
             # Validate request at application boundary
             self._validate_create_task_request(request)
             
+            # Check for recent duplicate creation attempts (following completion deduplication pattern)
+            was_already_created = self._check_for_duplicate_creation(request, derived_user_id)
+
             # Execute use case (clean relationship chain - only request needed)
             task_response = self._create_task_use_case.execute(request)
-            
+
             if task_response and getattr(task_response, "success", False):
                 # Ensure downstream callers get a consistent success message key
                 msg = getattr(task_response, "message", "Task created successfully")
@@ -252,18 +255,22 @@ class TaskApplicationFacade:
                     task_payload = task_response.task.to_dict()
                     warning_msg = f"Task created without context: {str(e)}"
 
-                # Broadcast task creation event ONCE, regardless of context sync status
-                try:
-                    WebSocketNotificationService.sync_broadcast_task_event(
-                        event_type="created",
-                        task_id=task_response.task.id,
-                        user_id=user_id or "system",
-                        task_data=task_payload,
-                        git_branch_id=request.git_branch_id,
-                        project_id=derived_project_id
-                    )
-                except Exception as e:
-                    logger.warning(f"Failed to broadcast task creation: {e}")
+                # Broadcast task creation event ONLY if this was a new creation (not a duplicate)
+                if not was_already_created:
+                    try:
+                        WebSocketNotificationService.sync_broadcast_task_event(
+                            event_type="created",
+                            task_id=task_response.task.id,
+                            user_id=user_id or "system",
+                            task_data=task_payload,
+                            git_branch_id=request.git_branch_id,
+                            project_id=derived_project_id
+                        )
+                        logger.info(f"Broadcasted task creation notification for NEW creation of task {task_response.task.id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to broadcast task creation: {e}")
+                elif was_already_created:
+                    logger.info(f"Skipped duplicate notification for recently created task with similar data")
 
                 # Build and return response
                 result = {
@@ -298,25 +305,35 @@ class TaskApplicationFacade:
             # Set task_id in request if not already set
             if not hasattr(request, 'task_id') or request.task_id is None:
                 request.task_id = task_id
-            
+
+            # Get current task state for comparison (following completion deduplication pattern)
+            current_task = self._get_task_for_update_comparison(task_id)
+
             # Execute use case
             task_response = self._update_task_use_case.execute(request)
+
+            # Check if task was actually updated with meaningful changes
+            was_actually_updated = self._check_for_meaningful_update(current_task, task_response.task if task_response and task_response.success else None, request)
             
             if task_response and task_response.success:
                 task_dict = task_response.task.to_dict()
 
-                # Broadcast task update event
-                try:
-                    # Get user_id from request or use "system"
-                    user_id = getattr(request, 'user_id', None) or "system"
-                    WebSocketNotificationService.sync_broadcast_task_event(
-                        event_type="updated",
-                        task_id=task_id,
-                        user_id=user_id,
-                        task_data=task_dict
-                    )
-                except Exception as e:
-                    logger.warning(f"Failed to broadcast task update: {e}")
+                # Broadcast task update event ONLY if this was a meaningful update (not a duplicate)
+                if was_actually_updated:
+                    try:
+                        # Get user_id from request or use "system"
+                        user_id = getattr(request, 'user_id', None) or "system"
+                        WebSocketNotificationService.sync_broadcast_task_event(
+                            event_type="updated",
+                            task_id=task_id,
+                            user_id=user_id,
+                            task_data=task_dict
+                        )
+                        logger.info(f"Broadcasted task update notification for MEANINGFUL update of task {task_id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to broadcast task update: {e}")
+                elif not was_actually_updated:
+                    logger.info(f"Skipped duplicate notification for non-meaningful update of task {task_id}")
 
                 return {
                     "success": True,
@@ -615,8 +632,8 @@ class TaskApplicationFacade:
                 if key not in response:
                     response[key] = value
 
-            # Broadcast task completion event if successful
-            if response.get("success"):
+            # Broadcast task completion event ONLY if this was a new completion (not an update to already completed task)
+            if response.get("success") and not response.get("was_already_completed", False):
                 try:
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="completed",
@@ -624,8 +641,11 @@ class TaskApplicationFacade:
                         user_id="system",  # TODO: Get actual user_id from context
                         task_data=response.get("task")
                     )
+                    logger.info(f"Broadcasted task completion notification for NEW completion of task {task_id}")
                 except Exception as e:
                     logger.warning(f"Failed to broadcast task completion: {e}")
+            elif response.get("success") and response.get("was_already_completed", False):
+                logger.info(f"Skipped duplicate notification for already completed task {task_id}")
 
             return response
             
@@ -1255,6 +1275,180 @@ class TaskApplicationFacade:
                 raise exception
             return result
         return value
+
+    # ---------------------------------------------------------------------
+    # Duplicate Detection Methods (following completion deduplication pattern)
+    # ---------------------------------------------------------------------
+
+    def _check_for_duplicate_creation(self, request: CreateTaskRequest, user_id: str) -> bool:
+        """
+        Check if a task with similar data was recently created to prevent duplicate notifications.
+        Following the same pattern as CompleteTaskUseCase._check_was_already_completed.
+
+        Args:
+            request: The create task request
+            user_id: The user creating the task
+
+        Returns:
+            True if a similar task was recently created, False otherwise
+        """
+        try:
+            from datetime import datetime, timedelta
+            from ...domain.value_objects.task_id import TaskId
+
+            # Check for tasks created in the last 10 seconds with same title and branch
+            cutoff_time = datetime.utcnow() - timedelta(seconds=10)
+
+            # Use list_tasks to find recent tasks with same criteria
+            from ..dtos.task.list_tasks_request import ListTasksRequest
+
+            # Create request to find recent tasks in same branch
+            list_request = ListTasksRequest(
+                git_branch_id=request.git_branch_id,
+                limit=20  # Check last 20 tasks
+            )
+
+            response = self._list_tasks_use_case.execute(list_request)
+
+            if not response.tasks:
+                return False
+
+            # Check for similar tasks created recently
+            for task in response.tasks:
+                # Skip if task is too old
+                if hasattr(task, 'created_at') and task.created_at < cutoff_time:
+                    continue
+
+                # Check for same title (case-insensitive)
+                if (hasattr(task, 'title') and request.title and
+                    task.title.lower().strip() == request.title.lower().strip()):
+                    logger.info(f"Found recent task with same title '{task.title}' created at {task.created_at}")
+                    return True
+
+            return False
+
+        except Exception as e:
+            logger.warning(f"Error checking for duplicate creation: {e}")
+            # If check fails, assume no duplicate to avoid blocking legitimate operations
+            return False
+
+    def _get_task_for_update_comparison(self, task_id: str):
+        """
+        Get current task state for update comparison.
+
+        Args:
+            task_id: The task ID to retrieve
+
+        Returns:
+            Current task state or None if not found
+        """
+        try:
+            from ...domain.value_objects.task_id import TaskId
+            domain_task_id = TaskId.from_string(str(task_id))
+
+            # Get current task state from repository
+            current_task = self._task_repository.find_by_id(domain_task_id)
+            return current_task
+
+        except Exception as e:
+            logger.warning(f"Error getting task for update comparison: {e}")
+            return None
+
+    def _check_for_meaningful_update(self, current_task, updated_task, request: UpdateTaskRequest) -> bool:
+        """
+        Check if the update request contains meaningful changes.
+        Following the same pattern as CompleteTaskUseCase with was_already_completed flag.
+
+        Args:
+            current_task: The task state before update
+            updated_task: The task state after update
+            request: The update request
+
+        Returns:
+            True if meaningful changes were made, False otherwise
+        """
+        try:
+            if not current_task or not updated_task:
+                # If we can't compare, assume it was meaningful
+                return True
+
+            # Check each field that could be updated
+            meaningful_changes = []
+
+            # Title change
+            if (request.title is not None and
+                hasattr(current_task, 'title') and hasattr(updated_task, 'title')):
+                if current_task.title != updated_task.title:
+                    meaningful_changes.append(f"title: '{current_task.title}' -> '{updated_task.title}'")
+
+            # Description change
+            if (request.description is not None and
+                hasattr(current_task, 'description') and hasattr(updated_task, 'description')):
+                current_desc = current_task.description or ""
+                updated_desc = updated_task.description or ""
+                if current_desc != updated_desc:
+                    meaningful_changes.append(f"description changed")
+
+            # Status change
+            if (request.status is not None and
+                hasattr(current_task, 'status') and hasattr(updated_task, 'status')):
+                current_status = str(current_task.status)
+                updated_status = str(updated_task.status)
+                if current_status != updated_status:
+                    meaningful_changes.append(f"status: '{current_status}' -> '{updated_status}'")
+
+            # Priority change
+            if (request.priority is not None and
+                hasattr(current_task, 'priority') and hasattr(updated_task, 'priority')):
+                current_priority = str(current_task.priority)
+                updated_priority = str(updated_task.priority)
+                if current_priority != updated_priority:
+                    meaningful_changes.append(f"priority: '{current_priority}' -> '{updated_priority}'")
+
+            # Details change
+            if (request.details is not None and
+                hasattr(current_task, 'details') and hasattr(updated_task, 'details')):
+                current_details = current_task.details or ""
+                updated_details = updated_task.details or ""
+                if current_details != updated_details:
+                    meaningful_changes.append(f"details changed")
+
+            # Estimated effort change
+            if (request.estimated_effort is not None and
+                hasattr(current_task, 'estimated_effort') and hasattr(updated_task, 'estimated_effort')):
+                current_effort = current_task.estimated_effort or ""
+                updated_effort = updated_task.estimated_effort or ""
+                if current_effort != updated_effort:
+                    meaningful_changes.append(f"estimated_effort: '{current_effort}' -> '{updated_effort}'")
+
+            # Assignees change
+            if (request.assignees is not None and
+                hasattr(current_task, 'assignees') and hasattr(updated_task, 'assignees')):
+                current_assignees = set(current_task.assignees or [])
+                updated_assignees = set(updated_task.assignees or [])
+                if current_assignees != updated_assignees:
+                    meaningful_changes.append(f"assignees changed")
+
+            # Labels change
+            if (request.labels is not None and
+                hasattr(current_task, 'labels') and hasattr(updated_task, 'labels')):
+                current_labels = set(current_task.labels or [])
+                updated_labels = set(updated_task.labels or [])
+                if current_labels != updated_labels:
+                    meaningful_changes.append(f"labels changed")
+
+            # Log the changes for debugging
+            if meaningful_changes:
+                logger.info(f"Meaningful changes detected for task {updated_task.id}: {', '.join(meaningful_changes)}")
+                return True
+            else:
+                logger.info(f"No meaningful changes detected for task update of {updated_task.id}")
+                return False
+
+        except Exception as e:
+            logger.warning(f"Error checking for meaningful update: {e}")
+            # If check fails, assume it was meaningful to avoid blocking legitimate operations
+            return True
 
     # ---------------------------------------------------------------------
 

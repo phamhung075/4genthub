@@ -9,6 +9,7 @@ import { TableCell, TableRow } from "./ui/table";
 import { CopyableId } from "./ui/CopyableId";
 import { ParentTaskReference } from "./ui/ParentTaskReference";
 import logger from "../utils/logger";
+import styles from "./SubtaskRow.module.css";
 
 // Lightweight subtask summary interface
 interface SubtaskSummary {
@@ -138,7 +139,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
       case 'deleting':
         return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
-        return `${baseClasses} subtask-updating-animation`;
+        return `${baseClasses} ${styles.subtaskUpdatingAnimation}`;
       default:
         return `${baseClasses} hover:bg-gray-50 dark:hover:bg-gray-800/20`;
     }
@@ -166,74 +167,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
 
   return (
     <React.Fragment>
-      {/* Animation CSS */}
-      <style jsx>{`
-        @keyframes slideInFromRight {
-          0% {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          30% {
-            transform: translateX(20%);
-            opacity: 0.7;
-          }
-          70% {
-            transform: translateX(-5%);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        @keyframes slideOutToRight {
-          0% {
-            transform: translateX(0);
-            opacity: 1;
-            height: auto;
-          }
-          30% {
-            transform: translateX(20%);
-            opacity: 0.8;
-          }
-          80% {
-            transform: translateX(100%);
-            opacity: 0;
-            height: auto;
-          }
-          100% {
-            transform: translateX(100%);
-            opacity: 0;
-            height: 0;
-            margin: 0;
-            padding: 0;
-            border: 0;
-            overflow: hidden;
-          }
-        }
-        @keyframes shimmerBackground {
-          0% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: -100% 50%;
-          }
-        }
-
-        .subtask-updating-animation {
-          background: linear-gradient(90deg,
-            transparent 0%,
-            transparent 30%,
-            rgba(59, 130, 246, 0.3) 40%,
-            rgba(96, 165, 250, 0.3) 50%,
-            rgba(147, 197, 253, 0.3) 60%,
-            transparent 70%,
-            transparent 100%);
-          background-size: 200% 100%;
-          animation: shimmerBackground 2s linear infinite;
-        }
-      `}</style>
-
       <TableRow
         className={`text-sm ${getAnimationClasses()}`}
         style={getAnimationStyle()}
