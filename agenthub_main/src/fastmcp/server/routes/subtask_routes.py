@@ -207,7 +207,7 @@ async def complete_subtask(
     try:
         result = subtask_controller.complete_subtask(
             subtask_id=subtask_id,
-            completion_notes=completion_notes,
+            completion_summary=completion_notes,
             user_id=current_user.id,
             session=db
         )
