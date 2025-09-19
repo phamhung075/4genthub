@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 
 from ...application.facades.subtask_application_facade import SubtaskApplicationFacade
 from ...application.services.facade_service import FacadeService
+from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
 # FacadeService handles all facade creation (DDD compliant)
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,35 @@ class SubtaskAPIController:
         """Initialize the controller"""
         # Use FacadeService for DDD compliance - no direct factory access
         self.facade_service = FacadeService.get_instance()
-    
+
+    def _get_task_id_from_subtask(self, subtask_id: str, user_id: str) -> Optional[str]:
+        """
+        Helper method to get task_id from subtask_id by looking up the subtask.
+
+        Args:
+            subtask_id: Subtask identifier
+            user_id: User identifier for repository access
+
+        Returns:
+            Task ID if subtask is found, None otherwise
+        """
+        try:
+            # Create subtask repository factory and repository
+            subtask_repository_factory = SubtaskRepositoryFactory()
+            subtask_repository = subtask_repository_factory.create(user_id=user_id, session=None)
+
+            # Look up the subtask
+            subtask = subtask_repository.find_by_id(subtask_id)
+
+            if subtask:
+                # Return the parent task ID from the subtask
+                return str(subtask.parent_task_id)
+            return None
+
+        except Exception as e:
+            logger.error(f"Error looking up task_id for subtask {subtask_id}: {e}")
+            return None
+
     def create_subtask(self, task_id: str, title: str, description: Optional[str], user_id: str, session) -> Dict[str, Any]:
         """
         Create a new subtask.
@@ -156,12 +185,11 @@ class SubtaskAPIController:
                 "message": "Failed to list subtasks"
             }
     
-    def get_subtask(self, task_id: str, subtask_id: str, user_id: str, session) -> Dict[str, Any]:
+    def get_subtask(self, subtask_id: str, user_id: str, session) -> Dict[str, Any]:
         """
         Get a specific subtask.
 
         Args:
-            task_id: Parent task identifier
             subtask_id: Subtask identifier
             user_id: Authenticated user ID
             session: Database session
@@ -170,6 +198,15 @@ class SubtaskAPIController:
             Subtask details
         """
         try:
+            # First, look up the subtask to get its task_id
+            task_id = self._get_task_id_from_subtask(subtask_id, user_id)
+            if not task_id:
+                return {
+                    "success": False,
+                    "error": "Subtask not found",
+                    "message": "Subtask not found or access denied"
+                }
+
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
                 project_id=None,
@@ -220,12 +257,11 @@ class SubtaskAPIController:
                 "message": "Failed to get subtask"
             }
     
-    def update_subtask(self, task_id: str, subtask_id: str, update_data: Dict[str, Any], user_id: str, session) -> Dict[str, Any]:
+    def update_subtask(self, subtask_id: str, update_data: Dict[str, Any], user_id: str, session) -> Dict[str, Any]:
         """
         Update a subtask.
 
         Args:
-            task_id: Parent task identifier
             subtask_id: Subtask identifier
             update_data: Subtask update data
             user_id: Authenticated user ID
@@ -235,6 +271,15 @@ class SubtaskAPIController:
             Updated subtask details
         """
         try:
+            # First, look up the subtask to get its task_id
+            task_id = self._get_task_id_from_subtask(subtask_id, user_id)
+            if not task_id:
+                return {
+                    "success": False,
+                    "error": "Subtask not found",
+                    "message": "Subtask not found or access denied"
+                }
+
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
                 project_id=None,
@@ -293,12 +338,11 @@ class SubtaskAPIController:
                 "message": "Failed to update subtask"
             }
     
-    def delete_subtask(self, task_id: str, subtask_id: str, user_id: str, session) -> Dict[str, Any]:
+    def delete_subtask(self, subtask_id: str, user_id: str, session) -> Dict[str, Any]:
         """
         Delete a subtask.
 
         Args:
-            task_id: Parent task identifier
             subtask_id: Subtask identifier
             user_id: Authenticated user ID
             session: Database session
@@ -307,6 +351,15 @@ class SubtaskAPIController:
             Deletion result
         """
         try:
+            # First, look up the subtask to get its task_id
+            task_id = self._get_task_id_from_subtask(subtask_id, user_id)
+            if not task_id:
+                return {
+                    "success": False,
+                    "error": "Subtask not found",
+                    "message": "Subtask not found or access denied"
+                }
+
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
                 project_id=None,
@@ -357,12 +410,11 @@ class SubtaskAPIController:
                 "message": "Failed to delete subtask"
             }
     
-    def complete_subtask(self, task_id: str, subtask_id: str, completion_summary: str, user_id: str, session) -> Dict[str, Any]:
+    def complete_subtask(self, subtask_id: str, completion_summary: str, user_id: str, session) -> Dict[str, Any]:
         """
         Complete a subtask.
 
         Args:
-            task_id: Parent task identifier
             subtask_id: Subtask identifier
             completion_summary: Summary of work completed
             user_id: Authenticated user ID
@@ -372,6 +424,15 @@ class SubtaskAPIController:
             Subtask completion result
         """
         try:
+            # First, look up the subtask to get its task_id
+            task_id = self._get_task_id_from_subtask(subtask_id, user_id)
+            if not task_id:
+                return {
+                    "success": False,
+                    "error": "Subtask not found",
+                    "message": "Subtask not found or access denied"
+                }
+
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
                 project_id=None,
