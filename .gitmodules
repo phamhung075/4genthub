@@ -1,0 +1,4 @@
+[submodule ".claude"]
+	path = .claude
+	url = git@github.com:phamhung075/4genthub-hooks.git
+	branch = main
