@@ -192,6 +192,10 @@ class MockAPIRouter:
         def decorator(func):
             return func
         return decorator
+    def websocket(self, *args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
 
 class MockHTTPException(Exception):
     def __init__(self, status_code, detail, headers=None):
