@@ -151,7 +151,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
     switch (animationState) {
       case 'creating':
-        return `${baseClasses} border-green-500 bg-green-100 dark:bg-green-950`;
+        return `${baseClasses} border-teal-500 bg-teal-100 dark:bg-teal-950`;
       case 'deleting':
         return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
@@ -251,34 +251,41 @@ const TaskRow: React.FC<TaskRowProps> = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <h3 className="font-medium text-base mb-2 pr-2">{summary.title}</h3>
-                <div className="flex flex-wrap gap-2">
-                  <HolographicStatusBadge status={summary.status as any} size="xs" />
-                  <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
-                  {summary.subtask_count > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {summary.subtask_count} subtasks
-                    </Badge>
-                  )}
-                  {summary.has_dependencies && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs cursor-help"
-                      title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
-                    >
-                      {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
-                    </Badge>
-                  )}
-                  {summary.assignees && summary.assignees.length > 0 && (
-                    <ClickableAssignees
-                      assignees={summary.assignees}
-                      task={fullTask || summary as any}
-                      onAgentClick={(agentName, task) => {
-                        onOpenDialog('agent-info', undefined, { agentName, taskTitle: task.title });
-                      }}
-                      variant="secondary"
-                      className="text-xs"
-                    />
-                  )}
+                {/* Single line with no wrap, truncation for overflow */}
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <HolographicStatusBadge status={summary.status as any} size="xs" />
+                    <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
+                  </div>
+                  <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                    {summary.subtask_count > 0 && (
+                      <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
+                        {summary.subtask_count} subtasks
+                      </Badge>
+                    )}
+                    {summary.has_dependencies && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs cursor-help whitespace-nowrap flex-shrink-0"
+                        title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+                      >
+                        {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
+                      </Badge>
+                    )}
+                    {summary.assignees && summary.assignees.length > 0 && (
+                      <div className="min-w-0 overflow-hidden">
+                        <ClickableAssignees
+                          assignees={summary.assignees}
+                          task={fullTask || summary as any}
+                          onAgentClick={(agentName, task) => {
+                            onOpenDialog('agent-info', undefined, { agentName, taskTitle: task.title });
+                          }}
+                          variant="secondary"
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <Button
