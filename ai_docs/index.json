@@ -84,7 +84,7 @@
         },
         {
           "hash": "bd9976592660c396c4a8e543e8cc3e25",
-          "modified": "2025-09-19T15:21:32.320824",
+          "modified": "2025-09-19T11:17:57.354596",
           "name": "AI_README.md",
           "path": "_workplace/workers/fix_tests_loop/AI_README.md",
           "size": 4197
@@ -415,6 +415,81 @@
         }
       ],
       "path": "authentication"
+    },
+    "claude-code": {
+      "count": 4,
+      "files": [
+        {
+          "hash": "b7737720b26d285c6a63e32041af0f71",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hooks-mcp-query-guide.md",
+          "path": "claude-code/hooks-mcp-query-guide.md",
+          "size": 11175
+        },
+        {
+          "hash": "408e02b024c1d25338a7b343cdda28f8",
+          "modified": "2025-09-17T00:40:29.826987",
+          "name": "cleanup-log.md",
+          "path": "claude-code/cleanup-log.md",
+          "size": 1469
+        },
+        {
+          "hash": "64a3e8dad60db8e9fa9cf270732ff852",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "sub-agent-format.md",
+          "path": "claude-code/sub-agent-format.md",
+          "size": 434
+        },
+        {
+          "hash": "25d88530a884faaced5e7505e92136cb",
+          "modified": "2025-09-17T14:11:39.079903",
+          "name": "tools_list.md",
+          "path": "claude-code/tools_list.md",
+          "size": 13466
+        }
+      ],
+      "path": "claude-code"
+    },
+    "claude-code/hook": {
+      "count": 5,
+      "files": [
+        {
+          "hash": "207fb40e782d2a3e37248ffb728ee393",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hooks-system-guide.md",
+          "path": "claude-code/hook/hooks-system-guide.md",
+          "size": 31659
+        },
+        {
+          "hash": "a7315270d44722b85b92aa826ca16e6a",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hook-message-flow-analysis.md",
+          "path": "claude-code/hook/hook-message-flow-analysis.md",
+          "size": 3490
+        },
+        {
+          "hash": "4ba44339c67eb2672fb47f5786280d28",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hooks-architecture-analysis.md",
+          "path": "claude-code/hook/hooks-architecture-analysis.md",
+          "size": 5897
+        },
+        {
+          "hash": "618b251c1a0203b76c5b8d0c44e311a1",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hooks-dependency-map.md",
+          "path": "claude-code/hook/hooks-dependency-map.md",
+          "size": 10524
+        },
+        {
+          "hash": "5ecfc308bae2180356fc84a3e597ad26",
+          "modified": "2025-09-17T13:15:40.075185",
+          "name": "hooks-reference.md",
+          "path": "claude-code/hook/hooks-reference.md",
+          "size": 23055
+        }
+      ],
+      "path": "claude-code/hook"
     },
     "claude-hooks-docker": {
       "count": 3,
@@ -2205,19 +2280,6 @@
       ],
       "path": "troubleshooting-guides"
     },
-    "video-content": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "86d28d2cd24529ecb20d12e1e78c3ef2",
-          "modified": "2025-09-19T16:11:32.588458",
-          "name": "4genthub-screen-capture-specifications.md",
-          "path": "video-content/4genthub-screen-capture-specifications.md",
-          "size": 9095
-        }
-      ],
-      "path": "video-content"
-    },
     "video-production": {
       "count": 1,
       "files": [
@@ -2232,7 +2294,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-19T16:11:32.646540",
+  "generated_at": "2025-09-19T11:17:57.491894",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2322,6 +2384,23 @@
         "keycloak-setup-guide.md",
         "token-flow.md"
       ]
+    },
+    "claude-code": {
+      "files": [
+        "cleanup-log.md",
+        "hooks-mcp-query-guide.md",
+        "sub-agent-format.md",
+        "tools_list.md"
+      ],
+      "hook": {
+        "files": [
+          "hook-message-flow-analysis.md",
+          "hooks-architecture-analysis.md",
+          "hooks-dependency-map.md",
+          "hooks-reference.md",
+          "hooks-system-guide.md"
+        ]
+      }
     },
     "claude-hooks-docker": {
       "files": [
@@ -2630,17 +2709,12 @@
         "v2-api-git-branch-filtering-fix.md"
       ]
     },
-    "video-content": {
-      "files": [
-        "4genthub-screen-capture-specifications.md"
-      ]
-    },
     "video-production": {
       "files": [
         "episode-03-web-dashboard.md"
       ]
     }
   },
-  "total_directories": 31,
-  "total_files": 292
+  "total_directories": 32,
+  "total_files": 300
 }
