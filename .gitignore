@@ -39,6 +39,21 @@
 .claude/runtime_agent_context.json
 agenthub_main/.claude/
 
+# Hook-generated files and caches
+.claude/hooks/__pycache__/
+.claude/hooks/**/__pycache__/
+.claude/hooks/.pytest_cache/
+.claude/hooks/**/.pytest_cache/
+.claude/hooks/data/*.json
+.claude/hooks/data/*.db
+.claude/hooks/data/*.log
+.claude/hooks/data/*.cache
+.claude/hooks/data/*.pkl
+.claude/hooks/data/*.pickle
+.claude/hooks/**/*.pyc
+.claude/hooks/**/*.pyo
+.claude/hooks/**/*.pyd
+
 # JWT tokens and API keys
 *.jwt
 *.token
@@ -506,3 +521,14 @@ marketing-solution/*
 # ✅ ALWAYS review .env.example files to ensure no real credentials
 # ✅ ALWAYS use placeholder values in template files
 # =============================================================================captain-definition
+
+# Prevent nested .claude in hooks
+.claude/hooks/.claude/
+.claude/hooks/tests/.claude/
+
+# Local Claude Code settings (auto-generated)
+.claude/settings.json
+
+# Local Claude Code settings and configs (auto-generated)
+.claude/hooks/config/__claude_hook__allowed_root_files
+.claude/hooks/config/__claude_hook__valid_test_paths
