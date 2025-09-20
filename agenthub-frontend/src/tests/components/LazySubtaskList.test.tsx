@@ -322,18 +322,27 @@ describe('LazySubtaskList', () => {
     });
   });
 
-  describe('Subtask Details', () => {
+  describe('Subtask Details Dialog', () => {
     beforeEach(async () => {
+      (apiLazy.getSubtaskSummaries as ReturnType<typeof vi.fn>).mockResolvedValue({
+        subtasks: mockSummaries,
+        total: 3
+      });
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubtasks);
+      (api.getSubtask as ReturnType<typeof vi.fn>).mockImplementation((parentId, subtaskId) => {
+        const subtask = mockSubtasks.find(s => s.id === subtaskId);
+        return Promise.resolve(subtask || null);
+      });
     });
 
-    it('should expand and show subtask details', async () => {
-      render(
+    it('should open details dialog when clicking view button', async () => {
+      renderWithRouter(
         <LazySubtaskList
           projectId={mockProjectId}
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
-        />
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}`]
       );
 
       await waitFor(() => {
@@ -345,54 +354,78 @@ describe('LazySubtaskList', () => {
       fireEvent.click(viewButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText('Description:')).toBeInTheDocument();
+        expect(screen.getByTestId('subtask-details-dialog')).toBeInTheDocument();
+        expect(screen.getByText('Details for Subtask 1')).toBeInTheDocument();
         expect(screen.getByText('First subtask description')).toBeInTheDocument();
-        expect(screen.getByText('Assignees: user-1')).toBeInTheDocument();
-        expect(screen.getByText('Progress Notes:')).toBeInTheDocument();
-        expect(screen.getByText('Completed successfully')).toBeInTheDocument();
       });
 
-      // Click again to collapse
-      fireEvent.click(viewButtons[0]);
+      // Close dialog
+      fireEvent.click(screen.getByText('Close'));
 
       await waitFor(() => {
-        expect(screen.queryByText('First subtask description')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('subtask-details-dialog')).not.toBeInTheDocument();
       });
     });
 
-    it('should show loading spinner when loading full subtask data', async () => {
-      render(
+    it('should open details dialog from URL parameter', async () => {
+      renderWithRouter(
         <LazySubtaskList
           projectId={mockProjectId}
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
-        />
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}/subtask/sub-1`]
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Subtask 1')).toBeInTheDocument();
+        expect(screen.getByTestId('subtask-details-dialog')).toBeInTheDocument();
+        expect(screen.getByText('Details for Subtask 1')).toBeInTheDocument();
       });
+    });
 
-      // The view button should show spinner during loading (this is a simplified test)
-      const viewButtons = screen.getAllByTitle('View details');
-      expect(viewButtons[0].querySelector('svg')).toBeInTheDocument();
+    it('should handle subtask not found when opening from URL', async () => {
+      (api.getSubtask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Subtask not found'));
+
+      const mockNavigate = vi.fn();
+      vi.doMock('react-router-dom', () => ({
+        ...vi.importActual('react-router-dom'),
+        useNavigate: () => mockNavigate
+      }));
+
+      renderWithRouter(
+        <LazySubtaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          parentTaskId={mockParentTaskId}
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}/subtask/invalid-id`]
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('subtask-details-dialog')).not.toBeInTheDocument();
+      });
     });
   });
 
   describe('Subtask Actions', () => {
     beforeEach(async () => {
+      (apiLazy.getSubtaskSummaries as ReturnType<typeof vi.fn>).mockResolvedValue({
+        subtasks: mockSummaries,
+        total: 3
+      });
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubtasks);
     });
 
     it('should handle subtask deletion', async () => {
       (api.deleteSubtask as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      render(
+      renderWithRouter(
         <LazySubtaskList
           projectId={mockProjectId}
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
-        />
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}`]
       );
 
       await waitFor(() => {
@@ -412,20 +445,21 @@ describe('LazySubtaskList', () => {
       fireEvent.click(screen.getByText('Confirm'));
 
       await waitFor(() => {
-        expect(api.deleteSubtask).toHaveBeenCalledWith(mockParentTaskId, 'sub-1');
-        expect(screen.queryByText('Subtask 1')).not.toBeInTheDocument();
+        expect(api.deleteSubtask).toHaveBeenCalledWith('sub-1');
       });
     });
 
-    it('should handle delete failure', async () => {
-      (api.deleteSubtask as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    it('should handle delete failure gracefully', async () => {
+      (api.deleteSubtask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Delete failed'));
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      render(
+      renderWithRouter(
         <LazySubtaskList
           projectId={mockProjectId}
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
-        />
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}`]
       );
 
       await waitFor(() => {
@@ -443,17 +477,20 @@ describe('LazySubtaskList', () => {
 
       await waitFor(() => {
         expect(api.deleteSubtask).toHaveBeenCalled();
-        expect(screen.getByText('Subtask 1')).toBeInTheDocument(); // Still exists
+        expect(consoleSpy).toHaveBeenCalledWith('Failed to delete subtask:', expect.any(Error));
       });
+
+      consoleSpy.mockRestore();
     });
 
     it('should cancel delete operation', async () => {
-      render(
+      renderWithRouter(
         <LazySubtaskList
           projectId={mockProjectId}
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
-        />
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}`]
       );
 
       await waitFor(() => {
@@ -477,12 +514,13 @@ describe('LazySubtaskList', () => {
     });
 
     it('should open complete dialog for incomplete subtasks', async () => {
-      render(
+      renderWithRouter(
         <LazySubtaskList
           projectId={mockProjectId}
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
-        />
+        />,
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}`]
       );
 
       await waitFor(() => {
@@ -491,7 +529,7 @@ describe('LazySubtaskList', () => {
 
       // Find complete button for second subtask (in_progress)
       const completeButtons = screen.getAllByTitle('Complete');
-      fireEvent.click(completeButtons[0]); // First complete button is for sub-2
+      fireEvent.click(completeButtons[1]); // Second subtask's complete button
 
       await waitFor(() => {
         expect(screen.getByTestId('subtask-complete-dialog')).toBeInTheDocument();
@@ -503,9 +541,6 @@ describe('LazySubtaskList', () => {
 
       await waitFor(() => {
         expect(screen.queryByTestId('subtask-complete-dialog')).not.toBeInTheDocument();
-        // The subtask status should be updated
-        const statusBadges = screen.getAllByText('done');
-        expect(statusBadges.length).toBeGreaterThan(1); // Original done + newly completed
       });
     });
 

@@ -14,6 +14,66 @@ import {
 } from './services/apiV2';
 import logger from './utils/logger';
 
+// --- Response Type Definitions ---
+export interface ApiResponse<T = any> {
+    success?: boolean;
+    message?: string;
+    error?: string;
+    detail?: string;
+    data?: T;
+    [key: string]: any;
+}
+
+export interface TasksResponse extends ApiResponse {
+    tasks: Task[];
+}
+
+export interface TaskResponse extends ApiResponse {
+    task: Task;
+}
+
+export interface SubtasksResponse extends ApiResponse {
+    subtasks: Subtask[];
+}
+
+export interface SubtaskResponse extends ApiResponse {
+    subtask: Subtask;
+}
+
+export interface ProjectsResponse extends ApiResponse {
+    projects: Project[];
+}
+
+export interface ProjectResponse extends ApiResponse {
+    project: Project;
+}
+
+export interface BranchesResponse extends ApiResponse {
+    branches: Branch[];
+}
+
+export interface BranchResponse extends ApiResponse {
+    branch: Branch;
+}
+
+export interface ContextResponse extends ApiResponse {
+    context: any;
+}
+
+export interface AgentsResponse extends ApiResponse {
+    agents: any[];
+}
+
+export interface HealthResponse extends ApiResponse {
+    status: string;
+}
+
+export interface DeleteResponse {
+    success: boolean;
+    message?: string;
+    error?: string;
+}
+
 // --- Interfaces for Type Safety ---
 export interface Task {
     id: string;
@@ -38,6 +98,7 @@ export interface Task {
     due_date?: string;
     created_at?: string;
     updated_at?: string;
+    progress_percentage?: number;
     [key: string]: any;
 }
 
@@ -91,17 +152,17 @@ export interface Rule {
 
 // --- Task Operations ---
 export const listTasks = async (params?: { git_branch_id?: string }): Promise<Task[]> => {
-    const response = await taskApiV2.getTasks(params);
+    const response = await taskApiV2.getTasks(params) as TasksResponse;
     return response.tasks || [];
 };
 
 export const getTasks = async (git_branch_id: string): Promise<any> => {
-    const response = await taskApiV2.getTasks({ git_branch_id });
+    const response = await taskApiV2.getTasks({ git_branch_id }) as TasksResponse;
     return response || { tasks: [] };
 };
 
 export const getTask = async (task_id: string): Promise<Task> => {
-    const response = await taskApiV2.getTask(task_id);
+    const response = await taskApiV2.getTask(task_id) as TaskResponse;
     return response.task || response;
 };
 
@@ -112,8 +173,8 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
         status: task.status,
         priority: task.priority,
         git_branch_id: task.git_branch_id,
-        assignees: task.assignees // Add assignees field
-    });
+        assignees: Array.isArray(task.assignees) ? task.assignees.join(',') : task.assignees // Convert array to comma-separated string
+    }) as TaskResponse;
     return response.task || response;
 };
 
@@ -124,7 +185,7 @@ export const updateTask = async (task_id: string, updates: Partial<Task>): Promi
         status: updates.status,
         priority: updates.priority,
         progress_percentage: updates.progress_percentage
-    });
+    }) as TaskResponse;
     return response.task || response;
 };
 
@@ -133,10 +194,10 @@ export const deleteTask = async (task_id: string): Promise<void> => {
 };
 
 export const completeTask = async (
-    task_id: string, 
+    task_id: string,
     completion_data: { completion_summary: string; testing_notes?: string }
 ): Promise<Task> => {
-    const response = await taskApiV2.completeTask(task_id, completion_data);
+    const response = await taskApiV2.completeTask(task_id, completion_data) as TaskResponse;
     return response.task || response;
 };
 
@@ -152,13 +213,13 @@ export const searchTasks = async (query: string, params?: { git_branch_id?: stri
 
 // --- Subtask Operations ---
 export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
-    const response = await subtaskApiV2.listSubtasksForTask(task_id);
+    const response = await subtaskApiV2.listSubtasksForTask(task_id) as SubtasksResponse;
     return response.subtasks || [];
 };
 
 export const getSubtask = async (task_id: string, subtask_id: string): Promise<Subtask> => {
-    // Use dedicated subtask endpoint for complete data
-    const response = await subtaskApiV2.getSubtask(subtask_id);
+    // Use nested subtask endpoint for complete data with proper parent task routing
+    const response = await subtaskApiV2.getSubtask(task_id, subtask_id) as SubtaskResponse;
     return response.subtask || response;
 };
 
@@ -166,7 +227,7 @@ export const createSubtask = async (task_id: string, subtask: Partial<Subtask>):
     const response = await subtaskApiV2.createSubtask(task_id, {
         title: subtask.title || '',
         description: subtask.description
-    });
+    }) as SubtaskResponse;
     return response.subtask || response;
 };
 
@@ -176,7 +237,7 @@ export const updateSubtask = async (subtask_id: string, updates: Partial<Subtask
         description: updates.description,
         status: updates.status,
         progress_percentage: updates.progress_percentage
-    });
+    }) as SubtaskResponse;
     return response.subtask || response;
 };
 
@@ -188,14 +249,14 @@ export const completeSubtask = async (
     subtask_id: string,
     completion_notes?: string
 ): Promise<Subtask> => {
-    const response = await subtaskApiV2.completeSubtask(subtask_id, completion_notes);
+    const response = await subtaskApiV2.completeSubtask(subtask_id, completion_notes) as SubtaskResponse;
     return response.subtask || response;
 };
 
 // --- Project Operations ---
 export const listProjects = async (): Promise<Project[]> => {
     try {
-        const response = await projectApiV2.getProjects();
+        const response = await projectApiV2.getProjects() as ProjectsResponse;
         return response.projects || [];
     } catch (error) {
         logger.error('listProjects: Error fetching projects:', error);
@@ -207,7 +268,7 @@ export const createProject = async (project: Partial<Project>): Promise<Project>
     const response = await projectApiV2.createProject({
         name: project.name || '',
         description: project.description
-    });
+    }) as ProjectResponse;
     return response.project || response;
 };
 
@@ -215,18 +276,18 @@ export const updateProject = async (project_id: string, updates: Partial<Project
     const response = await projectApiV2.updateProject(project_id, {
         name: updates.name,
         description: updates.description
-    });
+    }) as ProjectResponse;
     return response.project || response;
 };
 
-export const deleteProject = async (project_id: string): Promise<{ success: boolean; message?: string; error?: string }> => {
-    const response = await projectApiV2.deleteProject(project_id);
+export const deleteProject = async (project_id: string): Promise<DeleteResponse> => {
+    const response = await projectApiV2.deleteProject(project_id) as DeleteResponse;
     return response;
 };
 
 // --- Branch Operations ---
 export const listBranches = async (project_id: string): Promise<Branch[]> => {
-    const response = await branchApiV2.getBranches(project_id);
+    const response = await branchApiV2.getBranches(project_id) as BranchesResponse;
     return response.branches || [];
 };
 
@@ -234,7 +295,7 @@ export const createBranch = async (project_id: string, branch: Partial<Branch>):
     const response = await branchApiV2.createBranch(project_id, {
         git_branch_name: branch.git_branch_name || '',
         description: branch.description
-    });
+    }) as BranchResponse;
     return response.branch || response;
 };
 
@@ -243,37 +304,54 @@ export const updateBranch = async (branch_id: string, updates: Partial<Branch>):
         git_branch_name: updates.git_branch_name,
         description: updates.description,
         is_active: updates.is_active
-    });
+    }) as BranchResponse;
     return response.branch || response;
 };
 
-export const deleteBranch = async (branch_id: string): Promise<{ success: boolean; message?: string; error?: string }> => {
+export const deleteBranch = async (branch_id: string): Promise<DeleteResponse> => {
     try {
-        const response = await branchApiV2.deleteBranch(branch_id);
+        const response = await branchApiV2.deleteBranch(branch_id) as unknown;
+
         // Handle different response formats
         if (response === null || response === undefined) {
             // If response is null/undefined, assume success (204 No Content)
             return { success: true, message: 'Branch deleted successfully' };
         }
-        if (typeof response === 'object') {
+
+        if (typeof response === 'object' && response !== null) {
+            const responseObj = response as Record<string, any>;
+
             // If response has a success field, use it
-            if ('success' in response) {
-                return response;
+            if ('success' in responseObj) {
+                return {
+                    success: Boolean(responseObj.success),
+                    message: responseObj.message,
+                    error: responseObj.error
+                };
             }
+
             // If response has no error indication, assume success
-            if (!response.error && !response.detail) {
-                return { success: true, message: response.message || 'Branch deleted successfully' };
+            if (!responseObj.error && !responseObj.detail) {
+                return {
+                    success: true,
+                    message: responseObj.message || 'Branch deleted successfully'
+                };
             }
+
             // If there's an error
-            return { success: false, error: response.error || response.detail || 'Failed to delete branch' };
+            return {
+                success: false,
+                error: responseObj.error || responseObj.detail || 'Failed to delete branch'
+            };
         }
+
         // For any other response type, assume success
         return { success: true, message: 'Branch deleted successfully' };
     } catch (error: any) {
         logger.error('Delete branch error:', error);
-        return { 
-            success: false, 
-            error: error.message || 'Failed to delete branch' 
+        return {
+            success: false,
+            error: error.message || 'Failed to delete branch'
         };
     }
 };
@@ -281,7 +359,7 @@ export const deleteBranch = async (branch_id: string): Promise<{ success: boolea
 // --- Context Operations ---
 export const getTaskContext = async (task_id: string): Promise<any> => {
     try {
-        const response = await contextApiV2.getContext('task', task_id, true);
+        const response = await contextApiV2.getContext('task', task_id, true) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error getting task context:', error);
@@ -291,7 +369,7 @@ export const getTaskContext = async (task_id: string): Promise<any> => {
 
 export const getBranchContext = async (branch_id: string): Promise<any> => {
     try {
-        const response = await contextApiV2.getContext('branch', branch_id, true);
+        const response = await contextApiV2.getContext('branch', branch_id, true) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error getting branch context:', error);
@@ -301,7 +379,7 @@ export const getBranchContext = async (branch_id: string): Promise<any> => {
 
 export const getProjectContext = async (project_id: string): Promise<any> => {
     try {
-        const response = await contextApiV2.getContext('project', project_id, true);
+        const response = await contextApiV2.getContext('project', project_id, true) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error getting project context:', error);
@@ -312,7 +390,7 @@ export const getProjectContext = async (project_id: string): Promise<any> => {
 export const getGlobalContext = async (): Promise<any> => {
     try {
         // For global context, use any dummy value - server ignores it and uses token user
-        const response = await contextApiV2.getContext('global', 'global', false);
+        const response = await contextApiV2.getContext('global', 'global', false) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error getting global context:', error);
@@ -323,7 +401,7 @@ export const getGlobalContext = async (): Promise<any> => {
 export const updateGlobalContext = async (data: any): Promise<any> => {
     try {
         // For global context, use any dummy value - server ignores it and uses token user
-        const response = await contextApiV2.updateContext('global', 'global', data);
+        const response = await contextApiV2.updateContext('global', 'global', data) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error updating global context:', error);
@@ -333,7 +411,7 @@ export const updateGlobalContext = async (data: any): Promise<any> => {
 
 export const updateProjectContext = async (project_id: string, data: any): Promise<any> => {
     try {
-        const response = await contextApiV2.updateContext('project', project_id, data);
+        const response = await contextApiV2.updateContext('project', project_id, data) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error updating project context:', error);
@@ -343,7 +421,7 @@ export const updateProjectContext = async (project_id: string, data: any): Promi
 
 export const updateBranchContext = async (branch_id: string, data: any): Promise<any> => {
     try {
-        const response = await contextApiV2.updateContext('branch', branch_id, data);
+        const response = await contextApiV2.updateContext('branch', branch_id, data) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error updating branch context:', error);
@@ -353,7 +431,7 @@ export const updateBranchContext = async (branch_id: string, data: any): Promise
 
 export const updateTaskContext = async (task_id: string, data: any): Promise<any> => {
     try {
-        const response = await contextApiV2.updateContext('task', task_id, data);
+        const response = await contextApiV2.updateContext('task', task_id, data) as ContextResponse;
         return response.context || response;
     } catch (error) {
         logger.error('Error updating task context:', error);
@@ -364,7 +442,7 @@ export const updateTaskContext = async (task_id: string, data: any): Promise<any
 // --- Agent Operations ---
 export const listAgents = async (): Promise<any[]> => {
     try {
-        const response = await agentApiV2.getAgentsMetadata();
+        const response = await agentApiV2.getAgentsMetadata() as AgentsResponse;
         return response.agents || [];
     } catch (error) {
         logger.error('Error listing agents:', error);
@@ -441,22 +519,22 @@ export const listRules = async (): Promise<Rule[]> => {
     return [];
 };
 
-export const createRule = async (rule: Partial<Rule>): Promise<Rule> => {
+export const createRule = async (_rule: Partial<Rule>): Promise<Rule> => {
     logger.warn('Rule operations not yet implemented in V2 API');
     throw new Error('Rule operations not available');
 };
 
-export const updateRule = async (rule_id: string, updates: Partial<Rule>): Promise<Rule> => {
+export const updateRule = async (_rule_id: string, _updates: Partial<Rule>): Promise<Rule> => {
     logger.warn('Rule operations not yet implemented in V2 API');
     throw new Error('Rule operations not available');
 };
 
-export const deleteRule = async (rule_id: string): Promise<void> => {
+export const deleteRule = async (_rule_id: string): Promise<void> => {
     logger.warn('Rule operations not yet implemented in V2 API');
     throw new Error('Rule operations not available');
 };
 
-export const validateRule = async (rule: Partial<Rule>): Promise<any> => {
+export const validateRule = async (_rule: Partial<Rule>): Promise<any> => {
     logger.warn('Rule operations not yet implemented in V2 API');
     return { valid: false, errors: ['Rule operations not available'] };
 };
@@ -464,7 +542,7 @@ export const validateRule = async (rule: Partial<Rule>): Promise<any> => {
 // --- Connection Operations ---
 export const checkHealth = async (): Promise<boolean> => {
     try {
-        const response = await connectionApiV2.healthCheck();
+        const response = await connectionApiV2.healthCheck() as HealthResponse;
         return response.status === 'healthy';
     } catch (error) {
         logger.error('Health check failed:', error);

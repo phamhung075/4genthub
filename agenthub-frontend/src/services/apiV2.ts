@@ -321,8 +321,8 @@ export const subtaskApiV2 = {
   },
 
   // Get a specific subtask
-  getSubtask: async (subtaskId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
+  getSubtask: async (taskId: string, subtaskId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/tasks/${taskId}/subtasks/${subtaskId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
