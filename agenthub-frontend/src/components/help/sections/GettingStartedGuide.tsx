@@ -12,15 +12,21 @@ const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ expandedSecti
   const sectionData = {
     id: 'getting-started',
     title: 'Getting Started Guide',
-    description: '3-minute quick start with hosted 4genthub service - no server setup required',
+    description: '3-minute quick start with automated setup script - simplified configuration process',
     icon: <Play className="h-6 w-6 text-green-500" />,
     content: (
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
-          <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-100">⚡ 3-Minute Quick Start</h3>
+          <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-100">⚡ 3-Minute Quick Start with Automated Setup</h3>
           <p className="text-blue-800 dark:text-blue-200">
-            Get started with 4genthub in just 3 minutes using our fully hosted service - no local server installation or maintenance required!
+            Get started with 4genthub in just 3 minutes using our <strong>automated setup script</strong> - handles all configuration automatically with clear prompts!
           </p>
+          <div className="mt-2 p-2 bg-white/50 dark:bg-black/50 rounded">
+            <code className="text-sm font-mono text-blue-900 dark:text-blue-100">
+              python3 .claude/hooks/setup_hooks.py
+            </code>
+            <span className="text-xs text-blue-700 dark:text-blue-300 ml-2">← One command does it all!</span>
+          </div>
         </div>
 
         <div>
@@ -118,36 +124,71 @@ const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ expandedSecti
                 />
 
                 <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg">
-                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">Copy configuration files:</p>
+                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">🎯 Simplified Setup - Run ONE Command:</p>
 
                   <CommandBox
-                    command="cp .claude/copy-to-root-project-rename-to:CLAUDE.md CLAUDE.md"
-                    title="Copy CLAUDE.md to project root"
-                    description="Main AI agent instructions"
+                    command="python3 .claude/hooks/setup_hooks.py"
+                    title="Run Automated Setup"
+                    description="Handles all configuration automatically"
                   />
 
-                  <CommandBox
-                    command="cp .claude/copy-to-root-project-rename-to:CLAUDE.local.md CLAUDE.local.md"
-                    title="Copy CLAUDE.local.md to project root"
-                    description="Local environment rules (not checked into git)"
-                  />
+                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-3 mb-2">
+                    This setup script automatically:
+                  </p>
+                  <ul className="text-xs text-purple-700 dark:text-purple-300 space-y-1 ml-4 list-disc list-inside">
+                    <li>✅ Creates settings.json from template with correct paths</li>
+                    <li>✅ Updates .gitignore to exclude local files</li>
+                    <li>✅ Untracks configuration files from git</li>
+                    <li>✅ Validates all required hook files</li>
+                    <li>✅ Tests hook execution</li>
+                  </ul>
 
-                  <CommandBox
-                    command="cp .claude/.mcp.json.sample .claude/.mcp.json"
-                    title="Create MCP config file"
-                    description="Configure API connection"
-                  />
+                  <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mt-3 mb-2">Then follow the prompts to:</p>
 
-                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-2">
-                    Edit .claude/.mcp.json and add your API token from Step 1
+                  <ol className="text-xs text-purple-700 dark:text-purple-300 space-y-2 ml-4 list-decimal list-inside">
+                    <li>
+                      <strong>Copy CLAUDE configuration files</strong> (if not present):
+                      <div className="ml-4 mt-1">
+                        <code className="text-xs bg-purple-200 dark:bg-purple-800 px-1 rounded">
+                          cp .claude/copy-to-root-project-rename-to:CLAUDE.md CLAUDE.md
+                        </code>
+                      </div>
+                    </li>
+                    <li>
+                      <strong>Create API configuration</strong>:
+                      <div className="ml-4 mt-1">
+                        <code className="text-xs bg-purple-200 dark:bg-purple-800 px-1 rounded">
+                          cp .claude/.mcp.json.sample .mcp.json
+                        </code>
+                      </div>
+                    </li>
+                    <li>
+                      <strong>Configure hook protection</strong> (customize for your project):
+                      <div className="ml-4 mt-1 text-xs text-purple-600 dark:text-purple-400">
+                        Review and edit the files in .claude/hooks/config/
+                      </div>
+                    </li>
+                  </ol>
+
+                  <p className="text-xs text-purple-800 dark:text-purple-200 mt-3">
+                    ⚠️ Don't forget to edit <strong>.mcp.json</strong> and add your API token from Step 1
                   </p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-4 border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
-              <h5 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Step 4: Launch Claude Code</h5>
+              <h5 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Step 4: Configure & Launch Claude Code</h5>
               <div className="space-y-3">
+                <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
+                  Edit <strong>.mcp.json</strong> and replace YOUR_API_TOKEN_HERE with your token:
+                </p>
+                <div className="bg-orange-100 dark:bg-orange-900 p-2 rounded mb-3">
+                  <code className="text-xs font-mono">
+                    "Authorization": "Bearer YOUR_ACTUAL_TOKEN_HERE"
+                  </code>
+                </div>
+
                 <CommandBox
                   command="claude-code ."
                   title="Open in Claude Code"
@@ -202,6 +243,21 @@ const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ expandedSecti
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200 dark:border-red-800 mb-6">
+          <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">
+            ⚠️ Configuration Validation
+          </h4>
+          <p className="text-sm text-red-800 dark:text-red-200 mb-2">
+            If you see "CLAUDE CODE CONFIGURATION ERROR" when starting:
+          </p>
+          <ul className="text-xs text-red-700 dark:text-red-300 space-y-1 ml-4 list-disc list-inside">
+            <li>The error message shows EXACTLY which files are missing</li>
+            <li>Follow the provided fix commands to resolve</li>
+            <li>Run <code className="bg-red-200 dark:bg-red-800 px-1 rounded">python3 .claude/hooks/setup_hooks.py</code> again if needed</li>
+            <li>All 5 required files must exist: settings.json, .mcp.json, CLAUDE.md, and both hook config files</li>
+          </ul>
         </div>
 
         <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
