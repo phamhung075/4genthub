@@ -6,9 +6,7 @@
  */
 
 import { toastEventBus } from './toastEventBus';
-import { notificationDeduplicationService } from './notificationDeduplicationService';
 import logger from '../utils/logger';
-import Cookies from 'js-cookie';
 
 // Entity and event types for WebSocket messages
 type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
@@ -40,7 +38,6 @@ class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
-  private tokenMonitorInterval: NodeJS.Timeout | null = null;
   private handlers: Map<string, Set<DataChangeHandler>> = new Map();
   private isConnecting = false;
   private reconnectAttempts = 0;
@@ -76,8 +73,8 @@ class WebSocketService {
       if (token) {
         finalUrl = `${wsUrl}?token=${encodeURIComponent(token)}`;
       } else {
-        // Try to get token from cookies (primary storage for auth tokens)
-        const storedToken = Cookies.get('access_token');
+        // Try to get token from localStorage
+        const storedToken = localStorage.getItem('access_token');
         if (storedToken) {
           finalUrl = `${wsUrl}?token=${encodeURIComponent(storedToken)}`;
         }
@@ -93,15 +90,12 @@ class WebSocketService {
         this.reconnectDelay = 1000;
 
         // Log connection status
-        if (!token && !Cookies.get('access_token')) {
+        if (!token && !localStorage.getItem('access_token')) {
           logger.info('Connected as anonymous user');
         }
 
         // Start heartbeat
         this.startHeartbeat();
-
-        // Start token monitoring for automatic reconnection
-        this.startTokenMonitoring();
 
         // Subscribe to user updates by default
         this.subscribe('user');
@@ -127,9 +121,6 @@ class WebSocketService {
         this.isConnecting = false;
         this.stopHeartbeat();
 
-        // Stop token monitoring on disconnect (will restart on successful reconnect)
-        this.stopTokenMonitoring();
-
         // Attempt to reconnect if not intentionally closed
         if (event.code !== 1000) {
           this.scheduleReconnect();
@@ -152,7 +143,6 @@ class WebSocketService {
     }
 
     this.stopHeartbeat();
-    this.stopTokenMonitoring();
 
     if (this.ws) {
       this.ws.close(1000, 'Client disconnecting');
@@ -175,45 +165,6 @@ class WebSocketService {
 
     // Connect with new token
     await this.connect(newToken);
-  }
-
-  /**
-   * Monitor cookie changes and automatically reconnect with new tokens
-   * This provides automatic WebSocket reconnection when auth tokens are refreshed
-   */
-  private startTokenMonitoring(): void {
-    // Check for token changes every 30 seconds
-    const checkInterval = setInterval(() => {
-      const currentToken = Cookies.get('access_token');
-
-      // If no token exists and we're connected, disconnect
-      if (!currentToken && this.isConnected()) {
-        logger.info('Access token removed - disconnecting WebSocket');
-        this.disconnect();
-        return;
-      }
-
-      // If token exists but we're not connected, try to connect
-      if (currentToken && !this.isConnected()) {
-        logger.info('Access token detected - attempting WebSocket connection');
-        this.connect(currentToken).catch(error => {
-          logger.error('Failed to connect WebSocket with detected token:', error);
-        });
-      }
-    }, 30000); // Check every 30 seconds
-
-    // Store interval for cleanup
-    this.tokenMonitorInterval = checkInterval;
-  }
-
-  /**
-   * Stop token monitoring
-   */
-  private stopTokenMonitoring(): void {
-    if (this.tokenMonitorInterval) {
-      clearInterval(this.tokenMonitorInterval);
-      this.tokenMonitorInterval = null;
-    }
   }
 
   /**
@@ -381,18 +332,7 @@ class WebSocketService {
 
     // Don't show notification if it's from the current user's action
     // (They already know what they did)
-    // Extract user ID from access token in cookies if available
-    const accessToken = Cookies.get('access_token');
-    let currentUserId = null;
-    if (accessToken) {
-      try {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
-        currentUserId = payload.sub || payload.user_id;
-      } catch (error) {
-        logger.debug('Could not decode access token for user ID comparison');
-      }
-    }
-
+    const currentUserId = localStorage.getItem('user_id');
     if (currentUserId && userName === currentUserId) {
       // Still update the UI, but don't show notification
       return;
@@ -419,37 +359,8 @@ class WebSocketService {
     entityId?: string,
     userName?: string
   ): void {
-    // CRITICAL: Apply client-side deduplication to prevent 7x duplicate notifications
-    const shouldShow = notificationDeduplicationService.shouldShowNotification(
-      entityType,
-      eventType,
-      entityName,
-      entityId,
-      userName,
-      { timestamp: Date.now() } // Additional context for hash uniqueness
-    );
-
-    if (!shouldShow) {
-      logger.debug('🚫 WebSocket notification blocked by deduplication service', {
-        entityType,
-        eventType,
-        entityName,
-        entityId,
-        userName
-      });
-      return; // Exit early - don't show duplicate notification
-    }
-
     const name = entityName || `${entityType} #${entityId?.substring(0, 8)}`;
     const user = userName || 'Another user';
-
-    logger.debug('✅ WebSocket notification allowed by deduplication service', {
-      entityType,
-      eventType,
-      entityName,
-      entityId,
-      userName
-    });
 
     // Determine the notification based on event type
     switch (eventType) {
