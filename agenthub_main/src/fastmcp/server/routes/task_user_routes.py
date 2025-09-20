@@ -499,5 +499,55 @@ async def get_subtask_summaries(
         )
 
 
+@router.get("/{task_id}/subtasks/{subtask_id}", response_model=dict)
+async def get_subtask(
+    task_id: str,
+    subtask_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific subtask through its parent task.
+
+    This endpoint provides access to individual subtasks with proper parent task validation,
+    ensuring users can only access subtasks they have permission to view.
+    """
+    try:
+        logger.info(f"Getting subtask {subtask_id} for task {task_id} by user {current_user.email}")
+
+        # Use the subtask controller to get the subtask
+        result = subtask_controller.get_subtask(
+            subtask_id=subtask_id,
+            user_id=current_user.id,
+            session=db
+        )
+
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=result.get("error", "Subtask not found")
+            )
+
+        # Verify the subtask belongs to the specified task
+        subtask = result.get("subtask", {})
+        if subtask.get("task_id") != task_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Subtask not found for the specified task"
+            )
+
+        logger.info(f"Successfully retrieved subtask {subtask_id} for task {task_id}")
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting subtask {subtask_id} for task {task_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
 # Register the router in your main app
 # app.include_router(router)

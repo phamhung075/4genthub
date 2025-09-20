@@ -2011,7 +2011,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 30,
+      "count": 32,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2112,6 +2112,13 @@
           "size": 20412
         },
         {
+          "hash": "e4c47fceb1b338e427aeee301907b210",
+          "modified": "2025-09-20T17:06:58.889822",
+          "name": "subtask-wrong-task-id-api-calls.md",
+          "path": "troubleshooting-guides/subtask-wrong-task-id-api-calls.md",
+          "size": 4771
+        },
+        {
           "hash": "cbbcdc5819ef08506226b64432fc7a09",
           "modified": "2025-09-17T14:11:39.095822",
           "name": "frontend-debugging-summary.md",
@@ -2131,6 +2138,13 @@
           "name": "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
           "path": "troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
           "size": 20173
+        },
+        {
+          "hash": "be57f9bc7ebc767a87699757c119f512",
+          "modified": "2025-09-20T16:34:39.923726",
+          "name": "subtask-url-revert-fix.md",
+          "path": "troubleshooting-guides/subtask-url-revert-fix.md",
+          "size": 3547
         },
         {
           "hash": "3ad6ba6bac7df863ed318ca085fc1c42",
@@ -2240,7 +2254,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-20T00:34:55.834919",
+  "generated_at": "2025-09-20T17:06:58.985640",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2629,6 +2643,8 @@
         "orchestrator-bypass-analysis.md",
         "production-deployment-issues.md",
         "subtask-persistence-debugging-guide.md",
+        "subtask-url-revert-fix.md",
+        "subtask-wrong-task-id-api-calls.md",
         "task-context-completion-summary-fixes.md",
         "task-delegation-fix.md",
         "task-list-git-branch-filtering-fix.md",
@@ -2648,5 +2664,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 294
+  "total_files": 296
 }
