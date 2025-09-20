@@ -1562,7 +1562,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 9,
+      "count": 10,
       "files": [
         {
           "hash": "45809279307daf9847fb05aa5ae3251c",
@@ -1612,6 +1612,13 @@
           "name": "test-cleanup-report-2025-09-12.md",
           "path": "reports-status/test-cleanup-report-2025-09-12.md",
           "size": 2659
+        },
+        {
+          "hash": "2740195003a4b107ee776f77f9db1db6",
+          "modified": "2025-09-20T18:01:07.158870",
+          "name": "subtask-health-monitoring-report-2025-09-20.md",
+          "path": "reports-status/subtask-health-monitoring-report-2025-09-20.md",
+          "size": 6122
         },
         {
           "hash": "3420a75e715c9569bf04fd35532968ad",
@@ -2112,11 +2119,11 @@
           "size": 20412
         },
         {
-          "hash": "e4c47fceb1b338e427aeee301907b210",
-          "modified": "2025-09-20T17:06:58.889822",
+          "hash": "5a10a24240407a58465fe4b5792f7d51",
+          "modified": "2025-09-20T17:22:27.985061",
           "name": "subtask-wrong-task-id-api-calls.md",
           "path": "troubleshooting-guides/subtask-wrong-task-id-api-calls.md",
-          "size": 4771
+          "size": 12579
         },
         {
           "hash": "cbbcdc5819ef08506226b64432fc7a09",
@@ -2254,7 +2261,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-20T17:06:58.985640",
+  "generated_at": "2025-09-20T18:01:07.259365",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2555,6 +2562,7 @@
         "ai-task-planning-system-complete-2025-09-12.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
+        "subtask-health-monitoring-report-2025-09-20.md",
         "test-cleanup-report-2025-09-12.md",
         "test-error-resolution-final.md",
         "test-fixes-final-status.md",
@@ -2664,5 +2672,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 296
+  "total_files": 297
 }

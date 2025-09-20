@@ -7,27 +7,39 @@ from datetime import datetime, timezone
 from ..entities.task import Task
 from ..value_objects.task_id import TaskId
 from ..repositories.task_repository import TaskRepository
+from ....utilities.id_validator import IDValidator, IDValidationError
 
 logger = logging.getLogger(__name__)
 
 
 class DependencyValidationService:
     """Service for validating dependency chains and detecting issues"""
-    
-    def __init__(self, task_repository: TaskRepository):
+
+    def __init__(self, task_repository: TaskRepository, id_validator: Optional[IDValidator] = None):
         self._task_repository = task_repository
+        self._id_validator = id_validator or IDValidator()
     
     def validate_dependency_chain(self, task_id: TaskId) -> Dict[str, Any]:
         """
         Validate the entire dependency chain for a task.
-        
+
         Args:
             task_id: The task to validate
-            
+
         Returns:
             Dictionary with validation results
         """
         try:
+            # Validate task_id format first
+            task_id_str = str(task_id)
+            id_result = self._id_validator.detect_id_type(task_id_str, "task_id")
+            if not id_result.is_valid:
+                return {
+                    "valid": False,
+                    "errors": [f"Invalid task ID format: {id_result.error_message}"],
+                    "issues": []
+                }
+
             task = self._task_repository.find_by_id(task_id)
             if not task:
                 return {
@@ -58,6 +70,17 @@ class DependencyValidationService:
             
             # Validate each dependency
             for dep_id in dependency_ids:
+                # First validate dependency ID format
+                dep_id_result = self._id_validator.detect_id_type(dep_id, "task_id")
+                if not dep_id_result.is_valid:
+                    errors.append(f"Invalid dependency ID format '{dep_id}': {dep_id_result.error_message}")
+                    continue
+
+                # Check for self-dependency using ID validation
+                if task_id_str == dep_id:
+                    errors.append(f"Task cannot depend on itself (ID: {dep_id})")
+                    continue
+
                 dep_issues = self._validate_single_dependency(task, dep_id, task_map)
                 issues.extend(dep_issues)
             

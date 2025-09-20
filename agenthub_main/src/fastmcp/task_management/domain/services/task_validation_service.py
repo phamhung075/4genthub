@@ -9,6 +9,7 @@ from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus
 from ..value_objects.priority import Priority
 from ..exceptions.task_exceptions import TaskValidationError
+from ....utilities.id_validator import IDValidator, IDValidationError, prevent_id_confusion
 
 logger = logging.getLogger(__name__)
 
@@ -47,18 +48,21 @@ class TaskValidationService:
     - Consistency validation (status transitions, priority constraints)
     """
     
-    def __init__(self, 
+    def __init__(self,
                  git_branch_repository: Optional[GitBranchRepositoryProtocol] = None,
-                 project_repository: Optional[ProjectRepositoryProtocol] = None):
+                 project_repository: Optional[ProjectRepositoryProtocol] = None,
+                 id_validator: Optional[IDValidator] = None):
         """
         Initialize the task validation service.
-        
+
         Args:
             git_branch_repository: Repository for git branch validation (optional)
             project_repository: Repository for project validation (optional)
+            id_validator: ID validation service to prevent MCP/Application ID confusion (optional)
         """
         self._git_branch_repository = git_branch_repository
         self._project_repository = project_repository
+        self._id_validator = id_validator or IDValidator()
     
     def validate_task_creation(self, task: Task, additional_context: Optional[Dict[str, Any]] = None) -> List[str]:
         """
@@ -309,36 +313,67 @@ class TaskValidationService:
     def _validate_core_fields(self, task: Task) -> List[str]:
         """Validate core required fields."""
         errors = []
-        
-        # Task ID validation
+
+        # Task ID validation with IDValidator
         if not task.id:
             errors.append("Task ID is required")
-        
+        else:
+            task_id_str = str(task.id)
+            id_result = self._id_validator.detect_id_type(task_id_str, "task_id")
+            if not id_result.is_valid:
+                errors.append(f"Invalid task ID format: {id_result.error_message}")
+            elif id_result.warnings:
+                # Log warnings but don't add as validation errors
+                for warning in id_result.warnings:
+                    logger.warning(f"Task ID validation warning: {warning}")
+
         # Title validation
         if not hasattr(task, 'title') or not task.title:
             errors.append("Task title is required")
-        
+
         # Status validation
         if not hasattr(task, 'status') or not task.status:
             errors.append("Task status is required")
-        
+
         # Priority validation
         if not hasattr(task, 'priority') or not task.priority:
             errors.append("Task priority is required")
-        
+
         return errors
     
     def _validate_relationships(self, task: Task) -> List[str]:
         """Validate task relationships."""
         errors = []
-        
-        # Git branch relationship
+
+        # Git branch relationship with ID validation
         if hasattr(task, 'git_branch_id'):
             if not task.git_branch_id:
                 errors.append("Git branch ID is required")
-            elif self._git_branch_repository and not self._git_branch_repository.exists(task.git_branch_id):
-                errors.append(f"Git branch '{task.git_branch_id}' does not exist")
-        
+            else:
+                # Validate git branch ID format
+                git_branch_result = self._id_validator.detect_id_type(task.git_branch_id, "git_branch_id")
+                if not git_branch_result.is_valid:
+                    errors.append(f"Invalid git branch ID format: {git_branch_result.error_message}")
+
+                # Check if repository exists
+                if self._git_branch_repository and not self._git_branch_repository.exists(task.git_branch_id):
+                    errors.append(f"Git branch '{task.git_branch_id}' does not exist")
+
+                # Critical: Prevent task_id being used as git_branch_id (common bug)
+                if hasattr(task, 'id') and task.id and str(task.id) == str(task.git_branch_id):
+                    errors.append(
+                        "CRITICAL: Task ID and Git Branch ID are identical. "
+                        "This indicates parameter confusion that leads to data integrity issues."
+                    )
+
+        # Project relationship with ID validation
+        if hasattr(task, 'project_id') and task.project_id:
+            project_result = self._id_validator.detect_id_type(task.project_id, "project_id")
+            if not project_result.is_valid:
+                errors.append(f"Invalid project ID format: {project_result.error_message}")
+            elif self._project_repository and not self._project_repository.exists(task.project_id):
+                errors.append(f"Project '{task.project_id}' does not exist")
+
         return errors
     
     def _validate_business_rules(self, task: Task, operation_type: str) -> List[str]:
@@ -403,7 +438,81 @@ class TaskValidationService:
                 errors.append(f"Invalid status transition from '{current_status}' to '{new_status}'")
         
         return errors
-    
+
+    def validate_id_parameters(self, task_id: Optional[str] = None,
+                              git_branch_id: Optional[str] = None,
+                              project_id: Optional[str] = None,
+                              user_id: Optional[str] = None) -> List[str]:
+        """
+        Validate ID parameters to prevent confusion between MCP task IDs and application IDs.
+
+        This method should be called before any facade service operations to prevent
+        the critical bug where MCP task IDs are incorrectly passed as git_branch_ids.
+
+        Args:
+            task_id: Application task ID
+            git_branch_id: Git branch ID
+            project_id: Project ID
+            user_id: User ID
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        try:
+            result = self._id_validator.validate_parameter_mapping(
+                task_id=task_id,
+                git_branch_id=git_branch_id,
+                project_id=project_id,
+                user_id=user_id
+            )
+
+            errors = []
+            if not result.is_valid:
+                errors.append(result.error_message or "ID parameter validation failed")
+
+            # Log warnings for monitoring
+            if result.warnings:
+                for warning in result.warnings:
+                    logger.warning(f"ID Parameter Warning: {warning}")
+
+            return errors
+
+        except Exception as e:
+            logger.error(f"Error during ID parameter validation: {e}")
+            return [f"ID parameter validation error: {str(e)}"]
+
+    def validate_task_context_integrity(self, task_id: str, expected_git_branch_id: Optional[str] = None) -> List[str]:
+        """
+        Validate task context to ensure proper ID relationships.
+
+        This method helps prevent the critical issue where MCP task IDs
+        are incorrectly used as git_branch_ids in facade service calls.
+
+        Args:
+            task_id: The task ID to validate
+            expected_git_branch_id: The expected git_branch_id for cross-validation
+
+        Returns:
+            List of validation error messages (empty if valid)
+        """
+        try:
+            result = self._id_validator.validate_task_context(task_id, expected_git_branch_id)
+
+            errors = []
+            if not result.is_valid:
+                errors.append(result.error_message or "Task context validation failed")
+
+            # Log warnings for monitoring
+            if result.warnings:
+                for warning in result.warnings:
+                    logger.warning(f"Task Context Warning: {warning}")
+
+            return errors
+
+        except Exception as e:
+            logger.error(f"Error during task context validation: {e}")
+            return [f"Task context validation error: {str(e)}"]
+
     def _validate_priority_status_combination(self, task: Task) -> List[str]:
         """Validate priority and status combinations."""
         errors = []
