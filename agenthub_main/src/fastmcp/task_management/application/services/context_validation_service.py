@@ -15,6 +15,7 @@ from ...domain.exceptions.vision_exceptions import (
     InvalidContextUpdateError,
     MissingCompletionSummaryError
 )
+from ....utilities.id_validator import IDValidator, IDValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -22,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 class ContextValidationService:
     """Service for validating context updates according to Vision System rules."""
-    
-    def __init__(self, user_id: Optional[str] = None):
+
+    def __init__(self, user_id: Optional[str] = None, id_validator: Optional[IDValidator] = None):
         """Initialize the context validation service."""
         self._user_id = user_id  # Store user context
+        self._id_validator = id_validator or IDValidator()
 
     def _get_user_scoped_repository(self, repository: Any) -> Any:
         """Get a user-scoped version of the repository if it supports user context."""
@@ -42,7 +44,7 @@ class ContextValidationService:
 
     def with_user(self, user_id: str) -> 'ContextValidationService':
         """Create a new service instance scoped to a specific user."""
-        return ContextValidationService(user_id)
+        return ContextValidationService(user_id, self._id_validator)
     
     def validate_completion_context(self, 
                                   task: Task, 
@@ -69,9 +71,21 @@ class ContextValidationService:
         if not completion_summary or not completion_summary.strip():
             errors.append("completion_summary is required and cannot be empty")
             
-        # 2. Validate context belongs to the task
+        # 2. Validate task ID format
+        task_id_result = self._id_validator.detect_id_type(str(task.id), "task_id")
+        if not task_id_result.is_valid:
+            errors.append(f"Invalid task ID format: {task_id_result.error_message}")
+
+        # 3. Validate context belongs to the task
         if context.metadata.task_id != str(task.id):
             errors.append(f"Context task_id {context.metadata.task_id} does not match task {task.id}")
+
+            # Additional check for ID confusion
+            context_id_result = self._id_validator.detect_id_type(context.metadata.task_id, "task_id")
+            if not context_id_result.is_valid:
+                errors.append(f"Invalid context task_id format: {context_id_result.error_message}")
+            elif context.metadata.task_id == str(task.id):
+                errors.append("CRITICAL: Context task_id and task ID mismatch may indicate ID confusion")
             
         # 3. Validate task is not already completed
         if task.is_completed:

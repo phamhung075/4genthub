@@ -256,18 +256,45 @@ class SubtaskMCPController(ContextPropagationMixin):
 
     def _get_facade_for_request(self, task_id: str, user_id: str) -> SubtaskApplicationFacade:
         """Get appropriate facade for the request."""
-        
+
         # Check if using legacy factory interface (for backward compatibility)
         if self._subtask_facade_factory:
             # Legacy interface - use the factory directly (for tests)
             return self._subtask_facade_factory.create_subtask_facade()
-        
+
         if not self._facade_service:
             raise ValueError("FacadeService is required but not provided")
-        
-        # Get facade from service with user context
-        # Note: FacadeService.get_subtask_facade uses git_branch_id param, not task_id
-        return self._facade_service.get_subtask_facade(user_id=user_id, git_branch_id=task_id)
+
+        # CRITICAL FIX: Get git_branch_id from parent task, don't pass task_id as git_branch_id
+        # First get the parent task to derive the correct git_branch_id
+        try:
+            # Get temporary task facade to look up parent task
+            temp_facade = self._facade_service.get_task_facade(
+                project_id=None,  # Will be determined from task lookup
+                git_branch_id=None,  # Will be determined from task lookup
+                user_id=user_id
+            )
+
+            # Look up the parent task to get its git_branch_id
+            parent_task = temp_facade.get_task(task_id)
+            if not parent_task or not parent_task.get('task'):
+                raise ValueError(f"Parent task {task_id} not found")
+
+            # Extract git_branch_id from parent task
+            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            if not parent_git_branch_id:
+                raise ValueError(f"Parent task {task_id} missing git_branch_id required for context derivation")
+
+            # Now get the proper SUBTASK facade with correct git_branch_id
+            return self._facade_service.get_subtask_facade(
+                project_id=None,  # Will be derived from git_branch_id
+                git_branch_id=parent_git_branch_id,  # FIXED: Use actual git_branch_id from parent task
+                user_id=user_id
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to get facade for task {task_id}: {str(e)}")
+            raise ValueError(f"Failed to get subtask facade: {str(e)}")
 
     def _enhance_response_with_workflow_guidance(self, response: Dict[str, Any], 
                                                action: str, task_id: str) -> Dict[str, Any]:

@@ -1,0 +1,26 @@
+{
+  "migration_report": {
+    "timestamp": "2025-09-20T23:07:04.077414",
+    "database_path": "/home/daihungpham/__projects__/4genthub/agenthub_main/database/data/dhafnck_mcp.db",
+    "backup_path": null,
+    "dry_run": true,
+    "pre_migration_analysis": {
+      "analysis_timestamp": "2025-09-20T23:07:04.076636",
+      "total_subtasks": 0,
+      "total_tasks": 3,
+      "orphaned_subtasks": [],
+      "user_mismatch_subtasks": [],
+      "valid_subtasks": 0,
+      "corruption_summary": {
+        "total_corrupted": 0,
+        "orphaned_count": 0,
+        "user_mismatch_count": 0,
+        "valid_count": 0,
+        "corruption_percentage": 0
+      }
+    },
+    "migration_actions": [],
+    "post_migration_validation": null,
+    "migration_log": []
+  }
+}
