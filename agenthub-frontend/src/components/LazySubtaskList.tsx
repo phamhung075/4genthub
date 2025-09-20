@@ -1,7 +1,7 @@
 import { Check, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { deleteSubtask, listSubtasks, Subtask } from "../api";
+import { deleteSubtask, getSubtask, listSubtasks, Subtask } from "../api";
 import { getSubtaskSummaries } from "../api-lazy";
 import { useChangeSubscription } from "../hooks/useChangeSubscription";
 import { Badge } from "./ui/badge";
@@ -93,17 +93,20 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     open: false,
     subtaskId: null
   });
-  
+
   const [activeDialog, setActiveDialog] = useState<{
     type: 'details' | 'edit' | 'complete' | null;
     subtaskId?: string;
     subtask?: Subtask | null;
   }>({ type: null });
-  
+
   const [detailsDialog, setDetailsDialog] = useState<{
     open: boolean;
     subtask: Subtask | null;
   }>({ open: false, subtask: null });
+
+  // Track when we're programmatically opening a dialog to prevent race conditions
+  const [isOpeningDialog, setIsOpeningDialog] = useState(false);
   
   const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
@@ -353,33 +356,33 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     if (fullSubtasks.has(subtaskId)) {
       return fullSubtasks.get(subtaskId) || null;
     }
-    
+
     if (loadingSubtasks.has(subtaskId)) {
       return null; // Already loading
     }
-    
+
     setLoadingSubtasks(prev => {
       const newSet = new Set(prev);
       newSet.add(subtaskId);
       return newSet;
     });
-    
+
     try {
       // For now, load all subtasks since we don't have individual endpoint
       if (fullSubtasks.size === 0) {
         await loadFullSubtasksFallback();
       }
-      
+
       const subtask = fullSubtasks.get(subtaskId) || null;
-      
+
       setLoadingSubtasks(prev => {
         const newSet = new Set(prev);
         newSet.delete(subtaskId);
         return newSet;
       });
-      
+
       return subtask;
-      
+
     } catch (e) {
       logger.error(`Failed to load subtask ${subtaskId}:`, e);
       setLoadingSubtasks(prev => {
@@ -390,6 +393,20 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       return null;
     }
   }, [fullSubtasks, loadingSubtasks, loadFullSubtasksFallback]);
+
+  // Load a specific subtask by ID (cross-component check)
+  const loadSubtaskById = useCallback(async (subtaskId: string): Promise<Subtask | null> => {
+    try {
+      // Use the direct subtask API to get the subtask details
+      const subtask = await getSubtask(parentTaskId, subtaskId);
+      return subtask;
+    } catch (error: any) {
+      // If the subtask doesn't belong to this parent task, the API will return an error
+      // This is expected behavior for cross-component checks
+      logger.debug(`Subtask ${subtaskId} does not belong to parent task ${parentTaskId}:`, error);
+      return null;
+    }
+  }, [parentTaskId]);
 
   // Load subtasks when component mounts
   useEffect(() => {
@@ -404,28 +421,63 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       logger.debug('🔗 URL taskId matches parentTaskId, loading subtask:', subtaskId, 'for parent:', parentTaskId);
 
       // Load the subtask directly since we know it belongs to this parent task
+      setIsOpeningDialog(true);
       loadFullSubtask(subtaskId).then(subtask => {
         if (subtask) {
           logger.debug('🔗 Auto-opening SubtaskDetailsDialog for URL subtaskId:', subtaskId);
           setDetailsDialog({ open: true, subtask });
+          // Clear the opening flag after a short delay to allow dialog to stabilize
+          setTimeout(() => setIsOpeningDialog(false), 200);
         } else {
           logger.warn('⚠️ Subtask not found for URL subtaskId:', subtaskId);
+          setIsOpeningDialog(false);
           // Navigate back to task URL if subtask not found
           handleSubtaskDialogClose();
         }
       }).catch(error => {
         logger.error('❌ Failed to load subtask for URL:', subtaskId, error);
+        setIsOpeningDialog(false);
         // Navigate back to task URL on error
         handleSubtaskDialogClose();
       });
-    } else if (subtaskId && taskId !== parentTaskId) {
-      logger.debug('🚫 URL taskId does not match parentTaskId, ignoring subtask:', subtaskId, 'URL taskId:', taskId, 'parentTaskId:', parentTaskId);
-      // This LazySubtaskList component ignores the URL change since it's not relevant
+    } else if (subtaskId && hasLoaded && taskId !== parentTaskId) {
+      // 🔧 IMPROVED FIX: Try to load the subtask even if URL taskId doesn't match parentTaskId
+      // This handles cases where the subtask might belong to a completed task or cross-component scenarios
+      logger.debug('🔍 URL taskId differs from parentTaskId, checking if subtask belongs to this component:', subtaskId, 'URL taskId:', taskId, 'parentTaskId:', parentTaskId);
+
+      // Use the direct API to check if the subtask belongs to this component's parent task
+      setIsOpeningDialog(true);
+      loadSubtaskById(subtaskId).then(subtask => {
+        if (subtask) {
+          // Subtask actually belongs to this component's parent task
+          logger.debug('✅ Subtask found and belongs to this component:', subtaskId, 'opening dialog');
+          setDetailsDialog({ open: true, subtask });
+          // Clear the opening flag after a short delay to allow dialog to stabilize
+          setTimeout(() => setIsOpeningDialog(false), 200);
+        } else {
+          // Subtask not found or doesn't belong to this component - this is expected
+          logger.debug('🚫 Subtask not found in this component context:', subtaskId, 'this is expected for cross-component scenarios');
+          setIsOpeningDialog(false);
+        }
+      }).catch(error => {
+        logger.debug('🚫 Failed to load subtask for cross-component check:', subtaskId, error, 'this is expected for cross-component scenarios');
+        setIsOpeningDialog(false);
+        // Silently fail for cross-component checks - this is expected behavior
+      });
     } else if (!subtaskId && detailsDialog.open) {
       // Close dialog if subtaskId is removed from URL
       setDetailsDialog({ open: false, subtask: null });
     }
-  }, [subtaskId, taskId, hasLoaded, loadFullSubtask, detailsDialog.open, handleSubtaskDialogClose, parentTaskId]);
+  }, [
+    subtaskId,
+    taskId,
+    hasLoaded,
+    loadFullSubtask,
+    loadSubtaskById, // Required: used on line 441
+    detailsDialog.open,
+    handleSubtaskDialogClose,
+    parentTaskId
+  ]);
 
   // Animation effect - triggers animations after state updates
   useEffect(() => {
@@ -498,7 +550,12 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   const handleSubtaskAction = useCallback((action: 'details' | 'edit' | 'complete', subtaskId: string) => {
     // Get existing subtask data if available
     const existingSubtask = fullSubtasks.get(subtaskId);
-    
+
+    // Set opening flag for details dialog to prevent race conditions
+    if (action === 'details') {
+      setIsOpeningDialog(true);
+    }
+
     // Set dialog state immediately to fix double-click issue
     switch (action) {
       case 'details':
@@ -512,7 +569,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         setActiveDialog({ type: 'complete', subtaskId, subtask: existingSubtask || null });
         break;
     }
-    
+
     // Load full subtask data asynchronously after dialog is opened
     if (!existingSubtask) {
       loadFullSubtask(subtaskId).then(subtask => {
@@ -520,6 +577,8 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           switch (action) {
             case 'details':
               setDetailsDialog({ open: true, subtask });
+              // Clear opening flag after dialog stabilizes
+              setTimeout(() => setIsOpeningDialog(false), 200);
               break;
             case 'edit':
               setEditingSubtask(subtask);
@@ -528,10 +587,18 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
               setActiveDialog({ type: 'complete', subtaskId, subtask });
               break;
           }
+        } else if (action === 'details') {
+          setIsOpeningDialog(false);
         }
       }).catch(error => {
         logger.error('Failed to load subtask for action:', action, error);
+        if (action === 'details') {
+          setIsOpeningDialog(false);
+        }
       });
+    } else if (action === 'details') {
+      // Data already available, clear opening flag after a short delay
+      setTimeout(() => setIsOpeningDialog(false), 200);
     }
   }, [loadFullSubtask, fullSubtasks]);
 
@@ -810,7 +877,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           <SubtaskDetailsDialog
             open={detailsDialog.open}
             onOpenChange={(open) => {
-              if (!open) {
+              if (!open && !isOpeningDialog) {
+                // Only handle close events when we're not in the process of opening
+                // This prevents race conditions during dialog initialization
                 handleSubtaskDialogClose();
               }
             }}
