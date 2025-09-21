@@ -1,6 +1,5 @@
 import { Check, Eye, Pencil, Trash2 } from "lucide-react";
 import React, { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Subtask } from "../api";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -29,10 +28,6 @@ interface SubtaskRowProps {
   showDetails: boolean;
   parentTaskId: string; // Add parent task ID for context display
 
-  // Navigation props for URL routing
-  projectId: string;
-  taskTreeId: string; // branchId
-
   // Animation event callbacks from parent (placeholders)
   onPlayCreateAnimation: () => void;
   onPlayDeleteAnimation: () => void;
@@ -58,8 +53,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   isLoading,
   showDetails,
   parentTaskId,
-  projectId,
-  taskTreeId,
   onPlayCreateAnimation,
   onPlayDeleteAnimation,
   onPlayUpdateAnimation,
@@ -69,13 +62,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   onRegisterCallbacks,
   onUnregisterCallbacks
 }) => {
-  const navigate = useNavigate();
-
-  // Navigation handler for subtask details
+  // Handler for view details - use dialog instead of navigation
   const handleViewDetails = useCallback(() => {
-    const subtaskUrl = `/dashboard/project/${projectId}/branch/${taskTreeId}/task/${parentTaskId}/subtask/${summary.id}`;
-    navigate(subtaskUrl);
-  }, [navigate, projectId, taskTreeId, parentTaskId, summary.id]);
+    onSubtaskAction('details', summary.id);
+  }, [onSubtaskAction, summary.id]);
 
   // Internal animation state
   const [animationState, setAnimationState] = useState<'none' | 'creating' | 'deleting' | 'updating'>('none');

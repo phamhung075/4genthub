@@ -46,7 +46,8 @@ class TaskWorkflowHandler:
             result = task_facade.complete_task(
                 task_id=task_id,
                 completion_summary=completion_summary,
-                testing_notes=testing_notes
+                testing_notes=testing_notes,
+                user_id=user_id
             )
             
             logger.info(f"Task {task_id} completed successfully by user {user_id}")

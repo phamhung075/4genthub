@@ -48,7 +48,6 @@ class TestTaskCreation:
             status=status,
             priority=priority,
             git_branch_id="branch-123",
-            details="Additional details",
             estimated_effort="2 days",
             assignees=["@agent1", "@agent2"],
             labels=["feature", "backend"],
@@ -64,7 +63,6 @@ class TestTaskCreation:
         assert task.status == status
         assert task.priority == priority
         assert task.git_branch_id == "branch-123"
-        assert task.details == "Additional details"
         assert task.estimated_effort == "2 days"
         assert task.assignees == ["@agent1", "@agent2"]
         assert task.labels == ["feature", "backend"]

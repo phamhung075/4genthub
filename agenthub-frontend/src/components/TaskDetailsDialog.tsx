@@ -11,6 +11,7 @@ import { FileText, Info, ChevronDown, ChevronRight, Hash, Calendar, Tag, Layers,
 import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
+import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -182,7 +183,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden rounded-lg shadow-xl flex flex-col" style={{backgroundColor: 'var(--color-surface)'}}>
         <DialogHeader>
           <DialogTitle className="text-xl text-left">
             {displayTask?.title || 'Task Details'}
@@ -193,8 +194,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             <button
               onClick={() => setActiveTab('details')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === 'details' 
-                  ? 'text-info dark:text-info-dark border-info dark:border-info-dark' 
+                activeTab === 'details'
+                  ? 'text-text dark:text-text border-text dark:border-text'
                   : 'text-text-secondary border-transparent hover:text-text'
               }`}
             >
@@ -206,8 +207,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             <button
               onClick={() => setActiveTab('context')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === 'context' 
-                  ? 'text-info dark:text-info-dark border-info dark:border-info-dark' 
+                activeTab === 'context'
+                  ? 'text-text dark:text-text border-text dark:border-text'
                   : 'text-text-secondary border-transparent hover:text-text'
               }`}
             >
@@ -224,7 +225,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Details Tab Content */}
           {activeTab === 'details' && (
-            <div className="space-y-4 overflow-y-auto flex-1 p-4 bg-white dark:bg-gray-800">
+            <div className="space-y-4 overflow-y-auto flex-1 p-4" style={{backgroundColor: 'var(--color-background)'}}>
               {/* Task Information Header */}
               <div className="theme-context-section p-4 rounded-lg">
                 <div className="flex gap-2 mt-3 flex-wrap">
@@ -251,7 +252,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                 <div className="space-y-4">
                   {/* IDs and References */}
                   <div>
-                    <h4 className="font-semibold text-sm mb-3 text-info dark:text-info-dark">IDs and References</h4>
+                    <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">IDs and References</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm theme-context-metadata">
                       <div className="space-y-1">
                         <span className="text-muted-foreground font-medium">Task ID:</span>
@@ -294,7 +295,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
                   {/* Time Information */}
                   <div>
-                    <h4 className="font-semibold text-sm mb-3 text-success dark:text-success-dark">Time Information</h4>
+                    <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Time Information</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm theme-context-data">
                       {displayTask.estimated_effort && (
                         <div>
@@ -327,13 +328,17 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
                   {/* Assignment & Organization */}
                   <div>
-                    <h4 className="font-semibold text-sm mb-3 text-secondary dark:text-secondary-dark">Assignment & Organization</h4>
+                    <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Assignment & Organization</h4>
                     <div className="space-y-3 theme-context-insights">
-                      {/* Details field */}
-                      {displayTask.details && (
+                      {/* Progress History Timeline */}
+                      {displayTask.progress_history && (
                         <div>
-                          <span className="text-muted-foreground font-medium">Additional Details:</span>
-                          <p className="mt-1 whitespace-pre-wrap">{displayTask.details}</p>
+                          <ProgressHistoryTimeline
+                            progressHistory={displayTask.progress_history}
+                            progressCount={displayTask.progress_count}
+                            variant="full"
+                            className="mt-1"
+                          />
                         </div>
                       )}
                       
@@ -373,7 +378,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     <>
                       <Separator />
                       <div>
-                        <h4 className="font-semibold text-sm mb-3 text-warning dark:text-warning-dark">Dependencies ({displayTask.dependencies.length})</h4>
+                        <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Dependencies ({displayTask.dependencies.length})</h4>
                         <div className="space-y-2 theme-context-progress">
                           {displayTask.dependencies.map((dep: string, index: number) => (
                             <div key={index} className="text-sm flex items-start">
@@ -391,7 +396,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                     <>
                       <Separator />
                       <div>
-                        <h4 className="font-semibold text-sm mb-3 text-info dark:text-info-dark">Subtasks Summary</h4>
+                        <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Subtasks Summary</h4>
                         <div className="theme-context-metadata">
                           {displayTask.subtasks.length > 0 ? (
                             <>
@@ -442,13 +447,13 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                       {/* Enhanced Context Display */}
                       {contextDisplay.hasInfo && (
                         <div>
-                          <h4 className="font-semibold text-sm mb-3 text-info dark:text-info-dark">Task Completion Details</h4>
+                          <h4 className="font-semibold text-sm mb-3 text-text dark:text-text">Task Completion Details</h4>
                           <div className="theme-context-completion space-y-3">
                         
                         {/* Completion Summary */}
                         {contextDisplay.completionSummary && (
                           <div>
-                            <h5 className="font-medium text-xs text-info dark:text-info-dark mb-1">
+                            <h5 className="font-medium text-xs text-text-secondary dark:text-text-secondary mb-1">
                               Completion Summary{contextDisplay.isLegacy ? ' (Legacy)' : ''}:
                             </h5>
                             <p className={`text-sm whitespace-pre-wrap p-2 rounded border ${contextDisplay.isLegacy ? 'theme-context-progress' : 'theme-card'}`}>
@@ -470,7 +475,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Task Status */}
                         {contextDisplay.taskStatus && (
                           <div>
-                            <h5 className="font-medium text-xs text-info dark:text-info-dark mb-1">Context Status:</h5>
+                            <h5 className="font-medium text-xs text-text-secondary dark:text-text-secondary mb-1">Context Status:</h5>
                             <span className="inline-block px-2 py-1 theme-context-metadata text-xs font-medium">
                               {contextDisplay.taskStatus}
                             </span>
@@ -480,10 +485,10 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Testing Notes */}
                         {contextDisplay.testingNotes.length > 0 && (
                           <div>
-                            <h5 className="font-medium text-xs text-info dark:text-info-dark mb-1">Testing Notes & Next Steps:</h5>
+                            <h5 className="font-medium text-xs text-text-secondary dark:text-text-secondary mb-1">Testing Notes & Next Steps:</h5>
                             <ul className="text-sm space-y-1">
                               {contextDisplay.testingNotes.map((step: string, index: number) => (
-                                <li key={index} className="theme-card p-2 rounded border-l-4 border-l-info">
+                                <li key={index} className="theme-card p-2 rounded border-l-4 border-l-text-secondary">
                                   {step}
                                 </li>
                               ))}
@@ -522,26 +527,26 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
               {contextLoading ? (
                 <div className="text-center py-8">
                   <div className="inline-block w-8 h-8 border-3 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Loading context...</p>
+                  <p className="mt-2 text-sm" style={{color: 'var(--color-text-secondary)'}}>Loading context...</p>
                 </div>
               ) : taskContext ? (
                 <>
                   {/* Context Header */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <div className="p-4 rounded-lg border" style={{backgroundColor: 'var(--color-background-secondary)', borderColor: 'var(--color-surface-border)'}}>
+                    <h3 className="text-lg font-semibold flex items-center gap-2" style={{color: 'var(--color-text)'}}>
                       <Layers className="w-5 h-5" />
                       Task Context Data
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    <p className="text-sm mt-1" style={{color: 'var(--color-text-secondary)'}}>
                       Complete hierarchical view of task context and inherited data
                     </p>
                   </div>
                   
                   {/* Task Execution Section */}
                   {(taskContext.task_data || taskContext.execution_context || taskContext.discovered_patterns || taskContext.local_decisions) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 border-l-4 border-emerald-500 dark:border-emerald-400">
-                        <h3 className="text-emerald-800 dark:text-emerald-200 font-semibold flex items-center gap-2">
+                    <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
+                      <div className="p-3 border-l-4" style={{backgroundColor: 'var(--color-background-tertiary)', borderLeftColor: 'var(--color-success)'}}>
+                        <h3 className="font-semibold flex items-center gap-2" style={{color: 'var(--color-text)'}}>
                           <Settings className="w-4 h-4" />
                           Task Execution Details
                         </h3>
@@ -550,7 +555,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Task Data */}
                         {taskContext.task_data && Object.keys(taskContext.task_data).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm flex items-center gap-2 hover:opacity-80 transition-opacity" style={{color: 'var(--color-text-secondary)'}}>
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Task Data
                             </summary>
@@ -563,7 +568,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Execution Context */}
                         {taskContext.execution_context && Object.keys(taskContext.execution_context).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm flex items-center gap-2 hover:opacity-80 transition-opacity" style={{color: 'var(--color-text-secondary)'}}>
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Execution Context
                             </summary>
@@ -576,7 +581,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Discovered Patterns */}
                         {taskContext.discovered_patterns && Object.keys(taskContext.discovered_patterns).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm flex items-center gap-2 hover:opacity-80 transition-opacity" style={{color: 'var(--color-text-secondary)'}}>
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Discovered Patterns
                             </summary>
@@ -589,7 +594,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                         {/* Local Decisions */}
                         {taskContext.local_decisions && Object.keys(taskContext.local_decisions).length > 0 && (
                           <details className="group">
-                            <summary className="cursor-pointer font-medium text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2">
+                            <summary className="cursor-pointer font-medium text-sm flex items-center gap-2 hover:opacity-80 transition-opacity" style={{color: 'var(--color-text-secondary)'}}>
                               <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                               Local Decisions
                             </summary>
@@ -604,9 +609,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   
                   {/* Implementation Notes Section */}
                   {taskContext.implementation_notes && Object.keys(taskContext.implementation_notes).length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-purple-50 dark:bg-purple-900/20 p-3 border-l-4 border-purple-500 dark:border-purple-400">
-                        <h3 className="text-purple-800 dark:text-purple-200 font-semibold flex items-center gap-2">
+                    <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
+                      <div className="p-3 border-l-4" style={{backgroundColor: 'var(--color-background-tertiary)', borderLeftColor: 'var(--color-secondary)'}}>
+                        <h3 className="font-semibold flex items-center gap-2" style={{color: 'var(--color-text)'}}>
                           <FileText className="w-4 h-4" />
                           Implementation Notes
                         </h3>
@@ -619,9 +624,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   
                   {/* Metadata Section */}
                   {taskContext.metadata && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-amber-50 dark:bg-amber-900/20 p-3 border-l-4 border-amber-500 dark:border-amber-400">
-                        <h3 className="text-amber-800 dark:text-amber-200 font-semibold flex items-center gap-2">
+                    <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
+                      <div className="p-3 border-l-4" style={{backgroundColor: 'var(--color-background-tertiary)', borderLeftColor: 'var(--color-warning)'}}>
+                        <h3 className="font-semibold flex items-center gap-2" style={{color: 'var(--color-text)'}}>
                           <Info className="w-4 h-4" />
                           Metadata & System Information
                         </h3>
@@ -634,9 +639,9 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   
                   {/* Inheritance Information */}
                   {(taskContext._inheritance || taskContext.inheritance_metadata || taskContext.inheritance_disabled !== undefined) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 border-l-4 border-indigo-500 dark:border-indigo-400">
-                        <h3 className="text-indigo-800 dark:text-indigo-200 font-semibold flex items-center gap-2">
+                    <div className="rounded-lg border overflow-hidden" style={{backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-surface-border)'}}>
+                      <div className="p-3 border-l-4" style={{backgroundColor: 'var(--color-background-tertiary)', borderLeftColor: 'var(--color-info)'}}>
+                        <h3 className="font-semibold flex items-center gap-2" style={{color: 'var(--color-text)'}}>
                           <Layers className="w-4 h-4" />
                           Context Inheritance
                         </h3>

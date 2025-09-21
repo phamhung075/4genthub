@@ -6,6 +6,7 @@
  */
 
 import { toastEventBus } from './toastEventBus';
+import { changePoolService } from './changePoolService';
 import logger from '../utils/logger';
 
 // Entity and event types for WebSocket messages
@@ -68,19 +69,51 @@ class WebSocketService {
       // WebSocket endpoint is at /ws/realtime
       const wsUrl = `${wsProtocol}://${backendHost}/ws/realtime`;
 
-      // Add auth token to query params if available
-      let finalUrl = wsUrl;
-      if (token) {
-        finalUrl = `${wsUrl}?token=${encodeURIComponent(token)}`;
-      } else {
-        // Try to get token from localStorage
-        const storedToken = localStorage.getItem('access_token');
-        if (storedToken) {
-          finalUrl = `${wsUrl}?token=${encodeURIComponent(storedToken)}`;
+      // Enhanced token detection and debugging
+      let authToken = token;
+      if (!authToken) {
+        // Try cookies first (primary storage method)
+        const cookieValue = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('access_token='))
+          ?.split('=')[1];
+        if (cookieValue) {
+          authToken = cookieValue;
+          logger.debug('WebSocket: Found auth token in cookies');
+        } else {
+          // Try localStorage as fallback
+          authToken = localStorage.getItem('access_token');
+          if (authToken) {
+            logger.debug('WebSocket: Found auth token in localStorage');
+          }
         }
+      } else {
+        logger.debug('WebSocket: Using provided auth token');
       }
 
-      logger.info('Connecting to WebSocket:', wsUrl);
+      // Add detailed logging for token status
+      if (authToken) {
+        // Log token info without exposing the actual token
+        logger.info('WebSocket: Connecting with authentication token', {
+          tokenLength: authToken.length,
+          tokenPreview: authToken.substring(0, 20) + '...',
+          wsUrl: wsUrl
+        });
+      } else {
+        logger.warn('WebSocket: No authentication token found! Connection may fail.', {
+          localStorage: !!localStorage.getItem('access_token'),
+          cookies: document.cookie.includes('access_token='),
+          wsUrl: wsUrl
+        });
+      }
+
+      // Build final URL with token
+      let finalUrl = wsUrl;
+      if (authToken) {
+        finalUrl = `${wsUrl}?token=${encodeURIComponent(authToken)}`;
+      }
+
+      logger.info('WebSocket: Attempting connection to:', finalUrl.replace(/token=[^&]+/, 'token=***'));
       this.ws = new WebSocket(finalUrl);
 
       this.ws.onopen = () => {
@@ -112,14 +145,46 @@ class WebSocketService {
       };
 
       this.ws.onerror = (error) => {
-        logger.error('WebSocket error:', error);
+        logger.error('WebSocket error occurred:', error);
         this.isConnecting = false;
       };
 
       this.ws.onclose = (event) => {
-        logger.info('WebSocket disconnected:', event.code, event.reason);
+        logger.info('WebSocket disconnected:', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean
+        });
         this.isConnecting = false;
         this.stopHeartbeat();
+
+        // Enhanced close code handling with specific error messages
+        if (event.code === 4001) {
+          logger.error('WebSocket authentication failed! Invalid or missing JWT token.');
+          logger.error('Debug info:', {
+            hasTokenInLocalStorage: !!localStorage.getItem('access_token'),
+            hasTokenInCookies: document.cookie.includes('access_token='),
+            tokenUsed: authToken ? 'yes' : 'no'
+          });
+
+          // If we have a token but auth failed, it might be expired
+          // Try to trigger a token refresh if we're in a React context
+          if (authToken) {
+            logger.info('WebSocket: Token exists but auth failed - may be expired. Triggering refresh event.');
+            window.dispatchEvent(new CustomEvent('websocket-auth-failed', {
+              detail: { code: event.code, reason: 'Token authentication failed' }
+            }));
+          }
+
+          // Don't auto-reconnect on auth failure
+          return;
+        } else if (event.code === 1006) {
+          logger.error('WebSocket connection failed - server may be down or unreachable');
+        } else if (event.code === 1008) {
+          logger.error('WebSocket connection terminated due to policy violation');
+        } else if (event.code === 1011) {
+          logger.error('WebSocket connection terminated due to server error');
+        }
 
         // Attempt to reconnect if not intentionally closed
         if (event.code !== 1000) {
@@ -235,9 +300,23 @@ class WebSocketService {
       const entityType = message.metadata?.entity_type || 'unknown';
       const eventType = message.metadata?.event_type || message.event_type || 'updated';
 
-
       // Show notification to user
       this.showNotification(message, entityType, eventType);
+
+      // Notify changePoolService for component updates
+      if (entityType === 'task' || entityType === 'subtask') {
+        const changeNotification = {
+          entityType: entityType as any,
+          entityId: message.metadata?.entity_id || '',
+          eventType: eventType as any,
+          userId: message.user_id || message.metadata?.user_id || '',
+          data: message.data,
+          metadata: message.metadata,
+          timestamp: message.timestamp || new Date().toISOString()
+        };
+
+        changePoolService.processChange(changeNotification);
+      }
 
       // Notify all handlers for this entity type
       const handlers = this.handlers.get(entityType);
@@ -362,21 +441,32 @@ class WebSocketService {
     const name = entityName || `${entityType} #${entityId?.substring(0, 8)}`;
     const user = userName || 'Another user';
 
+    console.log(`🌐 WebSocket: showToastNotification called for ${entityType}:${eventType}`, {
+      entityType,
+      eventType,
+      entityName,
+      entityId,
+      userName
+    });
+
     // Determine the notification based on event type
     switch (eventType) {
       case 'created':
+        console.log('🌐 WebSocket: Calling toastEventBus.success for created event');
         toastEventBus.success(
           `New ${entityType} created`,
           `${user} created "${name}"`
         );
         break;
       case 'updated':
+        console.log('🌐 WebSocket: Calling toastEventBus.info for updated event');
         toastEventBus.info(
           `${entityType.charAt(0).toUpperCase() + entityType.slice(1)} updated`,
           `${user} modified "${name}"`
         );
         break;
       case 'deleted':
+        console.log('🌐 WebSocket: Calling toastEventBus.warning for deleted event');
         toastEventBus.warning(
           `${entityType.charAt(0).toUpperCase() + entityType.slice(1)} deleted`,
           `${user} deleted "${name}"`
@@ -424,6 +514,39 @@ class WebSocketService {
   }
 
   /**
+   * Debug method to check authentication and connection status
+   */
+  debugConnectionStatus(): void {
+    // Use same token detection logic as connect method
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+    const localStorageToken = localStorage.getItem('access_token');
+    const authToken = cookieToken || localStorageToken;
+
+    logger.info('WebSocket Debug Status:', {
+      connection: {
+        state: this.ws?.readyState,
+        stateText: this.ws?.readyState === WebSocket.CONNECTING ? 'CONNECTING' :
+                   this.ws?.readyState === WebSocket.OPEN ? 'OPEN' :
+                   this.ws?.readyState === WebSocket.CLOSING ? 'CLOSING' :
+                   this.ws?.readyState === WebSocket.CLOSED ? 'CLOSED' : 'UNKNOWN',
+        isConnecting: this.isConnecting,
+        reconnectAttempts: this.reconnectAttempts
+      },
+      authentication: {
+        hasToken: !!authToken,
+        tokenLength: authToken?.length || 0,
+        tokenSource: cookieToken ? 'cookies' : localStorageToken ? 'localStorage' : 'none',
+        cookieAvailable: !!cookieToken,
+        localStorageAvailable: !!localStorageToken
+      },
+      backend: {
+        apiUrl: import.meta.env?.VITE_BACKEND_URL || 'http://localhost:8000',
+        wsProtocol: window.location.protocol === 'https:' ? 'wss' : 'ws'
+      }
+    });
+  }
+
+  /**
    * Subscribe to project-specific updates
    */
   subscribeToProject(projectId: string): void {
@@ -448,17 +571,6 @@ class WebSocketService {
 // Export singleton instance
 export const websocketService = new WebSocketService();
 
-// Track if we've already scheduled auto-connect
-let autoConnectScheduled = false;
-
-// Auto-connect when the service is imported (only once, even with StrictMode)
-if (typeof window !== 'undefined' && !autoConnectScheduled) {
-  autoConnectScheduled = true;
-  // Connect after a short delay to ensure auth is initialized
-  setTimeout(() => {
-    // Double-check we're not already connected before attempting
-    if (!websocketService.isConnected()) {
-      websocketService.connect().catch(logger.error);
-    }
-  }, 1000);
-}
+// Note: WebSocket connection is now managed by AuthContext
+// This ensures proper authentication token is available before connecting
+// Auto-connect removed to fix race condition with authentication loading

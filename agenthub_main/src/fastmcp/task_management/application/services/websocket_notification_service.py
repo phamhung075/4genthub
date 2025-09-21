@@ -117,20 +117,20 @@ class WebSocketNotificationService:
         """
         try:
             from ...infrastructure.database.database_config import get_session
-            from ...infrastructure.database.models import TaskSubtask, Task
+            from ...infrastructure.database.models import Subtask, Task
 
             with get_session() as session:
                 # Query with proper relationships
-                query = session.query(TaskSubtask, Task).join(
-                    Task, TaskSubtask.task_id == Task.id
+                query = session.query(Subtask, Task).join(
+                    Task, Subtask.task_id == Task.id
                 ).filter(
-                    TaskSubtask.id == subtask_id,
-                    TaskSubtask.task_id == task_id
+                    Subtask.id == subtask_id,
+                    Subtask.task_id == task_id
                 )
 
                 # Add user filtering if provided
                 if user_id:
-                    query = query.filter(TaskSubtask.user_id == user_id)
+                    query = query.filter(Subtask.user_id == user_id)
 
                 result = query.first()
 

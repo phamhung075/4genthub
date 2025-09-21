@@ -17,6 +17,28 @@ Key Points:
 - docker-menu.sh option R for rebuild
 - The ORM model should be the source of truth. Update the database table to match the ORM model definition, not the other way
   around
+
+## 🚨 AGENTHUB-SPECIFIC: Test Fixing Priority
+
+### For This Project Specifically:
+- **ORM Location**: `agenthub_main/src/fastmcp/task_management/domain/entities/*.py`
+- **Test Location**: `agenthub_main/src/tests/`
+- **When Tests Fail**: Check ORM entity definitions FIRST
+- **Example**: Task.py has max_description_length=2000 → That's the truth
+- **Development Freedom**: We can change ANY architecture - no legacy users to support
+
+### Common Test Scenarios in agenthub:
+1. **Character Limits**: Check ORM model's max_length field
+2. **UUID Validation**: Check domain/value_objects for UUID rules
+3. **Context Hierarchy**: Check domain/entities for inheritance rules
+4. **Agent Assignment**: Check minimum agent requirements in domain
+
+### Remember for agenthub:
+- We're in DEVELOPMENT phase - break anything that needs breaking
+- No production data to migrate - make clean changes
+- Tests validate ORM rules, they don't define them
+- When in doubt: ORM model > test assertions
+
 ## Core Project Structure
 **Source Code Paths:**
 - `agenthub-frontend/` - Frontend (React/TypeScript, port 3800)

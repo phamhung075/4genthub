@@ -40,8 +40,8 @@ class CreateTaskUseCase:
                 title = title[:200]
             
             description = request.description
-            if description and len(description) > 1000:
-                description = description[:1000]           
+            if description and len(description) > 2000:
+                description = description[:2000]           
 
             
             # Validate git_branch_id existence before creating task
@@ -59,12 +59,15 @@ class CreateTaskUseCase:
                 status=status,
                 priority=priority,
                 git_branch_id=request.git_branch_id,
-                details=request.details,
                 estimated_effort=request.estimated_effort,
                 assignees=request.assignees,
                 labels=request.labels,
                 due_date=request.due_date,
             )
+
+            # Add initial progress if details provided
+            if request.details:
+                task.append_progress(request.details)
             
             # Add dependencies if provided
             if hasattr(request, 'dependencies') and request.dependencies:
@@ -89,9 +92,10 @@ class CreateTaskUseCase:
             # Update branch task count using repository (follows DDD pattern)
             try:
                 from ...application.services.repository_provider_service import RepositoryProviderService
-                
-                # Use repository provider to get branch repository
-                branch_repo = RepositoryProviderService.get_git_branch_repository()
+
+                # Get instance and use repository provider to get branch repository
+                provider = RepositoryProviderService.get_instance()
+                branch_repo = provider.get_git_branch_repository()
                 branch = branch_repo.get(request.git_branch_id)
                 
                 if branch:
@@ -116,8 +120,7 @@ class CreateTaskUseCase:
                 from ...application.factories.unified_context_facade_factory import UnifiedContextFacadeFactory
                 from ...domain.constants import validate_user_id
                 from ...domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-                from ....config.auth_config import AuthConfig
-                
+
                 # Get user_id from request or handle authentication
                 user_id = getattr(request, 'user_id', None)
                 if user_id is None:
@@ -130,9 +133,10 @@ class CreateTaskUseCase:
                 project_id = None
                 try:
                     from ...application.services.repository_provider_service import RepositoryProviderService
-                    
-                    # Use repository provider to get branch repository
-                    branch_repo = RepositoryProviderService.get_git_branch_repository()
+
+                    # Get instance and use repository provider to get branch repository
+                    provider = RepositoryProviderService.get_instance()
+                    branch_repo = provider.get_git_branch_repository()
                     branch = branch_repo.get(request.git_branch_id)
                     
                     if branch:

@@ -427,7 +427,7 @@ class TestStatusManagement:
         
         status = git_branch.get_tree_status()
         
-        assert status["tree_name"] == "Test Branch"
+        assert status["tree_name"] == "test/branch"
         assert status["total_tasks"] == 2
         assert status["completed_tasks"] == 1
         assert status["progress_percentage"] == 50.0

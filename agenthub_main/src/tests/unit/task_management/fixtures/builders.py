@@ -119,7 +119,6 @@ class TaskBuilder:
             status=self._status,
             priority=self._priority,
             git_branch_id=self._git_branch_id,
-            details=self._details,
             estimated_effort=self._estimated_effort,
             assignees=self._assignees,
             labels=self._labels,

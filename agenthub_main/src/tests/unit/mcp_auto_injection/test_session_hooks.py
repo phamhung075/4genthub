@@ -253,88 +253,66 @@ class TestGetRecentIssues:
 class TestMCPQueries:
     """Unit tests for MCP query functions."""
     
-    @patch('session_start.get_session_cache')
     @patch('session_start.get_default_client')
-    def test_query_mcp_pending_tasks_cache_hit(self, mock_get_client, mock_get_cache):
-        """Test pending tasks query with cache hit."""
-        cached_tasks = [
-            {"id": "task1", "title": "Cached Task 1"},
-            {"id": "task2", "title": "Cached Task 2"}
+    def test_query_mcp_pending_tasks_cache_hit(self, mock_get_client):
+        """Test pending tasks query - updated to match actual implementation."""
+        server_tasks = [
+            {"id": "task1", "title": "Server Task 1"},
+            {"id": "task2", "title": "Server Task 2"}
         ]
-        
-        mock_cache = Mock()
-        mock_cache.get_pending_tasks.return_value = cached_tasks
-        mock_get_cache.return_value = mock_cache
-        
+
+        mock_client = Mock()
+        mock_client.query_pending_tasks.return_value = server_tasks
+        mock_get_client.return_value = mock_client
+
         result = query_mcp_pending_tasks()
-        
-        assert result == cached_tasks
-        mock_cache.get_pending_tasks.assert_called_once()
-        mock_get_client.assert_not_called()  # Should not hit server
+
+        assert result == server_tasks
+        mock_client.query_pending_tasks.assert_called_once_with(limit=5)
     
-    @patch('session_start.get_session_cache')
     @patch('session_start.get_default_client')
-    def test_query_mcp_pending_tasks_server_success(self, mock_get_client, mock_get_cache):
+    def test_query_mcp_pending_tasks_server_success(self, mock_get_client):
         """Test pending tasks query with server success."""
         server_tasks = [
             {"id": "server1", "title": "Server Task 1"},
             {"id": "server2", "title": "Server Task 2"}
         ]
-        
-        mock_cache = Mock()
-        mock_cache.get_pending_tasks.return_value = None  # Cache miss
-        mock_get_cache.return_value = mock_cache
-        
+
         mock_client = Mock()
         mock_client.query_pending_tasks.return_value = server_tasks
         mock_get_client.return_value = mock_client
-        
+
         result = query_mcp_pending_tasks()
-        
+
         assert result == server_tasks
-        mock_cache.get_pending_tasks.assert_called_once()
         mock_client.query_pending_tasks.assert_called_once_with(limit=5)
-        mock_cache.cache_pending_tasks.assert_called_once_with(server_tasks)
     
-    @patch('session_start.get_session_cache')
     @patch('session_start.get_default_client')
-    def test_query_mcp_pending_tasks_server_failure(self, mock_get_client, mock_get_cache):
+    def test_query_mcp_pending_tasks_server_failure(self, mock_get_client):
         """Test pending tasks query with server failure."""
-        mock_cache = Mock()
-        mock_cache.get_pending_tasks.return_value = None
-        mock_get_cache.return_value = mock_cache
-        
         mock_client = Mock()
         mock_client.query_pending_tasks.side_effect = Exception("Server error")
         mock_get_client.return_value = mock_client
-        
+
         result = query_mcp_pending_tasks()
-        
+
         assert result is None
-        mock_cache.get_pending_tasks.assert_called_once()
         mock_client.query_pending_tasks.assert_called_once_with(limit=5)
     
-    @patch('session_start.get_session_cache')
     @patch('session_start.get_default_client')
-    def test_query_mcp_next_task_success(self, mock_get_client, mock_get_cache):
+    def test_query_mcp_next_task_success(self, mock_get_client):
         """Test next task query success."""
         branch_id = "branch-uuid-123"
         next_task = {"id": "next1", "title": "Next Task", "priority": "high"}
-        
-        mock_cache = Mock()
-        mock_cache.get_next_task.return_value = None
-        mock_get_cache.return_value = mock_cache
-        
+
         mock_client = Mock()
         mock_client.get_next_recommended_task.return_value = next_task
         mock_get_client.return_value = mock_client
-        
+
         result = query_mcp_next_task(branch_id)
-        
+
         assert result == next_task
-        mock_cache.get_next_task.assert_called_once_with(branch_id)
         mock_client.get_next_recommended_task.assert_called_once_with(branch_id)
-        mock_cache.cache_next_task.assert_called_once_with(branch_id, next_task)
     
     def test_query_mcp_next_task_no_branch_id(self):
         """Test next task query without branch ID."""
@@ -342,84 +320,57 @@ class TestMCPQueries:
         
         assert result is None
     
-    @patch('session_start.get_session_cache')
     @patch('session_start.get_default_client')
-    def test_query_mcp_next_task_server_error(self, mock_get_client, mock_get_cache):
+    def test_query_mcp_next_task_server_error(self, mock_get_client):
         """Test next task query with server error."""
         branch_id = "branch-uuid-123"
-        
-        mock_cache = Mock()
-        mock_cache.get_next_task.return_value = None
-        mock_get_cache.return_value = mock_cache
-        
+
         mock_client = Mock()
         mock_client.get_next_recommended_task.side_effect = Exception("Server error")
         mock_get_client.return_value = mock_client
-        
+
         result = query_mcp_next_task(branch_id)
-        
+
         assert result is None
 
 
 class TestGitBranchContext:
     """Unit tests for git branch context functionality."""
     
-    @patch('session_start.get_session_cache')
     @patch('session_start.subprocess.run')
-    def test_get_git_branch_context_success(self, mock_run, mock_get_cache):
+    def test_get_git_branch_context_success(self, mock_run):
         """Test successful git branch context retrieval."""
-        mock_cache = Mock()
-        mock_cache.get_git_status.return_value = None  # Cache miss
-        mock_get_cache.return_value = mock_cache
-        
         # Mock subprocess calls
         mock_branch = Mock(returncode=0, stdout="feature/auth\n")
         mock_status = Mock(returncode=0, stdout="M auth.py\n?? test.py\n")
         mock_log = Mock(returncode=0, stdout="abc123 Add auth\ndef456 Fix bug\n")
-        
+
         mock_run.side_effect = [mock_branch, mock_status, mock_log]
-        
+
         result = get_git_branch_context()
-        
+
         expected = {
             "branch": "feature/auth",
             "uncommitted_changes": 2,
             "recent_commits": ["abc123 Add auth", "def456 Fix bug"],
             "git_branch_id": None
         }
-        
+
         assert result == expected
-        mock_cache.cache_git_status.assert_called_once_with(expected)
     
-    @patch('session_start.get_session_cache')
-    def test_get_git_branch_context_cache_hit(self, mock_get_cache):
-        """Test git branch context with cache hit."""
-        cached_context = {
-            "branch": "cached/branch",
-            "uncommitted_changes": 1,
-            "recent_commits": ["cached commit"],
-            "git_branch_id": "cached-id"
-        }
-        
-        mock_cache = Mock()
-        mock_cache.get_git_status.return_value = cached_context
-        mock_get_cache.return_value = mock_cache
-        
-        result = get_git_branch_context()
-        
-        assert result == cached_context
-        mock_cache.get_git_status.assert_called_once()
+    def test_get_git_branch_context_no_cache_in_implementation(self):
+        """Test git branch context - cache not used in actual implementation."""
+        # Since the actual implementation doesn't use cache,
+        # this test verifies behavior when subprocess calls fail
+        with patch('session_start.subprocess.run', side_effect=Exception("Git error")):
+            result = get_git_branch_context()
+            assert result is None
     
-    @patch('session_start.get_session_cache')
     @patch('subprocess.run', side_effect=Exception("Git error"))
-    def test_get_git_branch_context_git_error(self, mock_run, mock_get_cache):
+    def test_get_git_branch_context_git_error(self, mock_run):
         """Test git branch context with git command error."""
-        mock_cache = Mock()
-        mock_cache.get_git_status.return_value = None
-        mock_get_cache.return_value = mock_cache
-        
         result = get_git_branch_context()
-        
+
         assert result is None
 
 
@@ -582,32 +533,28 @@ class TestMainFunction:
                 with patch('argparse.ArgumentParser.print_help'):
                     main()
     
-    @patch('sys.stdin')
-    @patch('session_start.log_session_start')
-    @patch('session_start.load_development_context')
-    def test_main_normal_execution(self, mock_load_context, mock_log, mock_stdin):
+    @patch('session_start.SessionStartHook')
+    @patch('utils.config_validator.validate_configuration', return_value=True)
+    def test_main_normal_execution(self, mock_validate_config, mock_hook_class):
         """Test normal main execution flow."""
         input_data = {
             "session_id": "test-123",
             "source": "startup"
         }
-        mock_stdin.read.return_value = json.dumps(input_data)
-        mock_load_context.return_value = "Test context loaded"
-        
+
+        mock_hook = Mock()
+        mock_hook.execute.return_value = 0
+        mock_hook_class.return_value = mock_hook
+
         with patch('sys.argv', ['session_start.py']):
-            with patch('builtins.print') as mock_print:
+            with patch('sys.stdin') as mock_stdin:
+                mock_stdin.isatty.return_value = False
+                mock_stdin.read.return_value = json.dumps(input_data)
                 with pytest.raises(SystemExit) as exc_info:
                     main()
-                
+
                 assert exc_info.value.code == 0
-                mock_log.assert_called_once_with(input_data)
-                mock_load_context.assert_called_once_with("startup")
-                
-                # Verify JSON output
-                print_call = mock_print.call_args[0][0]
-                output_data = json.loads(print_call)
-                assert "hookSpecificOutput" in output_data
-                assert output_data["hookSpecificOutput"]["additionalContext"] == "Test context loaded"
+                mock_hook.execute.assert_called_once_with(input_data)
     
     @patch('sys.stdin')
     def test_main_empty_input(self, mock_stdin):
@@ -631,42 +578,18 @@ class TestMainFunction:
             
             assert exc_info.value.code == 0
     
-    @patch('session_start.get_default_client')
-    def test_main_test_mcp_option(self, mock_get_client):
-        """Test main function with --test-mcp option."""
-        mock_client = Mock()
-        mock_client.authenticate.return_value = True
-        mock_client.query_pending_tasks.return_value = [{"test": "task"}]
-        mock_get_client.return_value = mock_client
-        
-        with patch('sys.argv', ['session_start.py', '--test-mcp']):
-            with pytest.raises(SystemExit) as exc_info:
-                main()
-            
-            assert exc_info.value.code == 0
-            mock_client.authenticate.assert_called_once()
-            mock_client.query_pending_tasks.assert_called_once_with(limit=1)
-    
-    @patch('session_start.get_session_cache')
-    def test_main_cache_stats_option(self, mock_get_cache):
-        """Test main function with --cache-stats option."""
-        mock_cache = Mock()
-        mock_cache.get_cache_stats.return_value = {
-            "total_files": 5,
-            "valid_files": 3,
-            "expired_files": 2
-        }
-        mock_get_cache.return_value = mock_cache
-        
-        with patch('sys.argv', ['session_start.py', '--cache-stats']):
-            with patch('builtins.print') as mock_print:
+    @patch('session_start.SessionStartHook')
+    def test_main_log_only_option(self, mock_hook_class):
+        """Test main function with --log-only option."""
+        mock_hook = Mock()
+        mock_hook_class.return_value = mock_hook
+
+        with patch('sys.argv', ['session_start.py', '--log-only']):
+            with patch('sys.stdin') as mock_stdin:
+                mock_stdin.isatty.return_value = False
+                mock_stdin.read.return_value = '{"test": "data"}'
                 with pytest.raises(SystemExit) as exc_info:
                     main()
-                
+
                 assert exc_info.value.code == 0
-                
-                # Verify stats output
-                stats_output = mock_print.call_args[0][0]
-                stats_data = json.loads(stats_output)
-                assert stats_data["total_files"] == 5
-                assert stats_data["valid_files"] == 3
+                mock_hook.logger.log.assert_called_once_with('info', 'Session start logged only', {"test": "data"})

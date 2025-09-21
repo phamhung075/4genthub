@@ -39,7 +39,7 @@ class WorkSession:
     # Session configuration
     max_duration: Optional[timedelta] = None  # Auto-timeout after this duration
     auto_save_interval: int = 300  # Seconds between auto-saves
-    last_activity: datetime = field(default_factory=datetime.now)
+    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def pause_session(self, reason: str = "") -> None:
         """Pause the work session"""

@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   changePoolService,
   ComponentSubscription,
@@ -58,6 +58,10 @@ export function useChangeSubscription(options: UseChangeSubscriptionOptions) {
     refreshCallback();
   }, [refreshCallback]);
 
+  // Stable array references to prevent unnecessary re-subscriptions
+  const stableEntityTypes = useMemo(() => entityTypes, [JSON.stringify(entityTypes)]);
+  const stableEntityIds = useMemo(() => entityIds, [JSON.stringify(entityIds)]);
+
   useEffect(() => {
     // Only subscribe if enabled
     if (!enabled) {
@@ -73,8 +77,8 @@ export function useChangeSubscription(options: UseChangeSubscriptionOptions) {
     // Create new subscription
     const subscription: ComponentSubscription = {
       componentId,
-      entityTypes,
-      entityIds,
+      entityTypes: stableEntityTypes,
+      entityIds: stableEntityIds,
       projectId,
       branchId,
       refreshCallback: stableRefreshCallback,
@@ -93,23 +97,14 @@ export function useChangeSubscription(options: UseChangeSubscriptionOptions) {
     };
   }, [
     componentId,
-    JSON.stringify(entityTypes), // Deep comparison for array
-    JSON.stringify(entityIds),   // Deep comparison for array
+    stableEntityTypes,
+    stableEntityIds,
     projectId,
     branchId,
     stableRefreshCallback,
     shouldRefresh,
     enabled
   ]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
-    };
-  }, []);
 }
 
 /**

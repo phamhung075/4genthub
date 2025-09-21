@@ -26,6 +26,9 @@ except ImportError:
 
 import os
 import logging
+import sys
+import sqlite3
+from datetime import datetime, date
 from typing import Optional, Dict, Any
 from sqlalchemy import create_engine, Engine, event, pool, text
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
@@ -33,10 +36,62 @@ from sqlalchemy.pool import NullPool, QueuePool
 
 logger = logging.getLogger(__name__)
 
+# Flag to ensure SQLite datetime adapters are registered only once
+_sqlite_adapters_registered = False
+
 # Import exception for better error handling
 from ...domain.exceptions.base_exceptions import DatabaseException
 # Import retry logic for connection resilience
 from .connection_retry import with_connection_retry, create_resilient_engine, DEFAULT_RETRY_CONFIG
+
+
+def _register_sqlite_datetime_adapters():
+    """
+    Register SQLite datetime adapters and converters for Python 3.12+.
+
+    In Python 3.12, the default datetime adapter was deprecated.
+    This function provides the recommended replacement using ISO format.
+    """
+    global _sqlite_adapters_registered
+
+    # Only register once per process
+    if _sqlite_adapters_registered:
+        return
+
+    # Only needed for Python 3.12+
+    if sys.version_info < (3, 12):
+        return
+
+    try:
+        # Register adapters (Python object -> SQLite string)
+        def adapt_datetime_iso(val):
+            """Convert datetime to ISO format string for SQLite storage."""
+            return val.isoformat()
+
+        def adapt_date_iso(val):
+            """Convert date to ISO format string for SQLite storage."""
+            return val.isoformat()
+
+        sqlite3.register_adapter(datetime, adapt_datetime_iso)
+        sqlite3.register_adapter(date, adapt_date_iso)
+
+        # Register converters (SQLite string -> Python object)
+        def convert_datetime(val):
+            """Convert ISO format string from SQLite to datetime object."""
+            return datetime.fromisoformat(val.decode())
+
+        def convert_date(val):
+            """Convert ISO format string from SQLite to date object."""
+            return date.fromisoformat(val.decode())
+
+        sqlite3.register_converter("datetime", convert_datetime)
+        sqlite3.register_converter("date", convert_date)
+
+        _sqlite_adapters_registered = True
+        logger.info("✅ SQLite datetime adapters registered for Python 3.12+ compatibility")
+
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to register SQLite datetime adapters: {e}")
 
 
 class Base(DeclarativeBase):
@@ -248,6 +303,9 @@ class DatabaseConfig:
     def _create_engine(self, database_url: str) -> Engine:
         """Create SQLAlchemy engine for database connection"""
         if database_url.startswith("sqlite"):
+            # Register SQLite datetime adapters for Python 3.12+ compatibility
+            _register_sqlite_datetime_adapters()
+
             # SQLite engine for test mode
             logger.info("📦 Creating SQLite engine for test execution")
             engine = create_engine(

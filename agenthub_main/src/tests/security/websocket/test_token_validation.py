@@ -64,7 +64,8 @@ class TestWebSocketTokenValidation:
             expected_user = User(
                 id=self.test_user_id,
                 email=self.test_email,
-                username="testuser"
+                username="testuser",
+                password_hash="dummy_hash_for_test"
             )
 
             with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
@@ -93,7 +94,8 @@ class TestWebSocketTokenValidation:
             expected_user = User(
                 id=self.test_user_id,
                 email=self.test_email,
-                username="testuser"
+                username="testuser",
+                password_hash="dummy_hash_for_test"
             )
 
             with patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_validate:
@@ -184,7 +186,8 @@ class TestWebSocketTokenValidation:
             expected_user = User(
                 id=self.test_user_id,
                 email=self.test_email,
-                username="testuser"
+                username="testuser",
+                password_hash="dummy_hash_for_test"
             )
 
             with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_keycloak:
@@ -277,7 +280,8 @@ class TestWebSocketTokenValidation:
         expected_user = User(
             id=self.test_user_id,
             email=self.test_email,
-            username="testuser"
+            username="testuser",
+            password_hash="dummy_hash_for_test"
         )
 
         with patch.dict(os.environ, {'AUTH_PROVIDER': 'local'}):

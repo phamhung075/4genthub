@@ -262,13 +262,26 @@ class TestJWTBearerAuthProvider:
     @pytest.mark.asyncio
     async def test_validate_token_in_database_valid(self, mock_db_session, mock_api_token):
         """Test validation of valid token in database"""
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        # Mock both get_db and APIToken import
+        with patch('fastmcp.server.auth.providers.jwt_bearer.get_db') as mock_get_db, \
+             patch('fastmcp.task_management.infrastructure.database.models.APIToken') as MockAPIToken:
+            # Setup mock to return the session as a generator
             mock_get_db.return_value = iter([mock_db_session])
-            mock_db_session.query.return_value.filter.return_value.first.return_value = mock_api_token
-            
-            provider = JWTBearerAuthProvider(secret_key="test-key")
-            result = await provider._validate_token_in_database("test-token-id")
-            
+
+            # Make MockAPIToken available for import inside the method
+            # The provider imports APIToken from token_router, but token_router should import it from models
+            # We need to mock the import chain properly
+            with patch.dict('sys.modules', {'fastmcp.server.routes.token_router': Mock(APIToken=MockAPIToken)}):
+                # Setup the query chain to return the mock token
+                mock_db_session.query.return_value.filter.return_value.first.return_value = mock_api_token
+
+                # Ensure MockAPIToken has the necessary attributes for the filter
+                MockAPIToken.id = Mock()
+                MockAPIToken.is_active = Mock()
+
+                provider = JWTBearerAuthProvider(secret_key="test-key")
+                result = await provider._validate_token_in_database("test-token-id")
+
             assert result is True
             assert mock_api_token.usage_count == 11
             assert mock_api_token.last_used_at is not None
@@ -278,13 +291,19 @@ class TestJWTBearerAuthProvider:
     @pytest.mark.asyncio
     async def test_validate_token_in_database_not_found(self, mock_db_session):
         """Test validation when token not found in database"""
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch('fastmcp.server.auth.providers.jwt_bearer.get_db') as mock_get_db, \
+             patch('fastmcp.task_management.infrastructure.database.models.APIToken') as MockAPIToken:
             mock_get_db.return_value = iter([mock_db_session])
-            mock_db_session.query.return_value.filter.return_value.first.return_value = None
-            
-            provider = JWTBearerAuthProvider(secret_key="test-key")
-            result = await provider._validate_token_in_database("non-existent-token")
-            
+
+            with patch.dict('sys.modules', {'fastmcp.server.routes.token_router': Mock(APIToken=MockAPIToken)}):
+                mock_db_session.query.return_value.filter.return_value.first.return_value = None
+
+                MockAPIToken.id = Mock()
+                MockAPIToken.is_active = Mock()
+
+                provider = JWTBearerAuthProvider(secret_key="test-key")
+                result = await provider._validate_token_in_database("non-existent-token")
+
             assert result is False
             mock_db_session.close.assert_called_once()
     
@@ -329,13 +348,19 @@ class TestJWTBearerAuthProvider:
     async def test_validate_token_in_database_with_rate_limit(self, mock_db_session, mock_api_token):
         """Test token validation with rate limit set"""
         mock_api_token.rate_limit = 100  # 100 requests per period
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch('fastmcp.server.auth.providers.jwt_bearer.get_db') as mock_get_db, \
+             patch('fastmcp.task_management.infrastructure.database.models.APIToken') as MockAPIToken:
             mock_get_db.return_value = iter([mock_db_session])
-            mock_db_session.query.return_value.filter.return_value.first.return_value = mock_api_token
-            
-            provider = JWTBearerAuthProvider(secret_key="test-key")
-            result = await provider._validate_token_in_database("test-token-id")
-            
+
+            with patch.dict('sys.modules', {'fastmcp.server.routes.token_router': Mock(APIToken=MockAPIToken)}):
+                mock_db_session.query.return_value.filter.return_value.first.return_value = mock_api_token
+
+                MockAPIToken.id = Mock()
+                MockAPIToken.is_active = Mock()
+
+                provider = JWTBearerAuthProvider(secret_key="test-key")
+                result = await provider._validate_token_in_database("test-token-id")
+
             assert result is True
             # Rate limit check is placeholder for now
     

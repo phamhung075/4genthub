@@ -289,7 +289,7 @@ class TestHookSystemIntegration:
 
                 # Should have informative error message
                 assert 'dangerous' in stderr_output.lower() or 'blocked' in stderr_output.lower()
-                assert result == 1
+                assert result == 2  # Changed from 1 to 2 - hooks return 2 for blocking
 
     def test_logging_format_consistency(self, tmp_path):
         """Test that all logging follows consistent format."""

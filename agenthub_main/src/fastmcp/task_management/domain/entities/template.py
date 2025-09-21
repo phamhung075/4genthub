@@ -1,5 +1,6 @@
 """Template Domain Entity"""
 
+import fnmatch
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from datetime import datetime
@@ -121,11 +122,8 @@ class Template:
         return False
     
     def _pattern_matches(self, template_pattern: str, file_pattern: str) -> bool:
-        """Check if patterns match (simple implementation)"""
-        # Simple pattern matching - can be enhanced with regex
-        return (template_pattern in file_pattern or 
-                file_pattern in template_pattern or
-                template_pattern == "*")
+        """Check if patterns match using fnmatch for wildcard support"""
+        return fnmatch.fnmatch(file_pattern, template_pattern)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert template to dictionary representation"""

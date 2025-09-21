@@ -19,7 +19,15 @@ class TestDependencyValidationService:
     def setup_method(self):
         """Setup test data before each test"""
         self.mock_repository = Mock(spec=TaskRepository)
-        self.service = DependencyValidationService(self.mock_repository)
+
+        # Create mock ID validator
+        self.mock_id_validator = Mock()
+        self.mock_id_validator.detect_id_type.return_value = Mock(
+            is_valid=True,
+            error_message=None
+        )
+
+        self.service = DependencyValidationService(self.mock_repository, self.mock_id_validator)
         
         # Create test tasks
         self.main_task = self._create_test_task(
@@ -535,7 +543,41 @@ class TestDependencyValidationServiceIntegration:
     def setup_method(self):
         """Setup integration test environment"""
         self.mock_repository = Mock(spec=TaskRepository)
-        self.service = DependencyValidationService(self.mock_repository)
+
+        # Create mock ID validator
+        self.mock_id_validator = Mock()
+        self.mock_id_validator.detect_id_type.return_value = Mock(
+            is_valid=True,
+            error_message=None
+        )
+
+        self.service = DependencyValidationService(self.mock_repository, self.mock_id_validator)
+
+    def _create_test_task(self, task_id: str, title: str, status: str = "todo",
+                         dependencies: List[str] = None) -> Task:
+        """Helper to create test tasks with dependencies"""
+        task = Task(
+            title=title,
+            description=f"Test description for {title}",
+            id=TaskId.from_string(task_id),
+            status=TaskStatus.from_string(status),
+            priority=Priority.from_string("medium"),
+            git_branch_id="test-1",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+
+        if dependencies:
+            task.dependencies = [TaskId.from_string(dep_id) for dep_id in dependencies]
+
+        # Add get_dependency_ids method for compatibility
+        def get_dependency_ids():
+            if hasattr(task, 'dependencies') and task.dependencies:
+                return [str(dep_id) for dep_id in task.dependencies]
+            return []
+
+        task.get_dependency_ids = get_dependency_ids
+        return task
 
     def test_complex_dependency_chain_validation(self):
         """Test validation of complex multi-level dependency chains"""

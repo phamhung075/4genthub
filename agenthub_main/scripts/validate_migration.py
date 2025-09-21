@@ -21,7 +21,7 @@ from sqlalchemy.exc import SQLAlchemyError
 # Add the src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from fastmcp.task_management.infrastructure.database.models import Base, Project, Agent, ProjectTaskTree, Task, TaskSubtask, Label, TaskLabel, GlobalContext, ProjectContext, TaskContext, ContextDelegation, ContextInheritanceCache, Template
+from fastmcp.task_management.infrastructure.database.models import Base, Project, Agent, ProjectGitBranch, Task, Subtask, Label, TaskLabel, GlobalContext, ProjectContext, TaskContext, ContextDelegation, ContextInheritanceCache, Template
 from fastmcp.task_management.infrastructure.database.database_config import get_db_config
 
 # Configure logging
@@ -52,9 +52,9 @@ class MigrationValidator:
         expected_tables = {
             'projects': Project.__tablename__,
             'agents': Agent.__tablename__,
-            'project_git_branchs': ProjectTaskTree.__tablename__,
+            'project_git_branchs': ProjectGitBranch.__tablename__,
             'tasks': Task.__tablename__,
-            'task_subtasks': TaskSubtask.__tablename__,
+            'subtasks': Subtask.__tablename__,
             'labels': Label.__tablename__,
             'task_labels': TaskLabel.__tablename__,
             'global_contexts': GlobalContext.__tablename__,

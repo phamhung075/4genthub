@@ -11,6 +11,7 @@ from ...domain.value_objects.task_status import TaskStatusEnum
 from ..enums.agent_roles import AgentRole, resolve_legacy_role
 from ..enums.common_labels import CommonLabel, LabelValidator
 from ..enums.estimated_effort import EffortLevel, EstimatedEffort
+from ..enums.progress_enums import ProgressState
 from ..events.progress_events import (
     ProgressMilestoneReached,
     ProgressTypeCompleted,
@@ -39,7 +40,8 @@ class Task:
     status: TaskStatus | None = None
     priority: Priority | None = None
     git_branch_id: str | None = None
-    details: str = ""
+    progress_history: dict[str, Any] = field(default_factory=dict)
+    progress_count: int = 0
     estimated_effort: str = ""
     assignees: list[str] = field(default_factory=list)
     labels: list[str] = field(default_factory=list)
@@ -52,6 +54,7 @@ class Task:
     
     # Progress tracking fields
     overall_progress: int = 0  # 0-100 percentage (integer)
+    progress_state: ProgressState = ProgressState.INITIAL
     progress_timeline: ProgressTimeline | None = None
     
     # Domain events
@@ -217,20 +220,36 @@ class Task:
             updated_at=self.updated_at
         ))
     
-    def update_details(self, details: str) -> None:
-        """Update task details"""
-        old_details = self.details
-        self.details = details
+    def append_progress(self, progress_content: str) -> None:
+        """Append new progress to task history with numbered headers"""
+        self.progress_count += 1
+        progress_header = f"=== Progress {self.progress_count} ==="
+
+        # Initialize progress_history if it doesn't exist
+        if not hasattr(self, 'progress_history') or self.progress_history is None:
+            self.progress_history = {}
+
+        # Store the progress entry
+        progress_entry = {
+            'content': f"{progress_header}\n{progress_content}",
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'progress_number': self.progress_count
+        }
+
+        # Add to history using progress number as key
+        self.progress_history[f"progress_{self.progress_count}"] = progress_entry
+
         self.updated_at = datetime.now(timezone.utc)
-        
-        # Keep context_id when task is updated (context should persist)
-        
+
+        # Clear context_id when task is updated (context needs updating)
+        self.context_id = None
+
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="details",
-            old_value=old_details,
-            new_value=details,
+            field_name="progress_history",
+            old_value=f"progress_added_{self.progress_count - 1}",
+            new_value=f"progress_added_{self.progress_count}",
             updated_at=self.updated_at
         ))
     
@@ -527,43 +546,22 @@ class Task:
             deleted_at=datetime.now(timezone.utc)
         ))
 
-    def update_details_legacy(self, title: str | None = None, description: str | None = None, 
-                      details: str | None = None, assignees: list[str] | None = None) -> None:
-        """Update task details"""
-        changes = {}
-        
-        if title is not None and title != self.title:
-            if not title.strip():
-                raise ValueError("Task title cannot be empty")
-            changes["title"] = (self.title, title)
-            self.title = title
-        
-        if description is not None and description != self.description:
-            if not description.strip():
-                raise ValueError("Task description cannot be empty")
-            changes["description"] = (self.description, description)
-            self.description = description
-        
-        if details is not None and details != self.details:
-            changes["details"] = (self.details, details)
-            self.details = details
-        
-        if assignees is not None and assignees != self.assignees:
-            changes["assignees"] = (self.assignees, assignees)
-            self.assignees = assignees
-        
-        if changes:
-            self.updated_at = datetime.now(timezone.utc)
-            
-            # Raise domain events for each change
-            for field_name, (old_value, new_value) in changes.items():
-                self._events.append(TaskUpdated(
-                    task_id=self.id,
-                    field_name=field_name,
-                    old_value=old_value,
-                    new_value=new_value,
-                    updated_at=self.updated_at
-                ))
+    def get_progress_history_text(self) -> str:
+        """Get full progress history as formatted text"""
+        if not self.progress_history:
+            return ""
+
+        # Sort progress entries by progress number
+        sorted_entries = sorted(
+            self.progress_history.items(),
+            key=lambda x: x[1].get('progress_number', 0)
+        )
+
+        history_text = []
+        for _, entry in sorted_entries:
+            history_text.append(entry['content'])
+
+        return '\n\n'.join(history_text)
     
     def add_dependency(self, dependency_id: TaskId) -> None:
         """Add a task dependency"""
@@ -754,6 +752,9 @@ class Task:
         # Update task status to done
         old_status = self.status
         self.status = TaskStatus.done()
+        # Update progress state to complete when task is done
+        self.progress_state = ProgressState.COMPLETE
+        self.overall_progress = 100
         self.updated_at = datetime.now(timezone.utc)
         
         # Raise domain event for task completion (include completion summary)
@@ -775,7 +776,69 @@ class Task:
                 new_value=self.subtasks,
                 updated_at=self.updated_at
             ))
-    
+
+    def update_progress_state(self) -> None:
+        """
+        Update progress state based on current status and progress percentage.
+        Called automatically when status or progress changes.
+        """
+        # If task is completed, set to COMPLETE
+        if self.status.is_completed():
+            self.progress_state = ProgressState.COMPLETE
+            return
+
+        # If task has 0% progress and is in todo status, set to INITIAL
+        if self.overall_progress == 0 and self.status.value.lower() in ["todo", "pending"]:
+            self.progress_state = ProgressState.INITIAL
+            return
+
+        # If task has progress or is in progress status, set to IN_PROGRESS
+        if self.overall_progress > 0 or self.status.value.lower() in ["in_progress", "in-progress", "active"]:
+            self.progress_state = ProgressState.IN_PROGRESS
+            return
+
+        # Default fallback based on progress percentage
+        self.progress_state = ProgressState.from_progress_percentage(self.overall_progress)
+
+    def set_status(self, status: TaskStatus) -> None:
+        """
+        Set task status and update progress state accordingly.
+        """
+        old_status = self.status
+        self.status = status
+        self.update_progress_state()
+        self.updated_at = datetime.now(timezone.utc)
+
+        # Raise domain event
+        self._events.append(TaskUpdated(
+            task_id=self.id,
+            field_name="status",
+            old_value=str(old_status),
+            new_value=str(status),
+            updated_at=self.updated_at
+        ))
+
+    def set_progress_percentage(self, percentage: int) -> None:
+        """
+        Set progress percentage and update progress state accordingly.
+        """
+        if not 0 <= percentage <= 100:
+            raise ValueError(f"Progress percentage must be between 0 and 100, got {percentage}")
+
+        old_progress = self.overall_progress
+        self.overall_progress = percentage
+        self.update_progress_state()
+        self.updated_at = datetime.now(timezone.utc)
+
+        # Raise domain event
+        self._events.append(TaskUpdated(
+            task_id=self.id,
+            field_name="overall_progress",
+            old_value=old_progress,
+            new_value=percentage,
+            updated_at=self.updated_at
+        ))
+
     def get_subtask(self, subtask_id: str) -> str | None:
         """Get a subtask ID if it exists in this task"""
         return subtask_id if subtask_id in self.subtasks else None
@@ -1197,7 +1260,8 @@ class Task:
             "git_branch_id": self.git_branch_id,
             "status": self.status.value if self.status and hasattr(self.status, 'value') else str(self.status) if self.status else None,
             "priority": self.priority.value if self.priority and hasattr(self.priority, 'value') else str(self.priority) if self.priority else None,
-            "details": self.details,
+            "progress_history": self.progress_history,
+            "progress_count": self.progress_count,
             "estimatedEffort": self.estimated_effort,
             "assignees": assignees_list,
             "labels": self.labels.copy() if self.labels is not None else [],

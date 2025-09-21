@@ -11,22 +11,6 @@ from fastmcp.task_management.domain.entities.work_session import (
 
 
 class TestWorkSessionCreation:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test WorkSession entity creation."""
     
     def test_create_work_session_minimal(self):
@@ -36,7 +20,7 @@ class TestWorkSessionCreation:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="feature-branch",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         assert session.id == "session-1"
@@ -60,7 +44,7 @@ class TestWorkSessionCreation:
             agent_id="agent-2",
             task_id="task-2",
             git_branch_name="main",
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
             max_duration=max_duration,
             auto_save_interval=600,
             session_notes="Initial notes"
@@ -78,7 +62,7 @@ class TestWorkSessionCreation:
             agent_id="agent-3",
             task_id="task-3",
             git_branch_name="dev",
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
             resources_locked=resources
         )
         
@@ -86,22 +70,6 @@ class TestWorkSessionCreation:
 
 
 class TestWorkSessionStatusTransitions:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test WorkSession status transitions."""
     
     def test_pause_active_session(self):
@@ -111,7 +79,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.pause_session("Taking a break")
@@ -129,7 +97,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         session.status = SessionStatus.COMPLETED
         
@@ -143,7 +111,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         # Pause then resume
@@ -169,7 +137,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         with pytest.raises(ValueError, match="Cannot resume session in active state"):
@@ -182,7 +150,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.complete_session(success=True, notes="Task completed")
@@ -200,7 +168,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.complete_session(success=False, notes="Encountered error")
@@ -215,7 +183,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.pause_session()
@@ -231,7 +199,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         session.status = SessionStatus.COMPLETED
         
@@ -245,7 +213,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.cancel_session("User requested cancellation")
@@ -263,7 +231,7 @@ class TestWorkSessionStatusTransitions:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.timeout_session()
@@ -275,22 +243,6 @@ class TestWorkSessionStatusTransitions:
 
 
 class TestWorkSessionProgressTracking:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test WorkSession progress tracking."""
     
     def test_add_progress_update(self):
@@ -300,7 +252,7 @@ class TestWorkSessionProgressTracking:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.add_progress_update(
@@ -324,7 +276,7 @@ class TestWorkSessionProgressTracking:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.add_progress_update("started", "Beginning work")
@@ -341,34 +293,18 @@ class TestWorkSessionProgressTracking:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
-        
+
         initial_activity = session.last_activity
         time.sleep(0.01)  # Small delay
-        
+
         session.add_progress_update("test", "Test update")
-        
+
         assert session.last_activity > initial_activity
 
 
 class TestWorkSessionResourceManagement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test WorkSession resource management."""
     
     def test_lock_resource(self):
@@ -378,7 +314,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.lock_resource("database-1")
@@ -394,7 +330,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.lock_resource("file-1")
@@ -410,7 +346,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.lock_resource("cache-1")
@@ -427,7 +363,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         session.unlock_resource("not-locked")
@@ -441,7 +377,7 @@ class TestWorkSessionResourceManagement:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         # Lock multiple resources
@@ -456,27 +392,11 @@ class TestWorkSessionResourceManagement:
 
 
 class TestWorkSessionDuration:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test WorkSession duration calculations."""
     
     def test_get_active_duration_for_active_session(self):
         """Test getting active duration for active session."""
-        started = datetime.now() - timedelta(minutes=30)
+        started = datetime.now(timezone.utc) - timedelta(minutes=30)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -493,7 +413,7 @@ class TestWorkSessionDuration:
     
     def test_get_active_duration_with_pauses(self):
         """Test getting active duration excluding pauses."""
-        started = datetime.now() - timedelta(hours=1)
+        started = datetime.now(timezone.utc) - timedelta(hours=1)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -513,7 +433,7 @@ class TestWorkSessionDuration:
     
     def test_get_active_duration_for_completed_session(self):
         """Test getting active duration for completed session."""
-        started = datetime.now() - timedelta(hours=2)
+        started = datetime.now(timezone.utc) - timedelta(hours=2)
         ended = started + timedelta(hours=1, minutes=30)
         
         session = WorkSession(
@@ -532,7 +452,7 @@ class TestWorkSessionDuration:
     
     def test_get_total_duration(self):
         """Test getting total duration including pauses."""
-        started = datetime.now() - timedelta(hours=2)
+        started = datetime.now(timezone.utc) - timedelta(hours=2)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -552,7 +472,7 @@ class TestWorkSessionDuration:
     
     def test_get_total_duration_for_ended_session(self):
         """Test getting total duration for ended session."""
-        started = datetime.now() - timedelta(hours=3)
+        started = datetime.now(timezone.utc) - timedelta(hours=3)
         ended = started + timedelta(hours=2)
         
         session = WorkSession(
@@ -571,22 +491,6 @@ class TestWorkSessionDuration:
 
 
 class TestWorkSessionScenarios:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test complex WorkSession scenarios."""
     
     def test_pause_resume_cycle(self):
@@ -596,7 +500,7 @@ class TestWorkSessionScenarios:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         # First pause/resume
@@ -621,7 +525,7 @@ class TestWorkSessionScenarios:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now()
+            started_at=datetime.now(timezone.utc)
         )
         
         # Lock resources
@@ -640,7 +544,7 @@ class TestWorkSessionScenarios:
     
     def test_max_duration_check(self):
         """Test session with max duration configuration."""
-        started = datetime.now() - timedelta(hours=3)
+        started = datetime.now(timezone.utc) - timedelta(hours=3)
         session = WorkSession(
             id="session-1",
             agent_id="agent-1",
@@ -667,7 +571,7 @@ class TestWorkSessionScenarios:
             agent_id="agent-1",
             task_id="task-1",
             git_branch_name="main",
-            started_at=datetime.now(),
+            started_at=datetime.now(timezone.utc),
             session_notes="Initial setup"
         )
         

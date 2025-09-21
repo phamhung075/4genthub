@@ -66,7 +66,7 @@
       "path": "_absolute_docs/scripts"
     },
     "_workplace/workers/fix_tests_loop": {
-      "count": 4,
+      "count": 5,
       "files": [
         {
           "hash": "b7200161c62e0ae9a680556f00416b1b",
@@ -95,6 +95,13 @@
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
           "size": 48043
+        },
+        {
+          "hash": "becbac54203824e79fc54b6878de0b97",
+          "modified": "2025-09-21T19:28:44.657548",
+          "name": "current_context.md",
+          "path": "_workplace/workers/fix_tests_loop/current_context.md",
+          "size": 7694
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -805,7 +812,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 51,
+      "count": 52,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -911,6 +918,13 @@
           "name": "email-authentication-setup.md",
           "path": "development-guides/email-authentication-setup.md",
           "size": 9270
+        },
+        {
+          "hash": "baea92080c24d21cd14607d0dc20502c",
+          "modified": "2025-09-21T14:42:07.163524",
+          "name": "task-progress-history-implementation.md",
+          "path": "development-guides/task-progress-history-implementation.md",
+          "size": 7256
         },
         {
           "hash": "3aae30e354c1616d51b242ccf6dd3b03",
@@ -1188,7 +1202,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 13,
+      "count": 14,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1247,11 +1261,11 @@
           "size": 5217
         },
         {
-          "hash": "652ad809da4e5538783c1504bcb6bca8",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "d5bd999c1dafc7d0ef777ad5a65d5f31",
+          "modified": "2025-09-21T14:32:34.174959",
           "name": "mcp-subtask-persistence-fix-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-fix-2025-09-05.md",
-          "size": 9186
+          "size": 9166
         },
         {
           "hash": "c47d32e442127bf2b9440009e93acf6c",
@@ -1259,6 +1273,13 @@
           "name": "mcp-subtask-persistence-iteration5-final-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-iteration5-final-2025-09-05.md",
           "size": 4698
+        },
+        {
+          "hash": "ce3a0af5b091c1903da2f3a28da95f26",
+          "modified": "2025-09-21T14:32:34.174959",
+          "name": "task-context-cascade-deletion-analysis.md",
+          "path": "issues/task-context-cascade-deletion-analysis.md",
+          "size": 6392
         },
         {
           "hash": "dff3ce2cfd7a7478a98f1c38fc79d5f4",
@@ -2018,7 +2039,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 32,
+      "count": 33,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2119,11 +2140,11 @@
           "size": 20412
         },
         {
-          "hash": "5a10a24240407a58465fe4b5792f7d51",
-          "modified": "2025-09-20T17:22:27.985061",
+          "hash": "2adccacd8abfa25f3908b05f4f0da03a",
+          "modified": "2025-09-21T14:32:34.174959",
           "name": "subtask-wrong-task-id-api-calls.md",
           "path": "troubleshooting-guides/subtask-wrong-task-id-api-calls.md",
-          "size": 12579
+          "size": 12567
         },
         {
           "hash": "cbbcdc5819ef08506226b64432fc7a09",
@@ -2133,11 +2154,11 @@
           "size": 9921
         },
         {
-          "hash": "b1236d3d274ab3faf90d97bb14312fd7",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "292f821f1a31d440f168f7440eabfc2a",
+          "modified": "2025-09-21T14:32:34.174959",
           "name": "task-persistence-issue-analysis.md",
           "path": "troubleshooting-guides/task-persistence-issue-analysis.md",
-          "size": 7007
+          "size": 7003
         },
         {
           "hash": "f8bad23dee0bddecb2655fcdc56d40e7",
@@ -2182,11 +2203,11 @@
           "size": 20661
         },
         {
-          "hash": "1df9f8387eef1797c085b3dc7a789808",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "b42137512165812e1ede41ae08278da2",
+          "modified": "2025-09-21T14:32:34.174959",
           "name": "comprehensive-branch-cascade-deletion-fix.md",
           "path": "troubleshooting-guides/comprehensive-branch-cascade-deletion-fix.md",
-          "size": 6179
+          "size": 6163
         },
         {
           "hash": "c775e2151e99e2c21e5d33b9aa1ff1b7",
@@ -2231,6 +2252,13 @@
           "size": 7012
         },
         {
+          "hash": "f79bfca03582fa580292fb6753677e12",
+          "modified": "2025-09-21T23:12:25.897474",
+          "name": "mcp-subtask-user-id-association-fix.md",
+          "path": "troubleshooting-guides/mcp-subtask-user-id-association-fix.md",
+          "size": 4870
+        },
+        {
           "hash": "3dec322f427737dda2e0089c7e77e04d",
           "modified": "2025-09-17T14:11:39.095822",
           "name": "test-menu-fix-applied.md",
@@ -2261,7 +2289,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-20T18:01:07.259365",
+  "generated_at": "2025-09-21T23:12:25.980623",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2280,6 +2308,7 @@
         "fix_tests_loop": {
           "files": [
             "AI_README.md",
+            "current_context.md",
             "fix-1by1-context.md",
             "fix-1by1-results.md",
             "fix-1by1.md"
@@ -2470,6 +2499,7 @@
         "refactored-hook-architecture.md",
         "role-based-tool-assignment-system.md",
         "server-initialization-patterns.md",
+        "task-progress-history-implementation.md",
         "test-organization-guide.md",
         "test_creation_guide.md",
         "token-management-analysis.md"
@@ -2505,6 +2535,7 @@
         "mcp-task-creation-fix-prompt-2025-09-05.md",
         "mcp-task-creation-import-error-2025-09-09.md",
         "project-deletion-fix-2025-09-06.md",
+        "task-context-cascade-deletion-analysis.md",
         "task-creation-assignees-bug.md"
       ]
     },
@@ -2647,6 +2678,7 @@
         "index.md",
         "mcp-connection-issues.md",
         "mcp-hint-system-resolved-issues.md",
+        "mcp-subtask-user-id-association-fix.md",
         "memory-leak-diagnosis-report.md",
         "orchestrator-bypass-analysis.md",
         "production-deployment-issues.md",
@@ -2672,5 +2704,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 297
+  "total_files": 301
 }

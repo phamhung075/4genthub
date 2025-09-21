@@ -68,7 +68,8 @@ class TestTaskCreation:
             status=TaskStatus.in_progress(),
             priority=Priority.high(),
             git_branch_id="branch-123",
-            details="Additional details",
+            progress_history={"progress_1": {"content": "=== Progress 1 ===\nAdditional details", "timestamp": created_at.isoformat(), "progress_number": 1}},
+            progress_count=1,
             estimated_effort="2 hours",
             assignees=["@user1", "@user2"],
             labels=["feature", "bug"],
@@ -87,7 +88,9 @@ class TestTaskCreation:
         assert task.status.value == TaskStatusEnum.IN_PROGRESS.value
         assert task.priority.value == "high"
         assert task.git_branch_id == "branch-123"
-        assert task.details == "Additional details"
+        assert task.progress_count == 1
+        assert "progress_1" in task.progress_history
+        assert "Additional details" in task.progress_history["progress_1"]["content"]
         assert task.estimated_effort == "2 hours"
         assert task.assignees == ["@user1", "@user2"]
         assert task.labels == ["feature", "bug"]
@@ -144,9 +147,9 @@ class TestTaskCreation:
             Task(title=long_title, description="Valid description")
     
     def test_task_validation_description_too_long(self):
-        """Test task validation rejects description exceeding 1000 characters."""
-        long_description = "a" * 1001
-        with pytest.raises(ValueError, match="Task description cannot exceed 1000 characters"):
+        """Test task validation rejects description exceeding 2000 characters."""
+        long_description = "a" * 2001
+        with pytest.raises(ValueError, match="Task description cannot exceed 2000 characters"):
             Task(title="Valid title", description=long_description)
     
     def test_task_equality(self):
@@ -410,16 +413,19 @@ class TestTaskFieldUpdates:
         with pytest.raises(ValueError, match="Task description cannot be empty"):
             task.update_description("   ")
     
-    def test_update_details(self):
-        """Test updating task details."""
+    def test_append_progress(self):
+        """Test appending progress to task history."""
         task = Task(id=TaskId("test-1"), title="Test", description="Test")
-        
-        task.update_details("Some implementation details")
-        assert task.details == "Some implementation details"
-        
-        # Can be empty
-        task.update_details("")
-        assert task.details == ""
+
+        task.append_progress("Some implementation details")
+        assert task.progress_count == 1
+        assert "progress_1" in task.progress_history
+        assert "Some implementation details" in task.progress_history["progress_1"]["content"]
+
+        # Second progress append
+        task.append_progress("Additional progress")
+        assert task.progress_count == 2
+        assert "progress_2" in task.progress_history
     
     def test_update_estimated_effort(self):
         """Test updating estimated effort."""
@@ -447,22 +453,22 @@ class TestTaskFieldUpdates:
         with pytest.raises(ValueError, match="Invalid due date format"):
             task.update_due_date("31-12-2024")
     
-    def test_update_details_legacy(self):
-        """Test the legacy update_details method."""
+    def test_multiple_field_updates(self):
+        """Test updating multiple fields individually."""
         task = Task(id=TaskId("test-1"), title="Original", description="Original")
-        
-        task.update_details_legacy(
-            title="New Title",
-            description="New Description",
-            details="New Details",
-            assignees=["@user1"]
-        )
-        
+
+        # Update fields individually
+        task.update_title("New Title")
+        task.update_description("New Description")
+        task.append_progress("New progress details")
+        task.update_assignees(["@user1"])
+
         assert task.title == "New Title"
         assert task.description == "New Description"
-        assert task.details == "New Details"
+        assert task.progress_count == 1
+        assert "New progress details" in task.get_progress_history_text()
         assert task.assignees == ["@user1"]
-        
+
         # Check multiple events raised
         events = task.get_events()
         assert len(events) == 4
@@ -494,7 +500,7 @@ class TestTaskAssigneeManagement:
         # @ prefix is added to valid roles
         with patch('fastmcp.task_management.domain.enums.agent_roles.AgentRole.is_valid_role', return_value=True):
             task.update_assignees(["coding-agent"])
-            assert "coding-agent" in task.assignees
+            assert "@coding-agent" in task.assignees
     
     def test_add_assignee(self):
         """Test adding individual assignee."""
@@ -520,7 +526,7 @@ class TestTaskAssigneeManagement:
         mock_role.value = "coding-agent"
         
         task.add_assignee(mock_role)
-        assert "coding-agent" in task.assignees
+        assert "@coding-agent" in task.assignees
     
     def test_remove_assignee(self):
         """Test removing assignee."""
@@ -756,7 +762,7 @@ class TestTaskDependencyManagement:
         assert not task.has_circular_dependency(TaskId("dep-2"))
 
 
-class TestTaskSubtaskManagement:
+class TestSubtaskManagement:
     """Test cases for Task subtask management."""
     
     def test_add_subtask(self):

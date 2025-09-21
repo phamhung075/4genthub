@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .database_config import get_db_config, Base
 from .models import (
-    Project, ProjectGitBranch, Task, TaskSubtask, TaskAssignee,
+    Project, ProjectGitBranch, Task, Subtask, TaskAssignee,
     TaskDependency, Agent, Label, TaskLabel, Template,
     GlobalContext, ProjectContext, BranchContext, TaskContext, ContextDelegation, ContextInheritanceCache,
     APIToken
@@ -128,9 +128,9 @@ def migrate_from_sqlite_to_postgresql(sqlite_path: str):
         
         # Migrate subtasks
         logger.info("Migrating subtasks...")
-        cursor = sqlite_conn.execute("SELECT * FROM task_subtasks")
+        cursor = sqlite_conn.execute("SELECT * FROM subtasks")
         for row in cursor:
-            subtask = TaskSubtask(
+            subtask = Subtask(
                 id=row['id'],
                 task_id=row['task_id'],
                 title=row['title'],

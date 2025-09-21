@@ -89,12 +89,12 @@ class TestRuleCompositionService:
         """Test composing empty rule list"""
         # Act
         result = self.service.compose_rules([])
-        
+
         # Assert
         assert isinstance(result, CompositionResult)
         assert result.success is False
         assert result.composed_content == ""
-        assert "No rules provided" in result.warnings
+        assert "No rules provided for composition" in result.warnings
 
     def test_compose_rules_intelligent_strategy_success(self):
         """Test intelligent composition strategy with multiple rules"""
@@ -182,7 +182,7 @@ class TestRuleCompositionService:
         
         # Assert
         assert result.success is False
-        assert "Composition failed" in result.warnings
+        assert any("Composition failed" in warning for warning in result.warnings)
         assert "error" in result.composition_metadata
 
     def test_resolve_conflicts(self):

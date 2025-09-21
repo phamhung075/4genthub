@@ -15,7 +15,7 @@ from fastmcp.task_management.infrastructure.repositories.orm.task_repository imp
 from fastmcp.task_management.infrastructure.orm.models import (
     Task as TaskORM,
     Project as ProjectORM,
-    TaskSubtask,
+    Subtask,
     TaskAssignee,
     TaskDependency,
     TaskContext

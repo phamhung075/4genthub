@@ -370,9 +370,9 @@ class TestOptimizationIntegration(unittest.TestCase):
         
         # Each hint should have proper structure
         for hint in structured_hints:
-            self.assertTrue(hasattr(hint, 'type'))
-            self.assertTrue(hasattr(hint, 'action'))
-            self.assertTrue(hasattr(hint, 'priority'))
+            self.assertIn('type', hint)
+            self.assertIn('action', hint)
+            self.assertIn('priority', hint)
     
     def test_optimization_with_different_profiles(self):
         """Test optimization with different response profiles"""

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -173,10 +173,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
+    console.log('🍞 ToastProvider.showToast() called with:', toast);
+
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = { ...toast, id };
-    
-    setToasts(prev => [...prev, newToast]);
+
+    console.log('🍞 ToastProvider: Creating toast with ID:', id, 'toast:', newToast);
+
+    setToasts(prev => {
+      const newToasts = [...prev, newToast];
+      console.log('🍞 ToastProvider: Updated toasts array, now have', newToasts.length, 'toasts');
+      return newToasts;
+    });
+
     return id;
   }, []);
 
@@ -187,6 +196,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const dismissAll = useCallback(() => {
     setToasts([]);
   }, []);
+
+  // Note: Event bus listening is now handled by WebSocketToastBridge
+  // This prevents duplicate toasts when both ToastProvider and WebSocketToastBridge
+  // listen to the same toastEventBus events
 
   return (
     <ToastContext.Provider value={{ toasts, showToast, dismissToast, dismissAll }}>

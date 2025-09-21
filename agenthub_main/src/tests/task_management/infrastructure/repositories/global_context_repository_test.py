@@ -137,16 +137,27 @@ class TestGlobalContextRepository:
         assert "Global context already exists" in str(exc_info.value)
     
     def test_create_global_context_without_user_id(self, mock_session_factory):
-        """Test create behavior without user_id raises error"""
+        """Test create behavior without user_id (system mode) succeeds"""
         repo = GlobalContextRepository(mock_session_factory)
         entity = GlobalContext(id="global-123", organization_name="test-org")
 
         mock_session = mock_session_factory.return_value
-        mock_session.query.return_value.filter.return_value.first.return_value = None
+        # When in system mode (no user_id), the code uses session.get() instead of query()
+        mock_session.get.return_value = None
 
-        # Should raise ValueError requiring user_id
-        with pytest.raises(ValueError, match="user_id is required"):
-            repo.create(entity)
+        # Mock the add and commit operations
+        mock_model = Mock()
+        mock_session.add = Mock()
+        mock_session.commit = Mock()
+        mock_session.refresh = Mock()
+
+        # In system mode (user_id=None), creation should succeed without user_id
+        result = repo.create(entity)
+
+        # Verify the entity was created
+        assert result.id == "global-123"
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_called_once()
     
     def test_get_global_context_found(self, repository, mock_session):
         """Test get retrieves global context successfully"""

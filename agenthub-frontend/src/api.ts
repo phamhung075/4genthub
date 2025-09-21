@@ -92,7 +92,9 @@ export interface Task {
     context_data?: any;
     context_id?: string;
     git_branch_id?: string;
-    details?: string;
+    progress_history?: string | object;  // Can be string (legacy) or object (new format) with progress entries
+    progress_count?: number;    // Count of progress entries
+    progress_state?: 'initial' | 'in_progress' | 'complete';  // New stepper progress state
     labels?: string[];
     estimated_effort?: string;
     due_date?: string;
@@ -112,6 +114,7 @@ export interface Subtask {
     assignees?: string[];
     dependencies?: string[];
     progress_percentage?: number;
+    progress_state?: 'initial' | 'in_progress' | 'complete';  // New stepper progress state
     progress_notes?: string;
     created_at?: string;
     updated_at?: string;
@@ -218,8 +221,8 @@ export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
 };
 
 export const getSubtask = async (task_id: string, subtask_id: string): Promise<Subtask> => {
-    // Use nested subtask endpoint for complete data with proper parent task routing
-    const response = await subtaskApiV2.getSubtask(task_id, subtask_id) as SubtaskResponse;
+    // Use subtask endpoint - task_id parameter kept for backward compatibility but not used
+    const response = await subtaskApiV2.getSubtask(subtask_id) as SubtaskResponse;
     return response.subtask || response;
 };
 

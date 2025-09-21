@@ -34,27 +34,27 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-    
+
     if (response.status === 401) {
       logger.info('V2 API: Got 401, attempting token refresh...');
-      
+
       // Try to refresh the token
       try {
         await refreshTokenAndRetry();
-        
+
         // Retry the original request with new token if we have the original request info
         if (originalUrl && originalInit) {
           const newToken = Cookies.get('access_token');
           if (newToken) {
             const newHeaders = { ...originalInit.headers };
             newHeaders['Authorization'] = `Bearer ${newToken}`;
-            
+
             const retryResponse = await fetch(originalUrl, {
               ...originalInit,
               headers: newHeaders,
               credentials: 'include', // Include cookies for CORS
             });
-            
+
             if (retryResponse.ok) {
               return retryResponse.json();
             }
@@ -68,10 +68,37 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
         window.dispatchEvent(new CustomEvent('auth-logout'));
         throw new Error('Authentication required. Please log in again.');
       }
-      
+
       throw new Error('Authentication required. Please log in again.');
     }
-    
+
+    // Enhanced 404 error handling for better debugging
+    if (response.status === 404) {
+      const url = originalUrl || response.url;
+      const resourceType = url.includes('/subtasks/') ? 'subtask' :
+                          url.includes('/tasks/') ? 'task' : 'resource';
+      const resourceId = url.substring(url.lastIndexOf('/') + 1);
+
+      // Create a structured 404 error with context
+      const notFoundError = new Error(`${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`) as any;
+      notFoundError.name = 'NotFoundError';
+      notFoundError.status = 404;
+      notFoundError.resourceType = resourceType;
+      notFoundError.resourceId = resourceId;
+      notFoundError.url = url;
+
+      // Log 404 as debug level instead of error to reduce console noise
+      logger.debug(`V2 API: ${resourceType} not found`, {
+        resourceType,
+        resourceId,
+        url,
+        status: 404,
+        userFriendly: `The ${resourceType} you're looking for may have been deleted or moved.`
+      });
+
+      throw notFoundError;
+    }
+
     throw new Error(error.detail || `Request failed with status ${response.status}`);
   }
   
@@ -321,8 +348,15 @@ export const subtaskApiV2 = {
   },
 
   // Get a specific subtask
-  getSubtask: async (taskId: string, subtaskId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/tasks/${taskId}/subtasks/${subtaskId}`, {
+  getSubtask: async (subtaskId: string) => {
+    // Validate UUID format before making API call
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(subtaskId)) {
+      logger.warn('Invalid subtask ID format, skipping API call', { subtaskId });
+      throw new Error('Invalid subtask ID format');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',

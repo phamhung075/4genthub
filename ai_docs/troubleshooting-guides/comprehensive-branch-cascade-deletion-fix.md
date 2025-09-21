@@ -9,7 +9,7 @@ Git branch deletion was failing with foreign key constraint violations due to in
 ### Previous Implementation Issues
 - **Incomplete Cascade Deletion**: Only handled TaskContext, Task, BranchContext, and ProjectGitBranch
 - **Manual SQL Deletions**: Used `session.query().filter().delete()` which bypasses SQLAlchemy ORM cascade settings
-- **Missing Relationships**: Did not handle TaskSubtask, TaskAssignee, TaskDependency, TaskLabel, ContextDelegation, ContextInheritanceCache
+- **Missing Relationships**: Did not handle Subtask, TaskAssignee, TaskDependency, TaskLabel, ContextDelegation, ContextInheritanceCache
 
 ### Database Schema Analysis
 Through systematic analysis of `models.py`, identified all foreign key relationships:
@@ -20,7 +20,7 @@ Through systematic analysis of `models.py`, identified all foreign key relations
 - `TaskContext.parent_branch_id` → `project_git_branchs.id`
 
 **Indirect Foreign Keys (through Tasks):**
-- `TaskSubtask.task_id` → `tasks.id`
+- `Subtask.task_id` → `tasks.id`
 - `TaskAssignee.task_id` → `tasks.id`
 - `TaskDependency.task_id` → `tasks.id`
 - `TaskDependency.depends_on_task_id` → `tasks.id`
@@ -42,7 +42,7 @@ async def delete_branch(self, branch_id: str) -> bool:
         # Step 2: ContextDelegation records 
         # Step 3: Collect BranchContext IDs
         # Step 4: Collect Task IDs
-        # Step 5: TaskSubtask records
+        # Step 5: Subtask records
         # Step 6: TaskAssignee records
         # Step 7: TaskLabel records
         # Step 8: TaskDependency records (both directions)
@@ -130,7 +130,7 @@ INFO: Deleted 2 ContextInheritanceCache records for branch abc-123
 INFO: Deleted 1 ContextDelegation records for branch abc-123
 INFO: Found 3 BranchContext records for branch abc-123
 INFO: Found 5 Task records for branch abc-123
-INFO: Deleted 10 TaskSubtask records for branch abc-123
+INFO: Deleted 10 Subtask records for branch abc-123
 INFO: Deleted 5 TaskAssignee records for branch abc-123
 INFO: Deleted 3 TaskLabel records for branch abc-123
 INFO: Deleted 2 TaskDependency records for branch abc-123

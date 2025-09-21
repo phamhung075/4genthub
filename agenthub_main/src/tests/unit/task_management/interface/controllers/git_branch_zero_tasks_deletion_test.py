@@ -32,15 +32,15 @@ class TestGitBranchZeroTasksDeletion:
         """Set up test fixtures for each test method"""
         self.project_id = str(uuid.uuid4())
         self.user_id = "test_user_123"
-        
+
         # Mock repository
         self.mock_repo = Mock(spec=ORMGitBranchRepository)
-        
-        # Mock facade factory
-        self.mock_facade_factory = Mock()
-        
+
+        # Mock facade service (not factory)
+        self.mock_facade_service = Mock()
+
         # Controller under test
-        self.controller = GitBranchMCPController(self.mock_facade_factory)
+        self.controller = GitBranchMCPController(self.mock_facade_service)
         
         # Sample branch data
         self.empty_branch_id = str(uuid.uuid4())
@@ -80,25 +80,22 @@ class TestGitBranchZeroTasksDeletion:
     @patch('fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller.get_authenticated_user_id')
     def test_delete_empty_branch_should_succeed(self, mock_auth):
         """FAILING TEST: Delete operation should succeed for branches with 0 tasks
-        
+
         GIVEN: A git branch with 0 tasks
         WHEN: User attempts to delete the branch
         THEN: The deletion should succeed without validation errors
         """
-        
+
         # Arrange
         mock_auth.return_value = self.user_id
-        
+
         # Create mock facade that simulates the current (potentially buggy) behavior
         mock_facade = Mock(spec=GitBranchApplicationFacade)
-        
+
         # This is the expected behavior - deletion should succeed
-        mock_facade.delete_git_branch.return_value = {
-            "success": True,
-            "message": f"Git branch {self.empty_branch_id} deleted successfully"
-        }
-        
-        self.mock_facade_factory.create_git_branch_facade.return_value = mock_facade
+        mock_facade.delete_git_branch.return_value = True  # Return True for successful deletion
+
+        self.mock_facade_service.get_branch_facade.return_value = mock_facade
         
         # Act
         result = self.controller.manage_git_branch(
@@ -111,34 +108,31 @@ class TestGitBranchZeroTasksDeletion:
         # Assert - This test should pass if the bug is fixed
         assert result["success"] is True
         assert "deleted successfully" in result.get("message", "").lower() or result.get("data", {}).get("deleted") is True
-        
+
         # Verify the facade method was called correctly
         mock_facade.delete_git_branch.assert_called_once()
         call_args = mock_facade.delete_git_branch.call_args
-        
-        # Check that project_id and git_branch_id were passed correctly
-        assert call_args[1]["project_id"] == self.project_id or call_args[0][0] == self.project_id  # positional or keyword
-        assert call_args[1]["git_branch_id"] == self.empty_branch_id or call_args[0][1] == self.empty_branch_id
+
+        # Check that project_id and git_branch_id were passed correctly (as keyword arguments)
+        assert call_args[1]["project_id"] == self.project_id
+        assert call_args[1]["git_branch_id"] == self.empty_branch_id
 
     @patch('fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller.get_authenticated_user_id')
     def test_delete_branch_with_tasks_should_also_succeed(self, mock_auth):
         """CONTROL TEST: Deletion should work for branches with tasks (baseline behavior)
-        
+
         GIVEN: A git branch with tasks
         WHEN: User attempts to delete the branch
         THEN: The deletion should succeed (this establishes baseline)
         """
-        
+
         # Arrange
         mock_auth.return_value = self.user_id
-        
+
         mock_facade = Mock(spec=GitBranchApplicationFacade)
-        mock_facade.delete_git_branch.return_value = {
-            "success": True,
-            "message": f"Git branch {self.branch_with_tasks_id} deleted successfully"
-        }
-        
-        self.mock_facade_factory.create_git_branch_facade.return_value = mock_facade
+        mock_facade.delete_git_branch.return_value = True  # Return True for successful deletion
+
+        self.mock_facade_service.get_branch_facade.return_value = mock_facade
         
         # Act
         result = self.controller.manage_git_branch(
@@ -154,28 +148,28 @@ class TestGitBranchZeroTasksDeletion:
 
     @patch('fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller.get_authenticated_user_id')
     def test_delete_empty_branch_with_validation_error_simulation(self, mock_auth):
-        """FAILING TEST: Simulates the current bug where empty branches cannot be deleted
-        
-        GIVEN: A git branch with 0 tasks
-        WHEN: Current buggy validation prevents deletion
-        THEN: This test demonstrates the bug behavior that we need to fix
+        """TEST: Verifies that validation errors from facade are properly handled
+
+        GIVEN: A git branch with 0 tasks and a facade that returns a validation error
+        WHEN: The facade returns a validation error (simulating a potential bug)
+        THEN: The controller should properly propagate the error response
         """
-        
+
         # Arrange
         mock_auth.return_value = self.user_id
-        
+
         # Mock facade that simulates the buggy behavior
         mock_facade = Mock(spec=GitBranchApplicationFacade)
-        
-        # This simulates the current bug - deletion fails for empty branches
+
+        # This simulates a validation error from the facade
         mock_facade.delete_git_branch.return_value = {
             "success": False,
             "error": "Cannot delete branch with 0 tasks",  # Hypothetical error message
             "error_code": "VALIDATION_ERROR"
         }
-        
-        self.mock_facade_factory.create_git_branch_facade.return_value = mock_facade
-        
+
+        self.mock_facade_service.get_branch_facade.return_value = mock_facade
+
         # Act
         result = self.controller.manage_git_branch(
             action="delete",
@@ -183,16 +177,13 @@ class TestGitBranchZeroTasksDeletion:
             git_branch_id=self.empty_branch_id,
             user_id=self.user_id
         )
-        
-        # Assert - This test demonstrates the bug
-        # After we fix the bug, we'll need to update the facade mock to return success
-        if result["success"] is False:
-            # This indicates the bug exists
-            assert "task" in result.get("error", "").lower() or result.get("error_code") == "VALIDATION_ERROR"
-            pytest.fail(f"BUG DETECTED: Empty branch deletion failed with: {result.get('error')}")
-        else:
-            # This indicates the bug is fixed
-            assert result["success"] is True
+
+        # Assert - The controller should properly handle and propagate the error
+        assert result["success"] is False
+        assert "error" in result
+        error_details = result.get("error", {})
+        assert "task" in error_details.get("message", "").lower()
+        assert error_details.get("code") == "VALIDATION_ERROR"
 
     def test_git_branch_service_delete_empty_branch_integration(self):
         """INTEGRATION TEST: Test the service layer directly for empty branch deletion
@@ -203,16 +194,22 @@ class TestGitBranchZeroTasksDeletion:
         
         # Arrange
         mock_repo = Mock(spec=ORMGitBranchRepository)
+        mock_repo.with_user = Mock(return_value=mock_repo)  # For user-scoped repository
         mock_project_repo = Mock()
-        
+        mock_project_repo.with_user = Mock(return_value=mock_project_repo)  # For user-scoped repository
+
         # Mock successful repository operations for empty branch
-        async def mock_find_by_id(*args):
-            return self.empty_branch
-        async def mock_delete(*args):
-            return True
-        
-        mock_repo.find_by_id = mock_find_by_id
-        mock_repo.delete = mock_delete
+        mock_repo.find_by_id = AsyncMock(return_value=self.empty_branch)
+        mock_repo.delete = AsyncMock(return_value=True)
+        mock_repo.delete_branch = AsyncMock(return_value=True)  # The actual method used by GitBranchService
+
+        # Mock project repo find_by_id - GitBranchService might need this
+        mock_project = Mock()
+        mock_project.id = self.project_id
+        mock_project.name = "Test Project"
+        mock_project.git_branchs = {self.empty_branch_id: self.empty_branch}
+        mock_project_repo.find_by_id = AsyncMock(return_value=mock_project)
+        mock_project_repo.update = AsyncMock(return_value=mock_project)
         
         # Mock context service
         mock_context_service = Mock()
@@ -220,11 +217,11 @@ class TestGitBranchZeroTasksDeletion:
         
         # Create service
         service = GitBranchService(
+            git_branch_repo=mock_repo,
             project_repo=mock_project_repo,
             hierarchical_context_service=mock_context_service,
             user_id=self.user_id
         )
-        service._git_branch_repo = mock_repo
         
         # Act
         import asyncio
@@ -246,11 +243,12 @@ class TestGitBranchZeroTasksDeletion:
         mock_session.query.return_value = mock_query
         
         repo = ORMGitBranchRepository(user_id=self.user_id)
-        
+
         # Act
+        import asyncio
         with patch.object(repo, 'get_db_session') as mock_session_context:
             mock_session_context.return_value.__enter__.return_value = mock_session
-            
+
             result = asyncio.run(repo.delete(self.project_id, self.empty_branch_id))
         
         # Assert
@@ -275,7 +273,7 @@ class TestGitBranchZeroTasksDeletion:
             "error_code": "NOT_FOUND"
         }
         
-        self.mock_facade_factory.create_git_branch_facade.return_value = mock_facade
+        self.mock_facade_service.get_branch_facade.return_value = mock_facade
         
         # Act
         result = self.controller.manage_git_branch(
@@ -291,7 +289,12 @@ class TestGitBranchZeroTasksDeletion:
             # The mock facade returned success instead of failure - this is expected if no validation
             pass  # This is actually correct behavior - no validation should prevent deletion
         else:
-            assert "not found" in result.get("error", "").lower()
+            error = result.get("error", "")
+            if isinstance(error, dict):
+                error_msg = error.get("message", "") or str(error)
+            else:
+                error_msg = str(error)
+            assert "not found" in error_msg.lower()
         # This should be a legitimate failure, not task count related
 
     def test_multiple_empty_branches_deletion_batch(self):

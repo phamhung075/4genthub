@@ -16,6 +16,15 @@ import { WebSocketToastBridge } from './components/WebSocketToastBridge';
 import { ThemeProvider } from './contexts/ThemeContext';
 // Import WebSocket service to ensure it auto-connects
 import './services/websocketService';
+// Import WebSocket debugging utility
+import './utils/websocketDebug';
+// Import WebSocket testing utility
+import './utils/websocketTest';
+// Import subscription debugger for memory leak debugging
+import './utils/subscriptionDebugger';
+// Import toastEventBus for testing
+import { toastEventBus } from './services/toastEventBus';
+import { useToast } from './components/ui/toast';
 import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
@@ -25,13 +34,14 @@ import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
 function Dashboard() {
-  const { projectId, branchId, taskId, subtaskId } = useParams<{
+  const { projectId, branchId } = useParams<{
     projectId?: string;
     branchId?: string;
     taskId?: string;
     subtaskId?: string;
   }>();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Derive selection from URL parameters
   const selection = projectId && branchId ? { projectId, branchId } : null;
@@ -139,6 +149,44 @@ function Dashboard() {
                   </div>
                   <h3 className="text-xl font-semibold text-base-primary mb-3">Choose a workspace</h3>
                   <p className="text-base-secondary max-w-md mx-auto">Select a project and branch from the sidebar to start viewing and managing your tasks.</p>
+
+                  {/* Temporary debug button to test notifications */}
+                  <div className="mt-8 space-y-2">
+                    <p className="text-sm text-base-secondary">Debug: Test Notifications</p>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => {
+                          console.log('🧪 TEST: Triggering success notification via toastEventBus');
+                          toastEventBus.success('Test Success', 'This is a test success notification');
+                        }}
+                        className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                      >
+                        Test Success
+                      </button>
+                      <button
+                        onClick={() => {
+                          console.log('🧪 TEST: Triggering error notification via toastEventBus');
+                          toastEventBus.error('Test Error', 'This is a test error notification');
+                        }}
+                        className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+                      >
+                        Test Error
+                      </button>
+                      <button
+                        onClick={() => {
+                          console.log('🧪 TEST: Triggering direct showToast call');
+                          showToast({
+                            type: 'info',
+                            title: 'Direct Toast',
+                            description: 'This is a direct showToast call'
+                          });
+                        }}
+                        className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                      >
+                        Direct Toast
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

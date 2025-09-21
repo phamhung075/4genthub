@@ -125,7 +125,7 @@ def main():
         
         # List of tables that need user_id columns based on the errors we saw
         tables_to_fix = [
-            'task_subtasks',        # TaskSubtask model - was missing user_id
+            'subtasks',        # Subtask model - was missing user_id
             'branch_contexts',      # BranchContext model - was missing user_id  
             'task_contexts',        # TaskContext model - was missing user_id
             'global_contexts',      # GlobalContext model - was missing user_id

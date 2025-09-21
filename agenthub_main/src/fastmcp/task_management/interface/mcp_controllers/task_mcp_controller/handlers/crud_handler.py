@@ -158,12 +158,12 @@ class CRUDHandler:
         
         return result
     
-    def update_task(self, facade: TaskApplicationFacade, task_id: Optional[str], title: Optional[str], 
-                   description: Optional[str], status: Optional[str], priority: Optional[str], 
-                   details: Optional[str], estimated_effort: Optional[str], 
-                   assignees: Optional[List[str]], labels: Optional[List[str]], 
-                   due_date: Optional[str], context_id: Optional[str] = None, 
-                   completion_summary: Optional[str] = None, 
+    def update_task(self, facade: TaskApplicationFacade, task_id: Optional[str] = None, title: Optional[str] = None,
+                   description: Optional[str] = None, status: Optional[str] = None, priority: Optional[str] = None,
+                   details: Optional[str] = None, estimated_effort: Optional[str] = None,
+                   assignees: Optional[List[str]] = None, labels: Optional[List[str]] = None,
+                   due_date: Optional[str] = None, context_id: Optional[str] = None,
+                   completion_summary: Optional[str] = None,
                    testing_notes: Optional[str] = None) -> Dict[str, Any]:
         """Handle task update operations."""
         logger.info(f"update_task called with task_id={task_id}, type={type(task_id)}")
@@ -294,7 +294,12 @@ class CRUDHandler:
                 hint="Include 'task_id' in your request"
             )
         
-        return facade.delete_task(task_id)
+        # Extract user_id from facade's repository if available
+        user_id = None
+        if hasattr(facade, '_task_repository') and hasattr(facade._task_repository, '_user_id'):
+            user_id = facade._task_repository._user_id
+
+        return facade.delete_task(task_id, user_id)
     
     def complete_task(self, facade: TaskApplicationFacade, task_id: Optional[str],
                      completion_summary: Optional[str] = None,
@@ -308,9 +313,14 @@ class CRUDHandler:
                 hint="Include 'task_id' in your request"
             )
 
+        # Extract user_id from facade's repository if available
+        user_id = None
+        if hasattr(facade, '_task_repository') and hasattr(facade._task_repository, '_user_id'):
+            user_id = facade._task_repository._user_id
+
         # Use the facade's complete_task method directly
         # This properly handles both transitioning to done and updating already-done tasks
-        return facade.complete_task(task_id, completion_summary, testing_notes)
+        return facade.complete_task(task_id, completion_summary, testing_notes, user_id)
     
     def _create_standardized_error(self, operation: str, field: str, 
                                  expected: str, hint: str) -> Dict[str, Any]:

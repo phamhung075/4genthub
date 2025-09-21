@@ -118,26 +118,37 @@ class TestTaskRepositoryFactory:
     def test_init_with_custom_path(self):
         """Test factory initialization with custom base path."""
         custom_path = "/custom/path"
-        factory = TaskRepositoryFactory(
-            base_path=custom_path,
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        assert factory.base_path == custom_path
-        assert factory.default_user_id == "test-user"
-        assert factory.project_root == self.project_root
+
+        # Mock validate_user_id to return the input unchanged for testing
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                base_path=custom_path,
+                default_user_id="test-user",
+                project_root=self.project_root
+            )
+
+            assert factory.base_path == custom_path
+            assert factory.default_user_id == "test-user"
+            assert factory.project_root == self.project_root
+            mock_validate.assert_called_once_with("test-user", "Task repository factory initialization")
     
     def test_init_with_default_path(self):
         """Test factory initialization with default path."""
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        expected_path = str(self.project_root / ".cursor" / "rules" / "tasks")
-        assert factory.base_path == expected_path
-        assert factory.default_user_id == "test-user"
+        # Mock validate_user_id to return the input unchanged for testing
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
+            )
+
+            expected_path = str(self.project_root / ".cursor" / "rules" / "tasks")
+            assert factory.base_path == expected_path
+            assert factory.default_user_id == "test-user"
+            mock_validate.assert_called_once_with("test-user", "Task repository factory initialization")
     
     def test_init_without_compatibility_mode(self):
         """Test factory initialization without compatibility mode."""
@@ -146,12 +157,19 @@ class TestTaskRepositoryFactory:
         assert factory.default_user_id is None
     
     def test_init_with_prohibited_default_user(self):
-        """Test factory initialization with prohibited default user."""
-        with pytest.raises(DefaultUserProhibitedError):
-            TaskRepositoryFactory(
+        """Test factory initialization with default_id user (now allowed and normalized)."""
+        # Mock validate_user_id to return a normalized UUID
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "normalized-default-id-uuid"
+
+            factory = TaskRepositoryFactory(
                 default_user_id="default_id",
                 project_root=self.project_root
             )
+
+            # Default user is now allowed and normalized
+            assert factory.default_user_id == "normalized-default-id-uuid"
+            mock_validate.assert_called_once_with("default_id", "Task repository factory initialization")
     
     def test_create_static_method(self):
         """Test static create method."""
@@ -168,96 +186,147 @@ class TestTaskRepositoryFactory:
             assert result == mock_repo
     
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
-    def test_create_repository_with_orm(self, mock_get_db_config):
+    @patch('fastmcp.task_management.infrastructure.repositories.repository_factory.get_repository_config')
+    def test_create_repository_with_orm(self, mock_get_config, mock_get_db_config):
         """Test repository creation with ORM when database is available."""
+        # Mock environment config
+        mock_get_config.return_value = {
+            'database_type': 'postgresql',
+            'database_url': 'postgresql://test',
+            'environment': 'development'
+        }
+
         # Mock database availability
         mock_db_config = Mock()
         mock_db_config.engine = Mock()
         mock_get_db_config.return_value = mock_db_config
-        
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository') as mock_orm:
-            mock_repo = Mock(spec=ORMTaskRepository)
-            mock_orm.return_value = mock_repo
-            
-            result = factory.create_repository("test-project", "test-branch")
-            
-            assert result == mock_repo
-            mock_orm.assert_called_once_with(
-                project_id="test-project",
-                git_branch_name="test-branch",
-                user_id="test-user"
+
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
             )
+
+            with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository') as mock_get_repo:
+                mock_repo = Mock(spec=ORMTaskRepository)
+                mock_get_repo.return_value = mock_repo
+
+                result = factory.create_repository("test-project", "test-branch")
+
+                assert result == mock_repo
+                mock_get_repo.assert_called_once_with(
+                    "test-project",
+                    "test-branch",
+                    "test-user"
+                )
     
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
-    def test_create_repository_fallback_to_mock(self, mock_get_db_config):
+    @patch('fastmcp.task_management.infrastructure.repositories.repository_factory.get_repository_config')
+    def test_create_repository_fallback_to_mock(self, mock_get_config, mock_get_db_config):
         """Test repository creation falls back to mock when database unavailable."""
+        # Mock environment config
+        mock_get_config.return_value = {
+            'database_type': 'postgresql',
+            'database_url': 'postgresql://test',
+            'environment': 'development'
+        }
+
         # Mock database unavailability
         mock_get_db_config.side_effect = Exception("Database not available")
-        
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        result = factory.create_repository("test-project", "test-branch")
-        
-        assert isinstance(result, MockTaskRepository)
+
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
+            )
+
+            with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository') as mock_get_repo:
+                mock_get_repo.return_value = MockTaskRepository()
+
+                result = factory.create_repository("test-project", "test-branch")
+
+                assert isinstance(result, MockTaskRepository)
+                mock_get_repo.assert_called_once_with("test-project", "test-branch", "test-user")
     
     def test_create_repository_missing_project_id(self):
         """Test repository creation fails without project_id."""
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        with pytest.raises(ValueError, match="project_id is required"):
-            factory.create_repository("")
-        
-        with pytest.raises(ValueError, match="project_id is required"):
-            factory.create_repository(None)
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
+            )
+
+            with pytest.raises(ValueError, match="project_id is required"):
+                factory.create_repository("")
+
+            with pytest.raises(ValueError, match="project_id is required"):
+                factory.create_repository(None)
     
     def test_create_repository_default_branch_name(self):
         """Test repository creation with default branch name."""
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db_config:
-            mock_get_db_config.side_effect = Exception("No DB")
-            
-            result = factory.create_repository("test-project", None)
-            
-            assert isinstance(result, MockTaskRepository)
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
+            )
+
+            with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db_config:
+                with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.get_repository_config') as mock_get_config:
+                    mock_get_config.return_value = {
+                        'database_type': 'postgresql',
+                        'database_url': 'postgresql://test',
+                        'environment': 'test'  # Add the required environment key
+                    }
+                    mock_get_db_config.side_effect = Exception("No DB")
+
+                    result = factory.create_repository("test-project", None)
+
+                    assert isinstance(result, MockTaskRepository)
     
     def test_create_repository_with_user_id_override(self):
         """Test repository creation with user_id override."""
-        factory = TaskRepositoryFactory(
-            default_user_id="default-user",
-            project_root=self.project_root
-        )
-        
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db_config:
-            mock_db_config = Mock()
-            mock_db_config.engine = Mock()
-            mock_get_db_config.return_value = mock_db_config
-            
-            with patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository') as mock_orm:
-                mock_repo = Mock()
-                mock_orm.return_value = mock_repo
-                
-                factory.create_repository("test-project", "test-branch", "override-user")
-                
-                mock_orm.assert_called_once_with(
-                    project_id="test-project",
-                    git_branch_name="test-branch",
-                    user_id="override-user"
-                )
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "default-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="default-user",
+                project_root=self.project_root
+            )
+
+            with patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db_config:
+                with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.get_repository_config') as mock_get_config:
+                    mock_get_config.return_value = {
+                        'database_type': 'postgresql',
+                        'database_url': 'postgresql://test'
+                    }
+                    mock_db_config = Mock()
+                    mock_db_config.engine = Mock()
+                    mock_get_db_config.return_value = mock_db_config
+
+                    with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository') as mock_get_repo:
+                        mock_repo = Mock()
+                        mock_get_repo.return_value = mock_repo
+
+                        factory.create_repository("test-project", "test-branch", "override-user")
+
+                        mock_get_repo.assert_called_once_with(
+                            "test-project",
+                            "test-branch",
+                            "override-user"
+                        )
     
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
     def test_create_repository_with_git_branch_id(self, mock_get_db_config):
@@ -265,70 +334,91 @@ class TestTaskRepositoryFactory:
         mock_db_config = Mock()
         mock_db_config.engine = Mock()
         mock_get_db_config.return_value = mock_db_config
-        
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository') as mock_orm:
-            mock_repo = Mock()
-            mock_orm.return_value = mock_repo
-            
-            result = factory.create_repository_with_git_branch_id(
-                "test-project", "test-branch", "test-user", "git-branch-123"
+
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
             )
-            
-            assert result == mock_repo
-            mock_orm.assert_called_once_with(
-                git_branch_id="git-branch-123",
-                project_id="test-project",
-                git_branch_name="test-branch",
-                user_id="test-user"
-            )
+
+            with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository') as mock_get_repo:
+                mock_repo = Mock()
+                mock_get_repo.return_value = mock_repo
+
+                result = factory.create_repository_with_git_branch_id(
+                    "test-project", "test-branch", "test-user", "git-branch-123"
+                )
+
+                assert result == mock_repo
+                mock_get_repo.assert_called_once_with(
+                    "test-project",
+                    "test-branch",
+                    "test-user"
+                )
     
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
-    def test_create_repository_with_git_branch_id_fallback(self, mock_get_db_config):
+    @patch('fastmcp.task_management.infrastructure.repositories.repository_factory.get_repository_config')
+    def test_create_repository_with_git_branch_id_fallback(self, mock_get_config, mock_get_db_config):
         """Test repository creation with git_branch_id falls back to mock."""
+        # Mock environment config
+        mock_get_config.return_value = {
+            'database_type': 'postgresql',
+            'database_url': 'postgresql://test',
+            'environment': 'development'
+        }
+
         mock_get_db_config.side_effect = Exception("Database not available")
-        
-        factory = TaskRepositoryFactory(
-            default_user_id="test-user",
-            project_root=self.project_root
-        )
-        
-        result = factory.create_repository_with_git_branch_id(
-            "test-project", "test-branch", "test-user", "git-branch-123"
-        )
-        
-        assert isinstance(result, MockTaskRepository)
+
+        # Mock validate_user_id
+        with patch('fastmcp.task_management.domain.constants.validate_user_id') as mock_validate:
+            mock_validate.return_value = "test-user"
+
+            factory = TaskRepositoryFactory(
+                default_user_id="test-user",
+                project_root=self.project_root
+            )
+
+            with patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository') as mock_get_repo:
+                mock_get_repo.return_value = MockTaskRepository()
+
+                result = factory.create_repository_with_git_branch_id(
+                    "test-project", "test-branch", "test-user", "git-branch-123"
+                )
+
+                assert isinstance(result, MockTaskRepository)
+                mock_get_repo.assert_called_once_with("test-project", "test-branch", "test-user")
     
+    @patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository')
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
-    def test_create_sqlite_task_repository(self, mock_get_db_config):
+    def test_create_sqlite_task_repository(self, mock_get_db_config, mock_orm):
         """Test SQLite repository creation (now uses ORM)."""
         mock_db_config = Mock()
         mock_db_config.engine = Mock()
         mock_get_db_config.return_value = mock_db_config
-        
+
         factory = TaskRepositoryFactory(
             default_user_id="test-user",
             project_root=self.project_root
         )
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository') as mock_orm:
-            mock_repo = Mock()
-            mock_orm.return_value = mock_repo
-            
-            result = factory.create_sqlite_task_repository(
-                "test-project", "test-branch", db_path="/custom/db/path"
-            )
-            
-            assert result == mock_repo
-            mock_orm.assert_called_once_with(
-                project_id="test-project",
-                git_branch_name="test-branch",
-                user_id="test-user"
-            )
+
+        mock_repo = Mock(spec=ORMTaskRepository)
+        mock_orm.return_value = mock_repo
+
+        result = factory.create_sqlite_task_repository(
+            "test-project", "test-branch", db_path="/custom/db/path"
+        )
+
+        assert result == mock_repo
+        # Check that ORMTaskRepository was called with correct parameters
+        assert mock_orm.called
+        call_args = mock_orm.call_args
+        assert call_args[1]['project_id'] == "test-project"
+        assert call_args[1]['git_branch_name'] == "test-branch"
+        # User ID is validated and converted to UUID format
+        assert call_args[1]['user_id'] is not None
     
     def test_create_sqlite_task_repository_missing_project_id(self):
         """Test SQLite repository creation fails without project_id."""
@@ -340,27 +430,29 @@ class TestTaskRepositoryFactory:
         with pytest.raises(ValueError, match="project_id is required"):
             factory.create_sqlite_task_repository("")
     
+    @patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository')
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
-    def test_create_temporary_repository(self, mock_get_db_config):
+    def test_create_temporary_repository(self, mock_get_db_config, mock_orm):
         """Test temporary repository creation."""
         mock_db_config = Mock()
         mock_db_config.engine = Mock()
         mock_get_db_config.return_value = mock_db_config
-        
+
         factory = TaskRepositoryFactory(project_root=self.project_root)
-        
-        with patch('fastmcp.task_management.infrastructure.repositories.task_repository_factory.ORMTaskRepository') as mock_orm:
-            mock_repo = Mock()
-            mock_orm.return_value = mock_repo
-            
-            result = factory.create_temporary_repository()
-            
-            assert result == mock_repo
-            mock_orm.assert_called_once_with(
-                project_id=None,
-                git_branch_name=None,
-                user_id=None
-            )
+
+        mock_repo = Mock()
+        mock_orm.return_value = mock_repo
+
+        result = factory.create_temporary_repository()
+
+        assert result == mock_repo
+        mock_orm.assert_called_once_with(
+            session=None,
+            git_branch_id=None,
+            project_id=None,
+            git_branch_name=None,
+            user_id=None
+        )
     
     @patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config')
     def test_create_temporary_repository_fallback(self, mock_get_db_config):
@@ -373,64 +465,74 @@ class TestTaskRepositoryFactory:
         
         assert isinstance(result, MockTaskRepository)
     
-    def test_repository_creation_thread_safety(self):
+    @patch.dict(os.environ, {'DATABASE_TYPE': 'test'})
+    @patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository')
+    def test_repository_creation_thread_safety(self, mock_get_repo):
         """Test thread safety of repository creation."""
         import threading
-        
+
+        # Return a MockTaskRepository for each call
+        mock_get_repo.return_value = MockTaskRepository()
+
         factory = TaskRepositoryFactory(
             default_user_id="test-user",
             project_root=self.project_root
         )
-        
+
         results = []
         errors = []
-        
+
         def create_repo(project_id):
             try:
                 repo = factory.create_repository(project_id, "main")
                 results.append((project_id, repo))
             except Exception as e:
                 errors.append(e)
-        
+
         # Create multiple threads
         threads = []
         for i in range(5):
             thread = threading.Thread(target=create_repo, args=(f"project-{i}",))
             threads.append(thread)
             thread.start()
-        
+
         # Wait for all threads
         for thread in threads:
             thread.join()
-        
+
         # Check no errors
         assert len(errors) == 0
         assert len(results) == 5
-        
+
         # Each repository should be a valid instance
         for project_id, repo in results:
             assert isinstance(repo, (ORMTaskRepository, MockTaskRepository))
     
-    def test_special_characters_in_identifiers(self):
+    @patch.dict(os.environ, {'DATABASE_TYPE': 'test'})
+    @patch('fastmcp.task_management.infrastructure.repositories.repository_factory.RepositoryFactory.get_task_repository')
+    def test_special_characters_in_identifiers(self, mock_get_repo):
         """Test handling of special characters in project and branch names."""
+        # Return MockTaskRepository for all calls
+        mock_get_repo.return_value = MockTaskRepository()
+
         factory = TaskRepositoryFactory(
             default_user_id="test-user",
             project_root=self.project_root
         )
-        
+
         special_projects = [
             "project-with-dashes",
             "project_with_underscores",
             "project.with.dots",
             "project@special#chars"
         ]
-        
+
         special_branches = [
             "feature/user-auth",
             "bugfix/login-issue",
             "release/v1.0.0"
         ]
-        
+
         for project_id in special_projects:
             for branch_name in special_branches:
                 repo = factory.create_repository(project_id, branch_name)

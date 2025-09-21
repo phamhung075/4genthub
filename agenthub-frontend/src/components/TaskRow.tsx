@@ -8,6 +8,7 @@ import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
 import logger from "../utils/logger";
+import { ProgressDisplayEnhanced } from "./ui/ProgressDisplay";
 
 import LazySubtaskList from "./LazySubtaskList";
 
@@ -199,20 +200,31 @@ const TaskRow: React.FC<TaskRowProps> = ({
               transform: translateX(0);
               opacity: 1;
               height: auto;
+              max-height: 1000px;
             }
-            30% {
-              transform: translateX(20%);
-              opacity: 0.8;
+            40% {
+              transform: translateX(30%);
+              opacity: 0.6;
+              height: auto;
+              max-height: 1000px;
             }
-            80% {
+            70% {
+              transform: translateX(80%);
+              opacity: 0.2;
+              height: auto;
+              max-height: 1000px;
+            }
+            85% {
               transform: translateX(100%);
               opacity: 0;
               height: auto;
+              max-height: 1000px;
             }
             100% {
               transform: translateX(100%);
               opacity: 0;
               height: 0;
+              max-height: 0;
               margin: 0;
               padding: 0;
               border: 0;
@@ -254,6 +266,21 @@ const TaskRow: React.FC<TaskRowProps> = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <h3 className="font-medium text-base mb-2 pr-2">{summary.title}</h3>
+                {/* Enhanced Progress Display with cleaned text and tooltips */}
+                <div className="mb-2">
+                  <ProgressDisplayEnhanced
+                    status={fullTask?.status || summary.status}
+                    progressPercentage={fullTask?.progress_percentage}
+                    progressState={fullTask?.progress_state}
+                    progressHistory={fullTask?.progress_history}
+                    size="sm"
+                    variant="compact"
+                    showLabels={false}
+                    animate={true}
+                    compactLayout={true}
+                    maxTextLength={80}
+                  />
+                </div>
                 {/* Single line with no wrap, truncation for overflow */}
                 <div className="flex items-center gap-2 overflow-hidden">
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -351,8 +378,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
             </div>
           </div>
 
-          {/* Expanded Content - Always render but control visibility */}
-          <div style={{ display: isExpanded && fullTask ? 'block' : 'none' }}>
+          {/* Expanded Content - Only render LazySubtaskList if task has subtasks */}
+          {isExpanded && fullTask && summary.subtask_count > 0 && (
             <div className="border-t border-surface-border dark:border-gray-700">
               <div className="border-blue-400 dark:border-blue-600">
                 <LazySubtaskList
@@ -362,7 +389,14 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 />
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Show message when expanded but no subtasks */}
+          {isExpanded && fullTask && summary.subtask_count === 0 && (
+            <div className="border-t border-surface-border dark:border-gray-700 p-4 text-center text-sm text-muted-foreground">
+              No subtasks for this task.
+            </div>
+          )}
           </div>
         </div>
       </>
@@ -396,20 +430,31 @@ const TaskRow: React.FC<TaskRowProps> = ({
               transform: translateX(0);
               opacity: 1;
               height: auto;
+              max-height: 1000px;
             }
-            30% {
-              transform: translateX(20%);
-              opacity: 0.8;
+            40% {
+              transform: translateX(30%);
+              opacity: 0.6;
+              height: auto;
+              max-height: 1000px;
             }
-            80% {
+            70% {
+              transform: translateX(80%);
+              opacity: 0.2;
+              height: auto;
+              max-height: 1000px;
+            }
+            85% {
               transform: translateX(100%);
               opacity: 0;
               height: auto;
+              max-height: 1000px;
             }
             100% {
               transform: translateX(100%);
               opacity: 0;
               height: 0;
+              max-height: 0;
               margin: 0;
               padding: 0;
               border: 0;
@@ -463,13 +508,28 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
 
           <TableCell className="">
-            <div className="flex items-center gap-2">
-              <span>{summary.title}</span>
-              {summary.subtask_count > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {summary.subtask_count}
-                </Badge>
-              )}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span>{summary.title}</span>
+                {summary.subtask_count > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {summary.subtask_count}
+                  </Badge>
+                )}
+              </div>
+              {/* Enhanced Progress Display with cleaned text and tooltips */}
+              <ProgressDisplayEnhanced
+                status={fullTask?.status || summary.status}
+                progressPercentage={fullTask?.progress_percentage}
+                progressState={fullTask?.progress_state}
+                progressHistory={fullTask?.progress_history}
+                size="sm"
+                variant="compact"
+                showLabels={false}
+                animate={true}
+                compactLayout={true}
+                maxTextLength={60}
+              />
             </div>
           </TableCell>
 
@@ -557,18 +617,29 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </TableCell>
         </TableRow>
 
-        {/* Always render but control visibility */}
-        <TableRow className="theme-context-section" style={{ display: isExpanded && fullTask ? 'table-row' : 'none' }}>
-          <TableCell colSpan={7} className="p-0">
-            <div className="border-blue-400 dark:border-blue-600 ml-8">
-              <LazySubtaskList
-                projectId={projectId}
-                taskTreeId={taskTreeId}
-                parentTaskId={summary.id}
-              />
-            </div>
-          </TableCell>
-        </TableRow>
+        {/* Only render LazySubtaskList if task has subtasks */}
+        {isExpanded && fullTask && summary.subtask_count > 0 && (
+          <TableRow className="theme-context-section">
+            <TableCell colSpan={7} className="p-0">
+              <div className="border-blue-400 dark:border-blue-600 ml-8">
+                <LazySubtaskList
+                  projectId={projectId}
+                  taskTreeId={taskTreeId}
+                  parentTaskId={summary.id}
+                />
+              </div>
+            </TableCell>
+          </TableRow>
+        )}
+
+        {/* Show message when expanded but no subtasks */}
+        {isExpanded && fullTask && summary.subtask_count === 0 && (
+          <TableRow className="theme-context-section">
+            <TableCell colSpan={7} className="p-4 text-center text-sm text-muted-foreground">
+              No subtasks for this task.
+            </TableCell>
+          </TableRow>
+        )}
       </>
     );
   }

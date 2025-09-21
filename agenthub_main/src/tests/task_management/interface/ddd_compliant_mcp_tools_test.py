@@ -259,18 +259,23 @@ class TestDDDCompliantMCPTools:
         """Test backward compatibility method for manage_context."""
         with patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.FacadeService'):
             tools = DDDCompliantMCPTools()
-            
-            # Mock controller method
-            mock_result = {"status": "success", "context_id": "789"}
-            tools._context_controller.manage_context = Mock(return_value=mock_result)
-            
-            # Call wrapper method
-            kwargs = {"action": "create", "level": "task", "context_id": "123"}
-            result = tools.manage_context(**kwargs)
-            
-            # Verify delegation
-            assert result == mock_result
-            tools._context_controller.manage_context.assert_called_once_with(**kwargs)
+
+            # Mock the permission check to always allow
+            with patch.object(tools._context_controller, '_check_context_permissions') as mock_check_perms:
+                mock_check_perms.return_value = (True, None)
+
+                # Call wrapper method
+                kwargs = {"action": "create", "level": "task", "context_id": "123"}
+                result = tools.manage_context(**kwargs)
+
+                # Verify that the call succeeds and returns expected structure
+                assert isinstance(result, dict)
+                assert result.get("success") is True
+                assert "data" in result
+                assert "meta" in result
+
+                # Verify permission check was called
+                mock_check_perms.assert_called_once_with("create", "608ab3c3-dcae-59ad-a354-f7e1b62b3265", "123")
     
     def test_backward_compatibility_manage_project(self):
         """Test backward compatibility method for manage_project."""

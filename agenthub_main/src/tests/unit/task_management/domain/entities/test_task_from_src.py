@@ -703,7 +703,7 @@ class TestTaskEntity:
         assert task_dict["status"] == "todo"
         assert task_dict["priority"] == "high"
         assert task_dict["estimatedEffort"] == "1 day"
-        assert "@developer" in task_dict["assignees"]
+        assert "developer-agent" in task_dict["assignees"]
         assert "urgent" in task_dict["labels"]
         assert task_dict["created_at"] is not None
         assert task_dict["updated_at"] is not None

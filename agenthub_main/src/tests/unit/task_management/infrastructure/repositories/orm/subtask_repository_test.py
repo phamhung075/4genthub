@@ -28,7 +28,7 @@ from fastmcp.task_management.domain.exceptions.base_exceptions import (
     ValidationException
 )
 from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
-from fastmcp.task_management.infrastructure.database.models import TaskSubtask
+from fastmcp.task_management.infrastructure.database.models import Subtask as SubtaskModel
 
 
 def create_mock_with_spec(spec_class):
@@ -56,7 +56,7 @@ class TestORMSubtaskRepositoryInitialization:
             repo = ORMSubtaskRepository()
             
             # Should initialize both base classes
-            assert repo.model_class == TaskSubtask
+            assert repo.model_class == SubtaskModel
             assert hasattr(repo, 'user_id')
             assert hasattr(repo, 'apply_user_filter')
     
@@ -150,8 +150,8 @@ class TestORMSubtaskRepositoryDataConversion:
     
     def test_from_model_data_to_entity(self):
         """Test converting ORM model to domain entity."""
-        # Mock TaskSubtask model
-        mock_model = create_mock_with_spec(TaskSubtask)
+        # Mock Subtask model
+        mock_model = create_mock_with_spec(Subtask)
         mock_model.id = "sub-123"
         mock_model.parent_task_id = "task-456"
         mock_model.title = "Test Subtask"
@@ -211,7 +211,7 @@ class TestORMSubtaskRepositorySaveOperations:
         subtask.id = None  # Explicitly no ID to indicate new subtask
 
         # Mock created model
-        mock_created_model = create_mock_with_spec(TaskSubtask)
+        mock_created_model = create_mock_with_spec(Subtask)
         mock_created_model.id = "sub-123"
         mock_created_model.updated_at = datetime.now(timezone.utc)
 
@@ -241,7 +241,7 @@ class TestORMSubtaskRepositorySaveOperations:
         )
 
         # Mock existing model in database
-        mock_existing_model = create_mock_with_spec(TaskSubtask)
+        mock_existing_model = create_mock_with_spec(Subtask)
         mock_existing_model.id = "sub-123"
         mock_existing_model.updated_at = datetime.now(timezone.utc)
 
@@ -282,7 +282,7 @@ class TestORMSubtaskRepositorySaveOperations:
         self.mock_session.query.return_value = mock_query
 
         # Mock new model creation
-        mock_new_model = create_mock_with_spec(TaskSubtask)
+        mock_new_model = create_mock_with_spec(Subtask)
         mock_new_model.id = "sub-nonexistent"
         mock_new_model.updated_at = datetime.now(timezone.utc)
 
@@ -339,7 +339,7 @@ class TestORMSubtaskRepositoryFindOperations:
     def test_find_by_id_found(self):
         """Test finding subtask by ID when it exists."""
         # Mock subtask model
-        mock_model = create_mock_with_spec(TaskSubtask)
+        mock_model = create_mock_with_spec(Subtask)
         mock_model.id = "sub-123"
         mock_model.task_id = "task-456"
         mock_model.title = "Test Subtask"
@@ -401,7 +401,7 @@ class TestORMSubtaskRepositoryFindOperations:
     
     def test_find_by_id_user_filter_denied(self):
         """Test finding subtask denied by user filter."""
-        mock_model = create_mock_with_spec(TaskSubtask)
+        mock_model = create_mock_with_spec(Subtask)
         mock_model.id = "sub-123"
 
         # Mock query chain that returns empty after user filter
@@ -427,11 +427,11 @@ class TestORMSubtaskRepositoryFindOperations:
     def test_find_by_parent_task_id(self):
         """Test finding subtasks by parent task ID."""
         # Mock subtask models
-        mock_model1 = create_mock_with_spec(TaskSubtask)
+        mock_model1 = create_mock_with_spec(Subtask)
         mock_model1.id = "sub-1"
         mock_model1.task_id = "task-456"  # Correct field name
 
-        mock_model2 = create_mock_with_spec(TaskSubtask)
+        mock_model2 = create_mock_with_spec(Subtask)
         mock_model2.id = "sub-2"
         mock_model2.task_id = "task-456"  # Correct field name
 
@@ -479,7 +479,7 @@ class TestORMSubtaskRepositoryCompletionOperations:
     def test_complete_subtask_success(self):
         """Test successful subtask completion."""
         # Mock existing subtask
-        mock_model = create_mock_with_spec(TaskSubtask)
+        mock_model = create_mock_with_spec(Subtask)
         mock_model.id = "sub-123"
         mock_model.status = "in_progress"
 
@@ -575,7 +575,7 @@ class TestORMSubtaskRepositoryProgressOperations:
     def test_update_progress_success(self):
         """Test successful progress update."""
         # Mock existing subtask
-        mock_model = create_mock_with_spec(TaskSubtask)
+        mock_model = create_mock_with_spec(Subtask)
         mock_model.id = "sub-123"
         mock_model.progress_percentage = 25
 
@@ -606,17 +606,17 @@ class TestORMSubtaskRepositoryProgressOperations:
     def test_get_subtask_progress(self):
         """Test getting subtask progress for parent task."""
         # Mock subtasks with different completion states
-        mock_subtask1 = create_mock_with_spec(TaskSubtask)
+        mock_subtask1 = create_mock_with_spec(Subtask)
         mock_subtask1.id = "sub-1"
         mock_subtask1.status = "done"
         mock_subtask1.progress_percentage = 100
 
-        mock_subtask2 = create_mock_with_spec(TaskSubtask)
+        mock_subtask2 = create_mock_with_spec(Subtask)
         mock_subtask2.id = "sub-2"
         mock_subtask2.status = "in_progress"
         mock_subtask2.progress_percentage = 50
 
-        mock_subtask3 = create_mock_with_spec(TaskSubtask)
+        mock_subtask3 = create_mock_with_spec(Subtask)
         mock_subtask3.id = "sub-3"
         mock_subtask3.status = "done"
         mock_subtask3.progress_percentage = 100
@@ -739,11 +739,12 @@ class TestORMSubtaskRepositoryErrorHandling:
     
     def test_json_serialization_error(self):
         """Test handling of JSON serialization errors for assignees."""
+        # Create a valid subtask object first
         subtask = Subtask(
             parent_task_id=TaskId("task-456"),
             title="Test",
             description="Test",
-            assignees=["valid", {"invalid": "object"}]  # Invalid assignee type
+            assignees=["valid-assignee"]  # Valid assignee list
         )
 
         # Mock session context manager
@@ -751,15 +752,16 @@ class TestORMSubtaskRepositoryErrorHandling:
         mock_session_ctx.__enter__ = Mock(return_value=self.mock_session)
         mock_session_ctx.__exit__ = Mock(return_value=None)
 
+        # Mock the save method to simulate JSON serialization error
         with patch.object(self.repo, 'save') as mock_save:
-            mock_save.side_effect = TypeError("Object not JSON serializable")
+            mock_save.side_effect = TypeError("Object of type 'dict' is not JSON serializable")
 
             try:
                 result = self.repo.save(subtask)
             except TypeError:
                 result = False
 
-            # Should handle serialization errors
+            # Should handle serialization errors gracefully
             assert result is False
 
 

@@ -326,27 +326,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [setTokens]);
 
-  // Check for existing tokens on mount
+  // Check for existing tokens on mount and establish WebSocket connection
   useEffect(() => {
     const access_token = Cookies.get('access_token');
     const refresh_token = Cookies.get('refresh_token');
 
     if (access_token && refresh_token) {
       const userData = decodeToken(access_token);
-      
+
       if (userData) {
         setUser(userData);
         setTokensState({ access_token, refresh_token });
+
+        // Connect WebSocket with authentication token after successful token loading
+        connectWebSocketWithAuth(access_token);
       } else if (refresh_token) {
         // Token expired, try to refresh
         refreshToken().catch(() => {
           logout();
         });
       }
+    } else {
+      // No tokens available - ensure WebSocket is disconnected
+      if (websocketService.isConnected()) {
+        websocketService.disconnect();
+        logger.info('WebSocket disconnected - no authentication tokens available');
+      }
     }
-    
+
     setIsLoading(false);
   }, [refreshToken]);
+
+  // Helper function to connect WebSocket with authentication
+  const connectWebSocketWithAuth = async (token: string) => {
+    try {
+      if (!websocketService.isConnected()) {
+        await websocketService.connect(token);
+        logger.info('WebSocket connected with authentication token from cookies');
+      }
+    } catch (error) {
+      logger.error('Failed to connect WebSocket with authentication token:', error);
+      // Optionally retry or handle specific error cases
+    }
+  };
 
   // Set up token refresh interval
   useEffect(() => {

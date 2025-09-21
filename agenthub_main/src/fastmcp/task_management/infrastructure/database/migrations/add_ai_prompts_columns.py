@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def upgrade(engine: Any) -> None:
-    """Add AI prompt columns to tasks and task_subtasks tables."""
+    """Add AI prompt columns to tasks and subtasks tables."""
     
     with engine.begin() as conn:
         inspector = inspect(engine)
@@ -47,17 +47,17 @@ def upgrade(engine: Any) -> None:
                     else:
                         raise
         
-        # Add columns to task_subtasks table
-        existing_subtask_columns = [col['name'] for col in inspector.get_columns('task_subtasks')]
+        # Add columns to subtasks table
+        existing_subtask_columns = [col['name'] for col in inspector.get_columns('subtasks')]
         for col_name, col_type, default_val in task_columns:
             if col_name not in existing_subtask_columns:
                 try:
-                    alter_sql = f"ALTER TABLE task_subtasks ADD COLUMN {col_name} {col_type} DEFAULT {default_val}"
-                    logger.info(f"Adding column {col_name} to task_subtasks table")
+                    alter_sql = f"ALTER TABLE subtasks ADD COLUMN {col_name} {col_type} DEFAULT {default_val}"
+                    logger.info(f"Adding column {col_name} to subtasks table")
                     conn.execute(text(alter_sql))
                 except (OperationalError, ProgrammingError) as e:
                     if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
-                        logger.info(f"Column {col_name} already exists in task_subtasks table")
+                        logger.info(f"Column {col_name} already exists in subtasks table")
                     else:
                         raise
         
@@ -65,7 +65,7 @@ def upgrade(engine: Any) -> None:
 
 
 def downgrade(engine: Any) -> None:
-    """Remove AI prompt columns from tasks and task_subtasks tables."""
+    """Remove AI prompt columns from tasks and subtasks tables."""
     
     with engine.begin() as conn:
         columns_to_remove = [
@@ -87,11 +87,11 @@ def downgrade(engine: Any) -> None:
                 logger.warning(f"Could not remove column {col_name} from tasks: {e}")
             
             try:
-                # Remove from task_subtasks table  
-                conn.execute(text(f"ALTER TABLE task_subtasks DROP COLUMN {col_name}"))
-                logger.info(f"Removed column {col_name} from task_subtasks table")
+                # Remove from subtasks table
+                conn.execute(text(f"ALTER TABLE subtasks DROP COLUMN {col_name}"))
+                logger.info(f"Removed column {col_name} from subtasks table")
             except (OperationalError, ProgrammingError) as e:
-                logger.warning(f"Could not remove column {col_name} from task_subtasks: {e}")
+                logger.warning(f"Could not remove column {col_name} from subtasks: {e}")
 
 
 if __name__ == "__main__":

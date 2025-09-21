@@ -39,10 +39,10 @@ def add_composite_indexes(database_url: str = None):
         # 2. Composite index for subtask lookups by parent task and status
         {
             'name': 'idx_subtasks_parent_status',
-            'table': 'task_subtasks',
+            'table': 'subtasks',
             'columns': ['task_id', 'status'],
-            'sql': """CREATE INDEX IF NOT EXISTS idx_subtasks_parent_status 
-                     ON task_subtasks(task_id, status)"""
+            'sql': """CREATE INDEX IF NOT EXISTS idx_subtasks_parent_status
+                     ON subtasks(task_id, status)"""
         },
         
         # 3. Composite index for assignee lookups
@@ -102,10 +102,10 @@ def add_composite_indexes(database_url: str = None):
         # 9. Index for subtask progress tracking
         {
             'name': 'idx_subtasks_progress',
-            'table': 'task_subtasks',
+            'table': 'subtasks',
             'columns': ['task_id', 'progress_percentage'],
-            'sql': """CREATE INDEX IF NOT EXISTS idx_subtasks_progress 
-                     ON task_subtasks(task_id, progress_percentage)"""
+            'sql': """CREATE INDEX IF NOT EXISTS idx_subtasks_progress
+                     ON subtasks(task_id, progress_percentage)"""
         },
         
         # 10. Index for label name lookups
@@ -184,7 +184,7 @@ def verify_index_performance(database_url: str = None):
         {
             'name': 'Subtask lookup',
             'query': """EXPLAIN QUERY PLAN
-                       SELECT * FROM task_subtasks 
+                       SELECT * FROM subtasks
                        WHERE task_id = '123'"""
         },
         {

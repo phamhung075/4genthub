@@ -326,14 +326,16 @@ class TestUserScopedRepository:
         mock_repo = Mock(spec=['user_id', 'session'])
         mock_repo.user_id = "different_user"
         mock_repo.session = Mock()
-        
-        # Since the repository has user_id but it's different from service's user_id,
-        # the service should try to create a new instance with the correct user_id
-        # However, without with_user method, it will just return the original repo
-        result = self.service._get_user_scoped_repository(mock_repo)
-        
-        # Without with_user method, should return original repository
-        assert result == mock_repo
+
+        # Mock the type() call to return a mock class that can be instantiated
+        mock_repo_class = Mock(return_value=Mock())
+
+        with patch('builtins.type', return_value=mock_repo_class):
+            result = self.service._get_user_scoped_repository(mock_repo)
+
+            # Should have attempted to create a new instance with the correct user_id
+            mock_repo_class.assert_called_once_with(mock_repo.session, user_id="test_user")
+            assert result == mock_repo_class.return_value
     
     def test_get_user_scoped_repository_no_user_context(self):
         """Test getting user-scoped repository with no user context"""

@@ -114,7 +114,8 @@ def test_users():
         user = User(
             id=f"perf_user_{i}",
             email=f"user{i}@perf.test",
-            username=f"perfuser{i}"
+            username=f"perfuser{i}",
+            password_hash="hashed_password_123"
         )
         users.append(user)
     return users
@@ -128,7 +129,12 @@ class TestAuthenticationPerformance:
         """Test JWT token validation performance"""
 
         # Mock successful validation
-        mock_user = User(id="test_user", email="test@example.com", username="testuser")
+        mock_user = User(
+            id="test_user",
+            email="test@example.com",
+            username="testuser",
+            password_hash="hashed_password_123"
+        )
 
         with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
             mock_validate.return_value = mock_user
@@ -182,7 +188,12 @@ class TestAuthenticationPerformance:
     async def test_memory_usage_under_authentication_load(self, perf_tester):
         """Test memory usage during high authentication load"""
 
-        mock_user = User(id="test_user", email="test@example.com", username="testuser")
+        mock_user = User(
+            id="test_user",
+            email="test@example.com",
+            username="testuser",
+            password_hash="hashed_password_123"
+        )
 
         with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
             mock_validate.return_value = mock_user
@@ -215,7 +226,7 @@ class TestAuthorizationPerformance:
         connection_users[mock_websocket] = user
 
         # Mock database for performance testing
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = AsyncMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -264,7 +275,7 @@ class TestAuthorizationPerformance:
             websockets.append(ws)
 
         # Mock database for authorization
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = AsyncMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -367,7 +378,12 @@ class TestRateLimitingPerformance:
     async def test_message_rate_limiting_performance(self, perf_tester):
         """Test message rate limiting performance impact"""
 
-        user = User(id="rate_test_user", email="rate@test.com", username="rateuser")
+        user = User(
+            id="rate_test_user",
+            email="rate@test.com",
+            username="rateuser",
+            password_hash="hashed_password_123"
+        )
         ws = AsyncMock()
         connection_users[ws] = user
         active_connections["rate_test"] = {ws}
@@ -401,7 +417,12 @@ class TestRateLimitingPerformance:
             """Simulate connection attempt"""
             # TODO: Implement actual connection rate limiting
             # For now, just simulate authentication
-            user = User(id="conn_test", email="conn@test.com", username="connuser")
+            user = User(
+                id="conn_test",
+                email="conn@test.com",
+                username="connuser",
+                password_hash="hashed_password_123"
+            )
             with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
                 mock_validate.return_value = user
                 return await validate_websocket_token("valid.token")
@@ -423,7 +444,12 @@ class TestSecurityMemoryLeaks:
     async def test_authentication_memory_leaks(self, perf_tester):
         """Test for memory leaks in authentication system"""
 
-        mock_user = User(id="leak_test", email="leak@test.com", username="leakuser")
+        mock_user = User(
+            id="leak_test",
+            email="leak@test.com",
+            username="leakuser",
+            password_hash="hashed_password_123"
+        )
 
         # Measure baseline memory
         gc.collect()
@@ -455,7 +481,12 @@ class TestSecurityMemoryLeaks:
 
         # Simulate many connections and disconnections
         for i in range(500):
-            user = User(id=f"temp_user_{i}", email=f"temp{i}@test.com", username=f"temp{i}")
+            user = User(
+                id=f"temp_user_{i}",
+                email=f"temp{i}@test.com",
+                username=f"temp{i}",
+                password_hash="hashed_password_123"
+            )
             ws = AsyncMock()
 
             # Add connection
@@ -511,7 +542,12 @@ class TestDosResistance:
         """Test broadcast system resistance to message flooding"""
 
         # Set up target user
-        user = User(id="dos_target", email="dos@test.com", username="dostarget")
+        user = User(
+            id="dos_target",
+            email="dos@test.com",
+            username="dostarget",
+            password_hash="hashed_password_123"
+        )
         ws = AsyncMock()
         connection_users[ws] = user
         active_connections["dos_target"] = {ws}

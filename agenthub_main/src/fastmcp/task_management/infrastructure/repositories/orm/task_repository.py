@@ -23,7 +23,7 @@ from ....domain.repositories.task_repository import TaskRepository
 from ....domain.value_objects.priority import Priority
 from ....domain.value_objects.task_id import TaskId
 from ....domain.value_objects.task_status import TaskStatus
-from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, Label, TaskContext, TaskSubtask
+from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, Label, TaskContext, Subtask
 from ..base_orm_repository import BaseORMRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
@@ -178,7 +178,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             priority=priority_obj,
             assignees=assignee_ids,
             labels=label_names,
-            details=task.details,
+            progress_history=task.progress_history,
+            progress_count=task.progress_count,
             estimated_effort=task.estimated_effort,
             due_date=task.due_date,
             created_at=task.created_at,
@@ -218,7 +219,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     'git_branch_id': self.git_branch_id,
                     'priority': priority,
                     'status': kwargs.get('status', 'todo'),
-                    'details': kwargs.get('details', ''),
+                    'progress_history': kwargs.get('progress_history', {}),
+                    'progress_count': kwargs.get('progress_count', 0),
                     'estimated_effort': _ensure_estimated_effort_default(kwargs.get('estimated_effort')),  # FIXED: Proper null/empty handling
                     'due_date': kwargs.get('due_date'),
                     'context_id': kwargs.get('context_id')
@@ -482,8 +484,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 logger.info(f"Deleted {deleted_contexts} task contexts for task {task_id}")
 
                 # 2. Delete task subtasks (these should cascade automatically, but let's be explicit)
-                deleted_subtasks = session.query(TaskSubtask).filter(
-                    TaskSubtask.task_id == task_id
+                deleted_subtasks = session.query(Subtask).filter(
+                    Subtask.task_id == task_id
                 ).delete(synchronize_session=False)
                 logger.info(f"Deleted {deleted_subtasks} subtasks for task {task_id}")
 
@@ -596,8 +598,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 CASE WHEN t.context_id IS NOT NULL AND t.context_id != '' THEN 1 ELSE 0 END as has_context
             FROM tasks t
             LEFT JOIN (
-                SELECT task_id, COUNT(*) as count 
-                FROM task_subtasks 
+                SELECT task_id, COUNT(*) as count
+                FROM subtasks
                 WHERE status != 'deleted'
                 GROUP BY task_id
             ) subtask_counts ON t.id = subtask_counts.task_id
@@ -950,7 +952,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     existing.git_branch_id = task.git_branch_id
                     existing.status = str(task.status)
                     existing.priority = str(task.priority)
-                    existing.details = task.details
+                    existing.progress_history = task.progress_history
+                    existing.progress_count = task.progress_count
                     existing.estimated_effort = _ensure_estimated_effort_default(task.estimated_effort)  # FIXED: Ensure proper default
                     existing.due_date = task.due_date
                     existing.updated_at = task.updated_at
@@ -1051,7 +1054,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                         git_branch_id=task.git_branch_id,
                         status=str(task.status),
                         priority=str(task.priority),
-                        details=task.details,
+                        progress_history=task.progress_history,
+            progress_count=task.progress_count,
                         estimated_effort=_ensure_estimated_effort_default(task.estimated_effort),  # FIXED: Ensure proper default
                         due_date=task.due_date,
                         created_at=task.created_at,
@@ -1436,7 +1440,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                             'priority': str(task.priority),
                             'assignees': task.assignees,
                             'labels': task.labels,
-                            'details': task.details,
+                            'progress_history': task.progress_history,
+                            'progress_count': task.progress_count,
                             'estimated_effort': task.estimated_effort,
                             'due_date': task.due_date,
                             'created_at': task.created_at,

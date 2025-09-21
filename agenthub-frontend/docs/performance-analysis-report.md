@@ -170,7 +170,7 @@ def list_tasks_optimized(self, git_branch_id: str, limit: int = 20):
         Task.git_branch_id == git_branch_id
     ).options(
         selectinload(Task.assignees),  # More efficient than joinedload
-        selectinload(Task.subtasks).selectinload(TaskSubtask.id),  # ID only
+        selectinload(Task.subtasks).selectinload(Subtask.id),  # ID only
         selectinload(Task.labels).selectinload(TaskLabel.label),
     ).order_by(
         Task.created_at.desc()

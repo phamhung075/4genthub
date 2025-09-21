@@ -248,6 +248,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Stable refresh callback for changePoolService
   const handleSubtaskChanges = useCallback(async () => {
+    console.log(`📡 LazySubtaskList-${parentTaskId}: Subtask changes detected, refreshing...`);
     logger.debug('📡 LazySubtaskList: Subtask changes detected, refreshing...');
 
     // Store current subtask data for comparison
@@ -337,17 +338,32 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Subscribe to centralized change pool for real-time updates
   // Listen to subtask changes for this specific parent task
+  // FIX: Always enable subscription immediately to catch first subtask animations
   useChangeSubscription({
     componentId: `LazySubtaskList-${parentTaskId}`,
     entityTypes: ['subtask'],
     refreshCallback: handleSubtaskChanges,
-    branchId: taskTreeId,   // Filter by specific branch
-    projectId: projectId,   // Filter by specific project
+    // REMOVED: branchId and projectId filters because subtask notifications don't include these fields
+    // branchId: taskTreeId,   // Filter by specific branch
+    // projectId: projectId,   // Filter by specific project
     // Custom filter to only refresh when the subtask belongs to this parent task
     shouldRefresh: (notification) => {
+      // DEBUG: Log all subtask notifications to see what we're receiving
+      console.log(`🔔 LazySubtaskList-${parentTaskId}: Received subtask notification:`, {
+        entityType: notification.entityType,
+        eventType: notification.eventType,
+        entityId: notification.entityId,
+        parentTaskId: notification.metadata?.parent_task_id,
+        currentParentTaskId: parentTaskId,
+        shouldRefresh: notification.metadata?.parent_task_id === parentTaskId
+      });
+
       // Only refresh if the subtask belongs to this parent task
       return notification.metadata?.parent_task_id === parentTaskId;
-    }
+    },
+    // FIX: Always enable subscription to catch first subtask creation/deletion animations
+    // The shouldRefresh filter already provides sufficient filtering for this parent task
+    enabled: true
   });
 
 
@@ -397,13 +413,40 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   // Load a specific subtask by ID (cross-component check)
   const loadSubtaskById = useCallback(async (subtaskId: string): Promise<Subtask | null> => {
     try {
+      // Validate UUID format before making API call
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(subtaskId)) {
+        logger.debug(`Invalid subtask ID format, skipping API call: ${subtaskId}`);
+        return null;
+      }
+
       // Use the direct subtask API to get the subtask details
+      // Note: parentTaskId is kept for backward compatibility but not used by the API
       const subtask = await getSubtask(parentTaskId, subtaskId);
-      return subtask;
+      // Check if the loaded subtask actually belongs to this parent task
+      if (subtask && subtask.parent_task_id === parentTaskId) {
+        return subtask;
+      }
+      logger.debug(`Subtask ${subtaskId} does not belong to parent task ${parentTaskId}`);
+      return null;
     } catch (error: any) {
-      // If the subtask doesn't belong to this parent task, the API will return an error
-      // This is expected behavior for cross-component checks
-      logger.debug(`Subtask ${subtaskId} does not belong to parent task ${parentTaskId}:`, error);
+      // Handle 404 and validation errors silently for cross-component checks
+      if (error?.name === 'NotFoundError' || error?.status === 404 ||
+          error?.message?.includes('Invalid subtask ID format')) {
+        logger.debug('Subtask not found or invalid format (cross-component check):', {
+          subtaskId,
+          parentTaskId,
+          errorType: error?.name || 'UNKNOWN'
+        });
+        return null;
+      }
+
+      // Log other errors as debug level to avoid console noise
+      logger.debug('Error loading subtask by ID (cross-component check):', {
+        error: error?.message || error,
+        subtaskId,
+        parentTaskId
+      });
       return null;
     }
   }, [parentTaskId]);
@@ -494,9 +537,11 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       animationTriggers.created.forEach(subtaskId => {
         const callbacks = rowAnimationCallbacks.current.get(subtaskId);
         if (callbacks) {
+          console.log(`🎬 LazySubtaskList: Playing create animation for subtask: ${subtaskId}`);
           logger.debug('🎬 Playing create animation for subtask:', subtaskId);
           callbacks.playCreateAnimation();
         } else {
+          console.log(`❌ LazySubtaskList: No callbacks found for created subtask: ${subtaskId}`);
           logger.debug('No callbacks found for created subtask:', subtaskId);
         }
       });
@@ -516,16 +561,18 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       animationTriggers.deleted.forEach(subtaskId => {
         const callbacks = rowAnimationCallbacks.current.get(subtaskId);
         if (callbacks) {
+          console.log(`🎬 LazySubtaskList: Playing delete animation for subtask: ${subtaskId}`);
           logger.debug('🎬 Playing delete animation for subtask:', subtaskId);
           callbacks.playDeleteAnimation();
         } else {
+          console.log(`❌ LazySubtaskList: No callbacks found for deleted subtask: ${subtaskId}`);
           logger.debug('No callbacks found for deleted subtask:', subtaskId);
         }
       });
 
       // Clear animation triggers after processing
       setAnimationTriggers({ created: new Set(), updated: new Set(), deleted: new Set() });
-    }, 100); // Shorter timeout since this runs after state update
+    }, 200); // Increased timeout to ensure callbacks are registered
 
     return () => clearTimeout(timeoutId);
   }, [animationTriggers]);
@@ -551,35 +598,30 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     // Get existing subtask data if available
     const existingSubtask = fullSubtasks.get(subtaskId);
 
-    // Set opening flag for details dialog to prevent race conditions
+    // For details action, navigate to subtask URL instead of opening dialog directly
     if (action === 'details') {
-      setIsOpeningDialog(true);
+      const subtaskUrl = `/dashboard/project/${projectId}/branch/${taskTreeId}/task/${parentTaskId}/subtask/${subtaskId}`;
+      logger.debug('🔗 Navigating to subtask URL:', subtaskUrl);
+      navigate(subtaskUrl);
+      return; // Let URL monitoring effect handle dialog opening
     }
 
-    // Set dialog state immediately to fix double-click issue
-    switch (action) {
-      case 'details':
-        // Open the details dialog immediately, even with null data
-        setDetailsDialog({ open: true, subtask: existingSubtask || null });
-        break;
-      case 'edit':
-        setEditingSubtask(existingSubtask || null);
-        break;
-      case 'complete':
-        setActiveDialog({ type: 'complete', subtaskId, subtask: existingSubtask || null });
-        break;
-    }
-
-    // Load full subtask data asynchronously after dialog is opened
-    if (!existingSubtask) {
+    // Handle other actions (edit, complete) directly
+    if (existingSubtask) {
+      // We have the subtask data, open dialog immediately
+      switch (action) {
+        case 'edit':
+          setEditingSubtask(existingSubtask);
+          break;
+        case 'complete':
+          setActiveDialog({ type: 'complete', subtaskId, subtask: existingSubtask });
+          break;
+      }
+    } else {
+      // Need to load subtask data first, then open dialog only if found
       loadFullSubtask(subtaskId).then(subtask => {
         if (subtask) {
           switch (action) {
-            case 'details':
-              setDetailsDialog({ open: true, subtask });
-              // Clear opening flag after dialog stabilizes
-              setTimeout(() => setIsOpeningDialog(false), 200);
-              break;
             case 'edit':
               setEditingSubtask(subtask);
               break;
@@ -587,20 +629,17 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
               setActiveDialog({ type: 'complete', subtaskId, subtask });
               break;
           }
-        } else if (action === 'details') {
-          setIsOpeningDialog(false);
+        } else {
+          // Subtask not found, don't open dialog and navigate away
+          logger.warn('⚠️ Subtask not found, cannot open dialog:', subtaskId);
+          handleSubtaskDialogClose();
         }
       }).catch(error => {
-        logger.error('Failed to load subtask for action:', action, error);
-        if (action === 'details') {
-          setIsOpeningDialog(false);
-        }
+        logger.error('❌ Failed to load subtask:', subtaskId, error);
+        handleSubtaskDialogClose();
       });
-    } else if (action === 'details') {
-      // Data already available, clear opening flag after a short delay
-      setTimeout(() => setIsOpeningDialog(false), 200);
     }
-  }, [loadFullSubtask, fullSubtasks]);
+  }, [loadFullSubtask, fullSubtasks, navigate, projectId, taskTreeId, parentTaskId]);
 
   // Handle subtask completion
   const handleCompleteSubtask = useCallback((completedSubtask: Subtask) => {
@@ -651,8 +690,6 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         isLoading={isLoadingFull}
         showDetails={isShowingDetails}
         parentTaskId={parentTaskId}
-        projectId={projectId}
-        taskTreeId={taskTreeId}
         onPlayCreateAnimation={() => {}}
         onPlayDeleteAnimation={() => {}}
         onPlayUpdateAnimation={() => {}}
@@ -873,7 +910,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       
       {/* Subtask Details Dialog */}
       <Suspense fallback={null}>
-        {detailsDialog.subtask && (
+        {detailsDialog.open && (
           <SubtaskDetailsDialog
             open={detailsDialog.open}
             onOpenChange={(open) => {
