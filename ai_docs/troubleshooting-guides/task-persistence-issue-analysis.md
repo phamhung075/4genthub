@@ -41,7 +41,7 @@ sqlite3.OperationalError: no such column: task_subtasks_1.user_id
 task = session.query(Task).options(
     joinedload(Task.assignees),      # ❌ TaskAssignee missing user_id
     joinedload(Task.labels),         # ❌ TaskLabel missing user_id  
-    joinedload(Task.subtasks),       # ❌ TaskSubtask missing user_id
+    joinedload(Task.subtasks),       # ❌ Subtask missing user_id
     joinedload(Task.dependencies)    # ❌ TaskDependency missing user_id
 ).filter(Task.id == task.id).first()  # 💥 FAILS HERE
 ```

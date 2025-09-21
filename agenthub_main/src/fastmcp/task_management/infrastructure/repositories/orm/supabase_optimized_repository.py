@@ -176,14 +176,13 @@ class SupabaseOptimizedRepository(ORMTaskRepository):
             status=task_model.status,
             priority=task_model.priority,
             subtasks=[],  # Empty - not loaded
-            assignees=[],  # Empty - not loaded  
+            assignees=[],  # Empty - not loaded
             dependencies=[],  # Empty - not loaded
             labels=[],  # Empty - not loaded
             created_at=task_model.created_at,
             updated_at=task_model.updated_at,
             git_branch_id=task_model.git_branch_id,
             context_id=task_model.context_id,
-            details=task_model.details,
             estimated_effort=task_model.estimated_effort,
             due_date=task_model.due_date
         )

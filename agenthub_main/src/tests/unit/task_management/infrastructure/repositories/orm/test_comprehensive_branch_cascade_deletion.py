@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from fastmcp.task_management.infrastructure.database.models import (
-    Base, ProjectGitBranch, Project, Task, TaskSubtask, TaskAssignee, 
+    Base, ProjectGitBranch, Project, Task, Subtask, TaskAssignee, 
     TaskDependency, TaskLabel, Label, BranchContext, TaskContext,
     ContextDelegation, ContextInheritanceCache
 )
@@ -90,7 +90,7 @@ def sample_data(test_db, test_user_id):
     # Create subtasks
     for task_id in task_ids:
         for j in range(2):
-            subtask = TaskSubtask(
+            subtask = Subtask(
                 id=str(uuid.uuid4()),
                 task_id=task_id,
                 title=f"Subtask {j+1} for {task_id[:8]}",
@@ -229,7 +229,7 @@ async def test_comprehensive_branch_cascade_deletion(test_db, git_branch_repo, s
     # Verify all data exists before deletion
     assert test_db.query(ProjectGitBranch).filter(ProjectGitBranch.id == branch_id).count() == 1
     assert test_db.query(Task).filter(Task.git_branch_id == branch_id).count() == 3
-    assert test_db.query(TaskSubtask).filter(TaskSubtask.task_id.in_(task_ids)).count() == 6  # 3 tasks * 2 subtasks
+    assert test_db.query(Subtask).filter(Subtask.task_id.in_(task_ids)).count() == 6  # 3 tasks * 2 subtasks
     assert test_db.query(TaskAssignee).filter(TaskAssignee.task_id.in_(task_ids)).count() == 3
     assert test_db.query(TaskDependency).filter(TaskDependency.task_id.in_(task_ids)).count() == 2
     assert test_db.query(TaskLabel).filter(TaskLabel.task_id.in_(task_ids)).count() == 3
@@ -249,7 +249,7 @@ async def test_comprehensive_branch_cascade_deletion(test_db, git_branch_repo, s
     # Verify all related data has been deleted
     assert test_db.query(ProjectGitBranch).filter(ProjectGitBranch.id == branch_id).count() == 0
     assert test_db.query(Task).filter(Task.git_branch_id == branch_id).count() == 0
-    assert test_db.query(TaskSubtask).filter(TaskSubtask.task_id.in_(task_ids)).count() == 0
+    assert test_db.query(Subtask).filter(Subtask.task_id.in_(task_ids)).count() == 0
     assert test_db.query(TaskAssignee).filter(TaskAssignee.task_id.in_(task_ids)).count() == 0
     assert test_db.query(TaskDependency).filter(TaskDependency.task_id.in_(task_ids)).count() == 0
     assert test_db.query(TaskLabel).filter(TaskLabel.task_id.in_(task_ids)).count() == 0

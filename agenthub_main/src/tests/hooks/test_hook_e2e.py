@@ -116,11 +116,11 @@ class TestHookE2E:
 
             # Debug: Print actual exit codes
             print(f"Exit codes: {exit_codes}")
-            print(f"Commands that got exit code 1: {sum(1 for code in exit_codes if code == 1)}/{len(exit_codes)}")
+            print(f"Commands that got exit code 2 (blocked): {sum(1 for code in exit_codes if code == 2)}/{len(exit_codes)}")
 
-            # At least some dangerous commands should be blocked
+            # At least some dangerous commands should be blocked (exit code 2 indicates blocking)
             assert len(exit_codes) == len(dangerous_commands)
-            blocked_commands = sum(1 for code in exit_codes if code == 1)
+            blocked_commands = sum(1 for code in exit_codes if code == 2)
             assert blocked_commands >= 2, f"Expected at least 2 blocked commands, got {blocked_commands}"
 
     def test_env_file_protection_workflow(self, tmp_path):
@@ -137,24 +137,34 @@ class TestHookE2E:
             {'tool_name': 'Edit', 'tool_input': {'file_path': str(env_file), 'old_string': 'SECRET', 'new_string': 'API'}}
         ]
 
-        with patch('utils.env_loader.get_ai_data_path', return_value=tmp_path), \
-             patch('sys.stdin') as mock_stdin, \
-             patch('sys.exit') as mock_exit:
+        with patch('utils.env_loader.get_ai_data_path', return_value=tmp_path):
 
             # Track exit codes
             exit_codes = []
-            mock_exit.side_effect = lambda code: exit_codes.append(code)
 
             for operation in env_operations:
-                mock_stdin.read.return_value = json.dumps(operation)
-                pre_main()
+                with patch('sys.stdin') as mock_stdin, \
+                     patch('sys.exit') as mock_exit:
+                    # Use side effect that captures code and raises SystemExit
+                    def capture_exit(code):
+                        exit_codes.append(code)
+                        raise SystemExit(code)
+
+                    mock_exit.side_effect = capture_exit
+                    mock_stdin.read.return_value = json.dumps(operation)
+
+                    try:
+                        pre_main()
+                    except SystemExit:
+                        # Expected - hook exited with a code
+                        pass
 
             # Debug: Print actual exit codes
             print(f"Env operations exit codes: {exit_codes}")
 
-            # All env file operations should be blocked (exit code 1)
+            # All env file operations should be blocked (exit code 2 for .env protection)
             assert len(exit_codes) == len(env_operations)
-            blocked_operations = sum(1 for code in exit_codes if code == 1)
+            blocked_operations = sum(1 for code in exit_codes if code == 2)
             assert blocked_operations >= 1, f"Expected at least 1 blocked env operation, got {blocked_operations}"
 
     def test_ai_docs_update_workflow(self, tmp_path):
@@ -381,23 +391,33 @@ class TestHookE2E:
 
         results = []
 
-        with patch('utils.env_loader.get_ai_data_path', return_value=tmp_path), \
-             patch('sys.stdin') as mock_stdin, \
-             patch('sys.exit') as mock_exit:
+        with patch('utils.env_loader.get_ai_data_path', return_value=tmp_path):
 
             # Track exit codes
             exit_codes = []
-            mock_exit.side_effect = lambda code: exit_codes.append(code)
 
             for operation in operations:
-                mock_stdin.read.return_value = json.dumps(operation)
-                pre_main()
+                with patch('sys.stdin') as mock_stdin, \
+                     patch('sys.exit') as mock_exit:
+                    # Use side effect that captures code and raises SystemExit
+                    def capture_exit(code):
+                        exit_codes.append(code)
+                        raise SystemExit(code)
 
-            # Map exit codes to results: 0 = success, 1 = blocked
+                    mock_exit.side_effect = capture_exit
+                    mock_stdin.read.return_value = json.dumps(operation)
+
+                    try:
+                        pre_main()
+                    except SystemExit:
+                        # Expected - hook exited with a code
+                        pass
+
+            # Map exit codes to results: 0 = success, 2 = blocked
             results = exit_codes
 
-        # Verify expected results: allow, block, allow
-        expected = [0, 1, 0]
+        # Verify expected results: allow, block (dangerous command = exit code 2), allow
+        expected = [0, 2, 0]
         assert results == expected
 
         # Verify system continues working after blocked operation

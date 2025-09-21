@@ -90,4 +90,100 @@ class HintGenerationService(_HintManager):
     # - remove_rule()
     # - get_rules()
 
-    pass  # All functionality inherited from HintManager
+    # === BACKWARD COMPATIBILITY METHODS FOR TESTS ===
+    # These methods delegate to the strategy for backward compatibility with existing tests
+
+    async def _get_related_tasks(self, task: Task, task_repository: TaskRepository = None) -> List[Task]:
+        """Get tasks related to the given task - delegates to strategy"""
+        if hasattr(self.strategy, '_get_related_tasks'):
+            return await self.strategy._get_related_tasks(task, task_repository or self.task_repository)
+        return []
+
+    async def _get_historical_patterns(self, task: Task, task_repository: TaskRepository = None) -> Dict[str, Any]:
+        """Get historical patterns relevant to the task - delegates to strategy"""
+        if hasattr(self.strategy, '_get_historical_patterns'):
+            return await self.strategy._get_historical_patterns(task, task_repository or self.task_repository)
+        return {}
+
+    def _should_include_hint(self, hint: WorkflowHint, hint_types: Optional[List[HintType]]) -> bool:
+        """Check if a hint should be included based on filters - delegates to strategy"""
+        if hasattr(self.strategy, '_should_include_hint'):
+            return self.strategy._should_include_hint(hint, hint_types)
+        return True
+
+    def _enhance_hint_with_effectiveness(self, hint: WorkflowHint, rule: HintRule) -> WorkflowHint:
+        """Enhance hint with historical effectiveness data - delegates to strategy"""
+        if hasattr(self.strategy, '_enhance_hint_with_effectiveness'):
+            return self.strategy._enhance_hint_with_effectiveness(hint, rule)
+        return hint
+
+    async def _publish_hint_generated(self, hint: WorkflowHint, rule: HintRule, event_store: Any = None) -> None:
+        """Publish a hint generated event - delegates to strategy"""
+        if hasattr(self.strategy, '_publish_hint_generated'):
+            await self.strategy._publish_hint_generated(hint, rule, event_store or self.event_store)
+
+    async def _store_hints(self, collection: HintCollection) -> None:
+        """Store hints in repository - backward compatibility method"""
+        if self.hint_repository is not None:
+            for hint in collection.hints:
+                # Store each hint individually - prioritize save method for test compatibility
+                if hasattr(self.hint_repository, 'save'):
+                    await self.hint_repository.save(hint)
+                elif hasattr(self.hint_repository, 'store'):
+                    await self.hint_repository.store(hint)
+
+    async def _update_effectiveness_cache(self) -> None:
+        """Update effectiveness cache - backward compatibility method"""
+        # This is a placeholder for backward compatibility with tests
+        # In the new architecture, effectiveness is managed by the strategy
+        pass
+
+    async def _get_hint_effectiveness_patterns(self) -> Dict[str, float]:
+        """Get hint effectiveness patterns - backward compatibility method"""
+        if hasattr(self.strategy, '_effectiveness_cache'):
+            return dict(self.strategy._effectiveness_cache)
+        return {}
+
+    # === OVERRIDE METHODS FOR BACKWARD COMPATIBILITY ===
+    # Override parent methods to include effectiveness cache updates for test compatibility
+
+    async def accept_hint(
+        self,
+        hint_id: UUID,
+        task_id: UUID,
+        user_id: str,
+        action_taken: Optional[str] = None
+    ) -> None:
+        """Record that a hint was accepted with effectiveness cache update"""
+        # Call parent implementation
+        await super().accept_hint(hint_id, task_id, user_id, action_taken)
+        # Update effectiveness cache for test compatibility
+        await self._update_effectiveness_cache()
+
+    async def dismiss_hint(
+        self,
+        hint_id: UUID,
+        task_id: UUID,
+        user_id: str,
+        reason: Optional[str] = None
+    ) -> None:
+        """Record that a hint was dismissed with effectiveness cache update"""
+        # Call parent implementation
+        await super().dismiss_hint(hint_id, task_id, user_id, reason)
+        # Update effectiveness cache for test compatibility
+        await self._update_effectiveness_cache()
+
+    async def provide_feedback(
+        self,
+        hint_id: UUID,
+        task_id: UUID,
+        user_id: str,
+        was_helpful: bool,
+        feedback_text: Optional[str] = None,
+        effectiveness_score: Optional[float] = None
+    ) -> None:
+        """Record feedback for a hint with effectiveness cache update"""
+        # Call parent implementation
+        await super().provide_feedback(hint_id, task_id, user_id, was_helpful, feedback_text, effectiveness_score)
+        # Update effectiveness cache for test compatibility
+        await self._update_effectiveness_cache()

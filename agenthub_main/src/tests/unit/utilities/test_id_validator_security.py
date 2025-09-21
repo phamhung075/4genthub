@@ -152,8 +152,7 @@ class TestSecurityVulnerabilities:
     def test_unicode_exploitation_attempts(self):
         """Test handling of Unicode exploitation attempts."""
         unicode_payloads = [
-            # Unicode normalization attacks
-            "550e8400-e29b-41d4-a716-44665544000\u0065",  # Unicode 'e'
+            # Unicode normalization attacks - extra characters at the end make UUID invalid
             "550e8400-e29b-41d4-a716-446655440000\u202e",  # Right-to-left override
             "550e8400-e29b-41d4-a716-446655440000\uFEFF",  # Byte order mark
 
@@ -232,13 +231,13 @@ class TestSecurityVulnerabilities:
     def test_malformed_encoding_attacks(self):
         """Test handling of malformed encoding attacks."""
         malformed_encoding_payloads = [
-            # Invalid UTF-8 sequences
-            b"550e8400-e29b-41d4-a716-446655440000\xFF\xFE".decode('utf-8', errors='ignore'),
-            b"550e8400-e29b-41d4-a716-446655440000\x80\x81".decode('utf-8', errors='ignore'),
+            # Mix invalid UTF-8 with valid chars to corrupt the UUID structure
+            b"550e8400-e29b\xFF\xFE41d4-a716-446655440000".decode('utf-8', errors='replace'),
+            b"550e8400-e29b-41d4\x80\x81a716-446655440000".decode('utf-8', errors='replace'),
 
-            # Overlong UTF-8 sequences (if they slip through)
-            "550e8400-e29b-41d4-a716-446655440000\xC0\x80",  # Overlong null
-            "550e8400-e29b-41d4-a716-446655440000\xE0\x80\x80",  # Overlong null
+            # UUIDs with replacement characters from error handling
+            "550e8400-e29b-41d4-a716-44665544000�",  # Replacement char
+            "550e8400-e29b-41d4-a716-446655440000\ufffd",  # Unicode replacement
         ]
 
         for payload in malformed_encoding_payloads:

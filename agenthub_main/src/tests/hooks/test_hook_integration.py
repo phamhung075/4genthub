@@ -26,6 +26,11 @@ class TestHookIntegration:
     @contextmanager
     def setup_mock_environment(self, tmp_path):
         """Setup a complete mock environment for testing."""
+        # Mock the missing cache_manager module first
+        import sys
+        from unittest.mock import MagicMock
+        sys.modules['utils.cache_manager'] = MagicMock()
+
         # Mock all external dependencies with correct import paths
         with patch.multiple('utils.env_loader',
                            get_ai_data_path=Mock(return_value=tmp_path),
@@ -36,10 +41,10 @@ class TestHookIntegration:
              patch('utils.docs_indexer.update_index', Mock()), \
              patch('utils.mcp_post_action_hints.generate_post_action_hints', return_value="Test hints"), \
              patch('utils.hint_bridge.store_hint', Mock()), \
-             patch('utils.agent_state_manager.update_agent_state_from_call_agent', Mock()), \
-             patch('utils.context_updater.update_context_sync', return_value=True):
-
-            yield
+             patch('utils.agent_state_manager.update_agent_state_from_call_agent', Mock()):
+            # Mock context_updater after cache_manager is mocked
+            with patch('utils.context_updater.update_context_sync', return_value=True):
+                yield
 
     def test_complete_pre_tool_workflow(self, tmp_path):
         """Test complete pre-tool use workflow."""
@@ -111,7 +116,7 @@ class TestHookIntegration:
             }
 
             result = hook.execute(dangerous_data)
-            assert result == 1  # Blocked
+            assert result == 2  # Blocked (hook returns 2 for blocking)
 
     def test_env_file_protection_integration(self, tmp_path):
         """Test environment file protection integration."""
@@ -126,8 +131,10 @@ class TestHookIntegration:
                 'tool_input': {'file_path': str(tmp_path / '.env')}
             }
 
-            result = hook.execute(env_data)
-            assert result == 1  # Blocked
+            # The hook calls sys.exit(2) for .env file blocking
+            with pytest.raises(SystemExit) as exc_info:
+                hook.execute(env_data)
+            assert exc_info.value.code == 2  # Blocked with exit code 2
 
     def test_hook_performance_integration(self, tmp_path):
         """Test hook performance under realistic conditions."""

@@ -551,7 +551,8 @@ class TestTaskMCPController:
             
             # Should return permission denied error
             assert result["success"] is False
-            assert "permission" in result.get("error", "").lower()
+            error_msg = self._extract_error_message(result).lower()
+            assert "permission" in error_msg
 
     # Test Cases for ERROR HANDLING
     
@@ -647,6 +648,8 @@ class TestTaskMCPController:
             "workflow_hints": ["Consider adding tests", "Update documentation"],
             "next_actions": ["Create subtasks", "Assign reviewers"]
         }
+        # Clear any existing side_effect and set return_value
+        mock_workflow_hint_enhancer.enhance_response.side_effect = None
         mock_workflow_hint_enhancer.enhance_response.return_value = enhanced_response
 
         result = controller.manage_task_sync(

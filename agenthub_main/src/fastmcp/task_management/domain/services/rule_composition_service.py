@@ -155,17 +155,22 @@ class RuleCompositionService(IRuleCompositionService):
         """Sort rules by priority score"""
         def get_priority_score(rule: RuleContent) -> int:
             score = 0
-            # Core rules have highest priority
-            if rule.rule_type.value == "core":
-                score += 1000
-            # Workflow rules have high priority
-            elif rule.rule_type.value == "workflow":
-                score += 500
+            # Check if rule_type exists before accessing its value
+            if rule.rule_type is not None:
+                # Core rules have highest priority
+                if rule.rule_type.value == "core":
+                    score += 1000
+                # Workflow rules have high priority
+                elif rule.rule_type.value == "workflow":
+                    score += 500
             # Add metadata-based priority
             if hasattr(rule.metadata, 'priority'):
-                score += getattr(rule.metadata, 'priority', 0)
+                priority_value = getattr(rule.metadata, 'priority', 0)
+                # Ensure priority is a valid integer
+                if isinstance(priority_value, (int, float)):
+                    score += int(priority_value)
             return score
-        
+
         return sorted(rules, key=get_priority_score, reverse=True)
     
     def _intelligent_composition(self, rules: List[RuleContent], output_format: RuleFormat) -> Tuple[str, List[str], List[str]]:
@@ -180,11 +185,20 @@ class RuleCompositionService(IRuleCompositionService):
             # Merge sections
             for section_name, content in rule.sections.items():
                 if section_name in merged_sections:
-                    # Conflict detected, resolve it
+                    # Conflict detected, resolve it based on strategy
                     existing_content = merged_sections[section_name]
-                    merged_content = self.merge_section_content(existing_content, content)
-                    merged_sections[section_name] = merged_content
-                    conflicts_resolved.append(f"Section '{section_name}' merged from {rule.rule_path}")
+                    if self.conflict_strategy == ConflictResolution.MERGE:
+                        merged_content = self.merge_section_content(existing_content, content)
+                        merged_sections[section_name] = merged_content
+                        conflicts_resolved.append(f"Section '{section_name}' merged from {rule.rule_path}")
+                    elif self.conflict_strategy == ConflictResolution.OVERRIDE:
+                        merged_sections[section_name] = content
+                        conflicts_resolved.append(f"Section '{section_name}' overridden from {rule.rule_path}")
+                    else:
+                        # Default to merge
+                        merged_content = self.merge_section_content(existing_content, content)
+                        merged_sections[section_name] = merged_content
+                        conflicts_resolved.append(f"Section '{section_name}' merged from {rule.rule_path}")
                 else:
                     merged_sections[section_name] = content
             

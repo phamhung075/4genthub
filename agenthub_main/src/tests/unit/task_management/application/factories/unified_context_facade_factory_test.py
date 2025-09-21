@@ -229,14 +229,14 @@ class TestUnifiedContextFacadeFactory:
         assert UnifiedContextFacadeFactory._initialized is True
 
     def test_repository_initialization(self):
-        """Test that all required repositories are initialized"""
+        """Test that all required repositories are initialized when database is available"""
         # Arrange
         mock_session_factory = Mock(spec=sessionmaker)
 
-        # Act
-        factory = UnifiedContextFacadeFactory()
+        # Act - Pass session factory to ensure database initialization succeeds
+        factory = UnifiedContextFacadeFactory(mock_session_factory)
 
-        # Assert
+        # Assert - Repository attributes should exist when database initialization succeeds
         assert hasattr(factory, 'global_repo')
         assert hasattr(factory, 'project_repo')
         assert hasattr(factory, 'branch_repo')
@@ -254,6 +254,20 @@ class TestUnifiedContextFacadeFactory:
         # Assert
         assert factory.unified_service is not None
         # Verify it's using mock service (though we can't import the exact type without better mocking)
+        assert UnifiedContextFacadeFactory._initialized is True
+
+    def test_repository_attributes_not_created_with_mock_service(self):
+        """Test that repository attributes are NOT created when using mock service"""
+        # Arrange & Act
+        factory = UnifiedContextFacadeFactory(None)  # Force database unavailable (mock service)
+
+        # Assert - Repository attributes should NOT exist when using mock service
+        assert not hasattr(factory, 'global_repo')
+        assert not hasattr(factory, 'project_repo')
+        assert not hasattr(factory, 'branch_repo')
+        assert not hasattr(factory, 'task_repo')
+        # Service attributes that don't depend on database should still exist
+        assert factory.unified_service is not None
         assert UnifiedContextFacadeFactory._initialized is True
 
     def test_logging_behavior(self):

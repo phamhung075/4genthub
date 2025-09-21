@@ -247,27 +247,53 @@ run_smart_tests() {
         
         # Run pytest and capture results
         cd "${PROJECT_ROOT}"
-        
+
         # Create temporary file for test results
         local temp_results="${CACHE_DIR}/temp_results.txt"
         > "$temp_results"
-        
+
         # Run tests and parse results
-        python -m pytest $tests_to_run -v --tb=short 2>&1 | tee "${RUN_LOG}" | while IFS= read -r line; do
-            # Parse test results
+        # Use temporary associative arrays to aggregate results by file
+        local temp_raw_results="${CACHE_DIR}/temp_raw_results.txt"
+        > "$temp_raw_results"
+
+        # Run pytest first and save to log
+        python -m pytest $tests_to_run -v --tb=short 2>&1 | tee "${RUN_LOG}"
+
+        # Parse the log file after pytest completes to avoid subshell issues
+        while IFS= read -r line; do
+            # Parse test results and collect raw data
             if echo "$line" | grep -q "PASSED"; then
                 local test_name=$(echo "$line" | sed -n 's/.*\(agenthub_main\/src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
-                    echo "PASSED:${PROJECT_ROOT}/${test_name}" >> "$temp_results"
+                    echo "PASSED:${PROJECT_ROOT}/${test_name}" >> "$temp_raw_results"
                 fi
             elif echo "$line" | grep -q "FAILED"; then
                 local test_name=$(echo "$line" | sed -n 's/.*\(agenthub_main\/src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
-                    echo "FAILED:${PROJECT_ROOT}/${test_name}" >> "$temp_results"
+                    echo "FAILED:${PROJECT_ROOT}/${test_name}" >> "$temp_raw_results"
                 fi
             fi
-            echo "$line"
-        done
+        done < "${RUN_LOG}"
+
+        # Aggregate results by file (if any test in file fails, file fails)
+        echo -e "\n${CYAN}${BOLD}Aggregating test results by file...${NC}"
+        if [ -f "$temp_raw_results" ]; then
+            # Get unique files and determine their status
+            cut -d':' -f2 "$temp_raw_results" | sort -u | while read test_file; do
+                # Check if this file has any failures
+                if grep -q "^FAILED:${test_file}$" "$temp_raw_results"; then
+                    echo "FAILED:${test_file}" >> "$temp_results"
+                    echo -e "${RED}  File has failures:${NC} ${test_file#${PROJECT_ROOT}/}"
+                else
+                    echo "PASSED:${test_file}" >> "$temp_results"
+                    echo -e "${GREEN}  File all passed:${NC} ${test_file#${PROJECT_ROOT}/}"
+                fi
+            done
+        fi
+
+        # Clean up temporary file
+        rm -f "$temp_raw_results"
         
         # Update cache based on results
         echo -e "\n${CYAN}${BOLD}Updating cache...${NC}"

@@ -4,6 +4,7 @@ This file provides authentication functions that work with both Keycloak and Sup
 """
 
 import os
+import logging
 from typing import Optional, Generator
 from sqlalchemy.orm import Session
 from fastapi import Depends
@@ -11,6 +12,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.task_management.infrastructure.database.database_config import get_session
+
+logger = logging.getLogger(__name__)
 
 # Get the configured auth provider
 AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "keycloak").lower()

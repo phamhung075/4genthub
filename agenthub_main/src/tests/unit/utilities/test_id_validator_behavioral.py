@@ -65,8 +65,10 @@ class TestIDConfusionScenarios:
         """
         # Simulate the bug scenario
         class BuggyControllerBehavior:
-            def __init__(self, validator: IDValidator):
+            def __init__(self, validator: IDValidator, app_task_id: str, git_branch_id: str):
                 self.validator = validator
+                self.app_task_id = app_task_id
+                self.git_branch_id = git_branch_id
 
             def get_facade_for_request_buggy(self, task_id: str, user_id: str):
                 """Simulate the buggy behavior - passing task_id as git_branch_id."""
@@ -96,7 +98,7 @@ class TestIDConfusionScenarios:
                     return self.git_branch_id
                 raise ValueError(f"Task {task_id} not found")
 
-        controller = BuggyControllerBehavior(self.validator)
+        controller = BuggyControllerBehavior(self.validator, self.app_task_id, self.git_branch_id)
 
         # Test buggy behavior - should detect the critical error
         buggy_result = controller.get_facade_for_request_buggy(

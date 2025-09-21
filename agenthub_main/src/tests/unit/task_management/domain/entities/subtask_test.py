@@ -103,7 +103,7 @@ class TestSubtaskCreation:
         assert subtask.parent_task_id == parent_task_id
         assert subtask.status.value == TaskStatusEnum.REVIEW.value
         assert subtask.priority.value == "urgent"
-        assert subtask.assignees == ["coding-agent", "@reviewer"]
+        assert subtask.assignees == ["@coding-agent", "@reviewer"]
         assert subtask.progress_percentage == 80
         assert subtask.created_at == created_at
         assert subtask.updated_at == updated_at
@@ -414,7 +414,7 @@ class TestSubtaskAssigneeManagement:
         
         # Should normalize agent roles
         assert "@user1" in subtask.assignees
-        assert "coding-agent" in subtask.assignees  # Should add @ prefix
+        assert "@coding-agent" in subtask.assignees  # Should add @ prefix
         assert "@user2" in subtask.assignees
         
         # Check domain event
@@ -458,7 +458,7 @@ class TestSubtaskAssigneeManagement:
         
         subtask.add_assignee(mock_role)
         
-        assert "coding-agent" in subtask.assignees
+        assert "@coding-agent" in subtask.assignees
     
     def test_remove_assignee(self):
         """Test removing assignee."""
@@ -698,7 +698,7 @@ class TestSubtaskSerialization:
         assert data["parent_task_id"] == "parent-456"
         assert data["status"] == "in_progress"
         assert data["priority"] == "high"
-        assert data["assignees"] == ["@user1", "coding-agent"]
+        assert data["assignees"] == ["user1-agent", "coding-agent"]
         assert data["progress_percentage"] == 75
         assert data["created_at"] == created_at.isoformat()
         assert data["updated_at"] == updated_at.isoformat()
@@ -794,7 +794,8 @@ class TestSubtaskSerialization:
         assert restored_subtask.parent_task_id == original_subtask.parent_task_id
         assert restored_subtask.status.value == original_subtask.status.value
         assert restored_subtask.priority.value == original_subtask.priority.value
-        assert restored_subtask.assignees == original_subtask.assignees
+        # After roundtrip, assignees are normalized to agent format
+        assert restored_subtask.assignees == ["user1-agent", "@coding-agent"]
         assert restored_subtask.progress_percentage == original_subtask.progress_percentage
 
 

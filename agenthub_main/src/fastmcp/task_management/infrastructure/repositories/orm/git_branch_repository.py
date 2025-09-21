@@ -376,15 +376,15 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 task_ids = [row[0] for row in task_query.all()]
                 logger.info(f"Found {len(task_ids)} Task records for branch {branch_id}")
                 
-                # Step 5: Delete TaskSubtask records for tasks in this branch
+                # Step 5: Delete Subtask records for tasks in this branch
                 if task_ids:
-                    from ...database.models import TaskSubtask
-                    subtask_filter = TaskSubtask.task_id.in_(task_ids)
+                    from ...database.models import Subtask
+                    subtask_filter = Subtask.task_id.in_(task_ids)
                     if self.user_id:
-                        subtask_filter = and_(subtask_filter, TaskSubtask.user_id == self.user_id)
+                        subtask_filter = and_(subtask_filter, Subtask.user_id == self.user_id)
                     
-                    subtask_count = session.query(TaskSubtask).filter(subtask_filter).delete(synchronize_session=False)
-                    logger.info(f"Deleted {subtask_count} TaskSubtask records for branch {branch_id}")
+                    subtask_count = session.query(Subtask).filter(subtask_filter).delete(synchronize_session=False)
+                    logger.info(f"Deleted {subtask_count} Subtask records for branch {branch_id}")
                 
                 # Step 6: Delete TaskAssignee records for tasks in this branch
                 if task_ids:

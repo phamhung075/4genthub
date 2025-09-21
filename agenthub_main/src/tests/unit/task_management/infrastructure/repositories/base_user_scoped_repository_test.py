@@ -248,14 +248,11 @@ class TestBaseUserScopedRepository:
         assert updated_data["status"] == "todo"
     
     def test_set_user_id_system_mode(self, system_repository):
-        """Test set_user_id in system mode (no user_id added)"""
+        """Test set_user_id in system mode raises authentication error"""
         data = {"title": "Test", "status": "todo"}
-        
-        updated_data = system_repository.set_user_id(data)
-        
-        assert "user_id" not in updated_data
-        assert updated_data["title"] == "Test"
-        assert updated_data["status"] == "todo"
+
+        with pytest.raises(ValueError, match="User authentication required"):
+            system_repository.set_user_id(data)
     
     def test_validate_bulk_operation_valid(self, repository):
         """Test validating bulk operation with valid entities"""

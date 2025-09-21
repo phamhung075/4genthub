@@ -175,8 +175,8 @@ class TaskCrudHandler:
                 user_id=user_id
             )
             
-            # Delegate to facade
-            task_facade.delete_task(task_id)
+            # Delegate to facade with user_id for proper WebSocket notification
+            task_facade.delete_task(task_id, user_id)
             
             logger.info(f"Task {task_id} deleted successfully for user {user_id}")
             

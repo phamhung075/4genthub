@@ -74,7 +74,8 @@ class SubtaskCRUDHandler:
             result = facade.handle_manage_subtask(
                 action="create",
                 task_id=task_id,
-                subtask_data=subtask_data
+                subtask_data=subtask_data,
+                user_id=user_id
             )
             
             # Add information about agent inheritance if it was applied

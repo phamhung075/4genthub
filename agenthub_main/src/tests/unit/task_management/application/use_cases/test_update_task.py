@@ -68,7 +68,7 @@ class TestUpdateTaskUseCase:
         task.update_description = Mock()
         task.update_status = Mock()
         task.update_priority = Mock()
-        task.update_details = Mock()
+        task.append_progress = Mock()  # Changed from update_details to match implementation
         task.update_estimated_effort = Mock()
         task.update_assignees = Mock()
         task.update_labels = Mock()
@@ -163,7 +163,7 @@ class TestUpdateTaskUseCase:
                 # Verify all update methods were called
                 sample_task.update_title.assert_called_once_with("Updated Task")
                 sample_task.update_description.assert_called_once_with("Updated description")
-                sample_task.update_details.assert_called_once_with("Updated details")
+                sample_task.append_progress.assert_called_once_with("Updated details")  # Changed from update_details to match implementation
                 sample_task.update_estimated_effort.assert_called_once_with("4 hours")
                 sample_task.update_assignees.assert_called_once_with(["user-1", "user-2"])
                 sample_task.update_labels.assert_called_once_with(["updated", "important"])

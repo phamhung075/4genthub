@@ -8,31 +8,29 @@
 
 import { useEffect } from 'react';
 import { toastEventBus, ToastEvent } from '../services/toastEventBus';
-import { useSuccessToast, useErrorToast, useWarningToast, useInfoToast } from './ui/toast';
+import { useToast } from './ui/toast';
 
 export const WebSocketToastBridge: React.FC = () => {
-  const showSuccessToast = useSuccessToast();
-  const showErrorToast = useErrorToast();
-  const showWarningToast = useWarningToast();
-  const showInfoToast = useInfoToast();
+  const { showToast } = useToast();
 
   useEffect(() => {
+    console.log('🔌 WebSocketToastBridge: Component mounted, subscribing to toastEventBus');
+
     // Subscribe to toast events from the WebSocket service
     const unsubscribe = toastEventBus.subscribe((event: ToastEvent) => {
-      switch (event.type) {
-        case 'success':
-          showSuccessToast(event.title, event.description, event.action);
-          break;
-        case 'error':
-          showErrorToast(event.title, event.description, event.action);
-          break;
-        case 'warning':
-          showWarningToast(event.title, event.description, event.action);
-          break;
-        case 'info':
-          showInfoToast(event.title, event.description, event.action);
-          break;
-      }
+      console.log('🔔 WebSocketToastBridge: Received toast event from toastEventBus:', event);
+
+      // Use the stable showToast function directly instead of individual hook functions
+      const toastId = showToast({
+        type: event.type,
+        title: event.title,
+        description: event.description,
+        action: event.action,
+        // Set appropriate durations for different types
+        duration: event.type === 'error' ? 8000 : 5000
+      });
+
+      console.log('✅ WebSocketToastBridge: Called showToast, returned ID:', toastId);
     });
 
     // Request notification permission on mount if not already granted
@@ -42,7 +40,7 @@ export const WebSocketToastBridge: React.FC = () => {
 
     // Cleanup on unmount
     return unsubscribe;
-  }, [showSuccessToast, showErrorToast, showWarningToast, showInfoToast]);
+  }, []); // Empty dependency array since showToast should be stable
 
   // This component doesn't render anything visible
   return null;

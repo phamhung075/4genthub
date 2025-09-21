@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def ensure_ai_columns_exist(engine: Engine) -> bool:
     """
-    Ensure AI columns exist in tasks and task_subtasks tables.
+    Ensure AI columns exist in tasks and subtasks tables.
     This is called on every application startup to guarantee schema consistency.
     
     Args:
@@ -40,7 +40,7 @@ def ensure_ai_columns_exist(engine: Engine) -> bool:
                 ("ai_model_preferences", "JSON" if dialect_name == 'postgresql' else "TEXT", "'{}'" if dialect_name == 'postgresql' else "'{}'")
             ]
             
-            tables_to_update = ['tasks', 'task_subtasks']
+            tables_to_update = ['tasks', 'subtasks']
             columns_added = 0
             
             for table_name in tables_to_update:
@@ -91,7 +91,7 @@ def verify_ai_columns(engine: Engine) -> dict:
         inspector = inspect(engine)
         status = {}
         
-        for table_name in ['tasks', 'task_subtasks']:
+        for table_name in ['tasks', 'subtasks']:
             if table_name not in inspector.get_table_names():
                 status[table_name] = "Table not found"
                 continue

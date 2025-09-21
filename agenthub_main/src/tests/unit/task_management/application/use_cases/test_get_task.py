@@ -92,7 +92,7 @@ class TestGetTaskUseCase:
         task.git_branch_id = "branch-456"
         task.status = TaskStatus.todo()
         task.priority = Priority.high()
-        task.assignees = ["user-1", "user-2"]
+        task.assignees = ["coding-agent", "@test-orchestrator-agent"]
         task.labels = ["bug", "urgent"]
         task.context_id = "context-123"
         task.created_at = datetime.now(timezone.utc)

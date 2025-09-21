@@ -47,11 +47,29 @@ class TestCreateTaskUseCaseInitialization:
 
 class TestCreateTaskUseCaseExecution:
     """Test cases for task creation execution."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_repository = Mock(spec=TaskRepository)
         self.use_case = CreateTaskUseCase(self.mock_repository)
+
+        # Set up common mocks for repository provider service
+        self.mock_provider = Mock()
+        self.mock_branch_repo = Mock()
+        self.mock_branch = Mock()
+        self.mock_branch.task_count = 0
+        self.mock_branch.project_id = "project-123"
+        self.mock_branch_repo.get.return_value = self.mock_branch
+        self.mock_branch_repo.update = Mock()
+        self.mock_provider.get_git_branch_repository.return_value = self.mock_branch_repo
+
+        # Set up mocks for context creation - ensure they return proper dictionaries
+        self.mock_context_facade = Mock()
+        self.mock_context_facade.create_context.return_value = {"success": True, "context": {"id": "task-123"}}
+        self.mock_context_factory = Mock()
+        self.mock_context_factory_instance = Mock()
+        self.mock_context_factory_instance.create_facade.return_value = self.mock_context_facade
+        self.mock_context_factory.return_value = self.mock_context_factory_instance
     
     def test_execute_minimal_request_success(self):
         """Test successful execution with minimal request."""
@@ -59,17 +77,23 @@ class TestCreateTaskUseCaseExecution:
         task_id = TaskId("task-123")
         self.mock_repository.get_next_id.return_value = task_id
         self.mock_repository.save.return_value = True
-        
+
         request = CreateTaskRequest(
             title="Test Task",
             description="Test Description",
-            git_branch_id="branch-456"
+            git_branch_id="branch-456",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
         
         # Mock Task.create
         mock_task = Mock(spec=Task)
         mock_task.id = task_id
         mock_task.git_branch_id = "branch-456"
+        mock_task.title = "Test Task"
+        mock_task.description = "Test Description"
+        mock_task.status = "todo"
+        mock_task.priority = "medium"
+        mock_task.set_context_id = Mock()
         mock_task.get_events = Mock(return_value=[])  # Add get_events method
         mock_task.to_dict = Mock(return_value={
             "id": str(task_id),
@@ -90,23 +114,26 @@ class TestCreateTaskUseCaseExecution:
         })
         
         with patch('fastmcp.task_management.domain.entities.task.Task.create', return_value=mock_task) as mock_create:
-            
-            result = self.use_case.execute(request)
-            
-            # Verify task creation
-            mock_create.assert_called_once()
-            call_args = mock_create.call_args
-            assert call_args[1]['id'] == task_id
-            assert call_args[1]['title'] == "Test Task"
-            assert call_args[1]['description'] == "Test Description"
-            assert call_args[1]['git_branch_id'] == "branch-456"
-            
-            # Verify repository save
-            self.mock_repository.save.assert_called_once_with(mock_task)
-            
-            # Verify response
-            assert isinstance(result, CreateTaskResponse)
-            assert result.success
+            with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance', return_value=self.mock_provider):
+                with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory', return_value=self.mock_context_factory):
+                    with patch('fastmcp.task_management.domain.constants.validate_user_id', return_value="user-123"):
+
+                        result = self.use_case.execute(request)
+
+                        # Verify task creation
+                        mock_create.assert_called_once()
+                        call_args = mock_create.call_args
+                        assert call_args[1]['id'] == task_id
+                        assert call_args[1]['title'] == "Test Task"
+                        assert call_args[1]['description'] == "Test Description"
+                        assert call_args[1]['git_branch_id'] == "branch-456"
+
+                        # Verify repository save
+                        self.mock_repository.save.assert_called_once_with(mock_task)
+
+                        # Verify response
+                        assert isinstance(result, CreateTaskResponse)
+                        assert result.success
     
     def test_execute_full_request_success(self):
         """Test successful execution with full request data."""
@@ -126,7 +153,8 @@ class TestCreateTaskUseCaseExecution:
             assignees=["@user1", "@user2"],
             labels=["feature", "urgent"],
             due_date="2024-12-31",
-            dependencies=["dep-1", "dep-2"]
+            dependencies=["dep-1", "dep-2"],
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
         
         # Mock Task.create and dependencies
@@ -155,28 +183,30 @@ class TestCreateTaskUseCaseExecution:
         
         with patch('fastmcp.task_management.domain.entities.task.Task.create', return_value=mock_task) as mock_create:
             with patch('fastmcp.task_management.domain.value_objects.task_id.TaskId') as mock_task_id:
-                mock_dep_id = Mock()
-                mock_task_id.return_value = mock_dep_id
-                
-                result = self.use_case.execute(request)
-                
-                # Verify task creation with all fields
-                mock_create.assert_called_once()
-                call_args = mock_create.call_args[1]
-                assert call_args['title'] == "Full Test Task"
-                assert call_args['description'] == "Full Test Description"
-                assert call_args['git_branch_id'] == "branch-456"
-                assert call_args['details'] == "Implementation details"
-                assert call_args['estimated_effort'] == "4 hours"
-                assert call_args['assignees'] == ["@user1", "@user2"]
-                assert call_args['labels'] == ["feature", "urgent"]
-                assert call_args['due_date'] == "2024-12-31"
-                
-                # Verify dependencies were added
-                assert mock_task.add_dependency.call_count == 2
-                
-                # Verify success
-                assert result.success
+                with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance', return_value=self.mock_provider):
+                    with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory'):
+                        mock_dep_id = Mock()
+                        mock_task_id.return_value = mock_dep_id
+
+                        result = self.use_case.execute(request)
+
+                        # Verify task creation with all fields
+                        mock_create.assert_called_once()
+                        call_args = mock_create.call_args[1]
+                        assert call_args['title'] == "Full Test Task"
+                        assert call_args['description'] == "Full Test Description"
+                        assert call_args['git_branch_id'] == "branch-456"
+                        assert call_args['details'] == "Implementation details"
+                        assert call_args['estimated_effort'] == "4 hours"
+                        assert call_args['assignees'] == ["@user1", "@user2"]
+                        assert call_args['labels'] == ["feature", "urgent"]
+                        assert call_args['due_date'] == "2024-12-31"
+
+                        # Verify dependencies were added
+                        assert mock_task.add_dependency.call_count == 2
+
+                        # Verify success
+                        assert result.success
     
     def test_execute_with_default_values(self):
         """Test execution applies default status and priority."""
@@ -184,17 +214,23 @@ class TestCreateTaskUseCaseExecution:
         task_id = TaskId("task-123")
         self.mock_repository.get_next_id.return_value = task_id
         self.mock_repository.save.return_value = True
-        
+
         request = CreateTaskRequest(
             title="Test Task",
             description="Test Description",
-            git_branch_id="branch-456"
+            git_branch_id="branch-456",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
             # No status or priority specified
         )
-        
+
         mock_task = Mock(spec=Task)
         mock_task.id = task_id
         mock_task.git_branch_id = "branch-456"
+        mock_task.title = "Test Task"
+        mock_task.description = "Test Description"
+        mock_task.status = "todo"
+        mock_task.priority = "medium"
+        mock_task.set_context_id = Mock()
         mock_task.get_events = Mock(return_value=[])  # Add get_events method
         mock_task.to_dict = Mock(return_value={
             "id": str(task_id),
@@ -223,17 +259,20 @@ class TestCreateTaskUseCaseExecution:
                 mock_priority.return_value = mock_priority_instance
                 
                 with patch('fastmcp.task_management.domain.entities.task.Task.create', return_value=mock_task) as mock_create:
-                    
-                    self.use_case.execute(request)
-                    
-                    # Verify default values were used
-                    mock_status.assert_called_once_with(TaskStatusEnum.TODO.value)
-                    mock_priority.assert_called_once_with(PriorityLevel.MEDIUM.label)
-                    
-                    # Verify Task.create was called with the created value objects
-                    call_args = mock_create.call_args[1]
-                    assert call_args['status'] == mock_status_instance
-                    assert call_args['priority'] == mock_priority_instance
+                    with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance', return_value=self.mock_provider):
+                        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory', return_value=self.mock_context_factory):
+                            with patch('fastmcp.task_management.domain.constants.validate_user_id', return_value="user-123"):
+
+                                self.use_case.execute(request)
+
+                                # Verify default values were used
+                                mock_status.assert_called_once_with(TaskStatusEnum.TODO.value)
+                                mock_priority.assert_called_once_with(PriorityLevel.MEDIUM.label)
+
+                                # Verify Task.create was called with the created value objects
+                                call_args = mock_create.call_args[1]
+                                assert call_args['status'] == mock_status_instance
+                                assert call_args['priority'] == mock_priority_instance
     
     def test_execute_truncates_long_content(self):
         """Test execution truncates overly long title and description."""
@@ -241,21 +280,27 @@ class TestCreateTaskUseCaseExecution:
         task_id = TaskId("task-123")
         self.mock_repository.get_next_id.return_value = task_id
         self.mock_repository.save.return_value = True
-        
+
         request = CreateTaskRequest(
             title="a" * 250,  # Exceeds 200 char limit
-            description="b" * 1100,  # Exceeds 1000 char limit
-            git_branch_id="branch-456"
+            description="b" * 2100,  # Exceeds 2000 char limit
+            git_branch_id="branch-456",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
-        
+
         mock_task = Mock(spec=Task)
         mock_task.id = task_id
         mock_task.git_branch_id = "branch-456"
+        mock_task.title = "a" * 200  # Truncated title
+        mock_task.description = "b" * 2000  # Truncated description
+        mock_task.status = "todo"
+        mock_task.priority = "medium"
+        mock_task.set_context_id = Mock()
         mock_task.get_events = Mock(return_value=[])  # Add get_events method
         mock_task.to_dict = Mock(return_value={
             "id": str(task_id),
             "title": "a" * 200,  # Truncated
-            "description": "b" * 1000,  # Truncated
+            "description": "b" * 2000,  # Truncated
             "status": "todo",
             "priority": "medium",
             "git_branch_id": "branch-456",
@@ -271,24 +316,45 @@ class TestCreateTaskUseCaseExecution:
         })
         
         with patch('fastmcp.task_management.domain.entities.task.Task.create', return_value=mock_task) as mock_create:
-            
-            self.use_case.execute(request)
-            
-            # Verify content was truncated
-            call_args = mock_create.call_args[1]
-            assert len(call_args['title']) == 200
-            assert len(call_args['description']) == 1000
-            assert call_args['title'] == "a" * 200
-            assert call_args['description'] == "b" * 1000
+            with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance', return_value=self.mock_provider):
+                with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory', return_value=self.mock_context_factory):
+                    with patch('fastmcp.task_management.domain.constants.validate_user_id', return_value="user-123"):
+
+                        self.use_case.execute(request)
+
+                        # Verify content was truncated
+                        call_args = mock_create.call_args[1]
+                        assert len(call_args['title']) == 200
+                        assert len(call_args['description']) == 2000
+                        assert call_args['title'] == "a" * 200
+                        assert call_args['description'] == "b" * 2000
 
 
 class TestCreateTaskUseCaseValidation:
     """Test cases for request validation and error handling."""
-    
+
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_repository = Mock(spec=TaskRepository)
         self.use_case = CreateTaskUseCase(self.mock_repository)
+
+        # Set up common mocks for repository provider service
+        self.mock_provider = Mock()
+        self.mock_branch_repo = Mock()
+        self.mock_branch = Mock()
+        self.mock_branch.task_count = 0
+        self.mock_branch.project_id = "project-123"
+        self.mock_branch_repo.get.return_value = self.mock_branch
+        self.mock_branch_repo.update = Mock()
+        self.mock_provider.get_git_branch_repository.return_value = self.mock_branch_repo
+
+        # Set up mocks for context creation - ensure they return proper dictionaries
+        self.mock_context_facade = Mock()
+        self.mock_context_facade.create_context.return_value = {"success": True, "context": {"id": "task-123"}}
+        self.mock_context_factory = Mock()
+        self.mock_context_factory_instance = Mock()
+        self.mock_context_factory_instance.create_facade.return_value = self.mock_context_facade
+        self.mock_context_factory.return_value = self.mock_context_factory_instance
     
     def test_execute_git_branch_validation_success(self):
         """Test git branch validation passes when branch exists."""
@@ -301,12 +367,18 @@ class TestCreateTaskUseCaseValidation:
         request = CreateTaskRequest(
             title="Test Task",
             description="Test Description",
-            git_branch_id="existing-branch"
+            git_branch_id="existing-branch",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
         
         mock_task = Mock(spec=Task)
         mock_task.id = task_id
         mock_task.git_branch_id = "existing-branch"
+        mock_task.title = "Test Task"
+        mock_task.description = "Test Description"
+        mock_task.status = "todo"
+        mock_task.priority = "medium"
+        mock_task.set_context_id = Mock()
         mock_task.get_events = Mock(return_value=[])  # Add get_events method
         mock_task.to_dict = Mock(return_value={
             "id": str(task_id),
@@ -327,14 +399,17 @@ class TestCreateTaskUseCaseValidation:
         })
         
         with patch('fastmcp.task_management.domain.entities.task.Task.create', return_value=mock_task):
-            
-            result = self.use_case.execute(request)
-            
-            # Verify branch validation was called
-            self.mock_repository.git_branch_exists.assert_called_once_with("existing-branch")
-            
-            # Verify success
-            assert result.success
+            with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance', return_value=self.mock_provider):
+                with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory', return_value=self.mock_context_factory):
+                    with patch('fastmcp.task_management.domain.constants.validate_user_id', return_value="user-123"):
+
+                        result = self.use_case.execute(request)
+
+                        # Verify branch validation was called
+                        self.mock_repository.git_branch_exists.assert_called_once_with("existing-branch")
+
+                        # Verify success
+                        assert result.success
     
     def test_execute_git_branch_validation_failure(self):
         """Test git branch validation fails when branch doesn't exist."""
@@ -344,7 +419,8 @@ class TestCreateTaskUseCaseValidation:
         request = CreateTaskRequest(
             title="Test Task",
             description="Test Description",
-            git_branch_id="nonexistent-branch"
+            git_branch_id="nonexistent-branch",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
         
         result = self.use_case.execute(request)
@@ -366,7 +442,8 @@ class TestCreateTaskUseCaseValidation:
             title="Test Task",
             description="Test Description",
             git_branch_id="branch-456",
-            status="invalid_status"
+            status="invalid_status",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
         
         # Mock TaskStatus to raise ValueError for invalid status
@@ -385,7 +462,8 @@ class TestCreateTaskUseCaseValidation:
             title="Test Task",
             description="Test Description",
             git_branch_id="branch-456",
-            priority="invalid_priority"
+            priority="invalid_priority",
+            user_id="user-123"  # Add user_id to prevent authentication warnings
         )
         
         # Mock Priority to raise ValueError for invalid priority

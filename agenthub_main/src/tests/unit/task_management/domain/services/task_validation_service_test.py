@@ -56,8 +56,8 @@ class TestTaskValidationService:
             status="todo",
             priority="medium"
         )
-        task.git_branch_id = "test-branch-id"
-        task.project_id = "test-project-id"
+        task.git_branch_id = "550e8400-e29b-41d4-a716-446655440000"
+        task.project_id = "550e8400-e29b-41d4-a716-446655440001"
         task.assignees = ["developer1"]
         task.labels = ["feature", "auth"]
         task.dependencies = []
@@ -286,7 +286,7 @@ class TestTaskValidationService:
 
             # Assert
             assert len(errors) > 0
-            assert any("validation error" in error.lower() for error in errors)
+            assert any("validation system error" in error.lower() for error in errors)
 
     class TestValidateTaskUpdate:
         """Test cases for validate_task_update method."""
@@ -786,8 +786,8 @@ class TestTaskValidationServiceIntegration:
             status="todo",
             priority="high"
         )
-        task.git_branch_id = "branch-uuid-123"
-        task.project_id = "project-uuid-456"
+        task.git_branch_id = "550e8400-e29b-41d4-a716-446655440002"
+        task.project_id = "550e8400-e29b-41d4-a716-446655440003"
         task.assignees = ["senior.developer@company.com", "security.engineer@company.com"]
         task.labels = ["feature", "authentication", "security", "high-priority"]
         task.dependencies = []

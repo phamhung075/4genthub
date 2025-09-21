@@ -261,7 +261,7 @@ class TaskApplicationFacade:
                         WebSocketNotificationService.sync_broadcast_task_event(
                             event_type="created",
                             task_id=task_response.task.id,
-                            user_id=user_id or "system",
+                            user_id=derived_user_id or "system",
                             task_data=task_payload,
                             git_branch_id=request.git_branch_id,
                             project_id=derived_project_id
@@ -552,23 +552,23 @@ class TaskApplicationFacade:
                 "error": f"Unexpected error: {str(e)}",
             }
     
-    def delete_task(self, task_id: str) -> Dict[str, Any]:
+    def delete_task(self, task_id: str, user_id: str = None) -> Dict[str, Any]:
         """Delete a task"""
         try:
             # Validate input at application boundary
             if not task_id or not task_id.strip():
                 raise ValueError("Task ID is required")
-            
+
             # Execute use case
             success = self._delete_task_use_case.execute(task_id)
-            
+
             if success:
                 # Broadcast task deletion event
                 try:
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="deleted",
                         task_id=task_id,
-                        user_id="system",  # TODO: Get actual user_id from context
+                        user_id=user_id or "system",  # Use provided user_id or fallback to "system"
                         task_data=None
                     )
                 except Exception as e:
@@ -594,8 +594,8 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in delete_task: {e}")
             return {"success": False, "action": "delete", "error": f"Unexpected error: {str(e)}"}
     
-    def complete_task(self, task_id: str, completion_summary: Optional[str] = None, 
-                      testing_notes: Optional[str] = None) -> Dict[str, Any]:
+    def complete_task(self, task_id: str, completion_summary: Optional[str] = None,
+                      testing_notes: Optional[str] = None, user_id: str = None) -> Dict[str, Any]:
         """Complete a task"""
         try:
             # Debug logging
@@ -638,7 +638,7 @@ class TaskApplicationFacade:
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="completed",
                         task_id=task_id,
-                        user_id="system",  # TODO: Get actual user_id from context
+                        user_id=user_id or "system",  # Use provided user_id or fallback to "system"
                         task_data=response.get("task")
                     )
                     logger.info(f"Broadcasted task completion notification for NEW completion of task {task_id}")
@@ -905,8 +905,8 @@ class TaskApplicationFacade:
         if len(request.title) > 200:
             raise ValueError("Task title cannot exceed 200 characters")
         
-        if request.description and len(request.description) > 1000:
-            raise ValueError("Task description cannot exceed 1000 characters")
+        if request.description and len(request.description) > 2000:
+            raise ValueError("Task description cannot exceed 2000 characters")
     
     def _validate_update_task_request(self, task_id: str, request: UpdateTaskRequest) -> None:
         """Validate update task request at application boundary"""
@@ -922,8 +922,8 @@ class TaskApplicationFacade:
         if request.title and len(request.title) > 200:
             raise ValueError("Task title cannot exceed 200 characters")
         
-        if request.description and len(request.description) > 1000:
-            raise ValueError("Task description cannot exceed 1000 characters")
+        if request.description and len(request.description) > 2000:
+            raise ValueError("Task description cannot exceed 2000 characters")
     
     def count_tasks(self, filters: Dict[str, Any]) -> Dict[str, Any]:
         """

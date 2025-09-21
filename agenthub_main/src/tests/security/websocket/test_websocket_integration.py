@@ -19,7 +19,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, AsyncMock, MagicMock
 from fastapi.testclient import TestClient
-from fastapi.websockets import WebSocketDisconnect
+from fastapi import WebSocketDisconnect
 import logging
 
 # Import test dependencies
@@ -62,7 +62,8 @@ class WebSocketTestClient:
         return User(
             id=user_id,
             email=email,
-            username=email.split('@')[0]
+            username=email.split('@')[0],
+            password_hash="test_password_hash_123"  # Required field for User entity
         )
 
 
@@ -205,7 +206,7 @@ class TestWebSocketAuthorizationIntegration:
         connection_users[ws2] = user2
 
         # Mock database query for task ownership
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -256,7 +257,7 @@ class TestWebSocketAuthorizationIntegration:
         assert is_authorized is True
 
         # Test authorization for other user's action
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -397,7 +398,7 @@ class TestWebSocketAttackScenarios:
         connection_users[ws1] = user1
 
         # Mock database to simulate user_1 doesn't own task_456
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -433,7 +434,7 @@ class TestWebSocketAttackScenarios:
         connection_users[ws_admin] = admin_user
 
         # Mock database to show admin owns sensitive data
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 

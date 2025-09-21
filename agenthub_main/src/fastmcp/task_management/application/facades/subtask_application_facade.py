@@ -240,10 +240,13 @@ class SubtaskApplicationFacade:
         if self._task_repository_factory and self._subtask_repository_factory:
             # For factory-based repositories, derive context from task_id
             context = self._derive_context_from_task(task_id)
+            # CRITICAL FIX: Prioritize provided user_id over derived user_id for MCP authentication
+            effective_user_id = user_id or context.get("user_id")
+            logger.info(f"🔐 SUBTASK_AUTH_FIX: Using user_id={effective_user_id} (provided={user_id}, derived={context.get('user_id')})")
             task_repository, subtask_repository = self._get_context_repositories(
                 project_id=context.get("project_id"),
-                git_branch_name=context.get("git_branch_name"), 
-                user_id=context.get("user_id")
+                git_branch_name=context.get("git_branch_name"),
+                user_id=effective_user_id
             )
         else:
             # For static repositories (backward compatibility), use them directly

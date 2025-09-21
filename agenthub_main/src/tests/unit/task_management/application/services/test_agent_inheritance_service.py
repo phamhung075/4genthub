@@ -44,7 +44,7 @@ class TestAgentInheritanceService:
             title="Subtask with assignees",
             description="Should not inherit from parent",
             parent_task_id=self.parent_task.id,
-            assignees=["code-reviewer-agent"]
+            assignees=["@code-reviewer-agent"]
         )
     
     def test_apply_agent_inheritance_with_empty_subtask(self):
@@ -70,7 +70,7 @@ class TestAgentInheritanceService:
         assert result is self.subtask_with_assignees
         assert result.assignees == original_assignees
         assert len(result.assignees) == 1
-        assert "code-reviewer-agent" in result.assignees
+        assert "@code-reviewer-agent" in result.assignees
     
     def test_apply_agent_inheritance_without_parent_task_provided(self):
         """Test inheritance when parent task is not provided (should fetch from repository)"""

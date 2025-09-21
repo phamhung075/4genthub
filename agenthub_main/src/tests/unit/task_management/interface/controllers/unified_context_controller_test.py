@@ -41,20 +41,33 @@ class TestUnifiedContextMCPController:
     def mock_mcp_server(self):
         """Create mock FastMCP server."""
         server = MagicMock()
-        
+
         # Store registered tools - no name parameter is passed to @mcp.tool decorator
         registered_tools = {}
-        
+
         def tool_decorator(description=None):
             def decorator(func):
                 # The function name becomes the tool name
                 registered_tools[func.__name__] = func
                 return func
             return decorator
-        
+
         server.tool = tool_decorator
         server.registered_tools = registered_tools
         return server
+
+    @pytest.fixture
+    def mock_request_context(self):
+        """Create mock request context with proper user and permissions."""
+        mock_user = Mock()
+        mock_user.token = {
+            "sub": "test-user",
+            "scope": "contexts:create contexts:read contexts:update contexts:delete contexts:delegate",
+            "realm_roles": ["user"]
+        }
+        mock_request_context = Mock()
+        mock_request_context.user = mock_user
+        return mock_request_context
     
     def test_controller_initialization(self, mock_facade_service):
         """Test controller initialization."""
@@ -69,9 +82,11 @@ class TestUnifiedContextMCPController:
         assert "manage_context" in mock_mcp_server.registered_tools
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_create_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade_service, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_create_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade_service, mock_facade, mock_request_context):
         """Test manage_context tool with create action."""
         mock_get_user_id.return_value = "authenticated-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.create_context.return_value = {
             "success": True,
             "context": {"id": "task-123", "level": "task", "data": {"title": "Test Task"}}
@@ -116,9 +131,11 @@ class TestUnifiedContextMCPController:
         assert result["data"]["level"] == "task"
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_get_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_get_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with get action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.get_context.return_value = {
             "success": True,
             "context": {"id": "project-456", "level": "project", "data": {"name": "Test Project"}}
@@ -146,9 +163,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_update_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_update_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with update action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.update_context.return_value = {
             "success": True,
             "context": {"id": "branch-789", "level": "branch", "data": {"status": "active"}}
@@ -175,9 +194,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_delete_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_delete_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with delete action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.delete_context.return_value = {"success": True}
         
         controller.register_tools(mock_mcp_server)
@@ -197,9 +218,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_resolve_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_resolve_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with resolve action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.resolve_context.return_value = {
             "success": True,
             "resolved_context": {"id": "task-111", "inherited_data": {}}
@@ -224,9 +247,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_delegate_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_delegate_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with delegate action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.delegate_context.return_value = {
             "success": True,
             "delegation": {"id": "del-123", "status": "pending"}
@@ -255,9 +280,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_add_insight_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_add_insight_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with add_insight action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.add_insight.return_value = {
             "success": True,
             "insight": {"id": "ins-123", "content": "Performance improved"}
@@ -288,9 +315,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_add_progress_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_add_progress_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with add_progress action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.add_progress.return_value = {
             "success": True,
             "progress": {"id": "prog-123", "content": "Completed phase 1"}
@@ -317,9 +346,11 @@ class TestUnifiedContextMCPController:
         assert result["success"] is True
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_list_action(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_list_action(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context tool with list action."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.list_contexts.return_value = {
             "success": True,
             "contexts": [
@@ -369,9 +400,11 @@ class TestUnifiedContextMCPController:
         assert "Valid actions:" in result["error"]["message"]
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_json_string_data(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_json_string_data(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test manage_context with JSON string data parameter."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.create_context.return_value = {"success": True}
         
         controller.register_tools(mock_mcp_server)
@@ -418,9 +451,11 @@ class TestUnifiedContextMCPController:
         assert "Invalid JSON string" in result["error"]["message"]
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_boolean_parameter_coercion(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_boolean_parameter_coercion(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade, mock_request_context):
         """Test boolean parameter coercion from string values."""
         mock_get_user_id.return_value = "test-user"
+        mock_get_request_context.return_value = mock_request_context
         mock_facade.get_context.return_value = {"success": True}
         
         controller.register_tools(mock_mcp_server)
@@ -470,21 +505,34 @@ class TestUnifiedContextMCPController:
                 "USER_AUTHENTICATION_REQUIRED" in str(result.get("error_code", "")))
     
     @patch('fastmcp.task_management.interface.mcp_controllers.unified_context_controller.unified_context_controller.get_authenticated_user_id')
-    def test_manage_context_facade_error(self, mock_get_user_id, controller, mock_mcp_server, mock_facade):
+    @patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context')
+    def test_manage_context_facade_error(self, mock_get_request_context, mock_get_user_id, controller, mock_mcp_server, mock_facade):
         """Test facade error handling."""
         mock_get_user_id.return_value = "test-user"
+
+        # Mock the request context with proper user and token
+        mock_user = Mock()
+        mock_user.token = {
+            "sub": "test-user",
+            "scope": "contexts:create contexts:read contexts:update contexts:delete",
+            "realm_roles": ["user"]
+        }
+        mock_request_context = Mock()
+        mock_request_context.user = mock_user
+        mock_get_request_context.return_value = mock_request_context
+
         mock_facade.create_context.side_effect = ValueError("Invalid context data")
-        
+
         controller.register_tools(mock_mcp_server)
         manage_context = mock_mcp_server.registered_tools["manage_context"]
-        
+
         result = manage_context(
             action="create",
             level="task",
             context_id="task-1000",
             data={"invalid": "data"}
         )
-        
+
         assert result["success"] is False
         assert "error" in result
         assert "meta" in result

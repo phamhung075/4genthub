@@ -45,7 +45,7 @@ interface TaskSummary {
 
 const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTasksChanged }) => {
   // Get URL parameters to handle automatic dialog opening
-  const { taskId: urlTaskId } = useParams<{ taskId?: string }>();
+  const { taskId: urlTaskId, subtaskId } = useParams<{ taskId?: string; subtaskId?: string }>();
   const navigate = useNavigate();
 
   // Core state - minimal for performance
@@ -162,28 +162,31 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         logger.info('Initial load - no animation for existing tasks', { component: 'LazyTaskList' });
       }
 
-      // 2. Removed tasks (deleted) - need to keep them in the list during animation
+      // 2. Removed tasks (deleted) - now handled optimistically, just log and update state
       const removedTasks = new Set([...currentTaskIds].filter(id => !newTaskIds.has(id)));
       if (removedTasks.size > 0) {
-        logger.info('Deleted tasks detected', { component: 'LazyTaskList', removedTasks: [...removedTasks] });
+        logger.info('Deleted tasks detected (post-optimistic-animation)', {
+          component: 'LazyTaskList',
+          removedTasks: [...removedTasks],
+          note: 'Animation should have already played optimistically'
+        });
 
-        // Add deleted tasks back to the summaries temporarily for animation
-        const deletedTasksData = taskSummaries.filter(task => removedTasks.has(task.id));
-        summaries.push(...deletedTasksData);
-
+        // Clean up callbacks for deleted tasks immediately (animation already played)
         removedTasks.forEach(taskId => {
-          const callbacks = rowAnimationCallbacks.current.get(taskId);
-          if (callbacks) {
-            logger.debug('Playing delete animation for task', { component: 'LazyTaskList', taskId });
-            callbacks.playDeleteAnimation();
-          } else {
-            // Reduce noise - only log at debug level since row may already be unmounted
-            logger.debug('No callbacks found for deleted task', {
-              component: 'LazyTaskList',
-              taskId,
-              note: 'This is normal if TaskRow was already unmounted'
-            });
-          }
+          rowAnimationCallbacks.current.delete(taskId);
+        });
+
+        // No need to add tasks back or play animation - that's handled optimistically
+        // Just update the counts to reflect the change
+        setTotalTasks(prevTotal => {
+          const newTotal = Math.max(0, prevTotal - removedTasks.size);
+          logger.debug('Updated total task count after optimistic deletion', {
+            component: 'LazyTaskList',
+            previousTotal: prevTotal,
+            newTotal,
+            removedCount: removedTasks.size
+          });
+          return newTotal;
         });
       }
 
@@ -451,22 +454,62 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     rowAnimationCallbacks.current.delete(taskId);
   }, []);
 
-  // Simple delete task handler - row animation handled independently
+  // Optimistic delete task handler - animation first, then API call
   const handleDeleteTask = useCallback(async (taskId: string) => {
     // Close dialog immediately for better UX
     closeDialog();
 
-    try {
-      // Call API to delete task
-      await deleteTask(taskId);
+    // Get the animation callbacks for this task
+    const callbacks = rowAnimationCallbacks.current.get(taskId);
 
-      // Notify parent that task was deleted
-      if (onTasksChanged) {
-        onTasksChanged();
+    if (callbacks) {
+      // STEP 1: Trigger delete animation immediately (optimistic UI)
+      logger.info('Starting optimistic delete animation for task', { component: 'LazyTaskList', taskId });
+      callbacks.playDeleteAnimation();
+
+      // STEP 2: Wait for animation to complete (800ms + small buffer)
+      await new Promise(resolve => setTimeout(resolve, 850));
+
+      try {
+        // STEP 3: Now call API to delete task from backend
+        logger.info('Animation complete, calling delete API', { component: 'LazyTaskList', taskId });
+        await deleteTask(taskId);
+
+        // STEP 4: Notify parent that task was deleted (this will trigger list refresh)
+        if (onTasksChanged) {
+          onTasksChanged();
+        }
+
+        logger.info('Task successfully deleted', { component: 'LazyTaskList', taskId });
+      } catch (error) {
+        logger.error('Failed to delete task after animation', { component: 'LazyTaskList', taskId, error });
+
+        // TODO: Reverse the animation or show the task again with error state
+        // For now, still refresh the list to restore correct state
+        if (onTasksChanged) {
+          onTasksChanged();
+        }
+
+        // Show error to user
+        alert(`Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    } catch (error) {
-      logger.error('Failed to delete task', { component: 'LazyTaskList', error });
-      // TODO: Show error message to user
+    } else {
+      // Fallback: No animation callbacks found, proceed with immediate deletion
+      logger.warn('No animation callbacks found for task, proceeding with immediate deletion', {
+        component: 'LazyTaskList',
+        taskId,
+        availableCallbacks: [...rowAnimationCallbacks.current.keys()]
+      });
+
+      try {
+        await deleteTask(taskId);
+        if (onTasksChanged) {
+          onTasksChanged();
+        }
+      } catch (error) {
+        logger.error('Failed to delete task (fallback path)', { component: 'LazyTaskList', error });
+        alert(`Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }, [closeDialog, onTasksChanged]);
 
@@ -549,7 +592,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Auto-open TaskDetailsDialog when taskId is in URL, auto-close when removed
   useEffect(() => {
-    if (urlTaskId && taskSummaries.length > 0) {
+    if (urlTaskId && taskSummaries.length > 0 && !subtaskId) {
+      // Don't auto-open TaskDetailsDialog if subtaskId is present (subtask view has priority)
       // Check if the taskId exists in our current task summaries
       const taskExists = taskSummaries.some(task => task.id === urlTaskId);
 
@@ -576,7 +620,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       });
       setActiveDialog({ type: null });
     }
-  }, [urlTaskId, taskSummaries, activeDialog, openDialog]);
+  }, [urlTaskId, subtaskId, taskSummaries, activeDialog, openDialog]);
 
   // Handle task hover for dependency highlighting
   const handleTaskHover = useCallback((taskId: string | null) => {

@@ -1,5 +1,5 @@
 """
-ORM Subtask Repository Implementation using SQLAlchemy
+ORM SubtaskEntity Repository Implementation using SQLAlchemy
 
 This module provides the ORM implementation of the SubtaskRepository
 interface using SQLAlchemy for database abstraction.
@@ -13,11 +13,11 @@ from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from ...database.models import TaskSubtask
+from ...database.models import Subtask as SubtaskModel
 from ...database.database_config import get_session
 from ..base_orm_repository import BaseORMRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
-from ....domain.entities.subtask import Subtask
+from ....domain.entities.subtask import Subtask as SubtaskEntity
 from ....domain.repositories.subtask_repository import SubtaskRepository
 from ....domain.value_objects.task_id import TaskId
 from ....domain.value_objects.subtask_id import SubtaskId
@@ -32,7 +32,7 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedRepository, SubtaskRepository):
+class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
     """
     ORM implementation of SubtaskRepository using SQLAlchemy.
     
@@ -42,18 +42,18 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
     
     def __init__(self, session=None, user_id: Optional[str] = None):
         """Initialize the ORM subtask repository with user isolation."""
-        BaseORMRepository.__init__(self, TaskSubtask)
+        BaseORMRepository.__init__(self, SubtaskModel)
         # CRITICAL FIX: Pass None as session to BaseUserScopedRepository
         # This prevents creating an isolated session in __init__
         # The actual session will come from transaction() or get_db_session() context managers
         BaseUserScopedRepository.__init__(self, None, user_id)
     
-    def save(self, subtask: Subtask) -> bool:
+    def save(self, subtask: SubtaskEntity) -> bool:
         """
         Save a subtask to the database.
         
         Args:
-            subtask: Subtask domain entity
+            subtask: SubtaskEntity domain entity
             
         Returns:
             True if saved successfully, False otherwise
@@ -68,8 +68,8 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
                 
                 if subtask.id:
                     # Update existing subtask
-                    existing = session.query(TaskSubtask).filter(
-                        TaskSubtask.id == subtask.id.value
+                    existing = session.query(SubtaskModel).filter(
+                        SubtaskModel.id == subtask.id.value
                     ).first()
                     
                     if existing:
@@ -96,14 +96,14 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
                 
                 # Create new subtask
                 logger.info(f"🔍 SUBTASK_SAVE: Creating new subtask with data: {model_data}")
-                new_subtask = TaskSubtask(**model_data)
+                new_subtask = SubtaskModel(**model_data)
                 session.add(new_subtask)
                 session.flush()
                 logger.info(f"🔍 SUBTASK_SAVE: Flushed to database, ID={new_subtask.id}")
                 session.refresh(new_subtask)
                 
                 # CRITICAL DEBUG: Verify persistence before commit
-                verify = session.query(TaskSubtask).filter(TaskSubtask.id == new_subtask.id).first()
+                verify = session.query(SubtaskModel).filter(SubtaskModel.id == new_subtask.id).first()
                 logger.info(f"🔍 SUBTASK_SAVE: Verification query - found subtask: {verify is not None}")
                 if verify:
                     logger.info(f"🔍 SUBTASK_SAVE: Verified subtask - ID={verify.id}, user_id={verify.user_id}, title='{verify.title}'")
@@ -120,41 +120,54 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to save subtask: {str(e)}",
                 operation="save_subtask",
-                table="task_subtasks"
+                table="subtasks"
             )
         except Exception as e:
             logger.error(f"Unexpected error saving subtask: {e}")
             return False
     
-    def find_by_id(self, id: str) -> Optional[Subtask]:
+    def find_by_id(self, id: str) -> Optional[SubtaskEntity]:
         """
-        Find a subtask by its ID.
-        
+        Find a subtask by its ID with user filtering for multi-tenancy.
+
         Args:
-            id: Subtask ID string
-            
+            id: SubtaskEntity ID string
+
         Returns:
-            Subtask domain entity or None if not found
+            SubtaskEntity domain entity or None if not found
         """
         try:
             with self.get_db_session() as session:
-                model = session.query(TaskSubtask).filter(
-                    TaskSubtask.id == id
-                ).first()
-                
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.id == id
+                )
+
+                # CRITICAL FIX: Apply user filter for multi-tenancy
+                # This ensures users can only access their own subtasks
+                if self.user_id:
+                    query = query.filter(SubtaskModel.user_id == self.user_id)
+                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter for user_id={self.user_id}")
+                else:
+                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering - this could cause data leakage")
+
+                model = query.first()
+
                 if model:
+                    logger.info(f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}")
                     return self._to_domain_entity(model)
-                return None
-                
+                else:
+                    logger.info(f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}")
+                    return None
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtask by id {id}: {e}")
             raise DatabaseException(
                 message=f"Failed to find subtask by id: {str(e)}",
                 operation="find_by_id",
-                table="task_subtasks"
+                table="subtasks"
             )
     
-    def find_by_parent_task_id(self, parent_task_id: TaskId) -> List[Subtask]:
+    def find_by_parent_task_id(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find all subtasks for a parent task.
         
@@ -166,8 +179,8 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(TaskSubtask).filter(
-                    TaskSubtask.task_id == parent_task_id.value
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.task_id == parent_task_id.value
                 )
                 
                 # DEBUG: Log query before user filter
@@ -178,7 +191,7 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
                 # Apply standard user filter - user authentication required
                 # CRITICAL FIX: Apply user filter directly to avoid model detection issues
                 if self.user_id:
-                    query = query.filter(TaskSubtask.user_id == self.user_id)
+                    query = query.filter(SubtaskModel.user_id == self.user_id)
                     logger.info(f"🐛 SUBTASK_DEBUG: Applied user filter directly: user_id={self.user_id}")
                 else:
                     logger.warning(f"🐛 SUBTASK_DEBUG: No user_id available for filtering - this could cause data leakage")
@@ -188,7 +201,7 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
                 # DEBUG: Log query after user filter
                 logger.info(f"🐛 SUBTASK_DEBUG: Query after user filter: {query}")
                 
-                models = query.order_by(TaskSubtask.created_at.asc()).all()
+                models = query.order_by(SubtaskModel.created_at.asc()).all()
                 
                 # DEBUG: Log results
                 logger.info(f"🐛 SUBTASK_DEBUG: Found {len(models)} subtask models")
@@ -202,10 +215,10 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to find subtasks for task: {str(e)}",
                 operation="find_by_parent_task_id",
-                table="task_subtasks"
+                table="subtasks"
             )
     
-    def find_by_assignee(self, assignee: str) -> List[Subtask]:
+    def find_by_assignee(self, assignee: str) -> List[SubtaskEntity]:
         """
         Find subtasks by assignee.
         
@@ -218,14 +231,14 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         try:
             with self.get_db_session() as session:
                 # Use JSON operations to search within assignees array
-                query = session.query(TaskSubtask).filter(
-                    TaskSubtask.assignees.contains([assignee])
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.assignees.contains([assignee])
                 )
                 
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
                 
-                models = query.order_by(TaskSubtask.created_at.desc()).all()
+                models = query.order_by(SubtaskModel.created_at.desc()).all()
                 
                 return [self._to_domain_entity(model) for model in models]
                 
@@ -234,10 +247,10 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to find subtasks by assignee: {str(e)}",
                 operation="find_by_assignee",
-                table="task_subtasks"
+                table="subtasks"
             )
     
-    def find_by_status(self, status: str) -> List[Subtask]:
+    def find_by_status(self, status: str) -> List[SubtaskEntity]:
         """
         Find subtasks by status.
         
@@ -249,14 +262,14 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(TaskSubtask).filter(
-                    TaskSubtask.status == status
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.status == status
                 )
                 
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
                 
-                models = query.order_by(TaskSubtask.created_at.desc()).all()
+                models = query.order_by(SubtaskModel.created_at.desc()).all()
                 
                 return [self._to_domain_entity(model) for model in models]
                 
@@ -265,10 +278,10 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to find subtasks by status: {str(e)}",
                 operation="find_by_status",
-                table="task_subtasks"
+                table="subtasks"
             )
     
-    def find_completed(self, parent_task_id: TaskId) -> List[Subtask]:
+    def find_completed(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find completed subtasks for a parent task.
         
@@ -280,17 +293,17 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(TaskSubtask).filter(
+                query = session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id.value,
-                        TaskSubtask.status == 'done'
+                        SubtaskModel.task_id == parent_task_id.value,
+                        SubtaskModel.status == 'done'
                     )
                 )
                 
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
                 
-                models = query.order_by(TaskSubtask.completed_at.desc()).all()
+                models = query.order_by(SubtaskModel.completed_at.desc()).all()
                 
                 return [self._to_domain_entity(model) for model in models]
                 
@@ -299,10 +312,10 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to find completed subtasks: {str(e)}",
                 operation="find_completed",
-                table="task_subtasks"
+                table="subtasks"
             )
     
-    def find_pending(self, parent_task_id: TaskId) -> List[Subtask]:
+    def find_pending(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find pending subtasks for a parent task.
         
@@ -314,17 +327,17 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(TaskSubtask).filter(
+                query = session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id.value,
-                        TaskSubtask.status.in_(['todo', 'in_progress', 'blocked'])
+                        SubtaskModel.task_id == parent_task_id.value,
+                        SubtaskModel.status.in_(['todo', 'in_progress', 'blocked'])
                     )
                 )
                 
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
                 
-                models = query.order_by(TaskSubtask.created_at.asc()).all()
+                models = query.order_by(SubtaskModel.created_at.asc()).all()
                 
                 return [self._to_domain_entity(model) for model in models]
                 
@@ -333,34 +346,44 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to find pending subtasks: {str(e)}",
                 operation="find_pending",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def delete(self, id: str) -> bool:
         """
-        Delete a subtask by its ID.
-        
+        Delete a subtask by its ID with user filtering for multi-tenancy.
+
         Args:
-            id: Subtask ID string
-            
+            id: SubtaskEntity ID string
+
         Returns:
             True if deleted successfully, False if not found
         """
         try:
             # CRITICAL FIX: Use transaction context manager for write operations
             with self.transaction() as session:
-                result = session.query(TaskSubtask).filter(
-                    TaskSubtask.id == id
-                ).delete()
-                
+                # CRITICAL SECURITY FIX: Apply user filter to prevent unauthorized deletion
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.id == id
+                )
+
+                if self.user_id:
+                    query = query.filter(SubtaskModel.user_id == self.user_id)
+                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in delete() for user_id={self.user_id}")
+                else:
+                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in delete() - this could allow unauthorized deletion")
+
+                result = query.delete()
+                logger.info(f"🗑️ SUBTASK_DELETE: Deleted {result} subtask(s) with id={id} for user_id={self.user_id}")
+
                 return result > 0
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to delete subtask {id}: {e}")
             raise DatabaseException(
                 message=f"Failed to delete subtask: {str(e)}",
                 operation="delete",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def delete_by_parent_task_id(self, parent_task_id: TaskId) -> bool:
@@ -375,8 +398,8 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                result = session.query(TaskSubtask).filter(
-                    TaskSubtask.task_id == parent_task_id.value
+                result = session.query(SubtaskModel).filter(
+                    SubtaskModel.task_id == parent_task_id.value
                 ).delete()
                 
                 return result > 0
@@ -386,31 +409,43 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to delete subtasks for task: {str(e)}",
                 operation="delete_by_parent_task_id",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def exists(self, id: str) -> bool:
         """
-        Check if a subtask exists by its ID.
-        
+        Check if a subtask exists by its ID with user filtering for multi-tenancy.
+
         Args:
-            id: Subtask ID string
-            
+            id: SubtaskEntity ID string
+
         Returns:
             True if exists, False otherwise
         """
         try:
             with self.get_db_session() as session:
-                return session.query(TaskSubtask).filter(
-                    TaskSubtask.id == id
-                ).first() is not None
-                
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.id == id
+                )
+
+                # CRITICAL FIX: Apply user filter for multi-tenancy
+                # This ensures users can only check existence of their own subtasks
+                if self.user_id:
+                    query = query.filter(SubtaskModel.user_id == self.user_id)
+                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in exists() for user_id={self.user_id}")
+                else:
+                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in exists() - this could cause data leakage")
+
+                result = query.first() is not None
+                logger.info(f"🔍 SUBTASK_EXISTS: Subtask id={id} exists={result} for user_id={self.user_id}")
+                return result
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to check if subtask exists {id}: {e}")
             raise DatabaseException(
                 message=f"Failed to check subtask existence: {str(e)}",
                 operation="exists",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def count_by_parent_task_id(self, parent_task_id: TaskId) -> int:
@@ -425,8 +460,8 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                return session.query(TaskSubtask).filter(
-                    TaskSubtask.task_id == parent_task_id.value
+                return session.query(SubtaskModel).filter(
+                    SubtaskModel.task_id == parent_task_id.value
                 ).count()
                 
         except SQLAlchemyError as e:
@@ -434,7 +469,7 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to count subtasks: {str(e)}",
                 operation="count_by_parent_task_id",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def count_completed_by_parent_task_id(self, parent_task_id: TaskId) -> int:
@@ -449,10 +484,10 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                return session.query(TaskSubtask).filter(
+                return session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id.value,
-                        TaskSubtask.status == 'done'
+                        SubtaskModel.task_id == parent_task_id.value,
+                        SubtaskModel.status == 'done'
                     )
                 ).count()
                 
@@ -461,7 +496,7 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to count completed subtasks: {str(e)}",
                 operation="count_completed_by_parent_task_id",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def get_next_id(self, parent_task_id: TaskId) -> SubtaskId:
@@ -489,34 +524,34 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         try:
             with self.get_db_session() as session:
                 # Get basic counts
-                total_count = session.query(TaskSubtask).filter(
-                    TaskSubtask.task_id == parent_task_id.value
+                total_count = session.query(SubtaskModel).filter(
+                    SubtaskModel.task_id == parent_task_id.value
                 ).count()
                 
-                completed_count = session.query(TaskSubtask).filter(
+                completed_count = session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id.value,
-                        TaskSubtask.status == 'done'
+                        SubtaskModel.task_id == parent_task_id.value,
+                        SubtaskModel.status == 'done'
                     )
                 ).count()
                 
-                in_progress_count = session.query(TaskSubtask).filter(
+                in_progress_count = session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id.value,
-                        TaskSubtask.status == 'in_progress'
+                        SubtaskModel.task_id == parent_task_id.value,
+                        SubtaskModel.status == 'in_progress'
                     )
                 ).count()
                 
-                blocked_count = session.query(TaskSubtask).filter(
+                blocked_count = session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id.value,
-                        TaskSubtask.status == 'blocked'
+                        SubtaskModel.task_id == parent_task_id.value,
+                        SubtaskModel.status == 'blocked'
                     )
                 ).count()
                 
                 # Calculate average progress percentage
-                avg_progress = session.query(func.avg(TaskSubtask.progress_percentage)).filter(
-                    TaskSubtask.task_id == parent_task_id.value
+                avg_progress = session.query(func.avg(SubtaskModel.progress_percentage)).filter(
+                    SubtaskModel.task_id == parent_task_id.value
                 ).scalar() or 0
                 
                 # Calculate completion percentage
@@ -538,7 +573,7 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to get subtask progress: {str(e)}",
                 operation="get_subtask_progress",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def bulk_update_status(self, parent_task_id: TaskId, status: str) -> bool:
@@ -555,19 +590,19 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         try:
             with self.get_db_session() as session:
                 update_data = {
-                    TaskSubtask.status: status,
-                    TaskSubtask.updated_at: datetime.now(timezone.utc)
+                    SubtaskModel.status: status,
+                    SubtaskModel.updated_at: datetime.now(timezone.utc)
                 }
                 
                 # Add completion timestamp if marking as done
                 if status == 'done':
-                    update_data[TaskSubtask.completed_at] = datetime.now(timezone.utc)
-                    update_data[TaskSubtask.progress_percentage] = 100
+                    update_data[SubtaskModel.completed_at] = datetime.now(timezone.utc)
+                    update_data[SubtaskModel.progress_percentage] = 100
                 elif status in ['todo', 'in_progress', 'blocked']:
-                    update_data[TaskSubtask.completed_at] = None
+                    update_data[SubtaskModel.completed_at] = None
                 
-                result = session.query(TaskSubtask).filter(
-                    TaskSubtask.task_id == parent_task_id.value
+                result = session.query(SubtaskModel).filter(
+                    SubtaskModel.task_id == parent_task_id.value
                 ).update(update_data)
                 
                 return result > 0
@@ -577,7 +612,7 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to bulk update status: {str(e)}",
                 operation="bulk_update_status",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def bulk_complete(self, parent_task_id: TaskId) -> bool:
@@ -598,17 +633,17 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         
         Args:
             parent_task_id: Parent task ID string
-            subtask_id: Subtask ID string
+            subtask_id: SubtaskEntity ID string
             
         Returns:
             True if removed successfully
         """
         try:
             with self.get_db_session() as session:
-                result = session.query(TaskSubtask).filter(
+                result = session.query(SubtaskModel).filter(
                     and_(
-                        TaskSubtask.task_id == parent_task_id,
-                        TaskSubtask.id == subtask_id
+                        SubtaskModel.task_id == parent_task_id,
+                        SubtaskModel.id == subtask_id
                     )
                 ).delete()
                 
@@ -619,89 +654,109 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to remove subtask: {str(e)}",
                 operation="remove_subtask",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     # Additional ORM-specific methods
     
-    def update_progress(self, subtask_id: str, progress_percentage: int, 
+    def update_progress(self, subtask_id: str, progress_percentage: int,
                        progress_notes: str = "") -> bool:
         """
-        Update subtask progress.
-        
+        Update subtask progress with user filtering for multi-tenancy.
+
         Args:
-            subtask_id: Subtask ID
+            subtask_id: SubtaskEntity ID
             progress_percentage: Progress percentage (0-100)
             progress_notes: Optional progress notes
-            
+
         Returns:
             True if updated successfully
         """
         try:
             # CRITICAL FIX: Use transaction context manager for write operations
             with self.transaction() as session:
-                result = session.query(TaskSubtask).filter(
-                    TaskSubtask.id == subtask_id
-                ).update({
-                    TaskSubtask.progress_percentage: max(0, min(100, progress_percentage)),
-                    TaskSubtask.progress_notes: progress_notes,
-                    TaskSubtask.updated_at: datetime.now(timezone.utc)
+                # CRITICAL SECURITY FIX: Apply user filter to prevent unauthorized updates
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.id == subtask_id
+                )
+
+                if self.user_id:
+                    query = query.filter(SubtaskModel.user_id == self.user_id)
+                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in update_progress() for user_id={self.user_id}")
+                else:
+                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in update_progress() - this could allow unauthorized updates")
+
+                result = query.update({
+                    SubtaskModel.progress_percentage: max(0, min(100, progress_percentage)),
+                    SubtaskModel.progress_notes: progress_notes,
+                    SubtaskModel.updated_at: datetime.now(timezone.utc)
                 })
-                
+
+                logger.info(f"📊 SUBTASK_PROGRESS: Updated {result} subtask(s) progress to {progress_percentage}% for user_id={self.user_id}")
                 return result > 0
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to update progress for subtask {subtask_id}: {e}")
             raise DatabaseException(
                 message=f"Failed to update progress: {str(e)}",
                 operation="update_progress",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     def complete_subtask(self, subtask_id: str, completion_summary: str = "",
                         impact_on_parent: str = "", insights_found: List[str] = None) -> bool:
         """
-        Complete a subtask with additional metadata.
-        
+        Complete a subtask with additional metadata and user filtering for multi-tenancy.
+
         Args:
-            subtask_id: Subtask ID
+            subtask_id: SubtaskEntity ID
             completion_summary: Summary of completion
             impact_on_parent: Impact on parent task
             insights_found: List of insights found
-            
+
         Returns:
             True if completed successfully
         """
         try:
             # CRITICAL FIX: Use transaction context manager for write operations
             with self.transaction() as session:
+                # CRITICAL SECURITY FIX: Apply user filter to prevent unauthorized completion
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.id == subtask_id
+                )
+
+                if self.user_id:
+                    query = query.filter(SubtaskModel.user_id == self.user_id)
+                    logger.info(f"🔐 SUBTASK_SECURITY: Applied user filter in complete_subtask() for user_id={self.user_id}")
+                else:
+                    logger.warning(f"🚨 SUBTASK_SECURITY: No user_id available for filtering in complete_subtask() - this could allow unauthorized completion")
+
                 update_data = {
-                    TaskSubtask.status: 'done',
-                    TaskSubtask.progress_percentage: 100,
-                    TaskSubtask.completed_at: datetime.now(timezone.utc),
-                    TaskSubtask.updated_at: datetime.now(timezone.utc),
-                    TaskSubtask.completion_summary: completion_summary,
-                    TaskSubtask.impact_on_parent: impact_on_parent
+                    SubtaskModel.status: 'done',
+                    SubtaskModel.progress_percentage: 100,
+                    SubtaskModel.completed_at: datetime.now(timezone.utc),
+                    SubtaskModel.updated_at: datetime.now(timezone.utc),
+                    SubtaskModel.completion_summary: completion_summary,
+                    SubtaskModel.impact_on_parent: impact_on_parent
                 }
-                
+
                 if insights_found:
-                    update_data[TaskSubtask.insights_found] = insights_found
-                
-                result = session.query(TaskSubtask).filter(
-                    TaskSubtask.id == subtask_id
-                ).update(update_data)
-                
+                    update_data[SubtaskModel.insights_found] = insights_found
+
+                result = query.update(update_data)
+                logger.info(f"✅ SUBTASK_COMPLETE: Completed {result} subtask(s) with id={subtask_id} for user_id={self.user_id}")
+
                 return result > 0
-                
+
         except SQLAlchemyError as e:
             logger.error(f"Failed to complete subtask {subtask_id}: {e}")
             raise DatabaseException(
                 message=f"Failed to complete subtask: {str(e)}",
                 operation="complete_subtask",
-                table="task_subtasks"
+                table="subtasks"
             )
     
-    def get_subtasks_by_assignee(self, assignee: str, limit: Optional[int] = None) -> List[Subtask]:
+    def get_subtasks_by_assignee(self, assignee: str, limit: Optional[int] = None) -> List[SubtaskEntity]:
         """
         Get subtasks assigned to a specific assignee.
         
@@ -714,9 +769,9 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         """
         try:
             with self.get_db_session() as session:
-                query = session.query(TaskSubtask).filter(
-                    TaskSubtask.assignees.contains([assignee])
-                ).order_by(TaskSubtask.updated_at.desc())
+                query = session.query(SubtaskModel).filter(
+                    SubtaskModel.assignees.contains([assignee])
+                ).order_by(SubtaskModel.updated_at.desc())
                 
                 if limit:
                     query = query.limit(limit)
@@ -729,17 +784,17 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
             raise DatabaseException(
                 message=f"Failed to get subtasks by assignee: {str(e)}",
                 operation="get_subtasks_by_assignee",
-                table="task_subtasks"
+                table="subtasks"
             )
     
     # Private helper methods
     
-    def _to_model_data(self, subtask: Subtask) -> Dict[str, Any]:
+    def _to_model_data(self, subtask: SubtaskEntity) -> Dict[str, Any]:
         """
         Convert domain entity to ORM model data.
         
         Args:
-            subtask: Subtask domain entity
+            subtask: SubtaskEntity domain entity
             
         Returns:
             Dictionary with model data
@@ -778,21 +833,21 @@ class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], BaseUserScopedReposit
         
         return model_data
     
-    def _to_domain_entity(self, model: TaskSubtask) -> Subtask:
+    def _to_domain_entity(self, model: SubtaskModel) -> SubtaskEntity:
         """
         Convert ORM model to domain entity.
-        
+
         Args:
-            model: TaskSubtask ORM model
-            
+            model: SubtaskModel ORM model
+
         Returns:
-            Subtask domain entity
+            SubtaskEntity domain entity
         """
         # Convert assignees from JSON to list
         assignees = model.assignees if model.assignees else []
         
         # Create subtask using factory method
-        subtask = Subtask(
+        subtask = SubtaskEntity(
             id=SubtaskId(model.id),
             title=model.title,
             description=model.description or "",

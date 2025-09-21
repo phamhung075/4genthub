@@ -18,25 +18,81 @@ export interface ToastEvent {
 }
 
 class ToastEventBus {
-  private listeners: Array<(event: ToastEvent) => void> = [];
+  private listeners: Map<string, Set<Function>> = new Map();
 
   /**
-   * Subscribe to toast events
+   * Subscribe to toast events (legacy API - expects ToastEvent objects)
    */
   subscribe(callback: (event: ToastEvent) => void): () => void {
-    this.listeners.push(callback);
+    console.log('📝 ToastEventBus.subscribe() called - adding legacy listener');
+
+    // Add to legacy listeners for direct ToastEvent objects
+    if (!this.listeners.has('legacy')) {
+      this.listeners.set('legacy', new Set());
+    }
+    this.listeners.get('legacy')!.add(callback);
+
+    const legacyCount = this.listeners.get('legacy')!.size;
+    console.log(`📝 ToastEventBus: Now have ${legacyCount} legacy listeners`);
 
     // Return unsubscribe function
     return () => {
-      this.listeners = this.listeners.filter(l => l !== callback);
+      console.log('📝 ToastEventBus: Unsubscribing legacy listener');
+      this.listeners.get('legacy')?.delete(callback);
     };
   }
 
   /**
-   * Emit a toast event to all listeners
+   * Subscribe to specific event types
    */
-  emit(event: ToastEvent): void {
-    this.listeners.forEach(listener => listener(event));
+  on(type: string, callback: Function): () => void {
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, new Set());
+    }
+    this.listeners.get(type)!.add(callback);
+
+    // Return unsubscribe function
+    return () => {
+      this.listeners.get(type)?.delete(callback);
+    };
+  }
+
+  /**
+   * Emit a toast event (overloaded method for both APIs)
+   */
+  emit(typeOrEvent: 'success' | 'error' | 'warning' | 'info' | 'dismiss' | ToastEvent, message?: string, options?: any): void {
+    console.log('📡 ToastEventBus.emit() called with:', typeOrEvent, message, options);
+
+    if (typeof typeOrEvent === 'string') {
+      // New simplified API for NotificationService: emit(type, message, options)
+      const listeners = this.listeners.get(typeOrEvent);
+      console.log(`📡 ToastEventBus: String API - found ${listeners?.size || 0} listeners for type "${typeOrEvent}"`);
+      if (listeners) {
+        listeners.forEach(listener => (listener as Function)(message, options));
+      }
+    } else {
+      // Legacy API for backward compatibility: emit(event)
+      const event = typeOrEvent as ToastEvent;
+      const legacyListeners = this.listeners.get('legacy') || new Set();
+      console.log(`📡 ToastEventBus: Object API - found ${legacyListeners.size} legacy listeners for event:`, event);
+
+      legacyListeners.forEach(listener => {
+        console.log('📡 ToastEventBus: Calling legacy listener with event:', event);
+        (listener as Function)(event);
+      });
+
+      // REMOVED: Dual notification to type-specific listeners
+      // This was causing duplicate notifications when convenience methods like
+      // toastEventBus.success() were called, as they triggered both legacy AND type-specific listeners
+      // const typeListeners = this.listeners.get(event.type);
+      // if (typeListeners) {
+      //   console.log(`📡 ToastEventBus: Also notifying ${typeListeners.size} specific type listeners for "${event.type}"`);
+      //   typeListeners.forEach(listener => (listener as Function)(event.title, {
+      //     description: event.description,
+      //     action: event.action
+      //   }));
+      // }
+    }
   }
 
   /**

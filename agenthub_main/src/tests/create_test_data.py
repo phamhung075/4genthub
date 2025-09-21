@@ -13,7 +13,7 @@ sys.path.insert(0, './agenthub_main/src')
 
 from fastmcp.task_management.infrastructure.database.database_config import get_session
 from fastmcp.task_management.infrastructure.database.models import (
-    Project, ProjectGitBranch, Task, TaskSubtask, ProjectContext, TaskContext
+    Project, ProjectGitBranch, Task, Subtask, ProjectContext, TaskContext
 )
 
 def create_test_data():
@@ -110,7 +110,7 @@ def create_test_data():
                 ]
                 
                 for st_data in subtasks:
-                    subtask = TaskSubtask(
+                    subtask = Subtask(
                         id=str(uuid.uuid4()),
                         title=st_data["title"],
                         description=st_data["title"],  # Use title as description for simplicity

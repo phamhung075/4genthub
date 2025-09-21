@@ -281,7 +281,7 @@
 ### Fixed - Database Model Test Data Issues
 - **UUID Format Validation**: Fixed invalid UUID strings like "agent-123" and "test-user-777" to use proper UUID format with `str(uuid4())`
 - **Missing Required Fields**: Added missing `description` field to Task model instantiations (field is NOT NULL in schema)
-- **Missing user_id Fields**: Added required `user_id` fields to TaskSubtask, TaskAssignee, TaskDependency, and other user-scoped models
+- **Missing user_id Fields**: Added required `user_id` fields to Subtask, TaskAssignee, TaskDependency, and other user-scoped models
 - **API Token Constraint Test**: Changed `test_api_token_unique_hash_constraint` to `test_api_token_hash_duplicates_allowed` to match actual model (no unique constraint exists)
 - **Agent Model ID References**: Fixed hardcoded agent ID lookups to use dynamic agent.id references
 
@@ -296,7 +296,7 @@
 - **Data Integrity**: All model instantiations now use proper UUID format and include required fields
 - **Constraint Validation**: Tests now match actual database schema constraints
 - **User Isolation**: Fixed user_id field requirements across all user-scoped models
-- **Relationship Testing**: Fixed missing user_id in relationship models (TaskSubtask, TaskAssignee, etc.)
+- **Relationship Testing**: Fixed missing user_id in relationship models (Subtask, TaskAssignee, etc.)
 
 ### Impact
 - Database model tests now use consistent, valid test data

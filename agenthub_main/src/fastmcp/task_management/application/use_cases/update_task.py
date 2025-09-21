@@ -48,7 +48,7 @@ class UpdateTaskUseCase:
             task.update_priority(new_priority)
         
         if request.details is not None:
-            task.update_details(request.details)
+            task.append_progress(request.details)
         
         if request.estimated_effort is not None:
             task.update_estimated_effort(request.estimated_effort)

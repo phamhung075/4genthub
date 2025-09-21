@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from sqlalchemy import (
     Column, String, Text, DateTime, Integer, Boolean, ForeignKey,
-    UniqueConstraint, CheckConstraint, Index, JSON, Float
+    UniqueConstraint, CheckConstraint, Index, JSON, Float, Enum
 )
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -17,6 +17,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from .database_config import Base
 from .uuid_column_type import UnifiedUUID, create_uuid_column
+from ...domain.enums.progress_enums import ProgressState
 
 # User-scoped global context approach implemented
 # Each user gets their own global context with unique UUIDs
@@ -103,7 +104,8 @@ class Task(Base):
     git_branch_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id", ondelete="CASCADE"), nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False, default="todo")
     priority: Mapped[str] = mapped_column(String, nullable=False, default="medium")
-    details: Mapped[str] = mapped_column(Text, default="")
+    progress_history: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    progress_count: Mapped[int] = mapped_column(Integer, default=0)
     estimated_effort: Mapped[str] = mapped_column(String, default="2 hours", nullable=False)
     due_date: Mapped[Optional[str]] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
@@ -113,6 +115,7 @@ class Task(Base):
     testing_notes: Mapped[str] = mapped_column(Text, default="")  # Added for schema validation
     context_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
+    progress_state: Mapped[ProgressState] = mapped_column(Enum(ProgressState), default=ProgressState.INITIAL, nullable=False)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED (using String for Keycloak UUID)
     
     # AI Agent System Prompts and Context - Permanent fields for AI task execution
@@ -126,11 +129,11 @@ class Task(Base):
     
     # Relationships
     git_branch: Mapped[ProjectGitBranch] = relationship("ProjectGitBranch", back_populates="tasks")
-    subtasks: Mapped[List["TaskSubtask"]] = relationship("TaskSubtask", back_populates="task", cascade="all, delete-orphan")
+    subtasks: Mapped[List["Subtask"]] = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
     assignees: Mapped[List["TaskAssignee"]] = relationship("TaskAssignee", back_populates="task", cascade="all, delete-orphan")
     dependencies: Mapped[List["TaskDependency"]] = relationship("TaskDependency", foreign_keys="TaskDependency.task_id", back_populates="task", cascade="all, delete-orphan")
     labels: Mapped[List["TaskLabel"]] = relationship("TaskLabel", back_populates="task", cascade="all, delete-orphan")
-    task_context: Mapped[Optional["TaskContext"]] = relationship("TaskContext", back_populates="task", uselist=False)
+    task_context: Mapped[Optional["TaskContext"]] = relationship("TaskContext", back_populates="task", uselist=False, cascade="all, delete-orphan")
     
     # Create indexes for performance
     __table_args__ = (
@@ -141,9 +144,9 @@ class Task(Base):
     )
 
 
-class TaskSubtask(Base):
+class Subtask(Base):
     """Subtasks table"""
-    __tablename__ = "task_subtasks"
+    __tablename__ = "subtasks"
     
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
@@ -154,6 +157,7 @@ class TaskSubtask(Base):
     assignees: Mapped[List[str]] = mapped_column(JSON, default=list)
     estimated_effort: Mapped[Optional[str]] = mapped_column(String)
     progress_percentage: Mapped[int] = mapped_column(Integer, default=0)
+    progress_state: Mapped[ProgressState] = mapped_column(Enum(ProgressState), default=ProgressState.INITIAL, nullable=False)
     progress_notes: Mapped[str] = mapped_column(Text, default="")
     blockers: Mapped[str] = mapped_column(Text, default="")
     completion_summary: Mapped[str] = mapped_column(Text, default="")
@@ -463,7 +467,7 @@ class TaskContext(Base):
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     # Foreign keys
-    task_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("tasks.id"), nullable=True)
+    task_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
     parent_branch_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("project_git_branchs.id"), nullable=True)
     parent_branch_context_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID, ForeignKey("branch_contexts.id"), nullable=True)
     

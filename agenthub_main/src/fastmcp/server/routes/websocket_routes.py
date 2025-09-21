@@ -241,7 +241,7 @@ async def is_user_authorized_for_message(
     # Rule 2: Check entity-specific authorization based on user ownership/access
     try:
         from fastmcp.task_management.infrastructure.database.database_config import get_session
-        from fastmcp.task_management.infrastructure.database.models import Task, ProjectGitBranch, TaskSubtask, Project
+        from fastmcp.task_management.infrastructure.database.models import Task, ProjectGitBranch, Subtask, Project
 
         with get_session() as session:
             # Check authorization based on entity type

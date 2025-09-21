@@ -10,6 +10,7 @@ from typing import Dict, Any, List
 from unittest.mock import MagicMock, AsyncMock, patch
 import sys
 import os
+import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
@@ -38,6 +39,7 @@ def create_mock_facade():
     mock_facade.create_task = MagicMock(side_effect=create_task_side_effect)
     return mock_facade
 
+@pytest.mark.asyncio
 async def test_all_dependency_formats():
     """Test all possible dependency input formats."""
 

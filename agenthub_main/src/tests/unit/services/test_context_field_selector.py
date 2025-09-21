@@ -28,10 +28,10 @@ class TestContextFieldSelector(unittest.TestCase):
     def test_task_minimal_fields(self):
         """Test minimal field set for tasks"""
         result = self.selector.get_task_fields("task-123", FieldSet.MINIMAL)
-        
+
         self.assertEqual(result["entity_type"], "task")
         self.assertEqual(result["entity_id"], "task-123")
-        self.assertEqual(set(result["fields"]), {"id", "title", "status"})
+        self.assertEqual(set(result["fields"]), {"id", "title", "status", "priority"})
         self.assertTrue(result["optimized"])
     
     def test_task_summary_fields(self):
@@ -203,7 +203,7 @@ class TestContextFieldSelector(unittest.TestCase):
         """Test performance savings estimation"""
         # Task minimal savings
         savings = self.selector.estimate_savings("task", FieldSet.MINIMAL)
-        self.assertEqual(savings["selected_fields"], 3)
+        self.assertEqual(savings["selected_fields"], 4)
         self.assertEqual(savings["full_fields"], 50)
         self.assertGreater(savings["field_reduction_percent"], 90)
         self.assertGreater(savings["bandwidth_savings_percent"], 80)
@@ -223,7 +223,7 @@ class TestContextFieldSelector(unittest.TestCase):
         """Test default field set when none specified"""
         # Should default to summary
         result = self.selector.get_task_fields("task-default")
-        self.assertEqual(len(result["fields"]), len(self.selector.TASK_FIELD_SETS[FieldSet.SUMMARY]) + 1)  # +1 for dependency
+        self.assertEqual(len(result["fields"]), len(self.selector.TASK_FIELD_SETS[FieldSet.SUMMARY]) + 2)  # +2 for dependencies (assignee_ids, label_ids)
         
         result = self.selector.get_project_fields("proj-default")
         self.assertEqual(len(result["fields"]), 5)

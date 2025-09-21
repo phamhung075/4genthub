@@ -9,6 +9,7 @@ Based on: ai_docs/troubleshooting-guides/subtask-wrong-task-id-api-calls.md
 
 import re
 import logging
+import html
 from typing import Optional, Tuple, Dict, Any
 from enum import Enum
 from dataclasses import dataclass
@@ -91,6 +92,95 @@ class IDValidator:
         self.strict_uuid_validation = strict_uuid_validation
         self._uuid_pattern = self.UUID_PATTERN if strict_uuid_validation else self.UUID_RELAXED_PATTERN
 
+    def _sanitize_for_error_message(self, value: str, max_length: int = 50) -> str:
+        """
+        Sanitize user input to prevent XSS attacks and information disclosure in error messages.
+
+        Args:
+            value: The input value to sanitize
+            max_length: Maximum length for the sanitized value
+
+        Returns:
+            Sanitized value safe for inclusion in error messages
+        """
+        if not value:
+            return "[empty]"
+
+        # First, handle Unicode normalization attacks and control characters
+        # Remove/replace dangerous Unicode characters
+        import unicodedata
+
+        # Normalize Unicode to prevent normalization attacks
+        try:
+            sanitized = unicodedata.normalize('NFKC', value)
+        except:
+            sanitized = value
+
+        # Remove control characters and format characters
+        sanitized = ''.join(char for char in sanitized
+                          if unicodedata.category(char) not in ['Cc', 'Cf', 'Cs', 'Co'])
+
+        # HTML escape to prevent XSS
+        sanitized = html.escape(sanitized)
+
+        # Remove dangerous patterns that could still be problematic
+        dangerous_patterns = [
+            'javascript:',
+            'vbscript:',
+            'data:',
+            'onload=',
+            'onerror=',
+            'onclick=',
+            'onmouseover=',
+            'onfocus=',
+            'onblur=',
+        ]
+
+        for pattern in dangerous_patterns:
+            sanitized = sanitized.replace(pattern, '[removed]')
+            sanitized = sanitized.replace(pattern.upper(), '[removed]')
+
+        # Remove sensitive information patterns to prevent information disclosure
+        sensitive_patterns = [
+            '/etc/',
+            '/root/',
+            '/home/',
+            '/var/',
+            '/usr/',
+            'c:\\',
+            'windows\\',
+            'system32\\',
+            'delete from',
+            'drop table',
+            'insert into',
+            'select *',
+            'union select',
+            'password',
+            'passwd',
+            'secret',
+            'key',
+            'token',
+            'auth',
+            'credential',
+            'api_key',
+            'database',
+            'config',
+            'admin',
+        ]
+
+        sanitized_lower = sanitized.lower()
+        for pattern in sensitive_patterns:
+            if pattern in sanitized_lower:
+                # Replace sensitive content with generic placeholder
+                sanitized = "[redacted-sensitive-content]"
+                break
+
+        # Truncate long values to prevent log flooding
+        if len(sanitized) > max_length:
+            sanitized = sanitized[:max_length] + "..."
+
+        return sanitized
+
     def validate_uuid_format(self, value: str) -> ValidationResult:
         """
         Validate that a string is in proper UUID format.
@@ -109,6 +199,27 @@ class IDValidator:
                 error_message="ID value cannot be empty or None"
             )
 
+        # Security check: Reject if contains any non-ASCII characters
+        # UUIDs should only contain ASCII hex digits and hyphens
+        if not all(ord(char) < 128 for char in value):
+            sanitized_value = self._sanitize_for_error_message(value)
+            return ValidationResult(
+                is_valid=False,
+                id_type=IDType.UNKNOWN,
+                original_value=value,
+                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            )
+
+        # Security check: Reject if contains any control characters
+        if any(ord(char) < 32 for char in value):
+            sanitized_value = self._sanitize_for_error_message(value)
+            return ValidationResult(
+                is_valid=False,
+                id_type=IDType.UNKNOWN,
+                original_value=value,
+                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            )
+
         # Normalize the value
         normalized = value.strip().lower()
 
@@ -122,11 +233,12 @@ class IDValidator:
                 metadata={"uuid_version": "v4" if self.strict_uuid_validation else "any"}
             )
         else:
+            sanitized_value = self._sanitize_for_error_message(value)
             return ValidationResult(
                 is_valid=False,
                 id_type=IDType.UNKNOWN,
                 original_value=value,
-                error_message=f"Invalid UUID format: {value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                error_message=f"Invalid UUID format: {sanitized_value}. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             )
 
     def detect_id_type(self, value: str, context_hint: Optional[str] = None) -> ValidationResult:
@@ -231,14 +343,16 @@ class IDValidator:
             # Check for potential confusion
             if param_name == "git_branch_id" and param_result.id_type == IDType.MCP_TASK_ID:
                 all_valid = False
+                sanitized_param_value = self._sanitize_for_error_message(param_value)
                 validation_errors.append(
-                    f"CRITICAL: MCP task ID {param_value} incorrectly passed as git_branch_id. "
+                    f"CRITICAL: MCP task ID {sanitized_param_value} incorrectly passed as git_branch_id. "
                     f"This causes data integrity issues."
                 )
 
             if param_name == "task_id" and param_result.id_type == IDType.GIT_BRANCH_ID:
+                sanitized_param_value = self._sanitize_for_error_message(param_value)
                 warnings.append(
-                    f"WARNING: Git branch ID {param_value} passed as task_id. "
+                    f"WARNING: Git branch ID {sanitized_param_value} passed as task_id. "
                     f"Verify this is intentional."
                 )
 
@@ -295,19 +409,23 @@ class IDValidator:
         if expected_git_branch_id:
             branch_result = self.detect_id_type(expected_git_branch_id, "git_branch_id")
             if not branch_result.is_valid:
+                sanitized_task_id = self._sanitize_for_error_message(task_id)
+                sanitized_git_branch_id = self._sanitize_for_error_message(expected_git_branch_id)
                 return ValidationResult(
                     is_valid=False,
                     id_type=IDType.UNKNOWN,
-                    original_value=f"task_id: {task_id}, git_branch_id: {expected_git_branch_id}",
+                    original_value=f"task_id: {sanitized_task_id}, git_branch_id: {sanitized_git_branch_id}",
                     error_message=f"Invalid git_branch_id: {branch_result.error_message}"
                 )
 
             # Critical check: ensure task_id != git_branch_id
             if task_id == expected_git_branch_id:
+                sanitized_task_id = self._sanitize_for_error_message(task_id)
+                sanitized_git_branch_id = self._sanitize_for_error_message(expected_git_branch_id)
                 return ValidationResult(
                     is_valid=False,
                     id_type=IDType.UNKNOWN,
-                    original_value=f"task_id: {task_id}, git_branch_id: {expected_git_branch_id}",
+                    original_value=f"task_id: {sanitized_task_id}, git_branch_id: {sanitized_git_branch_id}",
                     error_message=(
                         "CRITICAL: task_id and git_branch_id are identical. "
                         "This indicates parameter confusion that leads to data integrity issues."

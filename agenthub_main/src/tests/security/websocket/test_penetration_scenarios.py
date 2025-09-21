@@ -64,7 +64,8 @@ class AttackSimulator:
         return User(
             id=user_id,
             email=email or f"{user_id}@test.com",
-            username=user_id
+            username=user_id,
+            password_hash="dummy_hash_for_testing"
         )
 
     def log_attack_result(self, attack_name: str, success: bool, details: str):
@@ -330,7 +331,7 @@ class TestPermissionEscalationAttack:
         connection_users[low_priv_ws] = low_priv_user
 
         # Mock database to simulate admin-only data
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -420,7 +421,7 @@ class TestCrossTenantAttack:
         connection_users[tenant_a_ws] = tenant_a_user
 
         # Mock tenant isolation
-        with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 

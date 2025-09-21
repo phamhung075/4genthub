@@ -28,14 +28,15 @@ import asyncio
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
-from fastapi.websockets import WebSocketDisconnect
+from fastapi import WebSocketDisconnect
 import jwt
 from datetime import datetime, timedelta, timezone
 import logging
 
 # Import the modules to test
-from fastmcp.server.routes.websocket_routes import router, broadcast_data_change, active_connections, connection_subscriptions
+from fastmcp.server.routes.websocket_routes import router, broadcast_data_change, active_connections, connection_subscriptions, connection_users
 from fastmcp.auth.middleware.jwt_auth_middleware import JWTAuthMiddleware
+from fastmcp.auth.domain.entities.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -220,12 +221,31 @@ class TestWebSocketAuthorization:
         # Simulate connections in active_connections
         active_connections.clear()
         connection_subscriptions.clear()
+        connection_users.clear()
 
         active_connections["user_1"] = {mock_ws1}
         active_connections["user_2"] = {mock_ws2}
 
         connection_subscriptions[mock_ws1] = {"client_id": "user_1", "user_id": "user_1"}
         connection_subscriptions[mock_ws2] = {"client_id": "user_2", "user_id": "user_2"}
+
+        # Create User objects for authentication
+        user1 = User(
+            id="user_1",
+            email="user1@test.com",
+            username="user_1",
+            password_hash="dummy_hash"
+        )
+        user2 = User(
+            id="user_2",
+            email="user2@test.com",
+            username="user_2",
+            password_hash="dummy_hash"
+        )
+
+        # Set up connection_users mapping for authorization
+        connection_users[mock_ws1] = user1
+        connection_users[mock_ws2] = user2
 
         # Test broadcasting with user-specific data
         await broadcast_data_change(
@@ -236,12 +256,18 @@ class TestWebSocketAuthorization:
             data={"sensitive": "data_for_user_1_only"}
         )
 
-        # Verify both users received the message (current behavior - needs fixing)
-        assert mock_ws1.send_json.called
-        assert mock_ws2.send_json.called
+        # Verify SECURE behavior: only user_1 should receive the message
+        # user_1 should receive the message (they are the triggering user)
+        assert mock_ws1.send_json.called, "user_1 should receive their own message"
 
-        # After fix implementation, only user_1 should receive the message
-        # This test documents the current vulnerability
+        # user_2 should NOT receive the message (security filtering working)
+        assert not mock_ws2.send_json.called, "user_2 should NOT receive user_1's message"
+
+        # Verify the message content for user_1
+        mock_ws1.send_json.assert_called_once()
+        call_args = mock_ws1.send_json.call_args[0][0]  # Get the message sent
+        assert call_args["user_id"] == "user_1"
+        assert call_args["data"]["sensitive"] == "data_for_user_1_only"
 
     @pytest.mark.asyncio
     async def test_unauthorized_user_cannot_receive_sensitive_data(self, security_tester):

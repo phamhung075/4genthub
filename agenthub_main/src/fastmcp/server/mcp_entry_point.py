@@ -707,14 +707,26 @@ def create_agenthub_server() -> FastMCP:
 
 def main():
     """Main entry point for the MCP server."""
-    
+
     # Initialize logger first
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Set debug logging for troubleshooting
         os.environ.setdefault("FASTMCP_LOG_LEVEL", "DEBUG")
-        
+
+        # Run database migrations before starting server
+        logger.info("🔧 Running database migrations...")
+        try:
+            from fastmcp.database_migrations import run_startup_migrations
+            if run_startup_migrations():
+                logger.info("✅ Database migrations completed successfully")
+            else:
+                logger.warning("⚠️ Some database migrations failed, but continuing...")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not run database migrations: {e}")
+            # Don't fail the entire application if migrations fail
+
         # Create the server
         server = create_agenthub_server()
         

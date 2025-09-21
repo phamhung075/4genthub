@@ -32,6 +32,7 @@ class TestAuthWebSocketIntegration:
             id="test-user-123",
             email="test@example.com",
             username="testuser",
+            password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5",
             roles=["user"]
         )
         return user
@@ -51,13 +52,15 @@ class TestAuthWebSocketIntegration:
         """Test that valid JWT tokens are accepted for WebSocket connections."""
         with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token', return_value=mock_user):
             with patch('fastmcp.server.routes.websocket_routes.validate_local_token', return_value=mock_user):
-                # Mock environment variables for Keycloak validation
-                with patch.dict('os.environ', {'AUTH_PROVIDER': 'local'}):
-                    result = await validate_websocket_token(valid_jwt_token)
+                # Mock jwt.decode to return a valid payload structure
+                with patch('jwt.decode', return_value={'iss': 'local', 'sub': 'test-user-123', 'email': 'test@example.com'}):
+                    # Mock environment variables for local auth
+                    with patch.dict('os.environ', {'AUTH_PROVIDER': 'local'}):
+                        result = await validate_websocket_token(valid_jwt_token)
 
-                    assert result is not None
-                    assert result.id == mock_user.id
-                    assert result.email == mock_user.email
+                        assert result is not None
+                        assert result.id == mock_user.id
+                        assert result.email == mock_user.email
 
     @pytest.mark.asyncio
     async def test_websocket_token_validation_failure(self, invalid_jwt_token):
@@ -185,8 +188,8 @@ class TestAuthWebSocketIntegration:
         from fastmcp.server.routes.websocket_routes import is_user_authorized_for_message, connection_users
 
         # Create two different users
-        user1 = User(id="user1", email="user1@example.com", username="user1", roles=["user"])
-        user2 = User(id="user2", email="user2@example.com", username="user2", roles=["user"])
+        user1 = User(id="user1", email="user1@example.com", username="user1", password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5", roles=["user"])
+        user2 = User(id="user2", email="user2@example.com", username="user2", password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5", roles=["user"])
 
         # Mock WebSocket connections for both users
         mock_websocket1 = MagicMock()

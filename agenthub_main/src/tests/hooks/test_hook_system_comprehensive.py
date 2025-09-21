@@ -109,10 +109,11 @@ class TestValidatorComponents:
 
     def test_root_file_validator_allowed_files(self, tmp_path, monkeypatch):
         """Test RootFileValidator with allowed files."""
+        import pre_tool_use
         from pre_tool_use import RootFileValidator
 
-        # Mock Path.cwd to return tmp_path
-        monkeypatch.setattr(Path, 'cwd', lambda: tmp_path)
+        # Mock PROJECT_ROOT to return tmp_path
+        monkeypatch.setattr(pre_tool_use, 'PROJECT_ROOT', tmp_path)
 
         # Create config file
         config_dir = tmp_path / '.claude' / 'hooks' / 'config'
@@ -240,23 +241,40 @@ class TestValidatorComponents:
 class TestProcessorComponents(TestHookSystemBase):
     """Test suite for all processor components."""
 
-    @patch('utils.context_injector.inject_context_sync')
-    def test_context_processor(self, mock_inject_context):
+    def test_context_processor(self):
         """Test ContextProcessor."""
         from pre_tool_use import ContextProcessor
+        import sys
+        from unittest.mock import MagicMock
+
+        # Create a mock for the utils.context_injector module
+        mock_context_injector = MagicMock()
+        mock_inject_context = MagicMock()
+        mock_context_injector.inject_context_sync = mock_inject_context
+
+        # Add the mock to sys.modules
+        sys.modules['utils.context_injector'] = mock_context_injector
 
         processor = ContextProcessor()
 
-        # Mock context injection
+        # Test with context injection returning data
         mock_inject_context.return_value = "Injected context data"
-
         result = processor.process('Write', {'file_path': '/test.py'})
         assert result == "Injected context data"
 
-        # Mock no context
+        # Test with no context
         mock_inject_context.return_value = None
         result = processor.process('Write', {'file_path': '/test.py'})
         assert result is None
+
+        # Test with empty string context
+        mock_inject_context.return_value = "   "
+        result = processor.process('Write', {'file_path': '/test.py'})
+        assert result is None
+
+        # Clean up the mock from sys.modules
+        if 'utils.context_injector' in sys.modules:
+            del sys.modules['utils.context_injector']
 
     # @patch('pre_tool_use.get_pending_hints')  # Function doesn't exist
     # @patch('pre_tool_use.analyze_and_hint')  # Function doesn't exist
@@ -400,7 +418,7 @@ class TestPreToolUseHookIntegration:
         }
 
         exit_code = hook.execute(test_data)
-        assert exit_code == 1
+        assert exit_code == 2
 
         # Check error was written to stderr
         stderr_output = mock_stderr.getvalue()

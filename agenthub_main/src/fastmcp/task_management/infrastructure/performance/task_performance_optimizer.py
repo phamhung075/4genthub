@@ -223,7 +223,7 @@ class TaskPerformanceOptimizer:
             "CREATE INDEX IF NOT EXISTS idx_tasks_branch_created ON tasks(git_branch_id, created_at DESC)",
             "CREATE INDEX IF NOT EXISTS idx_task_assignees_composite ON task_assignees(task_id, assignee_id)",
             "CREATE INDEX IF NOT EXISTS idx_task_labels_composite ON task_labels(task_id, label_id)",
-            "CREATE INDEX IF NOT EXISTS idx_subtasks_task_status ON task_subtasks(task_id, status)"
+            "CREATE INDEX IF NOT EXISTS idx_subtasks_task_status ON subtasks(task_id, status)"
         ]
         
         for index_sql in index_definitions:

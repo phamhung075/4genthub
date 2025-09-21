@@ -9,7 +9,7 @@ import pytest
 import uuid
 from datetime import datetime, timezone
 from fastmcp.task_management.infrastructure.database.database_config import get_session
-from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch, Task, TaskSubtask
+from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch, Task, Subtask as SubtaskModel
 from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
@@ -77,7 +77,7 @@ class TestSubtaskUserIdFix:
         yield
         
         # Cleanup
-        self.session.query(TaskSubtask).filter(TaskSubtask.task_id == self.task_id).delete()
+        self.session.query(SubtaskModel).filter(SubtaskModel.task_id == self.task_id).delete()
         self.session.query(Task).filter(Task.id == self.task_id).delete()
         self.session.query(ProjectGitBranch).filter(ProjectGitBranch.id == self.branch_id).delete()
         self.session.query(Project).filter(Project.id == self.project_id).delete()
@@ -107,8 +107,8 @@ class TestSubtaskUserIdFix:
         assert result is True, "Subtask save should return True"
         
         # Verify subtask was created in database
-        db_subtask = self.session.query(TaskSubtask).filter(
-            TaskSubtask.id == subtask_id.value
+        db_subtask = self.session.query(SubtaskModel).filter(
+            SubtaskModel.id == subtask_id.value
         ).first()
         
         assert db_subtask is not None, "Subtask should exist in database"
@@ -140,7 +140,7 @@ class TestSubtaskUserIdFix:
             "Should fail to save subtask when no user_id is provided"
         
         # Verify it was NOT saved in database
-        from fastmcp.task_management.infrastructure.database.models import TaskSubtask as SubtaskModel
+        from fastmcp.task_management.infrastructure.database.models import Subtask as SubtaskModel
         db_subtask = self.session.query(SubtaskModel).filter_by(id=str(subtask_id)).first()
         
         assert db_subtask is None, "Subtask should NOT be saved without authentication"
@@ -170,8 +170,8 @@ class TestSubtaskUserIdFix:
         assert result is True, "Subtask save should return True"
         
         # Verify subtask was created in database
-        db_subtask = self.session.query(TaskSubtask).filter(
-            TaskSubtask.id == subtask_id.value
+        db_subtask = self.session.query(SubtaskModel).filter(
+            SubtaskModel.id == subtask_id.value
         ).first()
         
         assert db_subtask is not None, "Subtask should exist in database"

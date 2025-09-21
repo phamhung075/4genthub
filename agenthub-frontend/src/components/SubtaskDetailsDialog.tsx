@@ -53,7 +53,7 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
       } else {
         logger.warn('Invalid subtask ID format, closing dialog', { subtaskId: taskId, parentTaskId });
         setFullSubtask(null);
-        handleCloseDialog();
+        onOpenChange(false);
       }
     }
   }, [open, subtask?.id, fullSubtask?.id, parentTaskId]);
@@ -63,32 +63,46 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     try {
       const data = await getSubtask(parentId, subtaskId);
       setFullSubtask(data);
-    } catch (error) {
-      logger.error('Failed to fetch subtask details', { error, parentTaskId: parentId, subtaskId, component: 'SubtaskDetailsDialog' });
-
-      // Handle 404 errors (subtask not found)
-      if (error instanceof Error && (
-        error.message.includes('404') ||
-        error.message.includes('Not Found') ||
-        error.message.includes('Subtask not found')
-      )) {
-        logger.info('Subtask not found, closing dialog', { subtaskId, parentTaskId: parentId });
-
-        // Enhanced user feedback: Log detailed info for debugging
-        logger.warn('Subtask access attempt failed - subtask may have been deleted or never existed', {
+    } catch (error: any) {
+      // Handle structured 404 errors from the improved API layer
+      if (error?.name === 'NotFoundError' || error?.status === 404) {
+        // Use debug level logging to reduce console noise
+        logger.debug('Subtask not found, closing dialog gracefully', {
           subtaskId,
           parentTaskId: parentId,
-          errorType: '404_NOT_FOUND',
+          errorType: 'NOT_FOUND',
           userAction: 'dialog_auto_closed',
-          recommendation: 'Check if subtask was recently deleted or refresh task list'
+          resourceType: error?.resourceType || 'subtask'
         });
 
-        // Clear the subtask state
+        // Clear the subtask state and close dialog
         setFullSubtask(null);
-        // Close the dialog
-        handleCloseDialog();
+        onOpenChange(false);
         return;
       }
+
+      // Handle validation errors (invalid UUID format)
+      if (error instanceof Error && error.message.includes('Invalid subtask ID format')) {
+        logger.debug('Invalid subtask ID format, closing dialog', {
+          subtaskId,
+          parentTaskId: parentId,
+          errorType: 'INVALID_FORMAT',
+          userAction: 'dialog_auto_closed'
+        });
+
+        setFullSubtask(null);
+        onOpenChange(false);
+        return;
+      }
+
+      // For other errors (network, server, etc.), log as error and clear state
+      logger.error('Failed to fetch subtask details', {
+        error: error?.message || error,
+        parentTaskId: parentId,
+        subtaskId,
+        component: 'SubtaskDetailsDialog',
+        errorType: 'FETCH_ERROR'
+      });
 
       // For other errors, clear the subtask state but don't auto-close
       // This allows users to see that something went wrong
@@ -122,6 +136,22 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
     setActiveTab('details');
     onClose();
   };
+
+  // Show loading state when dialog is open but no subtask data yet
+  if (!fullSubtask && !loading && open) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Loading Subtask...</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (!fullSubtask && !loading) {
     return null;

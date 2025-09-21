@@ -23,7 +23,7 @@ PROJECT → GIT_BRANCH → TASK → SUBTASK
 
 **Correct Data Model Relationships:**
 - `Task.git_branch_id` → `ProjectGitBranch.id` (Foreign Key)
-- `TaskSubtask.task_id` → `Task.id` (Foreign Key)
+- `Subtask.task_id` → `Task.id` (Foreign Key)
 
 ### 2. The Critical Bug - Line-by-Line Analysis
 
@@ -157,8 +157,8 @@ def migrate_corrupted_subtask_data():
     session = get_session()
     try:
         # Step 1: Identify corrupted subtasks
-        corrupted_subtasks = session.query(TaskSubtask).filter(
-            ~TaskSubtask.task_id.in_(
+        corrupted_subtasks = session.query(Subtask).filter(
+            ~Subtask.task_id.in_(
                 session.query(Task.id).subquery()
             )
         ).all()

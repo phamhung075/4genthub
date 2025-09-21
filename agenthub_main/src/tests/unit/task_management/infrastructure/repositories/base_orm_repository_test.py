@@ -87,9 +87,9 @@ class TestBaseORMRepository:
     def test_transaction_success(self, mock_get_session):
         """Test successful transaction handling."""
         mock_get_session.return_value = self.mock_session
-        
-        with self.repo.transaction() as transaction_repo:
-            assert transaction_repo == self.repo
+
+        with self.repo.transaction() as transaction_session:
+            assert transaction_session == self.mock_session
             assert self.repo._session == self.mock_session
             
         self.mock_session.commit.assert_called_once()

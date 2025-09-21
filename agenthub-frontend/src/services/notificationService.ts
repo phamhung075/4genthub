@@ -3,7 +3,7 @@
  * Supports both toast notifications and browser notifications
  */
 
-import { toast } from 'react-hot-toast';
+import { toastEventBus } from './toastEventBus';
 import logger from '../utils/logger';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
@@ -145,49 +145,12 @@ class NotificationService {
    * Show toast notification
    */
   private showToast(message: string, type: NotificationType, options?: NotificationOptions) {
-    const toastOptions = {
+    // Use toastEventBus instead of react-hot-toast
+    toastEventBus.emit(type, message, {
       duration: options?.duration || 4000,
-      position: options?.position || 'top-right' as const,
-      style: {
-        borderRadius: '8px',
-        background: '#333',
-        color: '#fff',
-        fontSize: '14px',
-        padding: '12px 16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      }
-    };
-
-    switch (type) {
-      case 'success':
-        toast.success(message, {
-          ...toastOptions,
-          icon: options?.icon || '✅',
-          style: { ...toastOptions.style, background: '#10b981' }
-        });
-        break;
-      case 'error':
-        toast.error(message, {
-          ...toastOptions,
-          icon: options?.icon || '❌',
-          style: { ...toastOptions.style, background: '#ef4444' }
-        });
-        break;
-      case 'warning':
-        toast(message, {
-          ...toastOptions,
-          icon: options?.icon || '⚠️',
-          style: { ...toastOptions.style, background: '#f59e0b' }
-        });
-        break;
-      case 'info':
-      default:
-        toast(message, {
-          ...toastOptions,
-          icon: options?.icon || 'ℹ️',
-          style: { ...toastOptions.style, background: '#3b82f6' }
-        });
-    }
+      persistent: options?.duration === Infinity,
+      description: options?.icon ? `${options.icon} ${message}` : undefined
+    });
 
     // Play sound for certain types
     if (type === 'success' || type === 'error' || type === 'warning') {

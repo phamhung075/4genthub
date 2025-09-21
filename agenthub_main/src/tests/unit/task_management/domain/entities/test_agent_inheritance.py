@@ -321,7 +321,7 @@ class TestAgentInheritanceIntegration:
         assert set(subtask1.assignees) == set(parent_task.assignees)
         
         assert len(subtask2.assignees) == 1
-        assert subtask2.assignees[0] == "code-reviewer-agent"
+        assert subtask2.assignees[0] == "@code-reviewer-agent"
     
     def test_inheritance_with_task_update(self):
         """Test that subtask inheritance works when parent task assignees are updated"""

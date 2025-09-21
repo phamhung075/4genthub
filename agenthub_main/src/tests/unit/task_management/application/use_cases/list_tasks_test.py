@@ -311,7 +311,7 @@ class TestListTasksUseCase:
             title="Task 2",
             description="Description 2",
             git_branch_id="branch-123",
-            status=TaskStatus.IN_PROGRESS,
+            status=TaskStatus.in_progress(),
             priority=Priority.medium(),
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)

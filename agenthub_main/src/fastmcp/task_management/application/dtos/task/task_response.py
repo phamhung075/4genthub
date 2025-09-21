@@ -13,7 +13,7 @@ class TaskResponse:
     description: str
     status: str
     priority: str
-    details: str
+    details: str  # Backward compatibility - formatted progress_history text
     estimated_effort: str
     assignees: List[str]
     labels: List[str]
@@ -27,28 +27,32 @@ class TaskResponse:
     context_data: Optional[Dict[str, Any]] = None
     dependency_relationships: Optional[DependencyRelationships] = None  # Enhanced dependency information
     progress_percentage: int = 0  # Task completion progress (0-100)
+    progress_history: Optional[Dict[str, Any]] = None  # Full progress history structure
+    progress_count: int = 0  # Number of progress entries
     
     def __init__(
-            self, 
-            id: str, 
-            title: str, 
-            description: str, 
-            status: str, 
-            priority: str,                  
-            details: str, 
-            estimated_effort: str, 
-            assignees: List[str], 
+            self,
+            id: str,
+            title: str,
+            description: str,
+            status: str,
+            priority: str,
+            details: str,
+            estimated_effort: str,
+            assignees: List[str],
             labels: List[str],
-            dependencies: List[str], 
-            subtasks: List[Dict[str, Any]], 
+            dependencies: List[str],
+            subtasks: List[Dict[str, Any]],
             due_date: Optional[str],
-            created_at: Optional[datetime], 
-            updated_at: Optional[datetime], 
+            created_at: Optional[datetime],
+            updated_at: Optional[datetime],
             git_branch_id: Optional[str] = None,  # Following clean relationship chain
             context_id: Optional[str] = None,
             context_data: Optional[Dict[str, Any]] = None,
             dependency_relationships: Optional[DependencyRelationships] = None,
-            progress_percentage: int = 0 
+            progress_percentage: int = 0,
+            progress_history: Optional[Dict[str, Any]] = None,
+            progress_count: int = 0
         ):
         """Initialize TaskResponse following clean relationship chain with git_branch_id, context_id, and context_data"""
         self.id = id
@@ -69,7 +73,9 @@ class TaskResponse:
         self.context_id = context_id
         self.context_data = context_data
         self.dependency_relationships = dependency_relationships
-        self.progress_percentage = progress_percentage    
+        self.progress_percentage = progress_percentage
+        self.progress_history = progress_history or {}
+        self.progress_count = progress_count    
     @classmethod
     def from_domain(cls, task, context_data: Optional[Dict[str, Any]] = None, 
                    dependency_relationships: Optional[DependencyRelationships] = None) -> 'TaskResponse':
@@ -86,13 +92,20 @@ class TaskResponse:
             updated_at = datetime.fromisoformat(updated_at)
         
         
+        # Get progress_history and format details for backward compatibility
+        progress_history = task_dict.get("progress_history", {})
+        progress_count = task_dict.get("progress_count", 0)
+
+        # Use task's get_progress_history_text() method for details field (backward compatibility)
+        details = task.get_progress_history_text() if hasattr(task, 'get_progress_history_text') else ""
+
         return cls(
             id=task_dict["id"],
             title=task_dict["title"],
             description=task_dict["description"],
             status=task_dict["status"],
             priority=task_dict["priority"],
-            details=task_dict["details"],
+            details=details,  # Formatted progress history text for backward compatibility
             estimated_effort=task_dict["estimatedEffort"],
             assignees=task_dict["assignees"],
             labels=task_dict["labels"],
@@ -105,7 +118,9 @@ class TaskResponse:
             context_id=task_dict.get("context_id"),
             context_data=context_data,
             dependency_relationships=dependency_relationships,
-            progress_percentage=task_dict.get("progress_percentage", 0)
+            progress_percentage=task_dict.get("progress_percentage", 0),
+            progress_history=progress_history,
+            progress_count=progress_count
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -116,7 +131,7 @@ class TaskResponse:
             "description": self.description,
             "status": self.status,
             "priority": self.priority,
-            "details": self.details,
+            "details": self.details,  # Formatted progress history text for backward compatibility
             "estimatedEffort": self.estimated_effort,
             "assignees": self.assignees,
             "labels": self.labels,
@@ -129,5 +144,7 @@ class TaskResponse:
             "context_id": self.context_id,
             "context_data": self.context_data,
             "dependency_relationships": self.dependency_relationships.to_dict() if self.dependency_relationships else None,
-            "progress_percentage": self.progress_percentage
+            "progress_percentage": self.progress_percentage,
+            "progress_history": self.progress_history,  # Full progress history structure
+            "progress_count": self.progress_count  # Number of progress entries
         } 

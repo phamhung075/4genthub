@@ -128,9 +128,9 @@ def _to_model_data(self, subtask: Subtask) -> Dict[str, Any]:
 ```python
 # Simplify repository inheritance and session handling
 # Option A: Use composition instead of multiple inheritance
-class ORMSubtaskRepository(BaseORMRepository[TaskSubtask], SubtaskRepository):
+class ORMSubtaskRepository(BaseORMRepository[Subtask], SubtaskRepository):
     def __init__(self, session=None, user_id: Optional[str] = None):
-        super().__init__(TaskSubtask)
+        super().__init__(Subtask)
         # Explicit user context composition
         self._user_context = UserContext(user_id)
         # Single session management through BaseORMRepository
@@ -146,7 +146,7 @@ def save(self, subtask: Subtask) -> bool:
             model_data = self._to_model_data(subtask)
             logger.info(f"🔍 SUBTASK_SAVE: Model data prepared: {model_data}")
             
-            new_subtask = TaskSubtask(**model_data)
+            new_subtask = Subtask(**model_data)
             session.add(new_subtask)
             session.flush()
             
@@ -154,7 +154,7 @@ def save(self, subtask: Subtask) -> bool:
             session.refresh(new_subtask)
             
             # Verify persistence before commit
-            verify = session.query(TaskSubtask).filter(TaskSubtask.id == new_subtask.id).first()
+            verify = session.query(Subtask).filter(Subtask.id == new_subtask.id).first()
             logger.info(f"🔍 SUBTASK_SAVE: Verification query result: {verify}")
             
             return True

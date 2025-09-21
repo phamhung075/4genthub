@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError, StatementError
 
 from fastmcp.task_management.infrastructure.database.models import (
-    Base, APIToken, Project, ProjectGitBranch, Task, TaskSubtask, TaskAssignee,
+    Base, APIToken, Project, ProjectGitBranch, Task, Subtask, TaskAssignee,
     TaskDependency, Agent, Label, TaskLabel, Template, GlobalContext, ProjectContext,
     BranchContext, TaskContext, ContextDelegation, ContextInheritanceCache,
     GLOBAL_SINGLETON_UUID
@@ -148,7 +148,6 @@ class TestDatabaseModels:
             git_branch_id=branch_id,
             status="todo",
             priority="high",
-            details="Additional details",
             estimated_effort="2 hours",
             due_date="2024-12-31",
             progress_percentage=25,
@@ -173,7 +172,7 @@ class TestDatabaseModels:
         assert retrieved.git_branch.id == branch_id
     
     def test_task_subtask_model_creation(self, session):
-        """Test TaskSubtask model creation and relationship"""
+        """Test Subtask model creation and relationship"""
         # Create prerequisites
         project_id = str(uuid.uuid4())
         project = Project(id=project_id, name="Test Project", user_id="user-123")
@@ -201,7 +200,7 @@ class TestDatabaseModels:
         
         # Create subtask
         subtask_id = str(uuid.uuid4())
-        subtask = TaskSubtask(
+        subtask = Subtask(
             id=subtask_id,
             task_id=task_id,
             title="Test Subtask",
@@ -217,7 +216,7 @@ class TestDatabaseModels:
         session.add(subtask)
         session.commit()
         
-        retrieved = session.query(TaskSubtask).filter_by(id=subtask_id).first()
+        retrieved = session.query(Subtask).filter_by(id=subtask_id).first()
         assert retrieved is not None
         assert retrieved.title == "Test Subtask"
         assert retrieved.task_id == task_id

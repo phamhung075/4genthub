@@ -475,7 +475,7 @@ describe('API V2 Module', () => {
 
         const result = await getSubtask('task-123', 'sub-1');
         expect(result).toEqual(mockSubtask);
-        expect(subtaskApiV2.getSubtask).toHaveBeenCalledWith('task-123', 'sub-1');
+        expect(subtaskApiV2.getSubtask).toHaveBeenCalledWith('sub-1');
       });
 
       it('should handle direct response format', async () => {

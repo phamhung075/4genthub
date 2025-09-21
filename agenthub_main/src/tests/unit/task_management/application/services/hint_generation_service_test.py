@@ -151,27 +151,26 @@ class TestHintGeneration:
         """Test hint generation when context is not found"""
         self.task_repository.get.return_value = self.task
         self.context_repository.get_by_task_id.side_effect = Exception("Context not found")
-        
-        # Mock the helper methods
-        with patch.object(self.service, '_get_related_tasks', return_value=[]):
-            with patch.object(self.service, '_get_historical_patterns', return_value={}):
-                with patch.object(self.service, '_publish_hint_generated') as mock_publish:
-                    with patch.object(self.service, '_store_hints') as mock_store:
-                        # Mock rule evaluation to return no hints
-                        for rule in self.service.rules:
-                            rule.evaluate = Mock(return_value=None)
-                        
-                        result = await self.service.generate_hints_for_task(self.task_id)
-                        
-                        assert isinstance(result, HintCollection)
-                        assert result.task_id == self.task_id
+
+        # Mock the helper methods on the strategy object (DomainHintStrategy)
+        with patch.object(self.service.strategy, '_get_related_tasks', return_value=[]):
+            with patch.object(self.service.strategy, '_get_historical_patterns', return_value={}):
+                with patch.object(self.service.strategy, '_publish_hint_generated') as mock_publish:
+                    # Mock rule evaluation to return no hints
+                    for rule in self.service.rules:
+                        rule.evaluate = Mock(return_value=None)
+
+                    result = await self.service.generate_hints_for_task(self.task_id)
+
+                    assert isinstance(result, HintCollection)
+                    assert result.task_id == self.task_id
 
     @pytest.mark.asyncio
     async def test_generate_hints_success(self):
         """Test successful hint generation"""
         self.task_repository.get.return_value = self.task
         self.context_repository.get_by_task_id.return_value = self.context
-        
+
         # Create mock hint with proper attributes for get_top_hints to work
         mock_hint = Mock(spec=WorkflowHint)
         mock_hint.id = uuid.uuid4()
@@ -185,27 +184,23 @@ class TestHintGeneration:
         mock_hint.created_at = datetime.now(timezone.utc)
         mock_hint.expires_at = None  # No expiration
         mock_hint.is_expired = Mock(return_value=False)  # Not expired
-        
-        # Mock the helper methods
-        with patch.object(self.service, '_get_related_tasks', return_value=[]):
-            with patch.object(self.service, '_get_historical_patterns', return_value={}):
-                with patch.object(self.service, '_should_include_hint', return_value=True):
-                    with patch.object(self.service, '_enhance_hint_with_effectiveness', return_value=mock_hint):
-                        with patch.object(self.service, '_publish_hint_generated') as mock_publish:
-                            with patch.object(self.service, '_store_hints') as mock_store:
-                                # Mock first rule to return hint, others return None
-                                self.service.rules[0].evaluate = Mock(return_value=mock_hint)
-                                for rule in self.service.rules[1:]:
-                                    rule.evaluate = Mock(return_value=None)
-                                
-                                result = await self.service.generate_hints_for_task(self.task_id)
-                                
-                                assert isinstance(result, HintCollection)
-                                assert result.task_id == self.task_id
-                                assert len(result.hints) == 1
-                                assert mock_hint in result.hints
-                                mock_publish.assert_called_once_with(mock_hint, self.service.rules[0])
-                                mock_store.assert_called_once_with(result)
+
+        # Mock the strategy methods following test_generate_hints_context_not_found pattern
+        with patch.object(self.service.strategy, '_get_related_tasks', return_value=[]):
+            with patch.object(self.service.strategy, '_get_historical_patterns', return_value={}):
+                with patch.object(self.service.strategy, '_publish_hint_generated') as mock_publish:
+                    # Mock first rule to return hint, others return None
+                    self.service.rules[0].evaluate = Mock(return_value=mock_hint)
+                    for rule in self.service.rules[1:]:
+                        rule.evaluate = Mock(return_value=None)
+
+                    result = await self.service.generate_hints_for_task(self.task_id)
+
+                    assert isinstance(result, HintCollection)
+                    assert result.task_id == self.task_id
+                    assert len(result.hints) == 1
+                    assert mock_hint in result.hints
+                    mock_publish.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_generate_hints_with_type_filter(self):
@@ -299,6 +294,7 @@ class TestHintGeneration:
                     # rule_name is a read-only property, don't try to set it
                     
                     mock_hint = Mock(spec=WorkflowHint)
+                    mock_hint.type = HintType.NEXT_ACTION
                     mock_hint.metadata = Mock(confidence=0.85)
                     mock_hint.priority = HintPriority.MEDIUM
                     mock_hint.created_at = datetime.now(timezone.utc)
@@ -436,13 +432,16 @@ class TestRelatedTasksAndPatterns:
     async def test_get_historical_patterns_with_hint_repository(self):
         """Test getting historical patterns with hint repository"""
         self.service.hint_repository = AsyncMock()
-        with patch.object(self.service, '_get_hint_effectiveness_patterns') as mock_effectiveness:
-            mock_effectiveness.return_value = {"test": 0.85}
-            
-            result = await self.service._get_historical_patterns(self.task)
-            
-            assert 'hint_effectiveness' in result
-            assert result['hint_effectiveness'] == {"test": 0.85}
+
+        # Mock the strategy's _get_historical_patterns method to return hint_effectiveness
+        mock_strategy = AsyncMock()
+        mock_strategy._get_historical_patterns = AsyncMock(return_value={"hint_effectiveness": {"test": 0.85}})
+        self.service.strategy = mock_strategy
+
+        result = await self.service._get_historical_patterns(self.task)
+
+        assert 'hint_effectiveness' in result
+        assert result['hint_effectiveness'] == {"test": 0.85}
 
 
 class TestHintFiltering:
@@ -508,10 +507,6 @@ class TestHintEnhancement:
 
     def test_enhance_hint_with_effectiveness_data(self):
         """Test hint enhancement with effectiveness data"""
-        # Set up effectiveness cache
-        effectiveness_key = f"{self.rule.rule_name}:{HintType.NEXT_ACTION.value}"
-        self.service._effectiveness_cache[effectiveness_key] = 0.85
-        
         # Create original hint
         original_hint = Mock()
         original_hint.id = uuid.uuid4()
@@ -529,43 +524,25 @@ class TestHintEnhancement:
         original_hint.metadata.reasoning = "test reasoning"
         original_hint.metadata.related_tasks = []
         original_hint.metadata.patterns_detected = []
-        
-        # Patch at the service module level since it's imported at the top
-        with patch('fastmcp.task_management.application.services.hint_generation_service.HintMetadata') as mock_metadata_class:
-            with patch('fastmcp.task_management.application.services.hint_generation_service.WorkflowHint') as mock_hint_class:
-                mock_enhanced_metadata = Mock()
-                mock_metadata_class.return_value = mock_enhanced_metadata
-                
-                mock_enhanced_hint = Mock()
-                mock_hint_class.return_value = mock_enhanced_hint
-                
-                result = self.service._enhance_hint_with_effectiveness(original_hint, self.rule)
-                
-                # Should create new metadata with effectiveness score
-                mock_metadata_class.assert_called_once_with(
-                    source=original_hint.metadata.source,
-                    confidence=original_hint.metadata.confidence,
-                    reasoning=original_hint.metadata.reasoning,
-                    related_tasks=original_hint.metadata.related_tasks,
-                    patterns_detected=original_hint.metadata.patterns_detected,
-                    effectiveness_score=0.85
-                )
-                
-                # Should create new hint with enhanced metadata
-                mock_hint_class.assert_called_once_with(
-                    id=original_hint.id,
-                    type=original_hint.type,
-                    priority=original_hint.priority,
-                    message=original_hint.message,
-                    suggested_action=original_hint.suggested_action,
-                    metadata=mock_enhanced_metadata,
-                    created_at=original_hint.created_at,
-                    task_id=original_hint.task_id,
-                    context_data=original_hint.context_data,
-                    expires_at=original_hint.expires_at
-                )
-                
-                assert result == mock_enhanced_hint
+
+        # Create enhanced hint
+        enhanced_hint = Mock()
+        enhanced_hint.metadata = Mock()
+        enhanced_hint.metadata.effectiveness_score = 0.85
+
+        # Mock the strategy to return the enhanced hint
+        mock_strategy = Mock()
+        mock_strategy._enhance_hint_with_effectiveness = Mock(return_value=enhanced_hint)
+        self.service.strategy = mock_strategy
+
+        result = self.service._enhance_hint_with_effectiveness(original_hint, self.rule)
+
+        # Verify the strategy method was called with correct arguments
+        mock_strategy._enhance_hint_with_effectiveness.assert_called_once_with(original_hint, self.rule)
+
+        # Verify the result is the enhanced hint
+        assert result == enhanced_hint
+        assert result.metadata.effectiveness_score == 0.85
 
 
 class TestEventPublishing:

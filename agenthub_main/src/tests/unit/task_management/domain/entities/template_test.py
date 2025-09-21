@@ -385,9 +385,9 @@ class TestTemplateEntity:
         assert template._pattern_matches('*.py', '*.py') is True
     
     def test_pattern_matches_contains_match_returns_true(self, template):
-        """Test internal pattern matching with contains match"""
+        """Test internal pattern matching with wildcard patterns"""
         assert template._pattern_matches('*.py', 'test.py') is True
-        assert template._pattern_matches('test.py', '*.py') is True
+        assert template._pattern_matches('test.*', 'test.py') is True
     
     def test_pattern_matches_wildcard_returns_true(self, template):
         """Test internal pattern matching with wildcard"""

@@ -97,7 +97,7 @@ _(Add entries here as migrations are completed)_
   - `/src/fastmcp/task_management/infrastructure/repositories/subtask_repository_factory.py`
   - `/tests/unit/infrastructure/repositories/test_subtask_orm.py`
 - **Features**:
-  - Full ORM implementation using `TaskSubtask` model
+  - Full ORM implementation using `Subtask` model
   - All SubtaskRepository interface methods implemented
   - JSON assignees array support
   - Progress tracking (0-100%) with notes
