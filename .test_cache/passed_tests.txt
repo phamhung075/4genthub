@@ -49,6 +49,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/facades/token_application_facade_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/facades/unified_context_facade_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/factories/subtask_facade_factory_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/factories/unified_context_facade_factory_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/services/agent_coordination_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/services/ai_integration_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/services/context_cache_optimizer_test.py
@@ -305,7 +306,6 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/interface/controllers/auth_helper_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/interface/controllers/git_branch_mcp_controller_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/interface/ddd_compliant_mcp_tools_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/server/http_server_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/database/models_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/interface/mcp_controllers/test_controllers_init.py
@@ -320,12 +320,14 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/test_dependencies_all_formats.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/test_dependencies_parameter.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/test_env_priority_tdd.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/factories/unified_context_facade_factory_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/services/hint_generation_service_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/create_task_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/test_update_task.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/entities/test_task.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_validation_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/examples/test_using_builders.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/infrastructure/repositories/orm/subtask_repository_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/infrastructure/repositories/orm/supabase_optimized_repository_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/interface/controllers/git_branch_user_id_parameter_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/interface/controllers/unified_context_controller_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/services/hint_generation_service_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/create_task_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/server/http_server_test.py

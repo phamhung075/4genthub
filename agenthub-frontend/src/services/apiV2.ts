@@ -2,6 +2,7 @@
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../config/environment';
 import logger from '../utils/logger';
+import { deduplicateRequest } from '../utils/requestDeduplication';
 
 // Get current auth token
 const getAuthToken = (): string | null => {
@@ -155,13 +156,26 @@ const refreshTokenAndRetry = async (): Promise<void> => {
   logger.info('V2 API: Token refreshed successfully');
 };
 
-// Enhanced fetch with automatic retry
+// Enhanced fetch with automatic retry and request deduplication
 const fetchWithRetry = async (url: string, init?: RequestInit) => {
-  const response = await fetch(url, {
-    ...init,
-    credentials: 'include', // Include cookies for CORS
+  const method = init?.method || 'GET';
+  const body = init?.body;
+
+  // Check for duplicate request first
+  const duplicatePromise = deduplicateRequest(url, method, body);
+  if (duplicatePromise) {
+    logger.debug(`🔄 Using deduplicated request for ${method} ${url}`);
+    return duplicatePromise;
+  }
+
+  // Execute new request with deduplication tracking
+  return deduplicateRequest(url, method, body, async () => {
+    const response = await fetch(url, {
+      ...init,
+      credentials: 'include', // Include cookies for CORS
+    });
+    return handleResponse(response, url, init);
   });
-  return handleResponse(response, url, init);
 };
 
 // Task API V2 - User-isolated endpoints
@@ -347,7 +361,7 @@ export const subtaskApiV2 = {
     return handleResponse(response);
   },
 
-  // Get a specific subtask
+  // Get a specific subtask - simple endpoint with authentication
   getSubtask: async (subtaskId: string) => {
     // Validate UUID format before making API call
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -356,9 +370,10 @@ export const subtaskApiV2 = {
       throw new Error('Invalid subtask ID format');
     }
 
+    // Use simple endpoint with proper authentication headers
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
       method: 'GET',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(), // This includes the Bearer token
       credentials: 'include',
     });
     return handleResponse(response);

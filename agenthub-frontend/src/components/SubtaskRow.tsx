@@ -211,7 +211,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
                   key={index}
                   variant="secondary"
                   className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                  onClick={() => onAgentInfoClick(assignee)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAgentInfoClick(assignee);
+                  }}
                   title={`View ${assignee} information`}
                 >
                   {assignee}
@@ -228,7 +231,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleViewDetails}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails();
+              }}
               disabled={isLoading}
               title="View details"
             >
@@ -242,7 +248,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onSubtaskAction('edit', summary.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSubtaskAction('edit', summary.id);
+              }}
               disabled={isLoading || summary.status === 'done'}
               title="Edit"
             >
@@ -253,7 +262,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onSubtaskAction('complete', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSubtaskAction('complete', summary.id);
+                }}
                 disabled={isLoading}
                 title="Complete"
               >
@@ -264,7 +276,10 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDeleteSubtask(summary.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteSubtask(summary.id);
+              }}
               title="Delete subtask"
             >
               <Trash2 className="w-3 h-3" />

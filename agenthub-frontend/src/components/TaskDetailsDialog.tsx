@@ -183,7 +183,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden rounded-lg shadow-xl flex flex-col" style={{backgroundColor: 'var(--color-surface)'}}>
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden rounded-lg shadow-xl flex flex-col bg-[var(--color-surface)]">
         <DialogHeader>
           <DialogTitle className="text-xl text-left">
             {displayTask?.title || 'Task Details'}

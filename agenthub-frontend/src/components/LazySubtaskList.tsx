@@ -69,6 +69,8 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   
   // Only load when component is actually rendered (lazy)
   const [hasLoaded, setHasLoaded] = useState(false);
+  // Separate flag to control subscription timing - prevents race conditions
+  const [subscriptionEnabled, setSubscriptionEnabled] = useState(false);
 
   // Track previous subtask IDs for detecting new subtasks
   const [previousSubtaskIds, setPreviousSubtaskIds] = useState<Set<string>>(new Set());
@@ -208,7 +210,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     }
   }, [parentTaskId]);
 
-  // Load subtask summaries (lightweight)
+  // Load subtask summaries (lightweight) with request deduplication
   const loadSubtaskSummaries = useCallback(async () => {
     if (hasLoaded) return; // Only load once
 
@@ -229,6 +231,13 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     } finally {
       setLoading(false);
       setHasLoaded(true);
+
+      // Enable subscription AFTER initial load is complete
+      // Use setTimeout to ensure state has settled before enabling subscription
+      setTimeout(() => {
+        setSubscriptionEnabled(true);
+        logger.debug(`📡 LazySubtaskList-${parentTaskId}: Subscription enabled after initial load`);
+      }, 250); // Small delay to prevent race conditions
     }
   }, [parentTaskId, hasLoaded, loadFullSubtasksFallback]);
 
@@ -246,17 +255,33 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     rowAnimationCallbacks.current.delete(subtaskId);
   }, []);
 
-  // Stable refresh callback for changePoolService
+  // Debounce timer ref for batching rapid changes
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Stable refresh callback for changePoolService with enhanced protection
   const handleSubtaskChanges = useCallback(async () => {
-    console.log(`📡 LazySubtaskList-${parentTaskId}: Subtask changes detected, refreshing...`);
-    logger.debug('📡 LazySubtaskList: Subtask changes detected, refreshing...');
+    // PERFORMANCE FIX: Skip refresh during initial load to prevent duplicate API calls
+    if (!hasLoaded || !subscriptionEnabled) {
+      console.log(`📡 LazySubtaskList-${parentTaskId}: Skipping refresh - hasLoaded:${hasLoaded}, subscriptionEnabled:${subscriptionEnabled}`);
+      return;
+    }
+
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Debounce rapid changes to prevent multiple API calls
+    debounceTimerRef.current = setTimeout(async () => {
+      console.log(`📡 LazySubtaskList-${parentTaskId}: Subtask changes detected, refreshing...`);
+      logger.debug('📡 LazySubtaskList: Subtask changes detected, refreshing...');
 
     // Store current subtask data for comparison
     const currentSubtaskMap = new Map(subtaskSummaries.map(s => [s.id, s]));
     const currentSubtaskIds = new Set(subtaskSummaries.map(s => s.id));
 
     // Force reload of subtasks for this parent task
-    setHasLoaded(false); // Reset loaded flag to trigger refresh
+    // Note: No need to reset hasLoaded flag - we're refreshing data directly via API call
 
     try {
       // Use the proper API function that handles authentication and proper URLs
@@ -334,11 +359,12 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     } finally {
       setHasLoaded(true);
     }
-  }, [subtaskSummaries, parentTaskId, loadFullSubtasksFallback]);
+    }, 200); // 200ms debounce delay to batch rapid changes
+  }, [subtaskSummaries, parentTaskId, loadFullSubtasksFallback, hasLoaded, subscriptionEnabled]);
 
   // Subscribe to centralized change pool for real-time updates
   // Listen to subtask changes for this specific parent task
-  // FIX: Always enable subscription immediately to catch first subtask animations
+  // PERFORMANCE FIX: Only enable subscription after initial load to prevent duplicate API calls
   useChangeSubscription({
     componentId: `LazySubtaskList-${parentTaskId}`,
     entityTypes: ['subtask'],
@@ -361,9 +387,9 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       // Only refresh if the subtask belongs to this parent task
       return notification.metadata?.parent_task_id === parentTaskId;
     },
-    // FIX: Always enable subscription to catch first subtask creation/deletion animations
-    // The shouldRefresh filter already provides sufficient filtering for this parent task
-    enabled: true
+    // PERFORMANCE FIX: Only enable subscription after initial load completes
+    // This prevents the subscription from triggering during initial mount and causing duplicate calls
+    enabled: subscriptionEnabled
   });
 
 
@@ -460,8 +486,31 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   useEffect(() => {
     // 🚀 PERFORMANCE FIX: Only react to URL changes if the taskId in URL matches this component's parentTaskId
     // This prevents ALL LazySubtaskList components from reacting to ANY subtask URL change
+    logger.debug('🔗 LazySubtaskList useEffect triggered:', {
+      subtaskId,
+      taskId,
+      parentTaskId,
+      hasLoaded,
+      fullSubtasksCount: fullSubtasks.size
+    });
+
     if (subtaskId && hasLoaded && taskId === parentTaskId) {
       logger.debug('🔗 URL taskId matches parentTaskId, loading subtask:', subtaskId, 'for parent:', parentTaskId);
+
+      // PERFORMANCE FIX: Check if we already have the subtask data before making API call
+      const existingSubtask = fullSubtasks.get(subtaskId);
+      if (existingSubtask) {
+        logger.debug('🔗 Using existing subtask data for URL subtaskId:', subtaskId);
+        setDetailsDialog({ open: true, subtask: existingSubtask });
+        return;
+      }
+
+      // PERFORMANCE FIX: Also check subtask summaries to avoid unnecessary full load
+      const summaryExists = subtaskSummaries.some(s => s.id === subtaskId);
+      if (!summaryExists) {
+        logger.debug('🔗 Subtask not found in summaries, skipping load for URL subtaskId:', subtaskId);
+        return;
+      }
 
       // Load the subtask directly since we know it belongs to this parent task
       setIsOpeningDialog(true);
@@ -487,6 +536,21 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       // 🔧 IMPROVED FIX: Try to load the subtask even if URL taskId doesn't match parentTaskId
       // This handles cases where the subtask might belong to a completed task or cross-component scenarios
       logger.debug('🔍 URL taskId differs from parentTaskId, checking if subtask belongs to this component:', subtaskId, 'URL taskId:', taskId, 'parentTaskId:', parentTaskId);
+
+      // PERFORMANCE FIX: Check if we already have the subtask data before making API call
+      const existingSubtask = fullSubtasks.get(subtaskId);
+      if (existingSubtask && existingSubtask.parent_task_id === parentTaskId) {
+        logger.debug('✅ Using existing subtask data for cross-component check:', subtaskId);
+        setDetailsDialog({ open: true, subtask: existingSubtask });
+        return;
+      }
+
+      // PERFORMANCE FIX: Also check if subtask exists in summaries for this parent
+      const summaryExists = subtaskSummaries.some(s => s.id === subtaskId);
+      if (!summaryExists) {
+        logger.debug('🚫 Subtask not found in summaries for cross-component check:', subtaskId);
+        return;
+      }
 
       // Use the direct API to check if the subtask belongs to this component's parent task
       setIsOpeningDialog(true);
@@ -520,6 +584,8 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     detailsDialog.open,
     handleSubtaskDialogClose,
     parentTaskId
+    // REMOVED: fullSubtasks dependency - was causing infinite loop
+    // The useEffect should only respond to URL changes, not state changes it causes
   ]);
 
   // Animation effect - triggers animations after state updates
@@ -576,6 +642,15 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
     return () => clearTimeout(timeoutId);
   }, [animationTriggers]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Delete subtask handler - row animation handled independently
   const handleDeleteSubtask = useCallback(async (subtaskId: string) => {
