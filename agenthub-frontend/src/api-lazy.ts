@@ -1,14 +1,14 @@
 // Lazy loading API - Direct V2 API usage (no backward compatibility)
 // Provides lightweight endpoints for improved performance
 
+import Cookies from 'js-cookie';
+import { Project, Subtask, Task } from './api';
+import { API_BASE_URL } from './config/environment';
 import {
-  taskApiV2,
   projectApiV2,
   subtaskApiV2,
-  branchApiV2
+  taskApiV2
 } from './services/apiV2';
-import Cookies from 'js-cookie';
-import { API_BASE_URL } from './config/environment';
 import logger from './utils/logger';
 
 // --- Lazy Loading Interfaces ---
@@ -39,6 +39,8 @@ export interface SubtaskSummary {
   status: string;
   priority: string;
   assignees_count: number;
+  assignees?: string[]; // Add full assignee information
+  progress_percentage?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -70,9 +72,9 @@ export const getTaskSummaries = async (params?: {
   // For now, get full tasks and convert to summaries
   // Backend could optimize this with a dedicated endpoint
   const response = await taskApiV2.getTasks({ git_branch_id: params?.git_branch_id });
-  const tasks = response.tasks || [];
+  const tasks = (response as any).tasks || [];
   
-  const summaries: TaskSummary[] = tasks.map(task => ({
+  const summaries: TaskSummary[] = tasks.map((task: Task) => ({
     id: task.id,
     title: task.title,
     status: task.status,
@@ -96,24 +98,26 @@ export const getTaskSummaries = async (params?: {
 
 export const getFullTask = async (task_id: string): Promise<any> => {
   const response = await taskApiV2.getTask(task_id);
-  return response.task || response;
+  return (response as any).task || response;
 };
 
 // --- Subtask Lazy Loading ---
-export const getSubtaskSummaries = async (task_id: string, params?: {
+export const getSubtaskSummaries = async (task_id: string, _params?: {
   page?: number;
   limit?: number;
 }): Promise<{ subtasks: SubtaskSummary[]; total: number }> => {
-
+  // params reserved for future pagination implementation
   const response = await subtaskApiV2.listSubtasksForTask(task_id);
-  const subtasks = response.subtasks || [];
+  const subtasks = (response as any).subtasks || [];
   
-  const summaries: SubtaskSummary[] = subtasks.map(subtask => ({
+  const summaries: SubtaskSummary[] = subtasks.map((subtask: Subtask) => ({
     id: subtask.id,
     title: subtask.title,
     status: subtask.status,
     priority: subtask.priority,
     assignees_count: subtask.assignees?.length || 0,
+    assignees: subtask.assignees, // Include full assignee information
+    progress_percentage: subtask.progress_percentage,
     created_at: subtask.created_at,
     updated_at: subtask.updated_at
   }));
@@ -143,12 +147,12 @@ export const getBranchSummaries = async (project_id: string): Promise<{
     }
   });
 
-  if (!response.ok) {
-    logger.error(`Failed to fetch branch summaries: ${response.status}`);
+  if (!(response as any).ok) {
+    logger.error(`Failed to fetch branch summaries: ${(response as any).status}`);
     return { branches: [], total: 0 };
   }
 
-  const data = await response.json();
+  const data = await (response as any).json();
   const branches = data.branches || [];
   
   // Map the optimized response to BranchSummary format
@@ -183,10 +187,10 @@ export const getProjectSummaries = async (params?: {
   limit?: number;
 }): Promise<any> => {
   const response = await projectApiV2.getProjects();
-  const projects = response.projects || [];
+  const projects = (response as any).projects || [];
   
   return {
-    projects: projects.map(p => ({
+    projects: projects.map((p: Project) => ({
       id: p.id,
       name: p.name,
       description: p.description,

@@ -1,6 +1,7 @@
 import { Check, Eye, Pencil, Trash2 } from "lucide-react";
 import React, { useState, useCallback, useEffect } from "react";
 import { Subtask } from "../api";
+import { SubtaskSummary } from "../api-lazy";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
@@ -10,16 +11,7 @@ import { ParentTaskReference } from "./ui/ParentTaskReference";
 import logger from "../utils/logger";
 import styles from "./SubtaskRow.module.css";
 
-// Lightweight subtask summary interface
-interface SubtaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  assignees_count: number;
-  assignees?: string[];
-  progress_percentage?: number;
-}
+// Using SubtaskSummary interface from api-lazy.ts
 
 interface SubtaskRowProps {
   summary: SubtaskSummary;
