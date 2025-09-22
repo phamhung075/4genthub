@@ -1,8 +1,8 @@
-import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
 import logger from '../utils/logger';
-import { websocketService } from '../services/websocketService';
+import { useWebSocket } from '../hooks/useWebSocketV2';
 
 // Types for authentication
 export interface User {
@@ -59,6 +59,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokensState] = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    isConnected: isWebSocketConnected,
+    disconnect: disconnectWebSocket,
+  } = useWebSocket(user?.id ?? '', tokens?.access_token ?? '');
 
   // Decode JWT token to extract user information
   const decodeToken = (token: string): User | null => {
@@ -144,14 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
 
           // Connect WebSocket with the new access token for real-time updates
-          try {
-            if (!websocketService.isConnected()) {
-              await websocketService.connect(data.access_token);
-              logger.info('WebSocket connected after successful login');
-            }
-          } catch (error) {
-            logger.error('Failed to connect WebSocket after login:', error);
-          }
+          // WebSocket connection handled by useWebSocket hook
         }
       } else {
         throw new Error('No tokens received from server');
@@ -223,8 +221,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Disconnect WebSocket BEFORE clearing authentication state
     try {
-      if (websocketService.isConnected()) {
-        websocketService.disconnect();
+      if (isWebSocketConnected) {
+        disconnectWebSocket();
         logger.info('WebSocket connection closed during logout');
       }
     } catch (error) {
@@ -238,7 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove('refresh_token');
 
     logger.info('Logout complete - user session cleared');
-  }, []);
+  }, [disconnectWebSocket, isWebSocketConnected]);
 
   // Refresh token function
   const refreshToken = useCallback(async () => {
@@ -266,8 +264,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           // Disconnect WebSocket before clearing tokens
           try {
-            if (websocketService.isConnected()) {
-              websocketService.disconnect();
+            if (isWebSocketConnected) {
+              disconnectWebSocket();
               logger.info('WebSocket disconnected due to token refresh failure');
             }
           } catch (error) {
@@ -298,23 +296,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
 
         // Reconnect WebSocket with new token for continued real-time updates
-        try {
-          if (websocketService.isConnected()) {
-            await websocketService.reconnectWithNewToken(data.access_token);
-            logger.info('WebSocket reconnected with refreshed token');
-          }
-        } catch (error) {
-          logger.error('Failed to reconnect WebSocket with new token:', error);
-        }
       }
-      
+
     } catch (error) {
       logger.error('Token refresh error:', error);
 
       // Disconnect WebSocket on any refresh failure
       try {
-        if (websocketService.isConnected()) {
-          websocketService.disconnect();
+        if (isWebSocketConnected) {
+          disconnectWebSocket();
           logger.info('WebSocket disconnected due to token refresh error');
         }
       } catch (wsError) {
@@ -324,7 +314,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logout();
       throw error;
     }
-  }, [setTokens]);
+  }, [disconnectWebSocket, isWebSocketConnected, logout, setTokens]);
 
   // Check for existing tokens on mount and establish WebSocket connection
   useEffect(() => {
@@ -338,8 +328,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
         setTokensState({ access_token, refresh_token });
 
-        // Connect WebSocket with authentication token after successful token loading
-        connectWebSocketWithAuth(access_token);
       } else if (refresh_token) {
         // Token expired, try to refresh
         refreshToken().catch(() => {
@@ -348,27 +336,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } else {
       // No tokens available - ensure WebSocket is disconnected
-      if (websocketService.isConnected()) {
-        websocketService.disconnect();
+      if (isWebSocketConnected) {
+        disconnectWebSocket();
         logger.info('WebSocket disconnected - no authentication tokens available');
       }
     }
 
     setIsLoading(false);
-  }, [refreshToken]);
-
-  // Helper function to connect WebSocket with authentication
-  const connectWebSocketWithAuth = async (token: string) => {
-    try {
-      if (!websocketService.isConnected()) {
-        await websocketService.connect(token);
-        logger.info('WebSocket connected with authentication token from cookies');
-      }
-    } catch (error) {
-      logger.error('Failed to connect WebSocket with authentication token:', error);
-      // Optionally retry or handle specific error cases
-    }
-  };
+  }, [disconnectWebSocket, isWebSocketConnected, logout, refreshToken]);
 
   // Set up token refresh interval
   useEffect(() => {
@@ -397,7 +372,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     window.addEventListener('auth-logout', handleLogoutEvent);
     return () => window.removeEventListener('auth-logout', handleLogoutEvent);
-  }, []);
+  }, [logout]);
 
   const value: AuthContextType = {
     user,
@@ -416,4 +391,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

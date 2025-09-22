@@ -1,2 +1,5 @@
 
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/factories/unified_context_facade_factory_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/test_websocket_protocol.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_server.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_v2.py

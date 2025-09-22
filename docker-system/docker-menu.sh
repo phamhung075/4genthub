@@ -352,7 +352,8 @@ show_main_menu() {
     echo -e "${GREEN}${BOLD}Database Management${RESET}"
     echo "────────────────────────────────────────────────"
     echo "  B) 🗄️  Database Only (PostgreSQL standalone)"
-    echo "  C) 🎛️  pgAdmin UI Only (requires DB running)"
+    echo "  C) 🔍 Check PostgreSQL Connection (automatic test)"
+    echo "  G) 🎛️  pgAdmin UI Only (requires DB running)"
     echo ""
     echo -e "${CYAN}${BOLD}💻 Development Mode (Non-Docker)${RESET}"
     echo "────────────────────────────────────────────────"
@@ -482,7 +483,100 @@ start_database_only() {
     echo -e "${CYAN}Using credentials from .env.dev${RESET}"
 }
 
-# Start pgAdmin UI Only (Option C)
+# Check PostgreSQL Connection (Option C)
+check_postgresql_connection() {
+    echo -e "${CYAN}🔍 Checking PostgreSQL Connection...${RESET}"
+    echo ""
+
+    # Display connection parameters
+    echo -e "${YELLOW}Connection Parameters:${RESET}"
+    echo "  Host: ${DATABASE_HOST:-localhost} (Docker: agenthub-postgres)"
+    echo "  Port: ${DATABASE_PORT:-5432}"
+    echo "  Database: ${DATABASE_NAME:-agenthub}"
+    echo "  User: ${DATABASE_USER:-agenthub_user}"
+    echo ""
+
+    # Try both Docker internal and localhost connections
+    local connection_success=false
+
+    # Test 1: Docker internal connection (if PostgreSQL container is running)
+    if docker ps | grep -q agenthub-postgres; then
+        echo -e "${CYAN}🐳 Testing Docker internal connection...${RESET}"
+
+        # Use pg_isready for quick connection test
+        if PGPASSWORD="${DATABASE_PASSWORD}" docker exec agenthub-postgres pg_isready -h localhost -p 5432 -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Docker internal connection: SUCCESS${RESET}"
+
+            # Test actual SQL query
+            echo -e "${CYAN}   Testing SQL query execution...${RESET}"
+            if PGPASSWORD="${DATABASE_PASSWORD}" docker exec agenthub-postgres psql -h localhost -p 5432 -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -c "SELECT version();" >/dev/null 2>&1; then
+                echo -e "${GREEN}   ✅ SQL query execution: SUCCESS${RESET}"
+                connection_success=true
+            else
+                echo -e "${RED}   ❌ SQL query execution: FAILED${RESET}"
+            fi
+        else
+            echo -e "${RED}❌ Docker internal connection: FAILED${RESET}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  PostgreSQL container not running, skipping Docker internal test${RESET}"
+    fi
+
+    echo ""
+
+    # Test 2: Host connection (from outside Docker)
+    echo -e "${CYAN}🌐 Testing host connection (localhost:${DATABASE_PORT})...${RESET}"
+
+    # Check if psql is available on host
+    if command -v psql >/dev/null 2>&1; then
+        if PGPASSWORD="${DATABASE_PASSWORD}" pg_isready -h localhost -p "${DATABASE_PORT:-5432}" -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Host connection (pg_isready): SUCCESS${RESET}"
+
+            # Test actual SQL connection
+            echo -e "${CYAN}   Testing SQL connection from host...${RESET}"
+            if PGPASSWORD="${DATABASE_PASSWORD}" psql -h localhost -p "${DATABASE_PORT:-5432}" -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -c "SELECT current_database(), current_user;" >/dev/null 2>&1; then
+                echo -e "${GREEN}   ✅ Host SQL connection: SUCCESS${RESET}"
+                connection_success=true
+            else
+                echo -e "${RED}   ❌ Host SQL connection: FAILED${RESET}"
+            fi
+        else
+            echo -e "${RED}❌ Host connection (pg_isready): FAILED${RESET}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  psql not available on host, using Docker exec for testing${RESET}"
+
+        # Fallback: use Docker exec if container is running
+        if docker ps | grep -q agenthub-postgres; then
+            if PGPASSWORD="${DATABASE_PASSWORD}" docker exec agenthub-postgres psql -h agenthub-postgres -p 5432 -U "${DATABASE_USER:-agenthub_user}" -d "${DATABASE_NAME:-agenthub}" -c "SELECT 'Connection test successful' as status;" 2>/dev/null; then
+                echo -e "${GREEN}✅ Docker exec connection test: SUCCESS${RESET}"
+                connection_success=true
+            else
+                echo -e "${RED}❌ Docker exec connection test: FAILED${RESET}"
+            fi
+        fi
+    fi
+
+    echo ""
+    echo "────────────────────────────────────────────────"
+
+    # Final status
+    if [ "$connection_success" = true ]; then
+        echo -e "${GREEN}${BOLD}🎉 PostgreSQL Connection: OPERATIONAL${RESET}"
+        echo -e "${CYAN}You can now use option 7 for automatic database shell access${RESET}"
+    else
+        echo -e "${RED}${BOLD}❌ PostgreSQL Connection: FAILED${RESET}"
+        echo -e "${YELLOW}Troubleshooting tips:${RESET}"
+        echo "  1. Make sure PostgreSQL is running (use option B)"
+        echo "  2. Check if ports are available: netstat -tulpn | grep :${DATABASE_PORT:-5432}"
+        echo "  3. Verify environment variables in .env.dev"
+        echo "  4. Check Docker logs: docker logs agenthub-postgres"
+    fi
+
+    echo ""
+}
+
+# Start pgAdmin UI Only (Option G)
 start_postgresql_with_ui() {
     echo -e "${GREEN}🎛️  Starting pgAdmin UI Only...${RESET}"
     echo -e "${YELLOW}Note: PostgreSQL must be running (use option B first)${RESET}"
@@ -501,11 +595,19 @@ start_postgresql_with_ui() {
         echo -e "${YELLOW}⚠️  Stopping containers using port ${pgadmin_port} (pgAdmin)...${RESET}"
         docker stop $pgadmin_containers
     fi
-    
+
     # Stop any existing pgAdmin container
     echo -e "${YELLOW}Stopping existing pgAdmin container...${RESET}"
     docker stop agenthub-pgadmin 2>/dev/null || true
     docker rm agenthub-pgadmin 2>/dev/null || true
+
+    # Remove old pgAdmin data volume to ensure clean configuration
+    echo -e "${YELLOW}Removing old pgAdmin data to ensure fresh configuration...${RESET}"
+    docker volume rm pgadmin-data 2>/dev/null || true
+
+    # Pull latest pgAdmin image
+    echo -e "${CYAN}Pulling latest pgAdmin image...${RESET}"
+    docker pull dpage/pgadmin4:latest
 
     # Network should already exist from PostgreSQL
     docker network create agenthub-network 2>/dev/null || true
@@ -516,7 +618,7 @@ start_postgresql_with_ui() {
     # Start pgAdmin only (with profile to include it)
     echo -e "${CYAN}Starting pgAdmin UI...${RESET}"
     CONTAINER_ENV=docker docker-compose -f docker-compose.db-only.yml --profile with-pgadmin up -d pgadmin
-    
+
     echo -e "${GREEN}✅ pgAdmin UI started!${RESET}"
     echo ""
     echo -e "${CYAN}${BOLD}🎛️  pgAdmin UI: http://localhost:5050${RESET}"
@@ -531,7 +633,7 @@ start_postgresql_with_ui() {
     echo "     Port: 5432"
     echo "     Database: ${DATABASE_NAME:-agenthub}"
     echo "     Username: ${DATABASE_USER:-agenthub_user}"
-    echo "     Password: ${DATABASE_PASSWORD:-dev_password}"
+    echo "     Password: ${DATABASE_PASSWORD:-P02tqbj016p9}"
 }
 
 # Build and start Supabase Cloud configuration
@@ -699,21 +801,75 @@ view_logs() {
     esac
 }
 
-# Database shell access
+# Database shell access with automatic connection
 database_shell() {
     echo -e "${CYAN}🗄️  Database Shell Options:${RESET}"
-    echo "1) PostgreSQL (if running locally)"
+    echo "1) PostgreSQL (automatic connection)"
     echo "2) Redis (if running locally)"
-    
+
     read -p "Select database: " db_choice
-    
+
     case $db_choice in
-        1) 
-            echo "Connecting to PostgreSQL..."
-            docker exec -it agenthub-postgres psql -U postgres -d agenthub 2>/dev/null || \
-            echo "PostgreSQL container not found or not accessible"
+        1)
+            echo -e "${CYAN}Connecting to PostgreSQL with automatic authentication...${RESET}"
+            echo ""
+
+            # Check if PostgreSQL container is running
+            if docker ps | grep -q agenthub-postgres; then
+                echo -e "${GREEN}✅ PostgreSQL container found${RESET}"
+                echo -e "${YELLOW}Connection details:${RESET}"
+                echo "  Host: agenthub-postgres (Docker internal)"
+                echo "  Database: dhafnck_mcp"
+                echo "  User: dhafnck_user"
+                echo ""
+
+                # Use Docker exec with automatic password
+                echo -e "${CYAN}Connecting via Docker exec (no password required)...${RESET}"
+                echo -e "${YELLOW}Type \\q to exit, \\l to list databases, \\dt to list tables${RESET}"
+                echo "────────────────────────────────────────────────"
+
+                PGPASSWORD="${DATABASE_PASSWORD}" docker exec -it agenthub-postgres psql -U dhafnck_user -d dhafnck_mcp 2>/dev/null || {
+                    echo -e "${RED}❌ Failed to connect via Docker exec${RESET}"
+                    echo -e "${YELLOW}Trying alternative connection method...${RESET}"
+
+                    # Fallback: try external connection if psql is available
+                    if command -v psql >/dev/null 2>&1; then
+                        echo -e "${CYAN}Connecting via external psql...${RESET}"
+                        PGPASSWORD="${DATABASE_PASSWORD}" psql -h localhost -p "${DATABASE_PORT:-5432}" -U dhafnck_user -d dhafnck_mcp
+                    else
+                        echo -e "${RED}❌ psql not available on host. Install PostgreSQL client tools.${RESET}"
+                    fi
+                }
+
+            else
+                echo -e "${YELLOW}⚠️  PostgreSQL container not running. Trying external connection...${RESET}"
+
+                # Try external connection if PostgreSQL container is not running
+                if command -v psql >/dev/null 2>&1; then
+                    echo -e "${CYAN}Attempting external connection to localhost:${DATABASE_PORT:-5432}...${RESET}"
+                    echo -e "${YELLOW}Connection details:${RESET}"
+                    echo "  Host: localhost"
+                    echo "  Port: ${DATABASE_PORT:-5432}"
+                    echo "  Database: dhafnck_mcp"
+                    echo "  User: dhafnck_user"
+                    echo ""
+                    echo -e "${YELLOW}Type \\q to exit, \\l to list databases, \\dt to list tables${RESET}"
+                    echo "────────────────────────────────────────────────"
+
+                    PGPASSWORD="${DATABASE_PASSWORD}" psql -h localhost -p "${DATABASE_PORT:-5432}" -U dhafnck_user -d dhafnck_mcp || {
+                        echo -e "${RED}❌ Connection failed. Please check:${RESET}"
+                        echo "  1. PostgreSQL is running (use option B to start)"
+                        echo "  2. Connection parameters in .env.dev are correct"
+                        echo "  3. Database port ${DATABASE_PORT:-5432} is accessible"
+                    }
+                else
+                    echo -e "${RED}❌ PostgreSQL not accessible. Please:${RESET}"
+                    echo "  1. Start PostgreSQL container (option B)"
+                    echo "  2. Or install PostgreSQL client tools (psql)"
+                fi
+            fi
             ;;
-        2) 
+        2)
             echo "Connecting to Redis..."
             docker exec -it agenthub-redis redis-cli 2>/dev/null || \
             echo "Redis container not found or not accessible"
@@ -1064,12 +1220,12 @@ start_dev_mode() {
     fi
     echo -e "${GREEN}✅ Node.js found: $(node --version)${RESET}"
     
-    # Check npm
-    if ! command -v npm &> /dev/null; then
-        echo -e "${RED}❌ npm is not installed${RESET}"
+    # Check pnpm
+    if ! command -v pnpm &> /dev/null; then
+        echo -e "${RED}❌ pnpm is not installed${RESET}"
         return 1
     fi
-    echo -e "${GREEN}✅ npm found: $(npm --version)${RESET}"
+    echo -e "${GREEN}✅ pnpm found: $(pnpm --version)${RESET}"
     
     # Check for .env.dev or .env file
     if [[ -f "${PROJECT_ROOT}/.env.dev" ]]; then
@@ -1206,7 +1362,7 @@ start_dev_mode() {
     # Install frontend dependencies if needed
     if [[ ! -d "node_modules" ]]; then
         echo -e "${YELLOW}Installing frontend dependencies...${RESET}"
-        npm install
+        pnpm install
     fi
     
     # Start frontend in background with hot reload (Vite has HMR by default)
@@ -1214,7 +1370,7 @@ start_dev_mode() {
     export VITE_API_URL="http://localhost:${FASTMCP_PORT}"
     export CHOKIDAR_USEPOLLING=true
     export WATCHPACK_POLLING=true
-    nohup npm start > "${PROJECT_ROOT}/logs/frontend.log" 2>&1 &
+    nohup pnpm start > "${PROJECT_ROOT}/logs/frontend.log" 2>&1 &
     FRONTEND_PID=$!
     echo "Frontend PID: $FRONTEND_PID (with HMR enabled)"
     
@@ -1299,7 +1455,7 @@ stop_dev_mode() {
     # Also check for any orphaned processes
     echo "Checking for orphaned processes..."
     pkill -f "uvicorn.*8000" 2>/dev/null || true
-    pkill -f "npm.*dev.*3800" 2>/dev/null || true
+    pkill -f "pnpm.*dev.*3800" 2>/dev/null || true
     pkill -f "vite.*3800" 2>/dev/null || true
     
     echo -e "${GREEN}✅ Development services stopped${RESET}"
@@ -1324,7 +1480,7 @@ restart_dev_mode() {
     pkill -f "python.*mcp_entry_point" 2>/dev/null || true
     pkill -f "python.*fastmcp" 2>/dev/null || true
     pkill -f "uvicorn" 2>/dev/null || true
-    pkill -f "npm.*start" 2>/dev/null || true
+    pkill -f "pnpm.*start" 2>/dev/null || true
     pkill -f "vite" 2>/dev/null || true
     pkill -f "node.*3800" 2>/dev/null || true
 
@@ -1449,7 +1605,8 @@ main() {
             2) start_supabase_cloud ;;
             3) start_redis_supabase ;;
             [Bb]) start_database_only ;;
-            [Cc]) start_postgresql_with_ui ;;
+            [Cc]) check_postgresql_connection ;;
+            [Gg]) start_postgresql_with_ui ;;
             [Dd]) start_dev_mode ;;
             [Rr]) restart_dev_mode ;;
             [Pp]) start_optimized_mode ;;

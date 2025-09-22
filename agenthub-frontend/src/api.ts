@@ -294,6 +294,12 @@ export const listBranches = async (project_id: string): Promise<Branch[]> => {
     return response.branches || [];
 };
 
+// Get bulk summaries using the new optimized endpoint
+export const getBulkBranchSummaries = async (projectIds?: string[]): Promise<any> => {
+    const response = await branchApiV2.getBulkSummaries(projectIds, false);
+    return response;
+};
+
 export const createBranch = async (project_id: string, branch: Partial<Branch>): Promise<Branch> => {
     const response = await branchApiV2.createBranch(project_id, {
         git_branch_name: branch.git_branch_name || '',
@@ -553,5 +559,5 @@ export const checkHealth = async (): Promise<boolean> => {
     }
 };
 
-// Export utility functions
+// Export utility functions and bulk API functions
 export { getCurrentUserId, isAuthenticated };

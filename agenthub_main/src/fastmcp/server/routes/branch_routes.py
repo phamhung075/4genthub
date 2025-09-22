@@ -380,26 +380,26 @@ async def get_project_branches_with_task_counts(
 ):
     """
     Get all branches for a project with their task counts.
-    
+
     This is an optimized endpoint for sidebar performance.
     """
     try:
         # Log the access for audit
         logger.info(f"User {current_user.email} loading branch summaries for project: {project_id}")
-        
+
         # Delegate to API controller - using the optimized method
         result = branch_controller.get_branches_with_task_counts(
             project_id=project_id,
             user_id=current_user.id,
             session=db
         )
-        
+
         if not result.get("success"):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=result.get("message", "Failed to fetch branch summaries")
             )
-        
+
         return {
             "success": True,
             "branches": result.get("branches", []),
@@ -407,7 +407,7 @@ async def get_project_branches_with_task_counts(
             "total_branches": result.get("total_branches", 0),
             "message": f"Branch summaries retrieved for user {current_user.email}"
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -415,4 +415,60 @@ async def get_project_branches_with_task_counts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch branch summaries"
+        )
+
+
+# Request model for bulk summaries
+class BulkSummaryRequest(BaseModel):
+    project_ids: Optional[List[str]] = None
+    include_archived: bool = False
+
+
+@router.post("/summaries/bulk", response_model=dict)
+async def get_bulk_summaries(
+    request: BulkSummaryRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get bulk summaries for multiple projects in a single request.
+
+    This endpoint queries the materialized views for optimized performance.
+    Returns all branch summaries and project summaries in one response.
+    """
+    try:
+        # Log the access for audit
+        project_count = len(request.project_ids) if request.project_ids else "all"
+        logger.info(f"User {current_user.email} loading bulk summaries for {project_count} projects")
+
+        # Delegate to API controller - using the new bulk method
+        result = branch_controller.get_bulk_summaries(
+            project_ids=request.project_ids,
+            user_id=current_user.id,
+            include_archived=request.include_archived,
+            session=db
+        )
+
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result.get("error", "Failed to fetch bulk summaries")
+            )
+
+        return {
+            "success": True,
+            "summaries": result.get("summaries", {}),
+            "projects": result.get("projects", {}),
+            "metadata": result.get("metadata", {}),
+            "timestamp": result.get("timestamp"),
+            "message": f"Bulk summaries retrieved for user {current_user.email}"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching bulk summaries for user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch bulk summaries"
         )

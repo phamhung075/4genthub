@@ -205,7 +205,7 @@ class ComprehensiveLogger {
       }
     } catch (error) {
       // If remote logging fails, don't throw error - just log to console in development
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.warn('Remote logging failed:', error);
       }
     }

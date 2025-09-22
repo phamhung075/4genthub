@@ -274,8 +274,9 @@ export const changePoolService = new ChangePoolService();
 // Auto-connect to WebSocket service when this module is imported
 if (typeof window !== 'undefined') {
   console.log('🔌 ChangePool: Starting WebSocket connection process...');
-  import('./websocketService').then(({ websocketService }) => {
-    console.log('🔌 ChangePool: WebSocket service imported successfully');
+  import('./WebSocketClient').then(({ WebSocketClient }) => {
+    console.log('🔌 ChangePool: WebSocket client imported successfully');
+    const websocketService = new WebSocketClient();
 
     // Subscribe to all WebSocket messages and process them through change pool
     const unsubscribe = websocketService.on('*', (message) => {

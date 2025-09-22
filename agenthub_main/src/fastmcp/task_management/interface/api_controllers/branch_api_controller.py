@@ -485,49 +485,49 @@ class BranchAPIController:
     async def get_branch_task_counts(self, branch_id: str, user_id: str, session) -> Dict[str, Any]:
         """
         Get task counts for a branch following DDD architecture.
-        
+
         Args:
             branch_id: Branch identifier
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             Task counts with nested task_counts object for frontend compatibility
         """
         try:
             # First, get the project_id from the branch to comply with DDD requirements
             from ...application.services.repository_provider_service import RepositoryProviderService
-            
+
             repo_provider = RepositoryProviderService.get_instance()
             git_branch_repo = repo_provider.get_git_branch_repository(user_id=user_id)
-            
+
             # Find the branch by ID to get its project_id
             git_branch = await git_branch_repo.find_by_id(branch_id)
-            
+
             if not git_branch:
                 logger.warning(f"Branch {branch_id} not found for task counts")
                 return {
                     "success": False,
                     "error": f"Branch {branch_id} not found"
                 }
-            
+
             # Create facade with proper project_id for DDD compliance
             facade = self.facade_service.get_branch_facade(
                 project_id=git_branch.project_id,
                 user_id=user_id
             )
-            
+
             # Get branch summary which includes task counts
             result = facade.get_branch_summary(branch_id)
-            
+
             if not result.get("success"):
                 return {
                     "success": False,
                     "error": result.get("error", "Failed to get branch summary")
                 }
-            
+
             branch = result.get("branch", {})
-            
+
             # Create task_counts object in the format frontend expects
             task_counts = {
                 "total": branch.get("total_tasks", 0),
@@ -537,19 +537,188 @@ class BranchAPIController:
                 "blocked": branch.get("blocked_tasks", 0),
                 "progress_percentage": branch.get("progress_percentage", 0.0)
             }
-            
+
             logger.info(f"Retrieved task counts for branch {branch_id}")
-            
+
             return {
                 "success": True,
                 "task_counts": task_counts,
                 "branch_id": branch_id
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting branch task counts: {e}")
             return {
                 "success": False,
                 "error": str(e),
                 "task_counts": {}
+            }
+
+    def get_bulk_summaries(self, project_ids: Optional[list] = None, user_id: str = None,
+                          include_archived: bool = False, session=None) -> Dict[str, Any]:
+        """
+        Get bulk summaries for multiple projects in a single request.
+        Queries the materialized views for optimized performance.
+
+        Args:
+            project_ids: Optional list of project IDs to fetch
+            user_id: User ID for filtering projects
+            include_archived: Whether to include archived branches
+            session: Database session
+
+        Returns:
+            Bulk summary response with all branches and projects
+        """
+        import time
+        start_time = time.time()
+
+        try:
+            from sqlalchemy import text
+
+            # Query branch_summaries_mv
+            query = """
+            SELECT
+                branch_id,
+                project_id,
+                branch_name,
+                branch_status,
+                branch_priority,
+                total_tasks,
+                completed_tasks,
+                in_progress_tasks,
+                blocked_tasks,
+                todo_tasks,
+                progress_percentage,
+                last_task_activity
+            FROM branch_summaries_mv
+            WHERE 1=1
+            """
+
+            params = {}
+
+            if project_ids:
+                # Use IN clause for multiple project IDs
+                placeholders = ', '.join([f':p{i}' for i in range(len(project_ids))])
+                query += f" AND project_id IN ({placeholders})"
+                for i, pid in enumerate(project_ids):
+                    params[f'p{i}'] = pid
+            elif user_id:
+                # Get user's projects first
+                user_projects_query = text("""
+                    SELECT DISTINCT project_id
+                    FROM project_git_branchs b
+                    WHERE b.user_id = :user_id
+                """)
+                result = session.execute(user_projects_query, {'user_id': user_id})
+                user_project_ids = [row[0] for row in result]
+
+                if user_project_ids:
+                    placeholders = ', '.join([f':p{i}' for i in range(len(user_project_ids))])
+                    query += f" AND project_id IN ({placeholders})"
+                    for i, pid in enumerate(user_project_ids):
+                        params[f'p{i}'] = pid
+                else:
+                    # No projects found for user
+                    return {
+                        'success': True,
+                        'summaries': {},
+                        'projects': {},
+                        'metadata': {
+                            'count': 0,
+                            'query_time_ms': 0,
+                            'from_cache': False,
+                            'message': 'No projects found for user'
+                        },
+                        'timestamp': time.time()
+                    }
+
+            if not include_archived:
+                query += " AND branch_status != 'archived'"
+
+            # Execute query
+            result = session.execute(text(query), params)
+            rows = result.fetchall()
+
+            # Build response
+            summaries = {}
+            project_ids_found = set()
+
+            for row in rows:
+                branch_summary = {
+                    'id': row[0],
+                    'project_id': row[1],
+                    'name': row[2],
+                    'status': row[3],
+                    'priority': row[4],
+                    'total_tasks': row[5] or 0,
+                    'completed_tasks': row[6] or 0,
+                    'in_progress_tasks': row[7] or 0,
+                    'blocked_tasks': row[8] or 0,
+                    'todo_tasks': row[9] or 0,
+                    'progress_percentage': float(row[10] or 0),
+                    'last_activity': row[11].isoformat() if row[11] else None
+                }
+                summaries[row[0]] = branch_summary
+                project_ids_found.add(row[1])
+
+            # Get project summaries from project_summaries_mv
+            projects = {}
+            if project_ids_found:
+                project_placeholders = ', '.join([f':proj{i}' for i in range(len(project_ids_found))])
+                project_query = text(f"""
+                    SELECT
+                        project_id,
+                        project_name,
+                        project_description,
+                        total_branches,
+                        active_branches,
+                        total_tasks,
+                        completed_tasks,
+                        overall_progress_percentage
+                    FROM project_summaries_mv
+                    WHERE project_id IN ({project_placeholders})
+                """)
+
+                project_params = {}
+                for i, pid in enumerate(project_ids_found):
+                    project_params[f'proj{i}'] = pid
+
+                project_result = session.execute(project_query, project_params)
+
+                for row in project_result:
+                    projects[row[0]] = {
+                        'id': row[0],
+                        'name': row[1],
+                        'description': row[2],
+                        'total_branches': row[3] or 0,
+                        'active_branches': row[4] or 0,
+                        'total_tasks': row[5] or 0,
+                        'completed_tasks': row[6] or 0,
+                        'progress_percentage': float(row[7] or 0)
+                    }
+
+            query_time = (time.time() - start_time) * 1000  # ms
+
+            logger.info(f"Bulk summaries retrieved: {len(summaries)} branches, {len(projects)} projects in {query_time:.2f}ms")
+
+            return {
+                'success': True,
+                'summaries': summaries,
+                'projects': projects,
+                'metadata': {
+                    'count': len(summaries),
+                    'query_time_ms': round(query_time, 2),
+                    'from_cache': False
+                },
+                'timestamp': time.time()
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting bulk summaries: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'summaries': {},
+                'projects': {},
+                'metadata': {'error': str(e)}
             }
