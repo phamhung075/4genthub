@@ -13,6 +13,8 @@ import {
   selectWebSocketError,
 } from '../store/slices/webSocketSlice';
 import { updateFromWebSocket } from '../store/slices/cascadeSlice';
+import { webSocketAnimationService } from '../services/WebSocketAnimationService';
+import { initializeWebSocketIntegration } from '../services/changePoolService';
 
 
 /**
@@ -40,19 +42,24 @@ export function useWebSocket(userId: string, token: string) {
 
     // Handle updates (both immediate and batched)
     client.on('update', (message: WSMessage) => {
+      console.log('[useWebSocket] 🎯 UPDATE EVENT RECEIVED:', {
+        messageId: message.id,
+        entity: message.payload.entity,
+        action: message.payload.action,
+        source: message.metadata?.source,
+        hasCascade: !!message.payload.data.cascade
+      });
+
       // Dispatch message to Redux store
       dispatch(messageReceived(message));
 
       // Process cascade data if present
       if (message.payload.data.cascade) {
+        console.log('[useWebSocket] 🔄 Processing cascade data');
         dispatch(updateFromWebSocket(message.payload.data.cascade));
       }
 
-      console.log('[WebSocket] Processed update:', {
-        entity: message.payload.entity,
-        action: message.payload.action,
-        hasCascade: !!message.payload.data.cascade
-      });
+      console.log('[useWebSocket] ✅ Processed update successfully');
     });
 
     // Handle user actions (immediate feedback)
@@ -64,24 +71,30 @@ export function useWebSocket(userId: string, token: string) {
 
     // Handle connection events
     client.on('connected', () => {
-      console.log('[useWebSocket] Connected');
+      console.log('[useWebSocket] ✅ CONNECTED - WebSocket ready');
       dispatch(connected({}));
     });
 
     client.on('disconnected', () => {
-      console.log('[useWebSocket] Disconnected');
+      console.log('[useWebSocket] ❌ DISCONNECTED');
       dispatch(disconnected());
     });
 
     client.on('error', (errorEvent: Event) => {
-      console.error('[useWebSocket] Error:', errorEvent);
+      console.error('[useWebSocket] ❌ ERROR:', errorEvent);
       dispatch(error('WebSocket connection error'));
     });
 
     client.on('reconnectFailed', () => {
-      console.error('[useWebSocket] Failed to reconnect');
+      console.error('[useWebSocket] ❌ RECONNECT FAILED');
       dispatch(reconnectFailed());
     });
+
+    // Initialize the animation service with the WebSocket client
+    webSocketAnimationService.init(client);
+
+    // Initialize the change pool service with the WebSocket client
+    const cleanupChangePool = initializeWebSocketIntegration(client);
 
     // Connect to server
     client.connect();
@@ -90,6 +103,7 @@ export function useWebSocket(userId: string, token: string) {
     return () => {
       console.log('[useWebSocket] Cleaning up');
       client.disconnect();
+      cleanupChangePool();
       clientRef.current = null;
     };
   }, [userId, token, dispatch]);
@@ -97,7 +111,7 @@ export function useWebSocket(userId: string, token: string) {
   /**
    * Send message to WebSocket server
    */
-  const sendMessage = useCallback((message: Partial<WSMessage>) => {
+  const sendMessage = useCallback((message: Record<string, unknown>) => {
     if (clientRef.current) {
       clientRef.current.send(message);
     } else {
@@ -143,19 +157,10 @@ export function useBranchWebSocket(userId: string, token: string, branchId?: str
   const subscribeToBranch = useCallback(() => {
     if (branchId) {
       sendMessage({
-        type: 'update',
-        payload: {
-          entity: 'subscription',
-          action: 'subscribe',
-          data: {
-            primary: {
-              entityType: 'branch',
-              entityId: branchId
-            }
-          }
-        },
-        metadata: {
-          source: 'user'
+        type: 'subscribe',
+        scope: 'branch',
+        filters: {
+          branch_id: branchId
         }
       });
     }
@@ -182,19 +187,10 @@ export function useTaskWebSocket(userId: string, token: string, taskId?: string)
   const subscribeToTask = useCallback(() => {
     if (taskId) {
       sendMessage({
-        type: 'update',
-        payload: {
-          entity: 'subscription',
-          action: 'subscribe',
-          data: {
-            primary: {
-              entityType: 'task',
-              entityId: taskId
-            }
-          }
-        },
-        metadata: {
-          source: 'user'
+        type: 'subscribe',
+        scope: 'task',
+        filters: {
+          task_id: taskId
         }
       });
     }

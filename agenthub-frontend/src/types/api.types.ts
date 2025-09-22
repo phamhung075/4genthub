@@ -26,6 +26,12 @@ export interface BranchSummary {
   todo_tasks: number;
   progress_percentage: number;
   last_activity?: string; // ISO date string
+  has_urgent_tasks?: boolean; // Flag for urgent tasks
+  is_completed?: boolean; // Flag for completed branches
+  task_counts?: { // Additional task count details
+    total: number;
+    [key: string]: any;
+  };
 }
 
 export interface ProjectSummary {

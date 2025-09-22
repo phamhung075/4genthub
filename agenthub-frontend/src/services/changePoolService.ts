@@ -272,65 +272,92 @@ class ChangePoolService {
 export const changePoolService = new ChangePoolService();
 
 // Auto-connect to WebSocket service when this module is imported
-if (typeof window !== 'undefined') {
-  console.log('🔌 ChangePool: Starting WebSocket connection process...');
-  import('./WebSocketClient').then(({ WebSocketClient }) => {
-    console.log('🔌 ChangePool: WebSocket client imported successfully');
-    const websocketService = new WebSocketClient();
+/**
+ * Initialize change pool WebSocket integration
+ * This should be called with the WebSocket client instance from useWebSocket hook
+ */
+function initializeWebSocketIntegration(webSocketClient: any): () => void {
+  console.log('🔌 ChangePool: Initializing WebSocket integration...');
+  logger.info('🔌 ChangePool: Initializing WebSocket integration');
 
-    // Subscribe to all WebSocket messages and process them through change pool
-    const unsubscribe = websocketService.on('*', (message) => {
-      console.log('📡 ChangePool: Received WebSocket message:', message);
-      logger.debug('📡 ChangePool: Received WebSocket message:', message);
+  // Subscribe to WebSocket update messages
+  const unsubscribe: unknown = webSocketClient.on('update', (message: any) => {
+    console.log('📡 ChangePool: Received WebSocket update message:', message);
+    logger.debug('📡 ChangePool: Received WebSocket update message:', message);
 
-      // Only process status_update messages (data changes)
-      if (message.type === 'status_update' && message.metadata?.entity_type) {
-        console.log('📡 ChangePool: Processing status_update message:', {
-          entityType: message.metadata.entity_type,
-          entityId: message.metadata.entity_id,
-          eventType: message.metadata.event_type || message.event_type
-        });
-        logger.info('📡 ChangePool: Processing status_update message:', {
-          entityType: message.metadata.entity_type,
-          entityId: message.metadata.entity_id,
-          eventType: message.metadata.event_type || message.event_type
-        });
+    // Process v2.0 protocol messages (check both payload and metadata for entity info)
+    if (message.type === 'update' && (message.payload?.entity || message.metadata?.entity_type)) {
+      // Extract entity information from v2.0 protocol structure
+      const entityType = message.payload?.entity || message.metadata?.entity_type;
+      const action = message.payload?.action || message.metadata?.event_type || 'updated';
+      const entityId = message.metadata?.entity_id || 'unknown';
 
-        const notification: ChangeNotification = {
-          entityType: message.metadata.entity_type as EntityType,
-          entityId: message.metadata.entity_id || 'unknown',
-          eventType: (message.metadata.event_type || message.event_type || 'updated') as EventType,
-          userId: message.user_id || 'system',
-          data: message.data,
-          metadata: message.metadata,
-          timestamp: message.metadata.timestamp || new Date().toISOString()
-        };
+      console.log('📡 ChangePool: Processing v2.0 update message:', {
+        entityType,
+        entityId,
+        action,
+        version: message.version
+      });
+      logger.info('📡 ChangePool: Processing v2.0 update message:', {
+        entityType,
+        entityId,
+        action,
+        version: message.version
+      });
 
-        changePoolService.processChange(notification);
-      } else {
-        console.log('📡 ChangePool: Ignoring non-status_update message:', {
-          type: message.type,
-          hasMetadata: !!message.metadata,
-          entityType: message.metadata?.entity_type
-        });
-        logger.debug('📡 ChangePool: Ignoring non-status_update message:', {
-          type: message.type,
-          hasMetadata: !!message.metadata,
-          entityType: message.metadata?.entity_type
-        });
-      }
-    });
+      const notification: ChangeNotification = {
+        entityType: entityType as EntityType,
+        entityId: entityId,
+        eventType: action as EventType,
+        userId: message.metadata?.userId || 'system',
+        data: message.payload?.data?.primary || message.data || {},
+        metadata: message.metadata,
+        timestamp: message.timestamp || new Date().toISOString()
+      };
 
-    console.log('📡 ChangePool: Subscribed to WebSocket service with handler function');
-    logger.info('📡 ChangePool: Connected to WebSocket service');
-
-    // Cleanup on window unload
-    window.addEventListener('beforeunload', () => {
-      unsubscribe();
-      changePoolService.clearAllSubscriptions();
-    });
-  }).catch((error) => {
-    console.error('📡 ChangePool: Failed to connect to WebSocket service:', error);
-    logger.error('📡 ChangePool: Failed to connect to WebSocket service:', error);
+      changePoolService.processChange(notification);
+    } else {
+      console.log('📡 ChangePool: Ignoring non-update message:', {
+        type: message.type,
+        version: message.version,
+        hasPayload: !!message.payload,
+        entityType: message.payload?.entity || message.metadata?.entity_type
+      });
+      logger.debug('📡 ChangePool: Ignoring non-update message:', {
+        type: message.type,
+        version: message.version,
+        hasPayload: !!message.payload,
+        entityType: message.payload?.entity || message.metadata?.entity_type
+      });
+    }
   });
+
+  console.log('📡 ChangePool: Subscribed to WebSocket update events');
+  logger.info('📡 ChangePool: Connected to WebSocket service');
+
+  // Return cleanup function
+  return () => {
+    // Safe unsubscribe - check if it's actually a function before calling
+    if (typeof unsubscribe === 'function') {
+      console.log('🔌 ChangePool: Unsubscribing from WebSocket events');
+      logger.debug('🔌 ChangePool: Unsubscribing from WebSocket events');
+      unsubscribe();
+    } else {
+      console.warn('🔌 ChangePool: unsubscribe is not a function, WebSocket cleanup may be incomplete', {
+        unsubscribeType: typeof unsubscribe,
+        unsubscribeValue: unsubscribe
+      });
+      logger.warn('🔌 ChangePool: unsubscribe is not a function, WebSocket cleanup may be incomplete', {
+        unsubscribeType: typeof unsubscribe,
+        unsubscribeValue: unsubscribe
+      });
+    }
+
+    console.log('🔌 ChangePool: Clearing all change pool subscriptions');
+    logger.debug('🔌 ChangePool: Clearing all change pool subscriptions');
+    changePoolService.clearAllSubscriptions();
+  };
 }
+
+// Export the initialization function for use in App.tsx or useWebSocket hook
+export { initializeWebSocketIntegration };

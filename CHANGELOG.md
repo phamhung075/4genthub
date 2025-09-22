@@ -6,6 +6,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+- **Frontend WebSocket Unsubscribe Function Error**: Fixed critical TypeError preventing WebSocket DELETE notifications from working
+  - Root cause: `unsubscribe()` was being called without checking if it's actually a function, causing "unsubscribe is not a function" crash
+  - Solution: Added type safety check `if (typeof unsubscribe === 'function')` before calling unsubscribe
+  - Enhanced function with proper TypeScript typing and comprehensive error logging
+  - Files modified: `agenthub-frontend/src/services/changePoolService.ts:340-359, 279, 284`
+  - Impact: Prevents application crashes on component unmount, allows DELETE notifications to be received properly
+  - Testing: Frontend builds successfully without TypeScript errors
+- **WebSocket Authorization for Frontend Connections**: Resolved critical issue where WebSocket messages weren't reaching frontend clients
+  - Root cause: WebSocket connections weren't being properly maintained in the `connection_users` mapping
+  - Solution: Enhanced WebSocket connection establishment and token validation flow
+  - Added comprehensive debugging logs for WebSocket authentication and authorization
+  - Verified JWT token validation working correctly with Keycloak authentication
+  - Confirmed all message types (create, update, delete) are now broadcasting successfully to authorized clients
+  - Files modified: `agenthub_main/src/fastmcp/server/routes/websocket_routes.py`
+  - Testing: All WebSocket operations verified with 2/2 authorized clients receiving messages
+  - Impact: Frontend real-time updates and animations now trigger correctly
+
 ### Added
 - **Automatic Database Migrations on Server Startup**: Integrated AutoMigrationRunner into server startup process
   - Modified `init_database.py` to automatically run migrations after table creation

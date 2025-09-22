@@ -64,13 +64,17 @@ export class WebSocketClient extends EventEmitter {
    */
   connect(): void {
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
+      console.log('[WebSocket v2.0] Already connecting or connected, skipping');
       return;
     }
 
     this.isConnecting = true;
     const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/realtime?token=${this.token}`;
 
-    console.log('[WebSocket v2.0] Connecting...');
+    console.log('[WebSocket v2.0] 🔌 Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
+    console.log('[WebSocket v2.0] 🔑 Token length:', this.token ? this.token.length : 0);
+    console.log('[WebSocket v2.0] 👤 User ID:', this.userId);
+
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = this.handleOpen.bind(this);
@@ -80,38 +84,65 @@ export class WebSocketClient extends EventEmitter {
   }
 
   private handleOpen(): void {
-    console.log('[WebSocket v2.0] Connected successfully');
+    console.log('[WebSocket v2.0] ✅ Connected successfully');
+    console.log('[WebSocket v2.0] 📡 Connection state:', this.ws?.readyState);
+    console.log('[WebSocket v2.0] 🎯 Event listeners count:', this.listenerCount('connected'));
+
     this.isConnecting = false;
     this.reconnectAttempts = 0;
+
+    console.log('[WebSocket v2.0] 🔊 Emitting "connected" event');
     this.emit('connected');
 
     // Start heartbeat
     this.startHeartbeat();
+    console.log('[WebSocket v2.0] 💓 Heartbeat started');
   }
 
   private handleMessage(event: MessageEvent): void {
+    console.log('[WebSocket v2.0] 📨 Raw message received:', {
+      type: typeof event.data,
+      length: event.data?.length,
+      preview: event.data?.substring(0, 200)
+    });
+
     try {
       const message: WSMessage = JSON.parse(event.data);
 
+      console.log('[WebSocket v2.0] 📋 Parsed message:', {
+        id: message.id,
+        version: message.version,
+        type: message.type,
+        entity: message.payload?.entity,
+        action: message.payload?.action,
+        source: message.metadata?.source
+      });
+
       // ONLY accept v2.0 messages - reject all others
       if (message.version !== '2.0') {
-        console.error('[WebSocket] Rejected non-v2.0 message:', message.version);
+        console.error('[WebSocket] ❌ Rejected non-v2.0 message:', message.version);
         return;
       }
 
       // Handle heartbeat
       if (message.type === 'heartbeat') {
+        console.log('[WebSocket v2.0] 💓 Heartbeat received');
         return;
       }
 
+      console.log('[WebSocket v2.0] 🎯 Routing message based on source:', message.metadata?.source);
+
       // Route based on source for dual-track processing
       if (message.metadata?.source === 'mcp-ai') {
+        console.log('[WebSocket v2.0] 🤖 Buffering AI update');
         this.bufferAIUpdate(message);
       } else {
+        console.log('[WebSocket v2.0] ⚡ Processing immediate update');
         this.processImmediateUpdate(message);
       }
     } catch (error) {
-      console.error('[WebSocket] Failed to parse message:', error);
+      console.error('[WebSocket] ❌ Failed to parse message:', error);
+      console.error('[WebSocket] 📝 Raw data:', event.data);
     }
   }
 
@@ -155,10 +186,19 @@ export class WebSocketClient extends EventEmitter {
    * Process user updates immediately (no batching)
    */
   private processImmediateUpdate(message: WSMessage): void {
+    console.log('[WebSocket v2.0] ⚡ Processing immediate update:', {
+      entity: message.payload?.entity,
+      action: message.payload?.action,
+      updateListeners: this.listenerCount('update'),
+      userActionListeners: this.listenerCount('userAction')
+    });
+
+    console.log('[WebSocket v2.0] 🔊 Emitting "update" event');
     this.emit('update', message);
 
     // Special handling for user actions
     if (message.metadata?.source === 'user') {
+      console.log('[WebSocket v2.0] 🔊 Emitting "userAction" event');
       this.emit('userAction', message);
     }
   }
@@ -232,31 +272,39 @@ export class WebSocketClient extends EventEmitter {
   /**
    * Send message to server (v2.0 protocol only)
    */
-  send(message: Partial<WSMessage>): void {
+  send(message: Record<string, unknown> & { type?: string }): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       console.error('[WebSocket] Not connected');
       return;
     }
 
-    const fullMessage: WSMessage = {
+    const { type, ...rest } = message;
+    const fullMessage = {
       id: `msg-${Date.now()}`,
       version: '2.0',
       timestamp: new Date().toISOString(),
       sequence: this.sequenceNumber++,
-      type: 'update',
-      ...message
-    } as WSMessage;
+      type: typeof type === 'string' ? type : 'update',
+      ...rest
+    };
 
     this.ws.send(JSON.stringify(fullMessage));
   }
 
   private handleError(error: Event): void {
-    console.error('[WebSocket] Error:', error);
+    console.error('[WebSocket v2.0] ❌ Connection error:', error);
+    console.error('[WebSocket v2.0] 📊 Connection state:', this.ws?.readyState);
+    console.error('[WebSocket v2.0] 🔗 URL:', this.ws?.url?.replace(/token=[^&]+/, 'token=***'));
     this.emit('error', error);
   }
 
-  private handleClose(): void {
-    console.log('[WebSocket] Disconnected');
+  private handleClose(event?: CloseEvent): void {
+    console.log('[WebSocket v2.0] 🔌 Connection closed:', {
+      code: event?.code,
+      reason: event?.reason,
+      wasClean: event?.wasClean,
+      readyState: this.ws?.readyState
+    });
     this.isConnecting = false;
     this.stopHeartbeat();
     this.emit('disconnected');

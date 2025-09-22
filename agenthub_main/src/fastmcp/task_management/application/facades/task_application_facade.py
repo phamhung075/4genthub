@@ -559,17 +559,32 @@ class TaskApplicationFacade:
             if not task_id or not task_id.strip():
                 raise ValueError("Task ID is required")
 
+            # CRITICAL FIX: Get task context BEFORE deletion
+            # This prevents the WebSocket notification from trying to fetch context for a deleted task
+            try:
+                task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+                logger.info(f"✅ Pre-fetched task context before deletion: {task_context}")
+            except Exception as e:
+                logger.warning(f"Failed to get task context before deletion: {e}")
+                # Use fallback context if pre-fetch fails
+                task_context = {
+                    "task_title": f"Task {task_id[:8]}",
+                    "parent_branch_id": None,
+                    "parent_branch_title": "Unknown Branch"
+                }
+
             # Execute use case
             success = self._delete_task_use_case.execute(task_id)
 
             if success:
-                # Broadcast task deletion event
+                # Broadcast task deletion event with pre-fetched context
                 try:
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="deleted",
                         task_id=task_id,
                         user_id=user_id or "system",  # Use provided user_id or fallback to "system"
-                        task_data=None
+                        task_data=None,
+                        pre_fetched_context=task_context  # Pass the pre-fetched context
                     )
                 except Exception as e:
                     logger.warning(f"Failed to broadcast task deletion: {e}")

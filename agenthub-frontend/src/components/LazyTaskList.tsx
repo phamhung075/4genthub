@@ -49,10 +49,10 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   // Get URL parameters to handle automatic dialog opening
   const { taskId: urlTaskId, subtaskId } = useParams<{ taskId?: string; subtaskId?: string }>();
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, tokens } = useAuth();
 
   // Initialize WebSocket for real-time task updates
-  const { isConnected } = useTaskWebSocket(user?.id || '', token || '');
+  const { isConnected } = useTaskWebSocket(user?.id || '', tokens?.access_token || '');
 
   // Core state - minimal for performance
   const [taskSummaries, setTaskSummaries] = useState<TaskSummary[]>([]);
@@ -134,14 +134,46 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
       // Detect changes and trigger animations
       // 1. New tasks (created) - only if we have a previous state to compare
+      // 2. Deleted tasks (removed) - detect tasks that were present but now missing
       if (currentTaskIds.size > 0) {
         const addedTasks = new Set([...newTaskIds].filter(id => !currentTaskIds.has(id)));
+        const deletedTasks = new Set([...currentTaskIds].filter(id => !newTaskIds.has(id)));
+
         logger.debug('Change detection statistics', {
           component: 'LazyTaskList',
           currentTaskIds: currentTaskIds.size,
           newTaskIds: newTaskIds.size,
-          addedTasks: addedTasks.size
+          addedTasks: addedTasks.size,
+          deletedTasks: deletedTasks.size
         });
+
+        // Handle deleted tasks - show notification
+        if (deletedTasks.size > 0) {
+          logger.info('Tasks deleted', { component: 'LazyTaskList', deletedTasks: [...deletedTasks] });
+
+          // Show deletion notification to user
+          deletedTasks.forEach(taskId => {
+            const deletedTask = currentTaskMap.get(taskId);
+            const taskTitle = deletedTask?.title || `Task ${taskId.substring(0, 8)}`;
+
+            // Create a visual notification using the CSS classes from notifications.css
+            const notification = document.createElement('div');
+            notification.className = 'delete-notification animate-slide-in';
+            notification.textContent = `Task "${taskTitle}" has been deleted`;
+            document.body.appendChild(notification);
+
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+              notification.classList.remove('animate-slide-in');
+              notification.classList.add('animate-slide-out');
+              setTimeout(() => {
+                if (document.body.contains(notification)) {
+                  document.body.removeChild(notification);
+                }
+              }, 300);
+            }, 3000);
+          });
+        }
 
         if (addedTasks.size > 0) {
           logger.info('New tasks detected', { component: 'LazyTaskList', addedTasks: [...addedTasks] });
@@ -385,7 +417,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     
     try {
       const [projectAgents, availableAgentsList] = await Promise.all([
-        listAgents(projectId),
+        listAgents(),  // listAgents doesn't take parameters
         getAvailableAgents()
       ]);
       setAgents(projectAgents);

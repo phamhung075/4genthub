@@ -52,7 +52,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   useEffect(() => {
     // Only fetch if we have a task ID, either from prop or from fullTask
     const taskId = task?.id || fullTask?.id;
-    logger.debug('[TaskDetailsDialog] Dialog open:', open, 'TaskID:', taskId, 'Task prop:', task, 'FullTask:', fullTask);
+    logger.debug('[TaskDetailsDialog] Dialog open', { open, taskId, taskProp: task, fullTask });
     
     if (open && taskId) {
       setLoading(true);
@@ -137,7 +137,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   // Handle both response object and direct task object
   const rawDisplayTask = fullTask || task;
   const displayTask = rawDisplayTask?.task || rawDisplayTask;
-  logger.debug('[TaskDetailsDialog] DisplayTask being used:', displayTask, 'RawDisplayTask:', rawDisplayTask, 'FullTask:', fullTask, 'Task:', task);
+  logger.debug('[TaskDetailsDialog] DisplayTask being used', { displayTask, rawDisplayTask, fullTask, taskProp: task });
   
   // Format context data using helper functions
   const contextDisplay = formatContextDisplay(displayTask?.context_data);

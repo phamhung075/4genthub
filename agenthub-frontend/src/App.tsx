@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useParams, useNavigate } from 'react-router-dom';
 import { Project } from './api';
 import './App.css';
+import './styles/animations.css';
+import './styles/websocket-animations.css';
 import { AppLayout } from './components/AppLayout';
 import { AuthWrapper, EmailVerification, LoginForm, ProtectedRoute, SignupForm } from './components/auth';
 import BranchDetailsDialog from './components/BranchDetailsDialog';
@@ -31,6 +33,9 @@ import { HelpSetup } from './pages/HelpSetup';
 import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
+// TEMPORARY: Animation diagnostic component for debugging
+import AnimationDiagnostic from './components/AnimationDiagnostic';
+
 function Dashboard() {
   const { projectId, branchId } = useParams<{
     projectId?: string;
@@ -40,10 +45,10 @@ function Dashboard() {
   }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { user, token } = useAuth();
+  const { user, tokens } = useAuth();
 
   // Initialize WebSocket v2.0 connection
-  const { isConnected } = useWebSocket(user?.id || '', token || '');
+  useWebSocket(user?.id || '', tokens?.access_token || '');
 
   // Derive selection from URL parameters
   const selection = projectId && branchId ? { projectId, branchId } : null;
@@ -189,6 +194,9 @@ function Dashboard() {
                       </button>
                     </div>
                   </div>
+
+                  {/* TEMPORARY: Animation Diagnostic for debugging */}
+                  <AnimationDiagnostic />
                 </div>
               </div>
             )}
