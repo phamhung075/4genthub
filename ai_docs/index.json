@@ -618,7 +618,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 26,
+      "count": 27,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -782,6 +782,13 @@
           "size": 34824
         },
         {
+          "hash": "f69b6e649d5eec20a8dcbaac2fb6f432",
+          "modified": "2025-09-22T22:51:30.602380",
+          "name": "toast-notification-architecture.md",
+          "path": "core-architecture/toast-notification-architecture.md",
+          "size": 23907
+        },
+        {
           "hash": "2e885b833bedba234a95055c9c294902",
           "modified": "2025-09-17T14:11:39.083883",
           "name": "mcp-auto-injection-architecture.md",
@@ -826,7 +833,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 53,
+      "count": 52,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -960,13 +967,6 @@
           "name": "server-initialization-patterns.md",
           "path": "development-guides/server-initialization-patterns.md",
           "size": 5302
-        },
-        {
-          "hash": "4c535d972629b90936644ea043371ce1",
-          "modified": "2025-09-22T19:19:08.351568",
-          "name": "flutter-3-day-learning-plan.md",
-          "path": "development-guides/flutter-3-day-learning-plan.md",
-          "size": 16864
         },
         {
           "hash": "c65dcef80fa903596c3d8dd06b37508c",
@@ -2338,7 +2338,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-22T19:19:08.463542",
+  "generated_at": "2025-09-22T22:51:30.695646",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2491,7 +2491,8 @@
         "session-type-detection.md",
         "sub-agent-instructions.md",
         "system-architecture-overview.md",
-        "task-versioning-analysis.md"
+        "task-versioning-analysis.md",
+        "toast-notification-architecture.md"
       ]
     },
     "deployment": {
@@ -2534,7 +2535,6 @@
         "error-handling-and-logging.md",
         "factory-refactoring-example.md",
         "factory-refactoring-templates.md",
-        "flutter-3-day-learning-plan.md",
         "frontend-ux-enhancements.md",
         "hint-manager-consolidated-system.md",
         "index.md",

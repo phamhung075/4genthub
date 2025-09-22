@@ -1,12 +1,12 @@
 /**
  * WebSocket Animation Service
  *
- * This service bridges WebSocket messages to animation triggers.
- * It listens for task operation messages and triggers appropriate visual feedback.
+ * This service handles ONLY visual animations for WebSocket events.
+ * It does NOT handle notifications - that's the responsibility of WebSocketNotificationService.
+ * Follows single responsibility principle for clean architecture.
  */
 
 import { WSMessage } from './WebSocketClient';
-import { toastEventBus } from './toastEventBus';
 
 export type AnimationTriggerType = 'created' | 'updated' | 'deleted' | 'completed';
 
@@ -85,7 +85,7 @@ class WebSocketAnimationService {
   }
 
   /**
-   * Trigger animations for task operations
+   * Trigger animations for task operations (ANIMATIONS ONLY - no notifications)
    */
   private triggerTaskAnimation(action: string, message: WSMessage) {
     const { payload, metadata } = message;
@@ -103,34 +103,19 @@ class WebSocketAnimationService {
 
     switch (action) {
       case 'created':
-        // Show success toast with animation
-        toastEventBus.success(
-          'Task Created',
-          `"${taskTitle}" was added to ${branchTitle}`
-        );
-        // Trigger visual effects with task ID
+        // Trigger visual effects with task ID (NO notifications)
         this.triggerShimmerEffect('task-created', taskId);
         this.emit('task-created', { action, message });
         break;
 
       case 'updated':
-        // Show info toast for updates
-        toastEventBus.info(
-          'Task Updated',
-          `"${taskTitle}" was modified`
-        );
-        // Trigger visual effects with task ID
+        // Trigger visual effects with task ID (NO notifications)
         this.triggerShimmerEffect('task-updated', taskId);
         this.emit('task-updated', { action, message });
         break;
 
       case 'completed':
-        // Show success toast for completion
-        toastEventBus.success(
-          'Task Completed',
-          `"${taskTitle}" was completed successfully`
-        );
-        // Trigger celebration effect with task ID
+        // Trigger celebration effect with task ID (NO notifications)
         this.triggerCelebrationEffect(taskId);
         this.emit('task-completed', { action, message });
         break;
@@ -140,18 +125,9 @@ class WebSocketAnimationService {
         console.warn('  Task ID:', taskId);
         console.warn('  Task Title:', taskTitle);
         console.warn('  Branch Title:', branchTitle);
-        console.warn('  About to show warning toast...');
-
-        // Show warning toast for deletion
-        toastEventBus.warning(
-          'Task Deleted',
-          `"${taskTitle}" was removed`
-        );
-
-        console.warn('✅ DELETE toast triggered');
         console.warn('  About to trigger fade effect...');
 
-        // Trigger fade effect with task ID for targeted animation
+        // Trigger fade effect with task ID for targeted animation (NO notifications)
         this.triggerFadeEffect(taskId);
 
         console.warn('✅ DELETE fade effect triggered');
@@ -168,7 +144,7 @@ class WebSocketAnimationService {
   }
 
   /**
-   * Trigger animations for subtask operations
+   * Trigger animations for subtask operations (ANIMATIONS ONLY - no notifications)
    */
   private triggerSubtaskAnimation(action: string, message: WSMessage) {
     const { metadata } = message;
@@ -183,18 +159,12 @@ class WebSocketAnimationService {
 
     switch (action) {
       case 'created':
-        toastEventBus.info(
-          'Subtask Created',
-          `"${subtaskTitle}" added to "${parentTaskTitle}"`
-        );
+        // Trigger visual effects only (NO notifications)
         this.triggerShimmerEffect('subtask-created');
         break;
 
       case 'completed':
-        toastEventBus.success(
-          'Subtask Completed',
-          `"${subtaskTitle}" finished`
-        );
+        // Trigger visual effects only (NO notifications)
         this.triggerShimmerEffect('subtask-completed');
         break;
 
@@ -204,7 +174,7 @@ class WebSocketAnimationService {
   }
 
   /**
-   * Trigger animations for branch operations
+   * Trigger animations for branch operations (ANIMATIONS ONLY - no notifications)
    */
   private triggerBranchAnimation(action: string, message: WSMessage) {
     const { metadata } = message;
@@ -217,10 +187,7 @@ class WebSocketAnimationService {
 
     switch (action) {
       case 'created':
-        toastEventBus.success(
-          'Branch Created',
-          `"${branchTitle}" workspace is ready`
-        );
+        // Trigger visual effects only (NO notifications)
         this.triggerShimmerEffect('branch-created');
         break;
 
@@ -334,7 +301,7 @@ class WebSocketAnimationService {
   }
 
   /**
-   * Manually trigger an animation (for testing)
+   * Manually trigger an animation (for testing - ANIMATIONS ONLY)
    */
   triggerTestAnimation(type: AnimationTriggerType, entity: string = 'task') {
     console.log('🧪 WebSocketAnimationService: Triggering test animation:', type, entity);
@@ -357,6 +324,7 @@ class WebSocketAnimationService {
       }
     };
 
+    // Only trigger animations, not notifications
     this.handleWebSocketMessage(mockMessage);
   }
 }

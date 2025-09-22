@@ -22,9 +22,7 @@ import { store } from './store';
 // Import WebSocket v2.0 hook for new implementation
 import { useWebSocket } from './hooks/useWebSocketV2';
 import { useAuth } from './contexts/AuthContext';
-// Import toastEventBus for testing
-import { toastEventBus } from './services/toastEventBus';
-import { useToast } from './components/ui/toast';
+// Removed toastEventBus and useToast imports - test code removed
 import { Profile } from './pages/Profile';
 import RegistrationSuccess from './pages/RegistrationSuccess';
 import { TokenManagement } from './pages/TokenManagement';
@@ -33,8 +31,6 @@ import { HelpSetup } from './pages/HelpSetup';
 import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
-// TEMPORARY: Animation diagnostic component for debugging
-import AnimationDiagnostic from './components/AnimationDiagnostic';
 
 function Dashboard() {
   const { projectId, branchId } = useParams<{
@@ -44,7 +40,6 @@ function Dashboard() {
     subtaskId?: string;
   }>();
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { user, tokens } = useAuth();
 
   // Initialize WebSocket v2.0 connection
@@ -157,46 +152,7 @@ function Dashboard() {
                   <h3 className="text-xl font-semibold text-base-primary mb-3">Choose a workspace</h3>
                   <p className="text-base-secondary max-w-md mx-auto">Select a project and branch from the sidebar to start viewing and managing your tasks.</p>
 
-                  {/* Temporary debug button to test notifications */}
-                  <div className="mt-8 space-y-2">
-                    <p className="text-sm text-base-secondary">Debug: Test Notifications</p>
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => {
-                          console.log('🧪 TEST: Triggering success notification via toastEventBus');
-                          toastEventBus.success('Test Success', 'This is a test success notification');
-                        }}
-                        className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-                      >
-                        Test Success
-                      </button>
-                      <button
-                        onClick={() => {
-                          console.log('🧪 TEST: Triggering error notification via toastEventBus');
-                          toastEventBus.error('Test Error', 'This is a test error notification');
-                        }}
-                        className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
-                      >
-                        Test Error
-                      </button>
-                      <button
-                        onClick={() => {
-                          console.log('🧪 TEST: Triggering direct showToast call');
-                          showToast({
-                            type: 'info',
-                            title: 'Direct Toast',
-                            description: 'This is a direct showToast call'
-                          });
-                        }}
-                        className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-                      >
-                        Direct Toast
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* TEMPORARY: Animation Diagnostic for debugging */}
-                  <AnimationDiagnostic />
+                  {/* Test notification buttons removed to prevent duplicate notifications */}
                 </div>
               </div>
             )}
@@ -329,6 +285,9 @@ function App() {
           
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Catch-all route for unmatched paths */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         </AuthWrapper>
       </ToastProvider>

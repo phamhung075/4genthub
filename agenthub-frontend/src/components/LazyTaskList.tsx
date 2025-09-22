@@ -12,7 +12,7 @@ import { changePoolService } from "../services/changePoolService";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
 import logger from "../utils/logger";
-import { notificationService } from "../services/notificationService";
+// Removed notificationService import - WebSocket notifications handle task changes
 
 // Lazy-loaded components
 const LazySubtaskList = lazy(() => import("./LazySubtaskList"));
@@ -152,14 +152,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         if (deletedTasks.size > 0) {
           logger.info('Tasks deleted', { component: 'LazyTaskList', deletedTasks: [...deletedTasks] });
 
-          // Show deletion notification using unified notification service
-          deletedTasks.forEach(taskId => {
-            const deletedTask = currentTaskMap.get(taskId);
-            const taskTitle = deletedTask?.title || `Task ${taskId.substring(0, 8)}`;
-
-            // Use unified notification service for consistency
-            notificationService.warning(`Task "${taskTitle}" has been deleted`);
-          });
+          // Note: Deletion notifications are handled automatically by WebSocket service
+          // No need to manually trigger notifications here to avoid duplicates
         }
 
         if (addedTasks.size > 0) {
@@ -335,7 +329,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   }, [taskTreeId]);
 
   // Initial lightweight load - only task summaries
-  const loadTaskSummaries = useCallback(async (page = 1) => {
+  const loadTaskSummaries = useCallback(async (_page = 1) => {
     setLoading(true);
     setError(null);
     
@@ -764,7 +758,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
               projectId={projectId}
               taskTreeId={taskTreeId}
               onTaskSelect={(task) => openDialog('details', task.id)}
-              onSubtaskSelect={(subtask, parentTask) => openDialog('details', parentTask.id)}
+              onSubtaskSelect={(_subtask, parentTask) => openDialog('details', parentTask.id)}
             />
           </Suspense>
         </div>
@@ -859,7 +853,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             onOpenChange={closeDialog}
             task={fullTasks.get(activeDialog.taskId) || null}
             onClose={closeDialog}
-            onAgentClick={(agentName, task) => {
+            onAgentClick={(_agentName, task) => {
               closeDialog();
               openDialog('assign', task.id);
             }}

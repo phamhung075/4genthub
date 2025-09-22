@@ -1,6 +1,11 @@
 /**
  * WebSocket Notification Service
  *
+ * @deprecated This service has been replaced by unified notification handling in notificationService.ts
+ * The new implementation includes automatic deduplication to prevent duplicate notifications.
+ *
+ * Migration: Use notificationService.initializeWebSocketListener() instead of webSocketNotificationService.init()
+ *
  * This service bridges WebSocket events to toast notifications.
  * It listens to WebSocket messages and triggers appropriate toast notifications
  * for CREATE, UPDATE, and DELETE operations.

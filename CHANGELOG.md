@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **TypeScript Unused Variable Warnings in LazyTaskList.tsx**: Fixed 3 TypeScript compiler warnings about unused parameters
+  - Fixed line 332: Changed `page = 1` to `_page = 1` in loadTaskSummaries function parameter
+  - Fixed line 761: Changed `subtask` to `_subtask` in onSubtaskSelect callback parameter
+  - Fixed line 856: Changed `agentName` to `_agentName` in onAgentClick callback parameter
+  - Applied TypeScript convention of underscore prefix for intentionally unused parameters
+  - Files modified: `agenthub-frontend/src/components/LazyTaskList.tsx:332,761,856`
+  - Impact: Eliminated TypeScript compiler warnings while maintaining interface compliance
 - **Frontend WebSocket Unsubscribe Function Error**: Fixed critical TypeError preventing WebSocket DELETE notifications from working
   - Root cause: `unsubscribe()` was being called without checking if it's actually a function, causing "unsubscribe is not a function" crash
   - Solution: Added type safety check `if (typeof unsubscribe === 'function')` before calling unsubscribe

@@ -15,7 +15,7 @@ import {
 import { updateFromWebSocket } from '../store/slices/cascadeSlice';
 import { webSocketAnimationService } from '../services/WebSocketAnimationService';
 import { initializeWebSocketIntegration } from '../services/changePoolService';
-import { webSocketNotificationService } from '../services/WebSocketNotificationService';
+import { notificationService } from '../services/notificationService';
 
 
 /**
@@ -121,8 +121,8 @@ export function useWebSocket(userId: string, token: string) {
     // Initialize the change pool service with the WebSocket client
     const cleanupChangePool = initializeWebSocketIntegration(client);
 
-    // Initialize the notification service with the WebSocket client
-    const cleanupNotifications = webSocketNotificationService.init(client);
+    // Initialize the unified notification service with the WebSocket client
+    const cleanupNotifications = notificationService.initializeWebSocketListener(client);
 
     // Connect to server
     client.connect();
