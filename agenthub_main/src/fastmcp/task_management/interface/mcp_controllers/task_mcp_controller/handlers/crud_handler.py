@@ -284,8 +284,8 @@ class CRUDHandler:
         
         return result
     
-    def delete_task(self, facade: TaskApplicationFacade, task_id: Optional[str]) -> Dict[str, Any]:
-        """Handle task deletion."""
+    def delete_task(self, facade: TaskApplicationFacade, task_id: Optional[str], user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Handle task deletion with authenticated user_id."""
         if not task_id:
             return self._create_standardized_error(
                 operation="delete_task",
@@ -293,12 +293,9 @@ class CRUDHandler:
                 expected="A valid task_id string",
                 hint="Include 'task_id' in your request"
             )
-        
-        # Extract user_id from facade's repository if available
-        user_id = None
-        if hasattr(facade, '_task_repository') and hasattr(facade._task_repository, '_user_id'):
-            user_id = facade._task_repository._user_id
 
+        # Use the provided authenticated user_id instead of extracting from repository
+        # This ensures WebSocket messages are sent with the correct user_id for authorization
         return facade.delete_task(task_id, user_id)
     
     def complete_task(self, facade: TaskApplicationFacade, task_id: Optional[str],

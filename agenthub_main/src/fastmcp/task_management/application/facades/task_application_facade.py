@@ -570,7 +570,8 @@ class TaskApplicationFacade:
                 task_context = {
                     "task_title": f"Task {task_id[:8]}",
                     "parent_branch_id": None,
-                    "parent_branch_title": "Unknown Branch"
+                    "parent_branch_title": "Unknown Branch",
+                    "task_user_id": None  # No user_id available on error
                 }
 
             # Execute use case
@@ -579,10 +580,17 @@ class TaskApplicationFacade:
             if success:
                 # Broadcast task deletion event with pre-fetched context
                 try:
+                    # Use the task owner's user_id from pre-fetched context for proper authorization
+                    # This ensures WebSocket clients receive notifications for tasks they own
+                    task_owner_user_id = task_context.get("task_user_id") if task_context else None
+                    notification_user_id = task_owner_user_id or user_id or "system"
+
+                    logger.info(f"🔔 DELETE: Broadcasting with user_id={notification_user_id} (task_owner={task_owner_user_id}, provided={user_id})")
+
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="deleted",
                         task_id=task_id,
-                        user_id=user_id or "system",  # Use provided user_id or fallback to "system"
+                        user_id=notification_user_id,  # Use task owner's user_id for proper authorization
                         task_data=None,
                         pre_fetched_context=task_context  # Pass the pre-fetched context
                     )

@@ -3,8 +3,8 @@
  * Supports both toast notifications and browser notifications
  */
 
-import { toastEventBus } from './toastEventBus';
 import logger from '../utils/logger';
+import { toastEventBus } from './toastEventBus';
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
@@ -204,9 +204,9 @@ class NotificationService {
   /**
    * Show toast notification
    */
-  private showToast(message: string, type: NotificationType, options?: NotificationOptions) {
-    // Use toastEventBus convenience methods to ensure deduplication
-    const description = options?.icon ? `${options.icon} ${message}` : options?.duration ? undefined : undefined;
+  private showToast(message: string, type: NotificationType, options?: NotificationOptions & { description?: string }) {
+    // Use the provided description or fall back to options.icon formatting
+    const description = options?.description || (options?.icon ? `${options.icon} ${message}` : undefined);
 
     switch (type) {
       case 'success':
@@ -230,6 +230,40 @@ class NotificationService {
   }
 
   /**
+   * Get icon for event type
+   */
+  private getEventIcon(eventType: EventType): string {
+    switch (eventType) {
+      case 'created': return '✨';
+      case 'updated': return '📝';
+      case 'deleted': return '🗑️';
+      case 'completed': return '✅';
+      case 'assigned': return '👤';
+      case 'unassigned': return '👥';
+      case 'archived': return '📦';
+      case 'restored': return '♻️';
+      default: return '📌';
+    }
+  }
+
+  /**
+   * Get category label for event type
+   */
+  private getEventCategory(eventType: EventType): string {
+    switch (eventType) {
+      case 'created': return 'CREATE';
+      case 'updated': return 'UPDATE';
+      case 'deleted': return 'DELETE';
+      case 'completed': return 'COMPLETE';
+      case 'assigned': return 'ASSIGN';
+      case 'unassigned': return 'UNASSIGN';
+      case 'archived': return 'ARCHIVE';
+      case 'restored': return 'RESTORE';
+      default: return 'CHANGE';
+    }
+  }
+
+  /**
    * Notify about entity changes
    */
   notifyEntityChange(
@@ -249,14 +283,26 @@ class NotificationService {
     const action = this.getActionText(eventType);
     const by = userName ? ` by ${userName}` : '';
 
-    // Build the message
-    let message = `${entity}`;
+    // Get icon and category for event type
+    const icon = this.getEventIcon(eventType);
+    const category = this.getEventCategory(eventType);
+
+    // Build the title with entity name
+    let title = `${entity}`;
     if (entityName) {
-      message += ` "${entityName}"`;
-    } else if (entityId) {
-      message += ` ${entityId.substring(0, 8)}...`;
+      title += ` "${entityName}"`;
     }
-    message += ` ${action}${by}`;
+    title += ` ${action}`;
+
+    // Create detailed description with ID, category, and user info
+    let description = `${icon} ${category}`;
+    if (entityId) {
+      description += ` • ID: ${entityId.substring(0, 8)}...`;
+    }
+    if (by) {
+      description += `${by}`;
+    }
+
 
     // Determine notification type
     let notificationType: NotificationType = 'info';
@@ -265,8 +311,8 @@ class NotificationService {
     else if (eventType === 'completed') notificationType = 'success';
     else if (eventType === 'updated') notificationType = 'info';
 
-    // Show toast
-    this.showToast(message, notificationType);
+    // Show toast with title and description
+    this.showToast(title, notificationType, { description });
 
     // Show browser notification for important events
     if (eventType === 'deleted' && entityType === 'branch') {

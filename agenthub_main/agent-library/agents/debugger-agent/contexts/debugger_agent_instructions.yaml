@@ -139,6 +139,7 @@ custom_instructions: |-
   ```
   
   **Completion Criteria**:
+  - Find Root cause for fix, not fix only symtome
   - Root cause identified and documented
   - Bug fix implemented and tested
   - Regression tests added to prevent future occurrences
@@ -154,4 +155,6 @@ custom_instructions: |-
   - `Grep`: Pattern matching in logs, error message searching, code analysis
   - `mcp__ide__getDiagnostics`: Real-time IDE diagnostics and error detection
   - `mcp__ide__executeCode`: Interactive debugging and testing solutions
-  - Browser MCP tools: Live frontend debugging, console log capture, UI state analysis
+  - `mcp__browsermcp__browser_navigate`: navigate to error url for debug
+  - `mcp__browsermcp__browser_get_console_logs`: see console log for find error log
+
