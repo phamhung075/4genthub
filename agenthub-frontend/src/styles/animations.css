@@ -1,0 +1,76 @@
+/**
+ * Animation styles with CSS @property support
+ *
+ * This file contains CSS @property rules that were causing conflicts
+ * when defined in inline <style> tags within React components.
+ * Moving them to a separate CSS file resolves constructable stylesheet issues.
+ */
+
+/* CSS @property definitions for modern browsers */
+@property --shimmer-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --test-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Shimmer animations using CSS @property */
+@keyframes shimmer-modern {
+  to {
+    --shimmer-angle: 360deg;
+  }
+}
+
+@keyframes test-shimmer {
+  to {
+    --test-angle: 360deg;
+  }
+}
+
+/* Modern shimmer classes */
+.shimmer-modern {
+  background: conic-gradient(from var(--shimmer-angle), transparent 15%, #06b6d4, transparent 60%);
+  animation: shimmer-modern 2.5s linear infinite;
+}
+
+.test-shimmer-bg {
+  background: conic-gradient(from var(--test-angle), transparent 25%, #06b6d4, transparent 50%);
+  animation: test-shimmer 2s linear infinite;
+}
+
+/* Fallback animations for browsers without @property support */
+@keyframes shimmer-fallback {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-fallback {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 40%,
+    #06b6d488 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-fallback 2.5s linear infinite;
+}
+
+/* Utility classes for feature detection */
+.supports-css-property .shimmer-container {
+  /* Modern browsers will use .shimmer-modern */
+}
+
+.no-css-property .shimmer-container {
+  /* Fallback browsers will use .shimmer-fallback */
+}

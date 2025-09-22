@@ -497,6 +497,7 @@ class WebSocketNotificationService:
         task_data = kwargs.get('task_data', args[3] if len(args) > 3 else None)
         git_branch_id = kwargs.get('git_branch_id', args[4] if len(args) > 4 else None)
         project_id = kwargs.get('project_id', args[5] if len(args) > 5 else None)
+        pre_fetched_context = kwargs.get('pre_fetched_context', None)
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "task", task_id, user_id):
@@ -504,7 +505,13 @@ class WebSocketNotificationService:
             return  # Skip this notification
 
         # Get enhanced task context (title and parent branch info)
-        task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
+        # CRITICAL FIX: Use pre-fetched context for deletion events to avoid querying deleted task
+        if pre_fetched_context:
+            logger.info(f"✅ Using pre-fetched context for {event_type} event: {pre_fetched_context}")
+            task_context = pre_fetched_context
+        else:
+            logger.info(f"🔍 Fetching task context from database for {event_type} event")
+            task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
 
         # Prepare enhanced metadata with titles and parent context
         metadata = {}

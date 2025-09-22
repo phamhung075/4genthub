@@ -123,15 +123,31 @@ async def realtime_updates(websocket: WebSocket):
         # Store user object for authorization checks
         connection_users[websocket] = authenticated_user
 
-        # Send welcome message with authenticated user info
+        # Send welcome message with authenticated user info (v2.0 format)
         await websocket.send_json({
-            "type": "welcome",
-            "client_id": client_id,
-            "user_id": authenticated_user.id,
-            "user_email": authenticated_user.email,
-            "scope": "branch",
-            "authenticated": True,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "id": f"welcome-{connection_id}",
+            "version": "2.0",
+            "type": "sync",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "sequence": 0,
+            "payload": {
+                "entity": "connection",
+                "action": "welcome",
+                "data": {
+                    "primary": {
+                        "client_id": client_id,
+                        "user_id": authenticated_user.id,
+                        "user_email": authenticated_user.email,
+                        "scope": "branch",
+                        "authenticated": True
+                    }
+                }
+            },
+            "metadata": {
+                "source": "system",
+                "userId": authenticated_user.id,
+                "sessionId": client_id
+            }
         })
 
         # Handle incoming messages
@@ -140,8 +156,26 @@ async def realtime_updates(websocket: WebSocket):
                 data = await websocket.receive_json()
                 message_type = data.get("type")
 
-                if message_type == "ping":
-                    await websocket.send_json({"type": "pong"})
+                if message_type in ["ping", "heartbeat"]:
+                    await websocket.send_json({
+                        "id": f"pong-{random.randint(100000, 999999)}",
+                        "version": "2.0",
+                        "type": "heartbeat",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "sequence": random.randint(1000, 9999),
+                        "payload": {
+                            "entity": "system",
+                            "action": "pong",
+                            "data": {
+                                "primary": {"status": "alive"}
+                            }
+                        },
+                        "metadata": {
+                            "source": "system",
+                            "userId": authenticated_user.id,
+                            "sessionId": client_id
+                        }
+                    })
 
                 elif message_type == "subscribe":
                     # Update subscription scope
@@ -154,29 +188,100 @@ async def realtime_updates(websocket: WebSocket):
                     })
 
                     await websocket.send_json({
-                        "type": "subscribed",
-                        "scope": scope,
-                        "filters": filters
+                        "id": f"subscribed-{random.randint(100000, 999999)}",
+                        "version": "2.0",
+                        "type": "sync",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "sequence": random.randint(1000, 9999),
+                        "payload": {
+                            "entity": "subscription",
+                            "action": "subscribed",
+                            "data": {
+                                "primary": {
+                                    "scope": scope,
+                                    "filters": filters
+                                }
+                            }
+                        },
+                        "metadata": {
+                            "source": "system",
+                            "userId": authenticated_user.id,
+                            "sessionId": client_id
+                        }
                     })
 
                 else:
                     await websocket.send_json({
+                        "id": f"error-{random.randint(100000, 999999)}",
+                        "version": "2.0",
                         "type": "error",
-                        "message": f"Unknown message type: {message_type}"
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "sequence": random.randint(1000, 9999),
+                        "payload": {
+                            "entity": "system",
+                            "action": "error",
+                            "data": {
+                                "primary": {
+                                    "message": f"Unknown message type: {message_type}",
+                                    "code": "UNKNOWN_MESSAGE_TYPE"
+                                }
+                            }
+                        },
+                        "metadata": {
+                            "source": "system",
+                            "userId": authenticated_user.id,
+                            "sessionId": client_id
+                        }
                     })
 
             except WebSocketDisconnect:
                 break
             except json.JSONDecodeError:
                 await websocket.send_json({
+                    "id": f"error-{random.randint(100000, 999999)}",
+                    "version": "2.0",
                     "type": "error",
-                    "message": "Invalid JSON"
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "sequence": random.randint(1000, 9999),
+                    "payload": {
+                        "entity": "system",
+                        "action": "error",
+                        "data": {
+                            "primary": {
+                                "message": "Invalid JSON",
+                                "code": "INVALID_JSON"
+                            }
+                        }
+                    },
+                    "metadata": {
+                        "source": "system",
+                        "userId": authenticated_user.id if authenticated_user else None,
+                        "sessionId": client_id
+                    }
                 })
             except Exception as e:
                 logger.error(f"Error handling message: {e}")
                 await websocket.send_json({
+                    "id": f"error-{random.randint(100000, 999999)}",
+                    "version": "2.0",
                     "type": "error",
-                    "message": str(e)
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "sequence": random.randint(1000, 9999),
+                    "payload": {
+                        "entity": "system",
+                        "action": "error",
+                        "data": {
+                            "primary": {
+                                "message": str(e),
+                                "code": "GENERAL_ERROR"
+                            }
+                        }
+                    },
+                    "metadata": {
+                        "source": "system",
+                        "userId": authenticated_user.id if authenticated_user else None,
+                        "sessionId": client_id
+                    }
                 })
 
     except Exception as e:
@@ -214,6 +319,7 @@ async def is_user_authorized_for_message(
     1. Users can receive messages about their own data
     2. Users can receive messages about shared data they have access to
     3. No unauthorized data exposure across user boundaries
+    4. System messages are allowed only to the actual resource owner
 
     Args:
         websocket: The WebSocket connection to check
@@ -238,7 +344,12 @@ async def is_user_authorized_for_message(
         logger.debug(f"User {connection_user_id} authorized to receive message about their own {entity_type}")
         return True
 
-    # Rule 2: Check entity-specific authorization based on user ownership/access
+    # Rule 2: Handle system messages with proper data isolation
+    if triggering_user_id == "system":
+        logger.debug(f"System message detected - checking resource ownership for user {connection_user_id}")
+        return await _check_resource_ownership(connection_user_id, entity_type, entity_id, metadata)
+
+    # Rule 3: Check entity-specific authorization based on user ownership/access
     try:
         from fastmcp.task_management.infrastructure.database.database_config import get_session
         from fastmcp.task_management.infrastructure.database.models import Task, ProjectGitBranch, Subtask, Project
@@ -297,6 +408,109 @@ async def is_user_authorized_for_message(
     return False
 
 
+async def _check_resource_ownership(
+    connection_user_id: str,
+    entity_type: str,
+    entity_id: str,
+    metadata: Optional[Dict[str, Any]] = None
+) -> bool:
+    """
+    Check if a user owns the resource being modified in a system message.
+
+    This ensures that system messages (from MCP operations) only reach
+    the authenticated user who owns the affected resource.
+
+    Args:
+        connection_user_id: ID of the WebSocket connection user
+        entity_type: Type of entity (task, project, branch, subtask, etc.)
+        entity_id: ID of the entity
+        metadata: Optional metadata containing additional context
+
+    Returns:
+        True if the connection user owns the resource, False otherwise
+    """
+    try:
+        from fastmcp.task_management.infrastructure.database.database_config import get_session
+        from fastmcp.task_management.infrastructure.database.models import Task, ProjectGitBranch, Subtask, Project
+
+        with get_session() as session:
+            if entity_type == "task":
+                # Check if the connection user owns this task
+                task = session.query(Task).filter(
+                    Task.id == entity_id,
+                    Task.user_id == connection_user_id
+                ).first()
+                if task:
+                    logger.debug(f"System message authorized: User {connection_user_id} owns task {entity_id}")
+                    return True
+                else:
+                    logger.debug(f"System message denied: User {connection_user_id} does not own task {entity_id}")
+                    return False
+
+            elif entity_type == "subtask":
+                # For subtasks, check ownership via parent task
+                parent_task_id = metadata.get("parent_task_id") if metadata else None
+                if parent_task_id:
+                    task = session.query(Task).filter(
+                        Task.id == parent_task_id,
+                        Task.user_id == connection_user_id
+                    ).first()
+                    if task:
+                        logger.debug(f"System message authorized: User {connection_user_id} owns parent task {parent_task_id} for subtask {entity_id}")
+                        return True
+                    else:
+                        logger.debug(f"System message denied: User {connection_user_id} does not own parent task {parent_task_id} for subtask {entity_id}")
+                        return False
+                else:
+                    # Fallback: try to find parent task via subtask
+                    subtask = session.query(Subtask).filter(Subtask.id == entity_id).first()
+                    if subtask:
+                        task = session.query(Task).filter(
+                            Task.id == subtask.task_id,
+                            Task.user_id == connection_user_id
+                        ).first()
+                        if task:
+                            logger.debug(f"System message authorized: User {connection_user_id} owns parent task for subtask {entity_id}")
+                            return True
+                    logger.debug(f"System message denied: Could not verify ownership for subtask {entity_id}")
+                    return False
+
+            elif entity_type == "branch":
+                # Check if the connection user owns this branch
+                branch = session.query(ProjectGitBranch).filter(
+                    ProjectGitBranch.id == entity_id,
+                    ProjectGitBranch.user_id == connection_user_id
+                ).first()
+                if branch:
+                    logger.debug(f"System message authorized: User {connection_user_id} owns branch {entity_id}")
+                    return True
+                else:
+                    logger.debug(f"System message denied: User {connection_user_id} does not own branch {entity_id}")
+                    return False
+
+            elif entity_type == "project":
+                # Check if the connection user owns this project
+                project = session.query(Project).filter(
+                    Project.id == entity_id,
+                    Project.user_id == connection_user_id
+                ).first()
+                if project:
+                    logger.debug(f"System message authorized: User {connection_user_id} owns project {entity_id}")
+                    return True
+                else:
+                    logger.debug(f"System message denied: User {connection_user_id} does not own project {entity_id}")
+                    return False
+
+            else:
+                logger.warning(f"Unknown entity type for system message: {entity_type}")
+                return False
+
+    except Exception as e:
+        logger.error(f"Error checking resource ownership for system message: {e}")
+        # Fail closed - deny access on errors
+        return False
+
+
 async def broadcast_data_change(
     event_type: str,
     entity_type: str,
@@ -318,17 +532,26 @@ async def broadcast_data_change(
     """
     logger.info(f"Broadcasting {entity_type} {event_type} event from {user_id}, entity_id: {entity_id[:8]}")
 
-    # Prepare the message
+    # Prepare the message in v2.0 format
     message = {
-        "type": "status_update",
-        "event_type": event_type,
-        "user_id": user_id,
-        "data": data or {},
+        "id": f"broadcast-{entity_type}-{random.randint(100000, 999999)}",
+        "version": "2.0",
+        "type": "update",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "sequence": random.randint(1000, 9999),
+        "payload": {
+            "entity": entity_type,
+            "action": event_type,
+            "data": {
+                "primary": data or {}
+            }
+        },
         "metadata": {
+            "source": "system",
+            "userId": user_id,
             "entity_type": entity_type,
             "entity_id": entity_id,
             "event_type": event_type,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
             **(metadata or {})
         }
     }

@@ -23,6 +23,7 @@ FAILED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integrati
 FAILED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_server.py
 FAILED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_server.py
 FAILED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_server.py
+FAILED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_system_message_fix.py
 PASSED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/test_websocket_protocol.py
 PASSED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/test_websocket_protocol.py
 PASSED:/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/test_websocket_protocol.py

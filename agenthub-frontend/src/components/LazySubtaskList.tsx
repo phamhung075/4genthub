@@ -6,7 +6,6 @@ import { getSubtaskSummaries } from "../api-lazy";
 import { useChangeSubscription } from "../hooks/useChangeSubscription";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { ShimmerButton } from "./ui/shimmer-button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import SubtaskRow from "./SubtaskRow";

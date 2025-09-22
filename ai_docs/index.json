@@ -826,7 +826,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 52,
+      "count": 53,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -960,6 +960,13 @@
           "name": "server-initialization-patterns.md",
           "path": "development-guides/server-initialization-patterns.md",
           "size": 5302
+        },
+        {
+          "hash": "4c535d972629b90936644ea043371ce1",
+          "modified": "2025-09-22T19:19:08.351568",
+          "name": "flutter-3-day-learning-plan.md",
+          "path": "development-guides/flutter-3-day-learning-plan.md",
+          "size": 16864
         },
         {
           "hash": "c65dcef80fa903596c3d8dd06b37508c",
@@ -1694,7 +1701,7 @@
       "path": "reports-status"
     },
     "root": {
-      "count": 8,
+      "count": 9,
       "files": [
         {
           "hash": "f36bd93e951295ca30e9d85b3b31cbad",
@@ -1744,6 +1751,13 @@
           "name": "openai_quick_start.md",
           "path": "openai_quick_start.md",
           "size": 9456
+        },
+        {
+          "hash": "e6696653fa05505d17961c3b71180169",
+          "modified": "2025-09-22T18:00:35.108400",
+          "name": "codex_tools_list.md",
+          "path": "codex_tools_list.md",
+          "size": 12726
         },
         {
           "hash": "4ac31144a6145b6274f55ff69851666b",
@@ -2324,7 +2338,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-22T12:45:49.584943",
+  "generated_at": "2025-09-22T19:19:08.463542",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2520,6 +2534,7 @@
         "error-handling-and-logging.md",
         "factory-refactoring-example.md",
         "factory-refactoring-templates.md",
+        "flutter-3-day-learning-plan.md",
         "frontend-ux-enhancements.md",
         "hint-manager-consolidated-system.md",
         "index.md",
@@ -2548,6 +2563,7 @@
       "anthropic_output_styles.md",
       "anthropic_quick_start.md",
       "cc_hooks_docs.md",
+      "codex_tools_list.md",
       "openai_quick_start.md",
       "user_prompt_submit_hook.md",
       "uv-single-file-scripts.md"
@@ -2744,5 +2760,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 306
+  "total_files": 308
 }

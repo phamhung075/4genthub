@@ -73,7 +73,8 @@ export function deduplicateRequest<T>(
   // Check if request is already pending
   const existingRequest = pendingRequests.get(key);
   if (existingRequest) {
-    logger.warn(`🔄 Deduplicating request from ${caller}`, {
+    // Use debug level since deduplication is expected behavior with React.StrictMode
+    logger.debug(`🔄 Deduplicating request from ${caller} (expected with React.StrictMode)`, {
       url,
       method,
       key,
