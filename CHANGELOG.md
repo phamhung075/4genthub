@@ -33,6 +33,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Benefits: Faster installs, better disk space efficiency, stricter dependency resolution
 
 ### Fixed
+- **WebSocket Connection Endpoint Mismatch**: Fixed WebSocket connection failure (403 Forbidden) by aligning frontend and backend endpoints
+  - Root cause: Frontend was trying to connect to `/ws/{userId}` while backend exposed `/ws/realtime`
+  - Solution: Updated frontend WebSocketClient.ts to use correct endpoint `/ws/realtime`
+  - Modified files:
+    - `agenthub-frontend/src/services/WebSocketClient.ts` (line 71): Changed WebSocket URL from `/ws/${this.userId}` to `/ws/realtime`
+  - Impact: WebSocket now connects successfully with JWT authentication, enabling real-time updates
+  - Notes: User identification is handled through JWT token payload, eliminating need for user ID in URL path
 - **Docker pgAdmin Clean Rebuild**: Enhanced pgAdmin option (G) in docker-menu.sh to completely clean and rebuild with auto-connect configuration
   - Root cause: Old pgAdmin containers may have cached settings that prevent new auto-connect configuration from working properly
   - Solutions implemented:
