@@ -530,7 +530,19 @@ async def broadcast_data_change(
         data: Optional data about the change
         metadata: Optional metadata
     """
-    logger.info(f"Broadcasting {entity_type} {event_type} event from {user_id}, entity_id: {entity_id[:8]}")
+    logger.info(f"🚨 DELETE DEBUG: Broadcasting {entity_type} {event_type} event from {user_id}, entity_id: {entity_id[:8]}")
+
+    # Special detailed logging for DELETE operations
+    if event_type.lower() in ['delete', 'deleted']:
+        logger.warning(f"🗑️ DELETE BROADCAST DETAILED LOG:")
+        logger.warning(f"   Event Type: {event_type}")
+        logger.warning(f"   Entity Type: {entity_type}")
+        logger.warning(f"   Entity ID: {entity_id}")
+        logger.warning(f"   User ID: {user_id}")
+        logger.warning(f"   Data: {data}")
+        logger.warning(f"   Metadata: {metadata}")
+        logger.warning(f"   Active Connections Count: {sum(len(ws_set) for ws_set in active_connections.values())}")
+        logger.warning(f"   Connection Client IDs: {list(active_connections.keys())}")
 
     # Prepare the message in v2.0 format
     message = {
@@ -560,7 +572,18 @@ async def broadcast_data_change(
     disconnected = []
     authorized_clients = 0
     total_connections = sum(len(ws_set) for ws_set in active_connections.values())
-    logger.info(f"Filtering {total_connections} total WebSocket connections for authorization")
+    logger.info(f"🔍 DELETE DEBUG: Filtering {total_connections} total WebSocket connections for authorization")
+
+    # Special detailed client logging for DELETE operations
+    if event_type.lower() in ['delete', 'deleted']:
+        logger.warning(f"🗑️ DELETE CLIENT AUTHORIZATION LOG:")
+        logger.warning(f"   Total connections: {total_connections}")
+        logger.warning(f"   Client details:")
+        for client_id, websocket_set in active_connections.items():
+            for websocket in websocket_set:
+                user_info = connection_users.get(websocket, 'Unknown User')
+                subscription_info = connection_subscriptions.get(websocket, {})
+                logger.warning(f"     Client {client_id}: User {getattr(user_info, 'id', 'Unknown')}, Scope: {subscription_info.get('scope', 'Unknown')}")
 
     for client_id, websocket_set in active_connections.items():
         for websocket in websocket_set:
@@ -571,14 +594,25 @@ async def broadcast_data_change(
                 try:
                     await websocket.send_json(message)
                     authorized_clients += 1
-                    logger.debug(f"Sent to authorized client {client_id}")
+                    # Enhanced logging for DELETE operations
+                    if event_type.lower() in ['delete', 'deleted']:
+                        logger.warning(f"✅ DELETE SENT to authorized client {client_id}")
+                    else:
+                        logger.debug(f"Sent to authorized client {client_id}")
                 except Exception as e:
-                    logger.warning(f"Failed to send to client {client_id}: {e}")
+                    logger.warning(f"❌ Failed to send to client {client_id}: {e}")
                     disconnected.append(websocket)
             else:
-                logger.debug(f"Skipped unauthorized client {client_id} for {entity_type} {entity_id}")
+                # Enhanced logging for DELETE operations
+                if event_type.lower() in ['delete', 'deleted']:
+                    logger.warning(f"🚫 DELETE SKIPPED unauthorized client {client_id} for {entity_type} {entity_id}")
+                else:
+                    logger.debug(f"Skipped unauthorized client {client_id} for {entity_type} {entity_id}")
 
-    logger.info(f"Message broadcast to {authorized_clients} authorized clients out of {total_connections} total connections")
+    if event_type.lower() in ['delete', 'deleted']:
+        logger.warning(f"🗑️ DELETE BROADCAST SUMMARY: Message sent to {authorized_clients} authorized clients out of {total_connections} total connections")
+    else:
+        logger.info(f"Message broadcast to {authorized_clients} authorized clients out of {total_connections} total connections")
 
     # Clean up disconnected clients
     for websocket in disconnected:

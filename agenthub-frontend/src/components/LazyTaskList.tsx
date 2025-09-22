@@ -12,6 +12,7 @@ import { changePoolService } from "../services/changePoolService";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
 import logger from "../utils/logger";
+import { notificationService } from "../services/notificationService";
 
 // Lazy-loaded components
 const LazySubtaskList = lazy(() => import("./LazySubtaskList"));
@@ -147,31 +148,17 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           deletedTasks: deletedTasks.size
         });
 
-        // Handle deleted tasks - show notification
+        // Handle deleted tasks - show unified notification
         if (deletedTasks.size > 0) {
           logger.info('Tasks deleted', { component: 'LazyTaskList', deletedTasks: [...deletedTasks] });
 
-          // Show deletion notification to user
+          // Show deletion notification using unified notification service
           deletedTasks.forEach(taskId => {
             const deletedTask = currentTaskMap.get(taskId);
             const taskTitle = deletedTask?.title || `Task ${taskId.substring(0, 8)}`;
 
-            // Create a visual notification using the CSS classes from notifications.css
-            const notification = document.createElement('div');
-            notification.className = 'delete-notification animate-slide-in';
-            notification.textContent = `Task "${taskTitle}" has been deleted`;
-            document.body.appendChild(notification);
-
-            // Remove notification after 3 seconds
-            setTimeout(() => {
-              notification.classList.remove('animate-slide-in');
-              notification.classList.add('animate-slide-out');
-              setTimeout(() => {
-                if (document.body.contains(notification)) {
-                  document.body.removeChild(notification);
-                }
-              }, 300);
-            }, 3000);
+            // Use unified notification service for consistency
+            notificationService.warning(`Task "${taskTitle}" has been deleted`);
           });
         }
 

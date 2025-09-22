@@ -124,6 +124,93 @@ const TaskRow: React.FC<TaskRowProps> = ({
     };
   }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, onRegisterCallbacks, onUnregisterCallbacks]);
 
+  // Listen for WebSocket animation events (for cross-user animations)
+  useEffect(() => {
+    const handleWebSocketFade = (event: CustomEvent) => {
+      const { taskId: eventTaskId } = event.detail || {};
+
+      // Only respond to events for this specific task
+      if (eventTaskId !== summary.id) {
+        return;
+      }
+
+      logger.debug('TaskRow received WebSocket fade event for this task', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        eventTaskId
+      });
+
+      // Only trigger if the row is still visible (not already deleted optimistically)
+      if (isVisible) {
+        logger.debug('TaskRow playing WebSocket delete animation', { component: 'TaskRow', taskId: summary.id });
+        playDeleteAnimation();
+      } else {
+        logger.debug('TaskRow ignoring WebSocket fade - already invisible', { component: 'TaskRow', taskId: summary.id });
+      }
+    };
+
+    const handleWebSocketCelebration = (event: CustomEvent) => {
+      const { taskId: eventTaskId } = event.detail || {};
+
+      // Only respond to events for this specific task
+      if (eventTaskId && eventTaskId !== summary.id) {
+        return;
+      }
+
+      logger.debug('TaskRow received WebSocket celebration event for this task', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        eventTaskId
+      });
+
+      // Trigger completion animation
+      playUpdateAnimation();
+    };
+
+    const handleWebSocketAnimation = (event: CustomEvent) => {
+      const { type, taskId: eventTaskId } = event.detail || {};
+
+      // Only respond to events for this specific task (if taskId is provided)
+      if (eventTaskId && eventTaskId !== summary.id) {
+        return;
+      }
+
+      logger.debug('TaskRow received WebSocket animation event for this task', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        eventTaskId,
+        type
+      });
+
+      switch (type) {
+        case 'task-created':
+          playCreateAnimation();
+          break;
+        case 'task-updated':
+          playUpdateAnimation();
+          break;
+        case 'task-completed':
+          // Use update animation for completion
+          playUpdateAnimation();
+          break;
+        default:
+          logger.debug('TaskRow unknown WebSocket animation type', { component: 'TaskRow', type });
+      }
+    };
+
+    // Add event listeners for WebSocket-triggered animations
+    window.addEventListener('task-fade', handleWebSocketFade as EventListener);
+    window.addEventListener('task-celebration', handleWebSocketCelebration as EventListener);
+    window.addEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('task-fade', handleWebSocketFade as EventListener);
+      window.removeEventListener('task-celebration', handleWebSocketCelebration as EventListener);
+      window.removeEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
+    };
+  }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, isVisible]);
+
   // Don't render if not visible (after delete animation)
   if (!isVisible) {
     return null;

@@ -100,7 +100,7 @@ export class WebSocketClient extends EventEmitter {
   }
 
   private handleMessage(event: MessageEvent): void {
-    console.log('[WebSocket v2.0] 📨 Raw message received:', {
+    console.log('[WebSocket v2.0] 📨 🚨 DELETE DEBUG: Raw message received:', {
       type: typeof event.data,
       length: event.data?.length,
       preview: event.data?.substring(0, 200)
@@ -109,7 +109,7 @@ export class WebSocketClient extends EventEmitter {
     try {
       const message: WSMessage = JSON.parse(event.data);
 
-      console.log('[WebSocket v2.0] 📋 Parsed message:', {
+      console.log('[WebSocket v2.0] 📋 🚨 DELETE DEBUG: Parsed message:', {
         id: message.id,
         version: message.version,
         type: message.type,
@@ -117,6 +117,17 @@ export class WebSocketClient extends EventEmitter {
         action: message.payload?.action,
         source: message.metadata?.source
       });
+
+      // Special detailed logging for DELETE operations
+      if (message.payload?.action?.toLowerCase().includes('delete')) {
+        console.warn('🗑️ DELETE MESSAGE RECEIVED IN WEBSOCKET CLIENT:');
+        console.warn('  Message ID:', message.id);
+        console.warn('  Entity:', message.payload?.entity);
+        console.warn('  Action:', message.payload?.action);
+        console.warn('  Data:', message.payload?.data);
+        console.warn('  Metadata:', message.metadata);
+        console.warn('  Full message:', message);
+      }
 
       // ONLY accept v2.0 messages - reject all others
       if (message.version !== '2.0') {
@@ -130,14 +141,22 @@ export class WebSocketClient extends EventEmitter {
         return;
       }
 
-      console.log('[WebSocket v2.0] 🎯 Routing message based on source:', message.metadata?.source);
+      console.log('[WebSocket v2.0] 🎯 🚨 DELETE DEBUG: Routing message based on source:', message.metadata?.source);
 
       // Route based on source for dual-track processing
       if (message.metadata?.source === 'mcp-ai') {
-        console.log('[WebSocket v2.0] 🤖 Buffering AI update');
+        if (message.payload?.action?.toLowerCase().includes('delete')) {
+          console.warn('[WebSocket v2.0] 🤖 🗑️ DELETE: Buffering AI update');
+        } else {
+          console.log('[WebSocket v2.0] 🤖 Buffering AI update');
+        }
         this.bufferAIUpdate(message);
       } else {
-        console.log('[WebSocket v2.0] ⚡ Processing immediate update');
+        if (message.payload?.action?.toLowerCase().includes('delete')) {
+          console.warn('[WebSocket v2.0] ⚡ 🗑️ DELETE: Processing immediate update');
+        } else {
+          console.log('[WebSocket v2.0] ⚡ Processing immediate update');
+        }
         this.processImmediateUpdate(message);
       }
     } catch (error) {
@@ -186,20 +205,38 @@ export class WebSocketClient extends EventEmitter {
    * Process user updates immediately (no batching)
    */
   private processImmediateUpdate(message: WSMessage): void {
-    console.log('[WebSocket v2.0] ⚡ Processing immediate update:', {
+    console.log('[WebSocket v2.0] ⚡ 🚨 DELETE DEBUG: Processing immediate update:', {
       entity: message.payload?.entity,
       action: message.payload?.action,
       updateListeners: this.listenerCount('update'),
       userActionListeners: this.listenerCount('userAction')
     });
 
-    console.log('[WebSocket v2.0] 🔊 Emitting "update" event');
+    // Special detailed logging for DELETE operations
+    if (message.payload?.action?.toLowerCase().includes('delete')) {
+      console.warn('🗑️ DELETE IMMEDIATE UPDATE PROCESSING:');
+      console.warn('  Entity:', message.payload?.entity);
+      console.warn('  Action:', message.payload?.action);
+      console.warn('  Update Listeners:', this.listenerCount('update'));
+      console.warn('  User Action Listeners:', this.listenerCount('userAction'));
+      console.warn('  About to emit "update" event...');
+    }
+
+    console.log('[WebSocket v2.0] 🔊 🚨 DELETE DEBUG: Emitting "update" event');
     this.emit('update', message);
+
+    if (message.payload?.action?.toLowerCase().includes('delete')) {
+      console.warn('✅ DELETE "update" event emitted successfully');
+    }
 
     // Special handling for user actions
     if (message.metadata?.source === 'user') {
       console.log('[WebSocket v2.0] 🔊 Emitting "userAction" event');
       this.emit('userAction', message);
+
+      if (message.payload?.action?.toLowerCase().includes('delete')) {
+        console.warn('✅ DELETE "userAction" event emitted successfully');
+      }
     }
   }
 
@@ -227,12 +264,23 @@ export class WebSocketClient extends EventEmitter {
 
       // Cascade data
       if (update.payload.data.cascade) {
-        Object.keys(update.payload.data.cascade).forEach(key => {
-          const cascadeKey = key as keyof typeof cascade;
-          if (update.payload.data.cascade![cascadeKey]) {
-            cascade[cascadeKey].push(...update.payload.data.cascade![cascadeKey]);
-          }
-        });
+        const updateCascade = update.payload.data.cascade;
+        // Process each cascade key explicitly
+        if (updateCascade.branches && Array.isArray(updateCascade.branches)) {
+          cascade.branches.push(...updateCascade.branches);
+        }
+        if (updateCascade.tasks && Array.isArray(updateCascade.tasks)) {
+          cascade.tasks.push(...updateCascade.tasks);
+        }
+        if (updateCascade.projects && Array.isArray(updateCascade.projects)) {
+          cascade.projects.push(...updateCascade.projects);
+        }
+        if (updateCascade.subtasks && Array.isArray(updateCascade.subtasks)) {
+          cascade.subtasks.push(...updateCascade.subtasks);
+        }
+        if (updateCascade.contexts && Array.isArray(updateCascade.contexts)) {
+          cascade.contexts.push(...updateCascade.contexts);
+        }
       }
     });
 
