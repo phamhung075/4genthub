@@ -64,6 +64,7 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
 }) => {
   const variant = toastVariants[toast.type];
   const Icon = variant.icon;
+
   const [isHovered, setIsHovered] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
