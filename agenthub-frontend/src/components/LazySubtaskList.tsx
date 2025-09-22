@@ -2,7 +2,7 @@ import { Check, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import React, { useEffect, useState, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { deleteSubtask, getSubtask, listSubtasks, Subtask } from "../api";
-import { getSubtaskSummaries } from "../api-lazy";
+import { getSubtaskSummaries, SubtaskSummary } from "../api-lazy";
 import { useChangeSubscription } from "../hooks/useChangeSubscription";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -25,16 +25,7 @@ interface LazySubtaskListProps {
   parentTaskId: string;
 }
 
-// Lightweight subtask summary for performance
-interface SubtaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  assignees_count: number;
-  assignees?: string[]; // Add full assignee information
-  progress_percentage?: number;
-}
+// Using SubtaskSummary interface from api-lazy.ts
 
 const statusColor: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   done: "default",
@@ -298,7 +289,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       // 1. New subtasks (created) - only if we have a previous state to compare
       if (currentSubtaskIds.size > 0) {
         const addedSubtasks = [...newSubtaskIds].filter(id => !currentSubtaskIds.has(id));
-        logger.debug('🔍 Subtask change detection - currentSubtaskIds:', currentSubtaskIds.size, 'newSubtaskIds:', newSubtaskIds.size, 'addedSubtasks:', addedSubtasks.length);
+        logger.debug('🔍 Subtask change detection', { currentSubtaskIds: currentSubtaskIds.size, newSubtaskIds: newSubtaskIds.size, addedSubtasks: addedSubtasks.length });
 
         if (addedSubtasks.length > 0) {
           logger.debug('✨ New subtasks detected:', addedSubtasks);
@@ -494,7 +485,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     });
 
     if (subtaskId && hasLoaded && taskId === parentTaskId) {
-      logger.debug('🔗 URL taskId matches parentTaskId, loading subtask:', subtaskId, 'for parent:', parentTaskId);
+      logger.debug('🔗 URL taskId matches parentTaskId, loading subtask', { subtaskId, parentTaskId });
 
       // PERFORMANCE FIX: Check if we already have the subtask data before making API call
       const existingSubtask = fullSubtasks.get(subtaskId);
@@ -534,7 +525,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     } else if (subtaskId && hasLoaded && taskId !== parentTaskId) {
       // 🔧 IMPROVED FIX: Try to load the subtask even if URL taskId doesn't match parentTaskId
       // This handles cases where the subtask might belong to a completed task or cross-component scenarios
-      logger.debug('🔍 URL taskId differs from parentTaskId, checking if subtask belongs to this component:', subtaskId, 'URL taskId:', taskId, 'parentTaskId:', parentTaskId);
+      logger.debug('🔍 URL taskId differs from parentTaskId, checking if subtask belongs to this component', { subtaskId, urlTaskId: taskId, parentTaskId });
 
       // PERFORMANCE FIX: Check if we already have the subtask data before making API call
       const existingSubtask = fullSubtasks.get(subtaskId);
@@ -566,7 +557,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
           setIsOpeningDialog(false);
         }
       }).catch(error => {
-        logger.debug('🚫 Failed to load subtask for cross-component check:', subtaskId, error, 'this is expected for cross-component scenarios');
+        logger.debug('🚫 Failed to load subtask for cross-component check', { subtaskId, error, note: 'this is expected for cross-component scenarios' });
         setIsOpeningDialog(false);
         // Silently fail for cross-component checks - this is expected behavior
       });
