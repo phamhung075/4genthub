@@ -68,7 +68,7 @@ export class WebSocketClient extends EventEmitter {
     }
 
     this.isConnecting = true;
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/${this.userId}?token=${this.token}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/realtime?token=${this.token}`;
 
     console.log('[WebSocket v2.0] Connecting...');
     this.ws = new WebSocket(wsUrl);
