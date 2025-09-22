@@ -19,6 +19,8 @@ export interface ToastEvent {
 
 class ToastEventBus {
   private listeners: Map<string, Set<Function>> = new Map();
+  private recentMessages: Map<string, number> = new Map();
+  private readonly DEDUPLICATION_WINDOW = 1000; // 1 second window for deduplication
 
   /**
    * Subscribe to toast events (legacy API - expects ToastEvent objects)
@@ -58,10 +60,53 @@ class ToastEventBus {
   }
 
   /**
+   * Create a deduplication key for a message
+   */
+  private createDeduplicationKey(typeOrEvent: string | ToastEvent, message?: string): string {
+    if (typeof typeOrEvent === 'string') {
+      return `${typeOrEvent}:${message || ''}`;
+    } else {
+      const event = typeOrEvent as ToastEvent;
+      return `${event.type}:${event.title}:${event.description || ''}`;
+    }
+  }
+
+  /**
+   * Check if a message should be deduplicated
+   */
+  private shouldDeduplicate(key: string): boolean {
+    const now = Date.now();
+    const lastEmitted = this.recentMessages.get(key);
+
+    if (lastEmitted && (now - lastEmitted) < this.DEDUPLICATION_WINDOW) {
+      console.log(`🚫 ToastEventBus: DEDUPLICATING message with key "${key}" (last emitted ${now - lastEmitted}ms ago)`);
+      return true;
+    }
+
+    // Update the timestamp for this message
+    this.recentMessages.set(key, now);
+
+    // Clean up old entries to prevent memory leaks
+    for (const [existingKey, timestamp] of this.recentMessages.entries()) {
+      if (now - timestamp > this.DEDUPLICATION_WINDOW * 2) {
+        this.recentMessages.delete(existingKey);
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Emit a toast event (overloaded method for both APIs)
    */
   emit(typeOrEvent: 'success' | 'error' | 'warning' | 'info' | 'dismiss' | ToastEvent, message?: string, options?: any): void {
     console.log('📡 ToastEventBus.emit() called with:', typeOrEvent, message, options);
+
+    // Check for deduplication
+    const deduplicationKey = this.createDeduplicationKey(typeOrEvent, message);
+    if (this.shouldDeduplicate(deduplicationKey)) {
+      return; // Skip this duplicate message
+    }
 
     if (typeof typeOrEvent === 'string') {
       // New simplified API for NotificationService: emit(type, message, options)

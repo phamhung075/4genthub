@@ -10,6 +10,29 @@ export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
 export type EventType = 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned' | 'archived' | 'restored';
 
+interface WSMessage {
+  id: string;
+  version: '2.0';
+  type: 'update' | 'bulk' | 'sync' | 'heartbeat' | 'error';
+  timestamp: string;
+  sequence: number;
+  payload: {
+    entity: string;
+    action: string;
+    data: {
+      primary: any | any[];
+      cascade?: any;
+    };
+  };
+  metadata: {
+    source: 'mcp-ai' | 'user' | 'system';
+    userId?: string;
+    sessionId?: string;
+    correlationId?: string;
+    batchId?: string;
+  };
+}
+
 interface NotificationOptions {
   duration?: number;
   position?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
@@ -20,6 +43,8 @@ interface NotificationOptions {
 class NotificationService {
   private browserNotificationsEnabled = false;
   private soundEnabled = true;
+  private recentNotifications = new Map<string, number>();
+  private webSocketInitialized = false;
 
   constructor() {
     // Initialize notification sound
@@ -27,6 +52,41 @@ class NotificationService {
 
     // Check and request browser notification permission
     this.checkBrowserNotificationPermission();
+
+    // Clean up old notifications every 30 seconds
+    setInterval(() => this.cleanupOldNotifications(), 30000);
+  }
+
+  /**
+   * Clean up old notification entries (older than 10 seconds)
+   */
+  private cleanupOldNotifications() {
+    const now = Date.now();
+    const cutoff = 10000; // 10 seconds
+
+    for (const [key, timestamp] of this.recentNotifications.entries()) {
+      if (now - timestamp > cutoff) {
+        this.recentNotifications.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Check if notification is a duplicate within the deduplication window
+   */
+  private isDuplicate(entityType: EntityType, eventType: EventType, entityId?: string): boolean {
+    const key = `${entityType}:${eventType}:${entityId || 'unknown'}`;
+    const now = Date.now();
+    const lastNotification = this.recentNotifications.get(key);
+
+    // 5-second deduplication window
+    if (lastNotification && (now - lastNotification) < 5000) {
+      logger.debug(`Notification deduplication: Skipping duplicate ${key}`);
+      return true;
+    }
+
+    this.recentNotifications.set(key, now);
+    return false;
   }
 
   /**
@@ -145,12 +205,23 @@ class NotificationService {
    * Show toast notification
    */
   private showToast(message: string, type: NotificationType, options?: NotificationOptions) {
-    // Use toastEventBus instead of react-hot-toast
-    toastEventBus.emit(type, message, {
-      duration: options?.duration || 4000,
-      persistent: options?.duration === Infinity,
-      description: options?.icon ? `${options.icon} ${message}` : undefined
-    });
+    // Use toastEventBus convenience methods to ensure deduplication
+    const description = options?.icon ? `${options.icon} ${message}` : options?.duration ? undefined : undefined;
+
+    switch (type) {
+      case 'success':
+        toastEventBus.success(message, description);
+        break;
+      case 'error':
+        toastEventBus.error(message, description);
+        break;
+      case 'warning':
+        toastEventBus.warning(message, description);
+        break;
+      case 'info':
+        toastEventBus.info(message, description);
+        break;
+    }
 
     // Play sound for certain types
     if (type === 'success' || type === 'error' || type === 'warning') {
@@ -168,6 +239,12 @@ class NotificationService {
     entityId?: string,
     userName?: string
   ) {
+    // Check for duplicate notifications
+    if (this.isDuplicate(entityType, eventType, entityId)) {
+      logger.debug('Skipping duplicate notification:', { entityType, eventType, entityId, entityName });
+      return;
+    }
+
     const entity = entityType.charAt(0).toUpperCase() + entityType.slice(1);
     const action = this.getActionText(eventType);
     const by = userName ? ` by ${userName}` : '';
@@ -273,6 +350,160 @@ class NotificationService {
    */
   isBrowserNotificationsEnabled(): boolean {
     return this.browserNotificationsEnabled;
+  }
+
+  /**
+   * Initialize WebSocket notification integration
+   */
+  initializeWebSocketListener(webSocketClient: any): () => void {
+    if (this.webSocketInitialized) {
+      logger.warn('🔔 NotificationService: WebSocket already initialized');
+      return () => {};
+    }
+
+    logger.info('🔔 NotificationService: Initializing WebSocket notification integration...');
+
+    // Subscribe to WebSocket update messages
+    const unsubscribe = webSocketClient.on('update', (message: WSMessage) => {
+      this.handleWebSocketMessage(message);
+    });
+
+    this.webSocketInitialized = true;
+    logger.info('🔔 NotificationService: WebSocket integration initialized successfully');
+
+    // Return cleanup function
+    return () => {
+      logger.debug('🔔 NotificationService: Cleaning up WebSocket integration');
+
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+
+      this.webSocketInitialized = false;
+    };
+  }
+
+  /**
+   * Handle incoming WebSocket messages and trigger appropriate notifications
+   */
+  private handleWebSocketMessage(message: WSMessage): void {
+    // Only process update messages from user actions (not AI batched updates)
+    if (message.type !== 'update' || message.metadata?.source === 'mcp-ai') {
+      return;
+    }
+
+    const { entity, action } = message.payload;
+    const data = message.payload.data.primary;
+
+    logger.debug('🔔 NotificationService: Processing WebSocket message:', {
+      entity,
+      action,
+      source: message.metadata?.source,
+      messageId: message.id
+    });
+
+    // Map WebSocket actions to notification event types
+    const eventType = this.mapActionToEventType(action);
+    if (!eventType) {
+      logger.debug('🔔 NotificationService: Ignoring unmapped action:', action);
+      return;
+    }
+
+    // Extract entity information
+    const entityName = this.extractEntityName(data, entity);
+    const entityId = this.extractEntityId(data);
+    const userName = this.extractUserName(message.metadata);
+
+    // Trigger notification (with deduplication built-in)
+    try {
+      this.notifyEntityChange(
+        entity as EntityType,
+        eventType,
+        entityName,
+        entityId,
+        userName
+      );
+
+      logger.debug(`✅ NotificationService: Triggered ${eventType} notification for ${entity}`);
+    } catch (error) {
+      logger.error('❌ NotificationService: Failed to trigger notification:', error);
+    }
+  }
+
+  /**
+   * Map WebSocket action to notification event type
+   */
+  private mapActionToEventType(action: string): EventType | null {
+    const actionMap: Record<string, EventType> = {
+      'create': 'created',
+      'created': 'created',
+      'update': 'updated',
+      'updated': 'updated',
+      'delete': 'deleted',
+      'deleted': 'deleted',
+      'complete': 'completed',
+      'completed': 'completed',
+      'assign': 'assigned',
+      'assigned': 'assigned',
+      'unassign': 'unassigned',
+      'unassigned': 'unassigned',
+      'archive': 'archived',
+      'archived': 'archived',
+      'restore': 'restored',
+      'restored': 'restored'
+    };
+
+    return actionMap[action.toLowerCase()] || null;
+  }
+
+  /**
+   * Extract entity name from WebSocket data
+   */
+  private extractEntityName(data: any, entityType: string): string | undefined {
+    if (!data) return undefined;
+
+    // Try various common name fields
+    const nameFields = ['name', 'title', 'displayName', 'label'];
+
+    for (const field of nameFields) {
+      if (data[field] && typeof data[field] === 'string') {
+        return data[field];
+      }
+    }
+
+    // Entity-specific name extraction
+    if (entityType === 'task' || entityType === 'subtask') {
+      return data.title || data.name;
+    } else if (entityType === 'project') {
+      return data.name || data.title;
+    } else if (entityType === 'branch') {
+      return data.git_branch_name || data.name;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Extract entity ID from WebSocket data
+   */
+  private extractEntityId(data: any): string | undefined {
+    if (!data) return undefined;
+    return data.id || data.uuid || data.entityId;
+  }
+
+  /**
+   * Extract user name from WebSocket metadata
+   */
+  private extractUserName(metadata: any): string | undefined {
+    if (!metadata) return undefined;
+    return metadata.userName || metadata.userDisplayName || metadata.userId;
+  }
+
+  /**
+   * Check if WebSocket integration is initialized
+   */
+  isWebSocketInitialized(): boolean {
+    return this.webSocketInitialized;
   }
 }
 
