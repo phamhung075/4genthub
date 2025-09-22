@@ -218,12 +218,30 @@ class WebSocketNotificationService:
             git_branch_id: Optional branch ID for filtering
             project_id: Optional project ID for filtering
         """
-        logger.info(f"📡 broadcast_task_event called - event: {event_type}, task_id: {task_id}, user: {user_id}")
+        logger.info(f"📡 🚨 DELETE DEBUG: broadcast_task_event called - event: {event_type}, task_id: {task_id}, user: {user_id}")
+
+        # Special detailed logging for DELETE operations
+        if event_type.lower() in ['delete', 'deleted']:
+            logger.warning(f"🗑️ BACKEND DELETE EVENT BROADCAST:")
+            logger.warning(f"   Event Type: {event_type}")
+            logger.warning(f"   Task ID: {task_id}")
+            logger.warning(f"   User ID: {user_id}")
+            logger.warning(f"   Task Data: {task_data}")
+            logger.warning(f"   Git Branch ID: {git_branch_id}")
+            logger.warning(f"   Project ID: {project_id}")
+            logger.warning(f"   About to check for duplicate notification...")
 
         # DUPLICATE DETECTION: Check if this is a duplicate notification
         if _is_duplicate_notification(event_type, "task", task_id, user_id):
-            logger.info(f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}")
+            if event_type.lower() in ['delete', 'deleted']:
+                logger.warning(f"🚫 🗑️ DELETE DUPLICATE BLOCKED: {event_type} for task {task_id}")
+            else:
+                logger.info(f"🚫 Skipping duplicate task notification: {event_type} for task {task_id}")
             return  # Skip this notification
+
+        # Special logging for DELETE continuing after duplicate check
+        if event_type.lower() in ['delete', 'deleted']:
+            logger.warning(f"✅ DELETE NOT DUPLICATE - proceeding with broadcast")
 
         try:
             # Try direct import first (for when running in same process)
@@ -255,7 +273,13 @@ class WebSocketNotificationService:
                 data=task_data,
                 metadata=metadata
             )
-            logger.info(f"✅ Successfully broadcasted task {event_type} event for {task_id}")
+
+            # Enhanced success logging for DELETE operations
+            if event_type.lower() in ['delete', 'deleted']:
+                logger.warning(f"✅ 🗑️ DELETE SUCCESSFULLY BROADCASTED: task {event_type} event for {task_id}")
+                logger.warning(f"   Payload sent to broadcast_data_change: entity_type=task, event_type={event_type}, entity_id={task_id}")
+            else:
+                logger.info(f"✅ Successfully broadcasted task {event_type} event for {task_id}")
 
         except (ImportError, RuntimeError) as e:
             # Fallback to HTTP broadcast for cross-process communication

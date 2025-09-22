@@ -45,19 +45,42 @@ class WebSocketAnimationService {
     const { payload, metadata } = message;
     const { entity, action } = payload;
 
-    console.log('🎬 WebSocketAnimationService: Processing message:', {
+    console.log('🎬 🚨 DELETE DEBUG: WebSocketAnimationService: Processing message:', {
       entity,
       action,
       messageId: message.id
     });
 
+    // Special detailed logging for DELETE operations
+    if (action?.toLowerCase().includes('delete')) {
+      console.warn('🗑️ DELETE MESSAGE RECEIVED in WebSocketAnimationService:');
+      console.warn('  Entity:', entity);
+      console.warn('  Action:', action);
+      console.warn('  Message ID:', message.id);
+      console.warn('  Full message:', message);
+      console.warn('  Checking if entity matches supported types (task/subtask/branch)...');
+    }
+
     // Only handle task-related operations that should trigger animations
     if (entity === 'task') {
+      if (action?.toLowerCase().includes('delete')) {
+        console.warn('🗑️ DELETE: Triggering task animation');
+      }
       this.triggerTaskAnimation(action, message);
     } else if (entity === 'subtask') {
+      if (action?.toLowerCase().includes('delete')) {
+        console.warn('🗑️ DELETE: Triggering subtask animation');
+      }
       this.triggerSubtaskAnimation(action, message);
     } else if (entity === 'branch') {
+      if (action?.toLowerCase().includes('delete')) {
+        console.warn('🗑️ DELETE: Triggering branch animation');
+      }
       this.triggerBranchAnimation(action, message);
+    } else {
+      if (action?.toLowerCase().includes('delete')) {
+        console.warn('🗑️ DELETE: Entity not supported for animations:', entity);
+      }
     }
   }
 
@@ -75,6 +98,9 @@ class WebSocketAnimationService {
       branchTitle
     });
 
+    // Extract task ID from message for targeted animations
+    const taskId = message.payload?.data?.primary?.id || message.payload?.entity_id;
+
     switch (action) {
       case 'created':
         // Show success toast with animation
@@ -82,8 +108,8 @@ class WebSocketAnimationService {
           'Task Created',
           `"${taskTitle}" was added to ${branchTitle}`
         );
-        // Trigger visual effects
-        this.triggerShimmerEffect('task-created');
+        // Trigger visual effects with task ID
+        this.triggerShimmerEffect('task-created', taskId);
         this.emit('task-created', { action, message });
         break;
 
@@ -93,8 +119,8 @@ class WebSocketAnimationService {
           'Task Updated',
           `"${taskTitle}" was modified`
         );
-        // Trigger visual effects
-        this.triggerShimmerEffect('task-updated');
+        // Trigger visual effects with task ID
+        this.triggerShimmerEffect('task-updated', taskId);
         this.emit('task-updated', { action, message });
         break;
 
@@ -104,20 +130,36 @@ class WebSocketAnimationService {
           'Task Completed',
           `"${taskTitle}" was completed successfully`
         );
-        // Trigger celebration effect
-        this.triggerCelebrationEffect();
+        // Trigger celebration effect with task ID
+        this.triggerCelebrationEffect(taskId);
         this.emit('task-completed', { action, message });
         break;
 
       case 'deleted':
+        console.warn('🗑️ DELETE CASE MATCHED in triggerTaskAnimation');
+        console.warn('  Task ID:', taskId);
+        console.warn('  Task Title:', taskTitle);
+        console.warn('  Branch Title:', branchTitle);
+        console.warn('  About to show warning toast...');
+
         // Show warning toast for deletion
         toastEventBus.warning(
           'Task Deleted',
           `"${taskTitle}" was removed`
         );
-        // Trigger fade effect
-        this.triggerFadeEffect();
+
+        console.warn('✅ DELETE toast triggered');
+        console.warn('  About to trigger fade effect...');
+
+        // Trigger fade effect with task ID for targeted animation
+        this.triggerFadeEffect(taskId);
+
+        console.warn('✅ DELETE fade effect triggered');
+        console.warn('  About to emit task-deleted event...');
+
         this.emit('task-deleted', { action, message });
+
+        console.warn('✅ DELETE task-deleted event emitted');
         break;
 
       default:
@@ -190,8 +232,8 @@ class WebSocketAnimationService {
   /**
    * Trigger shimmer effect on UI elements
    */
-  private triggerShimmerEffect(eventType: string) {
-    console.log('✨ WebSocketAnimationService: Triggering shimmer effect:', eventType);
+  private triggerShimmerEffect(eventType: string, taskId?: string) {
+    console.log('✨ WebSocketAnimationService: Triggering shimmer effect:', eventType, 'for task:', taskId);
 
     // Find shimmer-capable elements and trigger their animations
     const shimmerElements = document.querySelectorAll('.shimmer-button, [data-shimmer]');
@@ -208,15 +250,19 @@ class WebSocketAnimationService {
 
     // Dispatch custom event for other components to listen to
     window.dispatchEvent(new CustomEvent('websocket-animation', {
-      detail: { type: eventType, timestamp: Date.now() }
+      detail: {
+        type: eventType,
+        timestamp: Date.now(),
+        taskId: taskId
+      }
     }));
   }
 
   /**
    * Trigger celebration effect for completed tasks
    */
-  private triggerCelebrationEffect() {
-    console.log('🎉 WebSocketAnimationService: Triggering celebration effect');
+  private triggerCelebrationEffect(taskId?: string) {
+    console.log('🎉 WebSocketAnimationService: Triggering celebration effect for task:', taskId);
 
     // Add celebration class to body for global effects
     document.body.classList.add('task-celebration');
@@ -226,22 +272,40 @@ class WebSocketAnimationService {
       document.body.classList.remove('task-celebration');
     }, 3000);
 
-    // Dispatch celebration event
+    // Dispatch celebration event with task ID
     window.dispatchEvent(new CustomEvent('task-celebration', {
-      detail: { timestamp: Date.now() }
+      detail: {
+        timestamp: Date.now(),
+        taskId: taskId
+      }
     }));
   }
 
   /**
    * Trigger fade effect for deleted items
    */
-  private triggerFadeEffect() {
-    console.log('💨 WebSocketAnimationService: Triggering fade effect');
+  private triggerFadeEffect(taskId?: string) {
+    console.warn('💨 🗑️ DELETE: WebSocketAnimationService: Triggering fade effect for task:', taskId);
 
-    // Dispatch fade event
-    window.dispatchEvent(new CustomEvent('task-fade', {
-      detail: { timestamp: Date.now() }
-    }));
+    // Check if there are any listeners for the task-fade event
+    console.warn('  About to dispatch task-fade CustomEvent...');
+    console.warn('  Task ID:', taskId);
+    console.warn('  Timestamp:', Date.now());
+
+    // Dispatch fade event with task ID
+    const event = new CustomEvent('task-fade', {
+      detail: {
+        timestamp: Date.now(),
+        taskId: taskId
+      }
+    });
+
+    console.warn('  CustomEvent created:', event);
+    console.warn('  Event detail:', event.detail);
+
+    window.dispatchEvent(event);
+
+    console.warn('✅ DELETE task-fade CustomEvent dispatched to window');
   }
 
   /**

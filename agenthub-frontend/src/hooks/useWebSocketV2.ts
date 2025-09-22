@@ -15,6 +15,7 @@ import {
 import { updateFromWebSocket } from '../store/slices/cascadeSlice';
 import { webSocketAnimationService } from '../services/WebSocketAnimationService';
 import { initializeWebSocketIntegration } from '../services/changePoolService';
+import { webSocketNotificationService } from '../services/WebSocketNotificationService';
 
 
 /**
@@ -42,7 +43,7 @@ export function useWebSocket(userId: string, token: string) {
 
     // Handle updates (both immediate and batched)
     client.on('update', (message: WSMessage) => {
-      console.log('[useWebSocket] 🎯 UPDATE EVENT RECEIVED:', {
+      console.log('[useWebSocket] 🎯 🚨 DELETE DEBUG: UPDATE EVENT RECEIVED:', {
         messageId: message.id,
         entity: message.payload.entity,
         action: message.payload.action,
@@ -50,16 +51,40 @@ export function useWebSocket(userId: string, token: string) {
         hasCascade: !!message.payload.data.cascade
       });
 
+      // Special detailed logging for DELETE operations
+      if (message.payload?.action?.toLowerCase().includes('delete')) {
+        console.warn('🗑️ DELETE UPDATE EVENT RECEIVED IN useWebSocket HOOK:');
+        console.warn('  Message ID:', message.id);
+        console.warn('  Entity:', message.payload.entity);
+        console.warn('  Action:', message.payload.action);
+        console.warn('  Source:', message.metadata?.source);
+        console.warn('  Has Cascade:', !!message.payload.data.cascade);
+        console.warn('  Primary Data:', message.payload.data.primary);
+        console.warn('  About to dispatch to Redux store...');
+      }
+
       // Dispatch message to Redux store
       dispatch(messageReceived(message));
+
+      if (message.payload?.action?.toLowerCase().includes('delete')) {
+        console.warn('✅ DELETE message dispatched to Redux store');
+      }
 
       // Process cascade data if present
       if (message.payload.data.cascade) {
         console.log('[useWebSocket] 🔄 Processing cascade data');
         dispatch(updateFromWebSocket(message.payload.data.cascade));
+
+        if (message.payload?.action?.toLowerCase().includes('delete')) {
+          console.warn('✅ DELETE cascade data processed');
+        }
       }
 
-      console.log('[useWebSocket] ✅ Processed update successfully');
+      if (message.payload?.action?.toLowerCase().includes('delete')) {
+        console.warn('✅ DELETE update processed successfully in useWebSocket');
+      } else {
+        console.log('[useWebSocket] ✅ Processed update successfully');
+      }
     });
 
     // Handle user actions (immediate feedback)
@@ -96,6 +121,9 @@ export function useWebSocket(userId: string, token: string) {
     // Initialize the change pool service with the WebSocket client
     const cleanupChangePool = initializeWebSocketIntegration(client);
 
+    // Initialize the notification service with the WebSocket client
+    const cleanupNotifications = webSocketNotificationService.init(client);
+
     // Connect to server
     client.connect();
 
@@ -104,6 +132,7 @@ export function useWebSocket(userId: string, token: string) {
       console.log('[useWebSocket] Cleaning up');
       client.disconnect();
       cleanupChangePool();
+      cleanupNotifications();
       clientRef.current = null;
     };
   }, [userId, token, dispatch]);
