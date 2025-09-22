@@ -120,6 +120,7 @@ class WebSocketAnimationService {
         this.emit('task-completed', { action, message });
         break;
 
+      case 'delete':
       case 'deleted':
         console.warn('🗑️ DELETE CASE MATCHED in triggerTaskAnimation');
         console.warn('  Task ID:', taskId);

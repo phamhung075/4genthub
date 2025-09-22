@@ -33,27 +33,27 @@ export const useToast = () => {
   return context;
 };
 
-// Toast variants
+// Toast variants using design system colors
 const toastVariants = {
   success: {
     icon: CheckCircle,
-    className: "border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100",
-    iconClassName: "text-green-500"
+    className: "border-success bg-success-light text-success-dark dark:bg-success-dark/20 dark:text-success-light dark:border-success/50",
+    iconClassName: "text-success dark:text-success-light"
   },
   error: {
     icon: XCircle,
-    className: "border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100",
-    iconClassName: "text-red-500"
+    className: "border-error bg-error-light text-error-dark dark:bg-error-dark/20 dark:text-error-light dark:border-error/50",
+    iconClassName: "text-error dark:text-error-light"
   },
   warning: {
     icon: AlertCircle,
-    className: "border-yellow-500 bg-yellow-50 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-100",
-    iconClassName: "text-yellow-500"
+    className: "border-warning bg-warning-light text-warning-dark dark:bg-warning-dark/20 dark:text-warning-light dark:border-warning/50",
+    iconClassName: "text-warning dark:text-warning-light"
   },
   info: {
     icon: Info,
-    className: "border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-100",
-    iconClassName: "text-blue-500"
+    className: "border-info bg-info-light text-info-dark dark:bg-info-dark/20 dark:text-info-light dark:border-info/50",
+    iconClassName: "text-info dark:text-info-light"
   }
 };
 
@@ -111,21 +111,24 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
   return (
     <div
       className={cn(
-        "relative flex w-full items-start gap-3 rounded-lg border p-4 shadow-lg transition-all duration-300 ease-in-out",
-        "animate-in",
+        "relative flex w-full items-start gap-3 rounded-lg border-l-4 border-t border-r border-b",
+        "bg-surface shadow-lg backdrop-blur-sm",
+        "p-4 transition-all duration-300 ease-in-out transform",
+        "hover:scale-[1.02] hover:shadow-xl",
+        "toast-slide-in",
         variant.className
       )}
       role="alert"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Icon className={cn("h-5 w-5 flex-shrink-0 mt-0.5", variant.iconClassName)} />
-      <div className="flex-1 space-y-1">
-        <div className="text-sm font-medium leading-none">
+      <div className="flex-1 space-y-1 min-w-0">
+        <div className="text-sm font-semibold leading-5 text-text flex items-center gap-2">
+          <Icon className={cn("h-4 w-4 flex-shrink-0", variant.iconClassName)} />
           {toast.title}
         </div>
         {toast.description && (
-          <div className="text-sm opacity-80">
+          <div className="text-sm text-text-secondary leading-relaxed">
             {toast.description}
           </div>
         )}
@@ -133,19 +136,28 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
           <div className="pt-2">
             <button
               onClick={toast.action.onClick}
-              className="text-sm font-medium underline hover:no-underline"
+              className={cn(
+                "text-sm font-medium transition-colors duration-150",
+                "hover:underline focus:outline-none focus:ring-2 focus:ring-primary/20 rounded",
+                variant.iconClassName
+              )}
             >
               {toast.action.label}
             </button>
           </div>
         )}
       </div>
+
       <button
         onClick={() => onDismiss(toast.id)}
-        className="absolute right-2 top-2 rounded-md p-1 opacity-70 hover:opacity-100 transition-opacity"
+        className={cn(
+          "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
+          "text-text-tertiary hover:text-text hover:bg-surface-hover",
+          "transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        )}
         aria-label="Close notification"
       >
-        <X className="h-4 w-4" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
@@ -158,9 +170,16 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[10000] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
-      {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
+    <div className="fixed top-4 right-4 z-[10000] flex flex-col gap-3 w-full max-w-md pointer-events-none">
+      {toasts.map((toast, index) => (
+        <div
+          key={toast.id}
+          className="pointer-events-auto"
+          style={{
+            animationDelay: `${index * 100}ms`,
+            zIndex: 10000 - index
+          }}
+        >
           <ToastItem toast={toast} onDismiss={dismissToast} />
         </div>
       ))}

@@ -133,8 +133,9 @@ class OperationFactory:
             return handler.update_task(facade, **crud_kwargs)
         elif operation == 'delete':
             # Filter to only include parameters accepted by delete_task method
-            allowed_params = {'task_id'}
+            allowed_params = {'task_id', 'user_id'}
             crud_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}
+            # Pass the authenticated user_id to ensure proper WebSocket authorization
             return handler.delete_task(facade, **crud_kwargs)
         elif operation == 'get':
             # Filter to only include parameters accepted by get_task method

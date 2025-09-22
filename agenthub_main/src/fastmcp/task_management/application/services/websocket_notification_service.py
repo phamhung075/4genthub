@@ -84,14 +84,16 @@ class WebSocketNotificationService:
                     return {
                         "task_title": task.title,
                         "parent_branch_id": branch.id,
-                        "parent_branch_title": branch.name
+                        "parent_branch_title": branch.name,
+                        "task_user_id": task.user_id  # Include task owner's user_id for proper authorization
                     }
                 else:
                     logger.warning(f"Task {task_id} not found for context lookup")
                     return {
                         "task_title": f"Task {task_id[:8]}",
                         "parent_branch_id": None,
-                        "parent_branch_title": "Unknown Branch"
+                        "parent_branch_title": "Unknown Branch",
+                        "task_user_id": None  # No user_id available if task not found
                     }
 
         except Exception as e:
@@ -99,7 +101,8 @@ class WebSocketNotificationService:
             return {
                 "task_title": f"Task {task_id[:8]}",
                 "parent_branch_id": None,
-                "parent_branch_title": "Unknown Branch"
+                "parent_branch_title": "Unknown Branch",
+                "task_user_id": None  # No user_id available on error
             }
 
     @staticmethod
