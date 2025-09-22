@@ -181,32 +181,81 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         logger.info('Initial load - no animation for existing tasks', { component: 'LazyTaskList' });
       }
 
-      // 2. Removed tasks (deleted) - now handled optimistically, just log and update state
+      // 2. Removed tasks (deleted) - handle WebSocket deletions with animation
       const removedTasks = new Set([...currentTaskIds].filter(id => !newTaskIds.has(id)));
+      let summariesToUpdate = summaries;
+
       if (removedTasks.size > 0) {
-        logger.info('Deleted tasks detected (post-optimistic-animation)', {
+        logger.info('Deleted tasks detected - setting up WebSocket deletion animation', {
           component: 'LazyTaskList',
-          removedTasks: [...removedTasks],
-          note: 'Animation should have already played optimistically'
+          removedTasks: [...removedTasks]
         });
 
-        // Clean up callbacks for deleted tasks immediately (animation already played)
+        // Keep deleted tasks visible temporarily for WebSocket animation
+        const tasksWithDeleted = [...summaries];
         removedTasks.forEach(taskId => {
-          rowAnimationCallbacks.current.delete(taskId);
+          const deletedTask = taskSummaries.find(t => t.id === taskId);
+          if (deletedTask) {
+            tasksWithDeleted.push(deletedTask);
+            logger.info('Adding deleted task back for WebSocket animation', {
+              component: 'LazyTaskList',
+              taskId,
+              taskTitle: deletedTask.title
+            });
+          }
         });
 
-        // No need to add tasks back or play animation - that's handled optimistically
-        // Just update the counts to reflect the change
-        setTotalTasks(prevTotal => {
-          const newTotal = Math.max(0, prevTotal - removedTasks.size);
-          logger.debug('Updated total task count after optimistic deletion', {
-            component: 'LazyTaskList',
-            previousTotal: prevTotal,
-            newTotal,
-            removedCount: removedTasks.size
+        // Use the extended summaries that include deleted tasks for animation
+        summariesToUpdate = tasksWithDeleted;
+
+        // Trigger WebSocket animations for deleted tasks
+        setTimeout(() => {
+          removedTasks.forEach(taskId => {
+            const callbacks = rowAnimationCallbacks.current.get(taskId);
+            if (callbacks) {
+              logger.info('Playing WebSocket delete animation for task', {
+                component: 'LazyTaskList',
+                taskId
+              });
+              callbacks.playDeleteAnimation();
+            } else {
+              logger.warn('No animation callbacks found for deleted task', {
+                component: 'LazyTaskList',
+                taskId,
+                availableCallbacks: [...rowAnimationCallbacks.current.keys()]
+              });
+            }
           });
-          return newTotal;
-        });
+        }, 100);
+
+        // Remove deleted tasks from UI after animation completes
+        setTimeout(() => {
+          logger.info('Removing deleted tasks from UI after animation', {
+            component: 'LazyTaskList',
+            removedTasks: [...removedTasks]
+          });
+
+          setTaskSummaries(prevSummaries =>
+            prevSummaries.filter(task => !removedTasks.has(task.id))
+          );
+
+          // Clean up callbacks for deleted tasks
+          removedTasks.forEach(taskId => {
+            rowAnimationCallbacks.current.delete(taskId);
+          });
+
+          // Update total count
+          setTotalTasks(prevTotal => {
+            const newTotal = Math.max(0, prevTotal - removedTasks.size);
+            logger.debug('Updated total task count after WebSocket deletion animation', {
+              component: 'LazyTaskList',
+              previousTotal: prevTotal,
+              newTotal,
+              removedCount: removedTasks.size
+            });
+            return newTotal;
+          });
+        }, 900); // Wait for 800ms animation + 100ms buffer
       }
 
       // 3. Updated tasks (modified)
@@ -231,9 +280,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         }
       });
 
-      // Update states
-      setTaskSummaries(summaries);
-      setTotalTasks(summaries.length);
+      // Update states (use summariesToUpdate which includes deleted tasks for animation)
+      setTaskSummaries(summariesToUpdate);
+      setTotalTasks(summariesToUpdate.length);
       setPreviousTaskIds(newTaskIds);
 
       // Store full tasks for immediate access
