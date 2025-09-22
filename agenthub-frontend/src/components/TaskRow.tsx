@@ -322,7 +322,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={onToggleExpansion}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpansion();
+                }}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -340,7 +343,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`);
+                }}
                 className="flex-1 min-w-[60px]"
               >
                 <Eye className="w-3 h-3 mr-1" />
@@ -350,7 +356,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onOpenDialog('edit', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('edit', summary.id);
+                }}
                 className="flex-1 min-w-[60px]"
               >
                 <Pencil className="w-3 h-3 mr-1" />
@@ -360,7 +369,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onOpenDialog('assign', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('assign', summary.id);
+                }}
                 className="flex-1 min-w-[60px]"
               >
                 <Users className="w-3 h-3 mr-1" />
@@ -370,7 +382,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onOpenDialog('delete', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('delete', summary.id);
+                }}
                 title="Delete task"
               >
                 <Trash2 className="w-3 h-3" />
@@ -494,7 +509,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={onToggleExpansion}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpansion();
+              }}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -577,7 +595,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`);
+                }}
                 title="View details"
                 className="h-8 w-8"
               >
@@ -587,7 +608,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onOpenDialog('assign', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('assign', summary.id);
+                }}
                 title="Assign agents"
                 className="h-8 w-8 hidden sm:inline-flex"
               >
@@ -597,7 +621,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onOpenDialog('edit', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('edit', summary.id);
+                }}
                 title="Edit task"
                 className="h-8 w-8"
               >
@@ -607,7 +634,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onOpenDialog('delete', summary.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('delete', summary.id);
+                }}
                 title="Delete task"
                 className="h-8 w-8"
               >

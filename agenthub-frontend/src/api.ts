@@ -221,7 +221,7 @@ export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
 };
 
 export const getSubtask = async (task_id: string, subtask_id: string): Promise<Subtask> => {
-    // Use subtask endpoint - task_id parameter kept for backward compatibility but not used
+    // Use simple endpoint with authentication - task_id kept for API consistency but not used
     const response = await subtaskApiV2.getSubtask(subtask_id) as SubtaskResponse;
     return response.subtask || response;
 };

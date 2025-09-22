@@ -196,7 +196,7 @@ class TestCreateTaskUseCaseExecution:
                         assert call_args['title'] == "Full Test Task"
                         assert call_args['description'] == "Full Test Description"
                         assert call_args['git_branch_id'] == "branch-456"
-                        assert call_args['details'] == "Implementation details"
+                        # Note: 'details' is not passed to Task.create - it's used for append_progress after creation
                         assert call_args['estimated_effort'] == "4 hours"
                         assert call_args['assignees'] == ["@user1", "@user2"]
                         assert call_args['labels'] == ["feature", "urgent"]
@@ -875,7 +875,7 @@ class TestCreateTaskUseCaseEdgeCases:
             
             # Verify None values are passed through (or converted to defaults)
             call_args = mock_create.call_args[1]
-            assert call_args['details'] is None
+            # Note: 'details' is not passed to Task.create - it's used for append_progress after creation
             assert call_args['estimated_effort'] is None
             # assignees and labels may be None or [] depending on CreateTaskRequest behavior
             assert call_args['assignees'] in [None, []]

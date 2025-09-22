@@ -85,8 +85,13 @@ class TestORMProjectRepositoryEntityConversion:
         assert entity.created_at == mock_project.created_at
         assert entity.updated_at == mock_project.updated_at
     
-    def test_model_to_entity_with_git_branches(self):
+    @patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.ORMProjectRepository.get_db_session')
+    def test_model_to_entity_with_git_branches(self, mock_get_db_session):
         """Test converting project model with git branches to entity."""
+        # Mock database session
+        mock_session = MagicMock()
+        mock_get_db_session.return_value.__enter__.return_value = mock_session
+
         # Mock project model with git branches
         mock_project = Mock(spec=Project)
         mock_project.id = "project-123"
@@ -94,7 +99,7 @@ class TestORMProjectRepositoryEntityConversion:
         mock_project.description = "Test Description"
         mock_project.created_at = datetime.now(timezone.utc)
         mock_project.updated_at = datetime.now(timezone.utc)
-        
+
         # Mock git branches
         mock_branch1 = Mock(spec=ProjectGitBranch)
         mock_branch1.id = "branch-1"
@@ -104,7 +109,7 @@ class TestORMProjectRepositoryEntityConversion:
         mock_branch1.task_count = 5
         mock_branch1.created_at = datetime.now(timezone.utc)
         mock_branch1.updated_at = datetime.now(timezone.utc)
-        
+
         mock_branch2 = Mock(spec=ProjectGitBranch)
         mock_branch2.id = "branch-2"
         mock_branch2.name = "feature/auth"
@@ -113,14 +118,14 @@ class TestORMProjectRepositoryEntityConversion:
         mock_branch2.task_count = 3
         mock_branch2.created_at = datetime.now(timezone.utc)
         mock_branch2.updated_at = datetime.now(timezone.utc)
-        
+
         mock_project.git_branchs = [mock_branch1, mock_branch2]
-        
+
         entity = self.repo._model_to_entity(mock_project)
-        
+
         assert isinstance(entity, ProjectEntity)
         assert entity.id == "project-123"
-        
+
         # Verify git branches were converted
         # Note: The actual implementation creates placeholder tasks based on task_count
         assert hasattr(entity, 'git_branches') or len(mock_project.git_branchs) == 2

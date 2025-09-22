@@ -78,8 +78,15 @@ class HintGenerationService(_HintManager):
         self.context_repository = context_repository
         self.event_store = event_store
         self.hint_repository = hint_repository
-        self.rules = self.strategy.rules if hasattr(self.strategy, 'rules') else []
+        # Don't copy rules - use property below to get live reference
         self._effectiveness_cache = self.strategy._effectiveness_cache if hasattr(self.strategy, '_effectiveness_cache') else {}
+
+    @property
+    def rules(self):
+        """Get the current rules list from strategy - provides live reference"""
+        if hasattr(self.strategy, 'rules'):
+            return self.strategy.rules
+        return []
     # All methods are now inherited from HintManager
     # The following methods are available and work as before:
     # - generate_hints_for_task()

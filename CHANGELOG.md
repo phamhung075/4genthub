@@ -7,6 +7,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed
+- **LazySubtaskList Duplicate HTTP Requests**: Fixed performance issue where expanding subtasks made 10+ duplicate API calls
+  - Root cause: Race conditions between initial load and real-time subscription, plus lack of request deduplication
+  - Solutions implemented:
+    - Created request deduplication utility (`agenthub-frontend/src/utils/requestDeduplication.ts`) with 500ms window
+    - Enhanced API service layer (`agenthub-frontend/src/services/apiV2.ts`) with automatic request deduplication
+    - Fixed subscription timing in LazySubtaskList component with separate `subscriptionEnabled` flag
+    - Added debouncing (200ms) to change handlers to batch rapid state changes
+    - Added cleanup effects for debounce timers to prevent memory leaks
+  - Modified files:
+    - `agenthub-frontend/src/utils/requestDeduplication.ts` (NEW): Global request deduplication with debugging tools
+    - `agenthub-frontend/src/services/apiV2.ts` (lines 5, 159-179): Added deduplication to fetchWithRetry function
+    - `agenthub-frontend/src/components/LazySubtaskList.tsx`:
+      - Line 73: Added subscriptionEnabled state flag
+      - Lines 235-241: Delayed subscription activation by 250ms after initial load
+      - Lines 258-277: Added debouncing to handleSubtaskChanges with 200ms delay
+      - Line 392: Updated subscription to use subscriptionEnabled flag
+      - Lines 647-653: Added cleanup effect for debounce timers
+  - Impact: Reduced API calls from 10+ to just 1 (plus CORS preflight) when expanding subtasks
+  - Debug tools: `window.getRequestDeduplicationStats()` and test validation script
+  - Performance improvement: Measurable network reduction and faster UI responsiveness
+- **Subtask API Endpoint Simplification**: Standardized subtask fetching to use simple authenticated endpoint
+  - Root cause: Confusion between two different subtask endpoints (simple vs nested)
+  - Solution: Standardized on simple `/api/v2/subtasks/{subtask_id}` endpoint with proper authentication
+  - Modified files:
+    - `agenthub-frontend/src/services/apiV2.ts` (line 350-366): getSubtask uses simple endpoint with auth headers
+    - `agenthub-frontend/src/api.ts` (line 223-227): Passes only subtask_id to apiV2.getSubtask
+    - `agenthub_main/src/fastmcp/server/routes/task_user_routes.py` (line 501): Removed nested endpoint to avoid confusion
+  - Impact: Clean, consistent API with single subtask endpoint that uses authentication like other endpoints
 - **Frontend Task List Real-Time Reactivity**: Fixed task list not updating reactively when changes occur
   - Root cause: WebSocket service was receiving messages but not notifying changePoolService for component updates
   - Solution: Connected websocketService to changePoolService to trigger real-time UI updates

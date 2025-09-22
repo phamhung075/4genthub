@@ -167,11 +167,22 @@ build_minimal_context() {
 
 # Run test-menu.sh to update cache
 update_test_cache() {
-    echo -e "${CYAN}🔄 Updating test cache...${NC}" | tee -a "$LOG_FILE"
+    local mode="${1:-failed}"  # Default to "failed" mode, accept parameter for different modes
 
-    # Run smart test mode to update cache
+    echo -e "${CYAN}🔄 Updating test cache (${mode} mode)...${NC}" | tee -a "$LOG_FILE"
+
     if [[ -f "test-menu.sh" ]]; then
-        echo "2" | ./test-menu.sh > /dev/null 2>&1  # Run failed tests only
+        case "$mode" in
+            "smart")
+                echo "1" | ./test-menu.sh > /dev/null 2>&1  # Run smart mode (skip cached passed tests)
+                ;;
+            "all")
+                echo "3" | ./test-menu.sh > /dev/null 2>&1  # Run all tests (ignore cache)
+                ;;
+            "failed"|*)
+                echo "2" | ./test-menu.sh > /dev/null 2>&1  # Run failed tests only (default)
+                ;;
+        esac
     else
         echo -e "${YELLOW}⚠️  test-menu.sh not found, using existing cache${NC}" | tee -a "$LOG_FILE"
     fi
@@ -214,8 +225,8 @@ main() {
     echo "Starting Optimized Test Fix Loop - $(date)" | tee "$LOG_FILE"
     init_progress
 
-    # Initial cache update
-    update_test_cache
+    # Initial cache update - use smart mode for comprehensive scan
+    update_test_cache "smart"
 
     ITERATION=0
 
@@ -230,9 +241,10 @@ main() {
 
         if [[ -z "$NEXT_TEST" ]]; then
             echo -e "${GREEN}🎉 All tests are passing! No failures found.${NC}" | tee -a "$LOG_FILE"
+            echo -e "${CYAN}Running comprehensive cache refresh to check for new failures...${NC}" | tee -a "$LOG_FILE"
+            update_test_cache "smart"  # Use smart mode to discover any newly failing tests
             echo -e "${CYAN}Waiting $DELAY_SECONDS seconds before rechecking...${NC}"
             sleep $DELAY_SECONDS
-            update_test_cache
             continue
         fi
 
