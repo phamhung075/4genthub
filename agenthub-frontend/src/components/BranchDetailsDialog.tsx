@@ -1,6 +1,8 @@
-import { Calendar, Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, FileCode, FileText, GitBranch, Hash, Info, Layers, Settings, Shield, Tag, Users } from "lucide-react";
+import { Calendar, Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, FileCode, FileText, GitBranch, Hash, Info, Layers, Settings, Shield, Tag, Users, Wifi, WifiOff } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getBranchContext, Project } from "../api";
+import { useBranchWebSocket } from "../hooks/useWebSocketV2";
+import { useAuth } from "../contexts/AuthContext";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -24,11 +26,15 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
   branch,
   onClose
 }) => {
+  const { user, token } = useAuth();
   const [branchContext, setBranchContext] = useState<any>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['data', 'resolved_context', 'branch_data', 'metadata']));
   const [jsonCopied, setJsonCopied] = useState(false);
+
+  // Initialize WebSocket connection for real-time branch updates
+  const { isConnected } = useBranchWebSocket(user?.id || '', token || '', branch?.id);
 
   // Fetch branch context when dialog opens
   useEffect(() => {
@@ -256,6 +262,26 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               <GitBranch className="w-5 h-5" />
               {branch?.name || 'Branch Details'}
             </DialogTitle>
+            <div className="flex items-center gap-2">
+              {/* WebSocket Connection Status */}
+              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                isConnected
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+              }`}>
+                {isConnected ? (
+                  <>
+                    <Wifi className="w-3 h-3" />
+                    <span>Live</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3" />
+                    <span>Offline</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </DialogHeader>
         

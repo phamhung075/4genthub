@@ -134,7 +134,7 @@
       "path": "api-behavior"
     },
     "api-integration": {
-      "count": 13,
+      "count": 15,
       "files": [
         {
           "hash": "677ae44155bbd2b3ca5ab9b6e533aa76",
@@ -142,6 +142,13 @@
           "name": "mcp-client-configuration-guide.md",
           "path": "api-integration/mcp-client-configuration-guide.md",
           "size": 17081
+        },
+        {
+          "hash": "6f0ccac50dd8f0aabe58e459d519c680",
+          "modified": "2025-09-22T08:19:12.315491",
+          "name": "implementation-phases-detailed.md",
+          "path": "api-integration/implementation-phases-detailed.md",
+          "size": 25135
         },
         {
           "hash": "1418838288008d5fce256cb6b5b06411",
@@ -191,6 +198,13 @@
           "name": "mcp-http-client-architecture.md",
           "path": "api-integration/mcp-http-client-architecture.md",
           "size": 16375
+        },
+        {
+          "hash": "6c662919de0d493964714b2eb1f512be",
+          "modified": "2025-09-22T08:17:30.296292",
+          "name": "real-time-optimization-architecture.md",
+          "path": "api-integration/real-time-optimization-architecture.md",
+          "size": 20233
         },
         {
           "hash": "d3482fdff391015ba16acdf6c9042a9d",
@@ -1306,7 +1320,7 @@
       "path": "issues"
     },
     "migration-guides": {
-      "count": 10,
+      "count": 11,
       "files": [
         {
           "hash": "150a21c9839af22982d0d76b0b3022d2",
@@ -1363,6 +1377,13 @@
           "name": "agent-name-migration.md",
           "path": "migration-guides/agent-name-migration.md",
           "size": 10427
+        },
+        {
+          "hash": "8e478839ee286eb5ed7baef57ed0b1b0",
+          "modified": "2025-09-22T12:45:49.489447",
+          "name": "automatic-migration-integration.md",
+          "path": "migration-guides/automatic-migration-integration.md",
+          "size": 5902
         },
         {
           "hash": "bd20b6dc020912ec4c944dd7a19ae820",
@@ -2303,7 +2324,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-22T07:15:36.258037",
+  "generated_at": "2025-09-22T12:45:49.584943",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2359,13 +2380,15 @@
         "api-reference.md",
         "api-verification-status.md",
         "configuration.md",
+        "implementation-phases-detailed.md",
         "mcp-client-api-reference.md",
         "mcp-client-configuration-guide.md",
         "mcp-client-troubleshooting.md",
         "mcp-client-usage-examples.md",
         "mcp-controller-implementation-changes.md",
         "mcp-http-client-architecture.md",
-        "mcp-parameter-type-resolution-guide.md"
+        "mcp-parameter-type-resolution-guide.md",
+        "real-time-optimization-architecture.md"
       ]
     },
     "architecture-design": {
@@ -2561,6 +2584,7 @@
         "agent-library-cleanup-migration-guide.md",
         "agent-name-migration.md",
         "authentication-config-migration-2025-09-05.md",
+        "automatic-migration-integration.md",
         "database-clean-migration-v3.md",
         "mcp-complete-implementation-plan.md",
         "mcp-implementation-change-plan.md",
@@ -2720,5 +2744,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 303
+  "total_files": 306
 }

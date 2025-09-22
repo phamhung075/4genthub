@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "AgentHub PostgreSQL",
+      "Group": "Servers",
+      "Host": "agenthub-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "dhafnck_mcp",
+      "Username": "dhafnck_user",
+      "SSLMode": "prefer"
+    }
+  }
+}

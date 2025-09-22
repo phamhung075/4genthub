@@ -42,6 +42,7 @@ dependencies = [
     "jinja2>=3.1.0", # Email template engine
     # Configuration parsing
     "toml>=0.10.2", # For reading pyproject.toml version
+    "asyncpg>=0.30.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

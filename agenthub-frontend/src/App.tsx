@@ -14,14 +14,12 @@ import ShimmerButton from './components/ui/ShimmerButton';
 import { ToastProvider } from './components/ui/toast';
 import { WebSocketToastBridge } from './components/WebSocketToastBridge';
 import { ThemeProvider } from './contexts/ThemeContext';
-// Import WebSocket service to ensure it auto-connects
-import './services/websocketService';
-// Import WebSocket debugging utility
-import './utils/websocketDebug';
-// Import WebSocket testing utility
-import './utils/websocketTest';
-// Import subscription debugger for memory leak debugging
-import './utils/subscriptionDebugger';
+// Import Redux Provider and store
+import { Provider as ReduxProvider } from 'react-redux';
+import { store } from './store';
+// Import WebSocket v2.0 hook for new implementation
+import { useWebSocket } from './hooks/useWebSocketV2';
+import { useAuth } from './contexts/AuthContext';
 // Import toastEventBus for testing
 import { toastEventBus } from './services/toastEventBus';
 import { useToast } from './components/ui/toast';
@@ -42,6 +40,10 @@ function Dashboard() {
   }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user, token } = useAuth();
+
+  // Initialize WebSocket v2.0 connection
+  const { isConnected } = useWebSocket(user?.id || '', token || '');
 
   // Derive selection from URL parameters
   const selection = projectId && branchId ? { projectId, branchId } : null;
@@ -223,10 +225,11 @@ function Dashboard() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <WebSocketToastBridge />
-        <AuthWrapper>
+    <ReduxProvider store={store}>
+      <ThemeProvider>
+        <ToastProvider>
+          <WebSocketToastBridge />
+          <AuthWrapper>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginForm />} />
@@ -322,6 +325,7 @@ function App() {
         </AuthWrapper>
       </ToastProvider>
     </ThemeProvider>
+    </ReduxProvider>
   );
 }
 

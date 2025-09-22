@@ -700,8 +700,37 @@ def create_agenthub_server() -> FastMCP:
         server._startup_hooks.append(initialize_connection_manager)
     else:
         server._startup_hooks = [initialize_connection_manager]
-    
-    logger.info("agenthub server initialized successfully with authentication and connection management")
+
+    # ============================================================================
+    # WEBSOCKET SERVER v2.0 INTEGRATION
+    # Integrate WebSocket server with dual-track processing, v2.0 protocol only
+    # ============================================================================
+
+    try:
+        logger.info("🔌 Initializing WebSocket Server v2.0...")
+
+        # Import WebSocket integration
+        from fastmcp.websocket.fastapi_integration import setup_websocket_integration
+
+        # Get the FastAPI app from the server
+        fastapi_app = server.app
+
+        # Setup WebSocket integration with the FastAPI app
+        websocket_server = setup_websocket_integration(fastapi_app)
+
+        logger.info("✅ WebSocket Server v2.0 integrated successfully")
+        logger.info("🚀 WebSocket endpoints available:")
+        logger.info("   - /ws/{user_id} - Main WebSocket endpoint with JWT auth")
+        logger.info("   - /ws/health - WebSocket health check")
+        logger.info("   - /ws/stats - WebSocket statistics")
+        logger.info("🎯 Features: Dual-track processing, v2.0 protocol, cascade data, 500ms AI batching")
+
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize WebSocket Server v2.0: {e}")
+        logger.warning("⚠️ Server will continue without WebSocket support")
+        # Don't fail the entire server if WebSocket integration fails
+
+    logger.info("agenthub server initialized successfully with authentication, connection management, and WebSocket v2.0")
     return server
 
 

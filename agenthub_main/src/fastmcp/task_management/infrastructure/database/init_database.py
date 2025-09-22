@@ -7,6 +7,7 @@ supporting both SQLite and PostgreSQL databases.
 
 import logging
 import os
+import asyncio
 from pathlib import Path
 
 from .database_config import get_db_config, Base
@@ -23,25 +24,109 @@ logger = logging.getLogger(__name__)
 def init_database():
     """
     Initialize database schema.
-    
+
     This function creates all tables defined in the models
-    if they don't already exist.
+    if they don't already exist, then runs automatic migrations.
     """
     try:
         # Get database configuration
         db_config = get_db_config()
-        
+
         # Log database info
         db_info = db_config.get_database_info()
         logger.info(f"Initializing database: {db_info['type']}")
-        
+
         # Create all tables
         db_config.create_tables()
-        
+
+        # Run automatic migrations after table creation
+        try:
+            logger.info("Running automatic database migrations...")
+            asyncio.run(_run_migrations(db_config))
+            logger.info("Automatic migrations completed successfully")
+        except Exception as migration_e:
+            logger.error(f"Migration failed: {migration_e}")
+            # Don't fail the entire initialization - server can continue without migrations
+            logger.warning("Server will continue without migrations - some features may not work optimally")
+
         logger.info("Database initialization completed successfully")
-        
+
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
+        raise
+
+
+async def _run_migrations(db_config):
+    """
+    Run automatic database migrations using AsyncEngine.
+
+    This function creates an async engine from the existing database configuration
+    and runs all pending migrations.
+    """
+    # Get the database URL from the existing configuration
+    database_url = db_config._get_database_url()
+
+    # Check if async drivers are available and convert URL accordingly
+    async_database_url = None
+
+    if database_url.startswith("sqlite:///"):
+        # For SQLite, try aiosqlite
+        try:
+            import aiosqlite
+            async_database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
+        except ImportError:
+            logger.warning("aiosqlite not available - skipping async migrations for SQLite")
+            logger.info("Install aiosqlite with: pip install aiosqlite")
+            return
+
+    elif database_url.startswith("postgresql://") or "postgresql" in database_url:
+        # For PostgreSQL, try asyncpg
+        try:
+            import asyncpg
+            if database_url.startswith("postgresql://"):
+                async_database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
+            else:
+                async_database_url = database_url
+                if not async_database_url.startswith("postgresql+asyncpg://"):
+                    async_database_url = async_database_url.replace("postgresql://", "postgresql+asyncpg://")
+        except ImportError:
+            logger.warning("asyncpg not available - skipping async migrations for PostgreSQL")
+            logger.info("Install asyncpg with: pip install asyncpg")
+            return
+    else:
+        logger.warning(f"Unsupported database type for async migrations: {database_url}")
+        return
+
+    if not async_database_url:
+        logger.warning("Could not create async database URL - skipping migrations")
+        return
+
+    # Create async engine
+    try:
+        from sqlalchemy.ext.asyncio import create_async_engine
+        from .migration_runner import initialize_database as run_migrations
+
+        async_engine = create_async_engine(
+            async_database_url,
+            echo=False,  # Set to True for debugging SQL queries
+            # Connection pool settings for reliability
+            pool_pre_ping=True,
+            pool_recycle=3600,
+        )
+
+        try:
+            # Run the migration initialization
+            await run_migrations(async_engine)
+            logger.info("Migration runner completed successfully")
+        finally:
+            # Clean up the async engine
+            await async_engine.dispose()
+
+    except ImportError as e:
+        logger.warning(f"Async SQLAlchemy not available: {e}")
+        logger.info("Install async support with: pip install sqlalchemy[asyncio]")
+    except Exception as e:
+        logger.error(f"Failed to create async engine: {e}")
         raise
 
 

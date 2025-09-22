@@ -50,7 +50,7 @@ Current vulnerabilities in dependencies:
 
 ### 1. Install Vite Dependencies
 ```bash
-npm install --save-dev vite @vitejs/plugin-react @types/node
+pnpm add --save-dev vite @vitejs/plugin-react @types/node
 ```
 
 ### 2. Create Vite Config
@@ -102,7 +102,7 @@ Move `public/index.html` to root and update script tag:
 For now, to address security issues without major migration:
 
 ```bash
-npm audit fix --force
+pnpm audit --fix
 ```
 
 **Warning**: This may cause breaking changes but will resolve security vulnerabilities.

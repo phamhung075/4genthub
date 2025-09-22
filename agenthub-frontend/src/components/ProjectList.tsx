@@ -2,7 +2,8 @@ import Cookies from "js-cookie";
 import { ChevronDown, ChevronRight, Eye, Folder, GitBranchPlus, Globe, Pencil, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { createBranch, createProject, deleteBranch, deleteProject, listProjects, Project, updateProject } from "../api";
-import { BranchSummary, getBranchSummaries } from "../api-lazy";
+import { BranchSummary } from "../types/api.types";
+import { useBranchSummaries } from "../hooks/useBranchSummaries";
 import { cn } from "../lib/utils";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
@@ -30,6 +31,15 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
   // Derive selection from URL params instead of local state
   const selected = selectedProjectId && selectedBranchId ? `${selectedProjectId}:${selectedBranchId}` : null;
 
+  // Use the new bulk API hook for optimized branch summaries
+  const {
+    summaries: allBranchSummaries,
+    projects: projectSummaries,
+    loading: loadingBulkSummaries,
+    error: bulkSummariesError,
+    refresh: refreshBulkSummaries
+  } = useBranchSummaries();
+
   // State declarations - moved openProjects before useEffect that uses it
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState<Project | null>(null);
@@ -46,9 +56,39 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
       setOpenProjects(prev => ({ ...prev, [selectedProjectId]: true }));
     }
   }, [selectedProjectId, openProjects]);
-  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
-  const [branchSummaries, setBranchSummaries] = useState<Record<string, BranchSummary[]>>({});
-  const [loadingBranches, setLoadingBranches] = useState<Record<string, boolean>>({});
+
+  // Convert bulk summaries to project-keyed format for compatibility with existing UI
+  const branchSummaries = React.useMemo(() => {
+    const result: Record<string, BranchSummary[]> = {};
+
+    // Group branch summaries by project ID and ensure compatibility fields
+    allBranchSummaries.forEach(branch => {
+      if (!result[branch.project_id]) {
+        result[branch.project_id] = [];
+      }
+
+      // Ensure compatibility with existing UI that expects both field names
+      const compatibleBranch: BranchSummary = {
+        ...branch,
+        git_branch_name: branch.name, // UI expects git_branch_name
+        task_count: branch.total_tasks // UI expects task_count
+      };
+
+      result[branch.project_id].push(compatibleBranch);
+    });
+
+    return result;
+  }, [allBranchSummaries]);
+
+  // Extract task counts from bulk summaries
+  const taskCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    allBranchSummaries.forEach(branch => {
+      counts[branch.id] = branch.total_tasks || 0;
+    });
+    return counts;
+  }, [allBranchSummaries]);
+
   const [deletingBranches, setDeletingBranches] = useState<Set<string>>(new Set());
   const [previousTaskCounts, setPreviousTaskCounts] = useState<Record<string, number>>({});
 
@@ -74,163 +114,39 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
     setLoading(true);
     try {
       const projectsData = await listProjects();
-      logger.debug('Fetched projects data:', projectsData);
+      logger.debug('✅ Fetched projects data:', projectsData);
       setProjects(projectsData);
 
-      // Extract task counts from the project data directly (no additional API calls needed)
-      const counts: Record<string, number> = {};
-      for (const project of projectsData) {
-        if (project.git_branchs) {
-          for (const tree of Object.values(project.git_branchs)) {
-            // Use task_count from API response if available, otherwise fallback to 0
-            counts[tree.id] = tree.task_count ?? 0;
+      logger.info('🚀 Using optimized bulk API for branch summaries - no individual project calls needed');
 
-            // Check if task count changed and show notification
-            const prevCount = taskCounts[tree.id] ?? 0;
-            const newCount = tree.task_count ?? 0;
-
-            if (prevCount !== newCount && taskCounts[tree.id] !== undefined) {
-              // Task count changed!
-              // Task count change notifications are now handled by WebSocket service
-              // to avoid duplicate notifications
-              /*
-              if (newCount > prevCount) {
-                const diff = newCount - prevCount;
-                showSuccessToast(
-                  '🎉 New task detected!',
-                  `${diff} new task${diff > 1 ? 's' : ''} added to branch "${tree.name}" in project "${project.name}"`
-                );
-              } else if (newCount < prevCount) {
-                const diff = prevCount - newCount;
-                showSuccessToast(
-                  '✅ Task completed or removed',
-                  `${diff} task${diff > 1 ? 's' : ''} removed from branch "${tree.name}" in project "${project.name}"`
-                );
-              }
-              */
-            }
-          }
-        }
-      }
-      setTaskCounts(counts);
-      logger.debug('Updated task counts:', counts);
-
-      // Preload branch summaries for all projects to avoid loading flash
-      const token = Cookies.get('access_token');
-      if (token) {
-        const branchPromises = projectsData.map(async (project) => {
-          try {
-            const summaries = await getBranchSummaries(project.id);
-            if (summaries.branches && summaries.branches.length > 0) {
-              return { projectId: project.id, branches: summaries.branches };
-            }
-            return null;
-          } catch (error) {
-            logger.error(`Failed to load branches for project ${project.id}:`, error);
-            return null;
-          }
-        });
-
-        const branchResults = await Promise.all(branchPromises);
-        const newBranchSummaries: Record<string, BranchSummary[]> = {};
-
-        branchResults.forEach(result => {
-          if (result) {
-            newBranchSummaries[result.projectId] = result.branches;
-          }
-        });
-
-        setBranchSummaries(newBranchSummaries);
-        logger.debug('Preloaded branch summaries for all projects');
-      }
     } catch (e: any) {
       setError(e.message);
+      logger.error('❌ Failed to fetch projects:', e);
     } finally {
       setLoading(false);
     }
-  }, [showSuccessToast]);
+  }, []);
 
-  const refreshOpenBranchSummaries = useCallback(async () => {
-    // Check if user is authenticated
-    const token = Cookies.get('access_token');
-    if (!token) {
-      logger.debug('User not authenticated, skipping branch summaries refresh');
-      return;
-    }
-
-    // Refresh summaries for all currently open projects
-    const openProjectIds = Object.entries(openProjects)
-      .filter(([_, isOpen]) => isOpen)
-      .map(([projectId, _]) => projectId);
-
-    if (openProjectIds.length === 0) {
-      return; // No open projects to refresh
-    }
-
-    logger.debug('Refreshing branch summaries for open projects:', openProjectIds);
-    
-    // Clear existing branch summaries for open projects to force fresh data
-    const clearedSummaries: Record<string, BranchSummary[]> = {};
-    for (const projectId of openProjectIds) {
-      clearedSummaries[projectId] = [];
-    }
-    setBranchSummaries(prev => ({ ...prev, ...clearedSummaries }));
-
-    // Load branch summaries for each open project
-    const refreshPromises = openProjectIds.map(async (projectId) => {
-      try {
-        const summaries = await getBranchSummaries(projectId);
-        return { projectId, summaries };
-      } catch (error) {
-        logger.error(`Error refreshing branch summaries for project ${projectId}:`, error);
-        return null;
-      }
-    });
-
-    const results = await Promise.all(refreshPromises);
-
-    // Update state with new summaries
-    const newBranchSummaries: Record<string, BranchSummary[]> = {};
-    const newTaskCounts: Record<string, number> = {};
-
-    for (const result of results) {
-      if (result) {
-        newBranchSummaries[result.projectId] = result.summaries.branches;
-        
-        // Update task counts from the optimized response
-        for (const branch of result.summaries.branches) {
-          // Use task_count field which is set by getBranchSummaries
-          const taskCount = branch.task_count || branch.task_counts?.total || 0;
-          newTaskCounts[branch.id] = taskCount;
-          logger.debug(`Updated task count for branch ${branch.git_branch_name || branch.name} (${branch.id}): ${taskCount}`);
-        }
-      }
-    }
-
-    // Replace state completely (not merge) to ensure fresh data
-    setBranchSummaries(newBranchSummaries);
-    setTaskCounts(newTaskCounts);
-    
-    logger.debug('Branch summaries refreshed successfully with fresh data');
-  }, [openProjects]);
+  const refreshBranchSummaries = useCallback(async () => {
+    // Use the bulk API hook's refresh function instead of manual refresh
+    logger.info('🔄 Refreshing branch summaries using optimized bulk API');
+    await refreshBulkSummaries();
+  }, [refreshBulkSummaries]);
 
   useEffect(() => {
     logger.debug('ProjectList refreshKey changed:', refreshKey);
-    // Clear all cached branch summaries to force fresh reload
-    setBranchSummaries({});
-    setTaskCounts({});
-
-    // Fetch projects which also preloads all branches
+    // Fetch projects and refresh bulk summaries
     fetchProjects();
-  }, [refreshKey, fetchProjects]);
+    refreshBranchSummaries();
+  }, [refreshKey, fetchProjects, refreshBranchSummaries]);
 
   // Create stable refresh callback for change pool
   const handleDataChange = useCallback(() => {
     logger.debug('📡 ProjectList: Data change detected, refreshing...');
-    // Refresh when entity events occur
+    // Refresh when entity events occur using bulk API
     fetchProjects();
-    // Note: We don't need to check openProjects here since branches are preloaded
-  }, [fetchProjects]);
+    refreshBranchSummaries();
+  }, [fetchProjects, refreshBranchSummaries]);
 
   // Subscribe to centralized change pool for real-time updates
   useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
@@ -528,13 +444,17 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
     }, 300); // Animation duration
   };
 
-  if (loading && projects.length === 0) return (
+  if ((loading && projects.length === 0) || loadingBulkSummaries) return (
     <div className="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1">
       <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full"></div>
-      Loading projects...
+      {loading ? 'Loading projects...' : 'Loading branch summaries...'}
     </div>
   );
-  if (error) return <div className="text-xs text-destructive px-2 py-1">Error: {error}</div>;
+  if (error || bulkSummariesError) return (
+    <div className="text-xs text-destructive px-2 py-1">
+      Error: {error || bulkSummariesError}
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-2 overflow-visible">

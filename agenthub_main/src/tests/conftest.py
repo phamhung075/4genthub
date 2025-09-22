@@ -607,6 +607,11 @@ class MockBody:
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
 
+class MockQuery:
+    def __init__(self, default=..., *args, **kwargs):
+        self.default = default
+        self.description = kwargs.get('description', None)
+
 class MockWebSocket:
     def __init__(self):
         self.client_state = "connected"
@@ -672,6 +677,7 @@ mock_fastapi.Request = MockRequest
 mock_fastapi.Response = MockResponse
 mock_fastapi.Header = MockHeader
 mock_fastapi.Body = MockBody
+mock_fastapi.Query = MockQuery
 mock_fastapi.WebSocket = MockWebSocket
 mock_fastapi.WebSocketDisconnect = MockWebSocketDisconnect
 mock_fastapi.FastAPI = MockFastAPI

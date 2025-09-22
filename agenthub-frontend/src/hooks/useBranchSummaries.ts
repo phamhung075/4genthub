@@ -1,0 +1,122 @@
+/**
+ * React Hook for Branch Summaries
+ *
+ * Provides a clean interface for loading branch summaries using the new
+ * bulk API endpoint. Replaces multiple API calls with optimized single requests.
+ */
+
+import { useEffect, useState, useCallback } from 'react';
+import { branchService } from '../services/branchService';
+import { BranchSummary, ProjectSummary } from '../types/api.types';
+import logger from '../utils/logger';
+
+export interface UseBranchSummariesOptions {
+  projectIds?: string[];
+  autoRefresh?: boolean;
+  refreshInterval?: number; // in milliseconds
+}
+
+export interface UseBranchSummariesResult {
+  summaries: BranchSummary[];
+  projects: ProjectSummary[];
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  refreshing: boolean;
+}
+
+export function useBranchSummaries(options: UseBranchSummariesOptions = {}): UseBranchSummariesResult {
+  const { projectIds, autoRefresh = false, refreshInterval = 30000 } = options;
+
+  const [summaries, setSummaries] = useState<BranchSummary[]>([]);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadSummaries = useCallback(async (isRefresh: boolean = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      let result;
+
+      if (projectIds?.length) {
+        // Load specific projects
+        const branches = await branchService.loadProjectSummaries(projectIds);
+        result = { branches, projects: [] }; // Projects not returned for filtered requests
+      } else {
+        // Load all user summaries
+        result = await branchService.loadUserSummaries();
+      }
+
+      setSummaries(result.branches);
+      setProjects(result.projects);
+
+      logger.debug(`📊 Loaded ${result.branches.length} branch summaries`);
+
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to load summaries. Please check your connection.';
+      setError(errorMessage);
+      logger.error('❌ Branch summaries hook error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [projectIds]);
+
+  // Manual refresh function
+  const refresh = useCallback(async () => {
+    await loadSummaries(true);
+  }, [loadSummaries]);
+
+  // Initial load
+  useEffect(() => {
+    loadSummaries(false);
+  }, [loadSummaries]);
+
+  // Auto-refresh setup
+  useEffect(() => {
+    if (!autoRefresh || refreshInterval <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (!loading && !refreshing) {
+        refresh();
+      }
+    }, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, loading, refreshing, refresh]);
+
+  return {
+    summaries,
+    projects,
+    loading,
+    error,
+    refresh,
+    refreshing
+  };
+}
+
+/**
+ * Hook for loading summaries of a single project
+ */
+export function useProjectSummaries(projectId: string) {
+  return useBranchSummaries({ projectIds: [projectId] });
+}
+
+/**
+ * Hook for loading all user summaries with auto-refresh
+ */
+export function useAllBranchSummaries(refreshInterval: number = 30000) {
+  return useBranchSummaries({
+    autoRefresh: true,
+    refreshInterval
+  });
+}

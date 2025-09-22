@@ -28,10 +28,19 @@ ENV VITE_BUILD_SHA=development
 COPY agenthub-frontend/package*.json ./
 
 # Install dependencies including dev dependencies for development
-RUN npm ci || npm install
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Copy pnpm-lock.yaml if it exists
+COPY agenthub-frontend/pnpm-lock.yaml* ./
+
+# Install dependencies with pnpm
+RUN pnpm install
 
 # Install serve globally for serving built files
-RUN npm install -g serve
+# Already installed pnpm above
+# Install serve globally
+RUN pnpm add -g serve
 
 # Copy frontend source code
 COPY agenthub-frontend/ .
@@ -100,7 +109,7 @@ echo "================================================"
 # Build and serve the application (no hot-reload in Docker)
 echo ""
 echo "🔨 Building frontend application..."
-npm run build || {
+pnpm run build || {
     echo "❌ ERROR: Frontend build failed"
     echo "Check that all dependencies are installed and code is valid"
     exit 1

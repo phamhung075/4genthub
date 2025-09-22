@@ -9,7 +9,7 @@ supporting both local PostgreSQL and cloud Supabase deployments.
 from pathlib import Path
 try:
     from dotenv import load_dotenv
-    project_root = Path(__file__).parent.parent.parent.parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent.parent.parent.parent
 
     # Try to load .env.dev first in development, then .env
     env_dev_path = project_root / ".env.dev"

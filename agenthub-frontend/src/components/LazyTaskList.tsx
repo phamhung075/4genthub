@@ -1,7 +1,9 @@
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { createTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
+import { useTaskWebSocket } from "../hooks/useWebSocketV2";
+import { useAuth } from "../contexts/AuthContext";
 import { getFullTask } from "../api-lazy";
 import TaskSearch from "./TaskSearch";
 import TaskRow from "./TaskRow";
@@ -47,6 +49,10 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   // Get URL parameters to handle automatic dialog opening
   const { taskId: urlTaskId, subtaskId } = useParams<{ taskId?: string; subtaskId?: string }>();
   const navigate = useNavigate();
+  const { user, token } = useAuth();
+
+  // Initialize WebSocket for real-time task updates
+  const { isConnected } = useTaskWebSocket(user?.id || '', token || '');
 
   // Core state - minimal for performance
   const [taskSummaries, setTaskSummaries] = useState<TaskSummary[]>([]);
@@ -746,9 +752,29 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         
         {/* Header - Responsive */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-          <h2 className="text-lg font-semibold">
-            Tasks ({totalTasks})
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">
+              Tasks ({totalTasks})
+            </h2>
+            {/* WebSocket Connection Status */}
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+              isConnected
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+            }`}>
+              {isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3" />
+                  <span>Live</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3" />
+                  <span>Offline</span>
+                </>
+              )}
+            </div>
+          </div>
           <div className="flex gap-2">
             <ShimmerButton
               onClick={async () => {

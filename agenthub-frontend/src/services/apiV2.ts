@@ -597,6 +597,19 @@ export const branchApiV2 = {
     });
     return handleResponse(response);
   },
+
+  // Get bulk summaries for all or selected projects
+  getBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false) => {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/v2/branches/summaries/bulk`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        project_ids: projectIds,
+        include_archived: includeArchived
+      }),
+    });
+    return response;
+  },
 };
 
 // Connection API V2 - User-isolated endpoints

@@ -6,7 +6,43 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+- **Automatic Database Migrations on Server Startup**: Integrated AutoMigrationRunner into server startup process
+  - Modified `init_database.py` to automatically run migrations after table creation
+  - Creates async engine from existing database configuration for migration support
+  - Supports both SQLite (aiosqlite) and PostgreSQL (asyncpg) database types
+  - Graceful fallback when async drivers are missing with helpful installation instructions
+  - Enhanced migration tracking table creation with database-specific SQL (SERIAL for PostgreSQL, AUTOINCREMENT for SQLite)
+  - Comprehensive error handling ensures server continues startup even if migrations fail
+  - Automatic execution of materialized view, index, and WebSocket optimization migrations
+  - Files modified: `agenthub_main/src/fastmcp/task_management/infrastructure/database/init_database.py`, `migration_runner.py`
+
+### Changed
+- **Frontend Package Manager Migration**: Migrated agenthub-frontend from npm to pnpm for improved dependency management
+  - Removed `package-lock.json` and replaced with `pnpm-lock.yaml`
+  - Updated all Docker configurations to use pnpm commands
+  - Updated documentation and scripts to use pnpm instead of npm
+  - Modified files:
+    - `agenthub-frontend/pnpm-lock.yaml` (NEW): pnpm lockfile with all dependencies
+    - `agenthub-frontend/package-lock.json` (REMOVED): Old npm lockfile
+    - `docker-system/docker-menu.sh`: Updated npm references to pnpm (lines 1223-1228, 1365, 1373, 1458, 1483)
+    - `docker-system/docker/Dockerfile.frontend.production`: Added pnpm installation and usage
+    - `docker-system/docker/Dockerfile.frontend.dev`: Updated to use pnpm for dependency installation
+    - `agenthub-frontend/README.md`: Updated command examples from npm to pnpm
+    - `agenthub-frontend/REACT_19_UPGRADE_PLAN.md`: Updated installation commands to use pnpm
+  - Benefits: Faster installs, better disk space efficiency, stricter dependency resolution
+
 ### Fixed
+- **Docker pgAdmin Clean Rebuild**: Enhanced pgAdmin option (G) in docker-menu.sh to completely clean and rebuild with auto-connect configuration
+  - Root cause: Old pgAdmin containers may have cached settings that prevent new auto-connect configuration from working properly
+  - Solutions implemented:
+    - Added volume cleanup: `docker volume rm pgadmin-data 2>/dev/null || true` to clear all cached settings
+    - Added image refresh: `docker pull dpage/pgadmin4:latest` to ensure clean start with latest image
+    - Both operations include user-friendly console output with colored messaging
+    - Operations positioned after container stop/remove and before network creation
+  - Modified files:
+    - `docker-system/docker-menu.sh` (lines 604-610): Added volume cleanup and image pull to start_postgresql_with_ui() function
+  - Impact: pgAdmin now starts completely fresh with no cached settings that could interfere with auto-connect configuration
 - **LazySubtaskList Duplicate HTTP Requests**: Fixed performance issue where expanding subtasks made 10+ duplicate API calls
   - Root cause: Race conditions between initial load and real-time subscription, plus lack of request deduplication
   - Solutions implemented:
