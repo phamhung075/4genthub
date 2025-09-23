@@ -360,23 +360,6 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         };
       });
       
-      // DEBUG: Log the actual API response and processed data
-      console.log('🔍 [DEBUG] LazyTaskList - API Response:', {
-        taskList,
-        isArray: Array.isArray(taskList),
-        originalLength: taskList?.length,
-        validTaskListLength: validTaskList.length,
-        taskTreeId,
-        timestamp: new Date().toISOString()
-      });
-
-      console.log('🔍 [DEBUG] LazyTaskList - Processed summaries:', {
-        summaries,
-        summariesLength: summaries.length,
-        aboutToSetTotalTasks: summaries.length,
-        timestamp: new Date().toISOString()
-      });
-
       setTaskSummaries(summaries);
       setTotalTasks(summaries.length);
       
@@ -924,14 +907,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">
-              {(() => {
-                console.log('🔍 [DEBUG] LazyTaskList - Rendering header with totalTasks:', {
-                  totalTasks,
-                  taskSummariesLength: taskSummaries.length,
-                  timestamp: new Date().toISOString()
-                });
-                return `Tasks (${totalTasks})`;
-              })()}
+              Tasks ({totalTasks})
             </h2>
             {/* WebSocket Connection Status */}
             <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
