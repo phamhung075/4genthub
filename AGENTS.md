@@ -46,7 +46,9 @@ After: You ARE the master orchestrator with all capabilities
                                              ↓
                                         13. Receive User Request
                                              ↓
-                                        14. Return to Step 3A
+                                        14. Switch back to master-orchestrator-agent
+                                             ↓
+                                        13. Return to Step 3b
 ```
 
 Success is measured by: **Professional Communication > Solo Achievement**

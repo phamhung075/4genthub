@@ -6,7 +6,10 @@ It serves as the interface layer, delegating business logic to application facad
 """
 
 import logging
+import time
 from typing import Dict, Any, Optional
+
+from sqlalchemy import text
 
 from ...application.facades.git_branch_application_facade import GitBranchApplicationFacade
 from ...application.services.facade_service import FacadeService
@@ -25,6 +28,51 @@ class BranchAPIController:
     def __init__(self):
         """Initialize the controller"""
         self.facade_service = FacadeService.get_instance()
+
+    def _refresh_summary_views(self, session) -> Dict[str, Any]:
+        """Refresh materialized views backing project/branch summaries when using PostgreSQL."""
+        refresh_metadata: Dict[str, Any] = {
+            "refreshed": False,
+            "refresh_time_ms": None,
+            "error": None,
+        }
+
+        try:
+            bind = session.get_bind()
+            if not bind or bind.dialect.name != "postgresql":
+                return refresh_metadata
+
+            start = time.perf_counter()
+            connection = session.connection()
+
+            # Use autocommit to satisfy PostgreSQL requirements for REFRESH statements.
+            autocommit_conn = connection.execution_options(isolation_level="AUTOCOMMIT")
+
+            try:
+                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY branch_summaries_mv;"))
+                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY project_summaries_mv;"))
+            except Exception as refresh_error:
+                logger.warning(
+                    "Concurrent refresh failed, falling back to non-concurrent refresh: %s",
+                    refresh_error,
+                )
+                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW branch_summaries_mv;"))
+                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW project_summaries_mv;"))
+
+            refresh_metadata["refreshed"] = True
+            refresh_metadata["refresh_time_ms"] = round((time.perf_counter() - start) * 1000, 2)
+
+        except Exception as exc:  # pragma: no cover - defensive logging path
+            logger.error("Failed to refresh summary materialized views: %s", exc)
+            refresh_metadata["error"] = str(exc)
+        finally:
+            # Ensure we are not left in a broken transaction state before running read queries.
+            try:
+                session.rollback()
+            except Exception:
+                pass
+
+        return refresh_metadata
     
     def get_branches_with_task_counts(self, project_id: str, user_id: str, session) -> Dict[str, Any]:
         """
@@ -569,12 +617,11 @@ class BranchAPIController:
         Returns:
             Bulk summary response with all branches and projects
         """
-        import time
         start_time = time.time()
 
-        try:
-            from sqlalchemy import text
+        refresh_metadata = self._refresh_summary_views(session)
 
+        try:
             # Query branch_summaries_mv
             query = """
             SELECT
@@ -701,7 +748,7 @@ class BranchAPIController:
 
             logger.info(f"Bulk summaries retrieved: {len(summaries)} branches, {len(projects)} projects in {query_time:.2f}ms")
 
-            return {
+            response = {
                 'success': True,
                 'summaries': summaries,
                 'projects': projects,
@@ -712,6 +759,17 @@ class BranchAPIController:
                 },
                 'timestamp': time.time()
             }
+
+            # Surface refresh diagnostics when available so the frontend can detect freshness.
+            metadata = response['metadata']
+            if refresh_metadata.get('refreshed'):
+                metadata['refreshed'] = True
+                if refresh_metadata.get('refresh_time_ms') is not None:
+                    metadata['refresh_time_ms'] = refresh_metadata['refresh_time_ms']
+            if refresh_metadata.get('error'):
+                metadata['refresh_error'] = refresh_metadata['error']
+
+            return response
 
         except Exception as e:
             logger.error(f"Error getting bulk summaries: {e}")
