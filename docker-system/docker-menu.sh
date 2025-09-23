@@ -1227,23 +1227,30 @@ start_dev_mode() {
     fi
     echo -e "${GREEN}✅ pnpm found: $(pnpm --version)${RESET}"
     
-    # Check for .env.dev or .env file
+    # Check for .env.dev or .env file (prefer .env.dev)
+    local env_source=""
     if [[ -f "${PROJECT_ROOT}/.env.dev" ]]; then
         echo -e "${GREEN}✅ .env.dev file found${RESET}"
-        # Load .env.dev for development mode
-        set -a
-        source "${PROJECT_ROOT}/.env.dev"
-        set +a
+        env_source="${PROJECT_ROOT}/.env.dev"
     elif [[ -f "${PROJECT_ROOT}/.env" ]]; then
         echo -e "${GREEN}✅ .env file found (fallback)${RESET}"
-        # Load .env as fallback
-        set -a
-        source "${PROJECT_ROOT}/.env"
-        set +a
+        env_source="${PROJECT_ROOT}/.env"
     else
         echo -e "${RED}❌ No .env.dev or .env file found at project root${RESET}"
         echo -e "${YELLOW}Please create .env.dev file with database configuration${RESET}"
         return 1
+    fi
+
+    # Load environment using sanitized reader to strip Windows carriage returns
+    if [[ -n "$env_source" ]]; then
+        set -a
+        source <(grep -v '^#' "$env_source" | grep -v '^$' | sed 's/\r$//')
+        set +a
+    fi
+
+    # Ensure database type falls back to PostgreSQL if still unset after loading
+    if [[ -z "${DATABASE_TYPE:-}" ]]; then
+        export DATABASE_TYPE=postgresql
     fi
     
     # Kill any existing processes on ports
@@ -1310,8 +1317,6 @@ start_dev_mode() {
     
     # Start backend in background with hot reload
     echo -e "${GREEN}Starting FastAPI backend with hot reload...${RESET}"
-    # Use Supabase database for development to access existing projects
-    export DATABASE_TYPE=supabase
     export ENV=development
     export APP_DEBUG=true
     export PYTHONDONTWRITEBYTECODE=1
@@ -1409,7 +1414,24 @@ start_dev_mode() {
     echo -e "${GREEN}✅ Development servers started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
     echo "Frontend: http://localhost:${FRONTEND_PORT}"
-    echo "Database: SQLite (./agenthub_dev.db)"
+
+    local db_type_lower="${DATABASE_TYPE,,}"
+    local db_summary=""
+    case "$db_type_lower" in
+        postgresql)
+            db_summary="PostgreSQL (${DATABASE_HOST:-localhost}:${DATABASE_PORT:-5432})"
+            ;;
+        supabase)
+            db_summary="Supabase Cloud (${SUPABASE_URL:-configured})"
+            ;;
+        sqlite|"")
+            db_summary="SQLite (${DATABASE_PATH:-./agenthub_dev.db})"
+            ;;
+        *)
+            db_summary="${DATABASE_TYPE:-unknown} (${DATABASE_HOST:-localhost}:${DATABASE_PORT:-5432})"
+            ;;
+    esac
+    echo "Database: ${db_summary}"
     echo ""
     echo -e "${CYAN}🔥 Hot Reload Enabled:${RESET}"
     echo "  • Backend: Auto-reloads on Python changes"

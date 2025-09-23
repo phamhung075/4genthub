@@ -169,17 +169,35 @@ class DatabaseConfig:
             import sys
             is_test_mode = 'pytest' in sys.modules or 'PYTEST_CURRENT_TEST' in os.environ
 
-            # Default to PostgreSQL, but allow SQLite for tests
-            self.database_type = os.getenv("DATABASE_TYPE", "postgresql").lower()
+            # NO FALLBACK - Require explicit DATABASE_TYPE configuration
+            self.database_type = os.getenv("DATABASE_TYPE")
+
+            # Stop server if DATABASE_TYPE is not configured
+            if not self.database_type:
+                error_msg = (
+                    "❌ DATABASE_TYPE environment variable is NOT configured!\n"
+                    "The server cannot start without explicit database configuration.\n"
+                    "Please set DATABASE_TYPE in your .env or .env.dev file:\n"
+                    "  - DATABASE_TYPE=sqlite (for development)\n"
+                    "  - DATABASE_TYPE=postgresql (for production)\n"
+                    "  - DATABASE_TYPE=supabase (for cloud deployment)\n"
+                    "\nNo fallback will be used - configuration is required!"
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            self.database_type = self.database_type.lower()
 
             # Validate database type
             if self.database_type == "sqlite":
-                if not is_test_mode:
+                # Allow SQLite for development AND test mode
+                env_mode = os.getenv("ENV", "development").lower()
+                if env_mode == "production":
                     raise ValueError(
-                        "SQLite is only allowed for test execution.\n"
-                        "Use DATABASE_TYPE=postgresql or supabase for development/production."
+                        "SQLite is not allowed in production.\n"
+                        "Use DATABASE_TYPE=postgresql or supabase for production."
                     )
-                logger.info("📦 SQLite mode for test execution")
+                logger.info("📦 SQLite mode enabled for development/testing")
                 self.database_url = None  # Will be set in _get_database_url
 
             elif self.database_type in ["postgresql", "supabase"]:
@@ -194,7 +212,7 @@ class DatabaseConfig:
             else:
                 raise ValueError(
                     f"Invalid DATABASE_TYPE: {self.database_type}\n"
-                    "Supported types: 'postgresql', 'supabase', or 'sqlite' (tests only)"
+                    "Supported types: 'postgresql', 'supabase', or 'sqlite'"
                 )
 
             logger.info(f"Database type: {self.database_type}")
@@ -266,10 +284,27 @@ class DatabaseConfig:
     def _get_database_url(self) -> str:
         """Get the appropriate database URL based on configuration"""
         if self.database_type == "sqlite":
-            # SQLite for test mode only
-            import tempfile
-            sqlite_path = os.path.join(tempfile.gettempdir(), "agenthub_test.db")
-            logger.info(f"📦 Using SQLite database for tests: {sqlite_path}")
+            # Get SQLite path from environment variable - NO HARDCODED VALUES
+            sqlite_path = os.getenv("DATABASE_PATH")
+            if not sqlite_path:
+                error_msg = (
+                    "❌ DATABASE_PATH environment variable is NOT configured for SQLite!\n"
+                    "When using DATABASE_TYPE=sqlite, you MUST specify DATABASE_PATH.\n"
+                    "Please set DATABASE_PATH in your .env or .env.dev file:\n"
+                    "  Example: DATABASE_PATH=/data/agenthub.db\n"
+                    "  Or: DATABASE_PATH=./agenthub.db\n"
+                    "No hardcoded paths will be used!"
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            # Expand user home directory if ~ is used
+            sqlite_path = os.path.expanduser(sqlite_path)
+            # Make absolute path if relative
+            if not os.path.isabs(sqlite_path):
+                sqlite_path = os.path.abspath(sqlite_path)
+
+            logger.info(f"📦 Using SQLite database: {sqlite_path}")
             return f"sqlite:///{sqlite_path}"
 
         elif self.database_type == "supabase":
@@ -361,13 +396,13 @@ class DatabaseConfig:
             future=True,  # Use SQLAlchemy 2.0 style
             # Cloud-optimized connection settings
             connect_args={
-                "connect_timeout": 30,  # Increased for better cloud reliability
-                "application_name": "agenthub_supabase",
-                "options": "-c timezone=UTC",
-                "keepalives": 1,
-                "keepalives_idle": 30,
-                "keepalives_interval": 10,
-                "keepalives_count": 5,
+                "connect_timeout": int(os.getenv("DATABASE_CONNECT_TIMEOUT", "30")),
+                "application_name": os.getenv("DATABASE_APPLICATION_NAME", "agenthub"),
+                "options": os.getenv("DATABASE_OPTIONS", "-c timezone=UTC"),
+                "keepalives": int(os.getenv("DATABASE_KEEPALIVES", "1")),
+                "keepalives_idle": int(os.getenv("DATABASE_KEEPALIVES_IDLE", "30")),
+                "keepalives_interval": int(os.getenv("DATABASE_KEEPALIVES_INTERVAL", "10")),
+                "keepalives_count": int(os.getenv("DATABASE_KEEPALIVES_COUNT", "5")),
             }
         )
         
@@ -378,13 +413,18 @@ class DatabaseConfig:
                 # Set search path to public schema
                 cursor.execute("SET search_path TO public")
                 # Set statement timeout to prevent long-running queries
-                cursor.execute("SET statement_timeout = '60s'")  # Increased for cloud latency
+                statement_timeout = os.getenv("DATABASE_STATEMENT_TIMEOUT", "60")
+                cursor.execute(f"SET statement_timeout = '{statement_timeout}s'")
                 # Set lock timeout to prevent blocking
-                cursor.execute("SET lock_timeout = '30s'")  # Increased for cloud latency
+                lock_timeout = os.getenv("DATABASE_LOCK_TIMEOUT", "30")
+                cursor.execute(f"SET lock_timeout = '{lock_timeout}s'")
                 # Optimize for cloud latency
-                cursor.execute("SET tcp_keepalives_idle = 600")
-                cursor.execute("SET tcp_keepalives_interval = 30")
-                cursor.execute("SET tcp_keepalives_count = 3")
+                tcp_idle = os.getenv("DATABASE_TCP_KEEPALIVES_IDLE", "600")
+                tcp_interval = os.getenv("DATABASE_TCP_KEEPALIVES_INTERVAL", "30")
+                tcp_count = os.getenv("DATABASE_TCP_KEEPALIVES_COUNT", "3")
+                cursor.execute(f"SET tcp_keepalives_idle = {tcp_idle}")
+                cursor.execute(f"SET tcp_keepalives_interval = {tcp_interval}")
+                cursor.execute(f"SET tcp_keepalives_count = {tcp_count}")
         
         logger.info("✅ PostgreSQL engine created successfully")
         return engine
@@ -445,8 +485,17 @@ class DatabaseConfig:
                 logger.info(f"✅ Using cached connection: {DatabaseConfig._connection_info}")
             
         except Exception as e:
-            logger.error(f"Failed to initialize database: {e}")
-            raise
+            error_msg = f"❌ CRITICAL: Failed to initialize database: {e}"
+            logger.error(error_msg)
+            logger.error("Database configuration that failed:")
+            logger.error(f"  DATABASE_TYPE: {self.database_type}")
+            logger.error(f"  DATABASE_HOST: {os.getenv('DATABASE_HOST')}")
+            logger.error(f"  DATABASE_NAME: {os.getenv('DATABASE_NAME')}")
+            logger.error("Server MUST stop - no fallback allowed!")
+
+            # Exit immediately - NO FALLBACK
+            import sys
+            sys.exit(1)
     
     @with_connection_retry(DEFAULT_RETRY_CONFIG)
     def get_session(self) -> Session:
@@ -532,8 +581,13 @@ def get_db_config() -> DatabaseConfig:
             # Use singleton instance
             _db_config = DatabaseConfig.get_instance()
         except Exception as e:
-            logger.error(f"Failed to initialize database configuration: {e}")
-            raise
+            logger.error(f"❌ CRITICAL: Failed to initialize database configuration: {e}")
+            logger.error("NO FALLBACK ALLOWED - Server must stop!")
+            logger.error("Check your DATABASE_TYPE and connection settings in .env or .env.dev")
+
+            # Exit immediately - no database means no server
+            import sys
+            sys.exit(1)
     return _db_config
 
 

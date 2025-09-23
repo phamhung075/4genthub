@@ -55,20 +55,29 @@ class RepositoryFactory:
                 logger.warning("SupabaseTaskRepository not available, falling back to ORM")
         
         elif config['database_type'] == 'postgresql':
-            # PostgreSQL uses ORM repository directly - no separate implementation needed
-            logger.info("[RepositoryFactory] PostgreSQL configured, using ORMTaskRepository")
-        
-        # Fallback to ORM repository
-        if not base_repository:
+            # PostgreSQL uses ORM repository directly
             from .orm.task_repository import ORMTaskRepository
             base_repository = ORMTaskRepository(
                 session=None,
-                git_branch_id=None,  # Don't pass branch name as UUID - let repository handle lookup
+                git_branch_id=None,
                 project_id=project_id,
                 git_branch_name=git_branch_name,
                 user_id=user_id
             )
-            logger.info("[RepositoryFactory] Using ORMTaskRepository (fallback)")
+            logger.info("[RepositoryFactory] PostgreSQL configured, using ORMTaskRepository")
+
+        # NO FALLBACK - If we can't create the correct repository, FAIL
+        if not base_repository:
+            error_msg = (
+                f"❌ CRITICAL: Failed to create repository for database type: {config['database_type']}\n"
+                "NO FALLBACK ALLOWED - Server must use the configured database type!\n"
+                "Check your DATABASE_TYPE setting and ensure the database is accessible."
+            )
+            logger.error(error_msg)
+
+            # Exit immediately - no fallback repositories
+            import sys
+            sys.exit(1)
         
         # Wrap with cache if enabled and not in test environment
         # TEMPORARILY DISABLED: CachedTaskRepository has async methods but NextTaskUseCase expects sync
