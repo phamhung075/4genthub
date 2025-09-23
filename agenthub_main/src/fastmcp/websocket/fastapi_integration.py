@@ -27,10 +27,11 @@ async def get_database_session_factory():
         Database session factory function
     """
     db_config = get_db_config()
-    if not db_config or not db_config.get_async_session:
+    if not db_config:
         raise RuntimeError("Database configuration not available")
 
-    return db_config.get_async_session
+    # DatabaseConfig only provides sync sessions through get_session()
+    return db_config.get_session
 
 
 def setup_websocket_integration(app: FastAPI) -> WebSocketServer:
@@ -51,10 +52,12 @@ def setup_websocket_integration(app: FastAPI) -> WebSocketServer:
     # Get database session factory
     try:
         db_config = get_db_config()
-        if not db_config or not db_config.get_async_session:
+        if not db_config:
             raise RuntimeError("Database configuration not available")
 
-        session_factory = db_config.get_async_session
+        # DatabaseConfig only provides sync sessions through get_session()
+        # We'll pass the db_config itself and let WebSocket server handle session creation
+        session_factory = db_config.get_session
         logger.info("Database session factory configured for WebSocket server")
 
     except Exception as e:

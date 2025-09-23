@@ -1,0 +1,106 @@
+# Tool Configuration for MCP Server
+# Version: 1.0.0
+# This file controls which tools are enabled/disabled at server startup
+
+version: "1.0.0"
+
+# Tool groups and their configurations
+tools:
+  # Authentication tools configuration
+  authentication:
+    description: "Authentication and token management tools"
+    enabled: false  # Global enable/disable for entire group
+
+    # Individual tool configurations
+    tools:
+      validate_token:
+        enabled: true
+        description: "Validate authentication tokens"
+        dependencies: ["auth_middleware"]
+
+      get_rate_limit_status:
+        enabled: true
+        description: "Get current rate limit status for tokens"
+        dependencies: ["auth_middleware"]
+
+      revoke_token:
+        enabled: true
+        description: "Revoke authentication tokens"
+        dependencies: ["auth_middleware"]
+
+      get_auth_status:
+        enabled: true
+        description: "Get authentication system status"
+        dependencies: ["auth_middleware"]
+
+      generate_token:
+        enabled: false  # Deprecated tool - disabled by default
+        description: "Generate new authentication tokens (deprecated)"
+        deprecated: true
+        deprecation_message: "Use API endpoint POST /api/v2/tokens instead"
+        dependencies: ["auth_middleware"]
+
+  # Connection management tools
+  connection:
+    description: "Connection and health monitoring tools"
+    enabled: true
+
+    tools:
+      manage_connection:
+        enabled: true
+        description: "Basic health check and connection management"
+        dependencies: []
+
+# Global configuration
+global:
+  # Respect AUTH_ENABLED environment variable
+  respect_auth_env: true
+
+  # When AUTH_ENABLED=false, disable all auth tools regardless of config
+  auth_env_override: true
+
+  # Logging for tool registration
+  log_tool_registration: true
+
+  # Fail silently if dependencies are missing
+  fail_silently_on_missing_deps: true
+
+# Environment-based overrides
+environment_overrides:
+  # Development environment settings
+  development:
+    authentication:
+      tools:
+        generate_token:
+          enabled: true  # Enable deprecated tool in dev for testing
+
+  # Production environment settings
+  production:
+    authentication:
+      tools:
+        generate_token:
+          enabled: false  # Ensure deprecated tool is disabled in prod
+
+# Tool mounting strategy
+mounting:
+  # Strategy for handling disabled tools
+  # Options: skip, stub, error
+  disabled_strategy: "skip"
+
+  # Log when tools are skipped
+  log_skipped_tools: true
+
+  # Validate dependencies before mounting
+  validate_dependencies: true
+
+# Backward compatibility
+compatibility:
+  # Support legacy AUTH_ENABLED environment variable
+  legacy_auth_enabled: true
+
+  # Default behavior when config file is missing
+  default_on_missing_config: "enable_all"
+
+  # Version compatibility
+  min_supported_version: "1.0.0"
+  max_supported_version: "2.0.0"

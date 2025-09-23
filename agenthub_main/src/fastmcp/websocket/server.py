@@ -14,6 +14,9 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, Depends
+from starlette.applications import Starlette
+from starlette.routing import WebSocketRoute, Route
+from starlette.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.keycloak_auth import KeycloakAuth, TokenValidation
@@ -37,12 +40,12 @@ class WebSocketServer:
     - Health monitoring
     """
 
-    def __init__(self, app: FastAPI, session_factory):
+    def __init__(self, app, session_factory):
         """
         Initialize WebSocket server.
 
         Args:
-            app: FastAPI application instance
+            app: FastAPI or Starlette application instance
             session_factory: Database session factory
         """
         self.app = app
@@ -63,43 +66,49 @@ class WebSocketServer:
 
     def _register_endpoints(self) -> None:
         """
-        Register WebSocket endpoints with FastAPI.
+        Register WebSocket endpoints with the application.
         """
-        @self.app.websocket("/ws/{user_id}")
-        async def websocket_endpoint(
-            websocket: WebSocket,
-            user_id: str,
-            token: str = Query(..., description="JWT authentication token")
-        ):
+        # For Starlette apps, we need to add routes manually
+        # since http_app() returns a Starlette app, not FastAPI
+
+        async def websocket_endpoint(websocket):
             """
             Main WebSocket endpoint with JWT authentication.
-
-            Args:
-                websocket: WebSocket connection
-                user_id: User ID from URL path
-                token: JWT token from query parameter
             """
+            # Extract path parameters and query params from the scope
+            user_id = websocket.path_params.get('user_id')
+            token = websocket.query_params.get('token')
+
+            if not token:
+                await websocket.close(code=1008, reason="Missing token parameter")
+                return
+
             await self._handle_websocket_connection(websocket, user_id, token)
 
-        @self.app.get("/ws/health")
-        async def websocket_health():
+        async def websocket_health(request):
             """
             WebSocket server health check endpoint.
-
-            Returns:
-                Health status and statistics
             """
-            return await self.get_health_status()
+            status = await self.get_health_status()
+            return JSONResponse(status)
 
-        @self.app.get("/ws/stats")
-        async def websocket_stats():
+        async def websocket_stats(request):
             """
             WebSocket server statistics endpoint.
-
-            Returns:
-                Detailed server statistics
             """
-            return await self.get_detailed_stats()
+            stats = await self.get_detailed_stats()
+            return JSONResponse(stats)
+
+        # Add routes to the Starlette app
+        routes = [
+            WebSocketRoute("/ws/{user_id}", endpoint=websocket_endpoint),
+            Route("/ws/health", endpoint=websocket_health, methods=["GET"]),
+            Route("/ws/stats", endpoint=websocket_stats, methods=["GET"])
+        ]
+
+        # Add routes to the app's router
+        for route in routes:
+            self.app.router.routes.append(route)
 
     async def _handle_websocket_connection(
         self,
