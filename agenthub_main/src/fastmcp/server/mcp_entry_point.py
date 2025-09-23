@@ -12,7 +12,7 @@ import os
 import time
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 # Load environment variables from .env.dev or .env file FIRST
 try:
@@ -48,19 +48,16 @@ except Exception as e:
 
 # Import the FastMCP server class directly (avoid circular import)
 from fastmcp.server.server import FastMCP
-from fastmcp.utilities.logging import configure_logging, setup_comprehensive_logging
+from fastmcp.utilities.logging import setup_comprehensive_logging
 
 # Import authentication system
-from fastmcp.auth import AuthMiddleware, TokenValidator, TokenValidationError, RateLimitError
+from fastmcp.auth import AuthMiddleware
 
 # Import connection management tools
-from fastmcp.server.connection_manager import get_connection_manager, cleanup_connection_manager
+from fastmcp.server.connection_manager import get_connection_manager
 
 # Import Starlette components for middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
-from starlette.types import ASGIApp
+from starlette.responses import JSONResponse
 
 
 class DebugLoggingMiddleware:
@@ -165,7 +162,7 @@ class DebugLoggingMiddleware:
                     self.logger.debug(json.dumps(body_json, indent=2))
                 else:
                     self.logger.debug(f"📦 Request Body: {body.decode()[:500]}...")
-            except Exception as e:
+            except Exception:
                 self.logger.debug(f"📦 Request Body (raw): {body[:200]}...")
     
     def _log_response_sync(self, status_code, response_headers, response_body, url):
@@ -186,9 +183,9 @@ class DebugLoggingMiddleware:
             
             # Log response status and timing
             if status_code and status_code >= 400:
-                self.logger.debug(f"❌ RESPONSE: {status_code} ({duration:.3f}s)")
+                self.logger.debug(f"❌ RESPONSE: {status_code} ({duration:.3f}s) {url}")
             else:
-                self.logger.debug(f"✅ RESPONSE: {status_code or 'Unknown'} ({duration:.3f}s)")
+                self.logger.debug(f"✅ RESPONSE: {status_code or 'Unknown'} ({duration:.3f}s) {url}")
             
             # Log response headers
             content_type = headers_dict.get('content-type', 'Not provided')
@@ -249,7 +246,6 @@ def create_agenthub_server() -> FastMCP:
 
     # Log environment and logging configuration info
     try:
-        from fastmcp.utilities.logging import get_logging_info
         from fastmcp.utilities.environment import get_environment_info
 
         env_info = get_environment_info()
@@ -282,36 +278,47 @@ def create_agenthub_server() -> FastMCP:
 
     logger.info("Initializing agenthub server with consolidated tools and authentication...")
     
-    # Initialize database before server startup
+    # Initialize database before server startup - FAIL FAST MODE
     try:
         from fastmcp.task_management.infrastructure.database.init_database import init_database
         logger.info("Initializing database...")
         init_database()
         logger.info("Database initialized successfully")
-        
+
         # Run schema validation after database initialization
         logger.info("Running database schema validation...")
         from fastmcp.task_management.infrastructure.database.database_config import get_db_config
         from fastmcp.task_management.infrastructure.database.schema_validator import validate_schema_on_startup
         import asyncio
-        
+
         db_config = get_db_config()
         if db_config and db_config.engine:
             try:
                 validation_result = asyncio.run(validate_schema_on_startup(db_config.engine))
                 if not validation_result:
-                    logger.warning("Schema validation found warnings - database operations will continue with potential compatibility issues")
+                    error_msg = "CRITICAL: Schema validation found warnings that could cause data integrity issues"
+                    logger.error(error_msg)
+                    logger.error("SERVER CANNOT START - Database schema must be valid for data safety")
+                    raise RuntimeError(error_msg)
                 else:
                     logger.info("Schema validation completed successfully")
             except Exception as schema_e:
-                logger.warning(f"Schema validation failed: {schema_e} - database operations will continue without validation")
+                error_msg = f"CRITICAL: Schema validation failed: {schema_e}"
+                logger.error(error_msg)
+                logger.error("SERVER CANNOT START - Database schema validation is mandatory for data integrity")
+                raise RuntimeError(error_msg) from schema_e
         else:
-            logger.warning("Could not get database engine for schema validation")
-            
+            error_msg = "CRITICAL: Could not get database engine for schema validation"
+            logger.error(error_msg)
+            logger.error("SERVER CANNOT START - Database engine access is required")
+            raise RuntimeError(error_msg)
+
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
-        # Don't exit - let the server start and handle the error gracefully
-        logger.warning("Server will continue with potential database issues")
+        error_msg = f"CRITICAL: Failed to initialize database: {e}"
+        logger.error(error_msg)
+        logger.error("SERVER CANNOT START - Database initialization is mandatory for core functionality")
+        logger.error("Check database connection, credentials, and configuration")
+        raise RuntimeError(error_msg) from e
     
     # ============================================================================
     # DYNAMIC AUTHENTICATION CONFIGURATION
@@ -416,7 +423,7 @@ def create_agenthub_server() -> FastMCP:
         stateless_http=True,
     )
     
-    # Register DDD-compliant task management tools manually
+    # Register DDD-compliant task management tools manually - FAIL FAST MODE
     logger.info("Registering DDD-compliant task management tools...")
     try:
         from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
@@ -424,154 +431,54 @@ def create_agenthub_server() -> FastMCP:
         ddd_tools.register_tools(server)
         logger.info("DDD-compliant task management tools registered successfully")
     except Exception as e:
-        logger.error(f"Failed to register DDD task management tools: {e}")
-        logger.error("Server will continue without task management tools")
+        error_msg = f"CRITICAL: Failed to register DDD task management tools: {e}"
+        logger.error(error_msg)
+        logger.error("SERVER CANNOT START - DDD task management tools are required for core functionality")
+        logger.error("Ensure the task management module is properly installed and configured")
+        raise RuntimeError(error_msg) from e
     
-    # Add authentication tools (conditionally registered)
-    logger.info(f"Authentication enabled: {auth_enabled}")
-    
-    if auth_enabled:
-        @server.tool()
-        async def validate_token(token: str) -> dict:
-            """
-            Validate an authentication token.
-            
-            Args:
-                token: The authentication token to validate
-                
-            Returns:
-                Token validation result with user information
-            """
-            try:
-                token_info = await auth_middleware.authenticate_request(token)
-                
-                if not token_info:
-                    return {
-                        "valid": True,
-                        "message": "Authentication disabled or MVP mode",
-                        "user_id": "mvp_user",
-                        "auth_enabled": auth_middleware.enabled
-                    }
-                
-                return {
-                    "valid": True,
-                    "user_id": token_info.user_id,
-                    "created_at": token_info.created_at.isoformat(),
-                    "expires_at": token_info.expires_at.isoformat() if token_info.expires_at else None,
-                    "usage_count": token_info.usage_count,
-                    "last_used": token_info.last_used.isoformat() if token_info.last_used else None,
-                    "auth_enabled": auth_middleware.enabled
-                }
-                
-            except TokenValidationError as e:
-                return {
-                    "valid": False,
-                    "error": str(e),
-                    "error_type": "validation_error",
-                    "auth_enabled": auth_middleware.enabled
-                }
-            except RateLimitError as e:
-                return {
-                    "valid": False,
-                    "error": str(e),
-                    "error_type": "rate_limit_error",
-                    "auth_enabled": auth_middleware.enabled
-                }
-            except Exception as e:
-                logger.error(f"Token validation error: {e}")
-                return {
-                    "valid": False,
-                    "error": "Internal validation error",
-                    "error_type": "internal_error",
-                    "auth_enabled": auth_middleware.enabled
-                }
-        
-        @server.tool()
-        async def get_rate_limit_status(token: str) -> dict:
-            """
-            Get rate limit status for a token.
-            
-            Args:
-                token: The authentication token
-                
-            Returns:
-                Current rate limit status
-            """
-            try:
-                status = await auth_middleware.get_rate_limit_status(token)
-                return {
-                    "success": True,
-                    "rate_limits": status
-                }
-            except Exception as e:
-                logger.error(f"Rate limit status error: {e}")
-                return {
-                    "success": False,
-                    "error": str(e)
-                }
-        
-        @server.tool()
-        async def revoke_token(token: str) -> dict:
-            """
-            Revoke an authentication token.
-            
-            Args:
-                token: The token to revoke
-                
-            Returns:
-                Revocation result
-            """
-            try:
-                success = await auth_middleware.revoke_token(token)
-                return {
-                    "success": success,
-                    "message": "Token revoked successfully" if success else "Failed to revoke token"
-                }
-            except Exception as e:
-                logger.error(f"Token revocation error: {e}")
-                return {
-                    "success": False,
-                    "error": str(e)
-                }
-        
-        @server.tool()
-        def get_auth_status() -> dict:
-            """
-            Get authentication system status.
-            
-            Returns:
-                Authentication system status and configuration
-            """
-            return auth_middleware.get_auth_status()
-        
-        @server.tool()
-        def generate_token() -> dict:
-            """
-            Generate a new secure authentication token.
-            
-            NOTE: Token generation is now handled through the API at /api/v2/tokens
-            This MCP tool is deprecated and will return an informative message.
-            
-            Returns:
-                Information about how to generate tokens
-            """
-            return {
-                "success": False,
-                "error": "Token generation via MCP tool is deprecated",
-                "message": (
-                    "Please use the API endpoint POST /api/v2/tokens to generate tokens. "
-                    "This provides better security and integration with the authentication system."
-                ),
-                "api_endpoint": "/api/v2/tokens",
-                "method": "POST",
-                "example": {
-                    "name": "my-token",
-                    "expires_in_days": 30,
-                    "scopes": ["read", "write"]
-                }
-            }
-    else:
-        logger.info("Authentication disabled - skipping auth tools registration")
+    # Register tools using the new configuration system - FAIL FAST MODE
+    logger.info("Registering tools using configuration system...")
+
+    try:
+        from fastmcp.config import ToolRegistry, create_authentication_tools
+
+        # Create tool registry and load configuration
+        tool_registry = ToolRegistry()
+        tool_registry.load_configuration()
+
+        # Add available dependencies
+        if auth_middleware:
+            tool_registry.add_dependency("auth_middleware")
+
+        # Register authentication tools if auth_middleware exists
+        if auth_middleware:
+            auth_tools = create_authentication_tools(auth_middleware)
+            tool_registry.register_tool_group("authentication", auth_tools)
+            logger.info("Authentication tools registered with configuration system")
+        else:
+            logger.info("No auth middleware - skipping authentication tools registration")
+
+        # Mount tools to server based on configuration
+        mounting_stats = tool_registry.mount_tools_to_server(server)
+
+        # Check for mounting failures and fail fast
+        if mounting_stats['dependency_failures'] > 0:
+            error_msg = f"Tool mounting failed: {mounting_stats['dependency_failures']} dependency failures detected"
+            logger.error(error_msg)
+            logger.error("Server cannot start with missing tool dependencies - this is a security risk")
+            raise RuntimeError(error_msg)
+
+        # Log the mounting results
+        logger.info(f"Tool mounting completed: {mounting_stats['mounted_tools']} mounted, "
+                   f"{mounting_stats['disabled_tools']} disabled")
+
+    except Exception as e:
+        error_msg = f"CRITICAL: Failed to register tools with configuration system: {e}"
+        logger.error(error_msg)
+        logger.error("SERVER CANNOT START - Tool configuration is mandatory for security")
+        logger.error("Fix the tool configuration file (tool_config.yaml) and restart the server")
+        raise RuntimeError(error_msg) from e
     
     
     # Add HTTP health endpoint for container health checks
@@ -608,7 +515,6 @@ def create_agenthub_server() -> FastMCP:
         # Add authentication status based on environment configuration
         # Check AUTH_ENABLED from .env.dev or .env
         auth_status = os.environ.get("AUTH_ENABLED", "true")
-        supabase_configured = bool(os.environ.get("SUPABASE_URL"))
         health_data["auth_enabled"] = auth_status.lower() in ("true", "1", "yes", "on")
         
         # Add connection manager status if available
@@ -643,20 +549,20 @@ def create_agenthub_server() -> FastMCP:
         return JSONResponse(health_data)
     
     
-    # Register DDD-compliant connection management tools
+    # Register DDD-compliant connection management tools - FAIL FAST MODE
     try:
         # Import with proper absolute path since this is run as a script
         from fastmcp.connection_management.interface.ddd_compliant_connection_tools import register_ddd_connection_tools
         register_ddd_connection_tools(server)
         logger.info("DDD-compliant connection management tools registered")
     except ImportError as e:
-        logger.warning(f"Could not import DDD connection tools, falling back to legacy: {e}")
-        # Fallback to legacy connection management tools
-        from fastmcp.server.manage_connection_tool import register_manage_connection_tool
-        register_manage_connection_tool(server)
-        logger.info("Legacy connection management tools registered")
+        error_msg = f"CRITICAL: Could not import DDD connection tools: {e}"
+        logger.error(error_msg)
+        logger.error("SERVER CANNOT START - DDD-compliant connection tools are required")
+        logger.error("Ensure the connection management module is properly installed and configured")
+        raise RuntimeError(error_msg) from e
     
-    # Initialize database on startup
+    # Initialize database on startup - FAIL FAST MODE
     async def initialize_database():
         """Initialize and verify database on server startup"""
         try:
@@ -667,14 +573,19 @@ def create_agenthub_server() -> FastMCP:
             if initialize_database_on_startup():
                 logger.info("✅ Database initialized successfully")
             else:
-                logger.error("❌ Database initialization failed")
-                # Continue anyway - server might work with limited functionality
+                error_msg = "❌ Database initialization failed"
+                logger.error(error_msg)
+                logger.error("SERVER CANNOT START - Database is required for core functionality")
+                raise RuntimeError(error_msg)
 
         except Exception as e:
-            logger.error(f"Failed to initialize database: {e}")
-            # Continue anyway - server might work with limited functionality
+            error_msg = f"CRITICAL: Failed to initialize database: {e}"
+            logger.error(error_msg)
+            logger.error("SERVER CANNOT START - Database initialization is mandatory")
+            logger.error("Check database connection, credentials, and migrations")
+            raise RuntimeError(error_msg) from e
 
-    # Initialize connection manager and status broadcaster
+    # Initialize connection manager and status broadcaster - FAIL FAST MODE
     async def initialize_connection_manager():
         """Initialize the connection manager and status broadcaster on server startup"""
         try:
@@ -693,7 +604,10 @@ def create_agenthub_server() -> FastMCP:
             logger.info("Status broadcaster initialized and server restart broadcasted")
 
         except Exception as e:
-            logger.error(f"Failed to initialize connection manager and status broadcaster: {e}")
+            error_msg = f"CRITICAL: Failed to initialize connection manager and status broadcaster: {e}"
+            logger.error(error_msg)
+            logger.error("SERVER CANNOT START - Connection management is required for WebSocket functionality")
+            raise RuntimeError(error_msg) from e
     
     # Add startup hook to initialize connection manager and status broadcaster
     if hasattr(server, '_startup_hooks'):
@@ -702,7 +616,7 @@ def create_agenthub_server() -> FastMCP:
         server._startup_hooks = [initialize_connection_manager]
 
     # ============================================================================
-    # WEBSOCKET SERVER v2.0 INTEGRATION
+    # WEBSOCKET SERVER v2.0 INTEGRATION - FAIL FAST MODE
     # Integrate WebSocket server with dual-track processing, v2.0 protocol only
     # ============================================================================
 
@@ -712,11 +626,11 @@ def create_agenthub_server() -> FastMCP:
         # Import WebSocket integration
         from fastmcp.websocket.fastapi_integration import setup_websocket_integration
 
-        # Get the FastAPI app from the server
-        fastapi_app = server.app
+        # Get the HTTP app from the server (returns a Starlette app)
+        fastapi_app = server.http_app()
 
         # Setup WebSocket integration with the FastAPI app
-        websocket_server = setup_websocket_integration(fastapi_app)
+        _ = setup_websocket_integration(fastapi_app)
 
         logger.info("✅ WebSocket Server v2.0 integrated successfully")
         logger.info("🚀 WebSocket endpoints available:")
@@ -726,9 +640,11 @@ def create_agenthub_server() -> FastMCP:
         logger.info("🎯 Features: Dual-track processing, v2.0 protocol, cascade data, 500ms AI batching")
 
     except Exception as e:
-        logger.error(f"❌ Failed to initialize WebSocket Server v2.0: {e}")
-        logger.warning("⚠️ Server will continue without WebSocket support")
-        # Don't fail the entire server if WebSocket integration fails
+        error_msg = f"CRITICAL: Failed to initialize WebSocket Server v2.0: {e}"
+        logger.error(error_msg)
+        logger.error("SERVER CANNOT START - WebSocket v2.0 integration is required for real-time communication")
+        logger.error("Check WebSocket module installation and configuration")
+        raise RuntimeError(error_msg) from e
 
     logger.info("agenthub server initialized successfully with authentication, connection management, and WebSocket v2.0")
     return server
@@ -806,29 +722,29 @@ def main():
             if auth_enabled:
                 try:
                     from fastmcp.auth.middleware.dual_auth_middleware import DualAuthMiddleware
-                    
+
                     # Add DualAuthMiddleware first so JWT tokens are processed and request.state.user_id is set
                     middleware_stack.append(Middleware(DualAuthMiddleware))
                     logger.info("DualAuthMiddleware added for JWT token processing and user context extraction")
                 except Exception as e:
-                    logger.error(f"Failed to add DualAuthMiddleware: {e}")
-                    logger.warning("Authentication may not work properly without DualAuthMiddleware")
+                    error_msg = f"CRITICAL: Failed to add DualAuthMiddleware: {e}"
+                    logger.error(error_msg)
+                    logger.error("SERVER CANNOT START - DualAuthMiddleware is required for JWT processing")
+                    logger.error("Ensure the dual auth middleware module is properly installed")
+                    raise RuntimeError(error_msg) from e
             
-            # Step 2: Add RequestContextMiddleware SECOND (runs after DualAuth to capture auth context)
+            # Step 2: Add RequestContextMiddleware SECOND (runs after DualAuth to capture auth context) - FAIL FAST MODE
             # This runs AFTER DualAuthMiddleware processes authentication and sets request.state
             try:
                 from fastmcp.auth.middleware.request_context_middleware import RequestContextMiddleware
                 middleware_stack.append(Middleware(RequestContextMiddleware))
                 logger.info("RequestContextMiddleware added for authentication context propagation")
             except ImportError as e:
-                logger.warning(f"Could not add RequestContextMiddleware: {e}")
-                # Fallback to legacy RequestContextMiddleware if new one not available
-                try:
-                    from fastmcp.server.http_server import RequestContextMiddleware as LegacyRequestContextMiddleware
-                    middleware_stack.append(Middleware(LegacyRequestContextMiddleware))
-                    logger.info("Legacy RequestContextMiddleware added as fallback")
-                except ImportError as fallback_e:
-                    logger.warning(f"Could not add fallback RequestContextMiddleware: {fallback_e}")
+                error_msg = f"CRITICAL: Could not add RequestContextMiddleware: {e}"
+                logger.error(error_msg)
+                logger.error("SERVER CANNOT START - RequestContextMiddleware is required for authentication context")
+                logger.error("Ensure the request context middleware module is properly installed")
+                raise RuntimeError(error_msg) from e
             
             # Add debug middleware
             middleware_stack.append(Middleware(DebugLoggingMiddleware))
