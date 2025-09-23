@@ -114,7 +114,7 @@ Is code working in production/other tests?
 1. **FIRST**: Check the CURRENT implementation to understand how it actually works
 2. **SECOND**: Run the obsolescence check from Step 2
 3. **DECISION MATRIX**:
-   - Test expects OBSOLETE behavior → **UPDATE TEST** to match current implementation ✅
+   - Test expects OBSOLETE behavior → **UPDATE TEST** to match current implementation, changelog ✅
    - Test fails due to missing methods → Check if renamed/moved → **UPDATE TEST** ✅
    - Imports fail → Update imports to match current module structure → **UPDATE TEST** ✅
    - Assertions fail → Verify test data matches current API → **UPDATE TEST** ✅

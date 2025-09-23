@@ -10,6 +10,7 @@ NO backward compatibility - clean v2.0 implementation only.
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, Depends
@@ -182,8 +183,7 @@ class WebSocketServer:
             await self.batch_processor.start()
 
             self.is_running = True
-            from datetime import datetime
-            self.startup_time = datetime.utcnow().isoformat()
+            self.startup_time = datetime.now(timezone.utc).isoformat()
 
             logger.info("WebSocketServer v2.0 started successfully")
 

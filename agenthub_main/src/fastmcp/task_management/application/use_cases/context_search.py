@@ -9,12 +9,13 @@ from typing import List, Dict, Any, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import re
 
 from ...domain.models.unified_context import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
 from ...domain.interfaces.cache_service import ICacheService
+from ...infrastructure.cache.context_cache import get_context_cache
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,12 @@ class ContextSearchEngine:
             List of search results sorted by relevance
         """
         results = []
+        
+        # Return empty results for empty query (but allow '*' for wildcard)
+        if not query.query or query.query.strip() == "":
+            # Only return empty if it's not a wildcard search
+            if query.mode != SearchMode.REGEX or query.query != "*":
+                return results
         
         # Determine levels to search
         search_levels = self._expand_search_levels(query.levels, query.scope)
@@ -297,16 +304,27 @@ class ContextSearchEngine:
         elif mode == SearchMode.REGEX:
             # Regular expression matching
             try:
-                pattern = re.compile(query, re.IGNORECASE)
-                found_matches = pattern.findall(text_content)
-                
-                if found_matches:
-                    score = min(1.0, len(found_matches) * 0.2)
-                    for match in found_matches[:10]:  # Limit matches
-                        matches.append({
-                            'type': 'regex',
-                            'matched': match
-                        })
+                # Special handling for wildcard
+                if query == "*":
+                    score = 0.5  # Base score for wildcard match
+                    matches.append({
+                        'type': 'regex',
+                        'matched': 'all',
+                        'wildcard': True
+                    })
+                else:
+                    pattern = re.compile(query, re.IGNORECASE)
+                    # Use finditer to get all match objects with positions
+                    found_matches = list(pattern.finditer(text_content))
+                    
+                    if found_matches:
+                        score = min(1.0, len(found_matches) * 0.2)
+                        for match_obj in found_matches[:10]:  # Limit matches
+                            matches.append({
+                                'type': 'regex',
+                                'matched': match_obj.group(0),
+                                'position': match_obj.start()
+                            })
             except re.error:
                 logger.warning(f"Invalid regex pattern: {query}")
         
@@ -355,12 +373,51 @@ class ContextSearchEngine:
     def _string_similarity(self, s1: str, s2: str) -> float:
         """Calculate string similarity (0-1)"""
         
-        # Simple character overlap
+        # Handle empty strings
+        if not s1 and not s2:
+            return 1.0  # Both empty strings are considered identical
         if not s1 or not s2:
             return 0.0
         
-        common = len(set(s1) & set(s2))
-        return common / max(len(s1), len(s2))
+        # Exact match should return 1.0
+        if s1 == s2:
+            return 1.0
+        
+        # Case insensitive comparison
+        s1_lower = s1.lower()
+        s2_lower = s2.lower()
+        
+        # Exact match case insensitive
+        if s1_lower == s2_lower:
+            return 1.0
+        
+        # For short strings, use character set overlap
+        if len(s1) <= 5 or len(s2) <= 5:
+            # Check if one is substring of other
+            if s1_lower in s2_lower or s2_lower in s1_lower:
+                shorter = min(len(s1), len(s2))
+                longer = max(len(s1), len(s2))
+                return shorter / longer
+                
+            # Character set overlap
+            common = len(set(s1_lower) & set(s2_lower))
+            total = len(set(s1_lower) | set(s2_lower))
+            return common / total if total > 0 else 0.0
+        
+        # For longer strings, use bigram similarity
+        s1_bigrams = {s1_lower[i:i+2] for i in range(len(s1_lower)-1)}
+        s2_bigrams = {s2_lower[i:i+2] for i in range(len(s2_lower)-1)}
+        
+        # Handle strings with no valid bigrams
+        if not s1_bigrams or not s2_bigrams:
+            common = len(set(s1_lower) & set(s2_lower))
+            total = len(set(s1_lower) | set(s2_lower))
+            return common / total if total > 0 else 0.0
+        
+        intersection = len(s1_bigrams & s2_bigrams)
+        union = len(s1_bigrams | s2_bigrams)
+        
+        return intersection / union if union > 0 else 0.0
     
     def _apply_field_boosts(
         self, 
@@ -384,7 +441,6 @@ class ContextSearchEngine:
         # Boost for recent updates
         updated = data.get('updated_at')
         if updated:
-            from datetime import timedelta
             if isinstance(updated, str):
                 updated = datetime.fromisoformat(updated)
             
@@ -462,8 +518,6 @@ class ContextSearchEngine:
         limit: int = 20
     ) -> List[SearchResult]:
         """Search for recently updated contexts"""
-        
-        from datetime import timedelta
         
         query = SearchQuery(
             query="*",  # Match all

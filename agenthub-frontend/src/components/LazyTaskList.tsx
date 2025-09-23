@@ -1,7 +1,7 @@
 import { Plus, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { createTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
+import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
 import { useTaskWebSocket } from "../hooks/useWebSocketV2";
 import { useAuth } from "../contexts/AuthContext";
 import { getFullTask } from "../api-lazy";
@@ -11,6 +11,7 @@ import { useEntityChanges } from "../hooks/useChangeSubscription";
 import { changePoolService } from "../services/changePoolService";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
+import { useErrorToast } from "./ui/toast";
 import logger from "../utils/logger";
 // Removed notificationService import - WebSocket notifications handle task changes
 
@@ -51,6 +52,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   const { taskId: urlTaskId, subtaskId } = useParams<{ taskId?: string; subtaskId?: string }>();
   const navigate = useNavigate();
   const { user, tokens } = useAuth();
+  const showError = useErrorToast();
 
   // Initialize WebSocket for real-time task updates
   const { isConnected } = useTaskWebSocket(user?.id || '', tokens?.access_token || '');
@@ -585,6 +587,15 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   const handleCreateTask = useCallback(async (taskData: Partial<Task>) => {
     logger.info('Creating task', { component: 'LazyTaskList', taskData, taskTreeId });
 
+    // Check if taskTreeId (git_branch_id) is available
+    if (!taskTreeId) {
+      const errorMsg = 'Cannot create task: No branch selected. Please select a project and branch first.';
+      logger.error(errorMsg, { component: 'LazyTaskList' });
+      showError(errorMsg);
+      setSaving(false);
+      return;
+    }
+
     // Check authentication
     const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
     logger.debug('Auth token status', { component: 'LazyTaskList', hasToken: !!token });
@@ -625,7 +636,19 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
       // Extract the actual error message
       let errorMessage = 'Unknown error';
-      if (error.detail) {
+
+      // Handle validation errors (422)
+      if (error.name === 'ValidationError') {
+        errorMessage = error.message || 'Validation failed. Please check your input.';
+        if (error.detail && Array.isArray(error.detail)) {
+          // Format FastAPI validation errors
+          const errors = error.detail.map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : 'field';
+            return `${field}: ${err.msg}`;
+          }).join(', ');
+          errorMessage = `Validation errors: ${errors}`;
+        }
+      } else if (error.detail) {
         errorMessage = error.detail;
       } else if (error.message) {
         errorMessage = error.message;
@@ -635,11 +658,73 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         errorMessage = JSON.stringify(error);
       }
 
-      alert(`Failed to create task: ${errorMessage}`);
+      // Use toast for better UX instead of alert
+      showError(`Failed to create task: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, onTasksChanged, taskTreeId, loadTaskSummaries]);
+  }, [closeDialog, onTasksChanged, taskTreeId, loadTaskSummaries, showError]);
+
+  // Handle updating existing task
+  const handleUpdateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
+    logger.info('Updating task', { component: 'LazyTaskList', taskId, updates });
+    setSaving(true);
+
+    try {
+      // Call API to update task
+      const updatedTask = await updateTask(taskId, updates);
+
+      logger.info('Task updated successfully', { component: 'LazyTaskList', updatedTask });
+
+      // Update the full task in our local state
+      setFullTasks(prev => new Map(prev).set(taskId, updatedTask));
+
+      // Update task summary if it exists
+      setTaskSummaries(prev => prev.map(summary =>
+        summary.id === taskId
+          ? {
+              ...summary,
+              title: updates.title || summary.title,
+              status: updates.status || summary.status,
+              priority: updates.priority || summary.priority,
+              assignees: updates.assignees || summary.assignees
+            }
+          : summary
+      ));
+
+      // Close dialog after successful update
+      closeDialog();
+
+      // === Progress: Reload task list to show updated data ===
+      // Refresh the task list to show the updated task
+      await loadTaskSummaries(1);
+
+      // Notify parent that task was updated
+      if (onTasksChanged) {
+        onTasksChanged();
+      }
+    } catch (error: any) {
+      logger.error('Failed to update task', {
+        component: 'LazyTaskList',
+        error,
+        errorDetails: error.message || error
+      });
+
+      // Extract error message
+      let errorMessage = 'Unknown error';
+      if (error.name === 'ValidationError') {
+        errorMessage = error.message || 'Validation failed. Please check your input.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      showError(`Failed to update task: ${errorMessage}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [closeDialog, onTasksChanged, showError, loadTaskSummaries]);
 
   // Initial load
   useEffect(() => {
@@ -909,14 +994,14 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           />
         )}
         
-        {activeDialog.type === 'edit' && (
+        {activeDialog.type === 'edit' && activeDialog.taskId && (
           <TaskEditDialog
             open={true}
             onOpenChange={closeDialog}
-            task={activeDialog.taskId ? fullTasks.get(activeDialog.taskId) || null : null}
+            task={fullTasks.get(activeDialog.taskId) || null}
             onClose={closeDialog}
-            onSave={() => {}} // TODO: implement
-            saving={false}
+            onSave={(updates) => handleUpdateTask(activeDialog.taskId!, updates)}
+            saving={saving}
           />
         )}
 

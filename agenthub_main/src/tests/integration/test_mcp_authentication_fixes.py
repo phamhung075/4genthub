@@ -60,8 +60,7 @@ class TestMCPAuthenticationFixes:
         # Stop patches
         self.ai_columns_patcher.stop()
         
-    @pytest.mark.asyncio
-    async def test_task_creation_authentication_fixed(self):
+    def test_task_creation_authentication_fixed(self):
         """Test that task creation now works with proper user authentication"""
         # Mock the authentication context to simulate an authenticated request
         mock_auth_info = {
@@ -111,7 +110,8 @@ class TestMCPAuthenticationFixes:
                 "user_id": self.test_user_uuid
             }
 
-            result = await task_controller.manage_task(**test_params)
+            # Use the synchronous wrapper for tests
+            result = task_controller.manage_task_sync(**test_params)
 
             # Should succeed now (was failing before)
             assert result.get('success') is True, f"Task creation failed: {result.get('error', 'Unknown error')}"
@@ -122,8 +122,7 @@ class TestMCPAuthenticationFixes:
 
             logger.info("✅ Task creation authentication fix verified")
 
-    @pytest.mark.asyncio
-    async def test_git_branch_operations_work(self):
+    def test_git_branch_operations_work(self):
         """Test git branch operations with proper authentication"""
         # Mock the authentication context to simulate an authenticated request
         mock_auth_info = {
@@ -181,8 +180,7 @@ class TestMCPAuthenticationFixes:
 
             logger.info("✅ Git branch operations working correctly")
 
-    @pytest.mark.asyncio
-    async def test_context_management_authentication(self):
+    def test_context_management_authentication(self):
         """Test context management operations with authentication"""
         context_controller = self.mcp_tools._context_controller
         
@@ -206,8 +204,7 @@ class TestMCPAuthenticationFixes:
             # Context creation may have design limitations, log for investigation
             logger.warning(f"⚠️ Global context creation still has issues: {result.get('error')}")
             
-    @pytest.mark.asyncio
-    async def test_full_workflow_integration(self):
+    def test_full_workflow_integration(self):
         """Test complete workflow: project -> branch -> task -> context"""
 
         # Mock the authentication context to simulate an authenticated request
@@ -252,7 +249,8 @@ class TestMCPAuthenticationFixes:
             # 3. Create task (should now work)
             task_controller = self.mcp_tools._task_controller
 
-            task_result = await task_controller.manage_task(
+            # Use the synchronous wrapper for tests
+            task_result = task_controller.manage_task_sync(
                 action="create",
                 git_branch_id=branch_id,
                 title="Integration Test Task",
@@ -288,8 +286,7 @@ class TestMCPAuthenticationFixes:
 
             logger.info("✅ Full workflow integration test completed")
 
-    @pytest.mark.asyncio
-    async def test_authentication_error_cases(self):
+    def test_authentication_error_cases(self):
         """Test that proper errors are returned when required fields are missing"""
 
         # Mock the authentication context for project/branch setup
@@ -333,7 +330,8 @@ class TestMCPAuthenticationFixes:
 
             # Test without required fields - should fail with validation error
             try:
-                result = await task_controller.manage_task(
+                # Use the synchronous wrapper for tests
+                result = task_controller.manage_task_sync(
                     action="create",
                     git_branch_id=branch_id,
                     title="Test Task Without Required Fields",
@@ -374,44 +372,12 @@ class TestMCPAuthenticationFixes:
 
 if __name__ == "__main__":
     """Run tests directly for debugging"""
-    import asyncio
     
-    async def run_tests():
-        test_instance = TestMCPAuthenticationFixes()
-        test_instance.setup_method()
-        
-        print("🚀 Running MCP Authentication Fix Tests...")
-        
-        try:
-            await test_instance.test_task_creation_authentication_fixed()
-            print("✅ Task creation authentication test passed")
-        except Exception as e:
-            print(f"❌ Task creation test failed: {e}")
-            
-        try:
-            await test_instance.test_git_branch_operations_work()
-            print("✅ Git branch operations test passed")
-        except Exception as e:
-            print(f"❌ Git branch operations test failed: {e}")
-            
-        try:
-            await test_instance.test_context_management_authentication()
-            print("✅ Context management test completed")
-        except Exception as e:
-            print(f"❌ Context management test failed: {e}")
-            
-        try:
-            await test_instance.test_full_workflow_integration()
-            print("✅ Full workflow integration test completed")
-        except Exception as e:
-            print(f"❌ Full workflow integration test failed: {e}")
-            
-        try:
-            await test_instance.test_authentication_error_cases()
-            print("✅ Authentication error handling test passed")
-        except Exception as e:
-            print(f"❌ Authentication error handling test failed: {e}")
-            
-        print("🏁 All tests completed!")
+    # Import pytest to run tests properly
+    import pytest
     
-    asyncio.run(run_tests())
+    # Run this test file with pytest
+    print("🚀 Running MCP Authentication Fix Tests with pytest...")
+    # Use sys.exit to ensure the process exits after tests complete
+    result = pytest.main([__file__, "-v"])
+    sys.exit(result)

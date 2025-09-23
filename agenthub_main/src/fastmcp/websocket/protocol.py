@@ -8,7 +8,7 @@ NO backward compatibility - clean v2.0 implementation only.
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import ValidationError
@@ -288,7 +288,7 @@ def create_error(
     """
     error_data = {
         "message": error_message,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
     if error_code:

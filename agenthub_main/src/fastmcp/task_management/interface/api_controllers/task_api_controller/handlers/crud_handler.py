@@ -47,14 +47,24 @@ class TaskCrudHandler:
             
             # Delegate to facade
             result = task_facade.create_task(request)
-            
-            logger.info(f"Task created successfully for user {user_id}: {result.get('task', {}).get('id')}")
-            
-            return {
-                "success": True,
-                "task": result.get("task"),
-                "message": "Task created successfully"
-            }
+
+            # Check if the creation was successful
+            if result.get("success"):
+                logger.info(f"Task created successfully for user {user_id}: {result.get('task', {}).get('id')}")
+                return {
+                    "success": True,
+                    "task": result.get("task"),
+                    "message": "Task created successfully"
+                }
+            else:
+                # Handle validation or other errors from facade
+                error_msg = result.get("error", "Failed to create task")
+                logger.warning(f"Task creation failed for user {user_id}: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "message": error_msg
+                }
             
         except Exception as e:
             logger.error(f"Error creating task for user {user_id}: {e}")
@@ -134,17 +144,27 @@ class TaskCrudHandler:
             
             # Set task_id in request
             request.task_id = task_id
-            
-            # Delegate to facade
-            result = task_facade.update_task(request)
-            
-            logger.info(f"Task {task_id} updated successfully for user {user_id}")
-            
-            return {
-                "success": True,
-                "task": result.get("task"),
-                "message": "Task updated successfully"
-            }
+
+            # Delegate to facade - pass both task_id and request
+            result = task_facade.update_task(task_id, request)
+
+            # Check if the update was successful
+            if result.get("success"):
+                logger.info(f"Task {task_id} updated successfully for user {user_id}")
+                return {
+                    "success": True,
+                    "task": result.get("task"),
+                    "message": "Task updated successfully"
+                }
+            else:
+                # Handle validation or other errors from facade
+                error_msg = result.get("error", "Failed to update task")
+                logger.warning(f"Task {task_id} update failed for user {user_id}: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "message": error_msg
+                }
             
         except Exception as e:
             logger.error(f"Error updating task {task_id} for user {user_id}: {e}")
@@ -176,14 +196,24 @@ class TaskCrudHandler:
             )
             
             # Delegate to facade with user_id for proper WebSocket notification
-            task_facade.delete_task(task_id, user_id)
-            
-            logger.info(f"Task {task_id} deleted successfully for user {user_id}")
-            
-            return {
-                "success": True,
-                "message": "Task deleted successfully"
-            }
+            result = task_facade.delete_task(task_id, user_id)
+
+            # Check if the deletion was successful
+            if result.get("success"):
+                logger.info(f"Task {task_id} deleted successfully for user {user_id}")
+                return {
+                    "success": True,
+                    "message": "Task deleted successfully"
+                }
+            else:
+                # Handle validation or other errors from facade
+                error_msg = result.get("error", "Failed to delete task")
+                logger.warning(f"Task {task_id} deletion failed for user {user_id}: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "message": error_msg
+                }
             
         except Exception as e:
             logger.error(f"Error deleting task {task_id} for user {user_id}: {e}")
@@ -215,15 +245,25 @@ class TaskCrudHandler:
             
             # Delegate to facade - include dependencies for proper display
             result = task_facade.list_tasks(request, include_dependencies=True, minimal=False)
-            
-            logger.info(f"Listed {len(result.get('tasks', []))} tasks for user {user_id}")
-            
-            return {
-                "success": True,
-                "tasks": result.get("tasks", []),
-                "count": len(result.get("tasks", [])),
-                "user_id": user_id
-            }
+
+            # Check if the listing was successful
+            if result.get("success"):
+                logger.info(f"Listed {len(result.get('tasks', []))} tasks for user {user_id}")
+                return {
+                    "success": True,
+                    "tasks": result.get("tasks", []),
+                    "count": len(result.get("tasks", [])),
+                    "user_id": user_id
+                }
+            else:
+                # Handle validation or other errors from facade
+                error_msg = result.get("error", "Failed to list tasks")
+                logger.warning(f"Task listing failed for user {user_id}: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "message": error_msg
+                }
             
         except Exception as e:
             logger.error(f"Error listing tasks for user {user_id}: {e}")

@@ -261,7 +261,7 @@ class TestProtocolHelpers:
     @pytest.mark.asyncio
     async def test_create_user_update_without_cascade(self):
         """Test creating user update without cascade calculator"""
-        message = create_user_update(
+        message = await create_user_update(
             entity_type="task",
             action="create",
             primary_data={"id": "123", "title": "Test Task"},
@@ -327,7 +327,7 @@ class TestProtocolHelpers:
             {"entity_id": "task2", "entity_type": "task", "action": "create"}
         ]
 
-        message = create_ai_batch(
+        message = await create_ai_batch(
             updates=updates,
             batch_id="batch_456",
             user_id="user123",
@@ -599,7 +599,7 @@ class TestDualTrackMessaging:
                 action="update",
                 data=WSData(primary={"id": "123"})
             ),
-            metadata=WSMetadata(source="placeholder")  # Will be overridden
+            metadata=WSMetadata(source="system")  # Will be overridden to "user"
         )
 
         assert message.type == "update"
@@ -617,7 +617,7 @@ class TestDualTrackMessaging:
                 data=WSData(primary=[{"id": "123"}, {"id": "456"}])
             ),
             metadata=WSMetadata(
-                source="placeholder",  # Will be overridden
+                source="user",  # Will be overridden to "mcp-ai"
                 batch_id="batch_123"
             )
         )
@@ -636,7 +636,7 @@ class TestDualTrackMessaging:
                 action="update",
                 data=WSData(primary={"status": "alive"})
             ),
-            metadata=WSMetadata(source="placeholder")  # Will be overridden
+            metadata=WSMetadata(source="system")  # Will be overridden to "user"
         )
 
         assert message.type == "heartbeat"

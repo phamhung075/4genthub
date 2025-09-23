@@ -1,0 +1,159 @@
+Debug info:
+SCRIPT_DIR: /home/daihungpham/__projects__/4genthub/scripts
+PROJECT_ROOT: /home/daihungpham/__projects__/4genthub
+TEST_DIR: /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests
+Current PWD: /home/daihungpham/__projects__/4genthub
+
+[H[2J[3J[0;36m╔════════════════════════════════════════════════════════════════╗[0m
+[0;36m║[1;37m[1m        🧪 SMART TEST RUNNER - agenthub 🧪                   [0;36m║[0m
+[0;36m╠════════════════════════════════════════════════════════════════╣[0m
+[0;36m║[0m [1mTest Statistics:[0m
+[0;36m║[0m   Total Tests: [1;37m372[0m
+[0;36m║[0m   [0;32m✓ Passed (Cached):[0m [0;32m7[0m
+[0;36m║[0m   [0;31m✗ Failed:[0m [0;31m0[0m
+[0;36m║[0m   [1;33m⚡ Will Skip (Cached):[0m [1;33m7[0m
+[0;36m╚════════════════════════════════════════════════════════════════╝[0m
+
+[1;33m[1m═══ SMART TEST EXECUTION ═══[0m
+[0;32m1[0m)  🚀 [1mRun Backend Tests[0m (Skip cached passed tests)
+[0;32m2[0m)  🔴 [1mRun Failed Tests Only[0m
+[0;32m3[0m)  🔄 [1mRun All Tests[0m (Ignore cache)
+[0;32m4[0m)  📝 [1mRun Specific Test File[0m
+
+[1;33m[1m═══ CACHE MANAGEMENT ═══[0m
+[0;34m5[0m)  🗑️  [1mClear All Cache[0m (Force full rerun)
+[0;34m6[0m)  🧹 [1mClear Failed Tests Cache[0m
+[0;34m7[0m)  📊 [1mShow Cache Statistics[0m
+[0;34m8[0m)  📋 [1mList Cached Tests[0m
+
+[1;33m[1m═══ TEST CATEGORIES ═══[0m
+[0;35m10[0m) Run Unit Tests
+[0;35m11[0m) Run Integration Tests
+[0;35m12[0m) Run E2E Tests
+[0;35m13[0m) Run Performance Tests
+
+[1;33m[1m═══ UTILITIES ═══[0m
+[0;36m20[0m) 📈 Generate Coverage Report
+[0;36m21[0m) 🔍 Find Obsolete Tests
+[0;36m22[0m) 📜 View Last Run Log
+
+[0;31mQ[0m)  Quit
+
+
+[0;36m[1mStarting Smart Test Run...[0m
+
+[1;33mMode: All tests (ignoring cache)[0m
+
+[0;36m[1mRunning tests...[0m
+
+[1;33mTests to run: 372[0m
+
+
+🧪 Starting agenthub Test Suite
+🛡️  Test data isolation enabled
+🧹 Automatic cleanup configured
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests
+configfile: pytest.ini
+plugins: postgresql-7.0.2, cov-6.2.1, anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 7000 items / 6 skipped
+
+agenthub_main/src/tests/test_cascade_deletion_fix_verification.py::test_sqlalchemy_cascade_deletion PASSED [  0%]
+agenthub_main/src/tests/test_cascade_deletion_fix_verification.py::test_database_foreign_key_cascade PASSED [  0%]
+agenthub_main/src/tests/test_cascade_deletion_fix_verification.py::test_repository_manual_deletion_still_works PASSED [  0%]
+agenthub_main/src/tests/shared/test_shared_init.py::TestSharedInit::test_module_imports PASSED [  0%]
+agenthub_main/src/tests/shared/test_shared_init.py::TestSharedInit::test_exported_items PASSED [  0%]
+agenthub_main/src/tests/shared/test_shared_init.py::TestSharedInit::test_all_exports PASSED [  0%]
+agenthub_main/src/tests/shared/test_shared_init.py::TestSharedInit::test_infrastructure_imports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py::TestSharedInfrastructureInit::test_module_imports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py::TestSharedInfrastructureInit::test_exported_items PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py::TestSharedInfrastructureInit::test_all_exports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py::TestSharedInfrastructureInit::test_messaging_imports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py::TestSharedInfrastructureInit::test_function_imports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/event_bus_test.py::TestDomainEvent::test_event_name PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/event_bus_test.py::TestDomainEvent::test_event_metadata PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py::TestMessagingInit::test_module_imports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py::TestMessagingInit::test_exported_items PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py::TestMessagingInit::test_all_exports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py::TestMessagingInit::test_event_bus_imports PASSED [  0%]
+agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py::TestMessagingInit::test_enums_and_types PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_service_account_config_from_env PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_service_token_expiry_logic PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_config_validation PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_successful_authentication PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_authentication_failure PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_token_caching PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_force_refresh PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_get_valid_token PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_health_check PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_get_service_info PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_rate_limiting PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_get_auth_headers PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_context_manager PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestServiceAccountAuth::test_singleton_instance PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestAuthenticationHelper::test_authenticate_service_request_valid PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestAuthenticationHelper::test_authenticate_service_request_invalid_header PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestAuthenticationHelper::test_authenticate_service_request_invalid_token PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestErrorHandling::test_network_error_handling PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestErrorHandling::test_malformed_response_handling PASSED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestRealKeycloakIntegration::test_real_authentication SKIPPED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestRealKeycloakIntegration::test_real_token_validation SKIPPED [  0%]
+agenthub_main/src/tests/integration/test_service_account_auth.py::TestRealKeycloakIntegration::test_real_health_check SKIPPED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_caching_functionality PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_context_field_selector_initialization PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_estimate_savings PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_field_dependencies_expansion PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_field_sets_defined PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_get_context_fields PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_get_project_fields PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_get_task_fields PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_metrics_tracking PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_optimal_field_set_recommendation PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_performance_targets_validation PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_project_repository_selective_fields_mock PASSED [  0%]
+agenthub_main/src/tests/integration/test_selective_field_queries.py::TestSelectiveFieldQueries::test_task_repository_selective_fields_mock PASSED [  0%]
+agenthub_main/src/tests/integration/test_mcp_tools_inclusion.py::test_mcp_tools_inclusion PASSED [  0%]
+agenthub_main/src/tests/integration/test_assignees_fix.py::test_agent_role_validation PASSED [  0%]
+agenthub_main/src/tests/integration/test_assignees_fix.py::test_available_roles PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestAgentAssignmentAtCreation::test_create_task_with_multiple_assignees_success PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestAgentAssignmentAtCreation::test_create_task_with_invalid_assignees PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestAgentAssignmentAtCreation::test_create_task_empty_assignees PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestAgentInheritanceFlow::test_create_subtask_inherits_parent_assignees PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestAgentInheritanceFlow::test_create_subtask_with_explicit_assignees_no_inheritance PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestAgentInheritanceFlow::test_create_subtask_invalid_assignees PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestEndToEndAgentFlow::test_complete_task_to_subtask_flow PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestEndToEndAgentFlow::test_multiple_subtasks_inheritance_scenarios PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestEdgeCasesAndErrorHandling::test_create_task_with_mixed_valid_invalid_assignees PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestEdgeCasesAndErrorHandling::test_create_subtask_parent_task_not_found PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestEdgeCasesAndErrorHandling::test_create_subtask_inheritance_service_failure PASSED [  0%]
+agenthub_main/src/tests/integration/agent_assignment_flow_test.py::TestEdgeCasesAndErrorHandling::test_validate_large_assignee_list PASSED [  0%]
+agenthub_main/src/tests/integration/test_bulk_api.py::TestBulkSummariesEndpoint::test_bulk_summaries_with_project_ids SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_bulk_api.py::TestBulkSummariesEndpoint::test_bulk_summaries_performance SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_bulk_api.py::TestBulkSummariesEndpoint::test_bulk_summaries_with_user_projects SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_bulk_api.py::TestBulkSummariesEndpoint::test_bulk_summaries_include_archived SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_bulk_api.py::TestBulkSummariesEndpoint::test_bulk_summaries_empty_result SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_bulk_api.py::TestBulkSummariesEndpoint::test_bulk_summaries_error_handling SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_id_validation_api_flows.py::TestSubtaskAPIIntegrationWithValidation::test_subtask_controller_integration_with_validation PASSED [  1%]
+agenthub_main/src/tests/integration/test_id_validation_api_flows.py::TestSubtaskAPIIntegrationWithValidation::test_api_endpoint_integration_with_validation PASSED [  1%]
+agenthub_main/src/tests/integration/test_id_validation_api_flows.py::TestSubtaskAPIIntegrationWithValidation::test_database_integration_with_validation PASSED [  1%]
+agenthub_main/src/tests/integration/test_id_validation_api_flows.py::TestSubtaskAPIIntegrationWithValidation::test_full_stack_integration_scenario PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_token_validation_success PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_token_validation_failure PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_token_validation_no_token PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_connection_requires_authentication PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_connection_success_with_valid_token PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_cleanup_on_disconnection PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_auth_context_integration_concept PASSED [  1%]
+agenthub_main/src/tests/integration/test_auth_websocket_integration.py::TestAuthWebSocketIntegration::test_websocket_authorization_per_user PASSED [  1%]
+agenthub_main/src/tests/integration/test_subtask_api_integration.py::TestSubtaskAPIIntegration::test_create_subtask_with_correct_parent_task_id SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_subtask_api_integration.py::TestSubtaskAPIIntegration::test_fetch_subtask_via_parent_task_endpoint SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_subtask_api_integration.py::TestSubtaskAPIIntegration::test_list_subtasks_for_task SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_subtask_api_integration.py::TestSubtaskAPIIntegration::test_reject_invalid_task_id_for_subtask_creation PASSED [  1%]
+agenthub_main/src/tests/integration/test_subtask_api_integration.py::TestSubtaskAPIIntegration::test_update_subtask_maintains_parent_relationship SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_subtask_api_integration.py::TestSubtaskAPIIntegration::test_delete_subtask_via_parent_task SKIPPED [  1%]
+agenthub_main/src/tests/integration/test_direct_task_creation.py::test_direct_task_creation PASSED [  1%]
+agenthub_main/src/tests/integration/test_docker_config.py::TestCapRoverPostgreSQLConnection::test_caprover_ssl_disabled_connection_string PASSED [  1%]
+agenthub_main/src/tests/integration/test_docker_config.py::TestCapRoverPostgreSQLConnection::test_caprover_postgres_docker_compose_configuration 

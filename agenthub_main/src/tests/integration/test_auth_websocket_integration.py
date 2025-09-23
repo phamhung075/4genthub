@@ -117,9 +117,10 @@ class TestAuthWebSocketIntegration:
             # Verify that a welcome message was sent
             mock_websocket.send_json.assert_called()
             welcome_call = mock_websocket.send_json.call_args[0][0]
-            assert welcome_call["type"] == "welcome"
-            assert welcome_call["authenticated"] == True
-            assert welcome_call["user_id"] == mock_user.id
+            assert welcome_call["type"] == "sync"  # v2.0 format uses "sync" type
+            assert welcome_call["payload"]["action"] == "welcome"  # action is in payload
+            assert welcome_call["payload"]["data"]["primary"]["authenticated"] == True
+            assert welcome_call["payload"]["data"]["primary"]["user_id"] == mock_user.id
 
     @pytest.mark.asyncio
     async def test_websocket_cleanup_on_disconnection(self, mock_user, valid_jwt_token):
