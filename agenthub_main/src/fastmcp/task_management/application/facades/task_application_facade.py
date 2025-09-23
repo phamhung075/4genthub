@@ -597,6 +597,19 @@ class TaskApplicationFacade:
                 except Exception as e:
                     logger.warning(f"Failed to broadcast task deletion: {e}")
 
+                # CRITICAL FIX: REMOVED REDUNDANT BRANCH UPDATE BROADCAST
+                # The task deletion event already triggers frontend to refresh branch data
+                # Broadcasting both task deletion AND branch update causes double-counting
+                #
+                # PREVIOUSLY THIS CODE CAUSED THE "JUMPING BY 3" BUG:
+                # - Task deletion event → frontend decrements count by 1
+                # - Branch update event → frontend decrements count by 2 more
+                # - Total: count jumps by 3 instead of 1
+                #
+                # SOLUTION: Only broadcast task deletion event, let frontend handle branch refresh
+                logger.info(f"🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting")
+                logger.info(f"🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically")
+
                 return {
                     "success": True,
                     "action": "delete",

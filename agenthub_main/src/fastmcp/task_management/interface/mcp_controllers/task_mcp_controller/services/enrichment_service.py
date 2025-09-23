@@ -90,8 +90,8 @@ class EnrichmentService:
         }
         
         return {
-            "status": status_indicators.get(status.lower(), status_indicators["pending"]),
-            "priority": priority_indicators.get(priority.lower(), priority_indicators["medium"]),
+            "status_indicator": status_indicators.get(status.lower(), status_indicators["pending"]),
+            "priority_indicator": priority_indicators.get(priority.lower(), priority_indicators["medium"]),
             "completion_percentage": self._calculate_completion_percentage(task_data)
         }
     

@@ -9,6 +9,7 @@
 import { branchApiV2 } from './apiV2';
 import { BranchSummary, ProjectSummary, BulkSummaryResponse } from '../types/api.types';
 import logger from '../utils/logger';
+import { invalidateRequestCache, clearDeduplicationCache } from '../utils/requestDeduplication';
 
 export class BranchService {
   /**
@@ -23,7 +24,8 @@ export class BranchService {
 
     try {
       // One call to rule them all - no project filter means get all for user
-      const response = await branchApiV2.getBulkSummaries() as BulkSummaryResponse;
+      // Add cache busting to ensure fresh data
+      const response = await branchApiV2.getBulkSummaries(undefined, false, true) as BulkSummaryResponse;
 
       if (!response.success) {
         throw new Error(response.message || 'Failed to load bulk summaries');
@@ -57,7 +59,7 @@ export class BranchService {
     const startTime = Date.now();
 
     try {
-      const response = await branchApiV2.getBulkSummaries(projectIds) as BulkSummaryResponse;
+      const response = await branchApiV2.getBulkSummaries(projectIds, false, true) as BulkSummaryResponse;
 
       if (!response.success) {
         throw new Error(response.message || 'Failed to load project summaries');
@@ -94,7 +96,7 @@ export class BranchService {
     logger.info('🔄 Refreshing summaries with cache bypass...');
 
     // Add a cache-busting timestamp parameter to force fresh data
-    const response = await branchApiV2.getBulkSummaries(projectIds) as BulkSummaryResponse;
+    const response = await branchApiV2.getBulkSummaries(projectIds, false, true) as BulkSummaryResponse;
 
     if (!response.success) {
       throw new Error(response.message || 'Failed to refresh summaries');
@@ -104,6 +106,53 @@ export class BranchService {
     const projects = Object.values(response.projects || {});
 
     logger.info(`🔄 Refreshed ${branches.length} branches, ${projects.length} projects`);
+
+    return { branches, projects };
+  }
+
+  /**
+   * AGGRESSIVE cache bypass - clears ALL frontend caches
+   * Use this for debugging cache issues
+   */
+  async forceRefreshSummaries(projectIds?: string[]): Promise<{
+    branches: BranchSummary[];
+    projects: ProjectSummary[];
+  }> {
+    logger.warn('🚨 FORCE REFRESH: Clearing ALL frontend caches...');
+
+    // 1. Clear request deduplication cache entirely
+    logger.warn('  1️⃣ Clearing request deduplication cache...');
+    clearDeduplicationCache();
+
+    // 2. Invalidate specific bulk summaries requests
+    logger.warn('  2️⃣ Invalidating bulk summaries cache...');
+    invalidateRequestCache('/api/v2/branches/summaries/bulk', 'POST');
+
+    // 3. Log cache clearing for debugging
+    logger.warn('  3️⃣ Using aggressive cache busting API call...');
+
+    // 4. Use the force API call with aggressive cache busting
+    const response = await branchApiV2.forceGetBulkSummaries(projectIds, false) as BulkSummaryResponse;
+
+    if (!response.success) {
+      logger.error('🚨 FORCE REFRESH FAILED:', response);
+      throw new Error(response.message || 'Failed to force refresh summaries');
+    }
+
+    const branches = Object.values(response.summaries || {});
+    const projects = Object.values(response.projects || {});
+
+    // 5. Log task counts for debugging the 39 vs 11 issue
+    const totalTasks = branches.reduce((sum, branch) => sum + (branch.total_tasks || 0), 0);
+    logger.warn(`🚨 FORCE REFRESH SUCCESS: ${branches.length} branches, ${projects.length} projects`);
+    logger.warn(`📊 TOTAL TASK COUNT: ${totalTasks} (was showing 39, should be 11)`);
+
+    // 6. Log individual branch task counts for debugging
+    branches.forEach(branch => {
+      if (branch.total_tasks > 0) {
+        logger.info(`📊 Branch "${branch.name}": ${branch.total_tasks} tasks`);
+      }
+    });
 
     return { branches, projects };
   }

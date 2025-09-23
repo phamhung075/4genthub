@@ -18,8 +18,8 @@ export interface BranchSummary {
   git_branch_name?: string; // For compatibility with existing UI
   status?: string;
   priority?: string;
-  total_tasks: number;
-  task_count?: number; // For compatibility with existing UI
+  total_tasks: number; // Primary task count field
+  task_count?: number; // Deprecated - for backwards compatibility only
   completed_tasks: number;
   in_progress_tasks: number;
   blocked_tasks: number;

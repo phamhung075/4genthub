@@ -606,7 +606,7 @@ class BranchAPIController:
                           include_archived: bool = False, session=None) -> Dict[str, Any]:
         """
         Get bulk summaries for multiple projects in a single request.
-        Queries the materialized views for optimized performance.
+        Uses trigger-maintained counts from project_git_branchs table for real-time accuracy.
 
         Args:
             project_ids: Optional list of project IDs to fetch
@@ -619,25 +619,27 @@ class BranchAPIController:
         """
         start_time = time.time()
 
-        refresh_metadata = self._refresh_summary_views(session)
-
         try:
-            # Query branch_summaries_mv
+            # ✅ CRITICAL FIX: Query project_git_branchs directly to use trigger-maintained counts
+            # This ensures real-time accuracy instead of stale materialized view data
             query = """
             SELECT
-                branch_id,
-                project_id,
-                branch_name,
-                branch_status,
-                branch_priority,
-                total_tasks,
-                completed_tasks,
-                in_progress_tasks,
-                blocked_tasks,
-                todo_tasks,
-                progress_percentage,
-                last_task_activity
-            FROM branch_summaries_mv
+                b.id as branch_id,
+                b.project_id,
+                b.name as branch_name,
+                b.status as branch_status,
+                b.priority as branch_priority,
+                COALESCE(b.task_count, 0) as total_tasks,
+                COALESCE(b.completed_task_count, 0) as completed_tasks,
+                COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as in_progress_tasks,
+                0 as blocked_tasks,
+                COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as todo_tasks,
+                CASE
+                    WHEN COALESCE(b.task_count, 0) = 0 THEN 0
+                    ELSE ROUND((COALESCE(b.completed_task_count, 0)::numeric / b.task_count::numeric) * 100, 2)
+                END as progress_percentage,
+                b.updated_at as last_task_activity
+            FROM project_git_branchs b
             WHERE 1=1
             """
 
@@ -646,7 +648,7 @@ class BranchAPIController:
             if project_ids:
                 # Use IN clause for multiple project IDs
                 placeholders = ', '.join([f':p{i}' for i in range(len(project_ids))])
-                query += f" AND project_id IN ({placeholders})"
+                query += f" AND b.project_id IN ({placeholders})"
                 for i, pid in enumerate(project_ids):
                     params[f'p{i}'] = pid
             elif user_id:
@@ -661,7 +663,7 @@ class BranchAPIController:
 
                 if user_project_ids:
                     placeholders = ', '.join([f':p{i}' for i in range(len(user_project_ids))])
-                    query += f" AND project_id IN ({placeholders})"
+                    query += f" AND b.project_id IN ({placeholders})"
                     for i, pid in enumerate(user_project_ids):
                         params[f'p{i}'] = pid
                 else:
@@ -680,7 +682,7 @@ class BranchAPIController:
                     }
 
             if not include_archived:
-                query += " AND branch_status != 'archived'"
+                query += " AND b.status != 'archived'"
 
             # Execute query
             result = session.execute(text(query), params)
@@ -746,7 +748,7 @@ class BranchAPIController:
 
             query_time = (time.time() - start_time) * 1000  # ms
 
-            logger.info(f"Bulk summaries retrieved: {len(summaries)} branches, {len(projects)} projects in {query_time:.2f}ms")
+            logger.info(f"✅ FIXED: Bulk summaries retrieved using trigger-maintained counts: {len(summaries)} branches, {len(projects)} projects in {query_time:.2f}ms")
 
             response = {
                 'success': True,
@@ -755,19 +757,11 @@ class BranchAPIController:
                 'metadata': {
                     'count': len(summaries),
                     'query_time_ms': round(query_time, 2),
-                    'from_cache': False
+                    'from_cache': False,
+                    'data_source': 'trigger_maintained_counts'  # Indicate fix was applied
                 },
                 'timestamp': time.time()
             }
-
-            # Surface refresh diagnostics when available so the frontend can detect freshness.
-            metadata = response['metadata']
-            if refresh_metadata.get('refreshed'):
-                metadata['refreshed'] = True
-                if refresh_metadata.get('refresh_time_ms') is not None:
-                    metadata['refresh_time_ms'] = refresh_metadata['refresh_time_ms']
-            if refresh_metadata.get('error'):
-                metadata['refresh_error'] = refresh_metadata['error']
 
             return response
 

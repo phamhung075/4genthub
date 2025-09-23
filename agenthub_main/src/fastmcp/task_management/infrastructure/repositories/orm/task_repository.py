@@ -231,7 +231,28 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 
                 # Create task
                 task = self.create(**task_data)
-                
+
+                # Update branch counters after task creation
+                if self.git_branch_id:
+                    with self.get_db_session() as session:
+                        from ...database.models import ProjectGitBranch
+                        branch = session.query(ProjectGitBranch).filter(
+                            ProjectGitBranch.id == self.git_branch_id
+                        ).first()
+
+                        if branch:
+                            # Increment total task count
+                            branch.task_count = (branch.task_count or 0) + 1
+
+                            # Increment completed count if task starts as completed
+                            if task_data.get('status') == 'done':
+                                branch.completed_task_count = (branch.completed_task_count or 0) + 1
+
+                            # Update timestamp
+                            branch.updated_at = datetime.now(timezone.utc)
+                            session.commit()
+                            logger.info(f"Updated branch {self.git_branch_id} counters: task_count={branch.task_count}, completed_count={branch.completed_task_count}")
+
                 # Add assignees with proper error handling
                 if assignee_ids:
                     with self.get_db_session() as session:
@@ -371,17 +392,49 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
         """Update a task"""
         try:
             with self.transaction():
+                # Get the current task to check for status changes
+                with self.get_db_session() as session:
+                    current_task = session.query(Task).filter(Task.id == task_id).first()
+                    if not current_task:
+                        raise TaskNotFoundError(f"Task {task_id} not found")
+
+                    old_status = current_task.status
+                    new_status = updates.get('status', old_status)
+
                 # Map overall_progress to progress_percentage if provided
                 if 'overall_progress' in updates:
                     updates['progress_percentage'] = updates.pop('overall_progress')
-                
+
                 # Update basic fields
-                basic_updates = {k: v for k, v in updates.items() 
+                basic_updates = {k: v for k, v in updates.items()
                                if k not in ['assignee_ids', 'label_names', 'subtasks']}
-                
+
                 updated_task = self.update(task_id, **basic_updates)
                 if not updated_task:
                     raise TaskNotFoundError(f"Task {task_id} not found")
+
+                # Update branch counters if status changed between done/not-done
+                if old_status != new_status and updated_task.git_branch_id:
+                    with self.get_db_session() as session:
+                        from ...database.models import ProjectGitBranch
+                        branch = session.query(ProjectGitBranch).filter(
+                            ProjectGitBranch.id == updated_task.git_branch_id
+                        ).first()
+
+                        if branch:
+                            # Track completed count changes
+                            if old_status != 'done' and new_status == 'done':
+                                # Task became completed
+                                branch.completed_task_count = (branch.completed_task_count or 0) + 1
+                            elif old_status == 'done' and new_status != 'done':
+                                # Task became incomplete
+                                branch.completed_task_count = max(0, (branch.completed_task_count or 0) - 1)
+
+                            if old_status != new_status:
+                                # Update timestamp for any status change
+                                branch.updated_at = datetime.now(timezone.utc)
+                                session.commit()
+                                logger.info(f"Updated branch {updated_task.git_branch_id} completed count: {branch.completed_task_count} (status: {old_status} -> {new_status})")
                 
                 # Update assignees if provided
                 if 'assignee_ids' in updates:
@@ -512,7 +565,12 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 ).delete(synchronize_session=False)
                 logger.info(f"Deleted {deleted_labels} labels for task {task_id}")
 
-                # 6. Finally delete the task itself
+                # 6. Branch counters will be updated automatically by database triggers
+                # No manual counter manipulation needed - triggers handle this correctly
+                if task.git_branch_id:
+                    logger.info(f"Database triggers will automatically update branch {task.git_branch_id} counters after task deletion")
+
+                # 7. Finally delete the task itself
                 session.delete(task)
 
                 # CRITICAL: Explicitly commit here to ensure deletion persists
@@ -528,6 +586,29 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     user_id=self.user_id,
                     propagate=False
                 )
+
+                # CRITICAL FIX: Refresh materialized views after task deletion
+                # This ensures the summary views show accurate task counts immediately
+                try:
+                    from sqlalchemy import text
+                    # Use autocommit for PostgreSQL REFRESH requirements
+                    autocommit_conn = session.connection().execution_options(isolation_level="AUTOCOMMIT")
+
+                    # Try concurrent refresh first (faster, but may fail under high load)
+                    try:
+                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY branch_summaries_mv;"))
+                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY project_summaries_mv;"))
+                        logger.info(f"Successfully refreshed materialized views concurrently after deleting task {task_id}")
+                    except Exception as refresh_error:
+                        # Fallback to regular refresh if concurrent fails
+                        logger.warning(f"Concurrent refresh failed after task deletion, using regular refresh: {refresh_error}")
+                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW branch_summaries_mv;"))
+                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW project_summaries_mv;"))
+                        logger.info(f"Successfully refreshed materialized views (non-concurrent) after deleting task {task_id}")
+
+                except Exception as view_refresh_error:
+                    # Don't fail the entire deletion if view refresh fails
+                    logger.error(f"Failed to refresh materialized views after deleting task {task_id}: {view_refresh_error}")
 
                 return True
 

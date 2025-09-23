@@ -10,19 +10,27 @@ const getAuthToken = (): string | null => {
 };
 
 // Create headers with authentication
-const getAuthHeaders = (): HeadersInit => {
+const getAuthHeaders = (noCacheBypass: boolean = false): HeadersInit => {
   const token = getAuthToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
-  
+
+  // Add aggressive cache busting headers when needed
+  if (noCacheBypass) {
+    headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    headers['Pragma'] = 'no-cache';
+    headers['Expires'] = '0';
+    headers['X-Cache-Bypass'] = Date.now().toString();
+  }
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
     logger.debug('API V2: Adding auth header with token starting:', token.substring(0, 50) + '...');
   } else {
     logger.warn('API V2: No auth token found in cookies!');
   }
-  
+
   return headers;
 };
 
@@ -665,16 +673,49 @@ export const branchApiV2 = {
   },
 
   // Get bulk summaries for all or selected projects
-  getBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false) => {
+  getBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false, bustCache: boolean = false) => {
+    const requestBody: any = {
+      project_ids: projectIds,
+      include_archived: includeArchived
+    };
+
+    // Add cache busting parameter when requested
+    if (bustCache) {
+      requestBody._t = Date.now();
+    }
+
     const response = await fetchWithRetry(`${API_BASE_URL}/api/v2/branches/summaries/bulk`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({
-        project_ids: projectIds,
-        include_archived: includeArchived
-      }),
+      body: JSON.stringify(requestBody),
     });
     return response;
+  },
+
+  // Force refresh bulk summaries with aggressive cache busting
+  forceGetBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false) => {
+    const requestBody: any = {
+      project_ids: projectIds,
+      include_archived: includeArchived,
+      // Aggressive cache busting
+      _t: Date.now(),
+      _r: Math.random().toString(36).substring(7),
+      _force: true
+    };
+
+    // Create unique URL to bypass request deduplication entirely
+    const url = `${API_BASE_URL}/api/v2/branches/summaries/bulk?_bust=${Date.now()}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getAuthHeaders(true), // Enable aggressive cache busting headers
+      body: JSON.stringify(requestBody),
+      credentials: 'include',
+      // Additional cache busting
+      cache: 'no-store',
+    });
+
+    return handleResponse(response, url);
   },
 };
 

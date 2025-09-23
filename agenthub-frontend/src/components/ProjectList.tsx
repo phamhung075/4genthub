@@ -16,7 +16,6 @@ import logger from "../utils/logger";
 
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
-  refreshKey?: number; // Add refresh trigger
   selectedProjectId?: string; // Currently selected project ID from URL
   selectedBranchId?: string; // Currently selected branch ID from URL
   onShowGlobalContext?: () => void; // Handler for showing global context
@@ -24,7 +23,7 @@ interface ProjectListProps {
   onShowBranchDetails?: (project: Project, branch: any) => void; // Handler for showing branch details
 }
 
-const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selectedProjectId, selectedBranchId, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }) => {
+const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, selectedBranchId, onShowGlobalContext, onShowProjectDetails, onShowBranchDetails }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +70,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
       const compatibleBranch: BranchSummary = {
         ...branch,
         git_branch_name: branch.name, // UI expects git_branch_name
-        task_count: branch.total_tasks // UI expects task_count
+        total_tasks: branch.total_tasks || 0, // Use direct total_tasks field
+        task_counts: { // Ensure task_counts object exists
+          total: branch.total_tasks || 0,
+          ...branch.task_counts
+        }
       };
 
       result[branch.project_id].push(compatibleBranch);
@@ -85,7 +88,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
     const counts: Record<string, number> = {};
     allBranchSummaries.forEach(branch => {
       counts[branch.id] = branch.total_tasks || 0;
+      console.log('🚀 COUNT DEBUG: TaskCounts updated for branch', branch.id, 'count:', branch.total_tasks || 0);
     });
+    console.log('🚀 COUNT DEBUG: TaskCounts memo recalculated, total branches:', Object.keys(counts).length);
     return counts;
   }, [allBranchSummaries]);
 
@@ -129,24 +134,38 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
 
   const refreshBranchSummaries = useCallback(async () => {
     // Use the bulk API hook's refresh function instead of manual refresh
+    console.log('🚀 REFRESH DEBUG: refreshBranchSummaries called - this will update counts');
     logger.info('🔄 Refreshing branch summaries using optimized bulk API');
     await refreshBulkSummaries();
+    console.log('🚀 REFRESH DEBUG: refreshBulkSummaries completed');
   }, [refreshBulkSummaries]);
 
+  // Initial load only - real-time updates handled by useEntityChanges hook
   useEffect(() => {
-    logger.debug('ProjectList refreshKey changed:', refreshKey);
-    // Fetch projects and refresh bulk summaries
+    logger.debug('ProjectList initial load');
     fetchProjects();
     refreshBranchSummaries();
-  }, [refreshKey, fetchProjects, refreshBranchSummaries]);
+  }, [fetchProjects, refreshBranchSummaries]);
 
   // Create stable refresh callback for change pool
   const handleDataChange = useCallback(() => {
+    console.log('🚀 CHANGE DEBUG: handleDataChange called - WebSocket event detected');
     logger.debug('📡 ProjectList: Data change detected, refreshing...');
     // Refresh when entity events occur using bulk API
     fetchProjects();
     refreshBranchSummaries();
+    console.log('🚀 CHANGE DEBUG: handleDataChange completed refresh calls');
   }, [fetchProjects, refreshBranchSummaries]);
+
+  // Unified refresh function for UI buttons
+  const handleRefresh = useCallback(async () => {
+    logger.debug('🔄 Manual refresh triggered');
+    await Promise.all([
+      fetchProjects(),
+      refreshBranchSummaries()
+    ]);
+  }, [fetchProjects, refreshBranchSummaries]);
+
 
   // Subscribe to centralized change pool for real-time updates
   useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
@@ -452,32 +471,34 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
         <div className="flex items-center justify-between sm:justify-start">
           <span className="font-bold text-base sm:text-lg">Projects</span>
           {/* Refresh button on mobile - next to title */}
-          <RefreshButton 
-            onClick={fetchProjects}
-            loading={loading}
+          <RefreshButton
+            onClick={handleRefresh}
+            loading={loading || loadingBulkSummaries}
             className="sm:hidden"
             size="icon"
-            title="Refresh projects"
+            title="Refresh projects and branch summaries"
           />
         </div>
         
         {/* Action buttons - responsive layout */}
         <div className="flex gap-2 justify-end sm:w-auto">
           {/* Hidden refresh on desktop (shown in different position) */}
-          <RefreshButton 
-            onClick={fetchProjects}
-            loading={loading}
+          <RefreshButton
+            onClick={handleRefresh}
+            loading={loading || loadingBulkSummaries}
             className="hidden sm:flex lg:hidden"
             size="icon"
-            title="Refresh projects"
+            title="Refresh projects and branch summaries"
           />
-          <RefreshButton 
-            onClick={fetchProjects}
-            loading={loading}
+          <RefreshButton
+            onClick={handleRefresh}
+            loading={loading || loadingBulkSummaries}
             className="hidden lg:flex"
             size="sm"
+            title="Refresh projects and branch summaries"
           />
-          
+
+
           {/* Global context button */}
           <ShimmerButton 
             size="sm" 
@@ -526,7 +547,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
                     {(() => {
                       const branches = project.git_branchs as Record<string, any>;
                       const totalTasks = branches ?
-                        Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) : 0;
+                        Object.values(branches).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) : 0;
                       return totalTasks > 0 ? (
                         <ShimmerBadge variant="default" className="text-xs">
                           {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
@@ -587,7 +608,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
                             <span className="truncate text-left flex-1">{branch.git_branch_name || branch.name}</span>
                             <div className="flex items-center gap-1">
                               <ShimmerBadge variant="secondary" className="text-xs">
-                                {branch.task_count || branch.task_counts?.total || 0}
+                                {branch.total_tasks || 0}
                               </ShimmerBadge>
                               {branch.has_urgent_tasks && (
                                 <ShimmerBadge variant="destructive" className="text-xs">!</ShimmerBadge>
@@ -653,7 +674,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
                           >
                             <span className="truncate text-left flex-1">{tree.git_branch_name || tree.name}</span>
                             <ShimmerBadge variant="secondary" className="text-xs ml-2">
-                              {tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
+                              {tree.total_tasks !== undefined ? tree.total_tasks : (taskCounts[tree.id as string] ?? 0)}
                             </ShimmerBadge>
                           </ShimmerButton>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
@@ -797,7 +818,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
             )}
             {showDelete && showDelete.git_branchs && (() => {
               const branches = showDelete.git_branchs as Record<string, any>;
-              const totalTasks = Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0);
+              const totalTasks = Object.values(branches).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0);
               return totalTasks > 0 ? (
                 <p className="text-sm text-amber-600 dark:text-amber-400">
                   ⚠️ This project contains {totalTasks} task{totalTasks === 1 ? '' : 's'}. All tasks must be deleted first.
@@ -811,7 +832,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
             <ShimmerButton 
               variant={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
                   ? "secondary" 
                   : "destructive"
               }
@@ -820,18 +841,18 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
               disabled={
                 saving || 
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
               }
               title={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) 
                   ? "Delete all branches except 'main' first" 
-                  : (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                  : (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
                     ? "Delete all tasks first"
                     : undefined
               }
               className={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
+                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
                   ? "opacity-50 cursor-not-allowed" 
                   : ""
               }
@@ -850,9 +871,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, refreshKey, selecte
           </DialogHeader>
           <div className="space-y-2">
             <p className="text-sm">Are you sure you want to delete the branch <strong>{showDeleteBranch?.branch.git_branch_name || showDeleteBranch?.branch.name}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
-            {showDeleteBranch && (showDeleteBranch.branch.task_count || 0) > 0 && (
+            {showDeleteBranch && (showDeleteBranch.branch.total_tasks || 0) > 0 && (
               <p className="text-sm text-destructive">
-                Warning: This branch contains {showDeleteBranch.branch.task_count || 0} task(s) that will also be deleted.
+                Warning: This branch contains {showDeleteBranch.branch.total_tasks || 0} task(s) that will also be deleted.
               </p>
             )}
             <p className="text-sm text-muted-foreground">This action cannot be undone.</p>

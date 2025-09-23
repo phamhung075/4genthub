@@ -170,7 +170,7 @@ class ResponseEnrichmentService:
             "done": self.visual_indicators["task_completed"],
             "completed": self.visual_indicators["task_completed"]
         }
-        enrichment.visual_indicators["status"] = status_indicators.get(
+        enrichment.visual_indicators["status_indicator"] = status_indicators.get(
             task_status, "❓"
         )
         
@@ -182,7 +182,7 @@ class ResponseEnrichmentService:
             "medium": self.visual_indicators["priority_medium"],
             "low": self.visual_indicators["priority_low"]
         }
-        enrichment.visual_indicators["priority"] = priority_indicators.get(
+        enrichment.visual_indicators["priority_indicator"] = priority_indicators.get(
             task_priority, self.visual_indicators["priority_medium"]
         )
         
