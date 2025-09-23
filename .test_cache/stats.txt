@@ -1,5 +1,5 @@
-total:317
+total:372
 passed:0
 failed:0
 cached:0
-untested:317
+untested:372

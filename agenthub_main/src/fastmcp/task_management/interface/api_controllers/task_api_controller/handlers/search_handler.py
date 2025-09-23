@@ -39,14 +39,31 @@ class TaskSearchHandler:
             )
             
             # Get statistics through facade
-            stats = task_facade.get_task_statistics(user_id)
-            
-            logger.info(f"Retrieved task statistics for user {user_id}")
-            
-            return {
-                "success": True,
-                "statistics": stats
-            }
+            result = task_facade.get_task_statistics(user_id)
+
+            # Check if getting statistics was successful
+            if isinstance(result, dict) and result.get("success"):
+                logger.info(f"Retrieved task statistics for user {user_id}")
+                return {
+                    "success": True,
+                    "statistics": result.get("statistics", result)
+                }
+            elif isinstance(result, dict) and not result.get("success"):
+                # Handle errors from facade
+                error_msg = result.get("error", "Failed to get task statistics")
+                logger.warning(f"Getting task statistics failed for user {user_id}: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "message": error_msg
+                }
+            else:
+                # Legacy format - return as-is for backward compatibility
+                logger.info(f"Retrieved task statistics for user {user_id}")
+                return {
+                    "success": True,
+                    "statistics": result
+                }
             
         except Exception as e:
             logger.error(f"Error getting task statistics for user {user_id}: {e}")
@@ -80,15 +97,35 @@ class TaskSearchHandler:
             filters["user_id"] = user_id
             
             # Get count through facade
-            count = task_facade.count_tasks(filters)
-            
-            logger.info(f"Counted {count} tasks for user {user_id} with filters {filters}")
-            
-            return {
-                "success": True,
-                "count": count,
-                "filters": filters
-            }
+            result = task_facade.count_tasks(filters)
+
+            # Check if counting was successful
+            if isinstance(result, dict) and "success" in result:
+                if result.get("success"):
+                    count = result.get("count", 0)
+                    logger.info(f"Counted {count} tasks for user {user_id} with filters {filters}")
+                    return {
+                        "success": True,
+                        "count": count,
+                        "filters": filters
+                    }
+                else:
+                    # Handle errors from facade
+                    error_msg = result.get("error", "Failed to count tasks")
+                    logger.warning(f"Counting tasks failed for user {user_id}: {error_msg}")
+                    return {
+                        "success": False,
+                        "error": error_msg,
+                        "message": error_msg
+                    }
+            else:
+                # Legacy format - result is just the count
+                logger.info(f"Counted {result} tasks for user {user_id} with filters {filters}")
+                return {
+                    "success": True,
+                    "count": result,
+                    "filters": filters
+                }
             
         except Exception as e:
             logger.error(f"Error counting tasks for user {user_id}: {e}")
@@ -126,16 +163,26 @@ class TaskSearchHandler:
             
             # Get tasks through facade
             result = task_facade.list_tasks_with_pagination(filters, offset, limit)
-            
-            logger.info(f"Listed {len(result['tasks'])} task summaries for user {user_id}")
-            
-            return {
-                "success": True,
-                "tasks": result['tasks'],
-                "offset": offset,
-                "limit": limit,
-                "total": result['total']
-            }
+
+            # Check if listing was successful
+            if result.get("success"):
+                logger.info(f"Listed {len(result.get('tasks', []))} task summaries for user {user_id}")
+                return {
+                    "success": True,
+                    "tasks": result.get('tasks', []),
+                    "offset": offset,
+                    "limit": limit,
+                    "total": result.get('total', 0)
+                }
+            else:
+                # Handle validation or other errors from facade
+                error_msg = result.get("error", "Failed to list task summaries")
+                logger.warning(f"Task summary listing failed for user {user_id}: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "message": error_msg
+                }
             
         except Exception as e:
             logger.error(f"Error listing task summaries for user {user_id}: {e}")

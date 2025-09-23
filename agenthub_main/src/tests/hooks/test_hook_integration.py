@@ -275,6 +275,7 @@ class TestHookChainIntegration:
                 mock_interceptor.return_value = mock_interceptor_obj
 
                 mock_hint_system_obj = Mock()
+                mock_hint_system_obj.generate_pre_action_hints.return_value = "Pre-action MCP guidance"
                 mock_hint_system_obj.generate_post_action_hints.return_value = ["Task creation hints"]
                 mock_hint_system.return_value = mock_hint_system_obj
 

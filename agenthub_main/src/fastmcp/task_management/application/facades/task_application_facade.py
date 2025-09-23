@@ -1316,11 +1316,11 @@ class TaskApplicationFacade:
             True if a similar task was recently created, False otherwise
         """
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
             from ...domain.value_objects.task_id import TaskId
 
             # Check for tasks created in the last 10 seconds with same title and branch
-            cutoff_time = datetime.utcnow() - timedelta(seconds=10)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=10)
 
             # Use list_tasks to find recent tasks with same criteria
             from ..dtos.task.list_tasks_request import ListTasksRequest

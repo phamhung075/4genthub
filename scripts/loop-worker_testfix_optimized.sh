@@ -1,13 +1,17 @@
 #!/bin/bash
 
 # ======================================================================
-# OPTIMIZED TEST FIX LOOP WORKER - Minimal Token Usage + Cache Integration
+# TOKEN-EFFICIENT TEST FIX LOOP WORKER - Smart Cache + Auto-Retest + Recent Context
 # ======================================================================
 # Features:
-# - Integrates with test-menu.sh cache system
-# - Only sends failed tests and recent fixes to AI
-# - Uses incremental context instead of accumulating all history
-# - Tracks progress without bloating context
+# - Integrates with test-menu.sh cache system for fast operation
+# - Intelligent cache management: auto-refresh when empty/stale
+# - TOKEN-EFFICIENT context: Only last 3 results + current test
+# - AUTO-RETESTS after each fix to detect newly broken tests
+# - Compact error output and smart file inclusion
+# - Recent results tracking to prevent token burn
+# - Cache status monitoring and health indicators
+# - Clear fix instructions with minimal context bloat
 # ======================================================================
 
 # Configuration
@@ -18,7 +22,9 @@ CONTEXT_FILE="ai_docs/_workplace/workers/fix_tests_loop/current_context.md"
 PROGRESS_FILE="ai_docs/_workplace/workers/fix_tests_loop/progress.json"
 INSTRUCTIONS_FILE="ai_docs/_workplace/workers/fix_tests_loop/instructions.md"
 LOG_FILE="ai_docs/_workplace/workers/fix_tests_loop/session.log"
+RECENT_RESULTS_FILE="ai_docs/_workplace/workers/fix_tests_loop/recent_results.log"
 DELAY_SECONDS=15
+MAX_RECENT_RESULTS=3
 
 # Create directories
 mkdir -p "$(dirname "$CONTEXT_FILE")"
@@ -70,6 +76,60 @@ get_next_failing_test() {
     fi
 }
 
+# Check if cache needs refresh (empty or stale)
+cache_needs_refresh() {
+    local failed_count=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
+    local passed_count=$(wc -l < "$PASSED_TESTS" 2>/dev/null || echo "0")
+    local total_cache=$((failed_count + passed_count))
+
+    # Cache is empty or minimal
+    if [[ $total_cache -lt 3 ]]; then
+        echo "empty"
+        return 0
+    fi
+
+    # Check if cache files are older than 30 minutes (stale)
+    if [[ -f "$FAILED_TESTS" ]] && [[ $(find "$FAILED_TESTS" -mmin +30 | wc -l) -gt 0 ]]; then
+        echo "stale"
+        return 0
+    fi
+
+    echo "fresh"
+    return 1
+}
+
+# Add test result to recent history (keep only last 3)
+add_recent_result() {
+    local test_path="$1"
+    local status="$2"  # "FIXED" or "FAILED"
+    local details="$3"
+    local timestamp=$(date -Iseconds)
+
+    # Create result entry
+    local result_entry="[$timestamp] $status: ${test_path#*/agenthub_main/}"
+    if [[ -n "$details" ]]; then
+        result_entry="$result_entry - $details"
+    fi
+
+    # Add to recent results file
+    echo "$result_entry" >> "$RECENT_RESULTS_FILE"
+
+    # Keep only last MAX_RECENT_RESULTS entries
+    if [[ -f "$RECENT_RESULTS_FILE" ]] && [[ $(wc -l < "$RECENT_RESULTS_FILE") -gt $MAX_RECENT_RESULTS ]]; then
+        tail -n $MAX_RECENT_RESULTS "$RECENT_RESULTS_FILE" > "${RECENT_RESULTS_FILE}.tmp"
+        mv "${RECENT_RESULTS_FILE}.tmp" "$RECENT_RESULTS_FILE"
+    fi
+}
+
+# Get recent results for context
+get_recent_results() {
+    if [[ -f "$RECENT_RESULTS_FILE" ]] && [[ -s "$RECENT_RESULTS_FILE" ]]; then
+        cat "$RECENT_RESULTS_FILE"
+    else
+        echo "No recent results yet."
+    fi
+}
+
 # Move test from failed to passed
 mark_test_fixed() {
     local test_path="$1"
@@ -84,6 +144,9 @@ mark_test_fixed() {
     # Update progress
     local fixed_count=$(python3 -c "import json; data=json.load(open('$PROGRESS_FILE')); print(data.get('fixed_count', 0) + 1)")
     update_progress "fixed_count" "$fixed_count"
+
+    # Add to recent results
+    add_recent_result "$test_path" "FIXED" "Successfully fixed and verified"
 
     echo -e "${GREEN}✓ Test marked as fixed:${NC} ${test_path#*/agenthub_main/}" | tee -a "$LOG_FILE"
 }
@@ -102,61 +165,62 @@ verify_test_fix() {
     fi
 }
 
-# Build minimal context for AI (token-efficient)
-build_minimal_context() {
+# Build token-efficient context with recent results only
+build_efficient_context() {
     local test_path="$1"
     local iteration="$2"
 
     {
-        echo "# Test Fix Request - Iteration $iteration"
-        echo "Timestamp: $(date -Iseconds)"
+        echo "# 🔧 FIX TEST: \`${test_path#*/agenthub_main/}\` (Iteration $iteration)"
         echo ""
 
-        # Include custom instructions if exists
-        if [[ -f "$INSTRUCTIONS_FILE" ]]; then
-            echo "## Instructions:"
-            cat "$INSTRUCTIONS_FILE"
+        # Recent session context (only last 3 results to save tokens)
+        echo "## 📜 Recent Results (Last 3):"
+        echo '```'
+        get_recent_results
+        echo '```'
+        echo ""
+
+        echo "## 🎯 Task: Fix this failing test"
+        echo ""
+
+        # Compact error output (last 30 lines only)
+        echo "## 🚨 Error Output:"
+        echo '```bash'
+        python -m pytest "$test_path" -xvs --tb=short 2>&1 | tail -30
+        echo '```'
+        echo ""
+
+        # Show only test file if small, or key parts if large
+        local line_count=$(wc -l < "$test_path")
+        echo "## 📄 Test File (\`${test_path}\` - $line_count lines):"
+
+        if [[ $line_count -le 50 ]]; then
+            # Small file - show complete
+            echo '```python'
+            cat "$test_path"
+            echo '```'
+        else
+            # Large file - show imports and main test functions only
+            echo '```python'
+            echo "# Imports:"
+            grep -E "^(from|import)" "$test_path" | head -10
             echo ""
-        fi
-
-        echo "## Current Task:"
-        echo "Fix the failing test: \`${test_path#*/agenthub_main/}\`"
-        echo ""
-
-        # Get test failure output (last 50 lines only to save tokens)
-        echo "## Test Failure Output:"
-        echo '```'
-        python -m pytest "$test_path" -xvs 2>&1 | tail -50
-        echo '```'
-        echo ""
-
-        # Include test file content (first 100 lines for context)
-        echo "## Test File Content (first 100 lines):"
-        echo '```python'
-        head -100 "$test_path"
-        echo '```'
-
-        if [[ $(wc -l < "$test_path") -gt 100 ]]; then
-            echo "*(File has $(wc -l < "$test_path") total lines)*"
+            echo "# Test functions:"
+            grep -E "^def test_|^class Test" "$test_path" | head -5
+            echo ""
+            echo "# Use 'Read' tool to see full file if needed"
+            echo '```'
         fi
         echo ""
 
-        # Quick progress summary (minimal)
+        # Quick project info (very compact)
         local total_failed=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
-        local fixed_count=$(python3 -c "import json; print(json.load(open('$PROGRESS_FILE')).get('fixed_count', 0))" 2>/dev/null || echo "0")
-
-        echo "## Progress:"
-        echo "- Tests remaining: $total_failed"
-        echo "- Tests fixed this session: $fixed_count"
-        echo "- Current iteration: $iteration"
+        echo "## 📊 Status: $total_failed tests remaining"
         echo ""
 
-        echo "## Action Required:"
-        echo "1. Analyze the test failure"
-        echo "2. Fix the issue in the test file"
-        echo "3. Ensure the fix follows project patterns"
+        echo "**ACTION: Please fix the test to make it pass. Use Read/Edit tools as needed.**"
         echo ""
-        echo "*Note: Focus only on fixing this specific test. Context is minimal to save tokens.*"
     } > "$CONTEXT_FILE"
 
     # Log context size
@@ -192,16 +256,31 @@ update_test_cache() {
 show_status() {
     clear
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${NC} ${GREEN}🤖 OPTIMIZED TEST FIX LOOP - Token Efficient Mode${NC}           ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC} ${GREEN}🤖 OPTIMIZED TEST FIX LOOP - Auto-Retest Mode${NC}              ${CYAN}║${NC}"
     echo -e "${CYAN}╠════════════════════════════════════════════════════════════════╣${NC}"
 
     local total_failed=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
     local total_passed=$(wc -l < "$PASSED_TESTS" 2>/dev/null || echo "0")
     local fixed_count=$(python3 -c "import json; print(json.load(open('$PROGRESS_FILE')).get('fixed_count', 0))" 2>/dev/null || echo "0")
     local iterations=$(python3 -c "import json; print(json.load(open('$PROGRESS_FILE')).get('iterations', 0))" 2>/dev/null || echo "0")
+    local cache_status=$(cache_needs_refresh)
 
     echo -e "${CYAN}║${NC} Failed Tests: ${RED}$total_failed${NC}    Fixed This Session: ${GREEN}$fixed_count${NC}"
     echo -e "${CYAN}║${NC} Total Passed: ${GREEN}$total_passed${NC}    Iterations: $iterations"
+
+    # Show cache status
+    case "$cache_status" in
+        "empty")
+            echo -e "${CYAN}║${NC} Cache Status: ${YELLOW}Empty/Minimal${NC} - Will auto-refresh on next run"
+            ;;
+        "stale")
+            echo -e "${CYAN}║${NC} Cache Status: ${YELLOW}Stale${NC} - Will refresh soon"
+            ;;
+        "fresh")
+            echo -e "${CYAN}║${NC} Cache Status: ${GREEN}Fresh${NC} - Using cached results"
+            ;;
+    esac
+
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
@@ -225,8 +304,18 @@ main() {
     echo "Starting Optimized Test Fix Loop - $(date)" | tee "$LOG_FILE"
     init_progress
 
-    # Initial cache update - use smart mode for comprehensive scan
-    update_test_cache "smart"
+    # Initial cache check and intelligent refresh
+    local failed_count=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
+    local passed_count=$(wc -l < "$PASSED_TESTS" 2>/dev/null || echo "0")
+    local total_cache=$((failed_count + passed_count))
+
+    if [[ $total_cache -lt 5 ]]; then
+        echo -e "${YELLOW}📊 Cache is empty/minimal ($total_cache tests) - running full test suite to build work list${NC}" | tee -a "$LOG_FILE"
+        update_test_cache "all"
+    else
+        echo -e "${CYAN}📊 Cache has $total_cache tests ($failed_count failed, $passed_count passed) - using smart refresh${NC}" | tee -a "$LOG_FILE"
+        update_test_cache "smart"
+    fi
 
     ITERATION=0
 
@@ -240,10 +329,42 @@ main() {
         NEXT_TEST=$(get_next_failing_test)
 
         if [[ -z "$NEXT_TEST" ]]; then
-            echo -e "${GREEN}🎉 All tests are passing! No failures found.${NC}" | tee -a "$LOG_FILE"
-            echo -e "${CYAN}Running comprehensive cache refresh to check for new failures...${NC}" | tee -a "$LOG_FILE"
-            update_test_cache "smart"  # Use smart mode to discover any newly failing tests
-            echo -e "${CYAN}Waiting $DELAY_SECONDS seconds before rechecking...${NC}"
+            echo -e "${GREEN}🎉 Cache shows no failures! Validating...${NC}" | tee -a "$LOG_FILE"
+
+            # Check if cache is empty or very small - might need full refresh
+            local failed_count=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
+            local passed_count=$(wc -l < "$PASSED_TESTS" 2>/dev/null || echo "0")
+            local total_cache=$((failed_count + passed_count))
+
+            if [[ $total_cache -lt 5 ]]; then
+                echo -e "${YELLOW}⚠️  Cache is nearly empty ($total_cache tests) - running full test to renew work list${NC}" | tee -a "$LOG_FILE"
+                update_test_cache "all"
+            else
+                echo -e "${CYAN}Running smart refresh to validate cache...${NC}" | tee -a "$LOG_FILE"
+                update_test_cache "smart"
+            fi
+
+            # Check if any failures were discovered
+            NEXT_TEST=$(get_next_failing_test)
+            if [[ -n "$NEXT_TEST" ]]; then
+                echo -e "${YELLOW}📍 Refresh found failures - renewing work list and continuing...${NC}" | tee -a "$LOG_FILE"
+                continue
+            fi
+
+            # If still no failures after refresh, do periodic full validation
+            if [[ $((ITERATION % 10)) -eq 0 ]]; then
+                echo -e "${CYAN}🔍 Periodic full validation (every 10th iteration) - ensuring no hidden failures...${NC}" | tee -a "$LOG_FILE"
+                update_test_cache "all"
+
+                # Check again after full run
+                NEXT_TEST=$(get_next_failing_test)
+                if [[ -n "$NEXT_TEST" ]]; then
+                    echo -e "${YELLOW}📍 Full validation revealed hidden failures - continuing...${NC}" | tee -a "$LOG_FILE"
+                    continue
+                fi
+            fi
+
+            echo -e "${GREEN}✅ All tests genuinely passing! Waiting $DELAY_SECONDS seconds before rechecking...${NC}"
             sleep $DELAY_SECONDS
             continue
         fi
@@ -251,11 +372,11 @@ main() {
         echo -e "${YELLOW}📍 Working on test:${NC} ${NEXT_TEST#*/agenthub_main/}" | tee -a "$LOG_FILE"
         update_progress "current_test" "\"$NEXT_TEST\""
 
-        # Build minimal context (token-efficient)
-        build_minimal_context "$NEXT_TEST" "$ITERATION"
+        # Build efficient context with recent results only
+        build_efficient_context "$NEXT_TEST" "$ITERATION"
 
-        # Send to Claude with minimal context
-        echo -e "${CYAN}🤖 Sending to Claude for analysis...${NC}" | tee -a "$LOG_FILE"
+        # Send to Claude with token-efficient context + recent results
+        echo -e "${CYAN}🤖 Sending to Claude for test fixing (with recent context)...${NC}" | tee -a "$LOG_FILE"
 
         cat "$CONTEXT_FILE" | claude -p --dangerously-skip-permissions 2>&1 | tee -a "$LOG_FILE"
 
@@ -266,8 +387,34 @@ main() {
         if verify_test_fix "$NEXT_TEST"; then
             mark_test_fixed "$NEXT_TEST"
             echo -e "${GREEN}✅ Test successfully fixed!${NC}" | tee -a "$LOG_FILE"
+
+            # CRITICAL: Check if the fix broke other tests
+            echo -e "${CYAN}🔍 Checking if fix introduced new failures...${NC}" | tee -a "$LOG_FILE"
+            local old_failed_count=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
+
+            # Run comprehensive test to detect newly broken tests
+            update_test_cache "smart"
+
+            local new_failed_count=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
+            local failed_diff=$((new_failed_count - old_failed_count + 1))  # +1 because we just fixed one
+
+            if [[ $failed_diff -gt 0 ]]; then
+                echo -e "${YELLOW}⚠️  Fix introduced $failed_diff new test failure(s)${NC}" | tee -a "$LOG_FILE"
+                echo -e "${CYAN}🔄 New failures detected - continuing loop to fix them${NC}" | tee -a "$LOG_FILE"
+
+                # Update progress to track new failures
+                local total_failures=$(wc -l < "$FAILED_TESTS" 2>/dev/null || echo "0")
+                update_progress "total_failures" "$total_failures"
+                echo -e "${BLUE}📊 Updated total failures: $total_failures${NC}" | tee -a "$LOG_FILE"
+            else
+                echo -e "${GREEN}✅ Fix didn't break any other tests${NC}" | tee -a "$LOG_FILE"
+            fi
         else
             echo -e "${RED}❌ Test still failing, will retry in next iteration${NC}" | tee -a "$LOG_FILE"
+
+            # Add to recent results
+            add_recent_result "$NEXT_TEST" "FAILED" "Fix attempt unsuccessful"
+
             # Move test to end of failed list for round-robin
             grep -v "^${NEXT_TEST}$" "$FAILED_TESTS" > "${FAILED_TESTS}.tmp" 2>/dev/null || true
             echo "$NEXT_TEST" >> "${FAILED_TESTS}.tmp"
@@ -278,9 +425,10 @@ main() {
         echo -e "${CYAN}⏳ Waiting $DELAY_SECONDS seconds before next test...${NC}"
         sleep $DELAY_SECONDS
 
-        # Periodically refresh cache (every 5 iterations)
-        if [[ $((ITERATION % 5)) -eq 0 ]]; then
-            update_test_cache
+        # More frequent cache refresh to catch new failures quickly
+        if [[ $((ITERATION % 3)) -eq 0 ]]; then
+            echo -e "${CYAN}🔄 Periodic cache refresh (iteration $ITERATION)...${NC}" | tee -a "$LOG_FILE"
+            update_test_cache "smart"
         fi
     done
 }

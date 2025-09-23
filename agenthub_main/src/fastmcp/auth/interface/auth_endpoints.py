@@ -706,7 +706,7 @@ async def login(request: LoginRequest):
 
                 # Issue a local JWT token for development
                 import jwt
-                from datetime import datetime, timedelta
+                from datetime import datetime, timedelta, timezone
 
                 jwt_secret = os.getenv("JWT_SECRET_KEY")
                 if jwt_secret:
@@ -715,8 +715,8 @@ async def login(request: LoginRequest):
                         "sub": f"dev-user-{hash(request.email) % 10000}",  # Consistent user ID for same email
                         "email": request.email,
                         "username": request.email.split('@')[0],
-                        "iat": datetime.utcnow(),
-                        "exp": datetime.utcnow() + timedelta(hours=24),  # 24-hour expiry for development
+                        "iat": datetime.now(timezone.utc),
+                        "exp": datetime.now(timezone.utc) + timedelta(hours=24),  # 24-hour expiry for development
                         "type": "local_dev"
                     }
 
@@ -1125,7 +1125,7 @@ async def dev_login():
 
     # Issue a local JWT token for development
     import jwt
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     jwt_secret = os.getenv("JWT_SECRET_KEY")
     if not jwt_secret:
@@ -1136,8 +1136,8 @@ async def dev_login():
         "sub": "dev-user-001",
         "email": "dev@example.com",
         "username": "dev-user",
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=24),  # 24-hour expiry for development
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24),  # 24-hour expiry for development
         "type": "local_dev"
     }
 

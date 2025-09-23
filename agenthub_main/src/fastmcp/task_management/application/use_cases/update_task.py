@@ -41,11 +41,15 @@ class UpdateTaskUseCase:
         
         if request.status is not None:
             new_status = TaskStatus(request.status)
-            task.update_status(new_status)
+            # Only update status if it's actually changing
+            if task.status != new_status:
+                task.update_status(new_status)
         
         if request.priority is not None:
             new_priority = Priority(request.priority)
-            task.update_priority(new_priority)
+            # Only update priority if it's actually changing
+            if task.priority != new_priority:
+                task.update_priority(new_priority)
         
         if request.details is not None:
             task.append_progress(request.details)

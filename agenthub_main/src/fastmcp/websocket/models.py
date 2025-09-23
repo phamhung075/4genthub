@@ -6,7 +6,7 @@ NO backward compatibility - clean v2.0 implementation only.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -164,7 +164,7 @@ class WSMessage(BaseModel):
     )
 
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Message creation timestamp (UTC)"
     )
 
@@ -207,8 +207,15 @@ class UserUpdateMessage(WSMessage):
     def __init__(self, **data):
         # Ensure user message defaults
         if 'metadata' in data:
-            data['metadata']['source'] = 'user'
-            data['metadata']['immediate'] = True
+            # Create a new metadata dict with overrides
+            if isinstance(data['metadata'], WSMetadata):
+                metadata_dict = data['metadata'].model_dump()
+            else:
+                metadata_dict = data['metadata']
+            
+            metadata_dict['source'] = 'user'
+            metadata_dict['immediate'] = True
+            data['metadata'] = WSMetadata(**metadata_dict)
         super().__init__(**data)
 
 
@@ -229,8 +236,15 @@ class AIBatchMessage(WSMessage):
     def __init__(self, **data):
         # Ensure AI batch message defaults
         if 'metadata' in data:
-            data['metadata']['source'] = 'mcp-ai'
-            data['metadata']['immediate'] = False
+            # Create a new metadata dict with overrides
+            if isinstance(data['metadata'], WSMetadata):
+                metadata_dict = data['metadata'].model_dump()
+            else:
+                metadata_dict = data['metadata']
+            
+            metadata_dict['source'] = 'mcp-ai'
+            metadata_dict['immediate'] = False
+            data['metadata'] = WSMetadata(**metadata_dict)
         super().__init__(**data)
 
 
@@ -244,7 +258,14 @@ class SystemMessage(WSMessage):
     def __init__(self, **data):
         # Ensure system message defaults
         if 'metadata' in data:
-            data['metadata']['source'] = 'system'
+            # Create a new metadata dict with overrides
+            if isinstance(data['metadata'], WSMetadata):
+                metadata_dict = data['metadata'].model_dump()
+            else:
+                metadata_dict = data['metadata']
+            
+            metadata_dict['source'] = 'system'
+            data['metadata'] = WSMetadata(**metadata_dict)
         super().__init__(**data)
 
 

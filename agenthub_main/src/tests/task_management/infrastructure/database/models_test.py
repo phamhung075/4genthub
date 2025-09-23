@@ -807,7 +807,7 @@ class TestDatabaseModels:
     
     def test_datetime_fields_auto_population(self, session):
         """Test that datetime fields are automatically populated"""
-        before_create = datetime.utcnow().replace(microsecond=0)  # Remove microseconds to match database precision
+        before_create = datetime.now(timezone.utc).replace(microsecond=0)  # Remove microseconds to match database precision
 
         project = Project(
             id=str(uuid.uuid4()),
@@ -818,7 +818,7 @@ class TestDatabaseModels:
         session.add(project)
         session.commit()
 
-        after_create = datetime.utcnow() + timedelta(seconds=2)  # Add buffer
+        after_create = datetime.now(timezone.utc) + timedelta(seconds=2)  # Add buffer
 
         retrieved = session.query(Project).filter_by(name="Datetime Test Project").first()
         assert retrieved.created_at is not None

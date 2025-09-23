@@ -8,7 +8,7 @@ import os
 from typing import List, Dict, Any
 from sqlalchemy import text, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class AutoMigrationRunner:
                 VALUES (:name, :timestamp, :success, :error)
             """), {
                 "name": migration_name,
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(timezone.utc),
                 "success": success,
                 "error": error
             })

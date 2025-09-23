@@ -2,6 +2,8 @@ import React, { useRef } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import Select from "./ui/select-simple";
 import { Task, getAvailableAgents } from "../api";
 import { X } from "lucide-react";
 
@@ -27,7 +29,11 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     description: "",
     priority: "medium",
     status: "todo",
-    assignees: [] as string[]
+    assignees: [] as string[],
+    labels: [] as string[],
+    estimated_effort: "",
+    due_date: "",
+    progress_notes: ""  // New field for progress updates
   });
   const [availableAgents, setAvailableAgents] = React.useState<string[]>([]);
   const [showAgentDropdown, setShowAgentDropdown] = React.useState(false);
@@ -67,7 +73,11 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
         description: task.description || "",
         priority: task.priority || "medium",
         status: task.status || "todo",
-        assignees: task.assignees || []
+        assignees: task.assignees || [],
+        labels: task.labels || [],
+        estimated_effort: task.estimated_effort || "",
+        due_date: task.due_date || "",
+        progress_notes: ""  // Always start empty for new progress
       });
     } else {
       // Create mode - reset to defaults
@@ -76,7 +86,11 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
         description: "",
         priority: "medium",
         status: "todo",
-        assignees: []
+        assignees: [],
+        labels: [],
+        estimated_effort: "",
+        due_date: "",
+        progress_notes: ""
       });
     }
   }, [task]);
@@ -94,7 +108,11 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
         description: task.description || "",
         priority: task.priority || "medium",
         status: task.status || "todo",
-        assignees: task.assignees || []
+        assignees: task.assignees || [],
+        labels: task.labels || [],
+        estimated_effort: task.estimated_effort || "",
+        due_date: task.due_date || "",
+        progress_notes: ""
       });
     }
     onClose();
@@ -142,11 +160,10 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
           {/* Description */}
           <div>
             <label className="text-sm font-medium mb-2 block">Description</label>
-            <textarea
-              className="w-full p-2 border border-border bg-background text-foreground rounded-md resize-vertical focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800"
+            <Textarea
               placeholder="Task description"
               value={editForm.description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
               disabled={saving}
               rows={3}
             />
@@ -155,8 +172,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
           {/* Priority */}
           <div>
             <label className="text-sm font-medium mb-2 block">Priority</label>
-            <select
-              className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800"
+            <Select
               value={editForm.priority}
               onChange={(e) => setEditForm(prev => ({ ...prev, priority: e.target.value }))}
               disabled={saving}
@@ -166,14 +182,13 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
               <option value="high">High</option>
               <option value="urgent">Urgent</option>
               <option value="critical">Critical</option>
-            </select>
+            </Select>
           </div>
 
           {/* Status */}
           <div>
             <label className="text-sm font-medium mb-2 block">Status</label>
-            <select
-              className="w-full p-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800"
+            <Select
               value={editForm.status}
               onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
               disabled={saving}
@@ -186,8 +201,83 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
               <option value="blocked">Blocked</option>
               <option value="cancelled">Cancelled</option>
               <option value="archived">Archived</option>
-            </select>
+            </Select>
           </div>
+
+          {/* Estimated Effort */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Estimated Effort</label>
+            <Input
+              placeholder="e.g., 2 hours, 3 days, 1 week"
+              value={editForm.estimated_effort}
+              onChange={(e) => setEditForm(prev => ({ ...prev, estimated_effort: e.target.value }))}
+              disabled={saving}
+            />
+          </div>
+
+          {/* Due Date */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Due Date</label>
+            <Input
+              type="date"
+              value={editForm.due_date}
+              onChange={(e) => setEditForm(prev => ({ ...prev, due_date: e.target.value }))}
+              disabled={saving}
+            />
+          </div>
+
+          {/* Labels */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Labels</label>
+            <Input
+              placeholder="Enter labels separated by commas (e.g., frontend, bug, urgent)"
+              value={editForm.labels.join(", ")}
+              onChange={(e) => {
+                const labels = e.target.value
+                  .split(",")
+                  .map(label => label.trim())
+                  .filter(label => label.length > 0);
+                setEditForm(prev => ({ ...prev, labels }));
+              }}
+              disabled={saving}
+            />
+            {editForm.labels.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {editForm.labels.map((label, index) => (
+                  <span
+                    key={index}
+                    className="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Progress Notes - Only show in edit mode */}
+          {task && (
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Add Progress Update
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                  (Optional - add notes about work done)
+                </span>
+              </label>
+              <Textarea
+                placeholder="E.g., Completed authentication module, fixed login bug, added user validation..."
+                value={editForm.progress_notes}
+                onChange={(e) => setEditForm(prev => ({ ...prev, progress_notes: e.target.value }))}
+                disabled={saving}
+                rows={3}
+              />
+              {editForm.progress_notes && (
+                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {editForm.progress_notes.length} characters
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Agent Assignment */}
           <div>

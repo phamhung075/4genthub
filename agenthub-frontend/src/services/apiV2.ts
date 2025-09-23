@@ -100,6 +100,43 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
       throw notFoundError;
     }
 
+    // Handle 422 Unprocessable Entity (validation errors)
+    if (response.status === 422) {
+      // Try to extract validation details from the response
+      let validationDetails = 'Validation failed';
+
+      if (error.detail) {
+        // If detail is an array of validation errors (FastAPI format)
+        if (Array.isArray(error.detail)) {
+          const errors = error.detail.map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : 'field';
+            return `${field}: ${err.msg}`;
+          }).join(', ');
+          validationDetails = `Validation errors: ${errors}`;
+        } else if (typeof error.detail === 'string') {
+          validationDetails = error.detail;
+        } else if (typeof error.detail === 'object') {
+          // Handle object-based error details
+          validationDetails = JSON.stringify(error.detail);
+        }
+      }
+
+      const validationError = new Error(validationDetails) as any;
+      validationError.name = 'ValidationError';
+      validationError.status = 422;
+      validationError.detail = error.detail;
+      validationError.userFriendly = 'Please check your input and try again';
+
+      logger.error('V2 API: Validation error', {
+        status: 422,
+        detail: error.detail,
+        url: originalUrl || response.url,
+        message: validationDetails
+      });
+
+      throw validationError;
+    }
+
     throw new Error(error.detail || `Request failed with status ${response.status}`);
   }
   
@@ -212,7 +249,7 @@ export const taskApiV2 = {
     status?: string;
     priority?: string;
     git_branch_id?: string;
-    assignees?: string; // Add assignees field
+    assignees?: string | string[]; // Can be string or array
   }) => {
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/`, {
       method: 'POST',
@@ -229,11 +266,40 @@ export const taskApiV2 = {
     status?: string;
     priority?: string;
     progress_percentage?: number;
+    assignees?: string[];
+    labels?: string[];
+    estimated_effort?: string;
+    due_date?: string;
+    dependencies?: string[];
+    context_data?: any;
+    details?: string;  // Progress notes field
   }) => {
+    console.log('=== API V2 UPDATE TASK ===');
+    console.log('Task ID:', taskId);
+    console.log('Updates:', updates);
+
+    // Include task_id in the request body as required by backend
+    const requestBody = {
+      task_id: taskId,
+      ...updates
+    };
+
+    console.log('=== Progress API 1 ===');
+    console.log('Request body to backend:', JSON.stringify(requestBody, null, 2));
+    console.log('URL:', `${API_BASE_URL}/api/v2/tasks/${taskId}`);
+
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(updates),
+      body: JSON.stringify(requestBody),
+    }).then(response => {
+      console.log('=== Progress API 2 ===');
+      console.log('Response from backend:', response);
+      return response;
+    }).catch(error => {
+      console.error('=== API UPDATE ERROR ===');
+      console.error('Error:', error);
+      throw error;
     });
   },
 

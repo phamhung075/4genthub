@@ -666,6 +666,18 @@ class MockFastAPI:
         def decorator(func):
             return func
         return decorator
+    
+    def websocket(self, path: str):
+        """Mock decorator for WebSocket endpoints"""
+        def decorator(func):
+            return func
+        return decorator
+    
+    def on_event(self, event_type: str):
+        """Mock decorator for event handlers"""
+        def decorator(func):
+            return func
+        return decorator
 
 # Create fastapi module mock
 mock_fastapi = type(sys)('fastapi')
@@ -1060,7 +1072,8 @@ def set_mcp_db_path_for_tests(request):
         # Set test database environment variables
         # Use SQLite for tests to avoid needing PostgreSQL
         os.environ["DATABASE_TYPE"] = "sqlite"
-        os.environ["MCP_DB_PATH"] = "/tmp/agenthub_test.db"
+        # Use in-memory SQLite to avoid disk I/O issues in test environment
+        os.environ["MCP_DB_PATH"] = ":memory:"
         
         # Display what database is being used
         db_type = os.environ.get('DATABASE_TYPE', 'not set')
@@ -1100,10 +1113,11 @@ def set_mcp_db_path_for_tests(request):
         elif "TEST_DATABASE_URL" in os.environ:
             del os.environ["TEST_DATABASE_URL"]
             
-        # Clean up test database file
-        if os.path.exists("/tmp/agenthub_test.db"):
+        # Clean up test database file (if not in-memory)
+        db_path = os.environ.get("MCP_DB_PATH", "")
+        if db_path and db_path != ":memory:" and os.path.exists(db_path):
             try:
-                os.remove("/tmp/agenthub_test.db")
+                os.remove(db_path)
             except:
                 pass
 

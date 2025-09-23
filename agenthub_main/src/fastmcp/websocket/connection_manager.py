@@ -13,7 +13,7 @@ import json
 import logging
 import uuid
 from typing import Dict, List, Optional, Set, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -326,7 +326,7 @@ class ConnectionManager:
             sync_data = {
                 "type": "initial_sync",
                 "user_id": user_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "message": "WebSocket v2.0 connection established"
             }
 

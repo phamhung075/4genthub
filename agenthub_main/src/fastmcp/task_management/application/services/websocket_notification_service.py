@@ -5,7 +5,7 @@ WebSocket Notification Service for broadcasting data changes to connected client
 import asyncio
 import logging
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import time
 
@@ -260,7 +260,7 @@ class WebSocketNotificationService:
                 metadata["git_branch_id"] = git_branch_id
             if project_id:
                 metadata["project_id"] = project_id
-            metadata["timestamp"] = datetime.utcnow().isoformat()
+            metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
 
             # Enhanced payload with titles and parent context
             metadata["task_title"] = task_context["task_title"]
@@ -304,7 +304,7 @@ class WebSocketNotificationService:
                     metadata["git_branch_id"] = git_branch_id
                 if project_id:
                     metadata["project_id"] = project_id
-                metadata["timestamp"] = datetime.utcnow().isoformat()
+                metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
 
                 # Enhanced payload with titles and parent context
                 metadata["task_title"] = task_context["task_title"]
@@ -360,7 +360,7 @@ class WebSocketNotificationService:
 
             metadata = {
                 "parent_task_id": task_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 # Enhanced payload with titles and parent context
                 "subtask_title": subtask_context["subtask_title"],
                 "parent_task_title": subtask_context["parent_task_title"]
@@ -402,7 +402,7 @@ class WebSocketNotificationService:
             from fastmcp.server.routes.websocket_routes import broadcast_data_change
 
             metadata = {
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
 
             await broadcast_data_change(
@@ -447,7 +447,7 @@ class WebSocketNotificationService:
 
             metadata = {
                 "project_id": project_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 # Enhanced payload with branch title
                 "branch_title": branch_context["branch_title"]
             }
@@ -494,7 +494,7 @@ class WebSocketNotificationService:
             if metadata is None:
                 metadata = {}
             metadata["context_level"] = level
-            metadata["timestamp"] = datetime.utcnow().isoformat()
+            metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
 
             await broadcast_data_change(
                 event_type=event_type,
@@ -546,7 +546,7 @@ class WebSocketNotificationService:
             metadata["git_branch_id"] = git_branch_id
         if project_id:
             metadata["project_id"] = project_id
-        metadata["timestamp"] = datetime.utcnow().isoformat()
+        metadata["timestamp"] = datetime.now(timezone.utc).isoformat()
 
         # Enhanced payload with titles and parent context
         metadata["task_title"] = task_context["task_title"]
@@ -674,7 +674,7 @@ class WebSocketNotificationService:
         # Prepare enhanced metadata with branch title
         metadata = {
             "project_id": project_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             # Enhanced payload with branch title
             "branch_title": branch_context["branch_title"]
         }
@@ -784,7 +784,7 @@ class WebSocketNotificationService:
         # Prepare enhanced metadata with titles and parent context
         metadata = {
             "parent_task_id": task_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             # Enhanced payload with titles and parent context
             "subtask_title": subtask_context["subtask_title"],
             "parent_task_title": subtask_context["parent_task_title"]

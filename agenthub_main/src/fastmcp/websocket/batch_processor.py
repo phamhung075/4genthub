@@ -10,7 +10,7 @@ NO backward compatibility - clean v2.0 implementation only.
 import asyncio
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Set, Any, TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,7 +128,7 @@ class BatchProcessor:
             if not self.current_batch:
                 return
 
-            batch_start = datetime.utcnow()
+            batch_start = datetime.now(timezone.utc)
             batch_size = len(self.current_batch)
 
             logger.debug(f"Processing batch of {batch_size} AI messages")
@@ -162,12 +162,12 @@ class BatchProcessor:
             List of messages to process in this batch
         """
         messages = []
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         # Collect messages until batch size or timeout
         while (
             len(messages) < self.max_batch_size and
-            (datetime.utcnow() - start_time).total_seconds() < self.max_batch_timeout
+            (datetime.now(timezone.utc) - start_time).total_seconds() < self.max_batch_timeout
         ):
             try:
                 # Non-blocking queue get with timeout

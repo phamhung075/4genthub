@@ -176,20 +176,52 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
         status: task.status,
         priority: task.priority,
         git_branch_id: task.git_branch_id,
-        assignees: Array.isArray(task.assignees) ? task.assignees.join(',') : task.assignees // Convert array to comma-separated string
+        assignees: task.assignees || [] // Pass as array, backend expects List[str]
     }) as TaskResponse;
     return response.task || response;
 };
 
 export const updateTask = async (task_id: string, updates: Partial<Task>): Promise<Task> => {
-    const response = await taskApiV2.updateTask(task_id, {
-        title: updates.title,
-        description: updates.description,
-        status: updates.status,
-        priority: updates.priority,
-        progress_percentage: updates.progress_percentage
-    }) as TaskResponse;
-    return response.task || response;
+    console.log('=== UPDATE TASK DEBUG ===');
+    console.log('Task ID:', task_id);
+    console.log('Updates received:', updates);
+
+    // Filter out undefined values and only send defined fields
+    const updatePayload: any = {};
+    if (updates.title !== undefined) updatePayload.title = updates.title;
+    if (updates.description !== undefined) updatePayload.description = updates.description;
+    if (updates.status !== undefined) updatePayload.status = updates.status;
+    if (updates.priority !== undefined) updatePayload.priority = updates.priority;
+    if (updates.progress_percentage !== undefined) updatePayload.progress_percentage = updates.progress_percentage;
+    if (updates.assignees !== undefined) updatePayload.assignees = updates.assignees;
+    if (updates.labels !== undefined) updatePayload.labels = updates.labels;
+    if (updates.estimated_effort !== undefined) updatePayload.estimated_effort = updates.estimated_effort;
+    if (updates.due_date !== undefined) updatePayload.due_date = updates.due_date;
+    if (updates.dependencies !== undefined) updatePayload.dependencies = updates.dependencies;
+    if (updates.context_data !== undefined) updatePayload.context_data = updates.context_data;
+    // Add progress_notes - maps to 'details' field in backend
+    if ((updates as any).progress_notes !== undefined) updatePayload.details = (updates as any).progress_notes;
+
+    console.log('=== Progress 1 ===');
+    console.log('Sending update payload to backend:', updatePayload);
+
+    try {
+        const response = await taskApiV2.updateTask(task_id, updatePayload) as TaskResponse;
+
+        console.log('=== Progress 2 ===');
+        console.log('Response from backend:', response);
+
+        const result = response.task || response;
+
+        console.log('=== Progress 3 ===');
+        console.log('Returning updated task:', result);
+
+        return result;
+    } catch (error) {
+        console.error('=== UPDATE ERROR ===');
+        console.error('Error updating task:', error);
+        throw error;
+    }
 };
 
 export const deleteTask = async (task_id: string): Promise<void> => {
