@@ -28,6 +28,7 @@ from ..base_orm_repository import BaseORMRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
+from ...performance.task_performance_optimizer import get_performance_optimizer
 
 logger = logging.getLogger(__name__)
 
@@ -51,16 +52,18 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
     """
     
     def __init__(self, session=None, git_branch_id: str | None = None, project_id: str | None = None,
-                 git_branch_name: str | None = None, user_id: str | None = None):
+                 git_branch_name: str | None = None, user_id: str | None = None,
+                 performance_mode: bool = False):
         """
-        Initialize ORM task repository with user isolation.
-        
+        Initialize ORM task repository with user isolation and performance optimization support.
+
         Args:
             session: Database session
             git_branch_id: Git branch ID for filtering tasks
             project_id: Project ID for context
             git_branch_name: Git branch name for context
             user_id: User ID for data isolation
+            performance_mode: Enable performance optimizations (caching, selectinload queries)
         """
         # Initialize base classes properly
         from ...database.database_config import get_session
@@ -77,9 +80,16 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
         self.git_branch_id = git_branch_id
         self.project_id = project_id
         self.git_branch_name = git_branch_name
-        
+        self.performance_mode = performance_mode
+
         # Initialize field selector for selective queries
         self._field_selector = ContextFieldSelector()
+
+        # Initialize performance optimizer if performance mode is enabled
+        if self.performance_mode:
+            self.optimizer = get_performance_optimizer()
+        else:
+            self.optimizer = None
     
     def _load_task_with_relationships(self, session, task_id: str) -> Task | None:
         """
@@ -343,7 +353,12 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     user_id=self.user_id,
                     propagate=False
                 )
-                
+
+                # Invalidate performance cache if in performance mode
+                if self.performance_mode:
+                    self.invalidate_cache('list_tasks')
+                    self.invalidate_cache('task_count')
+
                 return self._model_to_entity(task)
                 
         except Exception as e:
@@ -498,7 +513,12 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     user_id=self.user_id,
                     propagate=False
                 )
-                
+
+                # Invalidate performance cache if in performance mode
+                if self.performance_mode:
+                    self.invalidate_cache('list_tasks')
+                    self.invalidate_cache('search_tasks')
+
                 return self._model_to_entity(task)
                 
         except Exception as e:
@@ -587,6 +607,12 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     propagate=False
                 )
 
+                # Invalidate performance cache if in performance mode
+                if self.performance_mode:
+                    self.invalidate_cache('list_tasks')
+                    self.invalidate_cache('task_count')
+                    self.invalidate_cache('search_tasks')
+
                 # CRITICAL FIX: Refresh materialized views after task deletion
                 # This ensures the summary views show accurate task counts immediately
                 try:
@@ -619,15 +645,42 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
     
     def list_tasks(self, status: str | None = None, priority: str | None = None,
                   assignee_id: str | None = None, limit: int = 100,
-                  offset: int = 0) -> list[TaskEntity]:
-        """List tasks with filters and user isolation"""
-        with self.get_db_session() as session:
-            query = session.query(Task).options(
-                joinedload(Task.assignees),
-                joinedload(Task.labels).joinedload(TaskLabel.label),
-                joinedload(Task.subtasks),
-                joinedload(Task.dependencies)
+                  offset: int = 0, use_cache: bool = True) -> list[TaskEntity]:
+        """List tasks with filters, user isolation, and optional performance optimization"""
+
+        # Performance optimization: check cache if enabled
+        if self.performance_mode and self.optimizer and use_cache:
+            cache_key = self.optimizer.get_cache_key(
+                'list_tasks',
+                git_branch_id=self.git_branch_id,
+                status=status,
+                priority=priority,
+                assignee_id=assignee_id,
+                limit=limit,
+                offset=offset
             )
+
+            cached_result = self.optimizer.get_from_cache(cache_key)
+            if cached_result is not None:
+                logger.info(f"Returning cached task list (key: {cache_key})")
+                return cached_result
+
+        with self.get_db_session() as session:
+            # Use selectinload for better performance when in performance mode
+            if self.performance_mode:
+                query = session.query(Task).options(
+                    selectinload(Task.assignees),
+                    selectinload(Task.labels).selectinload(TaskLabel.label),
+                    selectinload(Task.subtasks),
+                    selectinload(Task.dependencies)
+                )
+            else:
+                query = session.query(Task).options(
+                    joinedload(Task.assignees),
+                    joinedload(Task.labels).joinedload(TaskLabel.label),
+                    joinedload(Task.subtasks),
+                    joinedload(Task.dependencies)
+                )
             
             # Apply user filter for data isolation
             query = self.apply_user_filter(query)
@@ -646,20 +699,40 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             
             # Filter by assignee if specified
             if assignee_id:
-                query = query.join(TaskAssignee).filter(
-                    TaskAssignee.assignee_id == assignee_id
-                )
-            
+                if self.performance_mode:
+                    # Use exists subquery for better performance
+                    query = query.filter(
+                        Task.assignees.any(TaskAssignee.assignee_id == assignee_id)
+                    )
+                else:
+                    query = query.join(TaskAssignee).filter(
+                        TaskAssignee.assignee_id == assignee_id
+                    )
+
             # Apply ordering and pagination
             query = query.order_by(desc(Task.created_at))
             query = query.offset(offset).limit(limit)
-            
+
+            # Apply query optimization if performance mode is enabled
+            if self.performance_mode and self.optimizer:
+                query = self.optimizer.optimize_task_query(session, query, {
+                    'status': status,
+                    'priority': priority,
+                    'assignee_id': assignee_id
+                })
+
             tasks = query.all()
-            
+            result = [self._model_to_entity(task) for task in tasks]
+
+            # Cache the result if performance mode is enabled
+            if self.performance_mode and self.optimizer and use_cache:
+                self.optimizer.set_cache(cache_key, result)
+                logger.info(f"Cached task list (key: {cache_key})")
+
             # Log access for audit
             self.log_access('list', 'task')
-            
-            return [self._model_to_entity(task) for task in tasks]
+
+            return result
     
     def list_tasks_optimized(self, status: str | None = None, priority: str | None = None,
                             assignee_id: str | None = None, limit: int = 20,
@@ -755,20 +828,45 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             tasks = query.all()
             return [self._model_to_entity(task) for task in tasks]
     
-    def get_task_count(self, status: str | None = None) -> int:
-        """Get count of tasks with user isolation"""
+    def get_task_count(self, status: str | None = None, use_cache: bool = True) -> int:
+        """Get count of tasks with user isolation and optional performance optimization"""
+
+        # Performance optimization: check cache if enabled
+        if self.performance_mode and self.optimizer and use_cache:
+            cache_key = self.optimizer.get_cache_key(
+                'task_count',
+                git_branch_id=self.git_branch_id,
+                status=status
+            )
+
+            cached_result = self.optimizer.get_from_cache(cache_key)
+            if cached_result is not None:
+                logger.info(f"Returning cached task count (key: {cache_key})")
+                return cached_result
+
         with self.get_db_session() as session:
-            query = session.query(Task)
-            
+            if self.performance_mode:
+                # Use optimized count query for performance mode
+                query = session.query(func.count(Task.id))
+            else:
+                query = session.query(Task)
+
             # Apply user filter for data isolation (CRITICAL)
             query = self.apply_user_filter(query)
-            
+
             if self.git_branch_id:
                 query = query.filter(Task.git_branch_id == self.git_branch_id)
             if status:
                 query = query.filter(Task.status == status)
-            
-            return query.count()
+
+            count = query.scalar() if self.performance_mode else query.count()
+
+            # Cache the result if performance mode is enabled
+            if self.performance_mode and self.optimizer and use_cache:
+                self.optimizer.set_cache(cache_key, count)
+                logger.info(f"Cached task count (key: {cache_key})")
+
+            return count
     
     def get_task_count_optimized(self, status: str | None = None, priority: str | None = None) -> int:
         """Optimized count query using direct SQL with user isolation"""
@@ -880,25 +978,39 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             try:
                 results = query.all()
                 
-                # Get labels separately (more efficient than join for this use case)
+                # Get labels and assignees separately (more efficient than join for this use case)
                 task_ids = [r.id for r in results]
                 labels_by_task = {}
-                
+                assignees_by_task = {}
+
                 if task_ids:
+                    # Get labels
                     labels_query = session.query(
                         TaskLabel.task_id,
                         Label.name
                     ).join(Label).filter(TaskLabel.task_id.in_(task_ids))
-                    
+
                     for task_id, label_name in labels_query:
                         if task_id not in labels_by_task:
                             labels_by_task[task_id] = []
                         labels_by_task[task_id].append(label_name)
-                
+
+                    # Get assignees if performance mode is enabled (enhanced feature from optimized repo)
+                    if self.performance_mode:
+                        assignees_query = session.query(
+                            TaskAssignee.task_id,
+                            TaskAssignee.assignee_id
+                        ).filter(TaskAssignee.task_id.in_(task_ids))
+
+                        for task_id, assignee_id in assignees_query:
+                            if task_id not in assignees_by_task:
+                                assignees_by_task[task_id] = []
+                            assignees_by_task[task_id].append(assignee_id)
+
                 # Build minimal response
                 minimal_tasks = []
                 for r in results:
-                    minimal_tasks.append({
+                    task_data = {
                         'id': r.id,
                         'title': r.title,
                         'status': r.status,
@@ -909,7 +1021,13 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                         'due_date': r.due_date,
                         'updated_at': r.updated_at.isoformat() if r.updated_at else None,
                         'git_branch_id': r.git_branch_id
-                    })
+                    }
+
+                    # Add assignees array if performance mode is enabled (enhanced feature)
+                    if self.performance_mode:
+                        task_data['assignees'] = assignees_by_task.get(r.id, [])
+
+                    minimal_tasks.append(task_data)
                 
                 # Log access for audit
                 self.log_access('list_minimal', 'task')
@@ -922,7 +1040,22 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                 return []
     
     def search_tasks(self, query: str, limit: int = 50) -> list[TaskEntity]:
-        """Search tasks by title, description, and labels with multi-word support and user isolation"""
+        """Search tasks by title, description, and labels with multi-word support, user isolation, and optional caching"""
+
+        # Performance optimization: check cache if enabled
+        if self.performance_mode and self.optimizer:
+            cache_key = self.optimizer.get_cache_key(
+                'search_tasks',
+                git_branch_id=self.git_branch_id,
+                query=query,
+                limit=limit
+            )
+
+            cached_result = self.optimizer.get_from_cache(cache_key)
+            if cached_result is not None:
+                logger.info(f"Returning cached search results (key: {cache_key})")
+                return cached_result
+
         with self.get_db_session() as session:
             # Import Label model for label search
             from ...database.models import Label
@@ -973,11 +1106,18 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             tasks = base_query.filter(
                 and_(*filters)
             ).order_by(desc(Task.created_at)).limit(limit).all()
-            
+
+            result = [self._model_to_entity(task) for task in tasks]
+
+            # Cache the result if performance mode is enabled
+            if self.performance_mode and self.optimizer:
+                self.optimizer.set_cache(cache_key, result)
+                logger.info(f"Cached search results (key: {cache_key})")
+
             # Log access for audit
             self.log_access('search', 'task')
-            
-            return [self._model_to_entity(task) for task in tasks]
+
+            return result
     
     def get_tasks_by_assignee(self, assignee_id: str) -> list[TaskEntity]:
         """Get all tasks assigned to a specific user"""
@@ -1666,3 +1806,27 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
             Dictionary with estimated savings percentages
         """
         return self._field_selector.estimate_savings("task", field_set)
+
+    def invalidate_cache(self, operation: str = None) -> None:
+        """
+        Invalidate cache entries when in performance mode
+
+        Args:
+            operation: Optional operation to invalidate (None = all)
+        """
+        if not self.performance_mode or not self.optimizer:
+            return
+
+        if operation:
+            # Invalidate specific operation cache
+            keys_to_remove = [
+                key for key in self.optimizer._cache.keys()
+                if operation in key
+            ]
+            for key in keys_to_remove:
+                del self.optimizer._cache[key]
+            logger.info(f"Invalidated {len(keys_to_remove)} cache entries for operation: {operation}")
+        else:
+            # Clear all cache
+            self.optimizer._cache.clear()
+            logger.info("Cleared all cache entries")

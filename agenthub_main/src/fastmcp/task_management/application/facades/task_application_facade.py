@@ -724,14 +724,15 @@ class TaskApplicationFacade:
             from ...infrastructure.performance.performance_config import PerformanceConfig
             
             if PerformanceConfig.is_performance_mode() and minimal:
-                # Use OptimizedTaskRepository directly with git_branch_id for proper filtering
-                from ...infrastructure.repositories.orm.optimized_task_repository import OptimizedTaskRepository
-                
-                # Create optimized repository with git_branch_id for proper filtering
-                optimized_repo = OptimizedTaskRepository(
-                    git_branch_id=request.git_branch_id if hasattr(request, 'git_branch_id') else None
+                # Use enhanced main repository with performance mode enabled
+                from ...infrastructure.repositories.orm.task_repository import ORMTaskRepository
+
+                # Create repository with performance mode enabled for optimization
+                optimized_repo = ORMTaskRepository(
+                    git_branch_id=request.git_branch_id if hasattr(request, 'git_branch_id') else None,
+                    performance_mode=True  # Enable performance optimizations
                 )
-                
+
                 # Use minimal list method for best performance
                 tasks_list = optimized_repo.list_tasks_minimal(
                     status=request.status if hasattr(request, 'status') else None,

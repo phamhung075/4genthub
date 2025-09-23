@@ -1,6 +1,12 @@
 
 # 🚨 ABSOLUTE PRIORITY: NO COMPATIBILITY CODE ALLOWED 🚨
 
+✅ Clean Code: Eliminate duplication  
+✅ DRY: Reuse code, avoid repetition  
+✅ Single Source of Truth: Define each entity in only one place  
+✅ Performance: All optimizations maintained (performance_mode)  
+✅ Data Consistency: UI displays identical counts everywhere
+
 ## ⛔ CRITICAL RULE #1: CLEAN CODE ONLY - NO EXCEPTIONS
 
 ### YOU MUST NEVER ADD:

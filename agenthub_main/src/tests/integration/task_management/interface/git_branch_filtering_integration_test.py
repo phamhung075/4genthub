@@ -24,7 +24,7 @@ from fastmcp.task_management.application.dtos.task.list_tasks_request import Lis
 from fastmcp.task_management.application.factories.task_facade_factory import TaskFacadeFactory
 from fastmcp.task_management.infrastructure.repositories.task_repository_factory import TaskRepositoryFactory
 from fastmcp.task_management.infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
-from fastmcp.task_management.infrastructure.repositories.orm.optimized_task_repository import OptimizedTaskRepository
+from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -308,10 +308,10 @@ class TestGitBranchFilteringIntegration:
         logger.info("✅ Unfiltered listing test passed")
     
     def test_optimized_repository_direct_filtering(self):
-        """Test the optimized repository directly to ensure it filters correctly."""
-        # Create optimized repository instances for each branch
-        repo_a = OptimizedTaskRepository(git_branch_id=self.branch_a_id)
-        repo_b = OptimizedTaskRepository(git_branch_id=self.branch_b_id)
+        """Test the repository with performance mode enabled directly to ensure it filters correctly."""
+        # Create repository instances with performance mode enabled for each branch
+        repo_a = ORMTaskRepository(git_branch_id=self.branch_a_id, performance_mode=True)
+        repo_b = ORMTaskRepository(git_branch_id=self.branch_b_id, performance_mode=True)
         
         # Test branch A repository
         tasks_a = repo_a.list_tasks_minimal(limit=50)
@@ -337,8 +337,8 @@ class TestGitBranchFilteringIntegration:
     
     def test_optimized_repository_parameter_override(self):
         """Test that the git_branch_id parameter overrides repository's git_branch_id."""
-        # Create repository for branch A
-        repo = OptimizedTaskRepository(git_branch_id=self.branch_a_id)
+        # Create repository for branch A with performance mode
+        repo = ORMTaskRepository(git_branch_id=self.branch_a_id, performance_mode=True)
         
         # Use parameter to filter by branch B (should override repository's branch A setting)
         tasks = repo.list_tasks_minimal(git_branch_id=self.branch_b_id, limit=50)
