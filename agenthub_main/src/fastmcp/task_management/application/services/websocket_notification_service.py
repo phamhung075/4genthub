@@ -516,6 +516,8 @@ class WebSocketNotificationService:
     def sync_broadcast_task_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_task_event - tries direct WebSocket first, then HTTP fallback"""
         logger.info(f"🔔 sync_broadcast_task_event called from MCP server")
+        print(f"🚀 BACKEND DELETE DEBUG: sync_broadcast_task_event called")
+        print(f"🚀 BACKEND DELETE DEBUG: This is EVENT 1 of 2 - TASK DELETION")
 
         # Extract arguments
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')
@@ -660,6 +662,8 @@ class WebSocketNotificationService:
     def sync_broadcast_branch_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_branch_event - tries direct WebSocket first, then HTTP fallback"""
         logger.info(f"🔔 sync_broadcast_branch_event called from MCP server")
+        print(f"🚀 BACKEND DELETE DEBUG: sync_broadcast_branch_event called")
+        print(f"🚀 BACKEND DELETE DEBUG: This is EVENT 2 of 2 - BRANCH UPDATE")
 
         # Extract arguments
         event_type = kwargs.get('event_type', args[0] if args else 'unknown')

@@ -460,7 +460,7 @@ class GitBranchApplicationFacade:
                             "name": tree.get("name"),
                             "description": tree.get("description", ""),
                             "created_at": tree.get("created_at"),
-                            "task_count": tree.get("task_count", 0),
+                            "total_tasks": tree.get("total_tasks", 0),
                             "completed_tasks": tree.get("completed_tasks", 0),
                             "progress": tree.get("progress", 0.0)
                         })
@@ -488,7 +488,7 @@ class GitBranchApplicationFacade:
                             "name": tree.get("name"),
                             "description": tree.get("description", ""),
                             "created_at": tree.get("created_at"),
-                            "task_count": tree.get("task_count", 0),
+                            "total_tasks": tree.get("total_tasks", 0),
                             "completed_tasks": tree.get("completed_tasks", 0),
                             "progress": tree.get("progress", 0.0)
                         })
@@ -630,47 +630,53 @@ class GitBranchApplicationFacade:
                 project_id=project_id,
                 user_id=self._user_id
             )
-            # Use repository method to get tasks for branch
-            task_objs = task_repo.find_by_branch(git_branch_id) if hasattr(task_repo, 'find_by_branch') else []
+            # Use repository method to get tasks for branch - FIXED: Use correct method name
+            task_objs = task_repo.get_tasks_by_git_branch_id(git_branch_id) if hasattr(task_repo, 'get_tasks_by_git_branch_id') else []
             
-            # Convert to list of dicts for processing
-            tasks = [{
-                'id': str(task.id),
-                'status': task.status,
-                'updated_at': task.updated_at,
-                'user_id': task.user_id
-            } for task in task_objs] if task_objs else []
+            # get_tasks_by_git_branch_id already returns dicts, no conversion needed
+            tasks = task_objs if isinstance(task_objs, list) else []
+
+            if not tasks:
+                logger.warning(f"No tasks found for git branch {git_branch_id}")
+            else:
+                logger.info(f"Found {len(tasks)} tasks for git branch {git_branch_id}")
             
-            # The repository method returns a list directly
-            if not isinstance(tasks, list):
-                logger.warning(f"Unexpected tasks format for git branch {git_branch_id}")
-                tasks = []
-            
-            # Debug: Log task formats
-            logger.info(f"Tasks retrieved: {len(tasks)} tasks")
-            for i, task in enumerate(tasks[:3]):  # Log first 3 tasks for debugging
-                logger.info(f"Task {i}: type={type(task)}, hasattr get={hasattr(task, 'get')}, hasattr status={hasattr(task, 'status')}")
-                if hasattr(task, 'keys'):
-                    logger.info(f"Task {i} keys: {list(task.keys())}")
-                elif hasattr(task, '__dict__'):
-                    logger.info(f"Task {i} attributes: {list(task.__dict__.keys())}")
-                else:
-                    logger.info(f"Task {i} content: {task}")
-            
-            # Calculate statistics
-            total_tasks = len(tasks)
-            
-            # Safe status extraction - handle both dict and object formats
+            # ✅ CRITICAL FIX: Use denormalized count fields from database triggers
+            # Get branch data to access task_count and completed_task_count fields
+            git_branch_repo = repo_service.get_git_branch_repository(
+                project_id=project_id,
+                user_id=self._user_id
+            )
+
+            # Get the branch to access denormalized count fields
+            import asyncio
+            try:
+                branch = asyncio.run(git_branch_repo.find_by_id(git_branch_id))
+            except RuntimeError:
+                try:
+                    loop = asyncio.get_event_loop()
+                    branch = loop.run_until_complete(git_branch_repo.find_by_id(git_branch_id))
+                except Exception:
+                    branch = None
+
+            if not branch:
+                logger.warning(f"Branch {git_branch_id} not found")
+                return {
+                    "success": False,
+                    "error": f"Branch {git_branch_id} not found",
+                    "error_code": "BRANCH_NOT_FOUND"
+                }
+
+            # Use denormalized count fields (maintained by database triggers)
+            total_tasks = getattr(branch, 'task_count', 0) or 0
+
+            # Extract status from dictionary format (get_tasks_by_git_branch_id returns dicts)
             def get_task_status(task):
-                if hasattr(task, 'get'):  # Dictionary
-                    return task.get("status")
-                elif hasattr(task, 'status'):  # Object with status attribute
-                    return task.status
-                else:
-                    logger.warning(f"Unknown task format: {type(task)}")
-                    return None
+                return task.get("status") if isinstance(task, dict) else None
             
-            completed_tasks = len([t for t in tasks if get_task_status(t) == "done"])
+            completed_tasks = getattr(branch, 'completed_task_count', 0) or 0
+
+            logger.info(f"🎯 Using trigger-maintained counts: {total_tasks} total, {completed_tasks} completed")
             in_progress_tasks = len([t for t in tasks if get_task_status(t) == "in_progress"])
             todo_tasks = len([t for t in tasks if get_task_status(t) == "todo"])
             blocked_tasks = len([t for t in tasks if get_task_status(t) == "blocked"])
@@ -681,15 +687,7 @@ class GitBranchApplicationFacade:
             # Find last activity (most recent task update)
             last_activity = None
             if tasks:
-                def get_task_updated_at(task):
-                    if hasattr(task, 'get'):  # Dictionary
-                        return task.get("updated_at")
-                    elif hasattr(task, 'updated_at'):  # Object with updated_at attribute
-                        return task.updated_at
-                    else:
-                        return None
-                
-                last_updates = [get_task_updated_at(t) for t in tasks if get_task_updated_at(t)]
+                last_updates = [task.get("updated_at") for task in tasks if task.get("updated_at")]
                 if last_updates:
                     # Find the most recent update
                     last_activity = max(last_updates)
@@ -710,15 +708,7 @@ class GitBranchApplicationFacade:
                     "assigned_agents": assigned_agents,
                     "git_branch_id": git_branch_id,
                     "project_id": project_id,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    # Add task_counts object for frontend compatibility
-                    "task_counts": {
-                        "total": total_tasks,
-                        "todo": todo_tasks,
-                        "in_progress": in_progress_tasks,
-                        "done": completed_tasks,
-                        "blocked": blocked_tasks
-                    }
+                    "timestamp": datetime.now(timezone.utc).isoformat()
                 },
                 "message": f"Statistics retrieved for git branch {git_branch_id}"
             }
@@ -776,27 +766,29 @@ class GitBranchApplicationFacade:
                 task_repo_factory = TaskRepositoryFactory()
                 task_repo = task_repo_factory.create_repository(project_id=project_id, git_branch_name=branch.get("name", "main"), user_id=self._user_id)
                 # Use repository method to get tasks for branch
-                # Fixed: Use correct method name get_tasks_by_git_branch_id instead of find_by_branch
-                has_method = hasattr(task_repo, 'get_tasks_by_git_branch_id')
-                task_objs = task_repo.get_tasks_by_git_branch_id(branch_id) if has_method else []
+                # FIXED: Use correct method name get_tasks_by_git_branch_id
+                task_objs = task_repo.get_tasks_by_git_branch_id(branch_id) if hasattr(task_repo, 'get_tasks_by_git_branch_id') else []
                 
                 # Convert to list of dicts for processing (get_tasks_by_git_branch_id already returns dicts)
                 tasks = task_objs if isinstance(task_objs, list) else []
                 
-                # Count tasks by status
-                total_tasks = len(tasks)
-                completed_tasks = 0
+                # ✅ CRITICAL FIX: Use denormalized count fields from database triggers
+                # Access the branch object to get trigger-maintained counts
+                total_tasks = branch.get("task_count", 0) or 0
+                completed_tasks = branch.get("completed_task_count", 0) or 0
+
+                logger.info(f"🎯 Branch {branch.get('name')}: Using trigger-maintained counts: {total_tasks} total, {completed_tasks} completed")
+
+                # Calculate detailed status breakdown from actual tasks (for detailed stats)
                 in_progress_tasks = 0
                 todo_tasks = 0
                 blocked_tasks = 0
-                
+
                 for task in tasks:
                     # get_tasks_by_git_branch_id returns dictionaries with 'status' key
                     status = task.get("status") if isinstance(task, dict) else getattr(task, 'status', None)
-                    
-                    if status == "done":
-                        completed_tasks += 1
-                    elif status == "in_progress":
+
+                    if status == "in_progress":
                         in_progress_tasks += 1
                     elif status == "todo":
                         todo_tasks += 1
@@ -813,22 +805,14 @@ class GitBranchApplicationFacade:
                     "git_branch_name": branch.get("git_branch_name") or branch.get("name"),
                     "description": branch.get("description", ""),
                     "project_id": project_id,
-                    "total_tasks": total_tasks,
+                    "total_tasks": total_tasks,  # Single source of truth for task count
                     "completed_tasks": completed_tasks,
                     "in_progress_tasks": in_progress_tasks,
                     "todo_tasks": todo_tasks,
                     "blocked_tasks": blocked_tasks,
                     "progress_percentage": round(progress_percentage, 2),
                     "created_at": branch.get("created_at"),
-                    "updated_at": branch.get("updated_at"),
-                    # Add task_counts object for frontend compatibility
-                    "task_counts": {
-                        "total": total_tasks,
-                        "todo": todo_tasks,
-                        "in_progress": in_progress_tasks,
-                        "done": completed_tasks,
-                        "blocked": blocked_tasks
-                    }
+                    "updated_at": branch.get("updated_at")
                 }
                 enhanced_branches.append(enhanced_branch)
             
@@ -898,7 +882,7 @@ class GitBranchApplicationFacade:
                     most_active_branch = {
                         "id": most_active.get("id"),
                         "name": most_active.get("name"),
-                        "task_count": most_active.get("total_tasks")
+                        "total_tasks": most_active.get("total_tasks")
                     }
             
             summary = {
@@ -968,27 +952,29 @@ class GitBranchApplicationFacade:
             
             task_repo = RepositoryProviderService.get_task_repository()
             # Use repository method to get tasks for branch
-            # Fixed: Use correct method name get_tasks_by_git_branch_id instead of find_by_branch
-            has_method = hasattr(task_repo, 'get_tasks_by_git_branch_id')
-            task_objs = task_repo.get_tasks_by_git_branch_id(branch_id) if has_method else []
+            # FIXED: Use correct method name get_tasks_by_git_branch_id
+            task_objs = task_repo.get_tasks_by_git_branch_id(branch_id) if hasattr(task_repo, 'get_tasks_by_git_branch_id') else []
             
             # Convert to list of dicts for processing (get_tasks_by_git_branch_id already returns dicts)
             tasks = task_objs if isinstance(task_objs, list) else []
             
-            # Count tasks by status
-            total_tasks = len(tasks)
-            completed_tasks = 0
+            # ✅ CRITICAL FIX: Use denormalized count fields from database triggers
+            # Access the branch object to get trigger-maintained counts
+            total_tasks = branch.get("task_count", 0) or 0
+            completed_tasks = branch.get("completed_task_count", 0) or 0
+
+            logger.info(f"🎯 Branch summary: Using trigger-maintained counts: {total_tasks} total, {completed_tasks} completed")
+
+            # Calculate detailed status breakdown from actual tasks (for detailed stats)
             in_progress_tasks = 0
             todo_tasks = 0
             blocked_tasks = 0
-            
+
             for task in tasks:
                 # get_tasks_by_git_branch_id returns dictionaries with 'status' key
                 status = task.get("status") if isinstance(task, dict) else getattr(task, 'status', None)
-                
-                if status == "done":
-                    completed_tasks += 1
-                elif status == "in_progress":
+
+                if status == "in_progress":
                     in_progress_tasks += 1
                 elif status == "todo":
                     todo_tasks += 1
@@ -1005,22 +991,14 @@ class GitBranchApplicationFacade:
                 "git_branch_name": branch.get("git_branch_name") or branch.get("name"),
                 "description": branch.get("description", ""),
                 "project_id": branch.get("project_id"),
-                "total_tasks": total_tasks,
+                "total_tasks": total_tasks,  # Single source of truth for task count
                 "completed_tasks": completed_tasks,
                 "in_progress_tasks": in_progress_tasks,
                 "todo_tasks": todo_tasks,
                 "blocked_tasks": blocked_tasks,
                 "progress_percentage": round(progress_percentage, 2),
                 "created_at": branch.get("created_at"),
-                "updated_at": branch.get("updated_at"),
-                # Add task_counts object for frontend compatibility
-                "task_counts": {
-                    "total": total_tasks,
-                    "todo": todo_tasks,
-                    "in_progress": in_progress_tasks,
-                    "done": completed_tasks,
-                    "blocked": blocked_tasks
-                }
+                "updated_at": branch.get("updated_at")
             }
             
             logger.info(f"Generated branch summary: {total_tasks} tasks, {progress_percentage:.1f}% complete")

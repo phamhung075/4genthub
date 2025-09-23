@@ -360,6 +360,23 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         };
       });
       
+      // DEBUG: Log the actual API response and processed data
+      console.log('🔍 [DEBUG] LazyTaskList - API Response:', {
+        taskList,
+        isArray: Array.isArray(taskList),
+        originalLength: taskList?.length,
+        validTaskListLength: validTaskList.length,
+        taskTreeId,
+        timestamp: new Date().toISOString()
+      });
+
+      console.log('🔍 [DEBUG] LazyTaskList - Processed summaries:', {
+        summaries,
+        summariesLength: summaries.length,
+        aboutToSetTotalTasks: summaries.length,
+        timestamp: new Date().toISOString()
+      });
+
       setTaskSummaries(summaries);
       setTotalTasks(summaries.length);
       
@@ -526,6 +543,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Optimistic delete task handler - animation first, then API call
   const handleDeleteTask = useCallback(async (taskId: string) => {
+    console.log('🚀 DELETE DEBUG: handleDeleteTask called for taskId:', taskId);
+    console.log('🚀 DELETE DEBUG: Function call count - this should only appear ONCE per delete');
+
     // Close dialog immediately for better UX
     closeDialog();
 
@@ -542,11 +562,14 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
       try {
         // STEP 3: Now call API to delete task from backend
+        console.log('🚀 DELETE DEBUG: About to call deleteTask API for taskId:', taskId);
         logger.info('Animation complete, calling delete API', { component: 'LazyTaskList', taskId });
         await deleteTask(taskId);
+        console.log('🚀 DELETE DEBUG: deleteTask API call completed for taskId:', taskId);
 
         // STEP 4: Notify parent that task was deleted (this will trigger list refresh)
         if (onTasksChanged) {
+          console.log('🚀 DELETE DEBUG: Calling onTasksChanged() - this will refresh the list');
           onTasksChanged();
         }
 
@@ -901,7 +924,14 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">
-              Tasks ({totalTasks})
+              {(() => {
+                console.log('🔍 [DEBUG] LazyTaskList - Rendering header with totalTasks:', {
+                  totalTasks,
+                  taskSummariesLength: taskSummaries.length,
+                  timestamp: new Date().toISOString()
+                });
+                return `Tasks (${totalTasks})`;
+              })()}
             </h2>
             {/* WebSocket Connection Status */}
             <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${

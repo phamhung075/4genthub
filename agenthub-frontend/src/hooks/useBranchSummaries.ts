@@ -22,6 +22,7 @@ export interface UseBranchSummariesResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  forceRefresh: () => Promise<void>;
   refreshing: boolean;
 }
 
@@ -74,6 +75,37 @@ export function useBranchSummaries(options: UseBranchSummariesOptions = {}): Use
     await loadSummaries(true);
   }, [loadSummaries]);
 
+  // Force refresh function (aggressive cache clearing)
+  const forceRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+
+      let result;
+
+      if (projectIds?.length) {
+        // Force refresh specific projects (not implemented yet - use regular refresh)
+        const branches = await branchService.loadProjectSummaries(projectIds);
+        result = { branches, projects: [] };
+      } else {
+        // Force refresh all user summaries with aggressive cache clearing
+        result = await branchService.forceRefreshSummaries();
+      }
+
+      setSummaries(result.branches);
+      setProjects(result.projects);
+
+      logger.warn(`🚨 FORCE REFRESHED ${result.branches.length} branch summaries (all caches cleared)`);
+
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to force refresh summaries. Please check your connection.';
+      setError(errorMessage);
+      logger.error('❌ Branch summaries force refresh error:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [projectIds]);
+
   // Initial load
   useEffect(() => {
     loadSummaries(false);
@@ -100,6 +132,7 @@ export function useBranchSummaries(options: UseBranchSummariesOptions = {}): Use
     loading,
     error,
     refresh,
+    forceRefresh,
     refreshing
   };
 }

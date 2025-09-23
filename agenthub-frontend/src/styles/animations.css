@@ -61,16 +61,239 @@
     #06b6d488 50%,
     transparent 60%,
     transparent 100%
+    transparent 100%
   );
   background-size: 200% 100%;
   animation: shimmer-fallback 2.5s linear infinite;
 }
 
+/* CSS @property definitions for dual rotating borders */
+@property --dual-rotate-angle-1 {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --dual-rotate-angle-2 {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Dual rotating border animations */
+@keyframes dual-rotate-border-1 {
+  to {
+    --dual-rotate-angle-1: 360deg;
+  }
+}
+
+@keyframes dual-rotate-border-2 {
+  to {
+    --dual-rotate-angle-2: 360deg;
+  }
+}
+
+/* Fallback keyframes for older browsers */
+@keyframes dual-rotate-fallback-1 {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dual-rotate-fallback-2 {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* Dual rotating border container */
+.dual-rotating-border {
+  position: relative;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+/* First rotating border (blue/cyan) */
+.dual-rotating-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--dual-rotate-angle-1),
+    transparent 0deg,
+    #06b6d460 30deg,
+    #14b8a6 45deg,
+    #0891b250 60deg,
+    #06b6d430 90deg,
+    transparent 135deg,
+    transparent 225deg,
+    #06b6d460 255deg,
+    #14b8a6 270deg,
+    #0891b250 285deg,
+    #06b6d430 315deg,
+    transparent 360deg
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: dual-rotate-border-1 3s linear infinite;
+  z-index: -2;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Second rotating border (purple/magenta) */
+.dual-rotating-border::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--dual-rotate-angle-2),
+    transparent 0deg,
+    #a855f750 40deg,
+    #c084fc 60deg,
+    #e879f960 80deg,
+    #f0abfc40 120deg,
+    transparent 180deg,
+    #a855f750 220deg,
+    #c084fc 240deg,
+    #e879f960 260deg,
+    #f0abfc40 300deg,
+    transparent 360deg
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: dual-rotate-border-2 4.5s linear infinite;
+  z-index: -3;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Fallback for browsers without @property support */
+@supports not (background: conic-gradient(from var(--dual-rotate-angle-1), red, blue)) {
+  .dual-rotating-border::before {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      #06b6d430 45deg,
+      #0891b220 90deg,
+      transparent 135deg,
+      transparent 225deg,
+      #06b6d430 270deg,
+      #0891b220 315deg,
+      transparent 360deg
+    );
+    animation: dual-rotate-fallback-1 3s linear infinite;
+  }
+
+  .dual-rotating-border::after {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      #a855f725 60deg,
+      #c084fc20 120deg,
+      transparent 180deg,
+      #e879f925 240deg,
+      #f0abfc20 300deg,
+      transparent 360deg
+    );
+    animation: dual-rotate-fallback-2 4.5s linear infinite;
+  }
+}
+
+/* Accessibility: Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .dual-rotating-border::before,
+  .dual-rotating-border::after {
+    animation-duration: 8s;
+    animation-timing-function: ease-in-out;
+  }
+}
+
+/* Enhanced variant with glow effect */
+.dual-rotating-border-glow {
+  position: relative;
+  isolation: isolate;
+  border-radius: inherit;
+}
+
+.dual-rotating-border-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--dual-rotate-angle-1),
+    transparent 0deg,
+    #06b6d460 30deg,
+    #14b8a6 45deg,
+    #0891b250 60deg,
+    #06b6d430 90deg,
+    transparent 135deg,
+    transparent 225deg,
+    #06b6d460 255deg,
+    #14b8a6 270deg,
+    #0891b250 285deg,
+    #06b6d430 315deg,
+    transparent 360deg
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: dual-rotate-border-1 3s linear infinite;
+  z-index: -2;
+  will-change: transform;
+  transform: translateZ(0);
+  filter: drop-shadow(0 0 12px #06b6d480) drop-shadow(0 0 24px #14b8a640);
+}
+
+.dual-rotating-border-glow::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--dual-rotate-angle-2),
+    transparent 0deg,
+    #a855f750 40deg,
+    #c084fc 60deg,
+    #e879f960 80deg,
+    #f0abfc40 120deg,
+    transparent 180deg,
+    #a855f750 220deg,
+    #c084fc 240deg,
+    #e879f960 260deg,
+    #f0abfc40 300deg,
+    transparent 360deg
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: dual-rotate-border-2 4.5s linear infinite;
+  z-index: -3;
+  will-change: transform;
+  transform: translateZ(0);
+  filter: drop-shadow(0 0 16px #c084fc80) drop-shadow(0 0 32px #e879f940);
+}
+
 /* Utility classes for feature detection */
 .supports-css-property .shimmer-container {
   /* Modern browsers will use .shimmer-modern */
+  opacity: 0.5;
 }
 
 .no-css-property .shimmer-container {
   /* Fallback browsers will use .shimmer-fallback */
+  opacity: 0.5;
 }

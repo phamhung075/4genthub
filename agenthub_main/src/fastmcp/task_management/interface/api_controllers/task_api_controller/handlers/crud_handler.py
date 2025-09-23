@@ -226,19 +226,20 @@ class TaskCrudHandler:
     def list_tasks(self, request: ListTasksRequest, user_id: str, session) -> Dict[str, Any]:
         """
         List tasks for a user.
-        
+
         Args:
             request: Task listing request
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             List of tasks
         """
         try:
             # Get task facade with proper user context through service
+            # Project ID should be derived from git_branch_id context, not hardcoded
             task_facade = self.facade_service.get_task_facade(
-                project_id="default_project",
+                project_id=None,  # Derived from git_branch_id context
                 git_branch_id=request.git_branch_id,
                 user_id=user_id
             )

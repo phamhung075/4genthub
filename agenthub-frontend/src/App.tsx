@@ -50,7 +50,6 @@ function Dashboard() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
-  const [projectListRefreshKey, setProjectListRefreshKey] = useState(0);
   const [showGlobalContext, setShowGlobalContext] = useState(false);
   const [showProjectDetails, setShowProjectDetails] = useState<Project | null>(null);
   const [showBranchDetails, setShowBranchDetails] = useState<{ project: Project; branch: any } | null>(null);
@@ -96,7 +95,6 @@ function Dashboard() {
         shadow-xl md:shadow-none
       `}>
         <ProjectList
-          refreshKey={projectListRefreshKey}
           onSelect={(projectId: string, branchId: string) => {
             navigate(`/dashboard/project/${projectId}/branch/${branchId}`);
             // Auto-close sidebar on mobile after selection
@@ -139,9 +137,6 @@ function Dashboard() {
               <LazyTaskList
                 projectId={selection.projectId}
                 taskTreeId={selection.branchId}
-                onTasksChanged={() => {
-                  setProjectListRefreshKey(prev => prev + 1);
-                }}
               />
             ) : (
               <div className="flex items-center justify-center h-full">

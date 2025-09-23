@@ -225,7 +225,10 @@ export const updateTask = async (task_id: string, updates: Partial<Task>): Promi
 };
 
 export const deleteTask = async (task_id: string): Promise<void> => {
+    console.log('🚀 DELETE DEBUG: API deleteTask called for task_id:', task_id);
+    console.log('🚀 DELETE DEBUG: About to call taskApiV2.deleteTask');
     await taskApiV2.deleteTask(task_id);
+    console.log('🚀 DELETE DEBUG: taskApiV2.deleteTask completed for task_id:', task_id);
 };
 
 export const completeTask = async (

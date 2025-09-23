@@ -174,9 +174,9 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-primary"></div>
                               <span className="font-medium">{branch.name}</span>
-                              {branch.task_count !== undefined && (
+                              {branch.total_tasks !== undefined && (
                                 <Badge variant="secondary" className="text-xs">
-                                  {branch.task_count} tasks
+                                  {branch.total_tasks} tasks
                                 </Badge>
                               )}
                             </div>

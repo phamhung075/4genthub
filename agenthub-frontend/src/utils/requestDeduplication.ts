@@ -173,15 +173,35 @@ export function clearDeduplicationCache(): void {
   logger.debug('🧹 Cleared all request deduplication cache');
 }
 
+/**
+ * Force invalidate cache for specific request pattern
+ * Useful for debugging cache issues
+ */
+export function invalidateRequestCache(url: string, method: string = 'GET'): void {
+  const keys = Array.from(pendingRequests.keys());
+  const matchingKeys = keys.filter(key => key.includes(url) && key.startsWith(method));
+
+  matchingKeys.forEach(key => {
+    pendingRequests.delete(key);
+    logger.debug(`🧹 Force invalidated request cache: ${key}`);
+  });
+
+  if (matchingKeys.length > 0) {
+    logger.info(`🔄 Invalidated ${matchingKeys.length} cached requests for ${method} ${url}`);
+  }
+}
+
 // Make stats available globally for debugging
 declare global {
   interface Window {
     getRequestDeduplicationStats: () => any;
     clearRequestDeduplicationCache: () => void;
+    invalidateRequestCache: (url: string, method?: string) => void;
   }
 }
 
 if (typeof window !== 'undefined') {
   window.getRequestDeduplicationStats = getDeduplicationStats;
   window.clearRequestDeduplicationCache = clearDeduplicationCache;
+  window.invalidateRequestCache = invalidateRequestCache;
 }

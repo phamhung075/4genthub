@@ -121,7 +121,7 @@ describe('TaskSearch', () => {
       await userEvent.type(searchInput, 'auth');
 
       await waitFor(() => {
-        expect(api.searchTasks).toHaveBeenCalledWith('auth', mockTaskTreeId);
+        expect(api.searchTasks).toHaveBeenCalledWith('auth', { git_branch_id: mockTaskTreeId });
         expect(screen.getByText('Implement authentication')).toBeInTheDocument();
         expect(screen.getByText('Tasks (2)')).toBeInTheDocument();
       });
@@ -804,7 +804,7 @@ describe('TaskSearch', () => {
       await userEvent.type(searchInput, longQuery);
 
       await waitFor(() => {
-        expect(api.searchTasks).toHaveBeenCalledWith(longQuery, mockTaskTreeId);
+        expect(api.searchTasks).toHaveBeenCalledWith(longQuery, { git_branch_id: mockTaskTreeId });
       });
     });
   });

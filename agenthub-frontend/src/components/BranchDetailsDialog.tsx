@@ -367,14 +367,14 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               )}
 
               {/* Task Statistics */}
-              {branch && (branch['task_statistics'] || branch['task_count'] !== undefined) && (
+              {branch && (branch['task_statistics'] || branch['total_tasks'] !== undefined) && (
                 <>
                   <div className="bg-surface-hover p-4 rounded-lg">
                     <h3 className="text-lg font-semibold mb-3 text-green-700">Task Statistics</h3>
                     <div className="bg-surface p-3 rounded border border-surface-border">
-                      {branch['task_count'] !== undefined && (
+                      {branch['total_tasks'] !== undefined && (
                         <div className="mb-2">
-                          <span className="font-medium">Total Tasks:</span> {branch['task_count']}
+                          <span className="font-medium">Total Tasks:</span> {branch['total_tasks']}
                         </div>
                       )}
                       {branch['task_statistics'] && (
@@ -428,7 +428,7 @@ export const BranchDetailsDialog: React.FC<BranchDetailsDialogProps> = ({
               {branch && (
                 <>
                   {Object.entries(branch).filter(([key]) => 
-                    !['id', 'name', 'description', 'status', 'task_statistics', 'task_count', 'assigned_agents', 'metadata'].includes(key)
+                    !['id', 'name', 'description', 'status', 'task_statistics', 'total_tasks', 'assigned_agents', 'metadata'].includes(key)
                   ).map(([key, value]) => {
                     if (value === null || value === undefined) return null;
                     

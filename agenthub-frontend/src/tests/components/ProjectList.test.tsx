@@ -51,8 +51,8 @@ describe('ProjectList', () => {
       name: 'Project Alpha',
       description: 'First project',
       git_branchs: {
-        'branch-1': { id: 'branch-1', name: 'main', task_count: 5 },
-        'branch-2': { id: 'branch-2', name: 'feature-auth', task_count: 3 }
+        'branch-1': { id: 'branch-1', name: 'main', total_tasks: 5 },
+        'branch-2': { id: 'branch-2', name: 'feature-auth', total_tasks: 3 }
       }
     },
     {
@@ -60,7 +60,7 @@ describe('ProjectList', () => {
       name: 'Project Beta',
       description: 'Second project',
       git_branchs: {
-        'branch-3': { id: 'branch-3', name: 'main', task_count: 0 }
+        'branch-3': { id: 'branch-3', name: 'main', total_tasks: 0 }
       }
     },
     {
@@ -914,7 +914,7 @@ describe('ProjectList', () => {
             'branch-test': { 
               id: 'branch-test', 
               name: 'test-branch',
-              task_count: 10
+              total_tasks: 10
             }
           }
         }
@@ -931,7 +931,7 @@ describe('ProjectList', () => {
       });
     });
 
-    it('should handle missing task_count property', async () => {
+    it('should handle missing total_tasks property', async () => {
       const projectsWithoutTaskCount = [
         {
           id: 'proj-test',
@@ -941,7 +941,7 @@ describe('ProjectList', () => {
             'branch-test': { 
               id: 'branch-test', 
               name: 'test-branch'
-              // No task_count property
+              // No total_tasks property
             }
           }
         }
