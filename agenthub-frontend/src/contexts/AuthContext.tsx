@@ -60,10 +60,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [tokens, setTokensState] = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Only initialize WebSocket when we have valid user and token
+  const shouldConnectWebSocket = !!(user?.id && tokens?.access_token);
+
   const {
     isConnected: isWebSocketConnected,
     disconnect: disconnectWebSocket,
-  } = useWebSocket(user?.id ?? '', tokens?.access_token ?? '');
+  } = useWebSocket(
+    shouldConnectWebSocket ? user.id : '',
+    shouldConnectWebSocket ? tokens.access_token : ''
+  );
+
+  // Debug logging for WebSocket connection state
+  useEffect(() => {
+    console.log('[AuthContext] WebSocket connection state:', {
+      shouldConnect: shouldConnectWebSocket,
+      isConnected: isWebSocketConnected,
+      hasUser: !!user,
+      hasToken: !!tokens?.access_token,
+      userId: user?.id,
+      tokenLength: tokens?.access_token?.length
+    });
+  }, [shouldConnectWebSocket, isWebSocketConnected, user, tokens]);
 
   // Decode JWT token to extract user information
   const decodeToken = (token: string): User | null => {

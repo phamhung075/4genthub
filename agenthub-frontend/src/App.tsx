@@ -19,8 +19,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // Import Redux Provider and store
 import { Provider as ReduxProvider } from 'react-redux';
 import { store } from './store';
-// Import WebSocket v2.0 hook for new implementation
-import { useWebSocket } from './hooks/useWebSocketV2';
+// WebSocket is now handled in AuthContext, no need to import here
 import { useAuth } from './contexts/AuthContext';
 // Removed toastEventBus and useToast imports - test code removed
 import { Profile } from './pages/Profile';
@@ -45,8 +44,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const { user, tokens } = useAuth();
 
-  // Initialize WebSocket v2.0 connection
-  useWebSocket(user?.id || '', tokens?.access_token || '');
+  // WebSocket is already initialized in AuthContext, no need to duplicate here
 
   // Derive selection from URL parameters
   const selection = projectId && branchId ? { projectId, branchId } : null;
