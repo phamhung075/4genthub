@@ -20,3 +20,4 @@ class UpdateTaskRequest:
     completion_summary: Optional[str] = None
     testing_notes: Optional[str] = None
     completed_at: Optional[str] = None 
+    progress_percentage: Optional[int] = None

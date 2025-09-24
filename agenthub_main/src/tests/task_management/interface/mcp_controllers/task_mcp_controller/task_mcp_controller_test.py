@@ -120,7 +120,16 @@ class TestTaskMCPController:
     def test_controller_initialization_with_defaults(self):
         """Test controller initializes with default dependencies"""
         with patch.object(FacadeService, 'get_instance') as mock_get_instance:
-            mock_get_instance.return_value = Mock(spec=FacadeService)
+            # Create a mock service that has the expected methods/attributes
+            mock_service = Mock()
+            mock_service.get_task_facade = Mock()
+            mock_service.get_project_facade = Mock()
+            mock_service.get_git_branch_facade = Mock()
+            mock_service.get_agent_facade = Mock()
+            mock_service.get_context_facade = Mock()
+            mock_service.get_subtask_facade = Mock()
+            
+            mock_get_instance.return_value = mock_service
             controller = TaskMCPController()
             
             assert controller._facade_service is not None

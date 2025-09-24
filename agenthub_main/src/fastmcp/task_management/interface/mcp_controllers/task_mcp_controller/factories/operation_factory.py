@@ -126,7 +126,7 @@ class OperationFactory:
             # Filter to only include parameters accepted by update_task method
             allowed_params = {
                 'task_id', 'title', 'description', 'status', 'priority', 
-                'details', 'estimated_effort', 'assignees', 'labels', 
+                'details', 'estimated_effort', 'progress_percentage', 'assignees', 'labels', 
                 'due_date', 'context_id', 'completion_summary', 'testing_notes'
             }
             crud_kwargs = {k: v for k, v in kwargs.items() if k in allowed_params}

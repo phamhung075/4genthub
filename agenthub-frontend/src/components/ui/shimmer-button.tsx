@@ -9,13 +9,13 @@ interface ShimmerButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   shimmerColor?: string;
 }
 
-export const ShimmerButton: React.FC<ShimmerButtonProps> = ({ 
-  children, 
+export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
+  children,
   className = '',
   variant = 'default',
   size = 'default',
   shimmerColor = '#06b6d4',
-  ...props 
+  ...props
 }) => {
   const customCss = `
     @property --angle {
@@ -69,10 +69,10 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
         {...props}
       >
         {(variant === 'default' || variant === 'destructive') && (
-          <div 
+          <div
             className="absolute inset-0"
             style={{
-              background: `conic-gradient(from var(--angle), transparent 15%, ${shimmerColor}, transparent 60%)`,
+              background: `conic-gradient(from var(--angle), transparent 25%, ${shimmerColor}, transparent 50%)`,
               animation: 'shimmer-spin 2.5s linear infinite',
             }}
           />

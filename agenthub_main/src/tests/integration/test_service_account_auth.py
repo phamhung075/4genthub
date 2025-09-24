@@ -38,10 +38,12 @@ class TestServiceAccountAuth:
         """Setup for each test method"""
         self.auth = ServiceAccountAuth(TEST_CONFIG)
 
-    @pytest.mark.asyncio
-    async def teardown_method(self):
+    def teardown_method(self):
         """Cleanup after each test method"""
-        await self.auth.close()
+        # Note: We can't properly close the auth object here because it requires
+        # an async context and pytest doesn't support async teardown_method.
+        # The resources will be cleaned up when the object is garbage collected.
+        pass
 
     @pytest.mark.asyncio
     async def test_service_account_config_from_env(self):
@@ -311,20 +313,46 @@ class TestServiceAccountAuth:
     @pytest.mark.asyncio
     async def test_singleton_instance(self):
         """Test singleton pattern for service account auth"""
-        # Mock environment variables
-        env_vars = {
-            "KEYCLOAK_URL": "https://singleton-test.com",
-            "KEYCLOAK_SERVICE_CLIENT_SECRET": "singleton-secret"
-        }
+        # First ensure the singleton is reset from any previous test
+        import fastmcp.auth.service_account
         
-        with patch.dict(os.environ, env_vars):
-            auth1 = get_service_account_auth()
-            auth2 = get_service_account_auth()
+        # Save the current state and reset singleton
+        saved_instance = fastmcp.auth.service_account._service_auth_instance
+        fastmcp.auth.service_account._service_auth_instance = None
+        
+        try:
+            # Mock environment variables
+            env_vars = {
+                "KEYCLOAK_URL": "https://singleton-test.com",
+                "KEYCLOAK_SERVICE_CLIENT_SECRET": "singleton-secret"
+            }
             
-            # Should be the same instance
-            assert auth1 is auth2
-            
-            await auth1.close()
+            with patch.dict(os.environ, env_vars):
+                # Mock the httpx client to avoid real network calls
+                # Use new_callable=AsyncMock directly in patch for async behavior
+                with patch('fastmcp.auth.service_account.httpx.AsyncClient', new=AsyncMock) as mock_client_class:
+                    # Create a proper async mock client instance
+                    mock_client = AsyncMock()
+                    # Ensure aclose is an AsyncMock as well
+                    mock_client.aclose = AsyncMock()
+                    # Configure the constructor to return our async mock
+                    mock_client_class.return_value = mock_client
+                    
+                    auth1 = get_service_account_auth()
+                    auth2 = get_service_account_auth()
+                    
+                    # Should be the same instance
+                    assert auth1 is auth2
+                    
+                    # Ensure the mock client was used
+                    assert auth1.client is mock_client
+                    
+                    await auth1.close()
+                    mock_client.aclose.assert_awaited_once()
+                    
+        finally:
+            # Always restore the original singleton state
+            fastmcp.auth.service_account._service_auth_instance = saved_instance
 
 
 class TestAuthenticationHelper:
@@ -439,11 +467,12 @@ class TestRealKeycloakIntegration:
         
         self.auth = ServiceAccountAuth()
 
-    @pytest.mark.asyncio
-    async def teardown_method(self):
+    def teardown_method(self):
         """Cleanup after integration tests"""
-        if hasattr(self, 'auth'):
-            await self.auth.close()
+        # Note: We can't properly close the auth object here because it requires
+        # an async context and pytest doesn't support async teardown_method.
+        # The resources will be cleaned up when the object is garbage collected.
+        pass
 
     @pytest.mark.asyncio
     async def test_real_authentication(self):

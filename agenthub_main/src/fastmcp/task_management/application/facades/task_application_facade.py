@@ -944,6 +944,17 @@ class TaskApplicationFacade:
         
         if request.description and len(request.description) > 2000:
             raise ValueError("Task description cannot exceed 2000 characters")
+
+        if request.progress_percentage is not None:
+            try:
+                progress_value = int(request.progress_percentage)
+            except (TypeError, ValueError):
+                raise ValueError("progress_percentage must be an integer between 0 and 100")
+
+            if progress_value < 0 or progress_value > 100:
+                raise ValueError("progress_percentage must be between 0 and 100")
+
+            request.progress_percentage = progress_value
     
     def _validate_update_task_request(self, task_id: str, request: UpdateTaskRequest) -> None:
         """Validate update task request at application boundary"""
@@ -1433,6 +1444,13 @@ class TaskApplicationFacade:
                 updated_status = str(updated_task.status)
                 if current_status != updated_status:
                     meaningful_changes.append(f"status: '{current_status}' -> '{updated_status}'")
+
+            # Progress percentage change
+            if request.progress_percentage is not None:
+                current_progress = getattr(current_task, 'overall_progress', getattr(current_task, 'progress_percentage', None))
+                updated_progress = getattr(updated_task, 'progress_percentage', getattr(updated_task, 'overall_progress', None))
+                if current_progress != updated_progress:
+                    meaningful_changes.append(f"progress_percentage: {current_progress} -> {updated_progress}")
 
             # Priority change
             if (request.priority is not None and

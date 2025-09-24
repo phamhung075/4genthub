@@ -177,6 +177,7 @@ MANAGE_TASK_PARAMETERS_DESCRIPTION = {
     "priority": "Task priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: 'medium'. Higher priority tasks returned first by 'next' action.",
     "details": "Additional implementation notes, technical details, or context. Updated during work. Optional for: create, update",
     "estimated_effort": "Time estimate like '2 hours', '3 days', '1 week'. Helps with planning. Optional for: create, update",
+    "progress_percentage": "Task completion percentage (0-100). Optional for 'update'. Automatically maps to status transitions and progress tracking when supplied.",
     "assignees": "User identifiers - accepts string (single user) or comma-separated string (multiple users). Optional. Examples: 'user1' or 'user1,user2'. Default: current user",
     "labels": "Categories/tags - accepts string (single label) or comma-separated string (multiple labels). Optional. Examples: 'frontend' or 'frontend,auth,bug'. Useful for filtering.",
     "dependencies": "Task IDs this task depends on (for create action) - accepts string (single dependency) or comma-separated string (multiple dependencies). Optional. Examples: 'task-uuid' or 'task-uuid-1,task-uuid-2'. Tasks must be completed before this task can start.",
@@ -270,6 +271,10 @@ MANAGE_TASK_PARAMS = {
         "estimated_effort": {
             "type": "string",
             "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["estimated_effort"]
+        },
+        "progress_percentage": {
+            "type": "integer",
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["progress_percentage"]
         },
         
         # Multi-value parameters (accept comma-separated strings)
@@ -421,6 +426,5 @@ def get_manage_task_description():
 def get_manage_task_parameters():
     """Get the task management tool parameters schema."""
     return MANAGE_TASK_PARAMS
-
 
 

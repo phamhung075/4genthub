@@ -199,6 +199,7 @@ class TaskMCPController(ContextPropagationMixin):
             priority: Annotated[str, Field(description="[OPTIONAL] " + params["priority"]["description"])] = None,
             details: Annotated[str, Field(description="[OPTIONAL] " + params["details"]["description"])] = None,
             estimated_effort: Annotated[str, Field(description="[OPTIONAL] " + params["estimated_effort"]["description"])] = None,
+            progress_percentage: Annotated[int, Field(description="[OPTIONAL] " + params["progress_percentage"]["description"])] = None,
             assignees: Annotated[Union[str, List[str]], Field(description="[OPTIONAL] " + params["assignees"]["description"])] = None,
             labels: Annotated[Union[str, List[str]], Field(description="[OPTIONAL] " + params["labels"]["description"])] = None,
             due_date: Annotated[str, Field(description="[OPTIONAL] " + params["due_date"]["description"])] = None,
@@ -284,10 +285,18 @@ class TaskMCPController(ContextPropagationMixin):
                 except (ValueError, TypeError):
                     offset = 0  # Default value
             
+            # Normalize progress percentage input if provided
+            if progress_percentage is not None and not isinstance(progress_percentage, int):
+                try:
+                    progress_percentage = int(progress_percentage)
+                except (ValueError, TypeError):
+                    progress_percentage = None
+
             return await self.manage_task(
                 action=action, task_id=task_id, git_branch_id=git_branch_id,
                 title=title, description=description, status=status, 
                 priority=priority, details=details, estimated_effort=estimated_effort,
+                progress_percentage=progress_percentage,
                 assignees=assignees, labels=labels, due_date=due_date,
                 dependencies=dependencies, dependency_id=dependency_id, context_id=context_id,
                 completion_summary=completion_summary, testing_notes=testing_notes,
@@ -364,6 +373,22 @@ class TaskMCPController(ContextPropagationMixin):
                     filtered_kwargs['dependencies'] = [d.strip() for d in dependencies.split(',') if d.strip()]
                 else:
                     filtered_kwargs['dependencies'] = [dependencies.strip()] if dependencies.strip() else []
+
+            if 'progress_percentage' in filtered_kwargs and filtered_kwargs['progress_percentage'] is not None:
+                try:
+                    filtered_kwargs['progress_percentage'] = int(filtered_kwargs['progress_percentage'])
+                except (ValueError, TypeError):
+                    return self._response_factory.create_error_response(
+                        operation=action,
+                        error="progress_percentage must be an integer between 0 and 100",
+                        error_code=ErrorCodes.VALIDATION_ERROR
+                    )
+                if filtered_kwargs['progress_percentage'] < 0 or filtered_kwargs['progress_percentage'] > 100:
+                    return self._response_factory.create_error_response(
+                        operation=action,
+                        error="progress_percentage must be between 0 and 100",
+                        error_code=ErrorCodes.VALIDATION_ERROR
+                    )
             
             # Step 3: Get facade for request
             logger.debug(f"Getting facade for action={action}, task_id={task_id}, git_branch_id={git_branch_id}")

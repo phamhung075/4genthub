@@ -1,0 +1,75 @@
+
+🧪 Starting agenthub Test Suite
+🛡️  Test data isolation enabled
+🧹 Automatic cleanup configured
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0
+rootdir: /home/daihungpham/__projects__/4genthub/agenthub_main
+configfile: pyproject.toml
+testpaths: src/tests, src/**/task_management/**/__tests__
+plugins: postgresql-7.0.2, cov-6.2.1, anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 7000 items / 6 skipped
+
+src/tests/ai_task_planning/application/services/ai_planning_service_test.py . [  0%]
+................                                                         [  0%]
+src/tests/ai_task_planning/application/test_application_init.py ..       [  0%]
+src/tests/ai_task_planning/domain/entities/planning_request_test.py .... [  0%]
+.........                                                                [  0%]
+src/tests/ai_task_planning/domain/entities/task_plan_test.py ........... [  0%]
+.............                                                            [  0%]
+src/tests/ai_task_planning/domain/services/requirement_analyzer_test.py . [  0%]
+................                                                         [  1%]
+src/tests/ai_task_planning/domain/services/test_services_init.py ..      [  1%]
+src/tests/ai_task_planning/domain/test_domain_init.py ..                 [  1%]
+src/tests/ai_task_planning/interface/controllers/ai_planning_mcp_controller_test.py . [  1%]
+..............................                                           [  1%]
+src/tests/ai_task_planning/interface/test_interface_init.py ..           [  1%]
+src/tests/ai_task_planning/test_ai_planning_init.py ..                   [  1%]
+src/tests/auth/dependencies_test.py ...............                      [  1%]
+src/tests/auth/hook_auth_test.py ..............................          [  2%]
+src/tests/auth/infrastructure/repositories/email_token_repository_test.py . [  2%]
+.....................................                                    [  2%]
+src/tests/auth/interface/auth_endpoints_test.py ........................ [  3%]
+.....................                                                    [  3%]
+src/tests/auth/keycloak_dependencies_test.py ......................      [  3%]
+src/tests/auth/keycloak_integration_test.py ............................ [  4%]
+......                                                                   [  4%]
+src/tests/auth/mcp_dependencies_test.py ....................             [  4%]
+src/tests/auth/mcp_integration/test_database_connection_analysis.py .... [  4%]
+.                                                                        [  4%]
+src/tests/auth/mcp_integration/test_supabase_connection_fix.py ......    [  4%]
+src/tests/auth/mcp_keycloak_auth_test.py ............................... [  5%]
+...                                                                      [  5%]
+src/tests/auth/middleware/request_context_middleware_test.py ........... [  5%]
+........                                                                 [  5%]
+src/tests/auth/models/api_token_test.py ........................         [  5%]
+src/tests/auth/service_account_test.py ................................. [  6%]
+.....                                                                    [  6%]
+src/tests/connection_management/interface/controllers/connection_mcp_controller_test.py . [  6%]
+............                                                             [  6%]
+src/tests/connection_management/test_secure_health_check.py ....         [  6%]
+src/tests/e2e/test_subtask_dialog_flow.py ssssss                         [  6%]
+src/tests/hooks/test_agent_state_manager.py ............................ [  7%]
+                                                                         [  7%]
+src/tests/hooks/test_context_utilities_simple.py ..................      [  7%]
+src/tests/hooks/test_hook_e2e.py ..........                              [  7%]
+src/tests/hooks/test_hook_integration.py ............                    [  7%]
+src/tests/hooks/test_hook_integration_simple.py ..........               [  7%]
+src/tests/hooks/test_hook_system_comprehensive.py ...................... [  8%]
+..                                                                       [  8%]
+src/tests/hooks/test_hooks_basic.py ......                               [  8%]
+src/tests/hooks/test_session_tracker.py ......................           [  8%]
+src/tests/integration/agent_assignment_flow_test.py ............         [  8%]
+src/tests/integration/task_management/interface/git_branch_filtering_integration_test.py . [  8%]
+....                                                                     [  8%]
+src/tests/integration/task_management/interface/git_branch_zero_tasks_deletion_integration_test.py . [  8%]
+......                                                                   [  8%]
+src/tests/integration/task_management/test_critical_fixes_verification.py . [  8%]
+..                                                                       [  8%]
+src/tests/integration/task_management/test_subtask_user_id_fix.py ...    [  8%]
+src/tests/integration/test_assignees_fix.py ..                           [  8%]
+src/tests/integration/test_auth_websocket_integration.py ........        [  9%]
+src/tests/integration/test_bulk_api.py ssssss                            [  9%]
+src/tests/integration/test_direct_task_creation.py .                     [  9%]
+src/tests/integration/test_docker_config.py ...............

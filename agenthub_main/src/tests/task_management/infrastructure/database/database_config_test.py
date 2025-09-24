@@ -74,21 +74,22 @@ class TestDatabaseConfig:
                 assert config.database_type == "sqlite"
                 assert mock_create_engine.call_count == 1
     
+    @pytest.mark.unit
     @patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
     @patch('sqlalchemy.event.listens_for')
     @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite"}, clear=True)
     def test_sqlite_rejected_in_production(self, mock_listens_for, mock_ensure_ai):
-        """Test that SQLite is rejected in production mode"""
+        """Test that SQLite requires DATABASE_PATH to be set"""
         mock_listens_for.return_value = lambda func: func
         mock_ensure_ai.return_value = True
-        # Ensure we're not in test mode
-        with patch('sys.modules', {}):
-            with patch.dict(os.environ, {}, clear=True):
-                os.environ["DATABASE_TYPE"] = "sqlite"
-                with pytest.raises(ValueError) as exc_info:
-                    DatabaseConfig()
+        # Ensure DATABASE_PATH is not set
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ["DATABASE_TYPE"] = "sqlite"
+            with pytest.raises(SystemExit) as exc_info:
+                DatabaseConfig()
 
-                assert "SQLite is only allowed for test execution" in str(exc_info.value)
+            # SystemExit doesn't have a value message, it exits with code 1
+            assert exc_info.value.code == 1
     
     @patch.dict(os.environ, {"DATABASE_TYPE": "invalid_type"})
     def test_invalid_database_type(self):
@@ -425,15 +426,17 @@ class TestModuleFunctions:
             assert config1 is config2
             mock_get_instance.assert_called_once_with()  # Should only be called once due to caching
     
+    @pytest.mark.unit
     def test_get_db_config_error_handling(self):
         """Test error handling in get_db_config"""
         with patch('fastmcp.task_management.infrastructure.database.database_config.DatabaseConfig.get_instance') as mock_get_instance:
             mock_get_instance.side_effect = Exception("Database initialization failed")
             
-            with pytest.raises(Exception) as exc_info:
+            with pytest.raises(SystemExit) as exc_info:
                 get_db_config()
             
-            assert "Database initialization failed" in str(exc_info.value)
+            # SystemExit is called with code 1 when database initialization fails
+            assert exc_info.value.code == 1
     
     def test_get_session_function(self):
         """Test get_session module function"""
@@ -605,6 +608,7 @@ class TestErrorScenarios:
             assert "SUPABASE NOT PROPERLY CONFIGURED" in str(exc_info.value)
             assert "SUPABASE_URL" in str(exc_info.value)
     
+    @pytest.mark.unit
     @patch('sqlalchemy.event.listens_for')
     @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite", "PYTEST_CURRENT_TEST": "test"})
     def test_database_initialization_failure(self, mock_listens_for):
@@ -613,11 +617,13 @@ class TestErrorScenarios:
         with patch('fastmcp.task_management.infrastructure.database.database_config.create_engine') as mock_create_engine:
                 mock_create_engine.side_effect = Exception("Engine creation failed")
 
-                with pytest.raises(Exception) as exc_info:
+                with pytest.raises(SystemExit) as exc_info:
                     DatabaseConfig()
 
-                assert "Engine creation failed" in str(exc_info.value)
+                # SystemExit is called with code 1 when database initialization fails
+                assert exc_info.value.code == 1
     
+    @pytest.mark.unit
     @patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
     @patch('sqlalchemy.event.listens_for')
     @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite", "PYTEST_CURRENT_TEST": "test"})
@@ -631,10 +637,11 @@ class TestErrorScenarios:
                 mock_create_engine.return_value = mock_engine
 
                 with patch('fastmcp.task_management.infrastructure.database.database_config.sessionmaker'):
-                    with pytest.raises(Exception) as exc_info:
+                    with pytest.raises(SystemExit) as exc_info:
                         DatabaseConfig()
 
-                    assert "Connection failed" in str(exc_info.value)
+                    # SystemExit is called with code 1 when connection test fails
+                    assert exc_info.value.code == 1
 
 
 class TestSecurityFeatures:

@@ -122,6 +122,25 @@ class ParameterValidator:
                 "due_date", "ISO format date string",
                 "Use ISO date format"
             )
+
+        if 'progress_percentage' in kwargs and kwargs['progress_percentage'] is not None:
+            progress_value = kwargs['progress_percentage']
+            try:
+                progress_value = int(progress_value)
+            except (TypeError, ValueError):
+                return False, self._create_validation_error(
+                    "progress_percentage", "An integer between 0 and 100",
+                    "Provide progress_percentage as an integer between 0 and 100"
+                )
+
+            if progress_value < 0 or progress_value > 100:
+                return False, self._create_validation_error(
+                    "progress_percentage", "An integer between 0 and 100",
+                    "Provide progress_percentage within the 0-100 range"
+                )
+
+            # Update kwargs with normalized integer for downstream consumers
+            kwargs['progress_percentage'] = progress_value
         
         return True, None
     

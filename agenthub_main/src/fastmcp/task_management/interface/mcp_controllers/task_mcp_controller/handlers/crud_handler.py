@@ -161,6 +161,7 @@ class CRUDHandler:
     def update_task(self, facade: TaskApplicationFacade, task_id: Optional[str] = None, title: Optional[str] = None,
                    description: Optional[str] = None, status: Optional[str] = None, priority: Optional[str] = None,
                    details: Optional[str] = None, estimated_effort: Optional[str] = None,
+                   progress_percentage: Optional[int] = None,
                    assignees: Optional[List[str]] = None, labels: Optional[List[str]] = None,
                    due_date: Optional[str] = None, context_id: Optional[str] = None,
                    completion_summary: Optional[str] = None,
@@ -191,6 +192,11 @@ class CRUDHandler:
             request_data['details'] = details
         if estimated_effort is not None:
             request_data['estimated_effort'] = estimated_effort
+        if progress_percentage is not None:
+            try:
+                request_data['progress_percentage'] = int(progress_percentage)
+            except (ValueError, TypeError):
+                logger.warning(f"Ignoring invalid progress_percentage value: {progress_percentage}")
         if assignees is not None:
             request_data['assignees'] = assignees
         if labels is not None:

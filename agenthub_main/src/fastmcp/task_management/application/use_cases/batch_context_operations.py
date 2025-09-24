@@ -10,11 +10,12 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ...domain.models.unified_context import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
 from ...domain.interfaces.cache_service import ICacheService
+from ...infrastructure.cache.context_cache import get_context_cache
 
 logger = logging.getLogger(__name__)
 
