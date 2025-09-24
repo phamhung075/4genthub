@@ -31,6 +31,9 @@ import { HelpSetup } from './pages/HelpSetup';
 import LazyTaskList from './components/LazyTaskList';
 //const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'));
 
+// Import WebSocket test utility for debugging
+import './utils/testWebSocket';
+
 
 function Dashboard() {
   const { projectId, branchId } = useParams<{

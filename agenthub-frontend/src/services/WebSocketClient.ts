@@ -69,11 +69,37 @@ export class WebSocketClient extends EventEmitter {
     }
 
     this.isConnecting = true;
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/realtime?token=${this.token}`;
+
+    // Determine WebSocket URL based on environment
+    let wsUrl: string;
+
+    // First check if we're running from a production domain
+    const currentHost = window.location.hostname;
+    const isProduction = currentHost.includes('4genthub.com') || currentHost.includes('vercel.app');
+
+    if (import.meta.env.VITE_WS_URL) {
+      // Use explicit WebSocket URL from environment
+      wsUrl = `${import.meta.env.VITE_WS_URL}/ws/${this.userId}?token=${this.token}`;
+    } else if (import.meta.env.VITE_BACKEND_URL) {
+      // Derive WebSocket URL from backend URL
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      const wsProtocol = backendUrl.startsWith('https') ? 'wss' : 'ws';
+      const wsHost = backendUrl.replace(/^https?:\/\//, '');
+      wsUrl = `${wsProtocol}://${wsHost}/ws/${this.userId}?token=${this.token}`;
+    } else if (isProduction) {
+      // Auto-detect production environment
+      console.log('[WebSocket v2.0] 🌐 Production environment detected, using production backend');
+      wsUrl = `wss://api.4genthub.com/ws/${this.userId}?token=${this.token}`;
+    } else {
+      // Fallback to localhost for development
+      wsUrl = `ws://localhost:8000/ws/${this.userId}?token=${this.token}`;
+    }
 
     console.log('[WebSocket v2.0] 🔌 Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
     console.log('[WebSocket v2.0] 🔑 Token length:', this.token ? this.token.length : 0);
     console.log('[WebSocket v2.0] 👤 User ID:', this.userId);
+    console.log('[WebSocket v2.0] 🌍 Current host:', currentHost);
+    console.log('[WebSocket v2.0] 🏭 Is production:', isProduction);
 
     this.ws = new WebSocket(wsUrl);
 
@@ -357,10 +383,17 @@ export class WebSocketClient extends EventEmitter {
     this.stopHeartbeat();
     this.emit('disconnected');
 
-    // Attempt reconnection with exponential backoff
+    // Check for authentication failure (code 1008 or 4001-4003)
+    if (event?.code === 1008 || (event?.code && event.code >= 4001 && event.code <= 4003)) {
+      console.error('[WebSocket] Authentication failed - not attempting reconnect');
+      this.emit('authenticationFailed', event.reason || 'Authentication failed');
+      return;
+    }
+
+    // Attempt reconnection with exponential backoff for other disconnections
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+      const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
 
       console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       setTimeout(() => this.connect(), delay);
