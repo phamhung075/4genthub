@@ -79,20 +79,20 @@ export class WebSocketClient extends EventEmitter {
 
     if (import.meta.env.VITE_WS_URL) {
       // Use explicit WebSocket URL from environment
-      wsUrl = `${import.meta.env.VITE_WS_URL}/ws/${this.userId}?token=${this.token}`;
+      wsUrl = `${import.meta.env.VITE_WS_URL}/ws/realtime?token=${this.token}`;
     } else if (import.meta.env.VITE_BACKEND_URL) {
       // Derive WebSocket URL from backend URL
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
       const wsProtocol = backendUrl.startsWith('https') ? 'wss' : 'ws';
       const wsHost = backendUrl.replace(/^https?:\/\//, '');
-      wsUrl = `${wsProtocol}://${wsHost}/ws/${this.userId}?token=${this.token}`;
+      wsUrl = `${wsProtocol}://${wsHost}/ws/realtime?token=${this.token}`;
     } else if (isProduction) {
       // Auto-detect production environment
       console.log('[WebSocket v2.0] 🌐 Production environment detected, using production backend');
-      wsUrl = `wss://api.4genthub.com/ws/${this.userId}?token=${this.token}`;
+      wsUrl = `wss://api.4genthub.com/ws/realtime?token=${this.token}`;
     } else {
       // Fallback to localhost for development
-      wsUrl = `ws://localhost:8000/ws/${this.userId}?token=${this.token}`;
+      wsUrl = `ws://localhost:8000/ws/realtime?token=${this.token}`;
     }
 
     console.log('[WebSocket v2.0] 🔌 Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));

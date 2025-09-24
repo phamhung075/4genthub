@@ -15,10 +15,10 @@ export function testWebSocketConnection(userId: string, token: string, backendUr
 
   if (backend.startsWith('https')) {
     const host = backend.replace('https://', '');
-    wsUrl = `wss://${host}/ws/${userId}?token=${token}`;
+    wsUrl = `wss://${host}/ws/realtime?token=${token}`;
   } else {
     const host = backend.replace('http://', '');
-    wsUrl = `ws://${host}/ws/${userId}?token=${token}`;
+    wsUrl = `ws://${host}/ws/realtime?token=${token}`;
   }
 
   console.log('Attempting connection to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
