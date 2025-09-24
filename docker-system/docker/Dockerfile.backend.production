@@ -34,37 +34,44 @@ RUN uv venv /opt/venv && \
 # Stage 2: Production Runtime
 FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.11-slim
 
-# Accept build arguments for environment configuration
-ARG APP_DEBUG=false
-ARG APP_LOG_LEVEL=info
-ARG AUTH_ENABLED=true
-ARG AUTH_PROVIDER=keycloak
-ARG AUTO_MIGRATE=false
-ARG CAPROVER_GIT_COMMIT_SHA
-ARG CORS_ALLOW_CREDENTIALS=true
-ARG CORS_ORIGINS
-ARG DATABASE_HOST
-ARG DATABASE_NAME=agenthub
-ARG DATABASE_PASSWORD
-ARG DATABASE_PORT=5432
-ARG DATABASE_SSL_MODE=disable
-ARG DATABASE_TYPE=postgresql
-ARG DATABASE_USER=postgres
+# Build arguments grouped by frequency of change (optimization for Docker layer caching)
+# Group 1: Static/Rarely Changed - Environment type, ports, defaults, and basic configurations
+ARG NODE_ENV=production
 ARG ENV=production
 ARG FASTMCP_HOST=0.0.0.0
 ARG FASTMCP_PORT=8000
 ARG FASTMCP_TRANSPORT=streamable-http
+ARG DATABASE_PORT=5432
+ARG DATABASE_SSL_MODE=disable
+ARG DATABASE_TYPE=postgresql
+ARG DATABASE_NAME=agenthub
+ARG DATABASE_USER=postgres
+ARG AUTH_PROVIDER=keycloak
+ARG APP_DEBUG=false
+ARG APP_LOG_LEVEL=info
+
+# Group 2: Feature Flags/Config - Feature toggles and application settings (change occasionally)
+ARG AUTH_ENABLED=true
+ARG AUTO_MIGRATE=false
+ARG CORS_ALLOW_CREDENTIALS=true
 ARG FEATURE_HIERARCHICAL_CONTEXT=true
 ARG FEATURE_MULTI_AGENT=true
 ARG FEATURE_RATE_LIMITING=true
 ARG FEATURE_REQUEST_LOGGING=false
 ARG FEATURE_VISION_SYSTEM=true
-ARG JWT_SECRET_KEY
+
+# Group 3: External Services - Database, Keycloak, and service connections (change per deployment)
+ARG DATABASE_HOST
+ARG DATABASE_PASSWORD
+ARG CORS_ORIGINS
+ARG KEYCLOAK_URL
+ARG KEYCLOAK_REALM
 ARG KEYCLOAK_CLIENT_ID
 ARG KEYCLOAK_CLIENT_SECRET
-ARG KEYCLOAK_REALM
-ARG KEYCLOAK_URL
-ARG NODE_ENV=production
+ARG JWT_SECRET_KEY
+
+# Group 4: Build Metadata - Changes with every build (most frequently changed)
+ARG CAPROVER_GIT_COMMIT_SHA
 
 # Create non-root user and install runtime dependencies (optimized single layer)
 RUN groupadd -r appuser && useradd -r -g appuser appuser && \
