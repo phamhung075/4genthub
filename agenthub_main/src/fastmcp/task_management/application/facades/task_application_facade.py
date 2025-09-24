@@ -934,27 +934,19 @@ class TaskApplicationFacade:
         """Validate create task request at application boundary"""
         if not request.title or not request.title.strip():
             raise ValueError("Task title is required")
-        
+
         # Description is now optional, only validate if provided
         if request.description is not None and not request.description.strip():
             raise ValueError("Task description cannot be empty if provided")
-        
+
         if len(request.title) > 200:
             raise ValueError("Task title cannot exceed 200 characters")
-        
+
         if request.description and len(request.description) > 2000:
             raise ValueError("Task description cannot exceed 2000 characters")
 
-        if request.progress_percentage is not None:
-            try:
-                progress_value = int(request.progress_percentage)
-            except (TypeError, ValueError):
-                raise ValueError("progress_percentage must be an integer between 0 and 100")
-
-            if progress_value < 0 or progress_value > 100:
-                raise ValueError("progress_percentage must be between 0 and 100")
-
-            request.progress_percentage = progress_value
+        # CreateTaskRequest doesn't have progress_percentage attribute
+        # Progress percentage is only for UpdateTaskRequest
     
     def _validate_update_task_request(self, task_id: str, request: UpdateTaskRequest) -> None:
         """Validate update task request at application boundary"""

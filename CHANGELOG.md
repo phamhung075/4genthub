@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Iteration 72 (2025-09-24)
+- **Backend Fix**: Fixed task creation error with progress_percentage
+  - Removed invalid progress_percentage validation from CreateTaskRequest
+  - Progress percentage only applies to UpdateTaskRequest, not create
+  - Task creation now works properly without AttributeError
+
 ### Fixed - Iteration 71 (2025-09-24)
 - **Frontend Code Cleanup**: Consolidated duplicate ShimmerButton components
   - Merged 3 duplicate ShimmerButton files into single `shimmer-button.tsx`
@@ -13,11 +19,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Updated import in `App.tsx` to use consolidated component
   - Removed duplicate files: `ShimmerButton.tsx` and `ShimmerButtonFixed.tsx`
   - Maintained all existing functionality with improved browser compatibility
-- **LazyTaskList Fix**: Fixed duplicate API calls and infinite loop on refresh button click
+- **LazyTaskList Fix**: Fixed duplicate API calls, infinite loop, and incorrect task count
   - Removed redundant `changePoolService.forceRefresh` call in refresh button onClick
   - Added loading state check using `useRef` to prevent concurrent calls without causing re-render loops
   - Fixed infinite loop caused by including `loading` state in useCallback dependencies
+  - Fixed incorrect task count by not including deleted tasks being animated in total
+  - Removed double-subtraction of deleted tasks from total count
+  - Added validation for WebSocket task counts to only accept positive values
   - Added debug logging to track and prevent duplicate requests
+- **ProjectList Fix**: Updated task count calculation to match LazyTaskList logic
+  - Check `task_counts.total` first as most reliable source
+  - Fall back to `total_tasks` or `task_count` fields if needed
+  - Applied same logic to both branch grouping and taskCounts memo
+  - Ensures consistent task counting across all components
+- **ProjectList Enhancement**: Added visual effects to task count badges on change
+  - Added pulse animation when task count changes
+  - Green gradient for count increase, red gradient for decrease
+  - 600ms animation duration with smooth scaling and shadow effects
+  - Tracks previous counts to detect and animate changes
 
 ### Fixed - Iteration 70 (2025-09-24)
 - **Test Suite Improvements**: Fixed task repository tests by updating obsolete method calls and adding missing user_id parameters

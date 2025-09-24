@@ -763,7 +763,7 @@ task_id = response["task"]["id"]
 
 ### Step 2: Delegate with ID Only
 ```python
-# ✅ CORRECT: Only pass task ID (saves 95% tokens)
+# ✅ CORRECT: Only pass task ID (saves tokens)
 Task(
     subagent_type="coding-agent",
     prompt=f"task_id: {task_id}"
@@ -870,7 +870,7 @@ Task(subagent_type="@test-orchestrator-agent", prompt=f"task_id: {test_task['id'
 ### 1. Token Economy
 - **Store once**: Full context in MCP task
 - **Reference everywhere**: Use task_id only
-- **Result**: 95% token savings per delegation
+- **Result**: token savings per delegation
 
 ### 2. Clear Role Separation
 - **Master Orchestrator**: Plans, delegates, coordinates

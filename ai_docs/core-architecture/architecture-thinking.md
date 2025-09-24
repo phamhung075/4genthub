@@ -196,7 +196,7 @@ def optimize_token_usage():
     Task(subagent="coding-agent", prompt=f"task_id: {task.id}")
     # Uses only 10 tokens!
     
-    # Result: 95% token savings
+    # Result: token savings
 ```
 
 ### 3.3 Quantum State Resolution
