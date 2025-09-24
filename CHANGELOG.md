@@ -13,6 +13,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Updated import in `App.tsx` to use consolidated component
   - Removed duplicate files: `ShimmerButton.tsx` and `ShimmerButtonFixed.tsx`
   - Maintained all existing functionality with improved browser compatibility
+- **LazyTaskList Fix**: Fixed duplicate API calls and infinite loop on refresh button click
+  - Removed redundant `changePoolService.forceRefresh` call in refresh button onClick
+  - Added loading state check using `useRef` to prevent concurrent calls without causing re-render loops
+  - Fixed infinite loop caused by including `loading` state in useCallback dependencies
+  - Added debug logging to track and prevent duplicate requests
 
 ### Fixed - Iteration 70 (2025-09-24)
 - **Test Suite Improvements**: Fixed task repository tests by updating obsolete method calls and adding missing user_id parameters

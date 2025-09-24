@@ -128,6 +128,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     playUpdateAnimation: () => void;
   }>>(new Map());
 
+  // Loading state ref to prevent infinite loops
+  const isLoadingRef = useRef(false);
+
   // Synchronize total task count with authoritative branch totals from WebSocket payloads
   useEffect(() => {
     if (typeof branchTaskTotal === "number" && !Number.isNaN(branchTaskTotal)) {
@@ -417,9 +420,17 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Initial lightweight load - only task summaries
   const loadTaskSummaries = useCallback(async (_page = 1) => {
+    // Prevent duplicate calls while loading using ref
+    if (isLoadingRef.current) {
+      logger.debug('Already loading tasks, skipping duplicate call', { component: 'LazyTaskList' });
+      return;
+    }
+
+    logger.info('Loading task summaries', { component: 'LazyTaskList', page: _page });
+    isLoadingRef.current = true;
     setLoading(true);
     setError(null);
-    
+
     try {
       // Skip the non-existent summaries endpoint and go directly to fallback
       // TODO: Implement /api/tasks/summaries endpoint for better performance
@@ -428,6 +439,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       logger.error('Failed to load task summaries', { component: 'LazyTaskList', error });
       // Error is already set by loadFullTasksFallback
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
     }
   }, [loadFullTasksFallback]);
@@ -967,9 +979,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           <div className="flex gap-2">
             <ShimmerButton
               onClick={async () => {
+                // Only refresh once - loadTaskSummaries will handle everything
                 await loadTaskSummaries(1);
-                // Also force refresh all subtask lists
-                changePoolService.forceRefresh(['subtask']);
               }}
               size="sm"
               variant="outline"
