@@ -2,10 +2,10 @@
 
 ## Executive Summary
 
-Analysis of the 69 agents in the agenthub agent library reveals significant functional overlaps that create system complexity and maintenance challenges. This document provides recommendations for consolidating similar agents to create a cleaner, more maintainable system with 43 core agents.
+Analysis of the 69 agents in the agenthub agent library reveals significant functional overlaps that create system complexity and maintenance challenges. This document provides recommendations for consolidating similar agents to create a cleaner, more maintainable system with 32 core agents.
 
 **Current State**: 69 agents with functional overlaps
-**Recommended State**: 43 core agents (26 agents removed/consolidated)
+**Recommended State**: 32 core agents (broad consolidation of overlapping roles)
 **Benefits**: Simplified maintenance, clearer agent selection, reduced system complexity
 
 ## Analysis Results
@@ -184,7 +184,7 @@ Analysis of the 69 agents in the agenthub agent library reveals significant func
 - `visual_regression_testing_agent` (absorbed into test_orchestrator)
 - `design_qa_analyst_agent` (absorbed into design-system-agent)
 
-## 🎯 Final Recommended Agent Library (43 agents)
+## 🎯 Final Recommended Agent Library (32 agents)
 
 ### Core Development Agents (8 agents)
 - `coding-agent` - Feature implementation and development
@@ -300,7 +300,7 @@ Complete the consolidation of complex overlapping agents:
 
 ## 📈 Success Metrics
 
-- **Reduced Library Size**: From 69 to 43 agents (38% reduction)
+- **Reduced Library Size**: From 69 to 32 agents (major reduction in overlap)
 - **Improved Clarity**: Each agent has distinct, non-overlapping purpose
 - **Maintenance Efficiency**: Fewer agents to update and maintain
 - **User Satisfaction**: Clearer agent selection process

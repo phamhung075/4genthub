@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions to implement the agent library cleanup recommendations, transitioning from 69 agents to 43 core agents for improved maintainability and system performance.
+This guide provides step-by-step instructions to implement the agent library cleanup recommendations, transitioning from 69 agents to 32 core agents for improved maintainability and system performance.
 
 **Reference Document**: [Agent Library Cleanup Recommendations](../architecture-design/agent-library-cleanup-recommendations.md)
 
@@ -42,7 +42,7 @@ This guide provides step-by-step instructions to implement the agent library cle
 **Status**: **COMPLETED** ✅ - All phases successfully executed!
 
 **FINAL RESULTS**:
-- ✅ Successfully reduced from 69 to **43 agents** (38% reduction)
+- ✅ Successfully reduced from 69 to **32 agents** (major reduction in duplication)
 - ✅ Removed **26 redundant agents** as planned
 - ✅ **13 production-ready agents** maintained and enhanced
 - ✅ All high-priority agents (7/7) completed
@@ -59,7 +59,7 @@ This guide provides step-by-step instructions to implement the agent library cle
 
 ### 📋 Impact Assessment
 - **Current State**: 69 agents
-- **Target State**: 43 agents (26 agents to be removed/consolidated)
+- **Target State**: 32 agents (deep consolidation of redundant roles)
 - **Estimated Timeline**: 2-3 weeks
 - **Risk Level**: Medium (functionality consolidation required)
 
@@ -442,7 +442,7 @@ cp -r agenthub_main/agent-library.backup/agents/[agent_name] agenthub_main/agent
 ## Success Metrics
 
 ### ✅ Migration Success Criteria
-- [ ] All 43 core agents load successfully
+- [ ] All 32 core agents load successfully
 - [ ] No functionality loss reported by users
 - [ ] System performance improvements measurable
 - [ ] Agent selection time improved
@@ -486,7 +486,7 @@ AGENT_MAPPINGS = {
 
 ---
 
-**Next Steps**: After completing this migration, the system will have 43 optimized agents with improved maintainability, clearer specialization, and better performance characteristics.
+**Next Steps**: After completing this migration, the system will have 32 optimized agents with improved maintainability, clearer specialization, and better performance characteristics.
 
 *Migration Guide Version: 1.0*  
 *Created: 2025-09-06*  
