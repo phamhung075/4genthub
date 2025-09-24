@@ -1,4 +1,16 @@
 import { EventEmitter } from '../utils/EventEmitter';
+import { config } from '../config/environment';
+
+/**
+ * WebSocket Configuration Interface
+ */
+export interface WebSocketConfig {
+  maxReconnectAttempts: number;
+  reconnectDelay: number;
+  aiBufferTimeout: number;
+  maxReconnectDelay: number;
+  heartbeatInterval: number;
+}
 
 /**
  * WebSocket Protocol v2.0 Message Interface
@@ -44,8 +56,7 @@ export interface WSMessage {
 export class WebSocketClient extends EventEmitter {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private wsConfig: WebSocketConfig;
   private aiBuffer: WSMessage[] = [];
   private aiBufferTimer: NodeJS.Timeout | null = null;
   private sequenceNumber = 0;
@@ -54,9 +65,19 @@ export class WebSocketClient extends EventEmitter {
 
   constructor(
     private userId: string,
-    private token: string
+    private token: string,
+    wsConfig?: Partial<WebSocketConfig>
   ) {
     super();
+
+    // Initialize WebSocket configuration with defaults from environment and allow overrides
+    this.wsConfig = {
+      maxReconnectAttempts: wsConfig?.maxReconnectAttempts ?? config.websocket.maxReconnectAttempts,
+      reconnectDelay: wsConfig?.reconnectDelay ?? config.websocket.reconnectDelay,
+      aiBufferTimeout: wsConfig?.aiBufferTimeout ?? config.websocket.aiBufferTimeout,
+      maxReconnectDelay: wsConfig?.maxReconnectDelay ?? config.websocket.maxReconnectDelay,
+      heartbeatInterval: wsConfig?.heartbeatInterval ?? config.websocket.heartbeatInterval,
+    };
   }
 
   /**
@@ -69,10 +90,10 @@ export class WebSocketClient extends EventEmitter {
     }
 
     this.isConnecting = true;
-    // Use environment variable without fallback - fail fast if not configured
-    const wsBaseUrl = import.meta.env.VITE_WS_URL;
+    // Use configuration instead of direct environment access
+    const wsBaseUrl = config.websocket.url;
     if (!wsBaseUrl) {
-      console.error('[WebSocket v2.0] ❌ VITE_WS_URL is not configured');
+      console.error('[WebSocket v2.0] ❌ WebSocket URL is not configured');
       this.emit('error', new Error('WebSocket URL not configured'));
       this.isConnecting = false;
       return;
@@ -83,8 +104,6 @@ export class WebSocketClient extends EventEmitter {
     console.log('[WebSocket v2.0] 🔌 Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
     console.log('[WebSocket v2.0] 🔑 Token length:', this.token ? this.token.length : 0);
     console.log('[WebSocket v2.0] 👤 User ID:', this.userId);
-    console.log('[WebSocket v2.0] 🌍 Current host:', currentHost);
-    console.log('[WebSocket v2.0] 🏭 Is production:', isProduction);
 
     this.ws = new WebSocket(wsUrl);
 
@@ -187,10 +206,10 @@ export class WebSocketClient extends EventEmitter {
       clearTimeout(this.aiBufferTimer);
     }
 
-    // Process batch after 500ms
+    // Process batch after configured timeout
     this.aiBufferTimer = setTimeout(() => {
       this.processAIBatch();
-    }, 500);
+    }, this.wsConfig.aiBufferTimeout);
   }
 
   /**
@@ -376,11 +395,14 @@ export class WebSocketClient extends EventEmitter {
     }
 
     // Attempt reconnection with exponential backoff for other disconnections
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+    if (this.reconnectAttempts < this.wsConfig.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+      const delay = Math.min(
+        this.wsConfig.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+        this.wsConfig.maxReconnectDelay
+      );
 
-      console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+      console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.wsConfig.maxReconnectAttempts})`);
       setTimeout(() => this.connect(), delay);
     } else {
       console.error('[WebSocket] Max reconnection attempts reached');
@@ -406,7 +428,7 @@ export class WebSocketClient extends EventEmitter {
           metadata: { source: 'system' }
         });
       }
-    }, 30000); // Every 30 seconds
+    }, this.wsConfig.heartbeatInterval);
   }
 
   private stopHeartbeat(): void {
@@ -420,7 +442,7 @@ export class WebSocketClient extends EventEmitter {
    * Disconnect and cleanup
    */
   disconnect(): void {
-    this.reconnectAttempts = this.maxReconnectAttempts; // Prevent auto-reconnect
+    this.reconnectAttempts = this.wsConfig.maxReconnectAttempts; // Prevent auto-reconnect
 
     if (this.ws) {
       this.ws.close();
@@ -449,5 +471,12 @@ export class WebSocketClient extends EventEmitter {
    */
   resetReconnectAttempts(): void {
     this.reconnectAttempts = 0;
+  }
+
+  /**
+   * Get current WebSocket configuration
+   */
+  getConfig(): WebSocketConfig {
+    return { ...this.wsConfig };
   }
 }

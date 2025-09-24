@@ -60,6 +60,14 @@ export const KEYCLOAK_URL = getEnvVar('VITE_KEYCLOAK_URL', '');
 export const KEYCLOAK_REALM = getEnvVar('VITE_KEYCLOAK_REALM', '');
 export const KEYCLOAK_CLIENT_ID = getEnvVar('VITE_KEYCLOAK_CLIENT_ID', '');
 
+// WebSocket Configuration
+export const WS_URL = getEnvVar('VITE_WS_URL', '');
+export const WS_MAX_RECONNECT_ATTEMPTS = parseInt(getEnvVar('VITE_WS_MAX_RECONNECT_ATTEMPTS', '5'), 10);
+export const WS_RECONNECT_DELAY = parseInt(getEnvVar('VITE_WS_RECONNECT_DELAY', '1000'), 10);
+export const WS_AI_BUFFER_TIMEOUT = parseInt(getEnvVar('VITE_WS_AI_BUFFER_TIMEOUT', '500'), 10);
+export const WS_MAX_RECONNECT_DELAY = parseInt(getEnvVar('VITE_WS_MAX_RECONNECT_DELAY', '30000'), 10);
+export const WS_HEARTBEAT_INTERVAL = parseInt(getEnvVar('VITE_WS_HEARTBEAT_INTERVAL', '30000'), 10);
+
 // Validate configuration in production
 if (IS_PRODUCTION) {
   if (!import.meta.env.VITE_API_URL) {
@@ -81,6 +89,12 @@ if (IS_DEVELOPMENT || DEBUG_MODE) {
     ENVIRONMENT,
     DEBUG_MODE,
     APP_NAME,
+    WS_URL,
+    WS_MAX_RECONNECT_ATTEMPTS,
+    WS_RECONNECT_DELAY,
+    WS_AI_BUFFER_TIMEOUT,
+    WS_MAX_RECONNECT_DELAY,
+    WS_HEARTBEAT_INTERVAL,
     configuredApiUrl: configuredApiUrl,
     wasUpgraded: configuredApiUrl !== API_BASE_URL
   });
@@ -96,6 +110,14 @@ export const config = {
   api: {
     baseUrl: API_BASE_URL,
     timeout: 30000, // 30 seconds
+  },
+  websocket: {
+    url: WS_URL,
+    maxReconnectAttempts: WS_MAX_RECONNECT_ATTEMPTS,
+    reconnectDelay: WS_RECONNECT_DELAY,
+    aiBufferTimeout: WS_AI_BUFFER_TIMEOUT,
+    maxReconnectDelay: WS_MAX_RECONNECT_DELAY,
+    heartbeatInterval: WS_HEARTBEAT_INTERVAL,
   },
   app: {
     name: APP_NAME,
