@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { useAuth } from '../hooks/useAuth';
 import logger from '../utils/logger';
 import { tokenService } from '../services/tokenService';
+import { API_BASE_URL } from '../config/environment';
 
 interface APIToken {
   id: string;
@@ -773,8 +774,8 @@ export function TokenManagement() {
                   serverName: "agenthub",
                   protocol: "HTTP",
                   version: "2.1.0",
-                  host: (import.meta as any).env?.VITE_API_URL?.replace(/^https?:\/\//, '').replace(/:\d+.*$/, '') || 'localhost',
-                  port: parseInt((import.meta as any).env?.VITE_API_URL?.match(/:(\d+)/)?.[1] || '80'),
+                  host: API_BASE_URL.replace(/^https?:\/\//, '').replace(/:\d+.*$/, ''),
+                  port: parseInt(API_BASE_URL.match(/:(\d+)/)?.[1] || '80'),
                   authentication: "JWT Bearer",
                   capabilities: selectedScopes,
                   token: generatedToken || undefined,
@@ -793,7 +794,7 @@ export function TokenManagement() {
                       onClick={() => {
                         const config = {
                           type: "http",
-                          url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                          url: `${API_BASE_URL}/mcp`,
                           headers: {
                             Accept: "application/json, text/event-stream",
                             Authorization: `Bearer ${generatedToken}`
@@ -876,7 +877,7 @@ export function TokenManagement() {
                 onClick={() => {
                   const config = {
                     type: "http", 
-                    url: `${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'}/mcp`,
+                    url: `${API_BASE_URL}/mcp`,
                     headers: {
                       Accept: "application/json, text/event-stream",
                       Authorization: `Bearer ${generatedToken}`

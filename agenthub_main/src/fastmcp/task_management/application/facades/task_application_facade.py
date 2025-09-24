@@ -444,7 +444,7 @@ class TaskApplicationFacade:
                             {
                                 "chain_id": getattr(chain, 'chain_id', None),
                                 "chain_status": getattr(chain, 'chain_status', ''),
-                                "total_tasks": getattr(chain, 'total_tasks', 0),
+                                "task_count": getattr(chain, 'task_count', 0),
                                 "completed_tasks": getattr(chain, 'completed_tasks', 0),
                                 "blocked_tasks": getattr(chain, 'blocked_tasks', 0),
                                 "completion_percentage": getattr(chain, 'completion_percentage', 0),

@@ -741,7 +741,7 @@
         },
         {
           "hash": "6918341bc710221546526ebcac7d7bf2",
-          "modified": "2025-09-17T14:11:39.083883",
+          "modified": "2025-09-24T22:38:48.240582",
           "name": "PRD.md",
           "path": "core-architecture/PRD.md",
           "size": 10147
@@ -1237,7 +1237,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 14,
+      "count": 15,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1280,6 +1280,13 @@
           "name": "mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
           "size": 4333
+        },
+        {
+          "hash": "7079144b055da711052ad6c5bfd18e75",
+          "modified": "2025-09-24T23:37:08.576376",
+          "name": "task-count-fix.md",
+          "path": "issues/task-count-fix.md",
+          "size": 1558
         },
         {
           "hash": "60189137fe470dd0e5a792369f7b4d44",
@@ -1825,7 +1832,7 @@
       "path": "security"
     },
     "setup-guides": {
-      "count": 9,
+      "count": 10,
       "files": [
         {
           "hash": "96bd4cceca4513f357842eb7dd5b89db",
@@ -1875,6 +1882,13 @@
           "name": "keycloak-email-verification-fix.md",
           "path": "setup-guides/keycloak-email-verification-fix.md",
           "size": 7913
+        },
+        {
+          "hash": "54ca56130eb4e2a0d6b9e5031a1a79eb",
+          "modified": "2025-09-24T23:29:56.023614",
+          "name": "env-file-auto-selection.md",
+          "path": "setup-guides/env-file-auto-selection.md",
+          "size": 2315
         },
         {
           "hash": "94aa7f9c40ff5f1da468ad3d9b8c5906",
@@ -2863,7 +2877,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-24T21:24:02.729265",
+  "generated_at": "2025-09-24T23:37:08.748480",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3116,6 +3130,7 @@
         "mcp-task-creation-import-error-2025-09-09.md",
         "project-deletion-fix-2025-09-06.md",
         "task-context-cascade-deletion-analysis.md",
+        "task-count-fix.md",
         "task-creation-assignees-bug.md"
       ]
     },
@@ -3200,6 +3215,7 @@
         "DATABASE_UI_GUIDE.md",
         "POSTGRESQL_KEYCLOAK_PRODUCTION.md",
         "PRODUCTION_SETUP_SUMMARY.md",
+        "env-file-auto-selection.md",
         "index.md",
         "keycloak-authentication-fix.md",
         "keycloak-authentication-setup.md",

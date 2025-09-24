@@ -4,7 +4,8 @@
  * Ensures no hardcoded values in production
  */
 
-import logger from '../utils/logger';
+// Note: Cannot import logger here due to circular dependency
+// logger.config.ts depends on this file for API_BASE_URL
 
 // Helper to get runtime environment variable if available, fallback to build-time
 function getEnvVar(key: string, defaultValue: string = ''): string {
@@ -62,20 +63,20 @@ export const KEYCLOAK_CLIENT_ID = getEnvVar('VITE_KEYCLOAK_CLIENT_ID', '');
 // Validate configuration in production
 if (IS_PRODUCTION) {
   if (!import.meta.env.VITE_API_URL) {
-    logger.error('CRITICAL: VITE_API_URL is not configured in production!');
-    logger.error('Please configure VITE_API_URL in CapRover environment variables');
+    console.error('CRITICAL: VITE_API_URL is not configured in production!');
+    console.error('Please configure VITE_API_URL in CapRover environment variables');
   }
 
   if (API_BASE_URL.includes('localhost')) {
-    logger.warn('WARNING: API_BASE_URL contains localhost in production environment');
-    logger.warn('Current URL:', API_BASE_URL);
-    logger.warn('Please configure VITE_API_URL in CapRover to point to your production API');
+    console.warn('WARNING: API_BASE_URL contains localhost in production environment');
+    console.warn('Current URL:', API_BASE_URL);
+    console.warn('Please configure VITE_API_URL in CapRover to point to your production API');
   }
 }
 
 // Log configuration (only in development or debug mode)
 if (IS_DEVELOPMENT || DEBUG_MODE) {
-  logger.debug('Environment Configuration:', {
+  console.debug('Environment Configuration:', {
     API_BASE_URL,
     ENVIRONMENT,
     DEBUG_MODE,
@@ -86,7 +87,7 @@ if (IS_DEVELOPMENT || DEBUG_MODE) {
 
   // Log if URL was auto-upgraded to HTTPS
   if (configuredApiUrl !== API_BASE_URL) {
-    logger.info('API URL auto-upgraded from HTTP to HTTPS for mixed content security');
+    console.info('API URL auto-upgraded from HTTP to HTTPS for mixed content security');
   }
 }
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
+import { API_BASE_URL } from '../../config/environment';
 
 export const EmailVerification: React.FC = () => {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ export const EmailVerification: React.FC = () => {
     setResendMessage('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/supabase/resend-verification`, {
+      const response = await fetch(`${API_BASE_URL}/auth/supabase/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

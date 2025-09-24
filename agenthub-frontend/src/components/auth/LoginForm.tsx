@@ -27,6 +27,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { ThemeToggle } from '../ThemeToggle';
 import FallingGlitch from '../effects/FallingGlitch';
 import VersionDisplay from '../VersionDisplay';
+import { API_BASE_URL } from '../../config/environment';
 
 interface LoginFormData {
   email: string;
@@ -59,8 +60,8 @@ export const LoginForm: React.FC = () => {
   useEffect(() => {
     const fetchBackendVersion = async () => {
       try {
-        // Try to fetch from the backend health endpoint (port 8000)
-        const response = await fetch('http://localhost:8000/health');
+        // Use the configured API URL from environment
+        const response = await fetch(`${API_BASE_URL}/health`);
         if (response.ok) {
           const data = await response.json();
           if (data && data.version) {

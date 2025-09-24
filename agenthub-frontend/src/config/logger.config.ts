@@ -4,6 +4,7 @@
  */
 
 import { LoggerConfig, LogLevel } from '../types/logger.types';
+import { API_BASE_URL } from './environment';
 
 /**
  * Safe access to environment variables that works in both build time and runtime
@@ -81,7 +82,7 @@ export const loggerConfig: LoggerConfig = {
   batchInterval: getEnvInteger('VITE_LOG_BATCH_INTERVAL', 5000), // 5 seconds
 
   // Remote logging endpoint
-  remoteEndpoint: getEnvVar('VITE_LOG_REMOTE_ENDPOINT') || 'http://localhost:8000/api/logs/frontend'
+  remoteEndpoint: getEnvVar('VITE_LOG_REMOTE_ENDPOINT') || `${API_BASE_URL}/api/logs/frontend`
 };
 
 /**
