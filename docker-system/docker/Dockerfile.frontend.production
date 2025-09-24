@@ -17,8 +17,8 @@ FROM --platform=linux/arm64 node:20-alpine AS builder
 
 WORKDIR /build
 
-# Copy package files (explicitly include package-lock.json)
-COPY agenthub-frontend/package.json agenthub-frontend/package-lock.json ./
+# Copy package files (project uses pnpm)
+COPY agenthub-frontend/package.json ./
 
 # Install all dependencies (including dev dependencies for build)
 # Install pnpm globally

@@ -60,7 +60,7 @@ docker-compose exec frontend sh
 docker-compose exec frontend node --version
 
 # Check installed packages
-docker-compose exec frontend npm list
+docker-compose exec frontend pnpm list
 ```
 
 ## 🛠 Common Tasks
@@ -88,8 +88,8 @@ docker-compose up frontend
 ```bash
 # Test production build locally
 cd agenthub-frontend
-npm run build
-npm run preview
+pnpm run build
+pnpm run preview
 ```
 
 ## 🐛 Troubleshooting
