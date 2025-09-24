@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Agent Consolidation Migration Script
-Consolidates redundant agents into optimized structure (42 → 30 agents)
+Consolidates redundant agents into optimized structure (32 → 30 agents)
 """
 
 import os

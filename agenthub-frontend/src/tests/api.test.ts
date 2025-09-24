@@ -982,9 +982,9 @@ describe('API V2 Module', () => {
     });
 
     describe('getAvailableAgents', () => {
-      it('should return all 42 available agents from agent library', async () => {
+      it('should return all 32 available agents from agent library', async () => {
         const result = await getAvailableAgents();
-        expect(result).toHaveLength(42);
+        expect(result).toHaveLength(32);
         expect(result).toContain('coding-agent');
         expect(result).toContain('@master-orchestrator-agent');
         expect(result).toContain('debugger-agent');

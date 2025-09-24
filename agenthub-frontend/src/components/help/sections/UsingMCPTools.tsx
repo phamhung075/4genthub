@@ -77,10 +77,10 @@ const UsingMCPTools: React.FC<UsingMCPToolsProps> = ({ expandedSections, toggleS
         </div>
 
         <div>
-          <h4 className="text-lg font-semibold mb-3">Agent Coordination (42 Specialized Agents)</h4>
+          <h4 className="text-lg font-semibold mb-3">Agent Coordination (32 Specialized Agents)</h4>
           <div className="mb-4">
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              4genthub provides 42 specialized agents organized into categories:
+              4genthub provides 32 specialized agents organized into categories:
             </p>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

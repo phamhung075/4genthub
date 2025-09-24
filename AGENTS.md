@@ -153,7 +153,7 @@ def select_role_for_work(task_description):
     elif any(word in task_lower for word in ["architecture", "system design", "scalability", "patterns"]):
         return switch_to_role("system-architect-agent")
 
-    # And so on for all 43 specialist roles...
+    # And so on for all 32 specialist roles...
 ```
 
 ### 🔄 ROLE SWITCHING EXAMPLES
@@ -312,7 +312,7 @@ agenthub_http__manage_task(
 )
 ```
 
-## 🎯 SPECIALIST ROLES AVAILABLE (43 Total)
+## 🎯 SPECIALIST ROLES AVAILABLE (32 Total)
 
 ### Development & Coding (4):
 - `coding-agent` - Implementation and features

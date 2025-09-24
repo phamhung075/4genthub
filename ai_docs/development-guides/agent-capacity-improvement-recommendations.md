@@ -57,9 +57,9 @@ Create a comprehensive audit of template completion status:
 find agenthub_main/agent-library/agents -name "*instructions.yaml" -exec grep -l "\[.*\]" {} \;
 ```
 
-### Phase 2: Enhance Core 43 Agents (2-3 weeks)
+### Phase 2: Enhance Core 32 Agents (2-3 weeks)
 
-Focus on the 43 core agents identified in our [Agent Library Cleanup Recommendations](agent-library-cleanup-recommendations.md).
+Focus on the 32 core agents identified in our [Agent Library Cleanup Recommendations](agent-library-cleanup-recommendations.md).
 
 #### 2.1 Establish Quality Standards
 
@@ -388,7 +388,7 @@ custom_instructions: |-
 
 1. **Immediate**: Remove broken agents and establish quality standards
 2. **Priority**: Complete the 5 most critical agents using the established template
-3. **Systematic**: Apply the completion strategy to all 43 core agents
+3. **Systematic**: Apply the completion strategy to all 32 core agents
 4. **Validation**: Test and validate improved agents with users
 5. **Maintenance**: Establish ongoing quality assurance processes
 

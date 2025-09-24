@@ -190,7 +190,7 @@ ANALYSIS SPECIALISTS
 ## Success Metrics
 
 ### Before Optimization
-- 42 agents total
+- 32 agents total
 - 12+ redundant agents
 - Unclear boundaries
 - Confusing names

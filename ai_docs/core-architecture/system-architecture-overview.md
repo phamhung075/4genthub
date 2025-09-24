@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The agenthub system is a sophisticated multi-agent project management platform built on Domain-Driven Design (DDD) principles with a 4-tier context hierarchy. The system orchestrates 43+ specialized agents through MCP (Model Context Protocol) integration, providing intelligent task management, automated workflows, and comprehensive project coordination capabilities.
+The agenthub system is a sophisticated multi-agent project management platform built on Domain-Driven Design (DDD) principles with a 4-tier context hierarchy. The system orchestrates 32 specialized agents through MCP (Model Context Protocol) integration, providing intelligent task management, automated workflows, and comprehensive project coordination capabilities.
 
 ## Quick Navigation
 
@@ -36,7 +36,7 @@ graph TB
     
     subgraph "Application Layer"
         ORCH[Master Orchestrator]
-        AGENTS[43+ Specialized Agents]
+        AGENTS[32 Specialized Agents]
         FACADE[Application Facades]
         SERVICES[Application Services]
         USE_CASES[Use Cases]
@@ -101,7 +101,7 @@ graph TB
 ### 2. Application Layer  
 **Purpose:** Orchestrate business use cases and coordinate agents
 - **Master Orchestrator:** Central coordination agent
-- **Specialized Agents:** 43+ agents with domain expertise
+- **Specialized Agents:** 32 agents with domain expertise
 - **Application Facades:** Simplified interfaces for complex operations  
 - **Application Services:** Cross-cutting concerns and coordination
 - **Use Cases:** Business operation implementations
@@ -159,7 +159,7 @@ Orchestration:    docker-system/docker-menu.sh
 
 ### Agent System
 ```
-Total Agents:     43+ specialized agents
+Total Agents:     32 specialized agents
 Categories:       15+ (Development, Testing, Architecture, etc.)
 Protocol:         MCP (Model Context Protocol)
 Orchestration:    Master Orchestrator Agent
@@ -265,7 +265,7 @@ graph LR
 
 ### Agent-Centric Architecture  
 - **Master Orchestrator** coordinates all complex workflows
-- **Specialized Agents** with domain expertise (43+ agents)
+- **Specialized Agents** with domain expertise (32 agents)
 - **Token-efficient delegation** using task IDs instead of full context
 - **Transparent progress tracking** through MCP task system
 

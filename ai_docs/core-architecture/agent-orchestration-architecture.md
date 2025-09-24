@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The agenthub system employs a sophisticated multi-agent orchestration architecture centered around a Master Orchestrator that coordinates 43+ specialized agents. This enterprise-grade system uses token-efficient delegation, transparent task management, and intelligent agent assignment patterns to deliver scalable, maintainable, and traceable AI-driven project management.
+The agenthub system employs a sophisticated multi-agent orchestration architecture centered around a Master Orchestrator that coordinates 32 specialized agents. This enterprise-grade system uses token-efficient delegation, transparent task management, and intelligent agent assignment patterns to deliver scalable, maintainable, and traceable AI-driven project management.
 
 ## Quick Navigation
 
@@ -402,7 +402,7 @@ def select_agent(work_type: str, context: Dict) -> str:
         return "deep-research-agent"
     elif re.match(r"orchestrate|coordinate|multi-step|complex", work_type, re.IGNORECASE):
         return "master-orchestrator-agent"
-    # ... additional patterns for all 43+ agents
+    # ... additional patterns for all 32 agents
     else:
         return "master-orchestrator-agent"  # Default fallback
 

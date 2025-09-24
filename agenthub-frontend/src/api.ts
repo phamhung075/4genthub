@@ -495,7 +495,7 @@ export const listAgents = async (): Promise<any[]> => {
 };
 
 export const getAvailableAgents = async (): Promise<string[]> => {
-    // Return all 42 available agents from the agent library
+    // Return all 32 available agents from the agent library
     return [
         'coding-agent',
         'debugger-agent',

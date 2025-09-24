@@ -87,7 +87,7 @@ if agent_result['success']:
 
 ## Supported Agents
 
-All 42+ agents from `agenthub_main/agent-library/agents/` are supported:
+All 32 agents from `agenthub_main/agent-library/agents/` are supported:
 
 ### Development & Coding
 - `coding-agent` - Implementation and feature development
@@ -117,7 +117,7 @@ And many more...
 
 ### For Claude Code Users
 
-1. **Access to 42+ Specialized Agents** - Leverage agenthub's extensive agent library
+1. **Access to 32 Specialized Agents** - Leverage agenthub's extensive agent library
 2. **Production-Ready Agents** - All agents include comprehensive system prompts and capabilities
 3. **Consistent Interface** - Standard `.claude/agents/*.md` format for familiarity
 4. **Tool Access Control** - Agents inherit appropriate tool permissions based on capabilities

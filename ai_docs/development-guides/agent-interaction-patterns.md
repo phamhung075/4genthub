@@ -4,7 +4,7 @@
 **Status**: Active
 
 ## Overview
-This document describes the interaction patterns between the 31 consolidated agents in the agenthub system. After reducing from 42 to 31 agents, the interaction patterns have been streamlined for better efficiency and clearer delegation paths.
+This document describes the interaction patterns between the 32 consolidated agents in the agenthub system. After reducing from 69 to 32 agents, the interaction patterns have been streamlined for better efficiency and clearer delegation paths.
 
 ## Agent Hierarchy & Roles
 
@@ -317,7 +317,7 @@ delegate = 'documentation-agent'  # Handles all documentation types
 ## Performance Improvements
 
 ### Metrics
-- **Agent Count**: 42 → 31 (26% reduction)
+- **Agent Count**: 69 → 32 (major reduction in overlap)
 - **Delegation Overhead**: Reduced by 30%
 - **Context Switching**: Reduced by 40%
 - **Parallel Execution**: Increased by 25%
@@ -340,4 +340,4 @@ delegate = 'documentation-agent'  # Handles all documentation types
 - Implement agent learning and adaptation
 
 ## Conclusion
-The consolidated agent architecture provides a cleaner, more efficient system while maintaining full backward compatibility. The reduction from 42 to 31 agents has eliminated redundancy, clarified roles, and improved overall system performance.
+The consolidated agent architecture provides a cleaner, more efficient system while maintaining full backward compatibility. The reduction from 69 to 32 agents has eliminated redundancy, clarified roles, and improved overall system performance.

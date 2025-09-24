@@ -230,7 +230,7 @@ function App() {
             }
           />
           <Route
-            path="/dashboard/project/:projectId/branch/:branchId/task/:taskId/subtask/:subtaskId"
+            path="/dashboard/project/:projectId/branch/:branchId/subtask/:subtaskId"
             element={
               <ProtectedRoute>
                 <Dashboard />

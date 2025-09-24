@@ -65,7 +65,7 @@ GLOBAL → PROJECT → BRANCH → TASK
 - **Auth**: Keycloak (source of truth) with JWT tokens
 - **Container**: Docker with docker-compose orchestration
 - **Ports**: 8000 (backend), 3800 (frontend)
-- **MCP Tools**: 15+ categories, 43+ specialized agents
+- **MCP Tools**: 15+ categories, 32 specialized agents
 - **Vision System**: AI enrichment, workflow guidance, progress tracking
 
 **Docker Configurations:**
