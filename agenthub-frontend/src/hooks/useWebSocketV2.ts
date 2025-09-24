@@ -115,6 +115,13 @@ export function useWebSocket(userId: string, token: string) {
       dispatch(reconnectFailed());
     });
 
+    client.on('authenticationFailed', (reason: string) => {
+      console.error('[useWebSocket] ❌ AUTHENTICATION FAILED:', reason);
+      dispatch(error(`WebSocket authentication failed: ${reason}`));
+      // You may want to trigger a re-authentication flow here
+      // For example: dispatch a logout action or redirect to login
+    });
+
     // Initialize the animation service with the WebSocket client
     webSocketAnimationService.init(client);
 

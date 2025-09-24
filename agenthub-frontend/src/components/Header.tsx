@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { Brand } from './ui/Brand';
 import { MenuBar } from './ui/glow-menu';
 import UserProfileDropdown from './UserProfileDropdown';
+import { WebSocketStatus } from './WebSocketStatus';
 
 export const Header: React.FC = () => {
   const authContext = useContext(AuthContext);
@@ -105,6 +106,9 @@ export const Header: React.FC = () => {
 
           {user ? (
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* WebSocket Status Indicator */}
+              <WebSocketStatus />
+
               {/* Desktop/Tablet Glow Menu Navigation */}
               <div className="hidden lg:block">
                 <MenuBar
