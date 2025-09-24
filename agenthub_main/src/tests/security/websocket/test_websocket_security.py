@@ -263,11 +263,15 @@ class TestWebSocketAuthorization:
         # user_2 should NOT receive the message (security filtering working)
         assert not mock_ws2.send_json.called, "user_2 should NOT receive user_1's message"
 
-        # Verify the message content for user_1
+        # Verify the message content for user_1 (v2.0 format)
         mock_ws1.send_json.assert_called_once()
         call_args = mock_ws1.send_json.call_args[0][0]  # Get the message sent
-        assert call_args["user_id"] == "user_1"
-        assert call_args["data"]["sensitive"] == "data_for_user_1_only"
+        assert call_args["type"] == "update"
+        assert call_args["version"] == "2.0"
+        assert call_args["payload"]["entity"] == "task"
+        assert call_args["payload"]["action"] == "updated"
+        assert call_args["metadata"]["userId"] == "user_1"
+        assert call_args["payload"]["data"]["primary"]["sensitive"] == "data_for_user_1_only"
 
     @pytest.mark.asyncio
     async def test_unauthorized_user_cannot_receive_sensitive_data(self, security_tester):

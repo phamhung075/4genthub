@@ -95,10 +95,14 @@ class TestMCPTokenService:
     # Token Validation Tests
     
     @pytest.mark.asyncio
-    async def test_validate_mcp_token_valid(self, service, sample_token):
+    @patch('fastmcp.auth.services.mcp_token_service.get_session')
+    async def test_validate_mcp_token_valid(self, mock_get_session, service, sample_token):
         """Test validation of a valid MCP token."""
         # Arrange
         service._tokens[sample_token.token] = sample_token
+        # Mock database session to prevent actual DB access
+        mock_session = MagicMock()
+        mock_get_session.return_value.__enter__.return_value = mock_session
         
         # Act
         result = await service.validate_mcp_token(sample_token.token)
@@ -135,11 +139,15 @@ class TestMCPTokenService:
         assert result is None
     
     @pytest.mark.asyncio
-    async def test_validate_mcp_token_inactive(self, service, sample_token):
+    @patch('fastmcp.auth.services.mcp_token_service.get_session')
+    async def test_validate_mcp_token_inactive(self, mock_get_session, service, sample_token):
         """Test validation of an inactive token."""
         # Arrange
         sample_token.is_active = False
         service._tokens[sample_token.token] = sample_token
+        # Mock database session to prevent actual DB access
+        mock_session = MagicMock()
+        mock_get_session.return_value.__enter__.return_value = mock_session
         
         # Act
         result = await service.validate_mcp_token(sample_token.token)

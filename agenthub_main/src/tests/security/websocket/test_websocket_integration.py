@@ -128,13 +128,16 @@ class TestWebSocketAuthenticationIntegration:
             # Verify connection was accepted
             mock_websocket.accept.assert_called_once()
 
-            # Verify welcome message was sent
+            # Verify welcome message was sent (v2.0 format)
             welcome_calls = mock_websocket.send_json.call_args_list
             assert len(welcome_calls) >= 1
             welcome_message = welcome_calls[0][0][0]
-            assert welcome_message["type"] == "welcome"
-            assert welcome_message["user_id"] == user_id
-            assert welcome_message["authenticated"] is True
+            assert welcome_message["type"] == "sync"
+            assert welcome_message["version"] == "2.0"
+            assert welcome_message["payload"]["entity"] == "connection"
+            assert welcome_message["payload"]["action"] == "welcome"
+            assert welcome_message["payload"]["data"]["primary"]["user_id"] == user_id
+            assert welcome_message["payload"]["data"]["primary"]["authenticated"] is True
 
     @pytest.mark.asyncio
     async def test_connection_rejected_for_invalid_token(self, ws_client, mock_websocket):
@@ -226,11 +229,16 @@ class TestWebSocketAuthorizationIntegration:
                 data={"title": "Updated task"}
             )
 
-            # Verify user_1 received the message
+            # Verify user_1 received the message (v2.0 format)
             assert ws1.send_json.called
             message1 = ws1.send_json.call_args[0][0]
-            assert message1["event_type"] == "updated"
-            assert message1["user_id"] == "user_1"
+            assert message1["type"] == "update"
+            assert message1["version"] == "2.0"
+            assert message1["payload"]["entity"] == "task"
+            assert message1["payload"]["action"] == "updated"
+            assert message1["metadata"]["userId"] == "user_1"
+            assert message1["metadata"]["entity_id"] == "task_123"
+            assert message1["metadata"]["event_type"] == "updated"
 
             # Verify user_2 did NOT receive the message (not their task)
             # This depends on the authorization implementation

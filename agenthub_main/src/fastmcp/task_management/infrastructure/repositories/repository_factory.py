@@ -45,6 +45,16 @@ class RepositoryFactory:
                 logger.info("[RepositoryFactory] Using SQLiteTaskRepository")
             except ImportError:
                 logger.warning("SQLiteTaskRepository not available, falling back to ORM")
+                # Set up ORM repository for SQLite fallback
+                from .orm.task_repository import ORMTaskRepository
+                base_repository = ORMTaskRepository(
+                    session=None,
+                    git_branch_id=None,
+                    project_id=project_id,
+                    git_branch_name=git_branch_name,
+                    user_id=user_id
+                )
+                logger.info("[RepositoryFactory] Using ORMTaskRepository as SQLite fallback")
         
         elif config['database_type'] == 'supabase':
             try:
@@ -53,6 +63,16 @@ class RepositoryFactory:
                 logger.info("[RepositoryFactory] Using SupabaseTaskRepository")
             except ImportError:
                 logger.warning("SupabaseTaskRepository not available, falling back to ORM")
+                # Set up ORM repository for Supabase fallback
+                from .orm.task_repository import ORMTaskRepository
+                base_repository = ORMTaskRepository(
+                    session=None,
+                    git_branch_id=None,
+                    project_id=project_id,
+                    git_branch_name=git_branch_name,
+                    user_id=user_id
+                )
+                logger.info("[RepositoryFactory] Using ORMTaskRepository as Supabase fallback")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses ORM repository directly

@@ -18,6 +18,11 @@ from pathlib import Path
 from typing import Generator, Dict, Any
 import sys
 
+# Add src to sys.path to ensure imports work correctly
+src_path = Path(__file__).parent.parent
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
+
 # Set environment variables for tests
 os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing-only-do-not-use-in-production'
 os.environ['JWT_AUDIENCE'] = 'test-audience'
@@ -640,6 +645,9 @@ class MockFastAPI:
         self.routers = []
         self.state = MockAppState()
         
+        # Add router attribute with routes list for WebSocket server compatibility
+        self.router = type('MockRouter', (), {'routes': []})()
+        
         # Extract and set title, description, version from kwargs
         self.title = kwargs.get('title', 'Test App')
         self.description = kwargs.get('description', 'Test Description')
@@ -1073,14 +1081,14 @@ def set_mcp_db_path_for_tests(request):
         # Use SQLite for tests to avoid needing PostgreSQL
         os.environ["DATABASE_TYPE"] = "sqlite"
         # Use in-memory SQLite to avoid disk I/O issues in test environment
-        os.environ["MCP_DB_PATH"] = ":memory:"
+        os.environ["DATABASE_PATH"] = ":memory:"
         
         # Display what database is being used
         db_type = os.environ.get('DATABASE_TYPE', 'not set')
         print(f"\n📦 Using {db_type} test database")
         print(f"📊 DATABASE_TYPE: {db_type}")
         if db_type == 'sqlite':
-            print(f"🔗 MCP_DB_PATH: {os.environ.get('MCP_DB_PATH', 'not set')}")
+            print(f"🔗 DATABASE_PATH: {os.environ.get('DATABASE_PATH', 'not set')}")
         
         # Initialize the test database with schema and basic test data
         # Note: For PostgreSQL, we don't need to pass a file path

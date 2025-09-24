@@ -65,7 +65,10 @@ class UpdateTaskUseCase:
         
         if request.due_date is not None:
             task.update_due_date(request.due_date)
-        
+
+        if request.progress_percentage is not None:
+            task.set_progress_percentage(request.progress_percentage)
+
         # IMPORTANT: Set context_id LAST, after all other updates that might clear it
         if request.context_id is not None:
             logger.info(f"Setting context_id to: {request.context_id}")

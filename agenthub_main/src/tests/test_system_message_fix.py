@@ -13,7 +13,9 @@ import uuid
 from unittest.mock import Mock, MagicMock
 import sys
 import os
+import pytest
 
+@pytest.mark.asyncio
 async def test_system_message_authorization():
     """Test the WebSocket system message authorization logic."""
 
@@ -24,9 +26,9 @@ async def test_system_message_authorization():
     print("🧪 Testing WebSocket System Message Authorization Fix")
     print("=" * 60)
 
-    # Create mock users
-    user1 = User(id="user123", email="user1@example.com")
-    user2 = User(id="user456", email="user2@example.com")
+    # Create mock users with required fields
+    user1 = User(id="user123", email="user1@example.com", username="user1", password_hash="hash1")
+    user2 = User(id="user456", email="user2@example.com", username="user2", password_hash="hash2")
 
     # Create mock WebSocket connections
     websocket1 = Mock()

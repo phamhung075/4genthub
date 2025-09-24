@@ -823,9 +823,18 @@ class TestDatabaseModels:
         retrieved = session.query(Project).filter_by(name="Datetime Test Project").first()
         assert retrieved.created_at is not None
         assert retrieved.updated_at is not None
+        
+        # Make retrieved timestamps timezone-aware if they're not already
+        if retrieved.created_at.tzinfo is None:
+            retrieved_created_at = retrieved.created_at.replace(tzinfo=timezone.utc)
+            retrieved_updated_at = retrieved.updated_at.replace(tzinfo=timezone.utc)
+        else:
+            retrieved_created_at = retrieved.created_at
+            retrieved_updated_at = retrieved.updated_at
+        
         # Check that timestamps are within reasonable range (allowing for database precision)
-        assert before_create <= retrieved.created_at <= after_create
-        assert before_create <= retrieved.updated_at <= after_create
+        assert before_create <= retrieved_created_at <= after_create
+        assert before_create <= retrieved_updated_at <= after_create
     
     def test_unique_constraints_enforcement(self, session):
         """Test that unique constraints are properly enforced"""

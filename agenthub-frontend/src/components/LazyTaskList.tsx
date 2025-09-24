@@ -13,6 +13,7 @@ import { ShimmerButton } from "./ui/shimmer-button";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "./ui/table";
 import { useErrorToast } from "./ui/toast";
 import logger from "../utils/logger";
+import { useAppSelector } from "../store/hooks";
 // Removed notificationService import - WebSocket notifications handle task changes
 
 // Lazy-loaded components
@@ -57,6 +58,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   // Initialize WebSocket for real-time task updates
   const { isConnected } = useTaskWebSocket(user?.id || '', tokens?.access_token || '');
 
+  // Real-time branch summary from WebSocket cascade store (captures task_count updates)
+  const branchSummary = useAppSelector(state => state.cascade?.branches?.[taskTreeId]);
+
   // Core state - minimal for performance
   const [taskSummaries, setTaskSummaries] = useState<TaskSummary[]>([]);
   const [fullTasks, setFullTasks] = useState<Map<string, Task>>(new Map());
@@ -65,6 +69,31 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   
   // Pagination state
   const [totalTasks, setTotalTasks] = useState(0);
+
+  // Derive branch-reported totals from WebSocket cascade payload when available
+  const branchTaskTotal = useMemo(() => {
+    if (!branchSummary) return undefined;
+
+    const counts = branchSummary.task_counts;
+    if (counts && typeof counts.total === "number") {
+      return counts.total;
+    }
+
+    const candidateTotals = [
+      branchSummary.total_tasks,
+      branchSummary.task_count,
+      branchSummary.active_task_count,
+      branchSummary.tasks_total,
+    ];
+
+    for (const value of candidateTotals) {
+      if (typeof value === "number") {
+        return value;
+      }
+    }
+
+    return undefined;
+  }, [branchSummary]);
   
   // Lazy loading state
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
@@ -98,6 +127,13 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     playDeleteAnimation: () => void;
     playUpdateAnimation: () => void;
   }>>(new Map());
+
+  // Synchronize total task count with authoritative branch totals from WebSocket payloads
+  useEffect(() => {
+    if (typeof branchTaskTotal === "number" && !Number.isNaN(branchTaskTotal)) {
+      setTotalTasks(prevTotal => (prevTotal === branchTaskTotal ? prevTotal : branchTaskTotal));
+    }
+  }, [branchTaskTotal]);
 
   // Stable refresh callback for changePoolService
   const handleTaskChanges = useCallback(async () => {

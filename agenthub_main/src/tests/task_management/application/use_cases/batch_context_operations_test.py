@@ -144,11 +144,11 @@ class TestBatchContextOperations:
         assert results[2].success is False
         assert "Operation failed" in results[2].error
         
-        # Remaining operations should be marked as skipped
+        # Remaining operations should be marked as rolled back (since transaction=True)
         assert results[3].success is False
-        assert "Skipped due to previous error" in results[3].error
+        assert "Transaction rolled back" in results[3].error
         assert results[4].success is False
-        assert "Skipped due to previous error" in results[4].error
+        assert "Transaction rolled back" in results[4].error
         
         # Only first 3 operations should have been attempted
         assert mock_context_service.create_context.call_count == 3

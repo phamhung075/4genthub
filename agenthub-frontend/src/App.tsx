@@ -12,7 +12,7 @@ import GlobalContextDialog from './components/GlobalContextDialog';
 import { Header } from './components/Header';
 import ProjectDetailsDialog from './components/ProjectDetailsDialog';
 import ProjectList from './components/ProjectList';
-import ShimmerButton from './components/ui/ShimmerButton';
+import { ShimmerButton } from './components/ui/shimmer-button';
 import { ToastProvider } from './components/ui/toast';
 import { WebSocketToastBridge } from './components/WebSocketToastBridge';
 import { ThemeProvider } from './contexts/ThemeContext';
