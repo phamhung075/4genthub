@@ -69,31 +69,16 @@ export class WebSocketClient extends EventEmitter {
     }
 
     this.isConnecting = true;
-
-    // Determine WebSocket URL based on environment
-    let wsUrl: string;
-
-    // First check if we're running from a production domain
-    const currentHost = window.location.hostname;
-    const isProduction = currentHost.includes('4genthub.com') || currentHost.includes('vercel.app');
-
-    if (import.meta.env.VITE_WS_URL) {
-      // Use explicit WebSocket URL from environment
-      wsUrl = `${import.meta.env.VITE_WS_URL}/ws/realtime?token=${this.token}`;
-    } else if (import.meta.env.VITE_BACKEND_URL) {
-      // Derive WebSocket URL from backend URL
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
-      const wsProtocol = backendUrl.startsWith('https') ? 'wss' : 'ws';
-      const wsHost = backendUrl.replace(/^https?:\/\//, '');
-      wsUrl = `${wsProtocol}://${wsHost}/ws/realtime?token=${this.token}`;
-    } else if (isProduction) {
-      // Auto-detect production environment
-      console.log('[WebSocket v2.0] 🌐 Production environment detected, using production backend');
-      wsUrl = `wss://api.4genthub.com/ws/realtime?token=${this.token}`;
-    } else {
-      // Fallback to localhost for development
-      wsUrl = `ws://localhost:8000/ws/realtime?token=${this.token}`;
+    // Use environment variable without fallback - fail fast if not configured
+    const wsBaseUrl = import.meta.env.VITE_WS_URL;
+    if (!wsBaseUrl) {
+      console.error('[WebSocket v2.0] ❌ VITE_WS_URL is not configured');
+      this.emit('error', new Error('WebSocket URL not configured'));
+      this.isConnecting = false;
+      return;
     }
+
+    const wsUrl = `${wsBaseUrl}/ws/realtime?token=${this.token}`;
 
     console.log('[WebSocket v2.0] 🔌 Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
     console.log('[WebSocket v2.0] 🔑 Token length:', this.token ? this.token.length : 0);

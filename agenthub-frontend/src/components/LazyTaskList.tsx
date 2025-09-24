@@ -79,11 +79,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       return counts.total;
     }
 
+    // Use standardized task_count property
     const candidateTotals = [
-      branchSummary.total_tasks,
-      branchSummary.task_count,
-      branchSummary.active_task_count,
-      branchSummary.tasks_total,
+      branchSummary.task_count
     ];
 
     for (const value of candidateTotals) {

@@ -629,7 +629,7 @@ class BranchAPIController:
                 b.name as branch_name,
                 b.status as branch_status,
                 b.priority as branch_priority,
-                COALESCE(b.task_count, 0) as total_tasks,
+                COALESCE(b.task_count, 0) as task_count,
                 COALESCE(b.completed_task_count, 0) as completed_tasks,
                 COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as in_progress_tasks,
                 0 as blocked_tasks,
@@ -699,7 +699,7 @@ class BranchAPIController:
                     'name': row[2],
                     'status': row[3],
                     'priority': row[4],
-                    'total_tasks': row[5] or 0,
+                    'task_count': row[5] or 0,  # Changed from total_tasks to task_count for consistency
                     'completed_tasks': row[6] or 0,
                     'in_progress_tasks': row[7] or 0,
                     'blocked_tasks': row[8] or 0,
