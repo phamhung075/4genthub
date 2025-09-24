@@ -12,6 +12,7 @@ import { ShimmerBadge } from "./ui/shimmer-badge";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { useErrorToast, useSuccessToast } from "./ui/toast";
 import { useEntityChanges } from "../hooks/useChangeSubscription";
+import { useAppSelector } from "../store/hooks";
 import logger from "../utils/logger";
 
 interface ProjectListProps {
@@ -79,15 +80,28 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     return result;
   }, [allBranchSummaries]);
 
-  // Extract task counts from bulk summaries
+  // Get real-time branch updates from WebSocket cascade store
+  const cascadeBranches = useAppSelector(state => state.cascade?.branches || {});
+
+  // Extract task counts from bulk summaries and merge with WebSocket updates
   const taskCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
+
+    // Start with initial data from API
     allBranchSummaries.forEach(branch => {
       // Use standardized task_count property from backend
       counts[branch.id] = branch.task_count || 0;
     });
+
+    // Override with real-time WebSocket updates if available
+    Object.entries(cascadeBranches).forEach(([branchId, branchData]: [string, any]) => {
+      if (branchData?.task_count !== undefined) {
+        counts[branchId] = branchData.task_count;
+      }
+    });
+
     return counts;
-  }, [allBranchSummaries]);
+  }, [allBranchSummaries, cascadeBranches]);
 
   const [deletingBranches, setDeletingBranches] = useState<Set<string>>(new Set());
   const [previousTaskCounts, setPreviousTaskCounts] = useState<Record<string, number>>({});
@@ -274,7 +288,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     if (!showCreateBranch) return;
     setSaving(true);
     try {
-      const result = await createBranch(showCreateBranch.id, {
+      await createBranch(showCreateBranch.id, {
         git_branch_name: form.name,
         description: form.description
       });
