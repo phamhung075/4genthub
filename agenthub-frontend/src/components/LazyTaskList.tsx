@@ -133,8 +133,19 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Synchronize total task count with authoritative branch totals from WebSocket payloads
   useEffect(() => {
-    if (typeof branchTaskTotal === "number" && !Number.isNaN(branchTaskTotal)) {
-      setTotalTasks(prevTotal => (prevTotal === branchTaskTotal ? prevTotal : branchTaskTotal));
+    if (typeof branchTaskTotal === "number" && !Number.isNaN(branchTaskTotal) && branchTaskTotal > 0) {
+      // Only update if WebSocket provides a positive count
+      setTotalTasks(prevTotal => {
+        if (prevTotal !== branchTaskTotal) {
+          logger.debug('Updating total task count from WebSocket', {
+            component: 'LazyTaskList',
+            previousTotal: prevTotal,
+            webSocketTotal: branchTaskTotal
+          });
+          return branchTaskTotal;
+        }
+        return prevTotal;
+      });
     }
   }, [branchTaskTotal]);
 
@@ -285,16 +296,12 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
             rowAnimationCallbacks.current.delete(taskId);
           });
 
-          // Update total count
-          setTotalTasks(prevTotal => {
-            const newTotal = Math.max(0, prevTotal - removedTasks.size);
-            logger.debug('Updated total task count after WebSocket deletion animation', {
-              component: 'LazyTaskList',
-              previousTotal: prevTotal,
-              newTotal,
-              removedCount: removedTasks.size
-            });
-            return newTotal;
+          // Don't update total count here - it's already correct from the API response
+          // The summaries.length already reflects the correct count
+          logger.debug('Deleted tasks removed from UI after animation', {
+            component: 'LazyTaskList',
+            removedCount: removedTasks.size,
+            currentTotal: totalTasks
           });
         }, 900); // Wait for 800ms animation + 100ms buffer
       }
@@ -323,7 +330,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
       // Update states (use summariesToUpdate which includes deleted tasks for animation)
       setTaskSummaries(summariesToUpdate);
-      setTotalTasks(summariesToUpdate.length);
+      // Set total to actual task count (not including deleted tasks being animated out)
+      setTotalTasks(summaries.length);
       setPreviousTaskIds(newTaskIds);
 
       // Store full tasks for immediate access

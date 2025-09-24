@@ -284,7 +284,7 @@ graph LR
 - **Database connection management** with SQLAlchemy
 
 ### Token Economy (AI Efficiency)
-- **95% token savings** through task_id-based delegation
+- **Token savings** through task_id-based delegation
 - **Context reuse** via inheritance hierarchy
 - **Compressed responses** from MCP tools
 - **Efficient agent handoffs** without context duplication

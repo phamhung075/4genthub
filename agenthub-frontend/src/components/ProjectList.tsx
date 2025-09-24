@@ -67,12 +67,22 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
       }
 
       // Ensure compatibility with existing UI that expects both field names
+      // Determine the most accurate task count (same logic as taskCounts memo)
+      let taskCount = 0;
+      if (branch.task_counts && typeof branch.task_counts.total === "number") {
+        taskCount = branch.task_counts.total;
+      } else if (typeof branch.total_tasks === "number" && branch.total_tasks >= 0) {
+        taskCount = branch.total_tasks;
+      } else if (typeof branch.task_count === "number" && branch.task_count >= 0) {
+        taskCount = branch.task_count;
+      }
+
       const compatibleBranch: BranchSummary = {
         ...branch,
         git_branch_name: branch.name, // UI expects git_branch_name
-        total_tasks: branch.total_tasks || 0, // Use direct total_tasks field
+        total_tasks: taskCount, // Use calculated task count
         task_counts: { // Ensure task_counts object exists
-          total: branch.total_tasks || 0,
+          total: taskCount,
           ...branch.task_counts
         }
       };
@@ -83,12 +93,24 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     return result;
   }, [allBranchSummaries]);
 
-  // Extract task counts from bulk summaries
+  // Extract task counts from bulk summaries using the same logic as LazyTaskList
   const taskCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     allBranchSummaries.forEach(branch => {
-      counts[branch.id] = branch.total_tasks || 0;
-      console.log('🚀 COUNT DEBUG: TaskCounts updated for branch', branch.id, 'count:', branch.total_tasks || 0);
+      // Use the same logic as LazyTaskList to determine task count
+      let taskCount = 0;
+
+      // Check task_counts object first (most reliable)
+      if (branch.task_counts && typeof branch.task_counts.total === "number") {
+        taskCount = branch.task_counts.total;
+      } else if (typeof branch.total_tasks === "number" && branch.total_tasks >= 0) {
+        taskCount = branch.total_tasks;
+      } else if (typeof branch.task_count === "number" && branch.task_count >= 0) {
+        taskCount = branch.task_count;
+      }
+
+      counts[branch.id] = taskCount;
+      console.log('🚀 COUNT DEBUG: TaskCounts updated for branch', branch.id, 'count:', taskCount);
     });
     console.log('🚀 COUNT DEBUG: TaskCounts memo recalculated, total branches:', Object.keys(counts).length);
     return counts;
@@ -96,6 +118,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
 
   const [deletingBranches, setDeletingBranches] = useState<Set<string>>(new Set());
   const [previousTaskCounts, setPreviousTaskCounts] = useState<Record<string, number>>({});
+  const [animatingCounts, setAnimatingCounts] = useState<Map<string, 'up' | 'down'>>(new Map());
 
   // Animation states for branch creation and deletion
   const [newBranches, setNewBranches] = useState<Set<string>>(new Set());
@@ -169,6 +192,37 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
 
   // Subscribe to centralized change pool for real-time updates
   useEntityChanges('ProjectList', ['task', 'project', 'branch'], handleDataChange);
+
+  // Detect task count changes and trigger animations
+  useEffect(() => {
+    const changedBranches = new Map<string, 'up' | 'down'>();
+
+    Object.entries(taskCounts).forEach(([branchId, count]) => {
+      const previousCount = previousTaskCounts[branchId];
+      if (previousCount !== undefined && previousCount !== count) {
+        const direction = count > previousCount ? 'up' : 'down';
+        changedBranches.set(branchId, direction);
+        console.log('🎯 COUNT ANIMATION: Count changed for branch', branchId, 'from', previousCount, 'to', count, 'direction:', direction);
+      }
+    });
+
+    if (changedBranches.size > 0) {
+      // Add branches to animating map with direction
+      setAnimatingCounts(prev => new Map([...prev, ...changedBranches]));
+
+      // Remove from animating set after animation completes
+      setTimeout(() => {
+        setAnimatingCounts(prev => {
+          const newMap = new Map(prev);
+          changedBranches.forEach((_, id) => newMap.delete(id));
+          return newMap;
+        });
+      }, 600); // Animation duration
+    }
+
+    // Update previous counts
+    setPreviousTaskCounts(taskCounts);
+  }, [taskCounts]);
 
   // Detect new branches and trigger fade-in animations
   useEffect(() => {
@@ -465,6 +519,37 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
 
   return (
     <div className="flex flex-col gap-2 overflow-visible">
+      {/* CSS for count change animation */}
+      <style>{`
+        @keyframes countPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+          }
+          25% {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+          }
+          50% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+          }
+        }
+
+        .count-pulse {
+          animation: countPulse 0.6s ease-in-out;
+        }
+
+        .count-change-up {
+          animation: countPulse 0.6s ease-in-out;
+          background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+        }
+
+        .count-change-down {
+          animation: countPulse 0.6s ease-in-out;
+          background: linear-gradient(135deg, #ef4444 0%, #f87171 100%) !important;
+        }
+      `}</style>
       {/* Mobile-optimized header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-2">
         {/* Title section */}
@@ -673,7 +758,15 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
                             }}
                           >
                             <span className="truncate text-left flex-1">{tree.git_branch_name || tree.name}</span>
-                            <ShimmerBadge variant="secondary" className="text-xs ml-2">
+                            <ShimmerBadge
+                              variant="secondary"
+                              className={cn(
+                                "text-xs ml-2",
+                                animatingCounts.get(tree.id) === 'up' && "count-change-up",
+                                animatingCounts.get(tree.id) === 'down' && "count-change-down",
+                                animatingCounts.has(tree.id) && "count-pulse"
+                              )}
+                            >
                               {tree.total_tasks !== undefined ? tree.total_tasks : (taskCounts[tree.id as string] ?? 0)}
                             </ShimmerBadge>
                           </ShimmerButton>

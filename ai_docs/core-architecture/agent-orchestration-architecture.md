@@ -472,7 +472,7 @@ workflow = {
 
 ### Token-Efficient Delegation Pattern
 
-The system achieves **95% token savings** through intelligent delegation:
+The system achieves **token savings** through intelligent delegation:
 
 ```python
 # Traditional approach (token-heavy)
@@ -501,7 +501,7 @@ task = mcp__agenthub_http__manage_task(
     details="""COMPLETE CONTEXT WITH ALL REQUIREMENTS""" # Stored once
 )
 
-# Step 2: Delegate with only task ID (95% token savings)
+# Step 2: Delegate with only task ID (token savings)
 Task(
     subagent_type="coding-agent", 
     prompt=f"task_id: {task['task']['id']}"  # Only 20-30 tokens!
