@@ -142,15 +142,15 @@ export class BranchService {
     const branches = Object.values(response.summaries || {});
     const projects = Object.values(response.projects || {});
 
-    // 5. Log task counts for debugging the 39 vs 11 issue
-    const totalTasks = branches.reduce((sum, branch) => sum + (branch.total_tasks || 0), 0);
+    // 5. Log task counts for debugging
+    const totalTasks = branches.reduce((sum, branch) => sum + (branch.task_count || 0), 0);
     logger.warn(`🚨 FORCE REFRESH SUCCESS: ${branches.length} branches, ${projects.length} projects`);
-    logger.warn(`📊 TOTAL TASK COUNT: ${totalTasks} (was showing 39, should be 11)`);
+    logger.warn(`📊 TOTAL TASK COUNT: ${totalTasks} tasks`);
 
     // 6. Log individual branch task counts for debugging
     branches.forEach(branch => {
-      if (branch.total_tasks > 0) {
-        logger.info(`📊 Branch "${branch.name}": ${branch.total_tasks} tasks`);
+      if (branch.task_count > 0) {
+        logger.info(`📊 Branch "${branch.name}": ${branch.task_count} tasks`);
       }
     });
 

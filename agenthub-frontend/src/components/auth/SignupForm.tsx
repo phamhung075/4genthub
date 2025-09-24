@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 import { ThemeToggle } from '../ThemeToggle';
+import { API_BASE_URL } from '../../config/environment';
 
 interface SignupFormData {
   email: string;
@@ -124,7 +125,7 @@ export const SignupForm: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/supabase/resend-verification`, {
+      const response = await fetch(`${API_BASE_URL}/auth/supabase/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

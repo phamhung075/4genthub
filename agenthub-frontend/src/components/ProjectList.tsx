@@ -66,25 +66,11 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
         result[branch.project_id] = [];
       }
 
-      // Ensure compatibility with existing UI that expects both field names
-      // Determine the most accurate task count (same logic as taskCounts memo)
-      let taskCount = 0;
-      if (branch.task_counts && typeof branch.task_counts.total === "number") {
-        taskCount = branch.task_counts.total;
-      } else if (typeof branch.total_tasks === "number" && branch.total_tasks >= 0) {
-        taskCount = branch.total_tasks;
-      } else if (typeof branch.task_count === "number" && branch.task_count >= 0) {
-        taskCount = branch.task_count;
-      }
-
+      // Ensure compatibility with existing UI that expects git_branch_name
       const compatibleBranch: BranchSummary = {
         ...branch,
         git_branch_name: branch.name, // UI expects git_branch_name
-        total_tasks: taskCount, // Use calculated task count
-        task_counts: { // Ensure task_counts object exists
-          total: taskCount,
-          ...branch.task_counts
-        }
+        // task_count is already provided by backend, no mapping needed
       };
 
       result[branch.project_id].push(compatibleBranch);
@@ -93,26 +79,13 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
     return result;
   }, [allBranchSummaries]);
 
-  // Extract task counts from bulk summaries using the same logic as LazyTaskList
+  // Extract task counts from bulk summaries
   const taskCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     allBranchSummaries.forEach(branch => {
-      // Use the same logic as LazyTaskList to determine task count
-      let taskCount = 0;
-
-      // Check task_counts object first (most reliable)
-      if (branch.task_counts && typeof branch.task_counts.total === "number") {
-        taskCount = branch.task_counts.total;
-      } else if (typeof branch.total_tasks === "number" && branch.total_tasks >= 0) {
-        taskCount = branch.total_tasks;
-      } else if (typeof branch.task_count === "number" && branch.task_count >= 0) {
-        taskCount = branch.task_count;
-      }
-
-      counts[branch.id] = taskCount;
-      console.log('🚀 COUNT DEBUG: TaskCounts updated for branch', branch.id, 'count:', taskCount);
+      // Use standardized task_count property from backend
+      counts[branch.id] = branch.task_count || 0;
     });
-    console.log('🚀 COUNT DEBUG: TaskCounts memo recalculated, total branches:', Object.keys(counts).length);
     return counts;
   }, [allBranchSummaries]);
 
@@ -632,7 +605,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
                     {(() => {
                       const branches = project.git_branchs as Record<string, any>;
                       const totalTasks = branches ?
-                        Object.values(branches).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) : 0;
+                        Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) : 0;
                       return totalTasks > 0 ? (
                         <ShimmerBadge variant="default" className="text-xs">
                           {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
@@ -693,7 +666,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
                             <span className="truncate text-left flex-1">{branch.git_branch_name || branch.name}</span>
                             <div className="flex items-center gap-1">
                               <ShimmerBadge variant="secondary" className="text-xs">
-                                {branch.total_tasks || 0}
+                                {taskCounts[branch.id] ?? 0}
                               </ShimmerBadge>
                               {branch.has_urgent_tasks && (
                                 <ShimmerBadge variant="destructive" className="text-xs">!</ShimmerBadge>
@@ -767,7 +740,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
                                 animatingCounts.has(tree.id) && "count-pulse"
                               )}
                             >
-                              {tree.total_tasks !== undefined ? tree.total_tasks : (taskCounts[tree.id as string] ?? 0)}
+                              {tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
                             </ShimmerBadge>
                           </ShimmerButton>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
@@ -911,7 +884,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
             )}
             {showDelete && showDelete.git_branchs && (() => {
               const branches = showDelete.git_branchs as Record<string, any>;
-              const totalTasks = Object.values(branches).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0);
+              const totalTasks = Object.values(branches).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0);
               return totalTasks > 0 ? (
                 <p className="text-sm text-amber-600 dark:text-amber-400">
                   ⚠️ This project contains {totalTasks} task{totalTasks === 1 ? '' : 's'}. All tasks must be deleted first.
@@ -925,7 +898,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
             <ShimmerButton 
               variant={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
+                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
                   ? "secondary" 
                   : "destructive"
               }
@@ -934,7 +907,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
               disabled={
                 saving || 
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
+                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
               }
               title={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) 
@@ -945,7 +918,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
               }
               className={
                 (showDelete && showDelete.git_branchs && Object.keys(showDelete.git_branchs as Record<string, any>).length > 1) ||
-                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).total_tasks || 0), 0) > 0)
+                (showDelete && showDelete.git_branchs && Object.values(showDelete.git_branchs as Record<string, any>).reduce((sum, branch) => sum + ((branch as any).task_count || 0), 0) > 0)
                   ? "opacity-50 cursor-not-allowed" 
                   : ""
               }
@@ -964,9 +937,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
           </DialogHeader>
           <div className="space-y-2">
             <p className="text-sm">Are you sure you want to delete the branch <strong>{showDeleteBranch?.branch.git_branch_name || showDeleteBranch?.branch.name}</strong> from project <strong>{showDeleteBranch?.project.name}</strong>?</p>
-            {showDeleteBranch && (showDeleteBranch.branch.total_tasks || 0) > 0 && (
+            {showDeleteBranch && (showDeleteBranch.branch.task_count || 0) > 0 && (
               <p className="text-sm text-destructive">
-                Warning: This branch contains {showDeleteBranch.branch.total_tasks || 0} task(s) that will also be deleted.
+                Warning: This branch contains {showDeleteBranch.branch.task_count || 0} task(s) that will also be deleted.
               </p>
             )}
             <p className="text-sm text-muted-foreground">This action cannot be undone.</p>

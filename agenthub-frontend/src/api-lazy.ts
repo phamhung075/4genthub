@@ -49,7 +49,7 @@ export interface BranchSummary {
   id: string;
   git_branch_name: string;
   project_id: string;
-  total_tasks: number;
+  task_count: number;
   active_task_count: number;
   is_active: boolean;
   created_at?: string;
@@ -160,14 +160,14 @@ export const getBranchSummaries = async (project_id: string): Promise<{
     id: branch.id,
     git_branch_name: branch.name || branch.git_branch_name,
     project_id: project_id,
-    total_tasks: branch.total_tasks || 0,
+    task_count: branch.task_count || 0,
     active_task_count: branch.in_progress_tasks || 0,
     is_active: (branch.in_progress_tasks || 0) > 0,
     created_at: branch.created_at,
     updated_at: branch.updated_at,
     // Include the task_counts object for detailed info (using direct fields)
     task_counts: {
-      total: branch.total_tasks || 0,
+      total: branch.task_count || 0,
       todo: branch.todo_tasks || 0,
       in_progress: branch.in_progress_tasks || 0,
       done: branch.completed_tasks || 0,
