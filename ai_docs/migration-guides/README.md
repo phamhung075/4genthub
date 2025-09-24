@@ -5,7 +5,7 @@ This folder contains migration documentation for upgrading and transitioning bet
 ## 📋 Contents
 
 ### Agent Library Migrations
-- **[Agent Library Cleanup Migration Guide](agent-library-cleanup-migration-guide.md)** - **NEW 2025-09-06** - Step-by-step guide to implement agent library cleanup from 69 to 43 agents
+- **[Agent Library Cleanup Migration Guide](agent-library-cleanup-migration-guide.md)** - **NEW 2025-09-06** - Step-by-step guide to implement agent library cleanup from 69 to 32 agents
 
 ### Authentication & Configuration Migrations
 - **[Authentication Configuration Migration](authentication-config-migration-2025-09-05.md)** - **NEW** - Migration from `MCP_AUTH_ENABLED` to `AUTH_ENABLED` and `AUTH_PROVIDER` (2025-09-05)

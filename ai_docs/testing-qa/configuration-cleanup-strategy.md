@@ -10,14 +10,14 @@ This document provides a comprehensive strategy for cleaning up fragmented confi
 ## **1. AGENT SYSTEM ARCHITECTURE CLARIFICATION**
 
 ### **CORRECTED UNDERSTANDING - Agent-Library is ACTIVE System**
-- **agent-library/**: 43 agents - **ACTIVE SYSTEM** used for server-side agent building
+- **agent-library/**: 32 agents - **ACTIVE SYSTEM** used for server-side agent building
 - **.claude/agents/**: Client-side agent configurations  
 - **Status**: Both systems are active and serve different purposes
 - **Action**: **NO CLEANUP REQUIRED** - both systems are in production use
 
 ### **System Architecture**
 ```bash
-Agent-Library (Server):   43 agents in agenthub_main/agent-library/
+Agent-Library (Server):   32 agents in agenthub_main/agent-library/
 Claude Agents (Client):   Agent configurations in .claude/agents/
 Purpose:                  Server builds agents from library YAML configurations
 Integration:              Both systems work together - NOT duplicates
@@ -32,7 +32,7 @@ The agent-library YAML system is the **base for building agents on server** and 
 #### **Important Notes**
 - **agent-library/** contains server-side agent definitions in YAML format
 - These are used by the server to build and configure agents dynamically
-- The 43 agents in agent-library are production components
+- The 32 agents in agent-library are production components
 - **DO NOT REMOVE OR MODIFY** agent-library content
 
 ---

@@ -50,7 +50,7 @@ curl -X POST http://localhost:8000/projects \
 3. **Full screen**: Show complete dashboard interface
 
 #### Narration Script:
-> "Welcome back to the AgenthubMCP Tutorial Series! In Episode 2, we got the system running. Now we're going to explore the powerful web dashboard—your command center for orchestrating 43 AI agents. By the end of this episode, you'll navigate the dashboard like a pro and manage complex multi-agent projects with confidence."
+> "Welcome back to the AgenthubMCP Tutorial Series! In Episode 2, we got the system running. Now we're going to explore the powerful web dashboard—your command center for orchestrating 32 AI agents. By the end of this episode, you'll navigate the dashboard like a pro and manage complex multi-agent projects with confidence."
 
 #### Screen Actions:
 1. **[0:00-0:20]** Navigate to dashboard:
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8000/projects \
 └── Archive
 
 🤖 Agents
-├── Agent status grid (43 agents)
+├── Agent status grid (32 agents)
 ├── Performance metrics
 └── Configuration
 
@@ -253,19 +253,19 @@ Master Orchestrator assigns:
 **Objective**: Show how to monitor and optimize agent performance
 
 #### Screen Recording Instructions:
-1. **Agent status grid**: Show all 43 agents and their states
+1. **Agent status grid**: Show all 32 agents and their states
 2. **Performance metrics**: Display detailed agent analytics
 3. **Troubleshooting**: Demonstrate debugging agent issues
 
 #### Narration Script:
-> "With 43 specialized agents, monitoring their performance is crucial. The dashboard provides real-time insights into agent health, performance metrics, and detailed logs for troubleshooting."
+> "With 32 specialized agents, monitoring their performance is crucial. The dashboard provides real-time insights into agent health, performance metrics, and detailed logs for troubleshooting."
 
 #### Screen Actions Sequence:
 
 **[5:00-5:30] - Agent Status Overview:**
 ```
 # Navigate to Agents section
-# Show 43-agent grid:
+# Show 32-agent grid:
 
 🟢 Active Agents (38):
 ├── Master Orchestrator: Coordinating 3 projects
@@ -650,7 +650,7 @@ Key Metrics:
 └── Network: 125 Mbps (Normal)
 
 🤖 Agent Status Real-time:
-├── Active Agents: 41/43 (95%)
+├── Active Agents: 30/32 (94%)
 ├── Tasks in Queue: 12
 ├── Avg Response Time: 1.2s
 └── Error Rate: 0.3%

@@ -5,11 +5,11 @@ Dai Hung PHAM
 [![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/agenthub/agenthub)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2.1.0-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
 [![Docker Support](https://img.shields.io/badge/Docker-Multi%20Config-success?style=for-the-badge&logo=docker)](https://docker.com)
-[![AI Agents](https://img.shields.io/badge/AI%20Agents-43%20Core%20Agents-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
+[![AI Agents](https://img.shields.io/badge/AI%20Agents-32%20Core%20Agents-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
 
 **The Future of Human-AI Collaboration in Software Development**
 
-*Orchestrate 43 specialized AI agents through an intuitive web interface designed for humans who want to harness the power of AI without complexity. Recently optimized from 69 agents to 43 core agents for better maintainability and clearer specialization.*
+*Orchestrate 32 specialized AI agents through an intuitive web interface designed for humans who want to harness the power of AI without complexity. Recently optimized from 69 agents to 32 core agents for better maintainability and clearer specialization.*
 
 [🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Gallery](#-agent-gallery) • [📚 Documentation](#-documentation) • [📋 Version History](#-version-history) • [💬 Community](#-community)
 
@@ -19,13 +19,13 @@ Dai Hung PHAM
 
 ## ✨ **What Makes agenthub Special?**
 
-🎭 **Human-First AI Orchestration** — Control 43 specialized AI agents through a beautiful web interface  
+🎭 **Human-First AI Orchestration** — Control 32 specialized AI agents through a beautiful web interface  
 🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions  
 🔗 **MCP Protocol Native** — Built on the Model Context Protocol for seamless AI integration  
 🎯 **Visual Task Management** — See your AI agents working in real-time through our React dashboard  
 🚀 **Multi-Agent Workflows** — Chain specialized agents for complex development workflows  
 🌐 **Web-First Experience** — Designed for humans who prefer web interfaces over command lines  
-🧹 **Optimized Agent Library** — Streamlined from 69 to 43 agents for better maintainability and clearer specialization
+🧹 **Optimized Agent Library** — Streamlined from 69 to 32 agents for better maintainability and clearer specialization
 
 ## 🎯 **Perfect For Teams Who Want To...**
 
@@ -61,7 +61,7 @@ http://localhost:3800
 ```
 http://localhost:8000
 ```
-- 🤖 **43 specialized AI agents**
+- 🤖 **32 specialized AI agents**
 - 🛠️ **15+ MCP tool categories**
 - 📋 **4-tier context hierarchy**
 - 🔌 **RESTful API endpoints**
@@ -120,7 +120,7 @@ graph TD
 
 ## 🤖 **Agent Gallery - Meet Your Optimized AI Team**
 
-> **✨ Recently optimized from 69 to 43 agents** for better maintainability and clearer specialization. [View cleanup analysis →](ai_docs/architecture-design/agent-library-cleanup-recommendations.md)
+> **✨ Recently optimized from 69 to 32 agents** for better maintainability and clearer specialization. [View cleanup analysis →](ai_docs/architecture-design/agent-library-cleanup-recommendations.md)
 
 <table>
 <tr>
@@ -535,7 +535,7 @@ Track all changes, releases, and improvements to the agenthub platform through o
   - 107 consecutive perfect iterations achieved
   - Self-healing system with zero maintenance required
 
-- **Agent Library Optimization** - Streamlined from 69 to 43 specialized agents
+- **Agent Library Optimization** - Streamlined from 69 to 32 specialized agents
   - Better maintainability and clearer role specialization
   - Enhanced performance and reduced complexity
   - Comprehensive cleanup with maintained functionality
