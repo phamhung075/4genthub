@@ -460,7 +460,7 @@ class GitBranchApplicationFacade:
                             "name": tree.get("name"),
                             "description": tree.get("description", ""),
                             "created_at": tree.get("created_at"),
-                            "total_tasks": tree.get("total_tasks", 0),
+                            "task_count": tree.get("task_count", 0),
                             "completed_tasks": tree.get("completed_tasks", 0),
                             "progress": tree.get("progress", 0.0)
                         })
@@ -488,7 +488,7 @@ class GitBranchApplicationFacade:
                             "name": tree.get("name"),
                             "description": tree.get("description", ""),
                             "created_at": tree.get("created_at"),
-                            "total_tasks": tree.get("total_tasks", 0),
+                            "task_count": tree.get("task_count", 0),
                             "completed_tasks": tree.get("completed_tasks", 0),
                             "progress": tree.get("progress", 0.0)
                         })
@@ -698,7 +698,7 @@ class GitBranchApplicationFacade:
             return {
                 "success": True,
                 "statistics": {
-                    "total_tasks": total_tasks,
+                    "task_count": total_tasks,
                     "completed_tasks": completed_tasks,
                     "in_progress_tasks": in_progress_tasks,
                     "todo_tasks": todo_tasks,
@@ -805,7 +805,7 @@ class GitBranchApplicationFacade:
                     "git_branch_name": branch.get("git_branch_name") or branch.get("name"),
                     "description": branch.get("description", ""),
                     "project_id": project_id,
-                    "total_tasks": total_tasks,  # Single source of truth for task count
+                    "task_count": total_tasks,  # Single source of truth for task count
                     "completed_tasks": completed_tasks,
                     "in_progress_tasks": in_progress_tasks,
                     "todo_tasks": todo_tasks,
@@ -865,7 +865,7 @@ class GitBranchApplicationFacade:
             
             # Aggregate statistics
             total_branches = len(branches)
-            total_tasks = sum(b.get("total_tasks", 0) for b in branches)
+            total_tasks = sum(b.get("task_count", 0) for b in branches)
             total_completed = sum(b.get("completed_tasks", 0) for b in branches)
             total_in_progress = sum(b.get("in_progress_tasks", 0) for b in branches)
             total_todo = sum(b.get("todo_tasks", 0) for b in branches)
@@ -877,17 +877,17 @@ class GitBranchApplicationFacade:
             # Find most active branch (most tasks)
             most_active_branch = None
             if branches:
-                most_active = max(branches, key=lambda b: b.get("total_tasks", 0))
-                if most_active.get("total_tasks", 0) > 0:
+                most_active = max(branches, key=lambda b: b.get("task_count", 0))
+                if most_active.get("task_count", 0) > 0:
                     most_active_branch = {
                         "id": most_active.get("id"),
                         "name": most_active.get("name"),
-                        "total_tasks": most_active.get("total_tasks")
+                        "task_count": most_active.get("task_count")
                     }
             
             summary = {
                 "total_branches": total_branches,
-                "total_tasks": total_tasks,
+                "task_count": total_tasks,
                 "completed_tasks": total_completed,
                 "in_progress_tasks": total_in_progress,
                 "todo_tasks": total_todo,
@@ -991,7 +991,7 @@ class GitBranchApplicationFacade:
                 "git_branch_name": branch.get("git_branch_name") or branch.get("name"),
                 "description": branch.get("description", ""),
                 "project_id": branch.get("project_id"),
-                "total_tasks": total_tasks,  # Single source of truth for task count
+                "task_count": total_tasks,  # Single source of truth for task count
                 "completed_tasks": completed_tasks,
                 "in_progress_tasks": in_progress_tasks,
                 "todo_tasks": todo_tasks,

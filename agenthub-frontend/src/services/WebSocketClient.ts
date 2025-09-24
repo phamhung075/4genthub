@@ -69,7 +69,16 @@ export class WebSocketClient extends EventEmitter {
     }
 
     this.isConnecting = true;
-    const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}/ws/realtime?token=${this.token}`;
+    // Use environment variable without fallback - fail fast if not configured
+    const wsBaseUrl = import.meta.env.VITE_WS_URL;
+    if (!wsBaseUrl) {
+      console.error('[WebSocket v2.0] ❌ VITE_WS_URL is not configured');
+      this.emit('error', new Error('WebSocket URL not configured'));
+      this.isConnecting = false;
+      return;
+    }
+
+    const wsUrl = `${wsBaseUrl}/ws/realtime?token=${this.token}`;
 
     console.log('[WebSocket v2.0] 🔌 Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
     console.log('[WebSocket v2.0] 🔑 Token length:', this.token ? this.token.length : 0);
