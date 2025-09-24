@@ -43,7 +43,8 @@ class SubtaskAPIController:
         try:
             # Create subtask repository factory and repository
             subtask_repository_factory = SubtaskRepositoryFactory()
-            subtask_repository = subtask_repository_factory.create(user_id=user_id, session=None)
+            # Use create_orm_subtask_repository which accepts user_id
+            subtask_repository = subtask_repository_factory.create_orm_subtask_repository(user_id=user_id)
 
             # Look up the subtask
             subtask = subtask_repository.find_by_id(subtask_id)

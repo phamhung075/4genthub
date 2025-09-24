@@ -1,7 +1,7 @@
 # Agent Optimization Implementation Plan
 
 **Date**: 2025-09-09  
-**Objective**: Reduce 42 agents to 30 optimized agents  
+**Objective**: Reduce 32 agents to 30 optimized agents  
 **Timeline**: 4 phases over 4 weeks  
 
 ## Executive Summary
@@ -191,7 +191,7 @@ agent-library/
 ## Success Metrics
 
 ### Quantitative
-- **Agent Count**: 42 → 30 (-28%)
+- **Agent Count**: 32 → 30 (target reduction)
 - **Response Time**: Expected -15% improvement
 - **Maintenance Time**: Expected -30% reduction
 - **Code Duplication**: Expected -40% reduction

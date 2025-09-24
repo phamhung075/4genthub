@@ -46,8 +46,8 @@ const priorityColor: Record<string, "default" | "secondary" | "destructive" | "o
 };
 
 export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }: LazySubtaskListProps) {
-  // URL parameter monitoring
-  const { subtaskId, taskId } = useParams<{ subtaskId?: string, taskId?: string }>();
+  // URL parameter monitoring - no longer need taskId since subtaskId is unique
+  const { subtaskId } = useParams<{ subtaskId?: string }>();
   const navigate = useNavigate();
 
   // Lightweight state for performance
@@ -110,11 +110,11 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   // Create subtask dialog state
   const [createSubtaskDialogOpen, setCreateSubtaskDialogOpen] = useState(false);
 
-  // Handle subtask dialog close - remove subtaskId from URL
+  // Handle subtask dialog close - navigate back to branch URL
   const handleSubtaskDialogClose = useCallback(() => {
-    const taskUrl = `/dashboard/project/${projectId}/branch/${taskTreeId}/task/${parentTaskId}`;
-    navigate(taskUrl);
-  }, [navigate, projectId, taskTreeId, parentTaskId]);
+    const branchUrl = `/dashboard/project/${projectId}/branch/${taskTreeId}`;
+    navigate(branchUrl);
+  }, [navigate, projectId, taskTreeId]);
 
 
 
@@ -166,7 +166,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   }, []);
 
   // Load full subtasks fallback
-  const loadFullSubtasksFallback = useCallback(async () => {
+  const loadFullSubtasksFallback = useCallback(async (): Promise<Map<string, Subtask>> => {
     try {
       const subtasks = await listSubtasks(parentTaskId);
 
@@ -184,19 +184,26 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       setSubtaskSummaries(summaries);
 
       // Store full subtasks for immediate access
-      const subtaskMap = new Map();
+      const subtaskMap = new Map<string, Subtask>();
       subtasks.forEach(subtask => subtaskMap.set(subtask.id, subtask));
       setFullSubtasks(subtaskMap);
+
+      return subtaskMap;
 
     } catch (e: any) {
       // Silently handle 400 errors for non-existent tasks
       if (e.status === 400 || e.response?.status === 400) {
         // Task might not exist or have been deleted, just show empty subtasks
         setSubtaskSummaries([]);
-        setFullSubtasks(new Map());
-      } else {
-        setError(e.message);
+        const emptyMap = new Map<string, Subtask>();
+        setFullSubtasks(emptyMap);
+        return emptyMap;
       }
+
+      setError(e.message);
+      const emptyMap = new Map<string, Subtask>();
+      setFullSubtasks(emptyMap);
+      return emptyMap;
     }
   }, [parentTaskId]);
 
@@ -383,49 +390,6 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
   });
 
 
-  // Load full subtask data on demand
-  const loadFullSubtask = useCallback(async (subtaskId: string): Promise<Subtask | null> => {
-    if (fullSubtasks.has(subtaskId)) {
-      return fullSubtasks.get(subtaskId) || null;
-    }
-
-    if (loadingSubtasks.has(subtaskId)) {
-      return null; // Already loading
-    }
-
-    setLoadingSubtasks(prev => {
-      const newSet = new Set(prev);
-      newSet.add(subtaskId);
-      return newSet;
-    });
-
-    try {
-      // For now, load all subtasks since we don't have individual endpoint
-      if (fullSubtasks.size === 0) {
-        await loadFullSubtasksFallback();
-      }
-
-      const subtask = fullSubtasks.get(subtaskId) || null;
-
-      setLoadingSubtasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(subtaskId);
-        return newSet;
-      });
-
-      return subtask;
-
-    } catch (e) {
-      logger.error(`Failed to load subtask ${subtaskId}:`, e);
-      setLoadingSubtasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(subtaskId);
-        return newSet;
-      });
-      return null;
-    }
-  }, [fullSubtasks, loadingSubtasks, loadFullSubtasksFallback]);
-
   // Load a specific subtask by ID (cross-component check)
   const loadSubtaskById = useCallback(async (subtaskId: string): Promise<Subtask | null> => {
     try {
@@ -467,6 +431,57 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     }
   }, [parentTaskId]);
 
+  // Load full subtask data on demand
+  const loadFullSubtask = useCallback(async (subtaskId: string): Promise<Subtask | null> => {
+    if (fullSubtasks.has(subtaskId)) {
+      return fullSubtasks.get(subtaskId) || null;
+    }
+
+    if (loadingSubtasks.has(subtaskId)) {
+      return null; // Already loading
+    }
+
+    setLoadingSubtasks(prev => {
+      const newSet = new Set(prev);
+      newSet.add(subtaskId);
+      return newSet;
+    });
+
+    try {
+      let subtaskMap = fullSubtasks;
+
+      if (subtaskMap.size === 0) {
+        subtaskMap = await loadFullSubtasksFallback();
+      }
+
+      let subtask = subtaskMap.get(subtaskId) || null;
+
+      if (!subtask) {
+        subtask = await loadSubtaskById(subtaskId);
+      }
+
+      if (subtask) {
+        setFullSubtasks(prev => {
+          const newMap = new Map(prev);
+          newMap.set(subtaskId, subtask);
+          return newMap;
+        });
+      }
+
+      return subtask;
+
+    } catch (e) {
+      logger.error(`Failed to load subtask ${subtaskId}:`, e);
+      return null;
+    } finally {
+      setLoadingSubtasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(subtaskId);
+        return newSet;
+      });
+    }
+  }, [fullSubtasks, loadingSubtasks, loadFullSubtasksFallback, loadSubtaskById]);
+
   // Load subtasks when component mounts
   useEffect(() => {
     loadSubtaskSummaries();
@@ -474,106 +489,66 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Monitor subtaskId URL parameter and auto-open dialog
   useEffect(() => {
-    // 🚀 PERFORMANCE FIX: Only react to URL changes if the taskId in URL matches this component's parentTaskId
+    // 🚀 PERFORMANCE FIX: Only react to URL changes if this subtask belongs to this parent task
     // This prevents ALL LazySubtaskList components from reacting to ANY subtask URL change
     logger.debug('🔗 LazySubtaskList useEffect triggered:', {
       subtaskId,
-      taskId,
       parentTaskId,
       hasLoaded,
       fullSubtasksCount: fullSubtasks.size
     });
 
-    if (subtaskId && hasLoaded && taskId === parentTaskId) {
-      logger.debug('🔗 URL taskId matches parentTaskId, loading subtask', { subtaskId, parentTaskId });
+    if (subtaskId) {
+      // Check if this subtask belongs to this parent task by checking summaries
+      const subtaskBelongsToParent = subtaskSummaries.some(s => s.id === subtaskId);
 
-      // PERFORMANCE FIX: Check if we already have the subtask data before making API call
-      const existingSubtask = fullSubtasks.get(subtaskId);
-      if (existingSubtask) {
-        logger.debug('🔗 Using existing subtask data for URL subtaskId:', subtaskId);
-        setDetailsDialog({ open: true, subtask: existingSubtask });
-        return;
-      }
+      // FIX: Open dialog even if subtask not in summaries yet - this fixes double-click issue
+      // We'll let the loadFullSubtask call determine if the subtask actually belongs here
+      if (subtaskBelongsToParent || !hasLoaded) {
+        logger.debug('🔗 Attempting to load subtask for dialog', { subtaskId, parentTaskId, subtaskBelongsToParent, hasLoaded });
 
-      // PERFORMANCE FIX: Also check subtask summaries to avoid unnecessary full load
-      const summaryExists = subtaskSummaries.some(s => s.id === subtaskId);
-      if (!summaryExists) {
-        logger.debug('🔗 Subtask not found in summaries, skipping load for URL subtaskId:', subtaskId);
-        return;
-      }
+        // PERFORMANCE FIX: Check if we already have the subtask data before making API call
+        const existingSubtask = fullSubtasks.get(subtaskId);
+        if (existingSubtask) {
+          logger.debug('🔗 Using existing subtask data for URL subtaskId:', subtaskId);
+          setDetailsDialog({ open: true, subtask: existingSubtask });
+          return;
+        }
 
-      // Load the subtask directly since we know it belongs to this parent task
-      setIsOpeningDialog(true);
-      loadFullSubtask(subtaskId).then(subtask => {
-        if (subtask) {
-          logger.debug('🔗 Auto-opening SubtaskDetailsDialog for URL subtaskId:', subtaskId);
-          setDetailsDialog({ open: true, subtask });
-          // Clear the opening flag after a short delay to allow dialog to stabilize
-          setTimeout(() => setIsOpeningDialog(false), 200);
-        } else {
-          logger.warn('⚠️ Subtask not found for URL subtaskId:', subtaskId);
+        // Load the subtask directly - let the API call determine if it belongs to this parent
+        setIsOpeningDialog(true);
+        loadFullSubtask(subtaskId).then(subtask => {
+          if (subtask) {
+            logger.debug('🔗 Auto-opening SubtaskDetailsDialog for URL subtaskId:', subtaskId);
+            setDetailsDialog({ open: true, subtask });
+            // Clear the opening flag after a short delay to allow dialog to stabilize
+            setTimeout(() => setIsOpeningDialog(false), 200);
+          } else {
+            logger.warn('⚠️ Subtask not found for URL subtaskId:', subtaskId);
+            setIsOpeningDialog(false);
+            // Navigate back to branch URL if subtask not found
+            handleSubtaskDialogClose();
+          }
+        }).catch(error => {
+          logger.error('❌ Failed to load subtask for URL:', subtaskId, error);
           setIsOpeningDialog(false);
-          // Navigate back to task URL if subtask not found
+          // Navigate back to branch URL on error
           handleSubtaskDialogClose();
-        }
-      }).catch(error => {
-        logger.error('❌ Failed to load subtask for URL:', subtaskId, error);
-        setIsOpeningDialog(false);
-        // Navigate back to task URL on error
-        handleSubtaskDialogClose();
-      });
-    } else if (subtaskId && hasLoaded && taskId !== parentTaskId) {
-      // 🔧 IMPROVED FIX: Try to load the subtask even if URL taskId doesn't match parentTaskId
-      // This handles cases where the subtask might belong to a completed task or cross-component scenarios
-      logger.debug('🔍 URL taskId differs from parentTaskId, checking if subtask belongs to this component', { subtaskId, urlTaskId: taskId, parentTaskId });
-
-      // PERFORMANCE FIX: Check if we already have the subtask data before making API call
-      const existingSubtask = fullSubtasks.get(subtaskId);
-      if (existingSubtask && existingSubtask.parent_task_id === parentTaskId) {
-        logger.debug('✅ Using existing subtask data for cross-component check:', subtaskId);
-        setDetailsDialog({ open: true, subtask: existingSubtask });
-        return;
+        });
       }
-
-      // PERFORMANCE FIX: Also check if subtask exists in summaries for this parent
-      const summaryExists = subtaskSummaries.some(s => s.id === subtaskId);
-      if (!summaryExists) {
-        logger.debug('🚫 Subtask not found in summaries for cross-component check:', subtaskId);
-        return;
-      }
-
-      // Use the direct API to check if the subtask belongs to this component's parent task
-      setIsOpeningDialog(true);
-      loadSubtaskById(subtaskId).then(subtask => {
-        if (subtask) {
-          // Subtask actually belongs to this component's parent task
-          logger.debug('✅ Subtask found and belongs to this component:', subtaskId, 'opening dialog');
-          setDetailsDialog({ open: true, subtask });
-          // Clear the opening flag after a short delay to allow dialog to stabilize
-          setTimeout(() => setIsOpeningDialog(false), 200);
-        } else {
-          // Subtask not found or doesn't belong to this component - this is expected
-          logger.debug('🚫 Subtask not found in this component context:', subtaskId, 'this is expected for cross-component scenarios');
-          setIsOpeningDialog(false);
-        }
-      }).catch(error => {
-        logger.debug('🚫 Failed to load subtask for cross-component check', { subtaskId, error, note: 'this is expected for cross-component scenarios' });
-        setIsOpeningDialog(false);
-        // Silently fail for cross-component checks - this is expected behavior
-      });
     } else if (!subtaskId && detailsDialog.open) {
       // Close dialog if subtaskId is removed from URL
       setDetailsDialog({ open: false, subtask: null });
     }
   }, [
     subtaskId,
-    taskId,
     hasLoaded,
     loadFullSubtask,
-    loadSubtaskById, // Required: used on line 441
+    loadSubtaskById,
     detailsDialog.open,
     handleSubtaskDialogClose,
-    parentTaskId
+    parentTaskId,
+    subtaskSummaries
     // REMOVED: fullSubtasks dependency - was causing infinite loop
     // The useEffect should only respond to URL changes, not state changes it causes
   ]);
@@ -665,7 +640,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
     // For details action, navigate to subtask URL instead of opening dialog directly
     if (action === 'details') {
-      const subtaskUrl = `/dashboard/project/${projectId}/branch/${taskTreeId}/task/${parentTaskId}/subtask/${subtaskId}`;
+      const subtaskUrl = `/dashboard/project/${projectId}/branch/${taskTreeId}/subtask/${subtaskId}`;
       logger.debug('🔗 Navigating to subtask URL:', subtaskUrl);
       navigate(subtaskUrl);
       return; // Let URL monitoring effect handle dialog opening

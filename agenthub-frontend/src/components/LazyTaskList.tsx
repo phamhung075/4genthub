@@ -556,15 +556,22 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
   }, [loadFullTask, loadAgentsOnDemand]);
 
   const closeDialog = useCallback(() => {
-    // If there's a taskId in URL (meaning we opened via URL), navigate back to branch
+    // If there's a taskId in URL (meaning we opened via URL)
     if (urlTaskId) {
-      navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}`);
-      // Don't call setActiveDialog here - let the useEffect handle it when URL changes
+      // If there's also a subtaskId, we're viewing a subtask - don't navigate away
+      if (subtaskId) {
+        // Just close the task dialog locally without navigation
+        setActiveDialog({ type: null });
+      } else {
+        // Navigate back to branch URL only if there's no subtask being viewed
+        navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}`);
+        // Don't call setActiveDialog here - let the useEffect handle it when URL changes
+      }
     } else {
       // Direct dialog opening (not via URL), close normally
       setActiveDialog({ type: null });
     }
-  }, [urlTaskId, projectId, taskTreeId, navigate]);
+  }, [urlTaskId, subtaskId, projectId, taskTreeId, navigate]);
 
   // Register row animation callbacks
   const registerRowCallbacks = useCallback((taskId: string, callbacks: {

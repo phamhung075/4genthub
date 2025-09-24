@@ -374,7 +374,7 @@ describe('LazySubtaskList', () => {
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
         />,
-        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}/subtask/sub-1`]
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/subtask/sub-1`]
       );
 
       await waitFor(() => {
@@ -398,7 +398,7 @@ describe('LazySubtaskList', () => {
           taskTreeId={mockTaskTreeId}
           parentTaskId={mockParentTaskId}
         />,
-        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/task/${mockParentTaskId}/subtask/invalid-id`]
+        [`/dashboard/project/${mockProjectId}/branch/${mockTaskTreeId}/subtask/invalid-id`]
       );
 
       await waitFor(() => {

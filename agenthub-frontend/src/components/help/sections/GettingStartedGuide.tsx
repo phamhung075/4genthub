@@ -202,7 +202,7 @@ const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ expandedSecti
                   <li>✅ Connect to hosted 4genthub service</li>
                   <li>✅ Load master-orchestrator-agent</li>
                   <li>✅ Enable real-time status tracking</li>
-                  <li>✅ Activate all 42+ specialized agents</li>
+                  <li>✅ Activate all 32 specialized agents</li>
                 </ul>
 
                 <div className="bg-orange-100 dark:bg-orange-900 p-3 rounded-lg mt-3">
@@ -273,7 +273,7 @@ const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ expandedSecti
               <li>✅ Automatic scaling</li>
             </ul>
             <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
-              <li>✅ 42+ specialized agents ready instantly</li>
+              <li>✅ 32 specialized agents ready instantly</li>
               <li>✅ Real-time task management</li>
               <li>✅ Zero infrastructure required</li>
               <li>✅ Professional support included</li>

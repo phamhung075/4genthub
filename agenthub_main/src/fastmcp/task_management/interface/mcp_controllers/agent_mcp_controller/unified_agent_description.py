@@ -7,13 +7,13 @@ Agent invocation is handled separately by the call_agent tool.
 """
 
 UNIFIED_AGENT_DESCRIPTION = """
-🤖 AGENT MANAGEMENT SYSTEM - Registration and Assignment for 42 Specialized Agents
+🤖 AGENT MANAGEMENT SYSTEM - Registration and Assignment for 32 Specialized Agents
 
-⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 42 specialized agents covering development, testing, architecture, DevOps, documentation, and more.
+⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 32 specialized agents covering development, testing, architecture, DevOps, documentation, and more.
 📋 WHEN TO USE: Agent registration, assignment, updates, and project agent management operations.
 🎯 CRITICAL FOR: Multi-agent orchestration, dynamic agent assignment, and project organization.
 📝 NOTE: For agent invocation/calling, use the separate 'call_agent' tool.
-🚀 AVAILABLE AGENTS (42 Total):
+🚀 AVAILABLE AGENTS (32 Total):
   Development & Coding:
     coding-agent - Implementation and feature development
     debugger-agent - Bug fixing and troubleshooting

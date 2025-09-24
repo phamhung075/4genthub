@@ -1572,7 +1572,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   - Multi-tenant data isolation
 
 - **Agent Orchestration**:
-  - 43+ specialized AI agents
+  - 32 specialized AI agents
   - Dynamic agent assignment and coordination
   - Tool permission enforcement
   - Agent capability management

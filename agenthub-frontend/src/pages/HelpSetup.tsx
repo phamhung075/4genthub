@@ -69,7 +69,7 @@ export const HelpSetup: React.FC = () => {
           </div>
 
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Complete guide to setting up and using 4genthub MCP platform with 42+ specialized AI agents
+            Complete guide to setting up and using 4genthub MCP platform with 32 specialized AI agents
           </p>
 
           {/* Search and Controls */}

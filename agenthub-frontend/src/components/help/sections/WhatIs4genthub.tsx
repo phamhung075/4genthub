@@ -26,7 +26,7 @@ const WhatIs4genthub: React.FC<WhatIs4genthubProps> = ({ expandedSections, toggl
         <p className="text-base leading-relaxed">
           4genthub is a revolutionary enterprise MCP (Model Context Protocol) platform that enables seamless
           collaboration between AI agents and developers. It provides a structured way to manage tasks, contexts,
-          and agent interactions in software development projects with 42+ specialized agents.
+          and agent interactions in software development projects with 32 specialized agents.
         </p>
 
         {/* Community Links as Prominent Cards */}
@@ -80,7 +80,7 @@ const WhatIs4genthub: React.FC<WhatIs4genthubProps> = ({ expandedSections, toggl
               Key Features
             </h4>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• 42+ specialized AI agents</li>
+              <li>• 32 specialized AI agents</li>
               <li>• Intelligent task management</li>
               <li>• 4-tier context hierarchy</li>
               <li>• Enterprise orchestration</li>
