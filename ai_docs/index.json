@@ -70,14 +70,14 @@
       "files": [
         {
           "hash": "2fc0b6e70f1a1977cbbf53c2dc094f53",
-          "modified": "2025-09-23T01:59:07.680193",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
           "size": 13415
         },
         {
           "hash": "5e5b8775033cdfa3cee397fccd9d7f5a",
-          "modified": "2025-09-24T07:20:44.812409",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
           "size": 2075344
@@ -91,14 +91,14 @@
         },
         {
           "hash": "893dd7effd5cc0fb442f5ddefc3381d1",
-          "modified": "2025-09-24T07:20:42.508437",
+          "modified": "2025-09-24T13:24:47.166279",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
           "size": 49640
         },
         {
           "hash": "10c99f4a959a54ecda36092c042f082c",
-          "modified": "2025-09-22T07:14:50.258196",
+          "modified": "2025-09-24T13:24:47.166279",
           "name": "current_context.md",
           "path": "_workplace/workers/fix_tests_loop/current_context.md",
           "size": 10793
@@ -145,7 +145,7 @@
         },
         {
           "hash": "6f0ccac50dd8f0aabe58e459d519c680",
-          "modified": "2025-09-22T08:19:12.315491",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "implementation-phases-detailed.md",
           "path": "api-integration/implementation-phases-detailed.md",
           "size": 25135
@@ -201,7 +201,7 @@
         },
         {
           "hash": "6c662919de0d493964714b2eb1f512be",
-          "modified": "2025-09-22T08:17:30.296292",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "real-time-optimization-architecture.md",
           "path": "api-integration/real-time-optimization-architecture.md",
           "size": 20233
@@ -312,7 +312,7 @@
         },
         {
           "hash": "fd08fb2bd47bda1c8a8499d843aa5b20",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "call-agent-api.md",
           "path": "api-integration/controllers/call-agent-api.md",
           "size": 11226
@@ -321,14 +321,28 @@
       "path": "api-integration/controllers"
     },
     "architecture-design": {
-      "count": 1,
+      "count": 3,
       "files": [
         {
           "hash": "e7c58889a651944a23dd0f123d0a2dc8",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-correspondence-map.md",
           "path": "architecture-design/agent-correspondence-map.md",
           "size": 5364
+        },
+        {
+          "hash": "0fcaac26b0831d9207593cd4a5c132ec",
+          "modified": "2025-09-24T21:23:00.121248",
+          "name": "PRD.md",
+          "path": "architecture-design/PRD.md",
+          "size": 8848
+        },
+        {
+          "hash": "a424843fec892b079a1b45e257cde119",
+          "modified": "2025-09-24T21:24:02.617604",
+          "name": "Architecture_Technique.md",
+          "path": "architecture-design/Architecture_Technique.md",
+          "size": 14544
         }
       ],
       "path": "architecture-design"
@@ -622,7 +636,7 @@
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
-          "modified": "2025-09-19T23:56:17.692409",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "task-versioning-analysis.md",
           "path": "core-architecture/task-versioning-analysis.md",
           "size": 22924
@@ -650,7 +664,7 @@
         },
         {
           "hash": "b77182713d0b01c9c2f65e3fd163d93b",
-          "modified": "2025-09-24T09:00:48.102217",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
           "size": 13879
@@ -692,7 +706,7 @@
         },
         {
           "hash": "a55a9ddeb2c4784dc92e98aa56ea7d58",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "deprecated-agent-mappings.md",
           "path": "core-architecture/deprecated-agent-mappings.md",
           "size": 12547
@@ -706,7 +720,7 @@
         },
         {
           "hash": "7ecde5b1b4747f1bdf67c6117005ca8c",
-          "modified": "2025-09-24T08:45:01.062555",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "architecture-thinking.md",
           "path": "core-architecture/architecture-thinking.md",
           "size": 15178
@@ -741,7 +755,7 @@
         },
         {
           "hash": "f4a833cbce5808865e4222ae40591c1a",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
           "size": 6273
@@ -755,14 +769,14 @@
         },
         {
           "hash": "e0483c7ac4e33e1819c982c82c0411ae",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "implementation-methodology-pattern.md",
           "path": "core-architecture/implementation-methodology-pattern.md",
           "size": 4266
         },
         {
           "hash": "c60e3cc79506e0cb448c0e51be31a9c2",
-          "modified": "2025-09-24T09:00:55.792020",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-orchestration-architecture.md",
           "path": "core-architecture/agent-orchestration-architecture.md",
           "size": 30628
@@ -783,7 +797,7 @@
         },
         {
           "hash": "f69b6e649d5eec20a8dcbaac2fb6f432",
-          "modified": "2025-09-22T22:51:30.602380",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "toast-notification-architecture.md",
           "path": "core-architecture/toast-notification-architecture.md",
           "size": 23907
@@ -844,7 +858,7 @@
         },
         {
           "hash": "75e823852b23cf2187bd63f5b275c7c9",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "complete-agent-workflow-phases.md",
           "path": "development-guides/complete-agent-workflow-phases.md",
           "size": 18738
@@ -858,7 +872,7 @@
         },
         {
           "hash": "4e15bfabcc05630a3ee040e0c304c5de",
-          "modified": "2025-09-24T08:57:36.485063",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-optimization-implementation-plan.md",
           "path": "development-guides/agent-optimization-implementation-plan.md",
           "size": 7761
@@ -928,7 +942,7 @@
         },
         {
           "hash": "7f2b0a96f9e64bd8782446ac40a955f0",
-          "modified": "2025-09-24T09:01:49.687682",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-interaction-patterns.md",
           "path": "development-guides/agent-interaction-patterns.md",
           "size": 10528
@@ -942,7 +956,7 @@
         },
         {
           "hash": "baea92080c24d21cd14607d0dc20502c",
-          "modified": "2025-09-21T14:42:07.163524",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "task-progress-history-implementation.md",
           "path": "development-guides/task-progress-history-implementation.md",
           "size": 7256
@@ -1019,7 +1033,7 @@
         },
         {
           "hash": "411a0efd66290b94da668f01ef06aeba",
-          "modified": "2025-09-24T08:54:56.135867",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-library-cleanup-recommendations.md",
           "path": "development-guides/agent-library-cleanup-recommendations.md",
           "size": 13669
@@ -1075,7 +1089,7 @@
         },
         {
           "hash": "590acb3e83ab841b71abb3cf275eca31",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "mcp-task-creation-guide.md",
           "path": "development-guides/mcp-task-creation-guide.md",
           "size": 17996
@@ -1131,14 +1145,14 @@
         },
         {
           "hash": "846ec5659723aa3c5875ea64039e0264",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "ai-task-planning-prompt.md",
           "path": "development-guides/ai-task-planning-prompt.md",
           "size": 15620
         },
         {
           "hash": "59535d296075b92d41f87043521ad8aa",
-          "modified": "2025-09-24T09:02:01.831342",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-flow-diagrams.md",
           "path": "development-guides/agent-flow-diagrams.md",
           "size": 9629
@@ -1159,14 +1173,14 @@
         },
         {
           "hash": "753b343976e5e381ea0046e4cc6d5ff7",
-          "modified": "2025-09-24T09:00:32.570747",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-capacity-improvement-recommendations.md",
           "path": "development-guides/agent-capacity-improvement-recommendations.md",
           "size": 18407
         },
         {
           "hash": "64f7de4500844ac3cf9cbe8855bf509c",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "automated-agent-workflow-patterns.md",
           "path": "development-guides/automated-agent-workflow-patterns.md",
           "size": 24338
@@ -1187,7 +1201,7 @@
         },
         {
           "hash": "7c59956bb7a58d62c8ab9eaf169c0ae7",
-          "modified": "2025-09-24T08:57:43.587252",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-capability-matrix.md",
           "path": "development-guides/agent-capability-matrix.md",
           "size": 8098
@@ -1214,7 +1228,7 @@
         },
         {
           "hash": "7e2f53f50d014f2daaf06c98f8046576",
-          "modified": "2025-09-24T09:01:36.541938",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "claude-code-agent-delegation-guide.md",
           "path": "integration-guides/claude-code-agent-delegation-guide.md",
           "size": 8917
@@ -1283,7 +1297,7 @@
         },
         {
           "hash": "d5bd999c1dafc7d0ef777ad5a65d5f31",
-          "modified": "2025-09-21T14:32:34.174959",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "mcp-subtask-persistence-fix-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-fix-2025-09-05.md",
           "size": 9166
@@ -1297,7 +1311,7 @@
         },
         {
           "hash": "ce3a0af5b091c1903da2f3a28da95f26",
-          "modified": "2025-09-21T14:32:34.174959",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "task-context-cascade-deletion-analysis.md",
           "path": "issues/task-context-cascade-deletion-analysis.md",
           "size": 6392
@@ -1345,14 +1359,14 @@
         },
         {
           "hash": "e223d6016ad05ee9bcfc8ddbaa29de50",
-          "modified": "2025-09-24T08:55:12.120985",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "agent-library-cleanup-migration-guide.md",
           "path": "migration-guides/agent-library-cleanup-migration-guide.md",
           "size": 16855
         },
         {
           "hash": "4cd88af0f86ea78056f24e021d42caec",
-          "modified": "2025-09-24T08:55:04.310074",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "README.md",
           "path": "migration-guides/README.md",
           "size": 2630
@@ -1380,14 +1394,14 @@
         },
         {
           "hash": "035583693a6d49d2474e6c1de3f8bb91",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "agent-name-migration.md",
           "path": "migration-guides/agent-name-migration.md",
           "size": 10427
         },
         {
           "hash": "8e478839ee286eb5ed7baef57ed0b1b0",
-          "modified": "2025-09-22T12:45:49.489447",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "automatic-migration-integration.md",
           "path": "migration-guides/automatic-migration-integration.md",
           "size": 5902
@@ -1504,11 +1518,11 @@
           "size": 12101
         },
         {
-          "hash": "1b891598fc890a03bcb6387a3ef8d403",
-          "modified": "2025-09-24T13:08:33.940604",
+          "hash": "7297911763d78fd8056c23cce7c23a67",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "env-sample-production.md",
           "path": "operations/env-sample-production.md",
-          "size": 13798
+          "size": 13170
         },
         {
           "hash": "ab41f47a6f6d730f90deb81eec41158e",
@@ -1650,14 +1664,14 @@
         },
         {
           "hash": "b535a21f5bc786e04ac1d1562426e87a",
-          "modified": "2025-09-22T07:15:36.189235",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-session-complete-503.md",
           "path": "reports-status/test-session-complete-503.md",
           "size": 583
         },
         {
           "hash": "27ba0e63b62340e4026a9c3dcf3e0afb",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "uat-comprehensive-report-2025-09-12.md",
           "path": "reports-status/uat-comprehensive-report-2025-09-12.md",
           "size": 12686
@@ -1678,7 +1692,7 @@
         },
         {
           "hash": "2740195003a4b107ee776f77f9db1db6",
-          "modified": "2025-09-20T18:01:07.158870",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "subtask-health-monitoring-report-2025-09-20.md",
           "path": "reports-status/subtask-health-monitoring-report-2025-09-20.md",
           "size": 6122
@@ -1692,14 +1706,14 @@
         },
         {
           "hash": "2e7b0e91eeeac312ab375c744c5a6d67",
-          "modified": "2025-09-24T09:01:31.788647",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "ai-task-planning-system-complete-2025-09-12.md",
           "path": "reports-status/ai-task-planning-system-complete-2025-09-12.md",
           "size": 12815
         },
         {
           "hash": "a17399e5cc354c23288a1a763c07c01d",
-          "modified": "2025-09-22T04:25:15.378145",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fixing-session-complete-2025-09-22.md",
           "path": "reports-status/test-fixing-session-complete-2025-09-22.md",
           "size": 2285
@@ -1761,7 +1775,7 @@
         },
         {
           "hash": "e6696653fa05505d17961c3b71180169",
-          "modified": "2025-09-22T18:00:35.108400",
+          "modified": "2025-09-24T13:24:47.170491",
           "name": "codex_tools_list.md",
           "path": "codex_tools_list.md",
           "size": 12726
@@ -1781,7 +1795,7 @@
       "files": [
         {
           "hash": "07ae1c620ebee60304807ac265fd56db",
-          "modified": "2025-09-20T00:34:55.764397",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "websocket-auth-fix.md",
           "path": "security/websocket-auth-fix.md",
           "size": 35037
@@ -1884,14 +1898,14 @@
       "files": [
         {
           "hash": "6c4c1a4347c00705202e6bcd178af721",
-          "modified": "2025-09-24T02:18:18.877266",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-18-summary.md",
           "path": "testing-qa/test-fix-iteration-18-summary.md",
           "size": 1232
         },
         {
           "hash": "df9800f409821e310e6ca944e026dec6",
-          "modified": "2025-09-24T01:42:56.079479",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-10-summary.md",
           "path": "testing-qa/test-fix-iteration-10-summary.md",
           "size": 1771
@@ -1912,63 +1926,63 @@
         },
         {
           "hash": "7f111577723ffead27f9772d18e49ec7",
-          "modified": "2025-09-24T06:55:58.471031",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-70-summary.md",
           "path": "testing-qa/test-fix-iteration-70-summary.md",
           "size": 2007
         },
         {
           "hash": "13098bc5867bb7ef594db24e522bd824",
-          "modified": "2025-09-24T01:59:45.024730",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-14-summary.md",
           "path": "testing-qa/test-fix-iteration-14-summary.md",
           "size": 1746
         },
         {
           "hash": "0bc029dea30d2e3ac215eb2d978db050",
-          "modified": "2025-09-24T01:34:01.418060",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-8-summary.md",
           "path": "testing-qa/test-fix-iteration-8-summary.md",
           "size": 1533
         },
         {
           "hash": "78946dec246a453e8eba3945fe589f45",
-          "modified": "2025-09-24T03:41:53.759970",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-38-summary.md",
           "path": "testing-qa/test-fix-iteration-38-summary.md",
           "size": 1797
         },
         {
           "hash": "feb6573c02196f8559f1e0f658fc0bc7",
-          "modified": "2025-09-24T05:09:47.414031",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-57-summary.md",
           "path": "testing-qa/test-fix-iteration-57-summary.md",
           "size": 3938
         },
         {
           "hash": "c1a2b627a104acbaccd4542010d00f50",
-          "modified": "2025-09-24T02:14:48.800912",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-17-summary.md",
           "path": "testing-qa/test-fix-iteration-17-summary.md",
           "size": 2454
         },
         {
           "hash": "ccf907b1904d279bf7cea42386cf0c7f",
-          "modified": "2025-09-24T01:10:02.309641",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-4-summary.md",
           "path": "testing-qa/test-fix-iteration-4-summary.md",
           "size": 2081
         },
         {
           "hash": "ef9cf6535763fac3138d3312ba680ff3",
-          "modified": "2025-09-23T04:42:11.121249",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-suite-final-report-2025-09-23.md",
           "path": "testing-qa/test-suite-final-report-2025-09-23.md",
           "size": 2872
         },
         {
           "hash": "969e981cbe3100b57766bab6d5f9dba5",
-          "modified": "2025-09-24T05:22:42.057401",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-61-summary.md",
           "path": "testing-qa/test-fix-iteration-61-summary.md",
           "size": 1686
@@ -1989,7 +2003,7 @@
         },
         {
           "hash": "26a6bafc5f3246ea446bf917a8e79dea",
-          "modified": "2025-09-24T01:57:47.764381",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-13-summary.md",
           "path": "testing-qa/test-fix-iteration-13-summary.md",
           "size": 2089
@@ -2003,21 +2017,21 @@
         },
         {
           "hash": "77ccf58eb3bbe3b6e5b1f8c38a612a5b",
-          "modified": "2025-09-24T04:52:03.572761",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-52-summary.md",
           "path": "testing-qa/test-fix-iteration-52-summary.md",
           "size": 2114
         },
         {
           "hash": "64f0c04676e27bd85e229c331e0bd5a8",
-          "modified": "2025-09-24T01:51:05.720240",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-11-summary.md",
           "path": "testing-qa/test-fix-iteration-11-summary.md",
           "size": 3219
         },
         {
           "hash": "9063504f46ae45bc3c0c3b421414b7a8",
-          "modified": "2025-09-23T07:21:08.121058",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-107-final.md",
           "path": "testing-qa/test-fix-iteration-107-final.md",
           "size": 2207
@@ -2031,14 +2045,14 @@
         },
         {
           "hash": "9d051b5fe51198d7a0bce583f112e6bd",
-          "modified": "2025-09-24T03:33:28.112666",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-36-summary.md",
           "path": "testing-qa/test-fix-iteration-36-summary.md",
           "size": 1982
         },
         {
           "hash": "57c8609bc60c0186ab49d9a1dc52777b",
-          "modified": "2025-09-24T01:06:35.141236",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-3-summary.md",
           "path": "testing-qa/test-fix-iteration-3-summary.md",
           "size": 1357
@@ -2052,21 +2066,21 @@
         },
         {
           "hash": "0af9e5a28d303fa4d05c401ba70d7bb0",
-          "modified": "2025-09-24T08:54:44.694193",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "configuration-cleanup-strategy.md",
           "path": "testing-qa/configuration-cleanup-strategy.md",
           "size": 17880
         },
         {
           "hash": "1faab29813b99918db5e5ba104de44e1",
-          "modified": "2025-09-24T01:55:33.065061",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-12-summary.md",
           "path": "testing-qa/test-fix-iteration-12-summary.md",
           "size": 1824
         },
         {
           "hash": "5da707e26b806dc23a9e68081b283114",
-          "modified": "2025-09-24T02:20:36.181232",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-19-summary.md",
           "path": "testing-qa/test-fix-iteration-19-summary.md",
           "size": 1880
@@ -2080,42 +2094,42 @@
         },
         {
           "hash": "a381580deb551dd050f83e9fba2fc1a8",
-          "modified": "2025-09-24T03:01:13.654237",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-29-summary.md",
           "path": "testing-qa/test-fix-iteration-29-summary.md",
           "size": 2803
         },
         {
           "hash": "b290d050c995f42443cb0017f2c0e9f0",
-          "modified": "2025-09-24T02:50:19.191279",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-25-summary.md",
           "path": "testing-qa/test-fix-iteration-25-summary.md",
           "size": 2490
         },
         {
           "hash": "cfa3507e55ec2030913e78877c4c5b0f",
-          "modified": "2025-09-24T02:55:01.567012",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-26-summary.md",
           "path": "testing-qa/test-fix-iteration-26-summary.md",
           "size": 1767
         },
         {
           "hash": "3e1b09696459c7b37c16c5ef181bf8ca",
-          "modified": "2025-09-24T03:58:58.608531",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-44-summary.md",
           "path": "testing-qa/test-fix-iteration-44-summary.md",
           "size": 2306
         },
         {
           "hash": "bb09cc0ed6ea3edf1ec64459907ef4da",
-          "modified": "2025-09-24T01:40:26.956212",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-9-summary.md",
           "path": "testing-qa/test-fix-iteration-9-summary.md",
           "size": 3234
         },
         {
           "hash": "b2cd38f3719c9a6a572f078150e57876",
-          "modified": "2025-09-24T03:05:57.951213",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-31-summary.md",
           "path": "testing-qa/test-fix-iteration-31-summary.md",
           "size": 3230
@@ -2136,28 +2150,28 @@
         },
         {
           "hash": "276d301b8900ee4b69148fd7024af170",
-          "modified": "2025-09-24T02:29:58.905909",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-22-summary.md",
           "path": "testing-qa/test-fix-iteration-22-summary.md",
           "size": 2475
         },
         {
           "hash": "b662457789bc7d0f3bf2661b7a30e648",
-          "modified": "2025-09-24T02:56:29.515444",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-27-summary.md",
           "path": "testing-qa/test-fix-iteration-27-summary.md",
           "size": 3337
         },
         {
           "hash": "b6787ebd9369d0646c09862dceca6b4a",
-          "modified": "2025-09-24T03:04:17.935019",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-30-summary.md",
           "path": "testing-qa/test-fix-iteration-30-summary.md",
           "size": 4353
         },
         {
           "hash": "d6a8d8892760481be93393bf5bc1c2a5",
-          "modified": "2025-09-24T05:00:16.118931",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-53-summary.md",
           "path": "testing-qa/test-fix-iteration-53-summary.md",
           "size": 2663
@@ -2178,35 +2192,35 @@
         },
         {
           "hash": "2ee5d025a5af77b4a84ceab7b548acf9",
-          "modified": "2025-09-23T02:31:16.858444",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-status-report-2025-09-23.md",
           "path": "testing-qa/test-status-report-2025-09-23.md",
           "size": 2501
         },
         {
           "hash": "196285d79c3fd7851a1c4677ab94bda6",
-          "modified": "2025-09-24T05:11:51.473950",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-58-summary.md",
           "path": "testing-qa/test-fix-iteration-58-summary.md",
           "size": 2061
         },
         {
           "hash": "b896cb3dc72a1efe854007ab28bdeef3",
-          "modified": "2025-09-24T05:05:43.285730",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-55-summary.md",
           "path": "testing-qa/test-fix-iteration-55-summary.md",
           "size": 2988
         },
         {
           "hash": "23ebc6973a3d702121bff36f9c75ebdc",
-          "modified": "2025-09-24T05:02:25.036645",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-54-summary.md",
           "path": "testing-qa/test-fix-iteration-54-summary.md",
           "size": 1870
         },
         {
           "hash": "1ddd3efd11541b23094d63fd433f713f",
-          "modified": "2025-09-24T03:49:04.391502",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-41-summary.md",
           "path": "testing-qa/test-fix-iteration-41-summary.md",
           "size": 2311
@@ -2220,42 +2234,42 @@
         },
         {
           "hash": "d5107cdb6c3eb09a7af4f9cffccc11cf",
-          "modified": "2025-09-24T06:07:28.826198",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-65-summary.md",
           "path": "testing-qa/test-fix-iteration-65-summary.md",
           "size": 2081
         },
         {
           "hash": "66ca8c21dbcd8fac2703624eef20a914",
-          "modified": "2025-09-24T05:15:53.028322",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-59-summary.md",
           "path": "testing-qa/test-fix-iteration-59-summary.md",
           "size": 2696
         },
         {
           "hash": "8cea8d424a5075883da9d0126efc43a8",
-          "modified": "2025-09-23T03:42:38.353590",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-status-final-report-2025-09-23.md",
           "path": "testing-qa/test-status-final-report-2025-09-23.md",
           "size": 2070
         },
         {
           "hash": "76ce670ff5d87a3ea99bb4a31af782e0",
-          "modified": "2025-09-24T01:13:05.359130",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-5-summary.md",
           "path": "testing-qa/test-fix-iteration-5-summary.md",
           "size": 1908
         },
         {
           "hash": "90deb8f1f5bfdf3e0135f4cbc1623916",
-          "modified": "2025-09-24T05:07:31.411190",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-56-summary.md",
           "path": "testing-qa/test-fix-iteration-56-summary.md",
           "size": 3084
         },
         {
           "hash": "3049dec16b797333c00cd703d94be408",
-          "modified": "2025-09-24T01:01:18.988492",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-2-summary.md",
           "path": "testing-qa/test-fix-iteration-2-summary.md",
           "size": 1970
@@ -2269,42 +2283,42 @@
         },
         {
           "hash": "69613e59e32cab7b170207f60cf09194",
-          "modified": "2025-09-24T04:39:09.947602",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-50-summary.md",
           "path": "testing-qa/test-fix-iteration-50-summary.md",
           "size": 2100
         },
         {
           "hash": "0518844a82701b86a6ab2bae8720012f",
-          "modified": "2025-09-24T05:43:00.448176",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-62-summary.md",
           "path": "testing-qa/test-fix-iteration-62-summary.md",
           "size": 3247
         },
         {
           "hash": "ed420202af89fe47c5b1024486b07104",
-          "modified": "2025-09-24T04:24:05.140605",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-47-summary.md",
           "path": "testing-qa/test-fix-iteration-47-summary.md",
           "size": 2003
         },
         {
           "hash": "cb9d2c32200796299541b7cb13bef6e4",
-          "modified": "2025-09-23T07:23:07.935597",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-108-summary.md",
           "path": "testing-qa/test-fix-iteration-108-summary.md",
           "size": 1341
         },
         {
           "hash": "447c88d903d4c3991286f74dfb93271a",
-          "modified": "2025-09-24T03:46:54.447499",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-40-summary.md",
           "path": "testing-qa/test-fix-iteration-40-summary.md",
           "size": 4988
         },
         {
           "hash": "4fa37624f4332546600c07844e9e4f3e",
-          "modified": "2025-09-24T04:18:36.571938",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-46-summary.md",
           "path": "testing-qa/test-fix-iteration-46-summary.md",
           "size": 2311
@@ -2332,7 +2346,7 @@
         },
         {
           "hash": "bbbc746623610643e003127196aadf98",
-          "modified": "2025-09-24T03:18:02.292594",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-33-summary.md",
           "path": "testing-qa/test-fix-iteration-33-summary.md",
           "size": 1836
@@ -2346,7 +2360,7 @@
         },
         {
           "hash": "d4e0b25aef07a7748bc51f37d19999a0",
-          "modified": "2025-09-24T02:32:32.985769",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-23-summary.md",
           "path": "testing-qa/test-fix-iteration-23-summary.md",
           "size": 1420
@@ -2367,42 +2381,42 @@
         },
         {
           "hash": "a1bb43cb852a076fac9d9bb28adbfbcc",
-          "modified": "2025-09-24T03:09:28.309569",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-32-summary.md",
           "path": "testing-qa/test-fix-iteration-32-summary.md",
           "size": 2098
         },
         {
           "hash": "a4ed0504a062d62d2ed66c28e166eddd",
-          "modified": "2025-09-23T07:25:00.301556",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-109-summary.md",
           "path": "testing-qa/test-fix-iteration-109-summary.md",
           "size": 925
         },
         {
           "hash": "feb052e434f68762ccc74d984d1ddd7c",
-          "modified": "2025-09-24T04:48:14.703428",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-51-summary.md",
           "path": "testing-qa/test-fix-iteration-51-summary.md",
           "size": 2443
         },
         {
           "hash": "f78a01dd8d81089cdf2e5b3541a4021c",
-          "modified": "2025-09-24T02:08:16.226500",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-15-summary.md",
           "path": "testing-qa/test-fix-iteration-15-summary.md",
           "size": 1618
         },
         {
           "hash": "f343500f282c504aa5599b279cbb55a3",
-          "modified": "2025-09-24T04:26:53.058597",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-48-summary.md",
           "path": "testing-qa/test-fix-iteration-48-summary.md",
           "size": 2505
         },
         {
           "hash": "17ef6b22b6be5778e465d84a882d03da",
-          "modified": "2025-09-24T01:28:20.163721",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-7-summary.md",
           "path": "testing-qa/test-fix-iteration-7-summary.md",
           "size": 2357
@@ -2416,28 +2430,28 @@
         },
         {
           "hash": "615d8f6b44d313599b82865a7e3e1e96",
-          "modified": "2025-09-24T03:27:32.500044",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-35-summary.md",
           "path": "testing-qa/test-fix-iteration-35-summary.md",
           "size": 3652
         },
         {
           "hash": "89d492dfa587391fedb0090b4e05c1c5",
-          "modified": "2025-09-24T03:21:28.331550",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-34-summary.md",
           "path": "testing-qa/test-fix-iteration-34-summary.md",
           "size": 3111
         },
         {
           "hash": "6715cd7a021cd60ad77a0ad9e0ec9627",
-          "modified": "2025-09-24T06:28:36.926071",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-67-summary.md",
           "path": "testing-qa/test-fix-iteration-67-summary.md",
           "size": 2888
         },
         {
           "hash": "28ae8d92ba3b8f13d78c339794004bc6",
-          "modified": "2025-09-24T05:54:01.485145",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-63-summary.md",
           "path": "testing-qa/test-fix-iteration-63-summary.md",
           "size": 2408
@@ -2451,7 +2465,7 @@
         },
         {
           "hash": "77cf75f5238aee785dda2e0a11f6edd2",
-          "modified": "2025-09-24T03:38:55.079280",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-37-summary.md",
           "path": "testing-qa/test-fix-iteration-37-summary.md",
           "size": 2072
@@ -2465,14 +2479,14 @@
         },
         {
           "hash": "82b0f454487489aac0c7a704e018de37",
-          "modified": "2025-09-24T05:59:40.646080",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-64-summary.md",
           "path": "testing-qa/test-fix-iteration-64-summary.md",
           "size": 3689
         },
         {
           "hash": "00261aab8bcdb747a386bddbc95e9fdb",
-          "modified": "2025-09-24T04:13:56.445436",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-45-summary.md",
           "path": "testing-qa/test-fix-iteration-45-summary.md",
           "size": 2287
@@ -2486,35 +2500,35 @@
         },
         {
           "hash": "d6736e9a7b24c9cc852315ab6c4a54c4",
-          "modified": "2025-09-24T05:19:28.179675",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-60-summary.md",
           "path": "testing-qa/test-fix-iteration-60-summary.md",
           "size": 2642
         },
         {
           "hash": "eb4163d8bfa4df30e142389439a5fa6e",
-          "modified": "2025-09-24T06:44:19.894140",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-69-summary.md",
           "path": "testing-qa/test-fix-iteration-69-summary.md",
           "size": 1979
         },
         {
           "hash": "fc3899273130ad691ef1781a3ca28958",
-          "modified": "2025-09-24T03:51:16.892275",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-42-summary.md",
           "path": "testing-qa/test-fix-iteration-42-summary.md",
           "size": 1734
         },
         {
           "hash": "8623290fa83c0479a5369dfdeff66089",
-          "modified": "2025-09-24T04:31:26.551375",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-49-summary.md",
           "path": "testing-qa/test-fix-iteration-49-summary.md",
           "size": 2781
         },
         {
           "hash": "85b7dee8d5a84ad4b43d38889ff229ae",
-          "modified": "2025-09-24T02:12:11.907328",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-16-summary.md",
           "path": "testing-qa/test-fix-iteration-16-summary.md",
           "size": 2142
@@ -2528,21 +2542,21 @@
         },
         {
           "hash": "4dee999968eba2a0bbb0925b312cad3f",
-          "modified": "2025-09-23T02:19:43.553580",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-status-2025-09-23.md",
           "path": "testing-qa/test-status-2025-09-23.md",
           "size": 2086
         },
         {
           "hash": "a4bfe193d099b146f338221fd4a9c1be",
-          "modified": "2025-09-24T03:44:12.775618",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-39-summary.md",
           "path": "testing-qa/test-fix-iteration-39-summary.md",
           "size": 2560
         },
         {
           "hash": "ef0930a369478db3562fa9b18e84fbef",
-          "modified": "2025-09-24T02:58:55.560888",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-28-summary.md",
           "path": "testing-qa/test-fix-iteration-28-summary.md",
           "size": 2537
@@ -2563,21 +2577,21 @@
         },
         {
           "hash": "66df10942c0f9fca347b8fba7e2bffc9",
-          "modified": "2025-09-24T06:33:59.048930",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-68-summary.md",
           "path": "testing-qa/test-fix-iteration-68-summary.md",
           "size": 3341
         },
         {
           "hash": "a03e198c718f89a6fcf5541ea3111612",
-          "modified": "2025-09-24T02:24:35.029089",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-20-summary.md",
           "path": "testing-qa/test-fix-iteration-20-summary.md",
           "size": 3649
         },
         {
           "hash": "c629b76c5815011179f09970f2404415",
-          "modified": "2025-09-24T02:27:22.845189",
+          "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-21-summary.md",
           "path": "testing-qa/test-fix-iteration-21-summary.md",
           "size": 2267
@@ -2701,7 +2715,7 @@
         },
         {
           "hash": "2adccacd8abfa25f3908b05f4f0da03a",
-          "modified": "2025-09-21T14:32:34.174959",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "subtask-wrong-task-id-api-calls.md",
           "path": "troubleshooting-guides/subtask-wrong-task-id-api-calls.md",
           "size": 12567
@@ -2715,7 +2729,7 @@
         },
         {
           "hash": "292f821f1a31d440f168f7440eabfc2a",
-          "modified": "2025-09-21T14:32:34.174959",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "task-persistence-issue-analysis.md",
           "path": "troubleshooting-guides/task-persistence-issue-analysis.md",
           "size": 7003
@@ -2729,7 +2743,7 @@
         },
         {
           "hash": "be57f9bc7ebc767a87699757c119f512",
-          "modified": "2025-09-20T16:34:39.923726",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "subtask-url-revert-fix.md",
           "path": "troubleshooting-guides/subtask-url-revert-fix.md",
           "size": 3547
@@ -2764,7 +2778,7 @@
         },
         {
           "hash": "b42137512165812e1ede41ae08278da2",
-          "modified": "2025-09-21T14:32:34.174959",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "comprehensive-branch-cascade-deletion-fix.md",
           "path": "troubleshooting-guides/comprehensive-branch-cascade-deletion-fix.md",
           "size": 6163
@@ -2778,7 +2792,7 @@
         },
         {
           "hash": "f6cf4d9176fa7d302cd4c5cfa504a970",
-          "modified": "2025-09-19T23:23:37.395855",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "task-delegation-fix.md",
           "path": "troubleshooting-guides/task-delegation-fix.md",
           "size": 5975
@@ -2813,7 +2827,7 @@
         },
         {
           "hash": "f79bfca03582fa580292fb6753677e12",
-          "modified": "2025-09-21T23:12:25.897474",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "mcp-subtask-user-id-association-fix.md",
           "path": "troubleshooting-guides/mcp-subtask-user-id-association-fix.md",
           "size": 4870
@@ -2840,7 +2854,7 @@
       "files": [
         {
           "hash": "641a0f18087babee037521d2a464813e",
-          "modified": "2025-09-24T08:54:35.419045",
+          "modified": "2025-09-24T13:24:47.178915",
           "name": "episode-03-web-dashboard.md",
           "path": "video-production/episode-03-web-dashboard.md",
           "size": 31568
@@ -2849,7 +2863,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-24T13:08:34.042550",
+  "generated_at": "2025-09-24T21:24:02.729265",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2918,6 +2932,8 @@
     },
     "architecture-design": {
       "files": [
+        "Architecture_Technique.md",
+        "PRD.md",
         "agent-correspondence-map.md"
       ]
     },
@@ -3344,5 +3360,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 381
+  "total_files": 383
 }

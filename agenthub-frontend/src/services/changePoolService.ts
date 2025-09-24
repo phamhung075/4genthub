@@ -280,8 +280,8 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
   console.log('🔌 ChangePool: Initializing WebSocket integration...');
   logger.info('🔌 ChangePool: Initializing WebSocket integration');
 
-  // Subscribe to WebSocket update messages
-  const unsubscribe: unknown = webSocketClient.on('update', (message: any) => {
+  // Create the handler function so we can reference it later for cleanup
+  const updateHandler = (message: any) => {
     console.log('📡 ChangePool: Received WebSocket update message:', message);
     logger.debug('📡 ChangePool: Received WebSocket update message:', message);
 
@@ -330,29 +330,37 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         entityType: message.payload?.entity || message.metadata?.entity_type
       });
     }
-  });
+  };
+
+  // Subscribe to WebSocket update messages
+  webSocketClient.on('update', updateHandler);
 
   console.log('📡 ChangePool: Subscribed to WebSocket update events');
   logger.info('📡 ChangePool: Connected to WebSocket service');
 
   // Return cleanup function
   return () => {
-    // Safe unsubscribe - check if it's actually a function before calling
-    if (typeof unsubscribe === 'function') {
-      console.log('🔌 ChangePool: Unsubscribing from WebSocket events');
-      logger.debug('🔌 ChangePool: Unsubscribing from WebSocket events');
-      unsubscribe();
-    } else {
-      console.warn('🔌 ChangePool: unsubscribe is not a function, WebSocket cleanup may be incomplete', {
-        unsubscribeType: typeof unsubscribe,
-        unsubscribeValue: unsubscribe
-      });
-      logger.warn('🔌 ChangePool: unsubscribe is not a function, WebSocket cleanup may be incomplete', {
-        unsubscribeType: typeof unsubscribe,
-        unsubscribeValue: unsubscribe
-      });
+    try {
+      // Properly unsubscribe using the off method with the specific handler
+      if (webSocketClient && typeof webSocketClient.off === 'function') {
+        console.log('🔌 ChangePool: Unsubscribing from WebSocket events');
+        logger.debug('🔌 ChangePool: Unsubscribing from WebSocket events');
+        webSocketClient.off('update', updateHandler);
+      } else if (webSocketClient && typeof webSocketClient.removeAllListeners === 'function') {
+        // Fallback for EventEmitter-like objects
+        console.log('🔌 ChangePool: Using removeAllListeners for cleanup');
+        webSocketClient.removeAllListeners('update');
+      } else {
+        // Log warning but don't throw - this is not critical
+        console.log('🔌 ChangePool: WebSocket client cleanup skipped (no suitable method found)');
+      }
+    } catch (error) {
+      // Catch any errors during cleanup to prevent app crashes
+      console.warn('🔌 ChangePool: Error during WebSocket cleanup:', error);
+      logger.warn('🔌 ChangePool: Error during WebSocket cleanup:', error);
     }
 
+    // Always clear subscriptions regardless of WebSocket cleanup success
     console.log('🔌 ChangePool: Clearing all change pool subscriptions');
     logger.debug('🔌 ChangePool: Clearing all change pool subscriptions');
     changePoolService.clearAllSubscriptions();

@@ -18,9 +18,13 @@ import { initializeWebSocketIntegration } from '../services/changePoolService';
 import { notificationService } from '../services/notificationService';
 
 
+// Global WebSocket instance to ensure singleton
+let globalWebSocketClient: WebSocketClient | null = null;
+
 /**
  * React Hook for WebSocket v2.0
  * Provides WebSocket connection management and real-time updates
+ * Implements singleton pattern to prevent multiple connections
  */
 export function useWebSocket(userId: string, token: string) {
   const dispatch = useAppDispatch();
@@ -33,13 +37,41 @@ export function useWebSocket(userId: string, token: string) {
 
   useEffect(() => {
     if (!userId || !token) {
-      console.warn('[useWebSocket] Missing userId or token');
+      console.warn('[useWebSocket] Cannot connect - missing credentials:', {
+        hasUserId: !!userId,
+        hasToken: !!token,
+        userIdLength: userId?.length,
+        tokenLength: token?.length
+      });
       return;
     }
 
-    // Create WebSocket client
+    // Check if we already have a global client with the same credentials
+    if (globalWebSocketClient) {
+      const existingClientUserId = (globalWebSocketClient as any).userId;
+      const existingClientToken = (globalWebSocketClient as any).token;
+
+      if (existingClientUserId === userId && existingClientToken === token) {
+        console.log('[useWebSocket] Reusing existing WebSocket client');
+        clientRef.current = globalWebSocketClient;
+        return; // Keep existing connection
+      } else {
+        console.log('[useWebSocket] Credentials changed, disconnecting old client');
+        globalWebSocketClient.disconnect();
+        globalWebSocketClient = null;
+      }
+    }
+
+    console.log('[useWebSocket] Creating new WebSocket client with credentials:', {
+      userId,
+      tokenLength: token.length,
+      timestamp: new Date().toISOString()
+    });
+
+    // Create new WebSocket client
     const client = new WebSocketClient(userId, token);
     clientRef.current = client;
+    globalWebSocketClient = client;
 
     // Handle updates (both immediate and batched)
     client.on('update', (message: WSMessage) => {
@@ -134,10 +166,11 @@ export function useWebSocket(userId: string, token: string) {
     // Connect to server
     client.connect();
 
-    // Cleanup on unmount
+    // Cleanup on unmount - but don't disconnect the global singleton
     return () => {
-      console.log('[useWebSocket] Cleaning up');
-      client.disconnect();
+      console.log('[useWebSocket] Component cleanup (keeping WebSocket connected)');
+      // Don't disconnect the global client - it should persist
+      // Only clean up local references
       cleanupChangePool();
       cleanupNotifications();
       clientRef.current = null;
@@ -166,11 +199,16 @@ export function useWebSocket(userId: string, token: string) {
   }, []);
 
   /**
-   * Disconnect WebSocket
+   * Disconnect WebSocket (for logout or cleanup)
    */
   const disconnect = useCallback(() => {
+    console.log('[useWebSocket] Disconnecting WebSocket (explicit disconnect)');
     if (clientRef.current) {
       clientRef.current.disconnect();
+      // Also clear the global singleton on explicit disconnect (e.g., logout)
+      if (globalWebSocketClient === clientRef.current) {
+        globalWebSocketClient = null;
+      }
     }
   }, []);
 
