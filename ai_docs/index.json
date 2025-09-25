@@ -331,18 +331,18 @@
           "size": 5364
         },
         {
-          "hash": "c4482013ffd640ba1e241b28a1ebd99c",
-          "modified": "2025-09-25T21:50:23.191189",
+          "hash": "576ab38f40fc155697ed3e0ed33084a7",
+          "modified": "2025-09-26T00:44:03.928607",
           "name": "PRD.md",
           "path": "architecture-design/PRD.md",
-          "size": 9041
+          "size": 9217
         },
         {
-          "hash": "ed14edf8c4c3a87e0af9881ed1c52c63",
-          "modified": "2025-09-25T21:51:28.913026",
+          "hash": "1dc325ff94aedef9078200d4c249ad4d",
+          "modified": "2025-09-26T00:44:16.356557",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
-          "size": 15849
+          "size": 16026
         }
       ],
       "path": "architecture-design"
@@ -3339,7 +3339,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-25T22:12:01.100992",
+  "generated_at": "2025-09-26T00:44:16.461828",
   "structure": {
     "_absolute_docs": {
       "files": [

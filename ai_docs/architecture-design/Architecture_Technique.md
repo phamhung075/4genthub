@@ -241,6 +241,8 @@ The system uses direct SQL schema initialization instead of migrations:
 - `init_schema_sqlite.sql` for development environments
 - No migration history or version tracking needed
 - Clean slate approach for development phase
+- **Pure Domain Logic**: No SQL triggers, CASCADE constraints, or database business logic
+- **Clean Architecture**: All business rules in domain layer, database is just storage
 
 #### Redis Caching Strategy
 
@@ -541,7 +543,7 @@ logger.info(
 async def health_check():
     return {
         "status": "healthy",
-        "version": "0.0.4",
+        "version": "0.0.5",
         "services": {
             "database": check_database(),
             "redis": check_redis(),

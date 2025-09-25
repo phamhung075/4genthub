@@ -4,8 +4,8 @@
 ## Executive Summary
 
 **Product Name:** 4genthub
-**Version:** 0.0.4
-**Last Updated:** 2025-09-24
+**Version:** 0.0.5
+**Last Updated:** 2025-09-26
 **Product Type:** AI-Human Collaboration Platform
 **Target Users:** Development teams, AI engineers, software architects
 
@@ -165,7 +165,7 @@ Empower development teams with a visual, web-first platform that makes AI agent 
 
 ## Feature Roadmap
 
-### Phase 1: Foundation (Current - v0.0.4)
+### Phase 1: Foundation (Current - v0.0.5)
 - ✅ Core agent library (32 agents)
 - ✅ Basic task management
 - ✅ 4-tier context system
@@ -173,6 +173,8 @@ Empower development teams with a visual, web-first platform that makes AI agent 
 - ✅ Docker support
 - ✅ Clean timestamp management (application layer)
 - ✅ Migration-free database initialization
+- ✅ Domain-driven architecture with cascade deletion
+- ✅ Clean schema without SQL triggers/cascades
 
 ### Phase 2: Enhancement (Q1 2025)
 - [ ] Advanced workflow automation
@@ -258,6 +260,7 @@ Empower development teams with a visual, web-first platform that makes AI agent 
 - [Keycloak Documentation](https://www.keycloak.org/documentation)
 
 ### C. Revision History
+- v0.0.5 (2025-09-26): Domain-driven cascade deletion, clean SQL schema
 - v0.0.4 (2025-09-25): Timestamp management & clean architecture
 - v0.0.4 (2025-09-24): Current version with 32 core agents
 - v0.0.3: Initial optimization from 69 to 32 agents
