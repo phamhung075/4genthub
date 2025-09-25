@@ -773,3 +773,34 @@ class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepos
             Dictionary with estimated savings percentages
         """
         return self._field_selector.estimate_savings("project", field_set)
+
+    async def check_name_exists(self, name: str, exclude_project_id: Optional[str] = None) -> bool:
+        """
+        Check if a project name already exists for the current user.
+
+        Args:
+            name: The project name to check
+            exclude_project_id: Optional project ID to exclude from the check (for updates)
+
+        Returns:
+            True if the name exists, False otherwise
+        """
+        with self.get_db_session() as session:
+            query = session.query(Project)
+
+            # Apply user filter for data isolation (CRITICAL)
+            query = self.apply_user_filter(query)
+
+            # Filter by name
+            query = query.filter(Project.name == name.strip())
+
+            # Exclude specific project if provided (for updates)
+            if exclude_project_id:
+                query = query.filter(Project.id != exclude_project_id)
+
+            existing = query.first()
+
+            # Log access for audit
+            self.log_access('check_name_exists', 'project', f'name={name}')
+
+            return existing is not None

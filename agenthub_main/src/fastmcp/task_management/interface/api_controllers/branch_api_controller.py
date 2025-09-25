@@ -29,50 +29,6 @@ class BranchAPIController:
         """Initialize the controller"""
         self.facade_service = FacadeService.get_instance()
 
-    def _refresh_summary_views(self, session) -> Dict[str, Any]:
-        """Refresh materialized views backing project/branch summaries when using PostgreSQL."""
-        refresh_metadata: Dict[str, Any] = {
-            "refreshed": False,
-            "refresh_time_ms": None,
-            "error": None,
-        }
-
-        try:
-            bind = session.get_bind()
-            if not bind or bind.dialect.name != "postgresql":
-                return refresh_metadata
-
-            start = time.perf_counter()
-            connection = session.connection()
-
-            # Use autocommit to satisfy PostgreSQL requirements for REFRESH statements.
-            autocommit_conn = connection.execution_options(isolation_level="AUTOCOMMIT")
-
-            try:
-                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY branch_summaries_mv;"))
-                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY project_summaries_mv;"))
-            except Exception as refresh_error:
-                logger.warning(
-                    "Concurrent refresh failed, falling back to non-concurrent refresh: %s",
-                    refresh_error,
-                )
-                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW branch_summaries_mv;"))
-                autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW project_summaries_mv;"))
-
-            refresh_metadata["refreshed"] = True
-            refresh_metadata["refresh_time_ms"] = round((time.perf_counter() - start) * 1000, 2)
-
-        except Exception as exc:  # pragma: no cover - defensive logging path
-            logger.error("Failed to refresh summary materialized views: %s", exc)
-            refresh_metadata["error"] = str(exc)
-        finally:
-            # Ensure we are not left in a broken transaction state before running read queries.
-            try:
-                session.rollback()
-            except Exception:
-                pass
-
-        return refresh_metadata
     
     def get_branches_with_task_counts(self, project_id: str, user_id: str, session) -> Dict[str, Any]:
         """
@@ -710,22 +666,29 @@ class BranchAPIController:
                 summaries[row[0]] = branch_summary
                 project_ids_found.add(row[1])
 
-            # Get project summaries from project_summaries_mv
+            # Get project summaries using domain calculations instead of materialized views
             projects = {}
             if project_ids_found:
                 project_placeholders = ', '.join([f':proj{i}' for i in range(len(project_ids_found))])
+
+                # Calculate project summaries from actual tables using domain layer approach
                 project_query = text(f"""
                     SELECT
-                        project_id,
-                        project_name,
-                        project_description,
-                        total_branches,
-                        active_branches,
-                        total_tasks,
-                        completed_tasks,
-                        overall_progress_percentage
-                    FROM project_summaries_mv
-                    WHERE project_id IN ({project_placeholders})
+                        p.id as project_id,
+                        p.name as project_name,
+                        p.description as project_description,
+                        COUNT(DISTINCT b.id) as total_branches,
+                        COUNT(DISTINCT CASE WHEN b.status != 'archived' THEN b.id END) as active_branches,
+                        COALESCE(SUM(b.task_count), 0) as total_tasks,
+                        COALESCE(SUM(b.completed_task_count), 0) as completed_tasks,
+                        CASE
+                            WHEN COALESCE(SUM(b.task_count), 0) = 0 THEN 0
+                            ELSE ROUND((COALESCE(SUM(b.completed_task_count), 0)::numeric / COALESCE(SUM(b.task_count), 0)::numeric) * 100, 2)
+                        END as overall_progress_percentage
+                    FROM projects p
+                    LEFT JOIN project_git_branchs b ON p.id = b.project_id
+                    WHERE p.id IN ({project_placeholders})
+                    GROUP BY p.id, p.name, p.description
                 """)
 
                 project_params = {}

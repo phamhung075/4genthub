@@ -156,7 +156,7 @@ Empower development teams with a visual, web-first platform that makes AI agent 
    - PostgreSQL for persistent data
    - Redis for session/cache
    - SQLAlchemy ORM
-   - Alembic migrations
+   - Direct SQL schema initialization (no migrations)
 
 4. **Authentication Layer**
    - Keycloak SSO
@@ -171,6 +171,8 @@ Empower development teams with a visual, web-first platform that makes AI agent 
 - ✅ 4-tier context system
 - ✅ Web dashboard MVP
 - ✅ Docker support
+- ✅ Clean timestamp management (application layer)
+- ✅ Migration-free database initialization
 
 ### Phase 2: Enhancement (Q1 2025)
 - [ ] Advanced workflow automation
@@ -256,6 +258,7 @@ Empower development teams with a visual, web-first platform that makes AI agent 
 - [Keycloak Documentation](https://www.keycloak.org/documentation)
 
 ### C. Revision History
+- v0.0.4 (2025-09-25): Timestamp management & clean architecture
 - v0.0.4 (2025-09-24): Current version with 32 core agents
 - v0.0.3: Initial optimization from 69 to 32 agents
 - v0.0.2: Added Docker support

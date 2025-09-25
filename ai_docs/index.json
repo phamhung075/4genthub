@@ -331,18 +331,18 @@
           "size": 5364
         },
         {
-          "hash": "0fcaac26b0831d9207593cd4a5c132ec",
-          "modified": "2025-09-25T00:21:29.522766",
+          "hash": "c4482013ffd640ba1e241b28a1ebd99c",
+          "modified": "2025-09-25T21:50:23.191189",
           "name": "PRD.md",
           "path": "architecture-design/PRD.md",
-          "size": 8848
+          "size": 9041
         },
         {
-          "hash": "a424843fec892b079a1b45e257cde119",
-          "modified": "2025-09-25T00:21:29.522766",
+          "hash": "ed14edf8c4c3a87e0af9881ed1c52c63",
+          "modified": "2025-09-25T21:51:28.913026",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
-          "size": 14544
+          "size": 15849
         }
       ],
       "path": "architecture-design"
@@ -632,7 +632,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 32,
+      "count": 33,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -682,6 +682,13 @@
           "name": "database-architecture.md",
           "path": "core-architecture/database-architecture.md",
           "size": 9115
+        },
+        {
+          "hash": "26e673b631363afeb56868763818cda1",
+          "modified": "2025-09-25T22:12:01.002945",
+          "name": "clean-code-enforcement.md",
+          "path": "core-architecture/clean-code-enforcement.md",
+          "size": 8906
         },
         {
           "hash": "7996c942e243fbbcc96d08129658b58e",
@@ -3332,7 +3339,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-25T18:36:04.659905",
+  "generated_at": "2025-09-25T22:12:01.100992",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3469,6 +3476,7 @@
         "architecture-thinking.md",
         "architecture.md",
         "claude-hooks-refactoring-architecture.md",
+        "clean-code-enforcement.md",
         "context-hierarchy-system.md",
         "database-architecture.md",
         "database-initialization-enhancement.md",
@@ -3896,5 +3904,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 450
+  "total_files": 451
 }

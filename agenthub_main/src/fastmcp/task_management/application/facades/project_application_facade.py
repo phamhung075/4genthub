@@ -41,8 +41,29 @@ class ProjectApplicationFacade:
         if action == "create":
             if not name:
                 return {"success": False, "error": "Missing required field: name"}
+
             # Use user-scoped service - prioritize parameter user_id, fallback to instance user_id
             effective_user_id = user_id or self._user_id
+            if not effective_user_id:
+                return {"success": False, "error": "User authentication required"}
+
+            # Validate project name using domain service
+            try:
+                from ...domain.services.project_name_validator import ProjectNameValidator
+                from ...infrastructure.repositories.project_repository_factory import GlobalRepositoryManager
+
+                # Get user-scoped repository for validation
+                project_repo = GlobalRepositoryManager.get_for_user(effective_user_id)
+                validator = ProjectNameValidator(project_repo)
+
+                # Validate project name (includes format and uniqueness checks)
+                await validator.validate_project_name(name, effective_user_id)
+
+            except Exception as e:
+                # Return validation errors to frontend
+                return {"success": False, "error": str(e)}
+
+            # If validation passes, proceed with creation
             service = self._project_service.with_user(effective_user_id) if effective_user_id else self._project_service
             return await service.create_project(name, description or "")
         
@@ -64,6 +85,28 @@ class ProjectApplicationFacade:
         elif action == "update":
             if not project_id:
                 return {"success": False, "error": "Missing required field: project_id"}
+
+            # If name is being updated, validate it
+            if name is not None:
+                effective_user_id = user_id or self._user_id
+                if not effective_user_id:
+                    return {"success": False, "error": "User authentication required"}
+
+                try:
+                    from ...domain.services.project_name_validator import ProjectNameValidator
+                    from ...infrastructure.repositories.project_repository_factory import GlobalRepositoryManager
+
+                    # Get user-scoped repository for validation
+                    project_repo = GlobalRepositoryManager.get_for_user(effective_user_id)
+                    validator = ProjectNameValidator(project_repo)
+
+                    # Validate project name (include project_id to exclude current project)
+                    await validator.validate_project_name(name, effective_user_id, project_id)
+
+                except Exception as e:
+                    # Return validation errors to frontend
+                    return {"success": False, "error": str(e)}
+
             return await self._project_service.update_project(project_id, name, description)
 
         elif action == "project_health_check":

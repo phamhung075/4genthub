@@ -1377,3 +1377,44 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             except Exception as e:
                 logger.error(f"Error fetching single branch with counts: {e}")
                 return None
+
+    async def check_name_exists_in_project(self, project_id: str, name: str, exclude_branch_id: Optional[str] = None) -> bool:
+        """
+        Check if a git branch name already exists within a project.
+
+        Args:
+            project_id: The project ID to scope the check to
+            name: The branch name to check
+            exclude_branch_id: Optional branch ID to exclude from the check (for updates)
+
+        Returns:
+            True if the name exists, False otherwise
+        """
+        try:
+            with self.get_db_session() as session:
+                # SECURITY: Always apply user filtering for data isolation
+                if not self.user_id:
+                    raise ValueError("User authentication required for branch operations")
+
+                query = session.query(ProjectGitBranch).filter(
+                    and_(
+                        ProjectGitBranch.project_id == project_id,
+                        ProjectGitBranch.name == name.strip(),
+                        ProjectGitBranch.user_id == self.user_id  # USER ISOLATION
+                    )
+                )
+
+                # Exclude specific branch if provided (for updates)
+                if exclude_branch_id:
+                    query = query.filter(ProjectGitBranch.id != exclude_branch_id)
+
+                existing = query.first()
+                return existing is not None
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error checking branch name exists: {e}")
+            raise DatabaseException(
+                message=f"Failed to check branch name: {str(e)}",
+                operation="check_name_exists_in_project",
+                table="project_git_branchs"
+            )

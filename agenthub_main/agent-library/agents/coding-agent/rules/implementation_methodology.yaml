@@ -90,6 +90,9 @@ implementation_methodology:
       - properly_typed: Includes type annotations
       - well_structured: Clear organization and flow
       - performant: Efficient algorithms and patterns
+      - clean_code_compliant: Adheres to Clean Code principles
+      - dry_principle: No code duplication, single source of truth
+      - solid_compliant: Follows all five SOLID principles
       
     context_efficiency:
       - utilization_check: Always verify < 40%
@@ -176,3 +179,9 @@ implementation_methodology:
     - monitor_usage: Track context throughout implementation
     - clean_regularly: Remove completed work from context
     - verify_output: Ensure matches plan requirements
+    - apply_clean_code: Always follow Clean Code, DRY, and SOLID principles
+    - no_duplication: Extract common code into reusable components
+    - single_responsibility: Each class/function does exactly one thing
+    - meaningful_names: Use self-documenting, intention-revealing names
+    - small_functions: Keep functions under 20-30 lines
+    - proper_abstractions: Depend on interfaces, not implementations

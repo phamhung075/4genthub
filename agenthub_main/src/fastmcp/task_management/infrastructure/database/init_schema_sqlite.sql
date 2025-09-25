@@ -25,16 +25,7 @@ DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS agents;
 DROP TABLE IF EXISTS templates;
 DROP TABLE IF EXISTS api_tokens;
-DROP TABLE IF EXISTS applied_migrations;
 
--- Create migration tracking table
-CREATE TABLE applied_migrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    migration_name TEXT UNIQUE NOT NULL,
-    applied_at TIMESTAMP,
-    success BOOLEAN DEFAULT 1,
-    error_message TEXT
-);
 
 -- ========================================
 -- CORE TABLES
@@ -71,7 +62,7 @@ CREATE TABLE projects (
 -- Project Git Branches table (task trees)
 CREATE TABLE project_git_branchs (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
-    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    project_id TEXT NOT NULL REFERENCES projects(id),
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
     created_at TIMESTAMP,
@@ -91,7 +82,7 @@ CREATE TABLE tasks (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
     title TEXT NOT NULL CHECK (LENGTH(title) <= 200),
     description TEXT NOT NULL CHECK (LENGTH(description) <= 2000),
-    git_branch_id TEXT NOT NULL REFERENCES project_git_branchs(id) ON DELETE CASCADE,
+    git_branch_id TEXT NOT NULL REFERENCES project_git_branchs(id),
     status TEXT NOT NULL DEFAULT 'todo',
     priority TEXT NOT NULL DEFAULT 'medium',
     progress_history TEXT DEFAULT '{}',  -- JSON as TEXT
@@ -122,7 +113,7 @@ CREATE TABLE tasks (
 -- Subtasks table (with AI Agent fields)
 CREATE TABLE subtasks (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
-    task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    task_id TEXT NOT NULL REFERENCES tasks(id),
     title TEXT NOT NULL CHECK (LENGTH(title) <= 200),
     description TEXT DEFAULT '' CHECK (LENGTH(description) <= 500),
     status TEXT NOT NULL DEFAULT 'todo',
@@ -154,7 +145,7 @@ CREATE TABLE subtasks (
 -- Task Assignees table
 CREATE TABLE task_assignees (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
-    task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    task_id TEXT NOT NULL REFERENCES tasks(id),
     assignee_id TEXT NOT NULL,
     agent_id TEXT,  -- UUID as TEXT
     role TEXT DEFAULT 'contributor',
@@ -164,8 +155,8 @@ CREATE TABLE task_assignees (
 -- Task Dependencies table
 CREATE TABLE task_dependencies (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
-    task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    depends_on_task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    task_id TEXT NOT NULL REFERENCES tasks(id),
+    depends_on_task_id TEXT NOT NULL REFERENCES tasks(id),
     dependency_type TEXT DEFAULT 'blocks',
     user_id TEXT NOT NULL,
     created_at TIMESTAMP );
@@ -174,9 +165,12 @@ CREATE TABLE task_dependencies (
 CREATE TABLE agents (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
     name TEXT NOT NULL,
-    agent_type TEXT DEFAULT 'general',
-    capabilities TEXT DEFAULT '{}',  -- JSON as TEXT
-    status TEXT DEFAULT 'active',
+    description TEXT DEFAULT '',
+    role TEXT DEFAULT 'assistant',
+    capabilities TEXT DEFAULT '[]',  -- JSON as TEXT
+    status TEXT DEFAULT 'available',
+    availability_score REAL DEFAULT 1.0,
+    last_active_at TIMESTAMP,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     metadata TEXT DEFAULT '{}',  -- JSON as TEXT
@@ -195,8 +189,8 @@ CREATE TABLE labels (
 
 -- Task Labels junction table
 CREATE TABLE task_labels (
-    task_id TEXT REFERENCES tasks(id) ON DELETE CASCADE,
-    label_id TEXT REFERENCES labels(id) ON DELETE CASCADE,
+    task_id TEXT REFERENCES tasks(id),
+    label_id TEXT REFERENCES labels(id),
     user_id TEXT NOT NULL,
     applied_at TIMESTAMP,
     PRIMARY KEY (task_id, label_id)
@@ -206,14 +200,20 @@ CREATE TABLE task_labels (
 CREATE TABLE templates (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
     name TEXT NOT NULL,
-    template_type TEXT NOT NULL,
+    template_name TEXT NOT NULL DEFAULT '',
+    template_content TEXT DEFAULT '',
+    template_type TEXT DEFAULT 'general',
+    type TEXT NOT NULL,
     content TEXT NOT NULL,  -- JSON as TEXT
-    description TEXT DEFAULT '',
+    category TEXT DEFAULT 'general',
     tags TEXT DEFAULT '[]',  -- JSON as TEXT
     usage_count INTEGER DEFAULT 0,
     user_id TEXT,
     created_at TIMESTAMP,
-    updated_at TIMESTAMP );
+    updated_at TIMESTAMP,
+    created_by TEXT NOT NULL,
+    metadata TEXT DEFAULT '{}'  -- JSON as TEXT
+);
 
 -- ========================================
 -- CONTEXT SYSTEM TABLES
@@ -284,7 +284,7 @@ CREATE TABLE branch_contexts (
 -- Task Contexts table
 CREATE TABLE task_contexts (
     id TEXT PRIMARY KEY,  -- UUID as TEXT
-    task_id TEXT REFERENCES tasks(id) ON DELETE CASCADE,
+    task_id TEXT REFERENCES tasks(id),
     parent_branch_id TEXT REFERENCES project_git_branchs(id),
     parent_branch_context_id TEXT REFERENCES branch_contexts(id),
     data TEXT DEFAULT '{}',  -- JSON as TEXT
@@ -399,154 +399,20 @@ CREATE INDEX idx_cache_expires ON context_inheritance_cache(expires_at);
 CREATE INDEX idx_cache_invalidated ON context_inheritance_cache(invalidated);
 
 -- ========================================
--- TASK COUNT TRIGGERS
+-- NO SQL TRIGGERS
 -- ========================================
-
--- Branch task count triggers (INSERT)
-CREATE TRIGGER update_branch_task_counts_on_insert
-    AFTER INSERT ON tasks
-BEGIN
-    UPDATE project_git_branchs
-    SET
-        task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = NEW.git_branch_id),
-        completed_task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = NEW.git_branch_id AND status = 'done')
-    WHERE id = NEW.git_branch_id;
-END;
-
--- Branch task count triggers (UPDATE)
-CREATE TRIGGER update_branch_task_counts_on_update
-    AFTER UPDATE ON tasks
-BEGIN
-    -- Update old branch if git_branch_id changed (no timestamp update - application layer handles timestamps)
-    UPDATE project_git_branchs
-    SET
-        task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = OLD.git_branch_id),
-        completed_task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = OLD.git_branch_id AND status = 'done')
-    WHERE id = OLD.git_branch_id AND OLD.git_branch_id != NEW.git_branch_id;
-
-    -- Update new/current branch (no timestamp update - application layer handles timestamps)
-    UPDATE project_git_branchs
-    SET
-        task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = NEW.git_branch_id),
-        completed_task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = NEW.git_branch_id AND status = 'done')
-    WHERE id = NEW.git_branch_id;
-END;
-
--- Branch task count triggers (DELETE)
-CREATE TRIGGER update_branch_task_counts_on_delete
-    AFTER DELETE ON tasks
-BEGIN
-    UPDATE project_git_branchs
-    SET
-        task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = OLD.git_branch_id),
-        completed_task_count = (SELECT COUNT(*) FROM tasks WHERE git_branch_id = OLD.git_branch_id AND status = 'done')
-    WHERE id = OLD.git_branch_id;
-END;
-
--- Task subtask count triggers (INSERT)
-CREATE TRIGGER update_task_subtask_counts_on_insert
-    AFTER INSERT ON subtasks
-BEGIN
-    UPDATE tasks
-    SET
-        subtask_count = (SELECT COUNT(*) FROM subtasks WHERE task_id = NEW.task_id)
-    WHERE id = NEW.task_id;
-END;
-
--- Task subtask count triggers (UPDATE)
-CREATE TRIGGER update_task_subtask_counts_on_update
-    AFTER UPDATE ON subtasks
-BEGIN
-    -- Update old parent task if task_id changed (no timestamp update - application layer handles timestamps)
-    UPDATE tasks
-    SET
-        subtask_count = (SELECT COUNT(*) FROM subtasks WHERE task_id = OLD.task_id)
-    WHERE id = OLD.task_id AND OLD.task_id != NEW.task_id;
-
-    -- Update new/current parent task (no timestamp update - application layer handles timestamps)
-    UPDATE tasks
-    SET
-        subtask_count = (SELECT COUNT(*) FROM subtasks WHERE task_id = NEW.task_id)
-    WHERE id = NEW.task_id;
-END;
-
--- Task subtask count triggers (DELETE)
-CREATE TRIGGER update_task_subtask_counts_on_delete
-    AFTER DELETE ON subtasks
-BEGIN
-    UPDATE tasks
-    SET
-        subtask_count = (SELECT COUNT(*) FROM subtasks WHERE task_id = OLD.task_id)
-    WHERE id = OLD.task_id;
-END;
+-- All task counts, subtask counts, and cascade deletions are
+-- handled in the domain layer through domain services and events.
+-- This ensures clean architecture and business logic stays in code,
+-- not in the database.
 
 -- ========================================
--- VIEWS FOR COMPATIBILITY
+-- NO VIEWS OR MATERIALIZED VIEWS
 -- ========================================
+-- All statistics and summaries are calculated in the domain layer
+-- through domain services. This ensures business logic stays in code,
+-- not in the database, maintaining clean architecture.
 
--- Create views that mirror the materialized views from PostgreSQL migrations
-CREATE VIEW branch_summaries_mv AS
-SELECT
-    b.id as branch_id,
-    b.name as branch_name,
-    b.description as branch_description,
-    b.status as branch_status,
-    b.priority as branch_priority,
-    b.user_id,
-    b.project_id,
-    b.created_at as branch_created_at,
-    b.updated_at as branch_updated_at,
-
-    -- Task statistics
-    COUNT(t.id) as total_tasks,
-    COUNT(CASE WHEN t.status = 'done' THEN 1 END) as completed_tasks,
-    COUNT(CASE WHEN t.status = 'in_progress' THEN 1 END) as in_progress_tasks,
-    COUNT(CASE WHEN t.status = 'todo' THEN 1 END) as todo_tasks,
-    COUNT(CASE WHEN t.status = 'blocked' THEN 1 END) as blocked_tasks,
-
-    -- Progress calculation
-    CASE
-        WHEN COUNT(t.id) = 0 THEN 0
-        ELSE ROUND((COUNT(CASE WHEN t.status = 'done' THEN 1 END) * 100.0 / COUNT(t.id)), 2)
-    END as completion_percentage
-FROM project_git_branchs b
-LEFT JOIN tasks t ON b.id = t.git_branch_id
-GROUP BY b.id, b.name, b.description, b.status, b.priority, b.user_id, b.project_id, b.created_at, b.updated_at;
-
-CREATE VIEW project_summaries_mv AS
-SELECT
-    p.id as project_id,
-    p.name as project_name,
-    p.description as project_description,
-    p.status as project_status,
-    p.user_id,
-    p.created_at as project_created_at,
-    p.updated_at as project_updated_at,
-
-    -- Branch statistics
-    COUNT(DISTINCT b.id) as total_branches,
-    COUNT(DISTINCT CASE WHEN b.status = 'active' THEN b.id END) as active_branches,
-    COUNT(DISTINCT CASE WHEN b.status = 'archived' THEN b.id END) as archived_branches,
-
-    -- Task statistics (across all branches)
-    COUNT(t.id) as total_tasks,
-    COUNT(CASE WHEN t.status = 'done' THEN 1 END) as completed_tasks,
-    COUNT(CASE WHEN t.status = 'in_progress' THEN 1 END) as in_progress_tasks,
-    COUNT(CASE WHEN t.status = 'todo' THEN 1 END) as todo_tasks,
-
-    -- Progress calculation
-    CASE
-        WHEN COUNT(t.id) = 0 THEN 0
-        ELSE ROUND((COUNT(CASE WHEN t.status = 'done' THEN 1 END) * 100.0 / COUNT(t.id)), 2)
-    END as completion_percentage
-FROM projects p
-LEFT JOIN project_git_branchs b ON p.id = b.project_id
-LEFT JOIN tasks t ON b.id = t.git_branch_id
-GROUP BY p.id, p.name, p.description, p.status, p.user_id, p.created_at, p.updated_at;
-
--- Record successful initialization
-INSERT INTO applied_migrations (migration_name, applied_at, success)
-VALUES ('complete_schema_init_sqlite', CURRENT_TIMESTAMP, 1);
 
 -- Database initialization complete
 SELECT 'AGENTHUB SQLITE DATABASE INITIALIZED SUCCESSFULLY' as status;

@@ -1,0 +1,56 @@
+clean_code_principles:
+  core_rules:
+    DRY: "Don't Repeat Yourself - Single source of truth"
+    SOLID: "Five principles for maintainable design"
+    CLEAN: "Readable, simple, testable code"
+
+  mandatory_practices:
+    naming:
+      - "Self-documenting names, no comments needed"
+      - "Searchable, pronounceable, meaningful"
+
+    functions:
+      - "Max 20-30 lines"
+      - "Single purpose"
+      - "Max 3-4 parameters"
+      - "No side effects"
+
+    classes:
+      - "Single responsibility"
+      - "Max 300 lines"
+      - "High cohesion"
+
+    no_tolerance:
+      - "Zero copy-paste code"
+      - "No magic numbers"
+      - "No deep nesting (>3 levels)"
+      - "No god classes"
+
+  auto_refactor_triggers:
+    duplicate_code:
+      threshold: "Any duplication"
+      action: "Extract to function/module"
+
+    repeated_objects:
+      threshold: "3+ similar creations"
+      action: "Create factory"
+
+    complex_init:
+      threshold: "4+ setup steps"
+      action: "Use factory/builder"
+
+    many_params:
+      threshold: "5+ parameters"
+      action: "Use builder/parameter object"
+
+  solid_simplified:
+    S: "One class = One reason to change"
+    O: "Add features without modifying existing code"
+    L: "Child classes must work like parent"
+    I: "Don't force unused interface methods"
+    D: "Depend on interfaces, not concrete classes"
+
+  enforcement:
+    automatic: "Apply while writing code"
+    review: "Reject all violations"
+    continuous: "Refactor as you go"

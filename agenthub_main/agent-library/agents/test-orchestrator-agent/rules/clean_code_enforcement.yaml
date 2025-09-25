@@ -1,0 +1,33 @@
+clean_code_enforcement:
+  test_standards: "Test code = Production code quality"
+
+  test_principles:
+    - "One concept per test"
+    - "Descriptive test names"
+    - "Arrange-Act-Assert pattern"
+    - "Independent tests"
+    - "Fast execution (<100ms)"
+
+  dry_in_tests:
+    - "Test utilities for common setup"
+    - "Builder pattern for test data"
+    - "Custom assertions"
+    - "Parameterized tests"
+
+  factory_for_tests:
+    - "Test data factories"
+    - "Mock builders"
+    - "Fixture factories"
+
+  quality_rules:
+    - "No test interdependence"
+    - "No duplicate test logic"
+    - "Clear failure messages"
+    - "Minimal setup"
+
+  example:
+    bad: "test1(), test2(), test3()"
+    good: |
+      test_user_creation_with_valid_email()
+      test_user_creation_rejects_invalid_email()
+      test_user_creation_requires_password()

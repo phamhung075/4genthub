@@ -205,6 +205,43 @@ CREATE INDEX idx_tasks_branch ON tasks(git_branch_id);
 CREATE INDEX idx_contexts_level ON contexts(level);
 ```
 
+#### Timestamp Management Architecture
+
+The system implements application-layer timestamp management for clean architecture compliance:
+
+```python
+# Application Layer Timestamp Management
+from sqlalchemy import event
+from datetime import datetime, timezone
+
+@event.listens_for(BaseModel, 'before_insert', propagate=True)
+def receive_before_insert(mapper, connection, target):
+    """Set timestamps for new entities"""
+    now = datetime.now(timezone.utc)
+    target.created_at = now
+    target.updated_at = now
+
+@event.listens_for(BaseModel, 'before_update', propagate=True)
+def receive_before_update(mapper, connection, target):
+    """Update timestamp for modified entities"""
+    target.updated_at = datetime.now(timezone.utc)
+```
+
+**Benefits:**
+- Database portability (works across SQLite, PostgreSQL, cloud databases)
+- Explicit control and visibility in application code
+- Easy testing with mocked time
+- No database trigger complexity
+- Clean separation of concerns per DDD principles
+
+#### Database Initialization
+
+The system uses direct SQL schema initialization instead of migrations:
+- `init_schema_postgresql.sql` for PostgreSQL deployments
+- `init_schema_sqlite.sql` for development environments
+- No migration history or version tracking needed
+- Clean slate approach for development phase
+
 #### Redis Caching Strategy
 
 ```python

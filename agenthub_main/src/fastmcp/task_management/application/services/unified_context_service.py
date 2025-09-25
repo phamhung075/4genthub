@@ -933,10 +933,12 @@ class UnifiedContextService:
                 raise ValueError("user_id is required for global context creation")
             metadata["user_id"] = effective_user_id
             
+            # CRITICAL FIX: Pass all data as global_settings, not just data.get("global_settings")
+            # This ensures custom fields like claude_md_rules are stored
             return GlobalContext(
                 id=context_id,
                 organization_name=data.get("organization_name", "Default Organization"),
-                global_settings=data.get("global_settings", {}),
+                global_settings=data,  # Pass entire data dict to capture custom fields
                 metadata=metadata
             )
         elif level == ContextLevel.PROJECT:
@@ -1063,8 +1065,12 @@ class UnifiedContextService:
     
     def _entity_to_dict(self, entity) -> Dict[str, Any]:
         """Convert context entity to dictionary."""
-        result = entity.dict() if hasattr(entity, 'dict') else vars(entity)
-        logger.info(f"DEBUG: _entity_to_dict - converting entity type {type(entity).__name__} to dict: {result}")
+        # Always use dict() method if available, as it properly serializes all fields
+        if hasattr(entity, 'dict') and callable(getattr(entity, 'dict')):
+            result = entity.dict()
+        else:
+            result = vars(entity)
+        logger.info(f"DEBUG: _entity_to_dict - converting entity type {type(entity).__name__} to dict with {len(result)} keys")
         return result
     
     def _merge_context_data(

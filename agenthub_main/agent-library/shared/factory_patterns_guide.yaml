@@ -1,0 +1,49 @@
+factory_patterns_guide:
+  quick_decision:
+    "3+ similar objects": "Simple Factory"
+    "4+ setup steps": "Factory with presets"
+    "If-else types": "Factory Method"
+    "5+ parameters": "Builder Pattern"
+    "Related families": "Abstract Factory"
+
+  simple_factory:
+    when: "Multiple objects, different configs"
+    example: |
+      class UserFactory:
+        @staticmethod
+        def create_admin(name):
+            return User(name, role="admin", active=True)
+
+        @staticmethod
+        def create_user(name):
+            return User(name, role="user", active=True)
+
+  factory_method:
+    when: "Subclasses decide type"
+    benefit: "Open/Closed principle"
+
+  builder_pattern:
+    when: "Many optional parameters"
+    example: |
+      HttpRequestBuilder(url)
+        .with_method("POST")
+        .with_timeout(30)
+        .build()
+
+  abstract_factory:
+    when: "Families of objects"
+    benefit: "Consistent object families"
+
+  auto_refactor:
+    1: "Detect patterns"
+    2: "Choose factory type"
+    3: "Generate code"
+    4: "Replace usages"
+    5: "Validate"
+
+  benefits:
+    - "DRY compliance"
+    - "Centralized creation"
+    - "Easy to extend"
+    - "Better testing"
+    - "Less code"

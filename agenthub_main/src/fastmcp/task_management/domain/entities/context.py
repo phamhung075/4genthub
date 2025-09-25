@@ -43,10 +43,29 @@ class GlobalContext:
                 self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
     def _ensure_nested_structure(self) -> None:
-        """Ensure nested structure is initialized."""
+        """Ensure nested structure is initialized without overwriting custom data."""
         if self._nested_data is None:
             # Initialize empty nested structure
             self._nested_data = GlobalContextNestedData()
+            # CRITICAL FIX: Do NOT sync to flat structure if custom data exists
+            # This prevents overwriting custom fields with empty nested structure
+
+    def _is_only_nested_structure_data(self) -> bool:
+        """Check if global_settings only contains nested structure data (no custom fields)."""
+        if not isinstance(self.global_settings, dict):
+            return True
+
+        # Known nested structure keys that don't count as custom data
+        nested_keys = {"organization", "development", "security", "operations", "preferences", "_schema_version", "_custom_categories"}
+
+        # Check if all keys in global_settings are nested structure keys
+        for key in self.global_settings.keys():
+            if key not in nested_keys:
+                # Found custom data
+                return False
+
+        # Only nested structure data found
+        return True
     
     def get_nested_data(self) -> GlobalContextNestedData:
         """Get the nested data structure, ensuring it's initialized."""
@@ -140,22 +159,41 @@ class GlobalContext:
     def dict(self) -> Dict[str, Any]:
         """Convert to dictionary with support for both structures."""
         self._ensure_nested_structure()
-        
-        # Sync nested to flat format
-        self._sync_to_flat_structure()
-        
+
+        # CRITICAL FIX: Only sync nested to flat format if NO custom data exists
+        # This prevents overwriting custom data with empty nested structure
+        has_custom_data = (isinstance(self.global_settings, dict) and
+                          len(self.global_settings) > 0 and
+                          not self._is_only_nested_structure_data())
+
+        if not has_custom_data:
+            # Only sync if no custom data - this preserves nested structure behavior
+            self._sync_to_flat_structure()
+
+        # Start with base fields
         result = {
             "id": self.id,
             "organization_name": self.organization_name,
-            "global_settings": self.global_settings,
             "metadata": self.metadata.copy()
         }
-        
+
+        # CRITICAL FIX: Merge global_settings at root level to expose custom fields
+        # This allows custom data like claude_md_rules to appear in responses
+        if isinstance(self.global_settings, dict):
+            # Merge all global_settings fields at root level
+            for key, value in self.global_settings.items():
+                # Don't override base fields
+                if key not in ["id", "organization_name", "metadata"]:
+                    result[key] = value
+
+        # Keep global_settings field for backward compatibility
+        result["global_settings"] = self.global_settings
+
         # Add nested structure information to metadata
         if self._nested_data:
             result["metadata"]["schema_version"] = self._nested_data._schema_version
             result["metadata"]["nested_structure"] = self._nested_data.to_dict()
-        
+
         return result
     
     @classmethod

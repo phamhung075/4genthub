@@ -1,0 +1,32 @@
+factory_pattern_detection:
+  when_to_use_factory:
+    repeated_creation: "3+ similar object creations → Simple Factory"
+    complex_setup: "4+ initialization steps → Factory with presets"
+    type_branching: "If-else for types → Factory Method"
+    many_params: "5+ constructor params → Builder Pattern"
+    related_objects: "Object families → Abstract Factory"
+
+  simple_examples:
+    before: |
+      user1 = User("Alice", "admin", True)
+      user2 = User("Bob", "user", True)
+      user3 = User("Charlie", "user", False)
+
+    after: |
+      UserFactory.create_admin("Alice")
+      UserFactory.create_user("Bob")
+      UserFactory.create_inactive("Charlie")
+
+  auto_detection:
+    scan: "Find all object instantiations"
+    group: "Group by class name"
+    analyze: "Check for patterns"
+    suggest: "Recommend factory type"
+    refactor: "Generate factory code"
+
+  benefits:
+    - "Centralized creation logic"
+    - "DRY compliance"
+    - "Easy to extend"
+    - "Better testing"
+    - "30-50% less code"

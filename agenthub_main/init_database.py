@@ -26,8 +26,8 @@ from typing import Union
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 try:
-    from fastmcp.core.config import get_db_config
-    from fastmcp.task_management.infrastructure.database.database import Database
+    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from fastmcp.task_management.infrastructure.database.db_initializer import DatabaseInitializer
 except ImportError as e:
     print(f"Error importing database modules: {e}")
     print("Make sure you're running this from the agenthub_main directory")
@@ -82,10 +82,12 @@ def init_postgresql_database(connection_params: dict, sql_file: Path) -> bool:
         cursor = conn.cursor()
 
         # Drop all tables (cascade will handle dependencies)
-        cursor.execute("""
+        # Get the current user from connection params
+        db_user = connection_params.get('user', 'postgres')
+        cursor.execute(f"""
             DROP SCHEMA IF EXISTS public CASCADE;
             CREATE SCHEMA public;
-            GRANT ALL ON SCHEMA public TO postgres;
+            GRANT ALL ON SCHEMA public TO {db_user};
             GRANT ALL ON SCHEMA public TO public;
         """)
 
@@ -169,11 +171,8 @@ def main():
     db_type = args.database_type
     if not db_type:
         # Auto-detect from config
-        db_url = config.get('DATABASE_URL', '')
-        if 'postgresql' in db_url or 'postgres' in db_url:
-            db_type = "postgresql"
-        elif 'sqlite' in db_url or db_url.endswith('.db'):
-            db_type = "sqlite"
+        if hasattr(config, 'database_type'):
+            db_type = config.database_type
         else:
             print("❌ Could not auto-detect database type. Please specify --database-type")
             sys.exit(1)
@@ -182,7 +181,7 @@ def main():
 
     # Initialize based on database type
     if db_type == "sqlite":
-        db_path = config.get('DATABASE_URL', '').replace('sqlite:///', '')
+        db_path = os.getenv('DATABASE_PATH', '/data/agenthub.db')
         if not db_path:
             print("❌ SQLite database path not found in configuration")
             sys.exit(1)
@@ -190,9 +189,9 @@ def main():
         success = init_sqlite_database(db_path, sqlite_sql)
 
     elif db_type == "postgresql":
-        # Parse PostgreSQL connection parameters
-        db_url = config.get('DATABASE_URL', '')
-        if not db_url.startswith('postgresql'):
+        # Get database URL from the config object
+        db_url = config.database_url if hasattr(config, 'database_url') else config._get_secure_database_url()
+        if not db_url or not db_url.startswith('postgresql'):
             print("❌ PostgreSQL connection URL not found in configuration")
             sys.exit(1)
 

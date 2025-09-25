@@ -13,13 +13,39 @@ class RemoveSubtaskUseCase:
         subtask = self._subtask_repository.find_by_id(id)
         if not subtask:
             raise ValueError(f"Subtask {id} not found in task {task_id}")
-        
+
+        # Get branch ID and status before deletion for event
+        parent_task_obj = self._task_repository.find_by_id(self._convert_to_task_id(task_id))
+        branch_id = parent_task_obj.git_branch_id if parent_task_obj and hasattr(parent_task_obj, 'git_branch_id') else None
+        subtask_status = 'done' if subtask.is_completed else 'todo'
+
         # Remove the subtask
         success = self._subtask_repository.remove_subtask(task_id, id)
-        
+
         # Update parent task progress
         if success:
             self._update_parent_task_progress(str(task_id))
+
+            # Dispatch domain event for subtask deletion
+            # This will trigger branch statistics update
+            try:
+                from ...domain.services.event_dispatcher import dispatch_domain_event
+                from ...domain.events.task_lifecycle_events import TaskDeletedEvent
+
+                if branch_id:
+                    event = TaskDeletedEvent.create(
+                        task_id=str(id),
+                        branch_id=branch_id,
+                        status=subtask_status,
+                        title=subtask.title
+                    )
+
+                    dispatch_domain_event("task_deleted", event)
+                    import logging
+                    logging.info(f"Dispatched task_deleted event for subtask {id}")
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to dispatch subtask deletion event: {e}")
         
         # Calculate progress after deletion
         progress = {}

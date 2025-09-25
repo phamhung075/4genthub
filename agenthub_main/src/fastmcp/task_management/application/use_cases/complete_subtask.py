@@ -20,10 +20,35 @@ class CompleteSubtaskUseCase:
             subtask = self._subtask_repository.find_by_id(id)
             if not subtask:
                 raise ValueError(f"Subtask {id} not found in task {task_id}")
-            
+
+            # Store old status for event
+            old_status = 'todo'
+
             subtask.complete()
             self._subtask_repository.save(subtask)
             success = True
+
+            # Dispatch domain event for subtask status change
+            # This will trigger branch statistics update
+            try:
+                from ...domain.services.event_dispatcher import dispatch_domain_event
+                from ...domain.events.task_lifecycle_events import TaskStatusChangedEvent
+
+                branch_id = task.git_branch_id if hasattr(task, 'git_branch_id') else None
+                if branch_id:
+                    event = TaskStatusChangedEvent.create(
+                        task_id=str(id),
+                        branch_id=branch_id,
+                        old_status=old_status,
+                        new_status='done'
+                    )
+
+                    dispatch_domain_event("task_status_changed", event)
+                    import logging
+                    logging.info(f"Dispatched task_status_changed event for subtask {id} completion")
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to dispatch subtask completion event: {e}")
         else:
             # Fallback to existing task entity method for backward compatibility
             success = task.complete_subtask(id)

@@ -26,25 +26,29 @@ class UpdateTaskUseCase:
         """Execute the update task use case"""
         # Convert to domain value object with proper type handling
         domain_task_id = self._convert_to_task_id(request.task_id)
-        
+
         # Find the task
         task = self._task_repository.find_by_id(domain_task_id)
         if not task:
             raise TaskNotFoundError(f"Task {request.task_id} not found")
-        
+
+        # Store old values for event
+        old_status = str(task.status.value) if hasattr(task.status, 'value') else str(task.status)
+        old_branch_id = task.git_branch_id if hasattr(task, 'git_branch_id') else None
+
         # Update task fields if provided
         if request.title is not None:
             task.update_title(request.title)
-        
+
         if request.description is not None:
             task.update_description(request.description)
-        
+
         if request.status is not None:
             new_status = TaskStatus(request.status)
             # Only update status if it's actually changing
             if task.status != new_status:
                 task.update_status(new_status)
-        
+
         if request.priority is not None:
             new_priority = Priority(request.priority)
             # Only update priority if it's actually changing
@@ -77,17 +81,44 @@ class UpdateTaskUseCase:
         
         # Save the updated task
         self._task_repository.save(task)
-        
+
         # Check context_id after save
         logger.info(f"Task context_id after save: {task.context_id}")
-        
+
         # Auto-sync task context after update (Fix for Issue #3)
         try:
             self._sync_task_context_after_update(task)
         except Exception as e:
             # Don't fail the task update if context sync fails
             logger.warning(f"Context sync failed for task {task.id} but task update succeeded: {e}")
-        
+
+        # Dispatch domain event for task update
+        # Branch statistics will be updated automatically by event handlers
+        try:
+            from ...domain.services.event_dispatcher import dispatch_domain_event
+            from ...domain.events.task_lifecycle_events import TaskUpdatedEvent
+
+            new_status = str(task.status.value) if hasattr(task.status, 'value') else str(task.status)
+            new_branch_id = task.git_branch_id if hasattr(task, 'git_branch_id') else None
+
+            # Only dispatch if something changed
+            if old_status != new_status or old_branch_id != new_branch_id:
+                event = TaskUpdatedEvent.create(
+                    task_id=str(task.id.value),
+                    branch_id=new_branch_id or old_branch_id,
+                    old_status=old_status,
+                    new_status=new_status,
+                    old_branch_id=old_branch_id,
+                    new_branch_id=new_branch_id,
+                    user_id=getattr(request, 'user_id', None)
+                )
+
+                dispatch_domain_event("task_updated", event)
+                logger.info(f"Dispatched task_updated event for task {task.id.value}")
+
+        except Exception as e:
+            logger.warning(f"Failed to dispatch task update event: {e}")
+
         # Handle domain events
         events = task.get_events()
         for event in events:

@@ -198,6 +198,28 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           deletedTasks: deletedTasks.size
         });
 
+        // Trigger create animation for newly added tasks from WebSocket
+        if (addedTasks.size > 0) {
+          setTimeout(() => {
+            addedTasks.forEach(taskId => {
+              const callbacks = rowAnimationCallbacks.current.get(taskId);
+              if (callbacks) {
+                logger.info('Playing create animation for task added via WebSocket', {
+                  component: 'LazyTaskList',
+                  taskId
+                });
+                callbacks.playCreateAnimation();
+              } else {
+                logger.debug('TaskRow not yet mounted for WebSocket create animation', {
+                  component: 'LazyTaskList',
+                  taskId,
+                  availableCallbacks: [...rowAnimationCallbacks.current.keys()]
+                });
+              }
+            });
+          }, 200); // Small delay to allow TaskRow to mount
+        }
+
         // Handle deleted tasks - show unified notification
         if (deletedTasks.size > 0) {
           logger.info('Tasks deleted', { component: 'LazyTaskList', deletedTasks: [...deletedTasks] });
@@ -675,6 +697,9 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     setSaving(true);
 
     try {
+      // Store current task IDs before creating the new task
+      const currentTaskIds = new Set(taskSummaries.map(t => t.id));
+
       // Call API to create task
       const newTask = await createTask({
         ...taskData,
@@ -687,8 +712,30 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       // Close dialog after successful creation
       closeDialog();
 
+      // Update previousTaskIds BEFORE loading new tasks so we can detect the new one
+      setPreviousTaskIds(currentTaskIds);
+
       // Refresh the task list to show the new task
       await loadTaskSummaries(1);
+
+      // Trigger animation for the newly created task after a brief delay
+      // This gives time for the TaskRow to mount and register callbacks
+      setTimeout(() => {
+        const callbacks = rowAnimationCallbacks.current.get(newTask.id);
+        if (callbacks) {
+          logger.info('Triggering create animation for newly created task', {
+            component: 'LazyTaskList',
+            taskId: newTask.id
+          });
+          callbacks.playCreateAnimation();
+        } else {
+          logger.debug('TaskRow not yet mounted for animation', {
+            component: 'LazyTaskList',
+            taskId: newTask.id,
+            availableCallbacks: [...rowAnimationCallbacks.current.keys()]
+          });
+        }
+      }, 500); // Give TaskRow time to mount and register
 
       // Notify parent that task was created
       if (onTasksChanged) {
@@ -730,7 +777,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, onTasksChanged, taskTreeId, loadTaskSummaries, showError]);
+  }, [closeDialog, onTasksChanged, taskTreeId, loadTaskSummaries, showError, taskSummaries]);
 
   // Handle updating existing task
   const handleUpdateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {

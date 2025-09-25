@@ -1,0 +1,48 @@
+clean_code_master_config:
+  version: "1.0.0"
+
+  principles:
+    CLEAN: "Readable, maintainable, testable"
+    DRY: "Don't Repeat Yourself"
+    SOLID: "Five OOP principles"
+    FACTORIES: "Auto-detect and refactor duplication"
+
+  thresholds:
+    functions: "< 30 lines, < 4 params"
+    classes: "< 300 lines, single purpose"
+    nesting: "< 3 levels"
+    duplication: "Zero tolerance"
+    factory_triggers:
+      repeated_objects: 3
+      setup_steps: 4
+      type_branches: 3
+      parameters: 5
+
+  enforcement:
+    coding: "Apply while writing"
+    review: "Reject violations"
+    debug: "Fix and improve"
+    test: "Same standards"
+
+  agents:
+    - coding-agent
+    - debugger-agent
+    - code-reviewer-agent
+    - test-orchestrator-agent
+    - prototyping-agent
+    - devops-agent
+
+  auto_reject:
+    - "Copy-paste code"
+    - "Giant functions (>50 lines)"
+    - "God classes (>300 lines)"
+    - "Deep nesting (>3)"
+    - "Magic numbers"
+    - "Bad names"
+
+  success_metrics:
+    - "Zero duplication"
+    - "All functions < 30 lines"
+    - "Single responsibility everywhere"
+    - "80%+ test coverage"
+    - "Factory patterns used"

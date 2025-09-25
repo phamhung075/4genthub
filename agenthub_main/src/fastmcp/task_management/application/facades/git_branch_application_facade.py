@@ -15,6 +15,27 @@ class GitBranchApplicationFacade:
 
     async def create_tree(self, project_id: str, tree_name: str, description: str = "") -> Dict[str, Any]:
         """Facade method to create a new task tree (branch)."""
+        # Validate branch name using domain service
+        if not self._user_id:
+            return {"success": False, "error": "User authentication required"}
+
+        try:
+            from ...domain.services.git_branch_name_validator import GitBranchNameValidator
+            from ..services.repository_provider_service import RepositoryProviderService
+
+            # Get user-scoped repository for validation
+            repo_provider = RepositoryProviderService.get_instance()
+            git_branch_repo = repo_provider.get_git_branch_repository(user_id=self._user_id)
+            validator = GitBranchNameValidator(git_branch_repo)
+
+            # Validate branch name (includes format and uniqueness checks)
+            await validator.validate_branch_name(tree_name, project_id)
+
+        except Exception as e:
+            # Return validation errors to frontend
+            return {"success": False, "error": str(e)}
+
+        # If validation passes, proceed with creation
         return await self._git_branch_service.create_git_branch(project_id, tree_name, description)
 
     def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> Dict[str, Any]:

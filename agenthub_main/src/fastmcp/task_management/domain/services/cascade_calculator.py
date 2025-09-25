@@ -24,12 +24,13 @@ from typing import Dict, List, Optional, Set, Union, Any
 from dataclasses import dataclass
 from enum import Enum
 
-from sqlalchemy import select, text, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
 from ..entities.task import Task
 from ..entities.subtask import Subtask
 from ..entities.project import Project
+from ..entities.git_branch import GitBranch
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +75,11 @@ class CascadeResult:
 
 class CascadeCalculator:
     """
-    Service that efficiently calculates all affected entities when a change occurs.
+    Domain service that calculates all affected entities when a change occurs.
 
-    This service tracks relationships between tasks, subtasks, branches, projects,
-    and contexts using materialized views for optimal performance.
+    This service uses repositories to track relationships between tasks, subtasks,
+    branches, projects, and contexts. It operates purely in the domain layer without
+    knowledge of infrastructure details.
     """
 
     def __init__(self, session: AsyncSession):
@@ -461,9 +463,26 @@ class CascadeCalculator:
         )
 
     async def _get_branch_summary(self, branch_id: str) -> Optional[Dict[str, Any]]:
-        """Query branch_summaries_mv materialized view"""
+        """Calculate branch summary using domain layer logic from actual tables"""
         query = text("""
-            SELECT * FROM branch_summaries_mv WHERE branch_id = :branch_id
+            SELECT
+                b.id as branch_id,
+                b.project_id,
+                b.name as branch_name,
+                b.status as branch_status,
+                b.priority as branch_priority,
+                COALESCE(b.task_count, 0) as total_tasks,
+                COALESCE(b.completed_task_count, 0) as completed_tasks,
+                COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as in_progress_tasks,
+                0 as blocked_tasks,
+                COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as todo_tasks,
+                CASE
+                    WHEN COALESCE(b.task_count, 0) = 0 THEN 0
+                    ELSE ROUND((COALESCE(b.completed_task_count, 0)::numeric / b.task_count::numeric) * 100, 2)
+                END as progress_percentage,
+                b.updated_at as last_task_activity
+            FROM project_git_branchs b
+            WHERE b.id = :branch_id
         """)
 
         result = await self.session.execute(query, {"branch_id": branch_id})
@@ -474,9 +493,25 @@ class CascadeCalculator:
         return None
 
     async def _get_project_metrics(self, project_id: str) -> Optional[Dict[str, Any]]:
-        """Query project_summaries_mv materialized view"""
+        """Calculate project metrics using domain layer logic from actual tables"""
         query = text("""
-            SELECT * FROM project_summaries_mv WHERE project_id = :project_id
+            SELECT
+                p.id as project_id,
+                p.name as project_name,
+                p.description as project_description,
+                COUNT(DISTINCT b.id) as total_branches,
+                COUNT(DISTINCT CASE WHEN b.status != 'archived' THEN b.id END) as active_branches,
+                COALESCE(SUM(b.task_count), 0) as total_tasks,
+                COALESCE(SUM(b.completed_task_count), 0) as completed_tasks,
+                CASE
+                    WHEN COALESCE(SUM(b.task_count), 0) = 0 THEN 0
+                    ELSE ROUND((COALESCE(SUM(b.completed_task_count), 0)::numeric / COALESCE(SUM(b.task_count), 0)::numeric) * 100, 2)
+                END as overall_progress_percentage,
+                MAX(b.updated_at) as last_activity
+            FROM projects p
+            LEFT JOIN project_git_branchs b ON p.id = b.project_id
+            WHERE p.id = :project_id
+            GROUP BY p.id, p.name, p.description
         """)
 
         result = await self.session.execute(query, {"project_id": project_id})

@@ -1,74 +1,79 @@
-"""Task Domain Events"""
+"""Task Domain Events - Legacy compatibility"""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Dict
-
-from ..value_objects import TaskId
+from typing import Dict, Any
+from .base import DomainEvent, create_event_metadata
 
 
 @dataclass(frozen=True)
-class DomainEvent:
-    """Base class for domain events"""
-    occurred_at: datetime = None
-    
-    def __post_init__(self):
-        if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
-
-
-@dataclass(frozen=True)
-class TaskCreated:
-    """Event raised when a task is created"""
-    task_id: TaskId
+class TaskCreated(DomainEvent):
+    """Event raised when a task is created."""
+    task_id: str
     title: str
-    created_at: datetime
-    occurred_at: datetime = None
-    
-    def __post_init__(self):
-        if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
+    description: str = ""
+
+    @property
+    def event_type(self) -> str:
+        return "task_created"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "event_type": self.event_type,
+            "task_id": self.task_id,
+            "title": self.title,
+            "description": self.description
+        }
 
 
 @dataclass(frozen=True)
-class TaskUpdated:
-    """Event raised when a task is updated"""
-    task_id: TaskId
-    field_name: str
-    old_value: Any
-    new_value: Any
-    updated_at: datetime
-    occurred_at: datetime = None
-    metadata: Dict[str, Any] = None
-    
-    def __post_init__(self):
-        if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
-        if self.metadata is None:
-            object.__setattr__(self, 'metadata', {})
+class TaskUpdated(DomainEvent):
+    """Event raised when a task is updated."""
+    task_id: str
+    changes: Dict[str, Any]
+
+    @property
+    def event_type(self) -> str:
+        return "task_updated"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "event_type": self.event_type,
+            "task_id": self.task_id,
+            "changes": self.changes
+        }
 
 
 @dataclass(frozen=True)
-class TaskRetrieved:
-    """Event raised when a task is retrieved (triggers auto rule generation)"""
-    task_id: TaskId
-    task_data: Dict[str, Any]
-    retrieved_at: datetime
-    occurred_at: datetime = None
-    
-    def __post_init__(self):
-        if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc))
+class TaskRetrieved(DomainEvent):
+    """Event raised when a task is retrieved."""
+    task_id: str
+
+    @property
+    def event_type(self) -> str:
+        return "task_retrieved"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "event_type": self.event_type,
+            "task_id": self.task_id
+        }
 
 
 @dataclass(frozen=True)
-class TaskDeleted:
-    """Event raised when a task is deleted"""
-    task_id: TaskId
-    title: str
-    deleted_at: datetime
-    occurred_at: datetime = None
-    
-    def __post_init__(self):
-        if self.occurred_at is None:
-            object.__setattr__(self, 'occurred_at', datetime.now(timezone.utc)) 
+class TaskDeleted(DomainEvent):
+    """Event raised when a task is deleted."""
+    task_id: str
+
+    @property
+    def event_type(self) -> str:
+        return "task_deleted"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "event_type": self.event_type,
+            "task_id": self.task_id
+        }
+
+
+# Re-export DomainEvent for compatibility
+__all__ = ['DomainEvent', 'TaskCreated', 'TaskUpdated', 'TaskRetrieved', 'TaskDeleted']

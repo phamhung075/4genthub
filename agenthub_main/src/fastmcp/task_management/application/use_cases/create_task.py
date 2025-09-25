@@ -89,23 +89,27 @@ class CreateTaskUseCase:
                     "Failed to save task to database. This may be due to an invalid git_branch_id or database constraint violation."
                 )
             
-            # Update branch task count using repository (follows DDD pattern)
+            # Dispatch domain event for task creation
+            # Branch statistics will be updated automatically by event handlers
             try:
-                from ...application.services.repository_provider_service import RepositoryProviderService
+                from ...domain.services.event_dispatcher import dispatch_domain_event
+                from ...domain.events.task_lifecycle_events import TaskCreatedEvent
 
-                # Get instance and use repository provider to get branch repository
-                provider = RepositoryProviderService.get_instance()
-                branch_repo = provider.get_git_branch_repository()
-                branch = branch_repo.get(request.git_branch_id)
-                
-                if branch:
-                    # Update task count
-                    branch.task_count = branch.task_count + 1 if branch.task_count else 1
-                    # Use repository to update
-                    branch_repo.update(branch)
-                    self._logger.info(f"Updated task_count to {branch.task_count} for branch {request.git_branch_id}")
+                event = TaskCreatedEvent.create(
+                    task_id=str(task.id.value),
+                    branch_id=request.git_branch_id,
+                    title=task.title,
+                    status=str(task.status.value),
+                    priority=str(task.priority.value),
+                    assignees=task.assignees,
+                    user_id=getattr(request, 'user_id', None)
+                )
+
+                dispatch_domain_event("task_created", event)
+                self._logger.info(f"Dispatched task_created event for task {task.id.value}")
+
             except Exception as e:
-                self._logger.warning(f"Failed to update branch task count: {e}")
+                self._logger.warning(f"Failed to dispatch task creation event: {e}")
             
             # Handle domain events
             events = task.get_events()

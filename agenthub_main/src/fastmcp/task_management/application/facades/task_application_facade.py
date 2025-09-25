@@ -67,7 +67,15 @@ class TaskApplicationFacade:
         # Use the hierarchical context service instead of the passed context service
         # The passed context service might not be configured correctly for the unified context system
         self._get_task_use_case = GetTaskUseCase(task_repository, self._hierarchical_context_service)
-        self._delete_task_use_case = DeleteTaskUseCase(task_repository)
+
+        # Pass all repositories for cascade deletion support
+        self._delete_task_use_case = DeleteTaskUseCase(
+            task_repository,
+            subtask_repository=subtask_repository,
+            branch_repository=git_branch_repository,
+            project_repository=getattr(self, '_project_repository', None),
+            context_repository=None  # Will be set later if available
+        )
         
         # Initialize task context repository for unified context system
         task_context_repository = None
@@ -574,8 +582,9 @@ class TaskApplicationFacade:
                     "task_user_id": None  # No user_id available on error
                 }
 
-            # Execute use case
-            success = self._delete_task_use_case.execute(task_id)
+            # Execute use case with cascade deletion
+            result = self._delete_task_use_case.execute(task_id, cascade=True)
+            success = result.get("success", False)
 
             if success:
                 # Broadcast task deletion event with pre-fetched context
@@ -610,16 +619,28 @@ class TaskApplicationFacade:
                 logger.info(f"🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting")
                 logger.info(f"🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically")
 
+                # Log cascade statistics if available
+                if "subtasks_deleted" in result:
+                    logger.info(
+                        f"📊 Cascade deletion statistics: "
+                        f"subtasks_deleted={result.get('subtasks_deleted', 0)}, "
+                        f"contexts_deleted={result.get('contexts_deleted', 0)}"
+                    )
+
                 return {
                     "success": True,
                     "action": "delete",
-                    "message": f"Task {task_id} deleted successfully"
+                    "message": f"Task {task_id} deleted successfully",
+                    "cascade_stats": {
+                        "subtasks_deleted": result.get("subtasks_deleted", 0),
+                        "contexts_deleted": result.get("contexts_deleted", 0)
+                    }
                 }
             else:
                 return {
                     "success": False,
                     "action": "delete",
-                    "error": f"Failed to delete task {task_id}"
+                    "error": result.get("message", f"Failed to delete task {task_id}")
                 }
                 
         except TaskNotFoundError as e:

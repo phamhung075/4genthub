@@ -60,9 +60,32 @@ class AddSubtaskUseCase:
             
             self._subtask_repository.save(subtask)
             added_subtask = subtask.to_dict()
-            
+
             # Update parent task progress
             self._update_parent_task_progress(str(task_id))
+
+            # Dispatch domain event for subtask creation
+            # This will trigger branch statistics update
+            try:
+                from ...domain.services.event_dispatcher import dispatch_domain_event
+                from ...domain.events.task_lifecycle_events import TaskCreatedEvent
+
+                # Subtasks affect the same branch as their parent task
+                event = TaskCreatedEvent.create(
+                    task_id=str(subtask.id),
+                    branch_id=task.git_branch_id if hasattr(task, 'git_branch_id') else None,
+                    title=subtask.title,
+                    status='todo',
+                    priority=str(subtask.priority),
+                    assignees=subtask.assignees,
+                    user_id=getattr(request, 'user_id', None)
+                )
+
+                if event.branch_id:
+                    dispatch_domain_event("task_created", event)
+                    logging.info(f"Dispatched task_created event for subtask {subtask.id}")
+            except Exception as e:
+                logging.warning(f"Failed to dispatch subtask creation event: {e}")
         else:
             # Fallback to existing task entity method for backward compatibility
             logging.debug("[AddSubtask] Using legacy task entity path")

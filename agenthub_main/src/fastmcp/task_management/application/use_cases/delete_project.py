@@ -3,13 +3,14 @@ Delete Project Use Case with Cascade Deletion
 
 This module provides comprehensive project deletion with cascade deletion of all related data:
 - Git branches
-- Tasks and subtasks  
+- Tasks and subtasks
 - Contexts (project, branch, task levels)
 - Agent assignments
 - Dependencies
 """
 
 import logging
+import asyncio
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -19,6 +20,7 @@ from ...domain.exceptions.base_exceptions import (
     ValidationException,
     DatabaseException
 )
+from ...domain.services.cascade_deletion_service import CascadeDeletionService
 
 logger = logging.getLogger(__name__)
 
@@ -67,33 +69,21 @@ class DeleteProjectUseCase:
     async def execute(self, project_id: str, force: bool = False) -> Dict[str, Any]:
         """
         Execute project deletion with cascade deletion.
-        
+
         Args:
             project_id: The ID of the project to delete
             force: If True, skip confirmation checks and force deletion
-            
+
         Returns:
             Dictionary with deletion results and statistics
-            
+
         Raises:
             ResourceNotFoundException: If project not found
             ValidationException: If deletion cannot proceed (unless force=True)
             DatabaseException: If database operation fails
         """
         logger.info(f"Starting cascade deletion for project: {project_id}")
-        
-        # Track deletion statistics
-        stats = {
-            "project_id": project_id,
-            "git_branches_deleted": 0,
-            "tasks_deleted": 0,
-            "subtasks_deleted": 0,
-            "contexts_deleted": 0,
-            "agent_assignments_removed": 0,
-            "dependencies_removed": 0,
-            "errors": []
-        }
-        
+
         try:
             # 1. Verify project exists
             project = await self.project_repo.find_by_id(project_id)
@@ -103,47 +93,57 @@ class DeleteProjectUseCase:
                     resource_id=project_id,
                     message=f"Project {project_id} not found"
                 )
-            
-            stats["project_name"] = project.name
+
+            # Store project info for WebSocket notification
+            project_name = project.name
+            user_id = project.user_id if hasattr(project, 'user_id') else None
+
             logger.info(f"Found project: {project.name}")
-            
+
             # 2. Check if safe to delete (unless forced)
             if not force:
                 await self._validate_deletion_safety(project)
-            
-            # 3. Delete all contexts (hierarchical: task -> branch -> project)
-            await self._delete_contexts(project_id, stats)
-            
-            # 4. Delete all tasks and subtasks
-            await self._delete_tasks(project_id, stats)
-            
-            # 5. Delete all git branches
-            await self._delete_git_branches(project_id, stats)
-            
-            # 6. Delete the project itself
-            success = await self.project_repo.delete(project_id)
-            if not success:
-                raise DatabaseException(
-                    message=f"Failed to delete project {project_id}",
-                    operation="delete",
-                    table="projects"
+
+            # 3. Use cascade deletion service
+            cascade_service = CascadeDeletionService(
+                task_repository=self.task_repo,
+                subtask_repository=getattr(self, 'subtask_repo', None),
+                branch_repository=self.git_branch_repo,
+                project_repository=self.project_repo,
+                context_repository=self.context_repo
+            )
+
+            stats = cascade_service.delete_project_cascade(project_id)
+
+            # 4. Send WebSocket notification for frontend
+            if stats["project_deleted"]:
+                await self._send_websocket_notification(
+                    project_id=project_id,
+                    name=project_name,
+                    user_id=user_id,
+                    stats=stats
                 )
-            
-            logger.info(f"Successfully deleted project {project_id} with all related data")
-            
+
+                logger.info(
+                    f"Successfully deleted project {project_id} with cascade: "
+                    f"{stats['branches_deleted']} branches, "
+                    f"{stats['tasks_deleted']} tasks, "
+                    f"{stats['subtasks_deleted']} subtasks, "
+                    f"{stats['contexts_deleted']} contexts"
+                )
+
             return {
-                "success": True,
-                "message": f"Project '{project.name}' and all related data deleted successfully",
+                "success": stats["project_deleted"],
+                "message": f"Project '{project_name}' and all related data deleted successfully",
                 "statistics": stats
             }
-            
+
         except Exception as e:
             logger.error(f"Error during project deletion: {e}")
-            stats["errors"].append(str(e))
-            
+
             if isinstance(e, (ResourceNotFoundException, ValidationException, DatabaseException)):
                 raise
-            
+
             raise DatabaseException(
                 message=f"Failed to delete project: {str(e)}",
                 operation="delete",
@@ -330,3 +330,33 @@ class DeleteProjectUseCase:
         except Exception as e:
             logger.error(f"Error during git branch deletion: {e}")
             stats["errors"].append(f"Git branch deletion: {str(e)}")
+
+    async def _send_websocket_notification(self, project_id: str, name: str,
+                                          user_id: Optional[str], stats: Dict[str, Any]) -> None:
+        """Send WebSocket notification for project deletion."""
+        try:
+            # Import WebSocket service
+            from ...infrastructure.websocket.websocket_service import WebSocketService
+
+            # Create deletion notification
+            notification = {
+                "type": "project_deleted",
+                "project_id": project_id,
+                "name": name,
+                "user_id": user_id,
+                "cascade_stats": {
+                    "branches_deleted": stats.get("branches_deleted", 0),
+                    "tasks_deleted": stats.get("tasks_deleted", 0),
+                    "subtasks_deleted": stats.get("subtasks_deleted", 0),
+                    "contexts_deleted": stats.get("contexts_deleted", 0)
+                }
+            }
+
+            # Send via WebSocket
+            websocket_service = WebSocketService()
+            await websocket_service.broadcast(notification)
+
+            logger.info(f"Sent WebSocket notification for project {project_id} deletion")
+
+        except Exception as e:
+            logger.warning(f"Failed to send WebSocket notification: {e}")

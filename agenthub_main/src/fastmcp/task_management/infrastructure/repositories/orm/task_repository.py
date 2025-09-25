@@ -621,28 +621,8 @@ class ORMTaskRepository(
                     self.invalidate_cache('task_count')
                     self.invalidate_cache('search_tasks')
 
-                # CRITICAL FIX: Refresh materialized views after task deletion
-                # This ensures the summary views show accurate task counts immediately
-                try:
-                    from sqlalchemy import text
-                    # Use autocommit for PostgreSQL REFRESH requirements
-                    autocommit_conn = session.connection().execution_options(isolation_level="AUTOCOMMIT")
-
-                    # Try concurrent refresh first (faster, but may fail under high load)
-                    try:
-                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY branch_summaries_mv;"))
-                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY project_summaries_mv;"))
-                        logger.info(f"Successfully refreshed materialized views concurrently after deleting task {task_id}")
-                    except Exception as refresh_error:
-                        # Fallback to regular refresh if concurrent fails
-                        logger.warning(f"Concurrent refresh failed after task deletion, using regular refresh: {refresh_error}")
-                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW branch_summaries_mv;"))
-                        autocommit_conn.execute(text("REFRESH MATERIALIZED VIEW project_summaries_mv;"))
-                        logger.info(f"Successfully refreshed materialized views (non-concurrent) after deleting task {task_id}")
-
-                except Exception as view_refresh_error:
-                    # Don't fail the entire deletion if view refresh fails
-                    logger.error(f"Failed to refresh materialized views after deleting task {task_id}: {view_refresh_error}")
+                # Domain layer calculations are used instead of materialized views
+                # Task count updates are handled by database triggers automatically
 
                 return True
 

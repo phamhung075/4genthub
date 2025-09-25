@@ -1,0 +1,32 @@
+clean_code_enforcement:
+  prototype_philosophy: "Clean prototypes → Clean products"
+
+  must_have:
+    - "Clear structure"
+    - "Meaningful names"
+    - "No duplication"
+    - "Single responsibility"
+    - "Basic abstractions"
+
+  can_defer:
+    - "Comprehensive tests"
+    - "Perfect optimization"
+    - "Complete error handling"
+
+  never_compromise:
+    - "No copy-paste code"
+    - "No cryptic names"
+    - "No giant functions"
+    - "No mixed concerns"
+
+  evolution_ready:
+    - "Modular design"
+    - "Clear interfaces"
+    - "Extensible structure"
+    - "Can become production code"
+
+  red_flags:
+    - "Spaghetti code"
+    - "Massive files"
+    - "Deep nesting"
+    - "Everything in one place"

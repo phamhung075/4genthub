@@ -1,0 +1,41 @@
+clean_code_enforcement:
+  infrastructure_code: "Infrastructure = Code. Apply same standards."
+
+  clean_scripts:
+    - "Meaningful names"
+    - "Function-based"
+    - "Error handling"
+    - "No duplication"
+    - "Shellcheck clean"
+
+  dry_infrastructure:
+    - "Templated configs"
+    - "Terraform modules"
+    - "Ansible roles"
+    - "Helm charts"
+    - "Shared scripts"
+
+  quality_standards:
+    docker:
+      - "Multi-stage builds"
+      - "Minimal layers"
+      - "Non-root user"
+      - "Health checks"
+
+    kubernetes:
+      - "Resource limits"
+      - "Liveness probes"
+      - "Proper labels"
+      - "Security contexts"
+
+    ci_cd:
+      - "Single-purpose stages"
+      - "Fail fast"
+      - "Idempotent"
+      - "Parallelizable"
+
+  never_do:
+    - "Hardcode secrets"
+    - "Manual changes"
+    - "Ignore errors"
+    - "Duplicate configs"

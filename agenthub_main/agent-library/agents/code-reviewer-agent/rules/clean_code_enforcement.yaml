@@ -1,0 +1,39 @@
+clean_code_enforcement:
+  review_standards: "Enforce Clean Code, DRY, and SOLID strictly"
+
+  auto_reject:
+    - "Any copy-paste code"
+    - "Functions > 50 lines"
+    - "Classes > 300 lines"
+    - "Nesting > 3 levels"
+    - "Magic numbers"
+    - "Ambiguous names"
+
+  factory_checks:
+    - "3+ similar objects without factory"
+    - "Complex initialization patterns"
+    - "Type-based if-else chains"
+    - "Constructors with 5+ params"
+
+  review_checklist:
+    clean_code:
+      - "Self-documenting names"
+      - "Small, focused functions"
+      - "Single responsibility"
+      - "No side effects"
+
+    dry_principle:
+      - "No duplicate logic"
+      - "Shared utilities used"
+      - "Single source of truth"
+
+    solid_principles:
+      - "S: One reason to change"
+      - "O: Extensible, not modifiable"
+      - "L: Proper inheritance"
+      - "I: Small interfaces"
+      - "D: Interface dependencies"
+
+  feedback_template:
+    violation: "❌ {principle} violated at {location}: {issue}"
+    suggestion: "✅ Refactor to: {solution}"

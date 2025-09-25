@@ -672,6 +672,16 @@ def main():
             logger.warning(f"⚠️ Could not run database migrations: {e}")
             # Don't fail the entire application if migrations fail
 
+        # Initialize branch statistics tracking system
+        logger.info("📊 Initializing branch statistics tracking...")
+        try:
+            from fastmcp.task_management.application.services.statistics_initializer import StatisticsInitializer
+            StatisticsInitializer.initialize()
+            logger.info("✅ Branch statistics tracking initialized successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not initialize branch statistics tracking: {e}")
+            # Don't fail the entire application if statistics tracking fails
+
         # Create the server
         server = create_agenthub_server()
         
