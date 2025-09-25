@@ -1,7 +1,6 @@
 """Create Context Use Case"""
 
 from typing import Dict, Any
-from datetime import datetime, timezone
 
 from ...application.dtos.context import (
     CreateContextRequest,
@@ -39,14 +38,13 @@ class CreateContextUseCase:
             priority = Priority(request.priority or PriorityLevel.MEDIUM.label)
             
             # Create context metadata (using only task_id following clean relationship chain)
+            # Timestamps handled automatically by BaseTimestampEntity
             metadata = ContextMetadata(
                 task_id=request.task_id,  # Only task_id needed - other context derived from task relationships
                 status=status,
                 priority=priority,
                 assignees=request.assignees or [],
-                labels=request.labels or [],
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                labels=request.labels or []
             )
             
             # Create context objective

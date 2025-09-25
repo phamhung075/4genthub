@@ -94,8 +94,8 @@ class ProjectApplicationService:
         agent = Agent(
             id=agent_id,
             name=name,
-            capabilities=agent_capabilities,
-            created_at=datetime.now(timezone.utc)
+            capabilities=agent_capabilities
+            # created_at will be set automatically by the entity
         )
         
         # Register agent to project

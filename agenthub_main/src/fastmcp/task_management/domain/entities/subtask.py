@@ -10,29 +10,32 @@ from ..value_objects.task_status import TaskStatus, TaskStatusEnum
 from ..value_objects.priority import Priority
 from ..enums.agent_roles import AgentRole, resolve_legacy_role
 from ..events.task_events import TaskUpdated
+from .base.base_timestamp_entity import BaseTimestampEntity
 
 
 @dataclass
-class Subtask:
+class Subtask(BaseTimestampEntity):
     """Subtask domain entity with business logic"""
-    
-    title: str
-    description: str
-    parent_task_id: TaskId
+
+    title: str = ""
+    description: str = ""
+    parent_task_id: Optional[TaskId] = None
     id: Optional[SubtaskId] = None
     status: Optional[TaskStatus] = None
     priority: Optional[Priority] = None
     assignees: List[str] = field(default_factory=list)
     progress_percentage: int = 0  # Progress tracking (0-100)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
     
     # Domain events
     _events: List[Any] = field(default_factory=list, init=False)
     
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id) if self.id else f"subtask_{id(self)}"
+
     def __post_init__(self):
         """Validate subtask data after initialization"""
-        # Set default values if not provided
+        # Set default values if not provided before base validation
         if self.status is None:
             self.status = TaskStatus.todo()
         if self.priority is None:
@@ -65,24 +68,8 @@ class Subtask:
                         normalized_assignees.append(assignee)
             self.assignees = normalized_assignees
 
-        self._validate()
-        
-        # Set timestamps if not provided (ensure timezone-aware)
-        if self.created_at is None and self.updated_at is None:
-            now = datetime.now(timezone.utc)
-            self.created_at = now
-            self.updated_at = now
-        else:
-            # Handle existing timestamps separately
-            if self.created_at is None:
-                self.created_at = datetime.now(timezone.utc)
-            elif self.created_at.tzinfo is None:
-                self.created_at = self.created_at.replace(tzinfo=timezone.utc)
-                
-            if self.updated_at is None:
-                self.updated_at = datetime.now(timezone.utc)
-            elif self.updated_at.tzinfo is None:
-                self.updated_at = self.updated_at.replace(tzinfo=timezone.utc)
+        # Initialize timestamps through BaseTimestampEntity (runs _validate_entity)
+        super().__post_init__()
     
     def __eq__(self, other):
         """Subtasks are equal if they have the same ID."""
@@ -121,16 +108,20 @@ class Subtask:
         
         if self.parent_task_id is None:
             raise ValueError("Subtask must have a parent task ID")
+
+    def _validate_entity(self) -> None:
+        """Hook for BaseTimestampEntity validation."""
+        self._validate()
     
     def update_status(self, new_status: TaskStatus) -> None:
         """Update subtask status with validation"""
         if not self.status.can_transition_to(new_status.value):
             raise ValueError(f"Cannot transition from {self.status} to {new_status}")
-        
+
         old_status = self.status
         self.status = new_status
-        self.updated_at = datetime.now(timezone.utc)
-        
+        self.touch("status_changed")
+
         # Automatically set progress_percentage when status changes to done
         if new_status.value == TaskStatusEnum.DONE.value:
             self.progress_percentage = 100
@@ -138,7 +129,7 @@ class Subtask:
             # Only reset to 0 if progress is currently 100 (was completed)
             if self.progress_percentage == 100:
                 self.progress_percentage = 0
-        
+
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.parent_task_id,
@@ -152,8 +143,8 @@ class Subtask:
         """Update subtask priority"""
         old_priority = self.priority
         self.priority = new_priority
-        self.updated_at = datetime.now(timezone.utc)
-        
+        self.touch("priority_updated")
+
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.parent_task_id,
@@ -167,11 +158,11 @@ class Subtask:
         """Update subtask title"""
         if not title.strip():
             raise ValueError("Subtask title cannot be empty")
-        
+
         old_title = self.title
         self.title = title
-        self.updated_at = datetime.now(timezone.utc)
-        
+        self.touch("title_updated")
+
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.parent_task_id,
@@ -185,8 +176,8 @@ class Subtask:
         """Update subtask description"""
         old_description = self.description
         self.description = description
-        self.updated_at = datetime.now(timezone.utc)
-        
+        self.touch("description_updated")
+
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.parent_task_id,
@@ -223,7 +214,7 @@ class Subtask:
         
         old_assignees = self.assignees.copy()
         self.assignees = validated_assignees
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("assignees_updated")
         
         # Raise domain event
         self._events.append(TaskUpdated(
@@ -241,7 +232,7 @@ class Subtask:
         
         old_progress = self.progress_percentage
         self.progress_percentage = progress_percentage
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("progress_updated")
         
         # Auto-update status based on progress percentage
         if progress_percentage == 0:
@@ -290,7 +281,7 @@ class Subtask:
         
         if validated_assignee not in self.assignees:
             self.assignees.append(validated_assignee)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("assignee_added")
             
             # Raise domain event
             self._events.append(TaskUpdated(
@@ -311,7 +302,7 @@ class Subtask:
         
         if assignee_str in self.assignees:
             self.assignees.remove(assignee_str)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("assignee_removed")
             
             # Raise domain event
             self._events.append(TaskUpdated(
@@ -335,7 +326,7 @@ class Subtask:
             # Only inherit if subtask has no assignees assigned
             old_assignees = self.assignees.copy()
             self.assignees = parent_assignees.copy()
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("assignees_inherited")
             
             # Raise domain event for inheritance
             self._events.append(TaskUpdated(
@@ -370,7 +361,7 @@ class Subtask:
         old_status = self.status
         self.status = TaskStatus.done()
         self.progress_percentage = 100  # Automatically set progress to 100% when completed
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("subtask_completed")
         
         # Raise domain event
         self._events.append(TaskUpdated(
@@ -388,7 +379,7 @@ class Subtask:
         
         old_status = self.status
         self.status = TaskStatus.todo()
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("subtask_reopened")
         
         # Raise domain event
         self._events.append(TaskUpdated(

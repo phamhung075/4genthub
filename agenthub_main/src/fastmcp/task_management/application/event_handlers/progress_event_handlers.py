@@ -6,7 +6,6 @@ actions such as notifications, aggregations, and state updates.
 
 import logging
 from datetime import datetime, timezone
-from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from ...domain.events.progress_events import (

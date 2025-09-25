@@ -12,6 +12,7 @@ from datetime import datetime
 
 from ...database.models import Label, TaskLabel, Task
 from ...database.database_adapter import DatabaseAdapter
+from ..base_timestamp_repository import BaseTimestampRepository
 from ....domain.entities.label import Label as LabelEntity
 from ....domain.entities.task import Task as TaskEntity
 from ....domain.exceptions.base_exceptions import (
@@ -21,10 +22,11 @@ from ....domain.exceptions.base_exceptions import (
 )
 
 
-class ORMLabelRepository:
+class ORMLabelRepository(BaseTimestampRepository[Label]):
     """ORM-based Label repository implementation"""
     
     def __init__(self, db_adapter: DatabaseAdapter):
+        super().__init__(Label)
         self._db_adapter = db_adapter
     
     def create_label(self, name: str, color: str = "#0066cc", description: str = "") -> LabelEntity:

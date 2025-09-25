@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from dataclasses import dataclass, field
 import uuid
 
+from .base.base_timestamp_entity import BaseTimestampEntity
+
 from ..value_objects.task_id import TaskId
 from .git_branch import GitBranch
 from .agent import Agent
@@ -14,15 +16,17 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Project:
+class Project(BaseTimestampEntity):
     """Project aggregate root for multi-agent task orchestration"""
-    
-    id: str
-    name: str
-    description: str
-    created_at: datetime
-    updated_at: datetime
-    
+
+    id: str = ""
+    name: str = ""
+    description: str = ""
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id) if self.id else "unknown"
+
     @classmethod
     def create(
         cls,
@@ -31,27 +35,17 @@ class Project:
     ) -> 'Project':
         """Create a new project with auto-generated UUID"""
         project_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc)
-        
+
         return cls(
             id=project_id,
             name=name,
-            description=description,
-            created_at=now,
-            updated_at=now
+            description=description
         )
     
     def __hash__(self):
         """Make Project hashable based on its id"""
         return hash(self.id)
-    
-    def __post_init__(self):
-        """Ensure timestamps are timezone-aware"""
-        if self.created_at.tzinfo is None:
-            self.created_at = self.created_at.replace(tzinfo=timezone.utc)
-        if self.updated_at.tzinfo is None:
-            self.updated_at = self.updated_at.replace(tzinfo=timezone.utc)
-    
+
     # Multi-tree structure
     git_branchs: Dict[str, GitBranch] = field(default_factory=dict)
     
@@ -65,6 +59,11 @@ class Project:
     # Work coordination
     active_work_sessions: Dict[str, 'WorkSession'] = field(default_factory=dict)
     resource_locks: Dict[str, str] = field(default_factory=dict)  # resource -> agent_id
+
+    def _validate_entity(self) -> None:
+        """Ensure project invariants hold."""
+        if not self.name or not self.name.strip():
+            raise ValueError("Project name cannot be empty")
     
     async def create_git_branch_async(
         self, 
@@ -87,7 +86,7 @@ class Project:
         
         # Update local cache
         self.git_branchs[git_branch.id] = git_branch
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("git_branch_added")
         return git_branch
     
     def create_git_branch(self, git_branch_name: str, name: str, description: str = "") -> GitBranch:
@@ -106,18 +105,17 @@ class Project:
             name=name,
             description=description,
             project_id=self.id,
-            git_branch_name=git_branch_name,
-            created_at=datetime.now(timezone.utc)
+            git_branch_name=git_branch_name
         )
         
         self.git_branchs[git_branch_id] = git_branch
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("git_branch_created")
         return git_branch
     
     def add_git_branch(self, git_branch: GitBranch) -> None:
         """Add a git branch to the project"""
         self.git_branchs[git_branch.id] = git_branch
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("git_branch_added")
     
     def get_git_branch(self, branch_name: str) -> Optional[GitBranch]:
         """Get a git branch by name"""
@@ -129,7 +127,7 @@ class Project:
     def register_agent(self, agent: Agent) -> None:
         """Register an AI agent to work on this project"""
         self.registered_agents[agent.id] = agent
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_registered")
     
     def assign_agent_to_tree(self, agent_id: str, git_branch_name: str) -> None:
         """Assign an agent to work on a specific task tree"""
@@ -145,7 +143,7 @@ class Project:
                 raise ValueError(f"Task tree {git_branch_name} already assigned to agent {current_agent}")
         
         self.agent_assignments[git_branch_name] = agent_id
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_assigned_to_tree")
     
     def add_cross_tree_dependency(self, dependent_task_id: str, prerequisite_task_id: str) -> None:
         """Add a dependency between tasks in different trees"""
@@ -168,7 +166,7 @@ class Project:
             self.cross_tree_dependencies[dependent_task_id] = set()
         
         self.cross_tree_dependencies[dependent_task_id].add(prerequisite_task_id)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("cross_tree_dependency_added")
     
     def get_available_work_for_agent(self, agent_id: str) -> List['Task']:
         """Get available tasks for a specific agent based on their assignments and dependencies"""
@@ -216,7 +214,7 @@ class Project:
         )
         
         self.active_work_sessions[session.id] = session
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("work_session_started")
         return session
     
     def _find_git_branch(self, task_id: str) -> Optional[GitBranch]:

@@ -329,23 +329,26 @@ class TestServiceAccountAuth:
             
             with patch.dict(os.environ, env_vars):
                 # Mock the httpx client to avoid real network calls
-                # Use new_callable=AsyncMock directly in patch for async behavior
-                with patch('fastmcp.auth.service_account.httpx.AsyncClient', new=AsyncMock) as mock_client_class:
-                    # Create a proper async mock client instance
-                    mock_client = AsyncMock()
-                    # Ensure aclose is an AsyncMock as well
-                    mock_client.aclose = AsyncMock()
-                    # Configure the constructor to return our async mock
-                    mock_client_class.return_value = mock_client
-                    
+                # Create a single mock client instance that will be returned every time
+                mock_client = AsyncMock()
+                mock_client.aclose = AsyncMock()
+                
+                # Create a mock class that returns the same client instance
+                mock_client_class = MagicMock()
+                mock_client_class.return_value = mock_client
+                
+                with patch('fastmcp.auth.service_account.httpx.AsyncClient', mock_client_class):
                     auth1 = get_service_account_auth()
                     auth2 = get_service_account_auth()
                     
                     # Should be the same instance
                     assert auth1 is auth2
                     
-                    # Ensure the mock client was used
-                    assert auth1.client is mock_client
+                    # The httpx.AsyncClient should only be called once due to singleton
+                    assert mock_client_class.call_count == 1
+                    
+                    # Ensure auth1 is using the mocked client
+                    assert isinstance(auth1.client, AsyncMock)
                     
                     await auth1.close()
                     mock_client.aclose.assert_awaited_once()

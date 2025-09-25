@@ -7,8 +7,7 @@ and triggers follow-up actions.
 
 import logging
 from typing import Dict, Any, Optional
-from datetime import datetime, timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 from uuid import UUID
 
@@ -246,10 +245,11 @@ class HintEventHandlers:
         # Could be enhanced with weighted scoring
         effectiveness = accepted / total if total > 0 else 0
         
-        # Create and publish event
+        # Create and publish event with single timestamp calculation
+        now = datetime.now(timezone.utc)
         event = HintEffectivenessCalculated(
             aggregate_id=UUID(int=0),  # System event
-            occurred_at=datetime.now(timezone.utc),
+            occurred_at=now,
             user_id="hint_event_handler",
             hint_type=hint_type,
             source_rule=source_rule,
@@ -257,8 +257,8 @@ class HintEventHandlers:
             accepted_count=accepted,
             dismissed_count=dismissed,
             effectiveness_score=effectiveness,
-            period_start=datetime.now(timezone.utc) - timedelta(days=30),
-            period_end=datetime.now(timezone.utc)
+            period_start=now - timedelta(days=30),
+            period_end=now
         )
         
         await self.event_store.append(event)

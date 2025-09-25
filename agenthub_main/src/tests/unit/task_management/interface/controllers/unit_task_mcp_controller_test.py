@@ -50,7 +50,9 @@ class TestTaskMCPController:
     def test_register_tools(self):
         """Test MCP tool registration."""
         mock_mcp = Mock()
-        mock_mcp.tool = Mock()
+        # Create a mock that returns a decorator function when called
+        mock_decorator = Mock(return_value=lambda func: func)
+        mock_mcp.tool = Mock(return_value=mock_decorator)
         
         # Mock the get_manage_task_description function that's actually used
         with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_manage_task_description') as mock_get_desc, \
@@ -97,7 +99,8 @@ class TestTaskMCPController:
                     "analyze_complexity": {"description": "Analyze complexity parameter"},
                     "suggest_optimizations": {"description": "Suggest optimizations parameter"},
                     "identify_risks": {"description": "Identify risks parameter"},
-                    "available_agents": {"description": "Available agents parameter"}
+                    "available_agents": {"description": "Available agents parameter"},
+                    "progress_percentage": {"description": "Progress percentage parameter"}
                 }
             }
             

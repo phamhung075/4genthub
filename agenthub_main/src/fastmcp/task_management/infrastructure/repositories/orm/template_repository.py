@@ -16,13 +16,13 @@ from ....domain.entities.template import Template, TemplateUsage
 from ....domain.value_objects.template_id import TemplateId
 from ....domain.enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from ....domain.repositories.template_repository import TemplateRepositoryInterface
-from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ...database.models import Template as ORMTemplate
 
 logger = logging.getLogger(__name__)
 
 
-class ORMTemplateRepository(BaseORMRepository[ORMTemplate], TemplateRepositoryInterface):
+class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateRepositoryInterface):
     """ORM implementation of template repository using SQLAlchemy"""
     
     def __init__(self):
@@ -47,14 +47,14 @@ class ORMTemplateRepository(BaseORMRepository[ORMTemplate], TemplateRepositoryIn
                 ).first()
                 
                 if existing:
-                    # Update existing template
+                    # Update existing template (timestamps handled automatically)
                     existing.name = template.name
                     existing.type = template.template_type.value
                     existing.content = self._serialize_template_content(template)
                     existing.category = template.category.value
                     existing.tags = self._extract_tags_from_template(template)
-                    existing.updated_at = datetime.now(timezone.utc)
                     existing.created_by = getattr(template, 'created_by', 'system')
+                    existing.touch("template_updated")
                 else:
                     # Create new template
                     orm_template = ORMTemplate(
@@ -251,7 +251,7 @@ class ORMTemplateRepository(BaseORMRepository[ORMTemplate], TemplateRepositoryIn
                 
                 if orm_template:
                     orm_template.usage_count += 1
-                    orm_template.updated_at = datetime.now(timezone.utc)
+                    orm_template.touch("usage_incremented")
                     session.commit()
                     logger.debug(f"Usage count incremented for template: {template_id}")
                     return True

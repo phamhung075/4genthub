@@ -120,9 +120,7 @@ class AuthService:
                 password_hash=password_hash,
                 full_name=full_name,
                 status=UserStatus.PENDING_VERIFICATION,
-                email_verified=False,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                email_verified=False
             )
             
             # Save user to repository

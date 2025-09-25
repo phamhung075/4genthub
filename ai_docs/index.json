@@ -76,11 +76,11 @@
           "size": 13415
         },
         {
-          "hash": "5e5b8775033cdfa3cee397fccd9d7f5a",
-          "modified": "2025-09-24T13:24:47.170491",
+          "hash": "3fda8f89fcd467672c48f281b8a5296f",
+          "modified": "2025-09-25T08:25:55.590798",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 2075344
+          "size": 1605717
         },
         {
           "hash": "bd9976592660c396c4a8e543e8cc3e25",
@@ -90,11 +90,11 @@
           "size": 4197
         },
         {
-          "hash": "893dd7effd5cc0fb442f5ddefc3381d1",
-          "modified": "2025-09-24T13:24:47.166279",
+          "hash": "67f20844af9a4d10ee06afe3552c7b61",
+          "modified": "2025-09-25T08:19:37.860919",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 49640
+          "size": 50368
         },
         {
           "hash": "10c99f4a959a54ecda36092c042f082c",
@@ -332,14 +332,14 @@
         },
         {
           "hash": "0fcaac26b0831d9207593cd4a5c132ec",
-          "modified": "2025-09-24T21:23:00.121248",
+          "modified": "2025-09-25T00:21:29.522766",
           "name": "PRD.md",
           "path": "architecture-design/PRD.md",
           "size": 8848
         },
         {
           "hash": "a424843fec892b079a1b45e257cde119",
-          "modified": "2025-09-24T21:24:02.617604",
+          "modified": "2025-09-25T00:21:29.522766",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
           "size": 14544
@@ -632,7 +632,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 27,
+      "count": 32,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -719,6 +719,13 @@
           "size": 4364
         },
         {
+          "hash": "4de70f634e8ca38a5db73376961aa4a7",
+          "modified": "2025-09-25T17:38:32.394474",
+          "name": "database-initialization-enhancement.md",
+          "path": "core-architecture/database-initialization-enhancement.md",
+          "size": 9423
+        },
+        {
           "hash": "7ecde5b1b4747f1bdf67c6117005ca8c",
           "modified": "2025-09-24T13:24:47.170491",
           "name": "architecture-thinking.md",
@@ -740,11 +747,11 @@
           "size": 18926
         },
         {
-          "hash": "6918341bc710221546526ebcac7d7bf2",
-          "modified": "2025-09-24T22:38:48.240582",
-          "name": "PRD.md",
-          "path": "core-architecture/PRD.md",
-          "size": 10147
+          "hash": "16153ef7c18204a09eced8bd465a0b7a",
+          "modified": "2025-09-25T17:40:24.192380",
+          "name": "timestamp-query-optimization-analysis.md",
+          "path": "core-architecture/timestamp-query-optimization-analysis.md",
+          "size": 10442
         },
         {
           "hash": "06ecc70235b07f405b5e6ff3c9077941",
@@ -761,6 +768,13 @@
           "size": 6273
         },
         {
+          "hash": "0921d1d76da09658371cf2f062cc21f3",
+          "modified": "2025-09-25T17:36:31.376577",
+          "name": "database-session-handling-optimization.md",
+          "path": "core-architecture/database-session-handling-optimization.md",
+          "size": 8719
+        },
+        {
           "hash": "1164b62c5119ebd9364fb0e0c8d5e36a",
           "modified": "2025-09-13T23:31:32.151266",
           "name": "dependency-management-engine-architecture.md",
@@ -775,11 +789,32 @@
           "size": 4266
         },
         {
+          "hash": "a61fa754cf31d1e3694e3ee20a4fc4ce",
+          "modified": "2025-09-25T17:34:51.752297",
+          "name": "database-timestamp-standardization-summary.md",
+          "path": "core-architecture/database-timestamp-standardization-summary.md",
+          "size": 5158
+        },
+        {
           "hash": "c60e3cc79506e0cb448c0e51be31a9c2",
           "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-orchestration-architecture.md",
           "path": "core-architecture/agent-orchestration-architecture.md",
           "size": 30628
+        },
+        {
+          "hash": "c285280f638aa966bf09248216b478f4",
+          "modified": "2025-09-25T17:30:24.330718",
+          "name": "database-schema-timestamp-alignment-verification.md",
+          "path": "core-architecture/database-schema-timestamp-alignment-verification.md",
+          "size": 6933
+        },
+        {
+          "hash": "e3674b579210b8a041f426d2dd0d6a85",
+          "modified": "2025-09-25T11:37:11.884104",
+          "name": "timestamp-management-architectural-analysis.md",
+          "path": "core-architecture/timestamp-management-architectural-analysis.md",
+          "size": 14347
         },
         {
           "hash": "3e8655875e5419e4816635dccf2f33d4",
@@ -847,7 +882,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 52,
+      "count": 57,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -855,6 +890,13 @@
           "name": "controller-overlap-analysis.md",
           "path": "development-guides/controller-overlap-analysis.md",
           "size": 9387
+        },
+        {
+          "hash": "1f50b252d682d9c372b0e3e58eb3f172",
+          "modified": "2025-09-25T17:17:35.901578",
+          "name": "timestamp-management-implementation.md",
+          "path": "development-guides/timestamp-management-implementation.md",
+          "size": 169054
         },
         {
           "hash": "75e823852b23cf2187bd63f5b275c7c9",
@@ -1004,6 +1046,20 @@
           "size": 12583
         },
         {
+          "hash": "79787bfb4b4baf8e2338e0ce3132bbb4",
+          "modified": "2025-09-25T18:34:19.618789",
+          "name": "clean-timestamp-project-handover.md",
+          "path": "development-guides/clean-timestamp-project-handover.md",
+          "size": 16628
+        },
+        {
+          "hash": "3054fb9a6ac76604baea1b048b68d745",
+          "modified": "2025-09-25T18:26:37.716132",
+          "name": "clean-timestamp-developer-training.md",
+          "path": "development-guides/clean-timestamp-developer-training.md",
+          "size": 18705
+        },
+        {
           "hash": "4bd4fff8f2779b2e38a5922970e56e09",
           "modified": "2025-09-17T14:11:39.083883",
           "name": "DDD_COMPLIANCE_UPDATE_REPORT.md",
@@ -1074,6 +1130,13 @@
           "size": 13832
         },
         {
+          "hash": "41703f11767c61693f8160a4d50f9904",
+          "modified": "2025-09-25T18:28:56.906762",
+          "name": "clean-timestamp-best-practices.md",
+          "path": "development-guides/clean-timestamp-best-practices.md",
+          "size": 20977
+        },
+        {
           "hash": "f6b3c6b237dba50da1fb236499f38c9a",
           "modified": "2025-09-13T23:31:32.151266",
           "name": "REPOSITORY_LAYER_ARCHITECTURE_ANALYSIS.md",
@@ -1086,6 +1149,13 @@
           "name": "mcp-integration-guide.md",
           "path": "development-guides/mcp-integration-guide.md",
           "size": 12252
+        },
+        {
+          "hash": "4c3691ebec3bf29b7e2da1f804ac99f2",
+          "modified": "2025-09-25T18:31:56.253024",
+          "name": "clean-timestamp-team-training-sessions.md",
+          "path": "development-guides/clean-timestamp-team-training-sessions.md",
+          "size": 30041
         },
         {
           "hash": "590acb3e83ab841b71abb3cf275eca31",
@@ -1283,7 +1353,7 @@
         },
         {
           "hash": "7079144b055da711052ad6c5bfd18e75",
-          "modified": "2025-09-24T23:37:08.576376",
+          "modified": "2025-09-24T23:51:33.671386",
           "name": "task-count-fix.md",
           "path": "issues/task-count-fix.md",
           "size": 1558
@@ -1431,8 +1501,15 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 26,
+      "count": 28,
       "files": [
+        {
+          "hash": "64066fdddd8fdd12697a78886e949905",
+          "modified": "2025-09-25T18:10:59.115782",
+          "name": "production-deployment-plan-clean-timestamp.md",
+          "path": "operations/production-deployment-plan-clean-timestamp.md",
+          "size": 23959
+        },
         {
           "hash": "0aad9e989aedac5cebdd454d3846913b",
           "modified": "2025-09-17T14:11:39.087862",
@@ -1530,6 +1607,13 @@
           "name": "env-sample-production.md",
           "path": "operations/env-sample-production.md",
           "size": 13170
+        },
+        {
+          "hash": "a101e29dc7fc0d5c9217c0ba0e90c2c6",
+          "modified": "2025-09-25T18:16:18.262635",
+          "name": "monitoring-setup-documentation.md",
+          "path": "operations/monitoring-setup-documentation.md",
+          "size": 14866
         },
         {
           "hash": "ab41f47a6f6d730f90deb81eec41158e",
@@ -1885,7 +1969,7 @@
         },
         {
           "hash": "54ca56130eb4e2a0d6b9e5031a1a79eb",
-          "modified": "2025-09-24T23:29:56.023614",
+          "modified": "2025-09-24T23:51:33.671386",
           "name": "env-file-auto-selection.md",
           "path": "setup-guides/env-file-auto-selection.md",
           "size": 2315
@@ -1908,14 +1992,28 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 100,
+      "count": 152,
       "files": [
         {
-          "hash": "6c4c1a4347c00705202e6bcd178af721",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "781b8a0a49ca96f355d3d2ca79e3d28c",
+          "modified": "2025-09-25T07:47:34.576133",
+          "name": "test-verification-iteration-104-success-continues.md",
+          "path": "testing-qa/test-verification-iteration-104-success-continues.md",
+          "size": 2668
+        },
+        {
+          "hash": "560f9f1676e590e72f7779c3db35691a",
+          "modified": "2025-09-25T03:08:03.784797",
           "name": "test-fix-iteration-18-summary.md",
           "path": "testing-qa/test-fix-iteration-18-summary.md",
-          "size": 1232
+          "size": 1742
+        },
+        {
+          "hash": "a92dc891df2d3b16b783f2ba1c1f3b12",
+          "modified": "2025-09-25T05:48:19.628279",
+          "name": "test-verification-iteration-42-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-42-2025-09-25.md",
+          "size": 1224
         },
         {
           "hash": "df9800f409821e310e6ca944e026dec6",
@@ -1946,11 +2044,32 @@
           "size": 2007
         },
         {
-          "hash": "13098bc5867bb7ef594db24e522bd824",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "cbcc8c4bdcc4c0460b8266dcffdafcde",
+          "modified": "2025-09-25T07:09:39.854573",
+          "name": "test-analysis-iteration-95-batch-execution.md",
+          "path": "testing-qa/test-analysis-iteration-95-batch-execution.md",
+          "size": 2940
+        },
+        {
+          "hash": "32bf61ddbbfd6c2f49a47db2c843b715",
+          "modified": "2025-09-25T04:49:25.135670",
+          "name": "test-verification-iteration-31-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-31-2025-09-25.md",
+          "size": 1921
+        },
+        {
+          "hash": "281f2ddd8ca41a7bff4af62f2aa4273f",
+          "modified": "2025-09-25T03:44:57.382254",
+          "name": "test-fix-iteration-24-summary.md",
+          "path": "testing-qa/test-fix-iteration-24-summary.md",
+          "size": 2418
+        },
+        {
+          "hash": "7941afa26d172f3ddceaa593714f7047",
+          "modified": "2025-09-25T02:49:19.204163",
           "name": "test-fix-iteration-14-summary.md",
           "path": "testing-qa/test-fix-iteration-14-summary.md",
-          "size": 1746
+          "size": 2472
         },
         {
           "hash": "0bc029dea30d2e3ac215eb2d978db050",
@@ -1960,11 +2079,18 @@
           "size": 1533
         },
         {
-          "hash": "78946dec246a453e8eba3945fe589f45",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "f619900faa275e14c57930b1dd8f5018",
+          "modified": "2025-09-25T05:32:42.842777",
           "name": "test-fix-iteration-38-summary.md",
           "path": "testing-qa/test-fix-iteration-38-summary.md",
-          "size": 1797
+          "size": 2962
+        },
+        {
+          "hash": "7b83351ca20db40e8b16c19a89037808",
+          "modified": "2025-09-25T02:11:20.089579",
+          "name": "test-verification-iteration-7-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-7-2025-09-25.md",
+          "size": 2879
         },
         {
           "hash": "feb6573c02196f8559f1e0f658fc0bc7",
@@ -1974,18 +2100,32 @@
           "size": 3938
         },
         {
-          "hash": "c1a2b627a104acbaccd4542010d00f50",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "d7713b0b0282344badf4f5bd5d0c52ac",
+          "modified": "2025-09-25T03:06:07.897273",
           "name": "test-fix-iteration-17-summary.md",
           "path": "testing-qa/test-fix-iteration-17-summary.md",
-          "size": 2454
+          "size": 2256
         },
         {
-          "hash": "ccf907b1904d279bf7cea42386cf0c7f",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "a73ba75b444921c4a450086d27215ea3",
+          "modified": "2025-09-25T01:49:26.367721",
           "name": "test-fix-iteration-4-summary.md",
           "path": "testing-qa/test-fix-iteration-4-summary.md",
-          "size": 2081
+          "size": 1174
+        },
+        {
+          "hash": "064b987b92c6272cd7812ca715ee6430",
+          "modified": "2025-09-25T02:33:57.954645",
+          "name": "test-verification-iteration-12-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-12-2025-09-25.md",
+          "size": 2634
+        },
+        {
+          "hash": "6d3f4dfb2a5a581d60c67815a88a7d27",
+          "modified": "2025-09-25T04:51:25.173973",
+          "name": "test-verification-iteration-32-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-32-2025-09-25.md",
+          "size": 1418
         },
         {
           "hash": "ef9cf6535763fac3138d3312ba680ff3",
@@ -2002,6 +2142,13 @@
           "size": 1686
         },
         {
+          "hash": "6cb5bb5ddb88f1bff91edf99bdd210c2",
+          "modified": "2025-09-25T07:59:57.661390",
+          "name": "test-verification-iteration-109-unbreakable-stability.md",
+          "path": "testing-qa/test-verification-iteration-109-unbreakable-stability.md",
+          "size": 2424
+        },
+        {
           "hash": "8149b16986cbc567e2c5aceec9c70c18",
           "modified": "2025-09-17T10:26:47.264821",
           "name": "iteration-33-test-fixes.md",
@@ -2016,11 +2163,18 @@
           "size": 3956
         },
         {
-          "hash": "26a6bafc5f3246ea446bf917a8e79dea",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "88198e7c7fcb28f98b065d7c80f4e2bd",
+          "modified": "2025-09-25T02:42:36.595308",
           "name": "test-fix-iteration-13-summary.md",
           "path": "testing-qa/test-fix-iteration-13-summary.md",
-          "size": 2089
+          "size": 3753
+        },
+        {
+          "hash": "9fe71d1b39c2bb3b4ccb0e6cad5e4368",
+          "modified": "2025-09-25T06:20:58.791367",
+          "name": "test-fix-iteration-46-final-success.md",
+          "path": "testing-qa/test-fix-iteration-46-final-success.md",
+          "size": 3970
         },
         {
           "hash": "75e5ac453b81d2894815162446c8808d",
@@ -2028,6 +2182,13 @@
           "name": "iteration-107-septuple-centenarian-perfection.md",
           "path": "testing-qa/iteration-107-septuple-centenarian-perfection.md",
           "size": 5073
+        },
+        {
+          "hash": "ec19d845772dd52e6d15e7cad691b156",
+          "modified": "2025-09-25T07:31:42.279401",
+          "name": "test-verification-iteration-100-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-100-2025-09-25.md",
+          "size": 2585
         },
         {
           "hash": "77ccf58eb3bbe3b6e5b1f8c38a612a5b",
@@ -2065,11 +2226,11 @@
           "size": 1982
         },
         {
-          "hash": "57c8609bc60c0186ab49d9a1dc52777b",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "acccc59762eaaf15b134a7c72ddd03b2",
+          "modified": "2025-09-25T01:43:03.629100",
           "name": "test-fix-iteration-3-summary.md",
           "path": "testing-qa/test-fix-iteration-3-summary.md",
-          "size": 1357
+          "size": 2985
         },
         {
           "hash": "378aa13e352250d85c6226e253e6e8a8",
@@ -2077,6 +2238,20 @@
           "name": "testing.md",
           "path": "testing-qa/testing.md",
           "size": 7847
+        },
+        {
+          "hash": "a9bd1f5277d3e9d87ad402d99ed3786a",
+          "modified": "2025-09-25T04:39:16.908752",
+          "name": "test-verification-iteration-29-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-29-2025-09-25.md",
+          "size": 2430
+        },
+        {
+          "hash": "019d7bd7b56d7f498003a59aa100a3a8",
+          "modified": "2025-09-25T07:27:56.078121",
+          "name": "test-verification-iteration-99-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-99-2025-09-25.md",
+          "size": 5652
         },
         {
           "hash": "0af9e5a28d303fa4d05c401ba70d7bb0",
@@ -2093,11 +2268,11 @@
           "size": 1824
         },
         {
-          "hash": "5da707e26b806dc23a9e68081b283114",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "8df69e5ff89ba44e2f1c6a2e68fc0800",
+          "modified": "2025-09-25T03:11:01.845253",
           "name": "test-fix-iteration-19-summary.md",
           "path": "testing-qa/test-fix-iteration-19-summary.md",
-          "size": 1880
+          "size": 2132
         },
         {
           "hash": "57e431659b4d64fd8366c37c56aecfaf",
@@ -2107,6 +2282,13 @@
           "size": 7759
         },
         {
+          "hash": "f0bf9c0359af3dc8545cad7233037561",
+          "modified": "2025-09-25T05:08:34.629358",
+          "name": "test-verification-iteration-36-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-36-2025-09-25.md",
+          "size": 1962
+        },
+        {
           "hash": "a381580deb551dd050f83e9fba2fc1a8",
           "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-29-summary.md",
@@ -2114,11 +2296,11 @@
           "size": 2803
         },
         {
-          "hash": "b290d050c995f42443cb0017f2c0e9f0",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "34cb317756ac31bdcaddd5d174035ac3",
+          "modified": "2025-09-25T03:51:51.133818",
           "name": "test-fix-iteration-25-summary.md",
           "path": "testing-qa/test-fix-iteration-25-summary.md",
-          "size": 2490
+          "size": 3519
         },
         {
           "hash": "cfa3507e55ec2030913e78877c4c5b0f",
@@ -2126,6 +2308,13 @@
           "name": "test-fix-iteration-26-summary.md",
           "path": "testing-qa/test-fix-iteration-26-summary.md",
           "size": 1767
+        },
+        {
+          "hash": "383921b9eb0471db249647c82110d791",
+          "modified": "2025-09-25T04:59:48.343332",
+          "name": "test-verification-iteration-33-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-33-2025-09-25.md",
+          "size": 2510
         },
         {
           "hash": "3e1b09696459c7b37c16c5ef181bf8ca",
@@ -2149,6 +2338,13 @@
           "size": 3230
         },
         {
+          "hash": "d1853c7656a4aaa0ae4d7fe61cf799b3",
+          "modified": "2025-09-25T06:24:50.455125",
+          "name": "test-fix-iteration-48-final-confirmation.md",
+          "path": "testing-qa/test-fix-iteration-48-final-confirmation.md",
+          "size": 2934
+        },
+        {
           "hash": "762e177de10f2c7e6561ae6feecb0a98",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "context_resolution_tests_summary.md",
@@ -2163,18 +2359,46 @@
           "size": 3479
         },
         {
-          "hash": "276d301b8900ee4b69148fd7024af170",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "e5b2c6fbd2b32783334dd4a50a42c78d",
+          "modified": "2025-09-25T03:33:39.149393",
           "name": "test-fix-iteration-22-summary.md",
           "path": "testing-qa/test-fix-iteration-22-summary.md",
-          "size": 2475
+          "size": 3339
         },
         {
-          "hash": "b662457789bc7d0f3bf2661b7a30e648",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "cac7108dddd3d1ec4771d511403c0a54",
+          "modified": "2025-09-25T05:04:39.518624",
+          "name": "test-verification-iteration-34-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-34-2025-09-25.md",
+          "size": 1283
+        },
+        {
+          "hash": "b95f7074d608200c337cf90bc14f6e26",
+          "modified": "2025-09-25T02:30:00.871795",
+          "name": "test-verification-iteration-11-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-11-2025-09-25.md",
+          "size": 2221
+        },
+        {
+          "hash": "4ed3285d001c0f9dca7ce91b9616384c",
+          "modified": "2025-09-25T05:06:33.126831",
+          "name": "test-verification-iteration-35-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-35-2025-09-25.md",
+          "size": 1481
+        },
+        {
+          "hash": "6a4d98ae209ef6f51bce255a408a3ef2",
+          "modified": "2025-09-25T06:45:42.216190",
+          "name": "test-fix-iteration-53-sustained-perfection.md",
+          "path": "testing-qa/test-fix-iteration-53-sustained-perfection.md",
+          "size": 4036
+        },
+        {
+          "hash": "f2db3224b68b4ee462829aa9d31e98cf",
+          "modified": "2025-09-25T04:05:08.177274",
           "name": "test-fix-iteration-27-summary.md",
           "path": "testing-qa/test-fix-iteration-27-summary.md",
-          "size": 3337
+          "size": 2050
         },
         {
           "hash": "b6787ebd9369d0646c09862dceca6b4a",
@@ -2233,6 +2457,20 @@
           "size": 1870
         },
         {
+          "hash": "3dd4eb519f011cd7664a6fddb7fc4163",
+          "modified": "2025-09-25T06:17:41.254371",
+          "name": "test-fix-iteration-45-final-summary.md",
+          "path": "testing-qa/test-fix-iteration-45-final-summary.md",
+          "size": 3355
+        },
+        {
+          "hash": "3199fefd41c04ee6f5bb8f5c53a71452",
+          "modified": "2025-09-25T07:49:48.324751",
+          "name": "test-verification-iteration-105-sustained-excellence.md",
+          "path": "testing-qa/test-verification-iteration-105-sustained-excellence.md",
+          "size": 2644
+        },
+        {
           "hash": "1ddd3efd11541b23094d63fd433f713f",
           "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-41-summary.md",
@@ -2245,6 +2483,13 @@
           "name": "iteration-27-test-fixes.md",
           "path": "testing-qa/iteration-27-test-fixes.md",
           "size": 3392
+        },
+        {
+          "hash": "1c210331a8ba57fc347e87c9c551b0dc",
+          "modified": "2025-09-25T06:23:06.480379",
+          "name": "test-fix-iteration-47-final-verification.md",
+          "path": "testing-qa/test-fix-iteration-47-final-verification.md",
+          "size": 4038
         },
         {
           "hash": "d5107cdb6c3eb09a7af4f9cffccc11cf",
@@ -2268,11 +2513,18 @@
           "size": 2070
         },
         {
-          "hash": "76ce670ff5d87a3ea99bb4a31af782e0",
-          "modified": "2025-09-24T13:24:47.178915",
+          "hash": "764c56e9ec9a6077754c85b7210c2f83",
+          "modified": "2025-09-25T07:55:06.199318",
+          "name": "test-verification-iteration-107-continuous-excellence.md",
+          "path": "testing-qa/test-verification-iteration-107-continuous-excellence.md",
+          "size": 2283
+        },
+        {
+          "hash": "c734ff58f635765ceac80de9c1632a6e",
+          "modified": "2025-09-25T01:56:52.938835",
           "name": "test-fix-iteration-5-summary.md",
           "path": "testing-qa/test-fix-iteration-5-summary.md",
-          "size": 1908
+          "size": 2407
         },
         {
           "hash": "90deb8f1f5bfdf3e0135f4cbc1623916",
@@ -2289,11 +2541,25 @@
           "size": 1970
         },
         {
+          "hash": "e35103e5c59244a311c6e37ee044ad1d",
+          "modified": "2025-09-25T02:23:13.866290",
+          "name": "test-verification-iteration-10-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-10-2025-09-25.md",
+          "size": 2361
+        },
+        {
           "hash": "df33ea4bd0faecc33262013fb6626fab",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-34-test-success.md",
           "path": "testing-qa/iteration-34-test-success.md",
           "size": 7709
+        },
+        {
+          "hash": "b994cc6cb905a0712f4859eb3cf84306",
+          "modified": "2025-09-25T07:39:36.128233",
+          "name": "test-fix-iteration-101-summary.md",
+          "path": "testing-qa/test-fix-iteration-101-summary.md",
+          "size": 3073
         },
         {
           "hash": "69613e59e32cab7b170207f60cf09194",
@@ -2324,11 +2590,32 @@
           "size": 1341
         },
         {
+          "hash": "30aad99e498d3b3cc7c994133a2d9087",
+          "modified": "2025-09-25T05:41:22.461923",
+          "name": "test-verification-iteration-39-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-39-2025-09-25.md",
+          "size": 2073
+        },
+        {
+          "hash": "3b067c5a952ac6a79f0ccfb05f3442d8",
+          "modified": "2025-09-25T01:32:14.503977",
+          "name": "test-fix-iteration-1-summary.md",
+          "path": "testing-qa/test-fix-iteration-1-summary.md",
+          "size": 1746
+        },
+        {
           "hash": "447c88d903d4c3991286f74dfb93271a",
           "modified": "2025-09-24T13:24:47.174703",
           "name": "test-fix-iteration-40-summary.md",
           "path": "testing-qa/test-fix-iteration-40-summary.md",
           "size": 4988
+        },
+        {
+          "hash": "9f156be604af825e019e3c63aeb60df3",
+          "modified": "2025-09-25T07:14:15.650342",
+          "name": "test-verification-iteration-96-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-96-2025-09-25.md",
+          "size": 1700
         },
         {
           "hash": "4fa37624f4332546600c07844e9e4f3e",
@@ -2345,11 +2632,25 @@
           "size": 3737
         },
         {
+          "hash": "44930b544cbd59bab489c8d82aeac433",
+          "modified": "2025-09-25T06:29:42.762549",
+          "name": "test-fix-iteration-50-ultimate-success.md",
+          "path": "testing-qa/test-fix-iteration-50-ultimate-success.md",
+          "size": 4232
+        },
+        {
           "hash": "db872c87f0bf5f8deb19a6972d161ae7",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "iteration-35-test-suite-perfect.md",
           "path": "testing-qa/iteration-35-test-suite-perfect.md",
           "size": 6576
+        },
+        {
+          "hash": "426bd7a26478ab8015af7242d26acd43",
+          "modified": "2025-09-25T05:25:53.007879",
+          "name": "test-verification-iteration-37-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-37-2025-09-25.md",
+          "size": 3555
         },
         {
           "hash": "acd8cd8711a40117662be7a69782c21e",
@@ -2373,11 +2674,11 @@
           "size": 6225
         },
         {
-          "hash": "d4e0b25aef07a7748bc51f37d19999a0",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "1d6c4835864893f763b9faa96b84089f",
+          "modified": "2025-09-25T03:39:33.358820",
           "name": "test-fix-iteration-23-summary.md",
           "path": "testing-qa/test-fix-iteration-23-summary.md",
-          "size": 1420
+          "size": 3055
         },
         {
           "hash": "9165d8ab98d858ce9f05910300234a3c",
@@ -2385,6 +2686,20 @@
           "name": "iteration-25-test-fixes.md",
           "path": "testing-qa/iteration-25-test-fixes.md",
           "size": 2267
+        },
+        {
+          "hash": "b0cfc2136febb53a37b1adf5c9b45125",
+          "modified": "2025-09-25T02:19:08.962828",
+          "name": "test-verification-iteration-9-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-9-2025-09-25.md",
+          "size": 2898
+        },
+        {
+          "hash": "6d729e41e4d6914ccbe48952a91e288c",
+          "modified": "2025-09-25T07:45:24.427332",
+          "name": "test-fix-iteration-103-final-confirmation.md",
+          "path": "testing-qa/test-fix-iteration-103-final-confirmation.md",
+          "size": 2793
         },
         {
           "hash": "b81aae68a7f9663ca9d3db5239614fc9",
@@ -2415,11 +2730,11 @@
           "size": 2443
         },
         {
-          "hash": "f78a01dd8d81089cdf2e5b3541a4021c",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "2ff48d867ca1751795fec007b3b2725f",
+          "modified": "2025-09-25T02:55:48.290511",
           "name": "test-fix-iteration-15-summary.md",
           "path": "testing-qa/test-fix-iteration-15-summary.md",
-          "size": 1618
+          "size": 2109
         },
         {
           "hash": "f343500f282c504aa5599b279cbb55a3",
@@ -2427,6 +2742,13 @@
           "name": "test-fix-iteration-48-summary.md",
           "path": "testing-qa/test-fix-iteration-48-summary.md",
           "size": 2505
+        },
+        {
+          "hash": "9a1c62255d0fe8ca9d3ec716290e5e4b",
+          "modified": "2025-09-25T07:57:52.440616",
+          "name": "test-verification-iteration-108-perfect-reliability.md",
+          "path": "testing-qa/test-verification-iteration-108-perfect-reliability.md",
+          "size": 4011
         },
         {
           "hash": "17ef6b22b6be5778e465d84a882d03da",
@@ -2485,11 +2807,39 @@
           "size": 2072
         },
         {
+          "hash": "a8cee7b6d6b89d047787bf78f0063a86",
+          "modified": "2025-09-25T08:03:39.131140",
+          "name": "test-verification-iteration-110-complete-success.md",
+          "path": "testing-qa/test-verification-iteration-110-complete-success.md",
+          "size": 2589
+        },
+        {
+          "hash": "6167854d37f39bf8863bf5df979b2f72",
+          "modified": "2025-09-25T07:18:06.954456",
+          "name": "test-verification-iteration-97-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-97-2025-09-25.md",
+          "size": 2452
+        },
+        {
+          "hash": "b1b842599ad2400724a9d506770ef9a2",
+          "modified": "2025-09-25T07:52:46.955128",
+          "name": "test-verification-iteration-106-enduring-perfection.md",
+          "path": "testing-qa/test-verification-iteration-106-enduring-perfection.md",
+          "size": 3905
+        },
+        {
           "hash": "b36d36fee9e254ae477c7e6386f19494",
           "modified": "2025-09-19T10:21:27.556152",
           "name": "iteration-104-sustained-perfection-continues.md",
           "path": "testing-qa/iteration-104-sustained-perfection-continues.md",
           "size": 4593
+        },
+        {
+          "hash": "5ffdf05551f3c77e14cb5e56a0d9e6e8",
+          "modified": "2025-09-25T06:04:27.610315",
+          "name": "test-fix-iteration-44-final-summary.md",
+          "path": "testing-qa/test-fix-iteration-44-final-summary.md",
+          "size": 3233
         },
         {
           "hash": "82b0f454487489aac0c7a704e018de37",
@@ -2506,11 +2856,32 @@
           "size": 2287
         },
         {
+          "hash": "2f8a76076c68544d93f87f680a2470b8",
+          "modified": "2025-09-25T07:43:02.223260",
+          "name": "test-fix-iteration-102-final-success.md",
+          "path": "testing-qa/test-fix-iteration-102-final-success.md",
+          "size": 3701
+        },
+        {
           "hash": "e276321787d5df7d90fb9cd9bba91d66",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "comprehensive-mcp-tools-test-suite.md",
           "path": "testing-qa/comprehensive-mcp-tools-test-suite.md",
           "size": 9798
+        },
+        {
+          "hash": "5a0a031db764e19c790067b283afbc21",
+          "modified": "2025-09-25T06:32:23.967966",
+          "name": "test-fix-iteration-51-continued-excellence.md",
+          "path": "testing-qa/test-fix-iteration-51-continued-excellence.md",
+          "size": 1871
+        },
+        {
+          "hash": "db85f4530b709f66c18fbf87b4d13faa",
+          "modified": "2025-09-25T06:27:02.964133",
+          "name": "test-fix-iteration-49-final-success-complete.md",
+          "path": "testing-qa/test-fix-iteration-49-final-success-complete.md",
+          "size": 2598
         },
         {
           "hash": "d6736e9a7b24c9cc852315ab6c4a54c4",
@@ -2520,11 +2891,25 @@
           "size": 2642
         },
         {
+          "hash": "3dca4dfa9283f4417c64a02f9bc5c599",
+          "modified": "2025-09-25T02:14:50.194155",
+          "name": "test-verification-iteration-8-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-8-2025-09-25.md",
+          "size": 1639
+        },
+        {
           "hash": "eb4163d8bfa4df30e142389439a5fa6e",
           "modified": "2025-09-24T13:24:47.178915",
           "name": "test-fix-iteration-69-summary.md",
           "path": "testing-qa/test-fix-iteration-69-summary.md",
           "size": 1979
+        },
+        {
+          "hash": "272722fd2e3b818756ba28b4ad3ee292",
+          "modified": "2025-09-25T08:19:03.144181",
+          "name": "test-fix-iteration-112-unit-test-fix.md",
+          "path": "testing-qa/test-fix-iteration-112-unit-test-fix.md",
+          "size": 2890
         },
         {
           "hash": "fc3899273130ad691ef1781a3ca28958",
@@ -2541,11 +2926,18 @@
           "size": 2781
         },
         {
-          "hash": "85b7dee8d5a84ad4b43d38889ff229ae",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "62160ccfea927f02046a09df9fd7279d",
+          "modified": "2025-09-25T06:48:45.185188",
+          "name": "test-fix-iteration-54-enduring-excellence.md",
+          "path": "testing-qa/test-fix-iteration-54-enduring-excellence.md",
+          "size": 2153
+        },
+        {
+          "hash": "10d2bb07137c4e87e52b498be90d3f8d",
+          "modified": "2025-09-25T03:03:53.500279",
           "name": "test-fix-iteration-16-summary.md",
           "path": "testing-qa/test-fix-iteration-16-summary.md",
-          "size": 2142
+          "size": 2415
         },
         {
           "hash": "16b1c6275fc3596e3a795c39ec41a039",
@@ -2555,11 +2947,25 @@
           "size": 5122
         },
         {
+          "hash": "b62a164a078483ca0b307248dc857042",
+          "modified": "2025-09-25T05:46:37.268447",
+          "name": "test-verification-iteration-41-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-41-2025-09-25.md",
+          "size": 2062
+        },
+        {
           "hash": "4dee999968eba2a0bbb0925b312cad3f",
           "modified": "2025-09-24T13:24:47.178915",
           "name": "test-status-2025-09-23.md",
           "path": "testing-qa/test-status-2025-09-23.md",
           "size": 2086
+        },
+        {
+          "hash": "fdc402d70c0eff3ec8ae3487025a7d14",
+          "modified": "2025-09-25T02:05:53.268435",
+          "name": "test-fix-iteration-6-summary.md",
+          "path": "testing-qa/test-fix-iteration-6-summary.md",
+          "size": 2821
         },
         {
           "hash": "a4bfe193d099b146f338221fd4a9c1be",
@@ -2576,11 +2982,25 @@
           "size": 2537
         },
         {
+          "hash": "aafc66de75e6f1e01a5ac5f058d94987",
+          "modified": "2025-09-25T05:44:37.622127",
+          "name": "test-verification-iteration-40-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-40-2025-09-25.md",
+          "size": 1790
+        },
+        {
           "hash": "e0c5a91336d90e5c571824ae642d9923",
           "modified": "2025-09-19T10:21:27.556152",
           "name": "iteration-101-perfect-test-suite-sustained.md",
           "path": "testing-qa/iteration-101-perfect-test-suite-sustained.md",
           "size": 4916
+        },
+        {
+          "hash": "9f6a7dbe7a7a5ea18785bbf73ab1c6f5",
+          "modified": "2025-09-25T04:46:46.702555",
+          "name": "test-verification-iteration-30-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-30-2025-09-25.md",
+          "size": 1870
         },
         {
           "hash": "c72c9368ecfb2053a743dbbe3ef5a6f3",
@@ -2597,18 +3017,46 @@
           "size": 3341
         },
         {
-          "hash": "a03e198c718f89a6fcf5541ea3111612",
-          "modified": "2025-09-24T13:24:47.174703",
-          "name": "test-fix-iteration-20-summary.md",
-          "path": "testing-qa/test-fix-iteration-20-summary.md",
-          "size": 3649
+          "hash": "0061a9c557a2d999709525faf25999fc",
+          "modified": "2025-09-25T08:25:41.100125",
+          "name": "test-verification-iteration-113-perfect-stability-continues.md",
+          "path": "testing-qa/test-verification-iteration-113-perfect-stability-continues.md",
+          "size": 1795
         },
         {
-          "hash": "c629b76c5815011179f09970f2404415",
-          "modified": "2025-09-24T13:24:47.174703",
+          "hash": "79c2a4acdf0b46761ede0557f08eddf3",
+          "modified": "2025-09-25T08:09:30.675795",
+          "name": "test-verification-iteration-111-sustained-perfection.md",
+          "path": "testing-qa/test-verification-iteration-111-sustained-perfection.md",
+          "size": 2045
+        },
+        {
+          "hash": "c540da7d28a939bb026ea6213fdaa6ad",
+          "modified": "2025-09-25T03:17:26.854771",
+          "name": "test-fix-iteration-20-summary.md",
+          "path": "testing-qa/test-fix-iteration-20-summary.md",
+          "size": 1519
+        },
+        {
+          "hash": "30ed89cac3187ba0ba8f1c93b1ccb25a",
+          "modified": "2025-09-25T05:49:38.391028",
+          "name": "test-verification-iteration-43-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-43-2025-09-25.md",
+          "size": 2331
+        },
+        {
+          "hash": "19f46888d5a2168d147f6d5e68e63f91",
+          "modified": "2025-09-25T03:25:15.780654",
           "name": "test-fix-iteration-21-summary.md",
           "path": "testing-qa/test-fix-iteration-21-summary.md",
-          "size": 2267
+          "size": 3208
+        },
+        {
+          "hash": "c280cdfd967356a375d09d73c1f48f88",
+          "modified": "2025-09-25T07:22:45.798645",
+          "name": "test-verification-iteration-98-2025-09-25.md",
+          "path": "testing-qa/test-verification-iteration-98-2025-09-25.md",
+          "size": 2963
         }
       ],
       "path": "testing-qa"
@@ -2627,7 +3075,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 33,
+      "count": 34,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2670,6 +3118,13 @@
           "name": "orchestrator-bypass-analysis.md",
           "path": "troubleshooting-guides/orchestrator-bypass-analysis.md",
           "size": 7086
+        },
+        {
+          "hash": "997e791dec76d600f102900fd2d6d32a",
+          "modified": "2025-09-25T18:36:04.591568",
+          "name": "clean-timestamp-troubleshooting.md",
+          "path": "troubleshooting-guides/clean-timestamp-troubleshooting.md",
+          "size": 22477
         },
         {
           "hash": "8f8d1f8b076f0e86dd2ae9cf2ebfd929",
@@ -2877,7 +3332,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-24T23:37:08.748480",
+  "generated_at": "2025-09-25T18:36:04.659905",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3008,7 +3463,6 @@
     "core-architecture": {
       "files": [
         "Architecture_Technique.md",
-        "PRD.md",
         "README.md",
         "agent-delegation-fix.md",
         "agent-orchestration-architecture.md",
@@ -3017,6 +3471,10 @@
         "claude-hooks-refactoring-architecture.md",
         "context-hierarchy-system.md",
         "database-architecture.md",
+        "database-initialization-enhancement.md",
+        "database-schema-timestamp-alignment-verification.md",
+        "database-session-handling-optimization.md",
+        "database-timestamp-standardization-summary.md",
         "dependency-management-engine-architecture.md",
         "deprecated-agent-mappings.md",
         "design-patterns-in-architecture.md",
@@ -3033,6 +3491,8 @@
         "sub-agent-instructions.md",
         "system-architecture-overview.md",
         "task-versioning-analysis.md",
+        "timestamp-management-architectural-analysis.md",
+        "timestamp-query-optimization-analysis.md",
         "toast-notification-architecture.md"
       ]
     },
@@ -3068,6 +3528,10 @@
         "authentication-testing-patterns.md",
         "automated-agent-workflow-patterns.md",
         "claude-code-integration.md",
+        "clean-timestamp-best-practices.md",
+        "clean-timestamp-developer-training.md",
+        "clean-timestamp-project-handover.md",
+        "clean-timestamp-team-training-sessions.md",
         "complete-agent-workflow-phases.md",
         "controller-overlap-analysis.md",
         "docker-system-guide.md",
@@ -3095,6 +3559,7 @@
         "task-progress-history-implementation.md",
         "test-organization-guide.md",
         "test_creation_guide.md",
+        "timestamp-management-implementation.md",
         "token-management-analysis.md"
       ]
     },
@@ -3171,11 +3636,13 @@
         "index.md",
         "mcp-registration-system.md",
         "mcp-response-optimization-recommendations.md",
+        "monitoring-setup-documentation.md",
         "performance-optimization-guide.md",
         "performance-tuning-guide.md",
         "phase-6-deployment-guide.md",
         "postgresql-configuration-guide.md",
         "production-deployment-guide.md",
+        "production-deployment-plan-clean-timestamp.md",
         "runtime-env-configuration-fix.md"
       ]
     },
@@ -3257,11 +3724,17 @@
         "iteration-35-test-suite-perfect.md",
         "iteration-36-test-suite-milestone.md",
         "mcp-tools-test-report-2025-09-17.md",
+        "test-analysis-iteration-95-batch-execution.md",
+        "test-fix-iteration-1-summary.md",
         "test-fix-iteration-10-summary.md",
+        "test-fix-iteration-101-summary.md",
+        "test-fix-iteration-102-final-success.md",
+        "test-fix-iteration-103-final-confirmation.md",
         "test-fix-iteration-107-final.md",
         "test-fix-iteration-108-summary.md",
         "test-fix-iteration-109-summary.md",
         "test-fix-iteration-11-summary.md",
+        "test-fix-iteration-112-unit-test-fix.md",
         "test-fix-iteration-12-summary.md",
         "test-fix-iteration-13-summary.md",
         "test-fix-iteration-14-summary.md",
@@ -3275,6 +3748,7 @@
         "test-fix-iteration-21-summary.md",
         "test-fix-iteration-22-summary.md",
         "test-fix-iteration-23-summary.md",
+        "test-fix-iteration-24-summary.md",
         "test-fix-iteration-25-summary.md",
         "test-fix-iteration-26-summary.md",
         "test-fix-iteration-27-summary.md",
@@ -3295,23 +3769,34 @@
         "test-fix-iteration-40-summary.md",
         "test-fix-iteration-41-summary.md",
         "test-fix-iteration-42-summary.md",
+        "test-fix-iteration-44-final-summary.md",
         "test-fix-iteration-44-summary.md",
+        "test-fix-iteration-45-final-summary.md",
         "test-fix-iteration-45-summary.md",
+        "test-fix-iteration-46-final-success.md",
         "test-fix-iteration-46-summary.md",
+        "test-fix-iteration-47-final-verification.md",
         "test-fix-iteration-47-summary.md",
+        "test-fix-iteration-48-final-confirmation.md",
         "test-fix-iteration-48-summary.md",
+        "test-fix-iteration-49-final-success-complete.md",
         "test-fix-iteration-49-summary.md",
         "test-fix-iteration-5-summary.md",
         "test-fix-iteration-50-summary.md",
+        "test-fix-iteration-50-ultimate-success.md",
+        "test-fix-iteration-51-continued-excellence.md",
         "test-fix-iteration-51-summary.md",
         "test-fix-iteration-52-summary.md",
         "test-fix-iteration-53-summary.md",
+        "test-fix-iteration-53-sustained-perfection.md",
+        "test-fix-iteration-54-enduring-excellence.md",
         "test-fix-iteration-54-summary.md",
         "test-fix-iteration-55-summary.md",
         "test-fix-iteration-56-summary.md",
         "test-fix-iteration-57-summary.md",
         "test-fix-iteration-58-summary.md",
         "test-fix-iteration-59-summary.md",
+        "test-fix-iteration-6-summary.md",
         "test-fix-iteration-60-summary.md",
         "test-fix-iteration-61-summary.md",
         "test-fix-iteration-62-summary.md",
@@ -3329,6 +3814,40 @@
         "test-status-final-report-2025-09-23.md",
         "test-status-report-2025-09-23.md",
         "test-suite-final-report-2025-09-23.md",
+        "test-verification-iteration-10-2025-09-25.md",
+        "test-verification-iteration-100-2025-09-25.md",
+        "test-verification-iteration-104-success-continues.md",
+        "test-verification-iteration-105-sustained-excellence.md",
+        "test-verification-iteration-106-enduring-perfection.md",
+        "test-verification-iteration-107-continuous-excellence.md",
+        "test-verification-iteration-108-perfect-reliability.md",
+        "test-verification-iteration-109-unbreakable-stability.md",
+        "test-verification-iteration-11-2025-09-25.md",
+        "test-verification-iteration-110-complete-success.md",
+        "test-verification-iteration-111-sustained-perfection.md",
+        "test-verification-iteration-113-perfect-stability-continues.md",
+        "test-verification-iteration-12-2025-09-25.md",
+        "test-verification-iteration-29-2025-09-25.md",
+        "test-verification-iteration-30-2025-09-25.md",
+        "test-verification-iteration-31-2025-09-25.md",
+        "test-verification-iteration-32-2025-09-25.md",
+        "test-verification-iteration-33-2025-09-25.md",
+        "test-verification-iteration-34-2025-09-25.md",
+        "test-verification-iteration-35-2025-09-25.md",
+        "test-verification-iteration-36-2025-09-25.md",
+        "test-verification-iteration-37-2025-09-25.md",
+        "test-verification-iteration-39-2025-09-25.md",
+        "test-verification-iteration-40-2025-09-25.md",
+        "test-verification-iteration-41-2025-09-25.md",
+        "test-verification-iteration-42-2025-09-25.md",
+        "test-verification-iteration-43-2025-09-25.md",
+        "test-verification-iteration-7-2025-09-25.md",
+        "test-verification-iteration-8-2025-09-25.md",
+        "test-verification-iteration-9-2025-09-25.md",
+        "test-verification-iteration-96-2025-09-25.md",
+        "test-verification-iteration-97-2025-09-25.md",
+        "test-verification-iteration-98-2025-09-25.md",
+        "test-verification-iteration-99-2025-09-25.md",
         "testing.md"
       ]
     },
@@ -3341,6 +3860,7 @@
         "FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
         "README.md",
         "TROUBLESHOOTING.md",
+        "clean-timestamp-troubleshooting.md",
         "comprehensive-branch-cascade-deletion-fix.md",
         "frontend-debugging-summary.md",
         "frontend-development-environment-fix.md",
@@ -3376,5 +3896,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 383
+  "total_files": 450
 }

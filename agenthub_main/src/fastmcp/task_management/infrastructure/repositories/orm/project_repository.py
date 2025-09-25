@@ -12,6 +12,7 @@ from sqlalchemy import and_, or_, desc
 from sqlalchemy.orm import joinedload
 
 from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ...database.models import Project, ProjectGitBranch
@@ -27,7 +28,7 @@ from ....application.services.context_field_selector import ContextFieldSelector
 logger = logging.getLogger(__name__)
 
 
-class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
+class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
     """
     Project repository implementation using SQLAlchemy ORM.
     
@@ -105,7 +106,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     # Update existing project
                     existing.name = project.name
                     existing.description = project.description
-                    existing.updated_at = datetime.now(timezone.utc)
+                    existing.touch("project_updated")
                     existing.status = getattr(project, 'status', 'active')
                     existing.metadata = getattr(project, 'metadata', {})
                 else:
@@ -231,8 +232,8 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                 updated = super().update(
                     project.id,
                     name=project.name,
-                    description=project.description,
-                    updated_at=datetime.now(timezone.utc)
+                    description=project.description
+                    # BaseTimestampRepository handles updated_at automatically
                 )
                 
                 if not updated:
@@ -365,7 +366,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     
                     # Unassign the agent
                     branch.assigned_agent_id = None
-                    branch.updated_at = datetime.now(timezone.utc)
+                    branch.touch("agent_unassigned")
                     
                     return {
                         "success": True,
@@ -443,8 +444,8 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
         """Update a project with ORM"""
         try:
             with self.transaction():
-                # Update timestamp
-                updates['updated_at'] = datetime.now(timezone.utc)
+                # BaseTimestampRepository handles timestamps automatically
+                # Removed manual updated_at assignment
                 
                 updated_project = super().update(project_id, **updates)
                 if not updated_project:

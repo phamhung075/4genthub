@@ -169,6 +169,41 @@ mcp__agenthub_http__call_agent("master-orchestrator-agent")
 
 ## 📊 ENTERPRISE TASK MANAGEMENT SYSTEM - YOUR WORK TRACKER
 
+### ⚠️ CRITICAL TASK RULE: NO DUPLICATE TASKS - ALWAYS CHECK EXISTING FIRST!
+
+**ABSOLUTE REQUIREMENT:**
+> **NEVER create a new task if one already exists for the work**
+> **ALWAYS check for existing tasks/subtasks before creating new ones**
+> **CONTINUE working on existing tasks - don't create duplicates**
+> **If task exists but needs different approach, UPDATE it instead of creating new**
+
+### Task Duplication Prevention Workflow:
+```python
+# ✅ CORRECT - Check existing tasks first:
+existing_tasks = mcp__agenthub_http__manage_task(
+    action="list",
+    git_branch_id="branch-uuid"
+)
+
+# Check if relevant task already exists
+for task in existing_tasks:
+    if "authentication" in task.title.lower():
+        # USE EXISTING TASK - DON'T CREATE NEW
+        mcp__agenthub_http__manage_task(
+            action="update",
+            task_id=task.id,
+            status="in_progress",
+            details="Continuing work on existing task"
+        )
+
+# ❌ WRONG - Creating duplicate without checking:
+# Immediately creating new task without checking existing ones
+mcp__agenthub_http__manage_task(
+    action="create",  # DON'T DO THIS WITHOUT CHECKING FIRST!
+    title="Implement authentication"  # Might already exist!
+)
+```
+
 ### WHY `mcp__agenthub_http__manage_task` IS YOUR PROFESSIONAL DUTY
 
 **ENTERPRISE FUNDAMENTAL TRUTH:**
@@ -522,7 +557,7 @@ After: You ARE the master orchestrator with all capabilities
 4. Evaluate Complexity
     ↓
 5A. SIMPLE (< 1% of cases):          5B. COMPLEX (> 99% of cases):
-    → Handle directly with tools        → Create MCP task with full context
+    → Handle directly with tools        → Create MCP task with full context (Or Get exist task on priority, mark in progress)
     → Done                              → Get task_id from response
                                         → Delegate to agent(s) with ID only
                                             ↓
@@ -586,22 +621,56 @@ instructions = response["agent"]["system_prompt"]
 
 ## 🔄 RECEIVING RESULTS FROM SUB-AGENTS
 
+### ⚠️ CRITICAL: VERIFY ALL SUBTASKS BEFORE COMPLETING PARENT TASK
+
+**MANDATORY SUBTASK VERIFICATION WORKFLOW:**
+```python
+# BEFORE marking ANY parent task as complete, MUST verify subtasks:
+subtasks = mcp__agenthub_http__manage_subtask(
+    action="list",
+    task_id=parent_task_id
+)
+
+# Check ALL subtasks are done
+incomplete_subtasks = [st for st in subtasks if st.status != "done"]
+if incomplete_subtasks:
+    # ❌ CANNOT complete parent - subtasks still pending!
+    for subtask in incomplete_subtasks:
+        print(f"Subtask '{subtask.title}' is {subtask.status} - must complete first!")
+    # MUST complete all subtasks before parent
+else:
+    # ✅ All subtasks done - NOW can complete parent
+    mcp__agenthub_http__manage_task(
+        action="complete",
+        task_id=parent_task_id,
+        completion_summary="All subtasks verified complete..."
+    )
+```
+
+**SUBTASK COMPLETION RULES:**
+1. **ALWAYS list subtasks** before marking parent as complete
+2. **NEVER complete parent** if ANY subtask is pending/in_progress
+3. **VERIFY each subtask** has status "done" or "completed"
+4. **UPDATE parent only** after ALL subtasks verified complete
+5. **DOCUMENT in summary** that all subtasks were verified
+
 ### When Sub-Agent Completes Work:
 1. **Agent Returns Result** → You receive completion message with task_id
-2. **Verify Completion** → Check if task objectives fully met
-3. **Quality Review** (if needed):
+2. **Verify Subtask Completion** → Check ALL subtasks are done first
+3. **Verify Parent Objectives** → Check if task objectives fully met
+4. **Quality Review** (if needed):
    - For code: Delegate to `code-reviewer-agent` for quality check
    - For tests: Verify all tests pass
    - For features: Confirm acceptance criteria met
-4. **Decision Point Based on Verification**:
-   - ✅ **Fully Complete & Verified**: Update MCP task status as complete, report to user
-   - 🔄 **Incomplete/Issues Found**: Create new subtask for remaining work
+5. **Decision Point Based on Verification**:
+   - ✅ **Fully Complete & All Subtasks Done**: Update MCP task status as complete, report to user
+   - 🔄 **Incomplete/Subtasks Pending**: Complete remaining subtasks first
    - 🔍 **Needs Review**: Delegate to review agent before finalizing
    - ⚠️ **Bugs/Errors**: Create debug task for `debugger-agent`
-5. **Update Task Status** → Mark MCP task with appropriate status and summary
-6. **Continue or Complete**:
-   - If more work needed: Return to delegation process
-   - If done: Consolidate results and report to user
+6. **Update Task Status** → Mark MCP task with appropriate status and summary
+7. **Continue or Complete**:
+   - If subtasks pending: Complete them first
+   - If all done: Consolidate results and report to user
 
 ### Example Flow:
 ```python

@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
+from .base.base_timestamp_entity import BaseTimestampEntity
 from .task import Task
 from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus
@@ -12,16 +13,18 @@ from ..value_objects.priority import Priority
 
 
 @dataclass
-class GitBranch:
+class GitBranch(BaseTimestampEntity):
     """GitBranch entity representing a git branch with hierarchical task structure"""
-    
-    id: str
-    name: str
-    description: str
-    project_id: str
-    created_at: datetime
+
+    id: str = ""
+    name: str = ""
+    description: str = ""
+    project_id: str = ""
     git_branch_name: Optional[str] = None  # The actual git branch name (e.g., "feature/auth")
-    updated_at: datetime = field(default_factory=datetime.now)
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id) if self.id else "unknown"
     
     # Task hierarchy
     root_tasks: Dict[str, Task] = field(default_factory=dict)  # task_id -> Task
@@ -33,25 +36,31 @@ class GitBranch:
     priority: Priority = field(default_factory=Priority.medium)  # Branch-level priority
     status: TaskStatus = field(default_factory=TaskStatus.todo)    # todo, in_progress, blocked, review, testing, done, cancelled, archived
     archived: bool = False  # Support for archiving branches
+
+    def _validate_entity(self) -> None:
+        """Ensure branch invariants hold."""
+        if not self.id or not self.id.strip():
+            raise ValueError("GitBranch id cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("GitBranch name cannot be empty")
+        if not self.project_id or not self.project_id.strip():
+            raise ValueError("GitBranch project_id cannot be empty")
     
     @classmethod
     def create(cls, name: str, description: str, project_id: str) -> 'GitBranch':
         """Create a new GitBranch with a generated UUID"""
-        now = datetime.now(timezone.utc)
         return cls(
             id=str(uuid.uuid4()),
             name=name,
             description=description,
-            project_id=project_id,
-            created_at=now,
-            updated_at=now
+            project_id=project_id
         )
     
     def add_root_task(self, task: Task) -> None:
         """Add a root-level task to this branch"""
         self.root_tasks[task.id.value] = task
         self.all_tasks[task.id.value] = task
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("root_task_added")
     
     def add_child_task(self, parent_task_id: str, child_task: Task) -> None:
         """Add a child task under a parent task"""
@@ -60,7 +69,7 @@ class GitBranch:
             # Add subtask ID to parent task's subtasks list
             parent.add_subtask(child_task.id.value)
             self.all_tasks[child_task.id.value] = child_task
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("child_task_added")
         else:
             raise ValueError(f"Parent task {parent_task_id} not found in branch")
     
@@ -90,7 +99,7 @@ class GitBranch:
         
         # Remove the task itself
         del self.all_tasks[task_id]
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("task_removed")
         return True
     
     def get_task(self, task_id: str) -> Optional[Task]:
@@ -225,18 +234,18 @@ class GitBranch:
             self.status = TaskStatus.testing()
         else:
             self.status = TaskStatus.todo()
-        
-        self.updated_at = datetime.now(timezone.utc)
+
+        self.touch("status_updated")
     
     def assign_agent(self, agent_id: str) -> None:
         """Assign an agent to this branch"""
         self.assigned_agent_id = agent_id
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_assigned")
     
     def unassign_agent(self) -> None:
         """Remove agent assignment from this branch"""
         self.assigned_agent_id = None
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_unassigned")
     
     def is_assigned_to_agent(self, agent_id: str) -> bool:
         """Check if branch is assigned to specific agent"""

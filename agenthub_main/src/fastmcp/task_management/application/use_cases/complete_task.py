@@ -89,6 +89,7 @@ class CompleteTaskUseCase:
                         else:
                             next_steps_list = [next_recommendations]
                     
+                    completion_time = datetime.now(timezone.utc)
                     context_update = {
                         "progress": {
                             "current_session_summary": completion_summary,
@@ -98,7 +99,7 @@ class CompleteTaskUseCase:
                         },
                         "metadata": {
                             "status": "done",
-                            "last_summary_update": datetime.now(timezone.utc).isoformat()
+                            "last_summary_update": completion_time.isoformat()
                         }
                     }
                     
@@ -117,8 +118,8 @@ class CompleteTaskUseCase:
                 except Exception as e:
                     logging.getLogger(__name__).warning(f"Could not update context for already completed task {task_id}: {e}")
             
-            # Save the updated task (with completion summary)
-            task.updated_at = datetime.now(timezone.utc)
+            # Save the updated task (with completion summary) - use entity's touch() method for clean timestamp handling
+            task.touch("task_completed_with_summary")
             self._task_repository.save(task)
             
             return {
@@ -288,28 +289,39 @@ class CompleteTaskUseCase:
                 subtasks = self._subtask_repository.find_by_parent_task_id(task.id)
                 if subtasks:
                     incomplete_subtasks = [
-                        subtask for subtask in subtasks 
+                        subtask for subtask in subtasks
                         if not subtask.is_completed
                     ]
-                    
+
                     if incomplete_subtasks:
                         incomplete_count = len(incomplete_subtasks)
                         total_count = len(subtasks)
-                        incomplete_titles = [st.title for st in incomplete_subtasks[:3]]  # Show first 3
-                        
-                        error_msg = f"Cannot complete task: {incomplete_count} of {total_count} subtasks are incomplete."
-                        if incomplete_titles:
-                            if len(incomplete_titles) < incomplete_count:
-                                error_msg += f" Incomplete subtasks include: {', '.join(incomplete_titles)}, and {incomplete_count - len(incomplete_titles)} more."
-                            else:
-                                error_msg += f" Incomplete subtasks: {', '.join(incomplete_titles)}."
-                        error_msg += " Complete all subtasks first."
-                        
+
+                        # Create detailed incomplete subtask information
+                        incomplete_subtask_details = []
+                        for subtask in incomplete_subtasks:
+                            incomplete_subtask_details.append({
+                                "id": str(subtask.id.value if hasattr(subtask.id, 'value') else subtask.id),
+                                "title": subtask.title,
+                                "status": str(subtask.status.value if hasattr(subtask.status, 'value') else subtask.status)
+                            })
+
+                        error_msg = f"Cannot complete task: {incomplete_count} of {total_count} subtasks are not done"
+
                         return {
                             "success": False,
                             "task_id": str(task_id),
                             "message": error_msg,
-                            "status": str(task.status)
+                            "status": str(task.status),
+                            "error": {
+                                "message": error_msg,
+                                "code": "SUBTASKS_NOT_COMPLETE",
+                                "details": {
+                                    "incomplete_subtasks": incomplete_subtask_details,
+                                    "incomplete_count": incomplete_count,
+                                    "total_count": total_count
+                                }
+                            }
                         }
             
             # Get context timestamp to validate context is newer than task
@@ -371,8 +383,8 @@ class CompleteTaskUseCase:
                     old_status = task.status
                     task.status = TaskStatus.done()
                     task._completion_summary = completion_summary
-                    # Use the datetime that was already imported at the top of the file
-                    task.updated_at = datetime.now(timezone.utc)
+                    # Use entity's touch() method for clean timestamp handling
+                    task.touch("task_completed_manually")
                     # Raise domain event
                     task._events.append(TaskUpdated(
                         task_id=task.id,
@@ -445,12 +457,26 @@ class CompleteTaskUseCase:
                 "hint": "Use the 'complete_task_with_context' action or provide 'completion_summary' parameter"
             }
         except TaskCompletionError as e:
-            return {
+            response = {
                 "success": False,
                 "task_id": str(task_id),
                 "message": str(e),
                 "status": str(task.status)
             }
+
+            # Add detailed error information if incomplete subtasks data is available
+            if hasattr(e, 'incomplete_subtasks') and e.incomplete_subtasks:
+                response["error"] = {
+                    "message": str(e),
+                    "code": e.error_code or "SUBTASKS_NOT_COMPLETE",
+                    "details": {
+                        "incomplete_subtasks": e.incomplete_subtasks,
+                        "incomplete_count": len(e.incomplete_subtasks),
+                        "total_count": e.context.get('total_count', len(e.incomplete_subtasks)) if hasattr(e, 'context') else len(e.incomplete_subtasks)
+                    }
+                }
+
+            return response
         except ValueError as e:  # DISABLED - Let inner try-except handle context validation
             # The inner try-except at line 295-321 handles context validation errors
             # If we get here, it's a different ValueError that we should re-raise

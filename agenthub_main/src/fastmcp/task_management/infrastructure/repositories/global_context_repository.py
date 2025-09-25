@@ -164,10 +164,8 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 nested_structure=nested_structure_dict,
                 # Unified context API compatibility - store complete data
                 unified_context_data=entity.global_settings or {},
-                # Required fields
-                user_id=self.user_id,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                # Required fields (timestamps managed by BaseTimestampEntity/SQLAlchemy)
+                user_id=self.user_id
             )
             
             logger.info(f"Creating global context with nested structure for user {self.user_id}")
@@ -310,7 +308,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             # Update unified context API data field
             db_model.unified_context_data = entity.global_settings or {}
 
-            db_model.updated_at = datetime.now(timezone.utc)
+            # Timestamps updated automatically by BaseTimestampEntity/ORM triggers
             
             # Log access for audit
             self.log_access("update", "global_context", context_id)

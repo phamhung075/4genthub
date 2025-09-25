@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from enum import Enum
 
+from fastmcp.task_management.domain.entities.base.base_timestamp_entity import BaseTimestampEntity
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,14 +28,14 @@ class UserRole(str, Enum):
 
 
 @dataclass
-class User:
+class User(BaseTimestampEntity):
     """User domain entity with authentication business logic"""
     
-    # Required fields
-    email: str
-    username: str
-    password_hash: str  # Never store plain passwords
-    
+    # Required fields with default values to fix dataclass ordering
+    email: str = ""
+    username: str = ""
+    password_hash: str = ""  # Never store plain passwords
+
     # Optional fields
     id: Optional[str] = None
     full_name: Optional[str] = None
@@ -56,9 +58,7 @@ class User:
     refresh_token_family: Optional[str] = None
     refresh_token_version: int = 0
     
-    # Metadata
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    # Metadata (timestamps inherited from BaseTimestampEntity)
     created_by: Optional[str] = None
     
     # Project associations
@@ -70,22 +70,23 @@ class User:
     
     def __post_init__(self):
         """Initialize timestamps and validate data"""
-        if not self.created_at:
-            self.created_at = datetime.now(timezone.utc)
-        if not self.updated_at:
-            self.updated_at = datetime.now(timezone.utc)
-        
-        # Validate email format (basic validation)
-        if not self._is_valid_email(self.email):
-            raise ValueError(f"Invalid email format: {self.email}")
-        
-        # Ensure username is not empty
-        if not self.username or not self.username.strip():
-            raise ValueError("Username cannot be empty")
+        # Initialize base timestamp entity first
+        super().__post_init__()
+
+    def _get_entity_id(self) -> str:
+        """Get entity ID for BaseTimestampEntity"""
+        return str(self.id) if self.id else f"user:{self.username}"
     
     def _is_valid_email(self, email: str) -> bool:
         """Basic email validation"""
         return "@" in email and "." in email.split("@")[1] if "@" in email else False
+
+    def _validate_entity(self) -> None:
+        """Ensure user invariants hold."""
+        if not self._is_valid_email(self.email):
+            raise ValueError(f"Invalid email format: {self.email}")
+        if not self.username or not self.username.strip():
+            raise ValueError("Username cannot be empty")
     
     def is_active(self) -> bool:
         """Check if user account is active and can login"""
@@ -99,7 +100,8 @@ class User:
         """Check if account is temporarily locked"""
         if not self.locked_until:
             return False
-        return datetime.now(timezone.utc) < self.locked_until
+        current_time = datetime.now(timezone.utc)
+        return current_time < self.locked_until
     
     def can_login(self) -> bool:
         """Check if user can attempt login"""
@@ -108,51 +110,57 @@ class User:
     def record_failed_login(self):
         """Record a failed login attempt"""
         self.failed_login_attempts += 1
-        self.updated_at = datetime.now(timezone.utc)
-        
+        self.touch("failed_login_recorded")
+
         # Lock account after 5 failed attempts
         if self.failed_login_attempts >= 5:
             from datetime import timedelta
-            self.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
+            current_time = datetime.now(timezone.utc)
+            self.locked_until = current_time + timedelta(minutes=30)
             logger.warning(f"Account locked for user {self.username} due to failed login attempts")
     
     def record_successful_login(self):
         """Record a successful login"""
         self.failed_login_attempts = 0
         self.locked_until = None
-        self.last_login_at = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        self.last_login_at = current_time
+        self.touch("login_successful")
     
     def verify_email(self):
         """Mark email as verified"""
         self.email_verified = True
-        self.email_verified_at = datetime.now(timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        self.email_verified_at = current_time
         if self.status == UserStatus.PENDING_VERIFICATION:
             self.status = UserStatus.ACTIVE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("email_verified")
     
     def initiate_password_reset(self, token: str, expires_in_hours: int = 24):
         """Initiate password reset process"""
         from datetime import timedelta
         self.password_reset_token = token
-        self.password_reset_expires = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
-        self.updated_at = datetime.now(timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        self.password_reset_expires = current_time + timedelta(hours=expires_in_hours)
+        self.touch("password_reset_initiated")
     
     def complete_password_reset(self, new_password_hash: str):
         """Complete password reset"""
         self.password_hash = new_password_hash
         self.password_reset_token = None
         self.password_reset_expires = None
-        self.password_changed_at = datetime.now(timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        self.password_changed_at = current_time
         self.refresh_token_version += 1  # Invalidate all existing refresh tokens
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("password_reset_completed")
     
     def change_password(self, new_password_hash: str):
         """Change user password"""
         self.password_hash = new_password_hash
-        self.password_changed_at = datetime.now(timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        self.password_changed_at = current_time
         self.refresh_token_version += 1  # Invalidate all existing refresh tokens
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("password_changed")
     
     def has_role(self, role: UserRole) -> bool:
         """Check if user has a specific role"""
@@ -162,28 +170,28 @@ class User:
         """Add a role to the user"""
         if role not in self.roles:
             self.roles.append(role)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("role_added")
     
     def remove_role(self, role: UserRole):
         """Remove a role from the user"""
         if role in self.roles:
             self.roles.remove(role)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("role_removed")
     
     def suspend(self):
         """Suspend user account"""
         self.status = UserStatus.SUSPENDED
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("account_suspended")
     
     def activate(self):
         """Activate user account"""
         self.status = UserStatus.ACTIVE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("account_activated")
     
     def deactivate(self):
         """Deactivate user account"""
         self.status = UserStatus.INACTIVE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("account_deactivated")
     
     def to_dict(self) -> dict:
         """Convert to dictionary (excluding sensitive data)"""

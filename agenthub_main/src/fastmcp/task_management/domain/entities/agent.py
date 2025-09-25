@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
+from .base.base_timestamp_entity import BaseTimestampEntity
+
 
 class AgentStatus(Enum):
     """Agent status enumeration"""
@@ -29,15 +31,25 @@ class AgentCapability(Enum):
 
 
 @dataclass
-class Agent:
+class Agent(BaseTimestampEntity):
     """Agent entity representing an AI agent that can work on tasks"""
-    
-    id: str
-    name: str
+
+    # Required fields must have defaults since parent has defaults
+    id: str = ""
+    name: str = ""
     description: str = ""
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id) if self.id else "unknown"
+
+    def _validate_entity(self) -> None:
+        """Validate entity business rules."""
+        if not self.id:
+            raise ValueError("Agent must have an ID")
+        if not self.name:
+            raise ValueError("Agent must have a name")
+
     # Agent capabilities and preferences
     capabilities: Set[AgentCapability] = field(default_factory=set)
     specializations: List[str] = field(default_factory=list)  # More specific specializations
@@ -65,21 +77,25 @@ class Agent:
     active_tasks: Set[str] = field(default_factory=set)
     
     def __post_init__(self):
-        """Set default values after initialization"""
-        if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
-        if self.updated_at is None:
-            self.updated_at = datetime.now(timezone.utc)
+        """Initialize entity - timestamps handled by BaseTimestampEntity"""
+        super().__post_init__()
+
+    def _validate_entity(self) -> None:
+        """Ensure agent core fields are present."""
+        if not self.id or not str(self.id).strip():
+            raise ValueError("Agent id cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("Agent name cannot be empty")
     
     def add_capability(self, capability: AgentCapability) -> None:
         """Add a capability to the agent"""
         self.capabilities.add(capability)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("capability_added")
     
     def remove_capability(self, capability: AgentCapability) -> None:
         """Remove a capability from the agent"""
         self.capabilities.discard(capability)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("capability_removed")
     
     def has_capability(self, capability: AgentCapability) -> bool:
         """Check if agent has a specific capability"""
@@ -121,12 +137,12 @@ class Agent:
     def assign_to_project(self, project_id: str) -> None:
         """Assign agent to a project"""
         self.assigned_projects.add(project_id)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("project_assignment_added")
     
     def assign_to_tree(self, git_branch_name: str) -> None:
         """Assign agent to a task tree"""
         self.assigned_trees.add(git_branch_name)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("tree_assignment_added")
     
     def start_task(self, task_id: str) -> None:
         """Start working on a task"""
@@ -138,8 +154,8 @@ class Agent:
         
         if self.current_workload >= self.max_concurrent_tasks:
             self.status = AgentStatus.BUSY
-        
-        self.updated_at = datetime.now(timezone.utc)
+
+        self.touch("task_started")
     
     def complete_task(self, task_id: str, success: bool = True) -> None:
         """Complete a task and update metrics"""
@@ -160,13 +176,13 @@ class Agent:
         # Update status if no longer busy
         if self.current_workload < self.max_concurrent_tasks and self.status == AgentStatus.BUSY:
             self.status = AgentStatus.AVAILABLE
-        
-        self.updated_at = datetime.now(timezone.utc)
+
+        self.touch("task_completed")
     
     def pause_work(self) -> None:
         """Pause agent work"""
         self.status = AgentStatus.PAUSED
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_paused")
     
     def resume_work(self) -> None:
         """Resume agent work"""
@@ -174,17 +190,17 @@ class Agent:
             self.status = AgentStatus.BUSY
         else:
             self.status = AgentStatus.AVAILABLE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_resumed")
     
     def go_offline(self) -> None:
         """Set agent offline"""
         self.status = AgentStatus.OFFLINE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_offline")
     
     def go_online(self) -> None:
         """Set agent online and available"""
         self.status = AgentStatus.AVAILABLE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_online")
     
     def get_workload_percentage(self) -> float:
         """Get current workload as percentage of capacity"""
@@ -269,7 +285,6 @@ class Agent:
             id=agent_id,
             name=name,
             description=description,
-            created_at=datetime.now(timezone.utc),
             capabilities=set(capabilities or []),
             specializations=specializations or [],
             preferred_languages=preferred_languages or []

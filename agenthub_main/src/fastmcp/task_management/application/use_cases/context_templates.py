@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ...domain.models.unified_context import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
@@ -62,11 +62,16 @@ class ContextTemplate:
     # Template metadata (optional fields)
     version: str = "1.0.0"
     tags: List[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: Optional[datetime] = None  # Template metadata - will be set when template is registered
     
     # Usage statistics
     usage_count: int = 0
     last_used_at: Optional[datetime] = None
+
+    def __post_init__(self):
+        """Initialize template metadata timestamps"""
+        if self.created_at is None:
+            self.created_at = datetime.now(timezone.utc)
 
 
 class TemplateRegistry:
@@ -159,7 +164,8 @@ class TemplateRegistry:
                     required=False
                 )
             ],
-            tags=["frontend", "react", "typescript", "spa"]
+            tags=["frontend", "react", "typescript", "spa"],
+            author="system"
         ))
         
         # API Service Template
@@ -244,7 +250,8 @@ class TemplateRegistry:
                     required=False
                 )
             ],
-            tags=["backend", "api", "python", "fastapi"]
+            tags=["backend", "api", "python", "fastapi"],
+            author="system"
         ))
         
         # Machine Learning Model Template
@@ -352,7 +359,8 @@ class TemplateRegistry:
                     required=False
                 )
             ],
-            tags=["ml", "ai", "pytorch", "training"]
+            tags=["ml", "ai", "pytorch", "training"],
+            author="system"
         ))
         
         # Task Template for Feature Implementation
@@ -447,7 +455,8 @@ class TemplateRegistry:
                     required=False
                 )
             ],
-            tags=["task", "feature", "planning"]
+            tags=["task", "feature", "planning"],
+            author="system"
         ))
     
     def register(self, template: ContextTemplate) -> None:
@@ -577,11 +586,12 @@ class ContextTemplateService:
         )
         
         # Add template metadata
+        applied_at = datetime.now(timezone.utc)
         context_data['_template'] = {
             'id': template.id,
             'name': template.name,
             'version': template.version,
-            'applied_at': datetime.now(timezone.utc).isoformat()
+            'applied_at': applied_at.isoformat()  # Template application metadata
         }
         
         # Create context from template
@@ -594,9 +604,10 @@ class ContextTemplateService:
             git_branch_id=git_branch_id
         )
         
-        # Update template usage statistics
+        # Update template usage statistics - metadata not entity timestamp
+        current_time = datetime.now(timezone.utc)
         template.usage_count += 1
-        template.last_used_at = datetime.now(timezone.utc)
+        template.last_used_at = current_time
         
         return result
     
@@ -615,8 +626,8 @@ class ContextTemplateService:
             # Get value (use provided or default)
             value = variables.get(var.name, var.default_value)
             
-            # Validate required variables
-            if var.required and var.name not in variables:
+            # Validate required variables (only if no default value)
+            if var.required and var.name not in variables and var.default_value is None:
                 raise ValueError(f"Required variable not provided: {var.name}")
             
             # Replace placeholder

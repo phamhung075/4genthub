@@ -88,12 +88,16 @@ class TestGitBranchApplicationFacade:
             # Mock asyncio.get_running_loop to raise RuntimeError (no event loop)
             with patch('asyncio.get_running_loop', side_effect=RuntimeError):
                 with patch('asyncio.run', return_value=expected_result) as mock_run:
-                    result = facade.create_git_branch(
-                        "test-project", "feature-branch", "Feature description"
-                    )
-                    
-                    assert result == expected_result
-                    mock_run.assert_called_once()
+                    # Mock the WebSocket notification service to prevent database access
+                    with patch('fastmcp.task_management.application.facades.git_branch_application_facade.WebSocketNotificationService.sync_broadcast_branch_event') as mock_websocket:
+                        result = facade.create_git_branch(
+                            "test-project", "feature-branch", "Feature description"
+                        )
+                        
+                        assert result == expected_result
+                        mock_run.assert_called_once()
+                        # Verify WebSocket was called
+                        mock_websocket.assert_called_once()
 
     def test_create_git_branch_sync_in_event_loop(self, facade):
         """Test create_git_branch when already in event loop."""
@@ -129,11 +133,13 @@ class TestGitBranchApplicationFacade:
                     
                     mock_thread.start.side_effect = simulate_thread_run
                     
-                    result = facade.create_git_branch(
-                        "test-project", "feature-branch", "Feature description"
-                    )
-                    
-                    assert result == expected_result
+                    # Mock the WebSocket notification service to prevent database access
+                    with patch('fastmcp.task_management.application.facades.git_branch_application_facade.WebSocketNotificationService.sync_broadcast_branch_event') as mock_websocket:
+                        result = facade.create_git_branch(
+                            "test-project", "feature-branch", "Feature description"
+                        )
+                        
+                        assert result == expected_result
 
     def test_create_git_branch_sync_exception(self, facade):
         """Test create_git_branch handling exceptions."""
@@ -154,15 +160,24 @@ class TestGitBranchApplicationFacade:
 
     def test_update_git_branch(self, facade):
         """Test update_git_branch method."""
-        result = facade.update_git_branch(
-            "branch-id-123",
-            git_branch_name="updated-name",
-            git_branch_description="updated description"
-        )
-        
-        assert result["success"] is True
-        assert result["git_branch_id"] == "branch-id-123"
-        assert "updated successfully" in result["message"]
+        # Mock the WebSocket notification service to prevent database access
+        # We need to mock the __init__ method to prevent database initialization
+        with patch('fastmcp.task_management.application.facades.git_branch_application_facade.WebSocketNotificationService') as MockWebSocketService:
+            # Create a mock instance
+            mock_websocket_instance = MagicMock()
+            mock_websocket_instance.sync_broadcast_branch_event = MagicMock()
+            # Make the class return our mock instance when instantiated
+            MockWebSocketService.return_value = mock_websocket_instance
+            
+            result = facade.update_git_branch(
+                "branch-id-123",
+                git_branch_name="updated-name",
+                git_branch_description="updated description"
+            )
+            
+            assert result["success"] is True
+            assert result["git_branch_id"] == "branch-id-123"
+            assert "updated successfully" in result["message"]
 
     @pytest.mark.asyncio
     async def test_find_git_branch_by_id_in_memory(self, facade):

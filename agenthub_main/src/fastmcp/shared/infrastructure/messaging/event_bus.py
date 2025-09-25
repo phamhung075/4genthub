@@ -8,7 +8,7 @@ import asyncio
 import logging
 from typing import Dict, List, Type, Callable, Any, Optional, Set, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import uuid
 import inspect
@@ -28,7 +28,7 @@ class EventPriority(Enum):
 class EventMetadata:
     """Metadata for published events"""
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     source: Optional[str] = None
     user_id: Optional[str] = None
     correlation_id: Optional[str] = None

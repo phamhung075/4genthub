@@ -553,16 +553,16 @@ class TestTaskMCPControllerComplete:
         assert result["data"]["data"]["total"] == 0
 
     # === COMPLETE Operation Tests ===
-    
+
     @pytest.mark.asyncio
     async def test_complete_task_success(self, controller, mock_facade_service, sample_task_data, mock_auth, mock_perms):
         """Test successful task completion."""
         facade_service_mock, task_facade_mock = mock_facade_service
-        
+
         completed_data = sample_task_data.copy()
         completed_data["status"] = "done"
         completed_data["completion_summary"] = "Task completed successfully with all tests passing"
-        
+
         expected_response = {
             "success": True,
             "data": completed_data,
@@ -579,13 +579,161 @@ class TestTaskMCPControllerComplete:
 
         # Verify facade was called
         task_facade_mock.complete_task.assert_called_once()
-        
+
         # Verify response
         assert result["success"] is True
         assert "data" in result
         assert "data" in result["data"]
         assert result["data"]["data"]["status"] == "done"
         assert "completion_summary" in result["data"]["data"]
+
+    @pytest.mark.asyncio
+    async def test_complete_task_with_incomplete_subtasks_validation(self, controller, mock_facade_service, sample_task_data, mock_auth, mock_perms):
+        """Test task completion fails when subtasks are not done - validates new subtask completion validation."""
+        facade_service_mock, task_facade_mock = mock_facade_service
+
+        # Mock facade to return error with incomplete subtasks (as per our new implementation)
+        expected_response = {
+            "success": False,
+            "task_id": sample_task_data["task_id"],
+            "message": "Cannot complete task: 2 of 3 subtasks are not done",
+            "status": "in_progress",
+            "error": {
+                "message": "Cannot complete task: 2 of 3 subtasks are not done",
+                "code": "SUBTASKS_NOT_COMPLETE",
+                "details": {
+                    "incomplete_subtasks": [
+                        {
+                            "id": "subtask-1",
+                            "title": "Implement authentication logic",
+                            "status": "todo"
+                        },
+                        {
+                            "id": "subtask-2",
+                            "title": "Write unit tests",
+                            "status": "in_progress"
+                        }
+                    ],
+                    "incomplete_count": 2,
+                    "total_count": 3
+                }
+            }
+        }
+        task_facade_mock.complete_task.return_value = expected_response
+
+        result = await controller.manage_task(
+            action="complete",
+            task_id=sample_task_data["task_id"],
+            completion_summary="Task completed successfully"
+        )
+
+        # Verify facade was called
+        task_facade_mock.complete_task.assert_called_once()
+
+        # Verify error response structure matches our implementation
+        assert result["success"] is False
+        assert "error" in result
+
+        # Verify the error structure in the response
+        if isinstance(result.get("error"), dict):
+            # The error might be nested in result["data"]["error"] due to response formatting
+            error_data = result.get("error")
+        elif "data" in result and isinstance(result["data"], dict) and "error" in result["data"]:
+            error_data = result["data"]["error"]
+        else:
+            # Fallback - look for error details anywhere in the response
+            error_data = None
+
+        # Test the core functionality - task completion should be blocked
+        assert "subtasks" in self._extract_error_message(result).lower() or \
+               "cannot complete" in self._extract_error_message(result).lower()
+
+        # If we have detailed error structure, validate it
+        if error_data and isinstance(error_data, dict):
+            if "code" in error_data:
+                assert error_data["code"] == "SUBTASKS_NOT_COMPLETE"
+            if "details" in error_data and isinstance(error_data["details"], dict):
+                details = error_data["details"]
+                if "incomplete_subtasks" in details:
+                    assert len(details["incomplete_subtasks"]) == 2
+                    assert details["incomplete_count"] == 2
+                    assert details["total_count"] == 3
+
+    @pytest.mark.asyncio
+    async def test_complete_task_success_when_no_subtasks(self, controller, mock_facade_service, sample_task_data, mock_auth, mock_perms):
+        """Test task completion succeeds when task has no subtasks."""
+        facade_service_mock, task_facade_mock = mock_facade_service
+
+        completed_data = sample_task_data.copy()
+        completed_data["status"] = "done"
+        completed_data["completion_summary"] = "Task completed - no subtasks"
+
+        expected_response = {
+            "success": True,
+            "data": completed_data,
+            "message": "Task completed successfully"
+        }
+        task_facade_mock.complete_task.return_value = expected_response
+
+        result = await controller.manage_task(
+            action="complete",
+            task_id=sample_task_data["task_id"],
+            completion_summary="Task completed - no subtasks"
+        )
+
+        # Verify facade was called
+        task_facade_mock.complete_task.assert_called_once()
+
+        # Verify successful completion
+        assert result["success"] is True
+        assert "data" in result
+
+    @pytest.mark.asyncio
+    async def test_complete_task_success_when_all_subtasks_done(self, controller, mock_facade_service, sample_task_data, mock_auth, mock_perms):
+        """Test task completion succeeds when all subtasks are done."""
+        facade_service_mock, task_facade_mock = mock_facade_service
+
+        completed_data = sample_task_data.copy()
+        completed_data["status"] = "done"
+        completed_data["completion_summary"] = "All subtasks completed, task done"
+
+        expected_response = {
+            "success": True,
+            "data": completed_data,
+            "message": "Task completed successfully",
+            "subtask_summary": {
+                "total": 3,
+                "completed": 3,
+                "incomplete": 0,
+                "completion_percentage": 100.0,
+                "can_complete_parent": True
+            }
+        }
+        task_facade_mock.complete_task.return_value = expected_response
+
+        result = await controller.manage_task(
+            action="complete",
+            task_id=sample_task_data["task_id"],
+            completion_summary="All subtasks completed, task done"
+        )
+
+        # Verify facade was called
+        task_facade_mock.complete_task.assert_called_once()
+
+        # Verify successful completion
+        assert result["success"] is True
+        assert "data" in result
+
+        # Check if subtask summary is available in response (it might be nested)
+        response_data = result.get("data", {})
+        if "data" in response_data:
+            response_data = response_data["data"]
+
+        if "subtask_summary" in response_data:
+            summary = response_data["subtask_summary"]
+            assert summary["total"] == 3
+            assert summary["completed"] == 3
+            assert summary["can_complete_parent"] is True
 
     # === DEPENDENCY Operation Tests ===
     

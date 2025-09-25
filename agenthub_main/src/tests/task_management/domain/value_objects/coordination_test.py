@@ -1,7 +1,7 @@
 """Test coordination value objects"""
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 import uuid
 

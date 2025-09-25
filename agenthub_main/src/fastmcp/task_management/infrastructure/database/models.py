@@ -5,7 +5,7 @@ This module defines all database models using SQLAlchemy ORM,
 supporting both SQLite and PostgreSQL databases.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from sqlalchemy import (
     Column, String, Text, DateTime, Integer, Boolean, ForeignKey,
@@ -18,12 +18,18 @@ from sqlalchemy.sql import func
 from .database_config import Base
 from .uuid_column_type import UnifiedUUID, create_uuid_column
 from ...domain.enums.progress_enums import ProgressState
+# Import clean timestamp infrastructure
+from .timestamp_events import setup_timestamp_events
 
 # User-scoped global context approach implemented
 # Each user gets their own global context with unique UUIDs
 
 # Global context singleton UUID (used as a reference ID)
 GLOBAL_SINGLETON_UUID = "00000000-0000-0000-0000-000000000001"
+
+# Initialize clean timestamp event handlers for all models
+# This ensures automatic timestamp management for all entities
+setup_timestamp_events()
 
 
 class APIToken(Base):
@@ -35,7 +41,7 @@ class APIToken(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     token_hash: Mapped[str] = mapped_column(String, nullable=False)  # Store hashed token
     scopes: Mapped[List[str]] = mapped_column(JSON, default=list)  # List of permission scopes
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -45,36 +51,63 @@ class APIToken(Base):
 
 
 class Project(Base):
-    """Project model - Core organizational structure"""
+    """Project model - Core organizational structure
+
+    Integrates with clean timestamp management system:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - UTC timezone enforcement handled by SQLAlchemy event handlers
+    - No manual timestamp updates required in application code
+    """
     __tablename__ = "projects"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # No default - authentication required
     status: Mapped[str] = mapped_column(String, default="active")
     model_metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     
     # Relationships
     git_branchs: Mapped[List["ProjectGitBranch"]] = relationship("ProjectGitBranch", back_populates="project", cascade="all, delete-orphan")
-    
+
     __table_args__ = (
         UniqueConstraint('id', 'user_id', name='uq_project_user'),
     )
 
+    def touch(self, reason: str = "project_updated") -> None:
+        """Update the project's timestamp (compatible with BaseTimestampEntity pattern).
+
+        This provides compatibility with clean timestamp patterns.
+        The updated_at field will be automatically set by SQLAlchemy event handlers.
+
+        Args:
+            reason: Business reason for the update (for logging)
+        """
+        # The actual timestamp update is handled by timestamp_events.py
+        # This method exists for API compatibility with BaseTimestampEntity
+        pass
+
 
 class ProjectGitBranch(Base):
-    """Git branches (task trees) - Project workspaces"""
+    """Git branches (task trees) - Project workspaces
+
+    Integrates with clean timestamp management system:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - UTC timezone enforcement handled by SQLAlchemy event handlers
+    - Consistent timestamp behavior across all database operations
+    """
     __tablename__ = "project_git_branchs"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     project_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
     assigned_agent_id: Mapped[Optional[str]] = mapped_column(String)
     agent_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)  # Fixed: Using UnifiedUUID for cross-database compatibility
     priority: Mapped[str] = mapped_column(String, default="medium")
@@ -88,16 +121,36 @@ class ProjectGitBranch(Base):
     project: Mapped[Project] = relationship("Project", back_populates="git_branchs")
     tasks: Mapped[List["Task"]] = relationship("Task", back_populates="git_branch", cascade="all, delete-orphan")
     branch_context: Mapped[Optional["BranchContext"]] = relationship("BranchContext", back_populates="git_branch", uselist=False)
-    
+
     __table_args__ = (
         UniqueConstraint('id', 'project_id', name='uq_branch_project'),
     )
 
+    def touch(self, reason: str = "branch_updated") -> None:
+        """Update the branch's timestamp (compatible with BaseTimestampEntity pattern).
+
+        This provides compatibility with clean timestamp patterns.
+        The updated_at field will be automatically set by SQLAlchemy event handlers.
+
+        Args:
+            reason: Business reason for the update (for logging)
+        """
+        # The actual timestamp update is handled by timestamp_events.py
+        # This method exists for API compatibility with BaseTimestampEntity
+        pass
+
 
 class Task(Base):
-    """Main tasks table"""
+    """Main tasks table
+
+    Fully integrated with clean timestamp management:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - completed_at handled manually for business logic (set when status='done')
+    - All timestamps enforced as UTC through event handlers
+    - No manual timestamp manipulation needed in repositories or services
+    """
     __tablename__ = "tasks"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -108,9 +161,11 @@ class Task(Base):
     progress_count: Mapped[int] = mapped_column(Integer, default=0)
     estimated_effort: Mapped[str] = mapped_column(String, default="2 hours", nullable=False)
     due_date: Mapped[Optional[str]] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)  # Added for schema validation
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Business timestamp - manually managed for task completion logic
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)  # Set when status='done'
     completion_summary: Mapped[str] = mapped_column(Text, default="")  # Added for schema validation
     testing_notes: Mapped[str] = mapped_column(Text, default="")  # Added for schema validation
     context_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)
@@ -143,11 +198,31 @@ class Task(Base):
         Index('idx_task_created', 'created_at'),
     )
 
+    def touch(self, reason: str = "task_updated") -> None:
+        """Update the task's timestamp (compatible with BaseTimestampEntity pattern).
+
+        This provides compatibility with clean timestamp patterns.
+        The updated_at field will be automatically set by SQLAlchemy event handlers.
+
+        Args:
+            reason: Business reason for the update (for logging)
+        """
+        # The actual timestamp update is handled by timestamp_events.py
+        # This method exists for API compatibility with BaseTimestampEntity
+        pass
+
 
 class Subtask(Base):
-    """Subtasks table"""
+    """Subtasks table
+
+    Fully integrated with clean timestamp management:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - completed_at handled manually for business logic (set when status='done')
+    - Consistent timestamp behavior with parent Task entities
+    - UTC timezone enforcement through event handlers
+    """
     __tablename__ = "subtasks"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=False)
@@ -164,8 +239,10 @@ class Subtask(Base):
     impact_on_parent: Mapped[str] = mapped_column(Text, default="")
     insights_found: Mapped[List[str]] = mapped_column(JSON, default=list)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Keycloak user ID - String type for UUID strings
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    # Business timestamp - manually managed for subtask completion logic
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     
     # AI Agent System Prompts and Context for Subtasks - Permanent fields for AI subtask execution
@@ -186,18 +263,37 @@ class Subtask(Base):
         Index('idx_subtask_status', 'status'),
     )
 
+    def touch(self, reason: str = "subtask_updated") -> None:
+        """Update the subtask's timestamp (compatible with BaseTimestampEntity pattern).
+
+        This provides compatibility with clean timestamp patterns.
+        The updated_at field will be automatically set by SQLAlchemy event handlers.
+
+        Args:
+            reason: Business reason for the update (for logging)
+        """
+        # The actual timestamp update is handled by timestamp_events.py
+        # This method exists for API compatibility with BaseTimestampEntity
+        pass
+
 
 class TaskAssignee(Base):
-    """Task assignees table"""
+    """Task assignees table
+
+    Uses clean timestamp pattern:
+    - assigned_at business timestamp managed manually
+    - Represents the specific moment of assignment (business event)
+    """
     __tablename__ = "task_assignees"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     assignee_id: Mapped[str] = mapped_column(String, nullable=False)
     agent_id: Mapped[Optional[str]] = mapped_column(UnifiedUUID)  # Fixed: Using UnifiedUUID for cross-database compatibility
     role: Mapped[str] = mapped_column(String, default="contributor")
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
-    assigned_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # Business timestamp - manually set when assignment happens
+    assigned_at: Mapped[datetime] = mapped_column(DateTime)
     
     # Relationships
     task: Mapped[Task] = relationship("Task", back_populates="assignees")
@@ -218,7 +314,7 @@ class TaskDependency(Base):
     depends_on_task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     dependency_type: Mapped[str] = mapped_column(String, default="blocks")
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Keycloak user ID - String type for UUID strings
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime)
     
     # Relationships
     task: Mapped[Task] = relationship("Task", foreign_keys=[task_id], back_populates="dependencies")
@@ -231,9 +327,15 @@ class TaskDependency(Base):
 
 
 class Agent(Base):
-    """Agents table"""
+    """Agents table
+
+    Integrates with clean timestamp management:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - last_active_at business timestamp managed manually for agent activity tracking
+    - Separation between audit timestamps and business timestamps
+    """
     __tablename__ = "agents"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)  # Entity ID - UnifiedUUID for cross-database compatibility
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
@@ -241,9 +343,11 @@ class Agent(Base):
     capabilities: Mapped[List[str]] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String, default="available")
     availability_score: Mapped[float] = mapped_column(Float, default=1.0)
+    # Business timestamp - manually managed for agent activity
     last_active_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
     model_metadata: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Keycloak user ID - String type for UUID strings
     
@@ -258,16 +362,23 @@ class Agent(Base):
 
 
 class Label(Base):
-    """Labels table"""
+    """Labels table
+
+    Integrates with clean timestamp management:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - No manual timestamp handling required in application code
+    """
     __tablename__ = "labels"
-    
+
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     color: Mapped[str] = mapped_column(String, default="#0066cc")
     description: Mapped[str] = mapped_column(Text, default="")
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Required for data isolation - no defaults per DDD
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
     # Relationships
     task_labels: Mapped[List["TaskLabel"]] = relationship("TaskLabel", back_populates="label", cascade="all, delete-orphan")
 
@@ -279,7 +390,7 @@ class TaskLabel(Base):
     task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True)
     label_id: Mapped[str] = mapped_column(String, ForeignKey("labels.id", ondelete="CASCADE"), primary_key=True)
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
-    applied_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    applied_at: Mapped[datetime] = mapped_column(DateTime)
     
     # Relationships
     task: Mapped[Task] = relationship("Task", back_populates="labels")
@@ -292,9 +403,15 @@ class TaskLabel(Base):
 
 
 class Template(Base):
-    """Templates table"""
+    """Templates table
+
+    Integrates with clean timestamp management:
+    - created_at/updated_at automatically managed by timestamp_events.py
+    - Consistent timestamp behavior across template operations
+    - No manual timestamp handling in template services
+    """
     __tablename__ = "templates"
-    
+
     id: Mapped[str] = mapped_column(UnifiedUUID, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     template_name: Mapped[str] = mapped_column(String, nullable=False, default="")  # Added for schema validation
@@ -306,8 +423,9 @@ class Template(Base):
     tags: Mapped[List[str]] = mapped_column(JSON, default=list)
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
     user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # Optional for shared templates
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    # Clean timestamp fields - automatically managed by event handlers
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
     created_by: Mapped[str] = mapped_column(String, nullable=False)  # DDD: No default, user context required
     metadata_: Mapped[Dict[str, Any]] = mapped_column("metadata", JSON, default=dict)  # Added for schema validation
     
@@ -344,8 +462,8 @@ class GlobalContext(Base):
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps and versioning
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
     version: Mapped[int] = mapped_column(Integer, default=1)
     
     # Relationships with explicit primaryjoin
@@ -386,8 +504,8 @@ class ProjectContext(Base):
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # REQUIRED for user isolation
     
     # Timestamps and versioning
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, server_default=func.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
     inheritance_disabled: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
     
@@ -436,8 +554,8 @@ class BranchContext(Base):
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps and versioning
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, server_default=func.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
     
     # Relationships with explicit primaryjoin
@@ -494,8 +612,8 @@ class TaskContext(Base):
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps and versioning
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, server_default=func.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
     
     # Relationships with explicit primaryjoin
@@ -547,7 +665,7 @@ class ContextDelegation(Base):
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # User isolation field - REQUIRED
     
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime)
     processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     
     __table_args__ = (
@@ -577,10 +695,10 @@ class ContextInheritanceCache(Base):
     parent_chain: Mapped[List[str]] = mapped_column(JSON, default=list)  # SQLite compatible: Using JSON instead of ARRAY
     
     # Cache metadata
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     hit_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_hit: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    last_hit: Mapped[datetime] = mapped_column(DateTime)
     cache_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     
     # Invalidation tracking

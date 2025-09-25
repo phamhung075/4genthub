@@ -60,6 +60,10 @@ class TestProjectRepository:
             repo.invalidate_cache_for_entity = Mock()
             repo._model_to_entity = Mock()
             repo._field_selector = Mock()
+            repo.model_class = ProjectORM  # Add the model_class attribute
+            repo.user_id = "test-user"  # Add user_id attribute
+            repo._user_id = "test-user"  # Add _user_id attribute
+            repo.get_user_filter = Mock(return_value=ProjectORM.user_id == "test-user")
             return repo
 
     @pytest.fixture
@@ -84,7 +88,9 @@ class TestProjectRepository:
                 updated_at=datetime.now(timezone.utc),
                 user_id="user-123",
                 task_count=0,
-                agent_assignments=[]
+                completed_task_count=0,
+                priority="medium",
+                status="todo"
             )
         ]
         # Note: Agents don't have project_id in the model
@@ -259,36 +265,44 @@ class TestProjectRepository:
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = sample_project_orm
         
-        # Mock the entity conversion
-        expected_entity = Project(
-            id="proj-123",
-            name="Updated Project Name",
-            description="Updated description",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        )
-        repository._model_to_entity.return_value = expected_entity
-        
-        # Execute
-        result = repository.update_project(
-            project_id="proj-123",
-            name="Updated Project Name",
-            description="Updated description"
-        )
-        
-        # Verify
-        assert mock_session.commit.called
-        assert result.name == "Updated Project Name"
-        assert result.description == "Updated description"
+        # Mock super().update() to return the updated ORM object
+        # This is what the actual implementation expects
+        with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.super') as mock_super:
+            mock_super_instance = Mock()
+            mock_super.return_value = mock_super_instance
+            # update_project calls super().update() which returns the ORM object
+            mock_super_instance.update.return_value = sample_project_orm
+            
+            # Update the sample_project_orm to reflect the changes
+            sample_project_orm.name = "Updated Project Name"
+            sample_project_orm.description = "Updated description"
+            sample_project_orm.updated_at = datetime.now(timezone.utc)
+            
+            # Mock the entity conversion
+            expected_entity = Project(
+                id="proj-123",
+                name="Updated Project Name",
+                description="Updated description",
+                created_at=sample_project_orm.created_at,
+                updated_at=sample_project_orm.updated_at
+            )
+            repository._model_to_entity.return_value = expected_entity
+            
+            # Execute
+            result = repository.update_project(
+                project_id="proj-123",
+                name="Updated Project Name",
+                description="Updated description"
+            )
+            
+            # Verify
+            mock_super_instance.update.assert_called_once()
+            assert result.name == "Updated Project Name"
+            assert result.description == "Updated description"
 
     def test_delete_project(self, repository, mock_session, sample_project_orm):
         """Test deleting project"""
-        # Mock transaction context manager
-        repository.transaction = Mock()
-        repository.transaction().__enter__ = Mock()
-        repository.transaction().__exit__ = Mock(return_value=False)
-        
-        # Mock get_db_session
+        # Mock get_db_session - note that delete_project uses its own session management
         repository.get_db_session = Mock()
         repository.get_db_session().__enter__ = Mock(return_value=mock_session)
         repository.get_db_session().__exit__ = Mock(return_value=False)
@@ -296,16 +310,28 @@ class TestProjectRepository:
         # Configure mock query with chained methods
         mock_query = Mock()
         mock_session.query.return_value = mock_query
-        mock_query.filter.return_value = mock_query
-        mock_query.first.return_value = sample_project_orm
         
-        # Execute
-        result = repository.delete_project("proj-123")
+        # For the existence check (first query)
+        mock_query_check = Mock()
+        mock_query_check.filter.return_value = mock_query_check
+        mock_query_check.first.return_value = sample_project_orm  # Project exists
         
-        # Verify
-        mock_session.delete.assert_called_with(sample_project_orm)
-        assert mock_session.commit.called
-        assert result is True  # delete_project returns boolean
+        # Mock super().delete() to return True
+        with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.super') as mock_super:
+            mock_super_instance = Mock()
+            mock_super.return_value = mock_super_instance
+            # delete_project calls super().delete() which should return True
+            mock_super_instance.delete.return_value = True
+            
+            # Set up the query mock to handle both the existence check and super().delete()
+            mock_session.query.side_effect = [mock_query_check, mock_query]
+            
+            # Execute
+            result = repository.delete_project("proj-123")
+            
+            # Verify
+            mock_super_instance.delete.assert_called_once_with("proj-123")
+            assert result is True  # delete_project returns boolean
 
     def test_list_projects(self, repository, mock_session):
         """Test listing all projects"""
@@ -551,22 +577,34 @@ class TestProjectRepository:
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = sample_project_orm
         
-        # Mock the entity conversion
-        expected_entity = Project(
-            id="proj-123",
-            name="Test Project",  # Keep original name
-            description="New description only",  # Updated description
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        )
-        repository._model_to_entity.return_value = expected_entity
-        
-        # Execute partial update - update_project updates the ORM object in place
-        result = repository.update_project("proj-123", description="New description only")
-        
-        # Verify
-        assert mock_session.commit.called
-        assert result.description == "New description only"
+        # Mock super().update() to return the updated ORM object
+        with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.super') as mock_super:
+            mock_super_instance = Mock()
+            mock_super.return_value = mock_super_instance
+            # update_project calls super().update() which returns the ORM object
+            mock_super_instance.update.return_value = sample_project_orm
+            
+            # Update only the description field to simulate partial update
+            sample_project_orm.description = "New description only"
+            sample_project_orm.updated_at = datetime.now(timezone.utc)
+            
+            # Mock the entity conversion
+            expected_entity = Project(
+                id="proj-123",
+                name="Test Project",  # Keep original name
+                description="New description only",  # Updated description
+                created_at=sample_project_orm.created_at,
+                updated_at=sample_project_orm.updated_at
+            )
+            repository._model_to_entity.return_value = expected_entity
+            
+            # Execute partial update - update_project updates the ORM object in place
+            result = repository.update_project("proj-123", description="New description only")
+            
+            # Verify
+            mock_super_instance.update.assert_called_once()
+            assert result.description == "New description only"
+            assert result.name == "Test Project"  # Name should remain unchanged
 
     def test_cascade_delete(self, repository, mock_session, sample_project_orm):
         """Test cascade deletion of related entities"""

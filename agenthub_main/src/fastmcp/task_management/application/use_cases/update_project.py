@@ -1,7 +1,6 @@
 """Update Project Use Case"""
 
 from typing import Dict, Any, Optional
-from datetime import datetime, timezone
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -38,8 +37,8 @@ class UpdateProjectUseCase:
                 "error": "No fields to update. Provide name and/or description."
             }
         
-        # Update timestamp
-        project.updated_at = datetime.now(timezone.utc)
+        # Update timestamp using entity's touch() method
+        project.touch("project_updated")
         
         # Save to repository
         await self._project_repository.update(project)

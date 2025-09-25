@@ -1,7 +1,5 @@
 """Update Context Use Case"""
 
-from datetime import datetime, timezone
-
 from ...application.dtos.context import (
     UpdateContextRequest,
     UpdateContextResponse
@@ -38,8 +36,8 @@ class UpdateContextUseCase:
                 context_dict.update(request.data)
                 context = context.from_dict(context_dict)
             
-            # Update timestamp
-            context.metadata.updated_at = datetime.now(timezone.utc)
+            # Update timestamp using entity's touch() method
+            context.metadata.touch("context_updated")
             
             # Save the updated context
             result = self._context_repository.update_context(context)

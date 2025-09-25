@@ -3,7 +3,6 @@ Use Case: Rebalance Agents
 """
 from typing import Dict, Any
 from ...domain.repositories.project_repository import ProjectRepository
-from datetime import datetime
 
 class RebalanceAgentsUseCase:
     def __init__(self, project_repo: ProjectRepository):
@@ -70,6 +69,5 @@ class RebalanceAgentsUseCase:
         
         return {
             "changes_made": len(changes) > 0,
-            "changes": changes,
-            "rebalanced_at": datetime.now().isoformat()
+            "changes": changes
         } 

@@ -9,6 +9,9 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import uuid
 
+# Fixed timestamp for test consistency
+FIXED_TEST_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0)
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,8 +48,8 @@ class MockUnifiedContextService:
             "level": level,
             "data": data,
             "parent_id": parent_id,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "created_at": FIXED_TEST_TIMESTAMP.isoformat(),
+            "updated_at": FIXED_TEST_TIMESTAMP.isoformat()
         }
         self._contexts[key] = context
         return context
@@ -73,7 +76,7 @@ class MockUnifiedContextService:
             # Replace data
             context["data"] = data
         
-        context["updated_at"] = datetime.now().isoformat()
+        context["updated_at"] = FIXED_TEST_TIMESTAMP.isoformat()
         return context
     
     def delete_context(
@@ -106,7 +109,7 @@ class MockUnifiedContextService:
             "level": level,
             "data": {},
             "resolved": True,
-            "created_at": datetime.now().isoformat()
+            "created_at": FIXED_TEST_TIMESTAMP.isoformat()
         }
     
     def delegate_context(
@@ -155,7 +158,7 @@ class MockUnifiedContextService:
             context["data"]["insights"] = []
         
         context["data"]["insights"].append(insight)
-        context["updated_at"] = datetime.now().isoformat()
+        context["updated_at"] = FIXED_TEST_TIMESTAMP.isoformat()
         return context
     
     def add_progress(
@@ -174,7 +177,7 @@ class MockUnifiedContextService:
             context["data"]["progress"] = []
         
         context["data"]["progress"].append(progress)
-        context["updated_at"] = datetime.now().isoformat()
+        context["updated_at"] = FIXED_TEST_TIMESTAMP.isoformat()
         return context
     
     def validate_hierarchy(

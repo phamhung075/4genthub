@@ -1,0 +1,377 @@
+
+🧪 Starting agenthub Test Suite
+🛡️  Test data isolation enabled
+🧹 Automatic cleanup configured
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests
+configfile: pytest.ini
+plugins: postgresql-7.0.2, cov-6.2.1, anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... [09/25/25 01:52:37] INFO     File logging enabled:                 logging.py:89
+                             /home/daihungpham/__projects__/4genth              
+                             ub/agenthub_main/logs/agenthub.log                 
+                             (environment: local)                               
+[09/25/25 01:52:37] INFO     File logging enabled:                 logging.py:89
+                             /home/daihungpham/__projects__/4genth              
+                             ub/agenthub_main/logs/agenthub.log                 
+                             (environment: local)                               
+collected 25 items
+
+src/tests/task_management/application/use_cases/context_templates_test.py::TestTemplateRegistry::test_init_loads_builtin_templates 2025-09-25 01:52:38,259 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Detected TEST mode (pytest)
+2025-09-25 01:52:38,260 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Database path set to: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+2025-09-25 01:52:38,260 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - DatabaseSourceManager singleton cleared
+
+📦 Using sqlite test database
+📊 DATABASE_TYPE: sqlite
+🔗 DATABASE_PATH: :memory:
+2025-09-25 01:52:38,260 - fastmcp.task_management.infrastructure.database.database_initializer - INFO - 📦 Using SQLite database for test execution
+2025-09-25 01:52:38,260 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Detected TEST mode (pytest)
+2025-09-25 01:52:38,260 - fastmcp.task_management.infrastructure.database.database_source_manager - INFO - Database path set to: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+2025-09-25 01:52:38,261 - fastmcp.task_management.infrastructure.database.database_initializer - INFO - Initializing database: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+2025-09-25 01:52:38,261 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 SQLite mode enabled for development/testing
+2025-09-25 01:52:38,261 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database type: sqlite
+2025-09-25 01:52:38,261 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Using SQLite database: /home/daihungpham/__projects__/4genthub/agenthub_main/:memory:
+2025-09-25 01:52:38,261 - fastmcp.task_management.infrastructure.database.database_config - INFO - ✅ SQLite datetime adapters registered for Python 3.12+ compatibility
+2025-09-25 01:52:38,261 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Creating SQLite engine for test execution
+2025-09-25 01:52:38,266 - fastmcp.task_management.infrastructure.database.database_config - INFO - ✅ SQLite engine created for tests
+2025-09-25 01:52:38,269 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,269 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,270 INFO sqlalchemy.engine.Engine SELECT sqlite_version()
+2025-09-25 01:52:38,270 - sqlalchemy.engine.Engine - INFO - SELECT sqlite_version()
+2025-09-25 01:52:38,270 INFO sqlalchemy.engine.Engine [generated in 0.00067s] ()
+2025-09-25 01:52:38,270 - sqlalchemy.engine.Engine - INFO - [generated in 0.00067s] ()
+2025-09-25 01:52:38,271 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Connected to SQLite: 3.45.1
+2025-09-25 01:52:38,271 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,271 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,271 - fastmcp.task_management.infrastructure.database.database_config - INFO - Ensuring AI columns exist in database...
+2025-09-25 01:52:38,272 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,272 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,272 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,272 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,272 INFO sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2025-09-25 01:52:38,272 - sqlalchemy.engine.Engine - INFO - SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2025-09-25 01:52:38,272 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,272 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,273 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,273 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,273 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,273 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,273 INFO sqlalchemy.engine.Engine PRAGMA main.table_xinfo("tasks")
+2025-09-25 01:52:38,273 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_xinfo("tasks")
+2025-09-25 01:52:38,273 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,273 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,274 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,274 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,274 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,274 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,274 INFO sqlalchemy.engine.Engine PRAGMA main.table_xinfo("subtasks")
+2025-09-25 01:52:38,274 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_xinfo("subtasks")
+2025-09-25 01:52:38,274 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,274 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,275 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,275 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,275 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-25 01:52:38,275 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-09-25 01:52:38,275 - fastmcp.task_management.infrastructure.database.database_config - INFO - ✅ AI columns verified in database
+2025-09-25 01:52:38,275 - fastmcp.task_management.infrastructure.database.init_database - INFO - Initializing database: sqlite
+2025-09-25 01:52:38,275 - fastmcp.task_management.infrastructure.database.database_config - INFO - Creating database tables...
+2025-09-25 01:52:38,275 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,275 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,275 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("api_tokens")
+2025-09-25 01:52:38,275 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("api_tokens")
+2025-09-25 01:52:38,275 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,275 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("projects")
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("projects")
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("project_git_branchs")
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("project_git_branchs")
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("tasks")
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("subtasks")
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("subtasks")
+2025-09-25 01:52:38,276 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,276 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_assignees")
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("task_assignees")
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_dependencies")
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("task_dependencies")
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("agents")
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("agents")
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("labels")
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("labels")
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_labels")
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("task_labels")
+2025-09-25 01:52:38,277 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,277 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("templates")
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("templates")
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("global_contexts")
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("global_contexts")
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("project_contexts")
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("project_contexts")
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("branch_contexts")
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("branch_contexts")
+2025-09-25 01:52:38,278 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,278 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_contexts")
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("task_contexts")
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("context_delegations")
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("context_delegations")
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("context_inheritance_cache")
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("context_inheritance_cache")
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,279 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-25 01:52:38,279 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-09-25 01:52:38,280 - fastmcp.task_management.infrastructure.database.database_config - INFO - Database tables created successfully
+2025-09-25 01:52:38,280 - fastmcp.task_management.infrastructure.database.database_config - INFO - Ensuring AI columns exist in database...
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine PRAGMA main.table_xinfo("tasks")
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_xinfo("tasks")
+2025-09-25 01:52:38,280 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,280 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,281 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,281 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,281 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,281 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,281 INFO sqlalchemy.engine.Engine PRAGMA main.table_xinfo("subtasks")
+2025-09-25 01:52:38,281 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_xinfo("subtasks")
+2025-09-25 01:52:38,281 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-09-25 01:52:38,281 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-09-25 01:52:38,281 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-09-25 01:52:38,281 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-09-25 01:52:38,282 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-25 01:52:38,282 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-09-25 01:52:38,282 - fastmcp.task_management.infrastructure.database.database_config - INFO - ✅ AI columns verified/created successfully
+2025-09-25 01:52:38,282 - fastmcp.task_management.infrastructure.database.init_database - INFO - Running automatic database migrations...
+2025-09-25 01:52:38,282 - fastmcp.task_management.infrastructure.database.database_config - INFO - 📦 Using SQLite database: /home/daihungpham/__projects__/4genthub/agenthub_main/:memory:
+2025-09-25 01:52:38,296 - fastmcp.task_management.infrastructure.database.migration_runner - INFO - Database migration check completed
+2025-09-25 01:52:38,297 - fastmcp.task_management.infrastructure.database.migration_runner - INFO - Database initialization completed
+2025-09-25 01:52:38,297 - fastmcp.task_management.infrastructure.database.init_database - INFO - Migration runner completed successfully
+2025-09-25 01:52:38,297 - fastmcp.task_management.infrastructure.database.init_database - INFO - Automatic migrations completed successfully
+2025-09-25 01:52:38,298 - fastmcp.task_management.infrastructure.database.init_database - INFO - Database initialization completed successfully
+2025-09-25 01:52:38,298 - fastmcp.task_management.infrastructure.database.database_initializer - INFO - Database initialized successfully: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+2025-09-25 01:52:38,299 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-25 01:52:38,299 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-09-25 01:52:38,299 INFO sqlalchemy.engine.Engine SELECT 1
+2025-09-25 01:52:38,299 - sqlalchemy.engine.Engine - INFO - SELECT 1
+2025-09-25 01:52:38,299 INFO sqlalchemy.engine.Engine [generated in 0.00017s] ()
+2025-09-25 01:52:38,299 - sqlalchemy.engine.Engine - INFO - [generated in 0.00017s] ()
+2025-09-25 01:52:38,300 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET 
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description,
+                        updated_at = EXCLUDED.updated_at
+                
+2025-09-25 01:52:38,300 - sqlalchemy.engine.Engine - INFO - 
+                    INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET 
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description,
+                        updated_at = EXCLUDED.updated_at
+                
+2025-09-25 01:52:38,300 INFO sqlalchemy.engine.Engine [generated in 0.00018s] ('default_project', 'Default Test Project', 'Project for testing', 'default_id', 'active', datetime.datetime(2025, 9, 24, 23, 52, 38, 300090, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 9, 24, 23, 52, 38, 300092, tzinfo=datetime.timezone.utc), '{}')
+2025-09-25 01:52:38,300 - sqlalchemy.engine.Engine - INFO - [generated in 0.00018s] ('default_project', 'Default Test Project', 'Project for testing', 'default_id', 'active', datetime.datetime(2025, 9, 24, 23, 52, 38, 300090, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 9, 24, 23, 52, 38, 300092, tzinfo=datetime.timezone.utc), '{}')
+2025-09-25 01:52:38,300 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description,
+                        updated_at = EXCLUDED.updated_at
+                
+2025-09-25 01:52:38,300 - sqlalchemy.engine.Engine - INFO - 
+                    INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description,
+                        updated_at = EXCLUDED.updated_at
+                
+2025-09-25 01:52:38,301 INFO sqlalchemy.engine.Engine [generated in 0.00017s] ('ee99a9d0-d2a5-4e40-a7cd-240ca6ee9dd0', 'default_project', 'main', 'Main branch for testing', datetime.datetime(2025, 9, 24, 23, 52, 38, 300732, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 9, 24, 23, 52, 38, 300734, tzinfo=datetime.timezone.utc), 'medium', 'todo', '{}', 0, 0, 'system')
+2025-09-25 01:52:38,301 - sqlalchemy.engine.Engine - INFO - [generated in 0.00017s] ('ee99a9d0-d2a5-4e40-a7cd-240ca6ee9dd0', 'default_project', 'main', 'Main branch for testing', datetime.datetime(2025, 9, 24, 23, 52, 38, 300732, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 9, 24, 23, 52, 38, 300734, tzinfo=datetime.timezone.utc), 'medium', 'todo', '{}', 0, 0, 'system')
+2025-09-25 01:52:38,301 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-25 01:52:38,301 - sqlalchemy.engine.Engine - INFO - COMMIT
+📦 Initialized PostgreSQL test database with basic test data (branch_id: ee99a9d0-d2a5-4e40-a7cd-240ca6ee9dd0)
+ERROR
+🧹 Performing final test data cleanup...
+🧹 Final cleanup completed:
+   - 0 test data files removed
+   - 0 temporary directories removed
+✅ Test environment is clean
+
+
+==================================== ERRORS ====================================
+___ ERROR at setup of TestTemplateRegistry.test_init_loads_builtin_templates ___
+src/tests/task_management/application/use_cases/context_templates_test.py:29: in registry
+    return TemplateRegistry()
+           ^^^^^^^^^^^^^^^^^^
+src/fastmcp/task_management/application/use_cases/context_templates.py:77: in __init__
+    self._load_builtin_templates()
+src/fastmcp/task_management/application/use_cases/context_templates.py:83: in _load_builtin_templates
+    self.register(ContextTemplate(
+E   TypeError: ContextTemplate.__init__() missing 1 required positional argument: 'author'
+------------------------------ Captured log setup ------------------------------
+INFO     fastmcp.task_management.infrastructure.database.database_source_manager:database_source_manager.py:73 Detected TEST mode (pytest)
+INFO     fastmcp.task_management.infrastructure.database.database_source_manager:database_source_manager.py:163 Database path set to: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+INFO     fastmcp.task_management.infrastructure.database.database_source_manager:database_source_manager.py:260 DatabaseSourceManager singleton cleared
+INFO     fastmcp.task_management.infrastructure.database.database_initializer:database_initializer.py:91 📦 Using SQLite database for test execution
+INFO     fastmcp.task_management.infrastructure.database.database_source_manager:database_source_manager.py:73 Detected TEST mode (pytest)
+INFO     fastmcp.task_management.infrastructure.database.database_source_manager:database_source_manager.py:163 Database path set to: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+INFO     fastmcp.task_management.infrastructure.database.database_initializer:database_initializer.py:110 Initializing database: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:200 📦 SQLite mode enabled for development/testing
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:218 Database type: sqlite
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:307 📦 Using SQLite database: /home/daihungpham/__projects__/4genthub/agenthub_main/:memory:
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:91 ✅ SQLite datetime adapters registered for Python 3.12+ compatibility
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:345 📦 Creating SQLite engine for test execution
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:363 ✅ SQLite engine created for tests
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 SELECT sqlite_version()
+INFO     sqlalchemy.engine.Engine:base.py:1842 [generated in 0.00067s] ()
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:440 📦 Connected to SQLite: 3.45.1
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:477 Ensuring AI columns exist in database...
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_xinfo("tasks")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_xinfo("subtasks")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     sqlalchemy.engine.Engine:base.py:2704 COMMIT
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:479 ✅ AI columns verified in database
+INFO     fastmcp.task_management.infrastructure.database.init_database:init_database.py:37 Initializing database: sqlite
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:522 Creating database tables...
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("api_tokens")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("projects")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("project_git_branchs")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("tasks")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("subtasks")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("task_assignees")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("task_dependencies")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("agents")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("labels")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("task_labels")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("templates")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("global_contexts")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("project_contexts")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("branch_contexts")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("task_contexts")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("context_delegations")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_info("context_inheritance_cache")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2704 COMMIT
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:524 Database tables created successfully
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:528 Ensuring AI columns exist in database...
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_xinfo("tasks")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 PRAGMA main.table_xinfo("subtasks")
+INFO     sqlalchemy.engine.Engine:base.py:1842 [raw sql] ()
+INFO     sqlalchemy.engine.Engine:base.py:2701 ROLLBACK
+INFO     sqlalchemy.engine.Engine:base.py:2704 COMMIT
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:530 ✅ AI columns verified/created successfully
+INFO     fastmcp.task_management.infrastructure.database.init_database:init_database.py:44 Running automatic database migrations...
+INFO     fastmcp.task_management.infrastructure.database.database_config:database_config.py:307 📦 Using SQLite database: /home/daihungpham/__projects__/4genthub/agenthub_main/:memory:
+INFO     fastmcp.task_management.infrastructure.database.migration_runner:migration_runner.py:32 Database migration check completed
+INFO     fastmcp.task_management.infrastructure.database.migration_runner:migration_runner.py:502 Database initialization completed
+INFO     fastmcp.task_management.infrastructure.database.init_database:init_database.py:120 Migration runner completed successfully
+INFO     fastmcp.task_management.infrastructure.database.init_database:init_database.py:46 Automatic migrations completed successfully
+INFO     fastmcp.task_management.infrastructure.database.init_database:init_database.py:52 Database initialization completed successfully
+INFO     fastmcp.task_management.infrastructure.database.database_initializer:database_initializer.py:118 Database initialized successfully: /home/daihungpham/__projects__/4genthub/agenthub_main/database/data/agenthub_test.db
+INFO     sqlalchemy.engine.Engine:base.py:2698 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1842 SELECT 1
+INFO     sqlalchemy.engine.Engine:base.py:1842 [generated in 0.00017s] ()
+INFO     sqlalchemy.engine.Engine:base.py:1842 
+                    INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET 
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description,
+                        updated_at = EXCLUDED.updated_at
+                
+INFO     sqlalchemy.engine.Engine:base.py:1842 [generated in 0.00018s] ('default_project', 'Default Test Project', 'Project for testing', 'default_id', 'active', datetime.datetime(2025, 9, 24, 23, 52, 38, 300090, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 9, 24, 23, 52, 38, 300092, tzinfo=datetime.timezone.utc), '{}')
+INFO     sqlalchemy.engine.Engine:base.py:1842 
+                    INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        description = EXCLUDED.description,
+                        updated_at = EXCLUDED.updated_at
+                
+INFO     sqlalchemy.engine.Engine:base.py:1842 [generated in 0.00017s] ('ee99a9d0-d2a5-4e40-a7cd-240ca6ee9dd0', 'default_project', 'main', 'Main branch for testing', datetime.datetime(2025, 9, 24, 23, 52, 38, 300732, tzinfo=datetime.timezone.utc), datetime.datetime(2025, 9, 24, 23, 52, 38, 300734, tzinfo=datetime.timezone.utc), 'medium', 'todo', '{}', 0, 0, 'system')
+INFO     sqlalchemy.engine.Engine:base.py:2704 COMMIT
+=========================== short test summary info ============================
+ERROR src/tests/task_management/application/use_cases/context_templates_test.py::TestTemplateRegistry::test_init_loads_builtin_templates
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.51s ===============================

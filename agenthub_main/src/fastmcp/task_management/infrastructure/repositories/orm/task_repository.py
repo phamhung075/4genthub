@@ -7,7 +7,7 @@ supporting both SQLite and PostgreSQL databases.
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, List, Dict, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from sqlalchemy import and_, desc, or_, text, func
 from sqlalchemy.orm import joinedload, selectinload
@@ -25,7 +25,9 @@ from ....domain.value_objects.task_id import TaskId
 from ....domain.value_objects.task_status import TaskStatus
 from ...database.models import Task, TaskAssignee, TaskDependency, TaskLabel, Label, TaskContext, Subtask
 from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..clean_timestamp_repository_mixin import CleanTimestampRepository
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
 from ...performance.task_performance_optimizer import get_performance_optimizer
@@ -43,7 +45,13 @@ def _ensure_estimated_effort_default(value: any) -> str:
     return str(value).strip()
 
 
-class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUserScopedRepository, TaskRepository):
+class ORMTaskRepository(
+    CacheInvalidationMixin,
+    CleanTimestampRepository[TaskEntity],
+    BaseTimestampRepository[Task],
+    BaseUserScopedRepository,
+    TaskRepository
+):
     """
     Task repository implementation using SQLAlchemy ORM.
     
@@ -258,8 +266,8 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                             if task_data.get('status') == 'done':
                                 branch.completed_task_count = (branch.completed_task_count or 0) + 1
 
-                            # Update timestamp
-                            branch.updated_at = datetime.now(timezone.utc)
+                            # Update timestamp with semantic reason
+                            branch.touch("branch_task_count_updated")
                             session.commit()
                             logger.info(f"Updated branch {self.git_branch_id} counters: task_count={branch.task_count}, completed_count={branch.completed_task_count}")
 
@@ -447,7 +455,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
 
                             if old_status != new_status:
                                 # Update timestamp for any status change
-                                branch.updated_at = datetime.now(timezone.utc)
+                                branch.touch("branch_task_status_updated")
                                 session.commit()
                                 logger.info(f"Updated branch {updated_task.git_branch_id} completed count: {branch.completed_task_count} (status: {old_status} -> {new_status})")
                 
@@ -1126,7 +1134,7 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
     def get_overdue_tasks(self) -> list[TaskEntity]:
         """Get tasks that are overdue"""
         with self.get_db_session() as session:
-            now = datetime.now(timezone.utc).isoformat()
+            # BaseTimestampRepository handles timestamps automatically
             
             tasks = session.query(Task).options(
                 joinedload(Task.assignees),
@@ -1151,23 +1159,25 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     Task.git_branch_id == self.git_branch_id if self.git_branch_id else True
                 )
             ).update(
-                {'status': status, 'updated_at': datetime.now(timezone.utc)},
+                {'status': status},  # BaseTimestampRepository handles updated_at
                 synchronize_session=False
             )
             
             return updated
     
     # Abstract method implementations for TaskRepository interface
-    
+
     def save(self, task: TaskEntity) -> TaskEntity | None:
-        """Save a task entity, returns the saved task on success or None on failure"""
+        """Save a task entity with clean timestamp handling."""
+        return self.save_with_clean_timestamp(task, reason="repository_save_task")
+
+    def _perform_save(self, task: TaskEntity) -> TaskEntity | None:
+        """Persist a task entity and synchronize timestamps from the database."""
         try:
             with self.get_db_session() as session:
-                # Check if task already exists
                 existing = session.query(Task).filter(Task.id == str(task.id)).first()
-                
+
                 if existing:
-                    # Update existing task
                     existing.title = task.title
                     existing.description = task.description
                     existing.git_branch_id = task.git_branch_id
@@ -1175,123 +1185,103 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                     existing.priority = str(task.priority)
                     existing.progress_history = task.progress_history
                     existing.progress_count = task.progress_count
-                    existing.estimated_effort = _ensure_estimated_effort_default(task.estimated_effort)  # FIXED: Ensure proper default
+                    existing.estimated_effort = _ensure_estimated_effort_default(task.estimated_effort)
                     existing.due_date = task.due_date
-                    existing.updated_at = task.updated_at
                     existing.context_id = task.context_id
-                    # Map overall_progress to progress_percentage
+
                     if hasattr(task, 'overall_progress'):
                         existing.progress_percentage = task.overall_progress
-                    
-                    # Save completion_summary from Vision System field
+
                     completion_summary = task.get_completion_summary()
                     if completion_summary is not None:
                         existing.completion_summary = completion_summary
-                    
-                    # Update dependencies
-                    # First, remove all existing dependencies
+
                     session.query(TaskDependency).filter(TaskDependency.task_id == str(task.id)).delete()
-                    
-                    # Then add new dependencies
+
                     for dependency in task.dependencies:
-                        # DDD Compliance: No fallback values allowed - user_id must be present
                         if not hasattr(self, 'user_id') or not self.user_id:
                             raise ValueError("User ID is required for creating task dependencies (DDD compliance)")
-                        
+
                         new_dependency = TaskDependency(
                             task_id=str(task.id),
                             depends_on_task_id=str(dependency.value if hasattr(dependency, 'value') else dependency),
                             dependency_type="blocks",
-                            user_id=self.user_id  # CRITICAL: User ID required, no fallbacks
+                            user_id=self.user_id
                         )
                         session.add(new_dependency)
-                    
-                    # Update assignees
-                    # First, remove all existing assignees
+
                     from ...database.models import TaskAssignee
                     session.query(TaskAssignee).filter(TaskAssignee.task_id == str(task.id)).delete()
-                    
-                    # Then add new assignees
+
                     if hasattr(task, 'assignees') and task.assignees:
                         import uuid
                         for assignee in task.assignees:
-                            # Create task-assignee relationship
                             new_assignee = TaskAssignee(
                                 id=str(uuid.uuid4()),
                                 task_id=str(task.id),
-                                assignee_id=assignee,  # This is the agent role like 'coding-agent'
-                                role="agent",  # Role indicating this is an AI agent assignment
-                                user_id=self.user_id  # CRITICAL: User ID required for data isolation
+                                assignee_id=assignee,
+                                role="agent",
+                                user_id=self.user_id
                             )
                             session.add(new_assignee)
-                    
-                    # Update labels
-                    # First, remove all existing labels
+
                     session.query(TaskLabel).filter(TaskLabel.task_id == str(task.id)).delete()
-                    
-                    # Then add new labels
+
                     from ...database.models import Label
                     for label_name in task.labels:
-                        # Get or create label
                         label = session.query(Label).filter(Label.name == label_name).first()
                         if not label:
-                            # Create new label with a unique ID
                             import uuid
                             label = Label(
                                 id=str(uuid.uuid4()),
                                 name=label_name,
                                 color="#0066cc",
                                 description="",
-                                user_id=self.user_id  # DDD: user_id required, no fallbacks
+                                user_id=self.user_id
                             )
                             session.add(label)
-                            session.flush()  # Ensure label is saved before creating relationship
-                        
-                        # Create task-label relationship with user_id for data isolation
+                            session.flush()
+
                         task_label = TaskLabel(
                             task_id=str(task.id),
                             label_id=label.id,
-                            user_id=self.user_id  # CRITICAL: Add user_id for database constraint
+                            user_id=self.user_id
                         )
                         session.add(task_label)
+
+                    session.flush()
+                    session.refresh(existing)
+                    task.updated_at = existing.updated_at
+                    task.created_at = existing.created_at
+
                 else:
-                    # Get user_id from repository context or handle authentication
                     from ....domain.constants import validate_user_id
                     from ....domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
-                    
+
                     if hasattr(self, 'user_id') and self.user_id:
                         task_user_id = validate_user_id(self.user_id, "Task creation")
                     else:
-                        # User authentication is required
                         raise UserAuthenticationRequiredError("Task creation")
-                    
-                    # Create new task
-                    task_id_str = str(task.id)
-                    
+
                     new_task = Task(
-                        id=task_id_str,
+                        id=str(task.id),
                         title=task.title,
                         description=task.description,
                         git_branch_id=task.git_branch_id,
                         status=str(task.status),
                         priority=str(task.priority),
                         progress_history=task.progress_history,
-            progress_count=task.progress_count,
-                        estimated_effort=_ensure_estimated_effort_default(task.estimated_effort),  # FIXED: Ensure proper default
+                        progress_count=task.progress_count,
+                        estimated_effort=_ensure_estimated_effort_default(task.estimated_effort),
                         due_date=task.due_date,
-                        created_at=task.created_at,
-                        updated_at=task.updated_at,
                         context_id=task.context_id,
-                        user_id=task_user_id,  # Add user_id field
-                        # Map overall_progress to progress_percentage
-                        progress_percentage=task.overall_progress if hasattr(task, 'overall_progress') else 0,
-                        # Save completion_summary from Vision System field
+                        user_id=task_user_id,
+                        progress_percentage=getattr(task, 'overall_progress', 0),
                         completion_summary=task.get_completion_summary() or ""
                     )
-                    
+
                     session.add(new_task)
-                    
-                    # Add dependencies for new task
+
                     for dependency in task.dependencies:
                         new_dependency = TaskDependency(
                             task_id=str(task.id),
@@ -1300,57 +1290,58 @@ class ORMTaskRepository(CacheInvalidationMixin, BaseORMRepository[Task], BaseUse
                             user_id=task_user_id
                         )
                         session.add(new_dependency)
-                    
-                    # Add assignees for new task
+
                     from ...database.models import TaskAssignee
                     if hasattr(task, 'assignees') and task.assignees:
                         import uuid
                         for assignee in task.assignees:
-                            # Create task-assignee relationship
                             new_assignee = TaskAssignee(
                                 id=str(uuid.uuid4()),
                                 task_id=str(task.id),
-                                assignee_id=assignee,  # This is the agent role like 'coding-agent'
-                                role="agent",  # Role indicating this is an AI agent assignment
-                                user_id=task_user_id  # CRITICAL: User ID required for data isolation
+                                assignee_id=assignee,
+                                role="agent",
+                                user_id=task_user_id
                             )
                             session.add(new_assignee)
-                    
-                    # Add labels for new task
+
                     from ...database.models import Label
                     for label_name in task.labels:
-                        # Get or create label
                         label = session.query(Label).filter(Label.name == label_name).first()
                         if not label:
-                            # Create new label with a unique ID
                             import uuid
                             label = Label(
                                 id=str(uuid.uuid4()),
                                 name=label_name,
                                 color="#0066cc",
                                 description="",
-                                user_id=self.user_id  # DDD: user_id required, no fallbacks
+                                user_id=self.user_id
                             )
                             session.add(label)
-                            session.flush()  # Ensure label is saved before creating relationship
-                        
-                        # Create task-label relationship with user_id for data isolation
+                            session.flush()
+
                         task_label = TaskLabel(
                             task_id=str(task.id),
                             label_id=label.id,
-                            user_id=self.user_id  # CRITICAL: Add user_id for database constraint
+                            user_id=self.user_id
                         )
                         session.add(task_label)
-                
+
+                    session.flush()
+                    session.refresh(new_task)
+                    task.created_at = new_task.created_at
+                    task.updated_at = new_task.updated_at
+
                 session.commit()
-                # Return the saved task entity
                 return task
-        except Exception as e:
-            import traceback
-            logger.error(f"Failed to save task: {e}")
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            # Re-raise to see the actual error during debugging
+        except Exception as exc:
+            logger.error("Failed to save task: %s", exc)
             raise
+
+    def _perform_bulk_save(self, entities: Iterable[TaskEntity]) -> List[TaskEntity]:
+        saved_entities: List[TaskEntity] = []
+        for entity in entities:
+            saved_entities.append(self._perform_save(entity))
+        return saved_entities
     
     def find_by_id(self, task_id) -> TaskEntity | None:
         """Find task by ID"""

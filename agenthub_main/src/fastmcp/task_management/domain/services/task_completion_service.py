@@ -82,16 +82,23 @@ class TaskCompletionService:
                 if incomplete_subtasks:
                     incomplete_count = len(incomplete_subtasks)
                     total_count = len(subtasks)
-                    incomplete_titles = [st.title for st in incomplete_subtasks[:3]]  # Show first 3
-                    
-                    error_msg = f"Cannot complete task: {incomplete_count} of {total_count} subtasks are incomplete."
-                    if incomplete_titles:
-                        if len(incomplete_titles) < incomplete_count:
-                            error_msg += f" Incomplete subtasks include: {', '.join(incomplete_titles)}, and {incomplete_count - len(incomplete_titles)} more."
-                        else:
-                            error_msg += f" Incomplete subtasks: {', '.join(incomplete_titles)}."
-                    error_msg += " Complete all subtasks first."
-                    
+
+                    # Create detailed incomplete subtask information for the exception
+                    incomplete_subtask_details = []
+                    for subtask in incomplete_subtasks:
+                        incomplete_subtask_details.append({
+                            "id": str(subtask.id.value if hasattr(subtask.id, 'value') else subtask.id),
+                            "title": subtask.title,
+                            "status": str(subtask.status.value if hasattr(subtask.status, 'value') else subtask.status)
+                        })
+
+                    error_msg = f"Cannot complete task: {incomplete_count} of {total_count} subtasks are not done"
+
+                    # Store the detailed information for the exception
+                    self._incomplete_subtasks = incomplete_subtask_details
+                    self._incomplete_count = incomplete_count
+                    self._total_count = total_count
+
                     error_messages.append(error_msg)
             
             if error_messages:
@@ -107,17 +114,30 @@ class TaskCompletionService:
     def validate_task_completion(self, task: Task) -> None:
         """
         Validate that a task can be completed, raising an exception if not.
-        
+
         Args:
             task: The task to validate for completion
-            
+
         Raises:
             TaskCompletionError: If the task cannot be completed
         """
         can_complete, error_message = self.can_complete_task(task)
-        
+
         if not can_complete:
-            raise TaskCompletionError(error_message or "Task cannot be completed")
+            # Get detailed subtask information if available
+            incomplete_subtasks_data = getattr(self, '_incomplete_subtasks', None)
+
+            # Create enhanced exception with context data
+            exception = TaskCompletionError(
+                error_message or "Task cannot be completed",
+                incomplete_subtasks=incomplete_subtasks_data
+            )
+
+            # Add total count to the exception context if available
+            if hasattr(self, '_total_count'):
+                exception.context["total_count"] = self._total_count
+
+            raise exception
     
     def get_completion_blockers(self, task: Task) -> list[str]:
         """

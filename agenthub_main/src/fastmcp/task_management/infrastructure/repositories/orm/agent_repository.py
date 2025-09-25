@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from sqlalchemy import and_, desc
 
-from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...database.models import Agent
 from ....domain.repositories.agent_repository import AgentRepository
@@ -25,7 +25,7 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, AgentRepository):
+class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepository, AgentRepository):
     """
     Agent repository implementation using SQLAlchemy ORM.
     
@@ -36,14 +36,14 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
     def __init__(self, session=None, project_id: Optional[str] = None, user_id: Optional[str] = None):
         """
         Initialize ORM agent repository with user isolation.
-        
+
         Args:
             session: Database session
             project_id: Project ID for context
             user_id: User ID for data isolation
         """
-        # Initialize BaseORMRepository
-        BaseORMRepository.__init__(self, Agent)
+        # Initialize BaseTimestampRepository
+        BaseTimestampRepository.__init__(self, Agent)
         
         # Ensure user_id is a valid UUID if provided
         if user_id is not None and not self._is_valid_uuid(user_id):
@@ -417,13 +417,11 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                                 # It's a name (shouldn't happen with new logic, but keep for compatibility)
                                 agent_name = actual_agent_id.lstrip('@')
                         
-                        # Create agent entity
+                        # Create agent entity (timestamps will be handled automatically)
                         agent_entity = AgentEntity(
                             id=actual_agent_id,
                             name=agent_name,
-                            description=f"Auto-registered agent {agent_name} for project {project_id}",
-                            created_at=datetime.now(timezone.utc),
-                            updated_at=datetime.now(timezone.utc)
+                            description=f"Auto-registered agent {agent_name} for project {project_id}"
                         )
                         
                         # Convert to model dict
@@ -490,10 +488,9 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             assigned_trees.add(git_branch_id)
             model_metadata["assigned_trees"] = list(assigned_trees)
             
-            # Update agent
-            self.update(actual_agent_id, 
-                       model_metadata=model_metadata,
-                       updated_at=datetime.now(timezone.utc))
+            # Update agent (timestamps will be handled automatically)
+            self.update(actual_agent_id,
+                       model_metadata=model_metadata)
             
             logger.info(f"Assigned agent {actual_agent_id} to tree {git_branch_id} in project {project_id}")
             return {
@@ -546,10 +543,9 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             
             model_metadata["assigned_trees"] = list(assigned_trees)
             
-            # Update agent
-            self.update(agent_id, 
-                       model_metadata=model_metadata,
-                       updated_at=datetime.now(timezone.utc))
+            # Update agent (timestamps will be handled automatically)
+            self.update(agent_id,
+                       model_metadata=model_metadata)
             
             logger.info(f"Unassigned agent {agent_id} from {len(removed_assignments)} tree(s) in project {project_id}")
             return {
@@ -663,9 +659,8 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                     resource_id=agent.id
                 )
             
-            # Convert entity to model dict
+            # Convert entity to model dict (timestamps will be handled automatically)
             model_dict = self._entity_to_model_dict(agent)
-            model_dict["updated_at"] = datetime.now(timezone.utc)
             
             # Update agent
             updated_model = self.update(agent.id, **model_dict)

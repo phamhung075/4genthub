@@ -1128,8 +1128,8 @@ class UnifiedContextService:
         else:
             logger.debug("🚨 CONTEXT_FIX: new_data is None or not a dict, skipping merge iteration")
         
-        # Update timestamp
-        merged["updated_at"] = datetime.now(timezone.utc).isoformat()
+        # Remove manual timestamp handling - let repository layer handle persistence timestamps
+        # Following clean timestamp management principles from BaseTimestampEntity patterns
         
         return merged
     

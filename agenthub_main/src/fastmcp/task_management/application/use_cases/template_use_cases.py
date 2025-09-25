@@ -1,8 +1,6 @@
 """Template Use Cases - Application Layer Business Logic"""
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
-from datetime import datetime
 import logging
 
 from ...domain.entities.template import Template, TemplateResult, TemplateRenderRequest, TemplateUsage
@@ -51,9 +49,8 @@ class TemplateUseCases:
                 compatible_agents=create_dto.compatible_agents,
                 file_patterns=create_dto.file_patterns,
                 variables=create_dto.variables,
-                metadata=create_dto.metadata,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                metadata=create_dto.metadata
+                # Timestamps handled automatically by BaseTimestampEntity
             )
             
             # Validate template

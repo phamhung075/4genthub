@@ -1,42 +1,48 @@
 """Template Domain Entity"""
 
 import fnmatch
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from datetime import datetime
 from typing import Dict, Any, Optional, List
 from ..value_objects.template_id import TemplateId
 from ..enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from .base.base_timestamp_entity import BaseTimestampEntity
 
 
 @dataclass
-class Template:
+class Template(BaseTimestampEntity):
     """Template domain entity representing a template in the system"""
-    
-    id: TemplateId
-    name: str
-    description: str
-    content: str
-    template_type: TemplateType
-    category: TemplateCategory
-    status: TemplateStatus
-    priority: TemplatePriority
-    compatible_agents: List[str]
-    file_patterns: List[str]
-    variables: List[str]
-    metadata: Dict[str, Any]
-    created_at: datetime
-    updated_at: datetime
+
+    id: Optional[TemplateId] = None
+    name: str = ""
+    description: str = ""
+    content: str = ""
+    template_type: Optional[TemplateType] = None
+    category: Optional[TemplateCategory] = None
+    status: Optional[TemplateStatus] = None
+    priority: Optional[TemplatePriority] = None
+    compatible_agents: List[str] = field(default_factory=list)
+    file_patterns: List[str] = field(default_factory=list)
+    variables: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
     version: int = 1
     is_active: bool = True
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id)
     
     def __post_init__(self):
-        """Validate template data after initialization"""
-        if not self.name.strip():
+        """Initialize timestamps through BaseTimestampEntity."""
+        super().__post_init__()
+    
+    def _validate_entity(self) -> None:
+        """Ensure template invariants hold."""
+        if not self.name or not self.name.strip():
             raise ValueError("Template name cannot be empty")
-        if not self.content.strip():
+        if not self.content or not self.content.strip():
             raise ValueError("Template content cannot be empty")
-        if not self.description.strip():
+        if not self.description or not self.description.strip():
             raise ValueError("Template description cannot be empty")
     
     def update_content(self, content: str) -> None:
@@ -45,66 +51,66 @@ class Template:
             raise ValueError("Template content cannot be empty")
         self.content = content
         self.version += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("content_updated")
     
     def update_metadata(self, metadata: Dict[str, Any]) -> None:
         """Update template metadata"""
         self.metadata.update(metadata)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("metadata_updated")
     
     def add_compatible_agent(self, agent_name: str) -> None:
         """Add compatible agent to template"""
         if agent_name not in self.compatible_agents:
             self.compatible_agents.append(agent_name)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("agent_added")
     
     def remove_compatible_agent(self, agent_name: str) -> None:
         """Remove compatible agent from template"""
         if agent_name in self.compatible_agents:
             self.compatible_agents.remove(agent_name)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("agent_removed")
     
     def add_file_pattern(self, pattern: str) -> None:
         """Add file pattern to template"""
         if pattern not in self.file_patterns:
             self.file_patterns.append(pattern)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("pattern_added")
     
     def remove_file_pattern(self, pattern: str) -> None:
         """Remove file pattern from template"""
         if pattern in self.file_patterns:
             self.file_patterns.remove(pattern)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("pattern_removed")
     
     def add_variable(self, variable: str) -> None:
         """Add variable to template"""
         if variable not in self.variables:
             self.variables.append(variable)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("variable_added")
     
     def remove_variable(self, variable: str) -> None:
         """Remove variable from template"""
         if variable in self.variables:
             self.variables.remove(variable)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("variable_removed")
     
     def activate(self) -> None:
         """Activate template"""
         self.is_active = True
         self.status = TemplateStatus.ACTIVE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("template_activated")
     
     def deactivate(self) -> None:
         """Deactivate template"""
         self.is_active = False
         self.status = TemplateStatus.INACTIVE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("template_deactivated")
     
     def archive(self) -> None:
         """Archive template"""
         self.is_active = False
         self.status = TemplateStatus.ARCHIVED
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("template_archived")
     
     def is_compatible_with_agent(self, agent_name: str) -> bool:
         """Check if template is compatible with given agent"""
@@ -149,7 +155,8 @@ class Template:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Template':
         """Create template from dictionary representation"""
-        return cls(
+        # Create the template instance
+        template = cls(
             id=TemplateId(data["id"]),
             name=data["name"],
             description=data["description"],
@@ -162,11 +169,21 @@ class Template:
             file_patterns=data["file_patterns"],
             variables=data["variables"],
             metadata=data["metadata"],
-            created_at=datetime.fromisoformat(data["created_at"]),
-            updated_at=datetime.fromisoformat(data["updated_at"]),
             version=data.get("version", 1),
             is_active=data.get("is_active", True)
         )
+
+        # Set BaseTimestampEntity timestamps if provided
+        if "created_at" in data:
+            template.created_at = template._coerce_to_utc(
+                datetime.fromisoformat(data["created_at"])
+            )
+        if "updated_at" in data:
+            template.updated_at = template._coerce_to_utc(
+                datetime.fromisoformat(data["updated_at"])
+            )
+
+        return template
 
 
 @dataclass

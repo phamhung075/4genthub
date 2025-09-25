@@ -1,19 +1,18 @@
-import Cookies from "js-cookie";
 import { ChevronDown, ChevronRight, Eye, Folder, GitBranchPlus, Globe, Pencil, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { createBranch, createProject, deleteBranch, deleteProject, listProjects, Project, updateProject } from "../api";
-import { BranchSummary } from "../types/api.types";
 import { useBranchSummaries } from "../hooks/useBranchSummaries";
+import { useEntityChanges } from "../hooks/useChangeSubscription";
 import { cn } from "../lib/utils";
+import { useAppSelector } from "../store/hooks";
+import { BranchSummary } from "../types/api.types";
+import logger from "../utils/logger";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { RefreshButton } from "./ui/refresh-button";
 import { ShimmerBadge } from "./ui/shimmer-badge";
 import { ShimmerButton } from "./ui/shimmer-button";
 import { useErrorToast, useSuccessToast } from "./ui/toast";
-import { useEntityChanges } from "../hooks/useChangeSubscription";
-import { useAppSelector } from "../store/hooks";
-import logger from "../utils/logger";
 
 interface ProjectListProps {
   onSelect?: (projectId: string, branchId: string) => void;
@@ -681,13 +680,7 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelect, selectedProjectId, 
                             <div className="flex items-center gap-1">
                               <ShimmerBadge variant="secondary" className="text-xs">
                                 {taskCounts[branch.id] ?? 0}
-                              </ShimmerBadge>
-                              {branch.has_urgent_tasks && (
-                                <ShimmerBadge variant="destructive" className="text-xs">!</ShimmerBadge>
-                              )}
-                              {branch.is_completed && (
-                                <ShimmerBadge variant="secondary" className="text-xs text-green-600">✓</ShimmerBadge>
-                              )}
+                              </ShimmerBadge>                             
                             </div>
                           </ShimmerButton>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">

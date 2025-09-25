@@ -202,6 +202,91 @@ class WebSocketNotificationService:
             }
 
     @staticmethod
+    def _get_branch_cascade_data(branch_id: str, user_id: str = None) -> Dict[str, Any]:
+        """
+        Fetch branch cascade data with current task counts for WebSocket updates.
+        Uses the same trigger-maintained counts as the bulk API for consistency.
+
+        Args:
+            branch_id: ID of the branch
+            user_id: User ID for multi-tenant filtering
+
+        Returns:
+            Dict containing branch cascade data with task_count, completed_tasks, etc.
+        """
+        try:
+            from ...infrastructure.database.database_config import get_session
+            from sqlalchemy import text
+
+            with get_session() as session:
+                # Use the same query approach as bulk API for consistency
+                query = text("""
+                    SELECT
+                        b.id as branch_id,
+                        b.project_id,
+                        b.name as branch_name,
+                        b.status as branch_status,
+                        b.priority as branch_priority,
+                        COALESCE(b.task_count, 0) as task_count,
+                        COALESCE(b.completed_task_count, 0) as completed_tasks,
+                        COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as todo_tasks,
+                        CASE
+                            WHEN COALESCE(b.task_count, 0) = 0 THEN 0
+                            ELSE ROUND((COALESCE(b.completed_task_count, 0)::numeric / b.task_count::numeric) * 100, 2)
+                        END as progress_percentage,
+                        b.updated_at as last_activity
+                    FROM project_git_branchs b
+                    WHERE b.id = :branch_id
+                """)
+
+                params = {"branch_id": branch_id}
+
+                # Add user filtering if provided
+                if user_id:
+                    query = text("""
+                        SELECT
+                            b.id as branch_id,
+                            b.project_id,
+                            b.name as branch_name,
+                            b.status as branch_status,
+                            b.priority as branch_priority,
+                            COALESCE(b.task_count, 0) as task_count,
+                            COALESCE(b.completed_task_count, 0) as completed_tasks,
+                            COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as todo_tasks,
+                            CASE
+                                WHEN COALESCE(b.task_count, 0) = 0 THEN 0
+                                ELSE ROUND((COALESCE(b.completed_task_count, 0)::numeric / b.task_count::numeric) * 100, 2)
+                            END as progress_percentage,
+                            b.updated_at as last_activity
+                        FROM project_git_branchs b
+                        WHERE b.id = :branch_id AND b.user_id = :user_id
+                    """)
+                    params["user_id"] = user_id
+
+                result = session.execute(query, params).fetchone()
+
+                if result:
+                    return {
+                        "id": result[0],
+                        "project_id": result[1],
+                        "name": result[2],
+                        "status": result[3],
+                        "priority": result[4],
+                        "task_count": result[5] or 0,
+                        "completed_tasks": result[6] or 0,
+                        "todo_tasks": result[7] or 0,
+                        "progress_percentage": float(result[8] or 0),
+                        "last_activity": result[9].isoformat() if result[9] else None
+                    }
+                else:
+                    logger.warning(f"Branch {branch_id} not found for cascade data lookup")
+                    return None
+
+        except Exception as e:
+            logger.error(f"Failed to get branch cascade data for {branch_id}: {e}")
+            return None
+
+    @staticmethod
     async def broadcast_task_event(
         event_type: str,
         task_id: str,

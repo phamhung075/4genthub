@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from datetime import datetime
 
 
 @dataclass
@@ -143,8 +142,8 @@ class TemplateUsageDTO:
     def __post_init__(self):
         if self.variables_used is None:
             self.variables_used = {}
-        if self.used_at is None:
-            self.used_at = datetime.now(timezone.utc).isoformat()
+        # Note: used_at timestamp should be set by the service layer when creating usage records
+        # This DTO should receive the timestamp from the business logic, not generate it automatically
 
 
 @dataclass

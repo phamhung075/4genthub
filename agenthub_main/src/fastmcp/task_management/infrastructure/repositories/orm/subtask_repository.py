@@ -16,6 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from ...database.models import Subtask as SubtaskModel
 from ...database.database_config import get_session
 from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ....domain.entities.subtask import Subtask as SubtaskEntity
 from ....domain.repositories.subtask_repository import SubtaskRepository
@@ -32,7 +33,7 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
+class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
     """
     ORM implementation of SubtaskRepository using SQLAlchemy.
     
@@ -77,7 +78,7 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                         for key, value in model_data.items():
                             if key != 'id':  # Don't update primary key
                                 setattr(existing, key, value)
-                        existing.updated_at = datetime.now(timezone.utc)
+                        existing.touch("subtask_updated")
                         session.flush()
                         
                         # Update the domain entity with the persisted data
@@ -590,13 +591,13 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
         try:
             with self.get_db_session() as session:
                 update_data = {
-                    SubtaskModel.status: status,
-                    SubtaskModel.updated_at: datetime.now(timezone.utc)
+                    SubtaskModel.status: status
+                    # BaseTimestampRepository handles updated_at automatically
                 }
                 
                 # Add completion timestamp if marking as done
                 if status == 'done':
-                    update_data[SubtaskModel.completed_at] = datetime.now(timezone.utc)
+                    # BaseTimestampRepository handles completed_at automatically
                     update_data[SubtaskModel.progress_percentage] = 100
                 elif status in ['todo', 'in_progress', 'blocked']:
                     update_data[SubtaskModel.completed_at] = None
@@ -688,8 +689,8 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
 
                 result = query.update({
                     SubtaskModel.progress_percentage: max(0, min(100, progress_percentage)),
-                    SubtaskModel.progress_notes: progress_notes,
-                    SubtaskModel.updated_at: datetime.now(timezone.utc)
+                    SubtaskModel.progress_notes: progress_notes
+                    # BaseTimestampRepository handles updated_at automatically
                 })
 
                 logger.info(f"📊 SUBTASK_PROGRESS: Updated {result} subtask(s) progress to {progress_percentage}% for user_id={self.user_id}")
@@ -734,8 +735,7 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 update_data = {
                     SubtaskModel.status: 'done',
                     SubtaskModel.progress_percentage: 100,
-                    SubtaskModel.completed_at: datetime.now(timezone.utc),
-                    SubtaskModel.updated_at: datetime.now(timezone.utc),
+                    # BaseTimestampRepository handles completed_at and updated_at automatically
                     SubtaskModel.completion_summary: completion_summary,
                     SubtaskModel.impact_on_parent: impact_on_parent
                 }
@@ -818,8 +818,8 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
             "priority": subtask.priority.value if subtask.priority else "medium",
             "assignees": assignees,
             "progress_percentage": getattr(subtask, 'progress_percentage', 0),  # Use actual progress_percentage
-            "created_at": subtask.created_at or datetime.now(timezone.utc),
-            "updated_at": subtask.updated_at or datetime.now(timezone.utc)
+            "created_at": subtask.created_at,  # BaseTimestampRepository ensures this is set
+            "updated_at": subtask.updated_at   # BaseTimestampRepository ensures this is set
         }
         
         # CRITICAL FIX: Explicit user_id handling - no complex fallbacks

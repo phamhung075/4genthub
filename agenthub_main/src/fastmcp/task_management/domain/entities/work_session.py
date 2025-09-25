@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
+from .base.base_timestamp_entity import BaseTimestampEntity
+
 
 class SessionStatus(Enum):
     """Work session status enumeration"""
@@ -16,14 +18,14 @@ class SessionStatus(Enum):
 
 
 @dataclass
-class WorkSession:
+class WorkSession(BaseTimestampEntity):
     """WorkSession entity representing an active work session by an agent on a task"""
-    
-    id: str
-    agent_id: str
-    task_id: str
-    git_branch_name: str
-    started_at: datetime
+
+    id: str = ""
+    agent_id: str = ""
+    task_id: str = ""
+    git_branch_name: str = ""
+    started_at: Optional[datetime] = None
     
     # Session status and timing
     status: SessionStatus = SessionStatus.ACTIVE
@@ -40,16 +42,36 @@ class WorkSession:
     max_duration: Optional[timedelta] = None  # Auto-timeout after this duration
     auto_save_interval: int = 300  # Seconds between auto-saves
     last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return self.id
+
+    def _validate_entity(self) -> None:
+        """Ensure work session invariants hold."""
+        if not self.id or not self.id.strip():
+            raise ValueError("WorkSession id cannot be empty")
+        if not self.agent_id or not self.agent_id.strip():
+            raise ValueError("WorkSession agent_id cannot be empty")
+        if not self.task_id or not self.task_id.strip():
+            raise ValueError("WorkSession task_id cannot be empty")
+        if not self.git_branch_name or not self.git_branch_name.strip():
+            raise ValueError("WorkSession git_branch_name cannot be empty")
+        if self.started_at is None:
+            raise ValueError("WorkSession started_at cannot be None")
+        if self.auto_save_interval <= 0:
+            raise ValueError("auto_save_interval must be greater than 0")
     
     def pause_session(self, reason: str = "") -> None:
         """Pause the work session"""
         if self.status != SessionStatus.ACTIVE:
             raise ValueError(f"Cannot pause session in {self.status.value} state")
-        
+
         self.status = SessionStatus.PAUSED
         self.paused_at = datetime.now(timezone.utc)
         self.last_activity = datetime.now(timezone.utc)
-        
+        self.touch("session_paused")
+
         if reason:
             self.add_progress_update("session_paused", f"Session paused: {reason}")
     
@@ -66,6 +88,7 @@ class WorkSession:
         
         self.status = SessionStatus.ACTIVE
         self.last_activity = datetime.now(timezone.utc)
+        self.touch("session_resumed")
         self.add_progress_update("session_resumed", "Session resumed")
     
     def complete_session(self, success: bool = True, notes: str = "") -> None:
@@ -76,10 +99,11 @@ class WorkSession:
         self.status = SessionStatus.COMPLETED
         self.ended_at = datetime.now(timezone.utc)
         self.last_activity = datetime.now(timezone.utc)
-        
+        self.touch("session_completed")
+
         if notes:
             self.session_notes += f"\nCompletion notes: {notes}"
-        
+
         completion_type = "successful" if success else "unsuccessful"
         self.add_progress_update("session_completed", f"Session completed ({completion_type})")
     
@@ -88,17 +112,19 @@ class WorkSession:
         self.status = SessionStatus.CANCELLED
         self.ended_at = datetime.now(timezone.utc)
         self.last_activity = datetime.now(timezone.utc)
-        
+        self.touch("session_cancelled")
+
         if reason:
             self.session_notes += f"\nCancellation reason: {reason}"
-        
+
         self.add_progress_update("session_cancelled", f"Session cancelled: {reason}")
     
     def timeout_session(self) -> None:
         """Timeout the work session due to inactivity or max duration"""
         self.status = SessionStatus.TIMEOUT
         self.ended_at = datetime.now(timezone.utc)
-        
+        self.touch("session_timeout")
+
         self.add_progress_update("session_timeout", "Session timed out")
     
     def add_progress_update(self, update_type: str, message: str, metadata: Dict = None) -> None:
@@ -112,6 +138,7 @@ class WorkSession:
         
         self.progress_updates.append(update)
         self.last_activity = datetime.now(timezone.utc)
+        self.touch("progress_updated")
     
     def lock_resource(self, resource_id: str) -> None:
         """Lock a resource for this session"""
@@ -213,6 +240,7 @@ class WorkSession:
     def update_activity(self) -> None:
         """Update the last activity timestamp"""
         self.last_activity = datetime.now(timezone.utc)
+        self.touch("activity_updated")
     
     @classmethod
     def create_session(

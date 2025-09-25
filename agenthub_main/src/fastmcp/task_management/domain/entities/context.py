@@ -9,6 +9,7 @@ from ..value_objects.priority import Priority, PriorityLevel
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
 from ..value_objects.task_id import TaskId
 from .global_context_schema import GlobalContextNestedData
+from .base.base_timestamp_entity import BaseTimestampEntity
 import uuid
 
 
@@ -278,16 +279,23 @@ class TaskContextUnified:
 
 
 @dataclass
-class ContextMetadata:
+class ContextMetadata(BaseTimestampEntity):
     """Context metadata structure following clean relationship chain (uses Priority and TaskStatus value objects)"""
-    task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
+    task_id: str = ""  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     status: TaskStatus = field(default_factory=TaskStatus.todo)
     priority: Priority = field(default_factory=Priority.medium)
     assignees: List[str] = field(default_factory=list)
     labels: List[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     version: int = 1
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.task_id) if self.task_id else "unknown"
+
+    def _validate_entity(self) -> None:
+        """Validate entity business rules."""
+        if not self.task_id:
+            raise ValueError("ContextMetadata must have a task_id")
 
 
 @dataclass
@@ -452,7 +460,7 @@ class TaskContext:
             self.progress.next_recommendations = next_recommendations
         
         # Update metadata timestamp
-        self.metadata.updated_at = datetime.now(timezone.utc)
+        self.metadata.touch("completion_summary_updated")
     
     def has_completion_summary(self) -> bool:
         """Check if context has a completion summary"""
@@ -518,8 +526,6 @@ class TaskContext:
                 priority=Priority.from_string(metadata_data.get('priority', 'medium')),
                 assignees=metadata_data.get('assignees', []),
                 labels=metadata_data.get('labels', []),
-                created_at=datetime.fromisoformat(metadata_data.get('created_at', datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00')),
-                updated_at=datetime.fromisoformat(metadata_data.get('updated_at', datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00')),
                 version=metadata_data.get('version', 1)
             )
         else:

@@ -85,7 +85,6 @@ class DeleteProjectUseCase:
         # Track deletion statistics
         stats = {
             "project_id": project_id,
-            "deleted_at": datetime.now().isoformat(),
             "git_branches_deleted": 0,
             "tasks_deleted": 0,
             "subtasks_deleted": 0,

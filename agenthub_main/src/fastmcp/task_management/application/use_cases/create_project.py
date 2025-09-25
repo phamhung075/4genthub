@@ -1,7 +1,6 @@
 """Create Project Use Case"""
 
 from typing import Dict, Any
-from datetime import datetime, timezone
 from ...domain.entities.project import Project
 from ...domain.repositories.project_repository import ProjectRepository
 
@@ -50,15 +49,15 @@ class CreateProjectUseCase:
         project_id = project_id or str(uuid4())
 
         try:
-            # Create project entity
-            now = datetime.now(timezone.utc)
-            project = Project(
-                id=project_id,
+            # Create project entity using the domain factory method
+            # This automatically handles timestamps via BaseTimestampEntity
+            project = Project.create(
                 name=name,
-                description=description,
-                created_at=now,
-                updated_at=now,
+                description=description
             )
+            # Override the auto-generated ID if one was provided
+            if project_id:
+                project.id = project_id
 
             # Create default main task tree so the project has at least one branch
             project.create_git_branch(
@@ -124,11 +123,11 @@ class CreateProjectUseCase:
                 )
                 
                 # Create default project context
+                # Timestamps handled by context system
                 context_data = {
                     "project_id": project.id,
                     "name": project.name,
                     "description": project.description,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
                     "configuration": {},
                     "standards": {},
                     "team_settings": {}

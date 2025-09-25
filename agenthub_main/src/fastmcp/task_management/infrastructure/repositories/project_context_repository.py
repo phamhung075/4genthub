@@ -127,7 +127,7 @@ class ProjectContextRepository(CacheInvalidationMixin, BaseORMRepository):
             db_model.technical_specifications = getattr(entity, 'technical_specifications', {}) or {}
             db_model.global_overrides = entity.metadata.get('global_overrides', {})
             db_model.delegation_rules = entity.metadata.get('delegation_rules', {})
-            db_model.updated_at = datetime.now(timezone.utc)
+            # Timestamps updated automatically by BaseTimestampEntity/ORM
             
             session.flush()
             # Don't refresh to avoid UUID conversion issues with SQLite

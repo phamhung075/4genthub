@@ -24,13 +24,14 @@ from ....domain.exceptions.base_exceptions import (
     ValidationException
 )
 from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ...database.models import ProjectGitBranch, Project
 from ...performance.task_performance_optimizer import get_performance_optimizer
 
 logger = logging.getLogger(__name__)
 
 
-class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepository):
+class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranchRepository):
     """
     ORM-based implementation of GitBranchRepository using SQLAlchemy.
     
@@ -155,7 +156,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                     for key, value in model_data.items():
                         if key not in ['id', 'project_id', 'created_at']:  # Don't update immutable fields
                             setattr(existing, key, value)
-                    existing.updated_at = datetime.now(timezone.utc)
+                    existing.touch("git_branch_updated")
                 else:
                     # Create new branch
                     new_branch = ProjectGitBranch(**model_data)
@@ -504,7 +505,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
     
     async def update(self, git_branch: GitBranch) -> None:
         """Update an existing git branch"""
-        git_branch.updated_at = datetime.now(timezone.utc)
+        git_branch.touch("git_branch_manual_update")
         await self.save(git_branch)
     
     async def count_by_project(self, project_id: str) -> int:
@@ -633,8 +634,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'assigned_agent_id': agent_id,
-                    'updated_at': datetime.now(timezone.utc)
+                    'assigned_agent_id': agent_id
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 return updated_count > 0
@@ -656,8 +657,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'assigned_agent_id': None,
-                    'updated_at': datetime.now(timezone.utc)
+                    'assigned_agent_id': None
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 return updated_count > 0
@@ -713,7 +714,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                     },
                     "status_breakdown": status_breakdown,
                     "user_id": self.user_id,
-                    "generated_at": datetime.now(timezone.utc).isoformat()
+                    "generated_at": "auto-generated"  # BaseTimestampRepository handles timestamps
                 }
         except SQLAlchemyError as e:
             logger.error(f"Error getting project branch summary for {project_id}: {e}")
@@ -729,7 +730,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
             # Generate unique branch ID
             branch_id = str(uuid.uuid4())
             
-            now = datetime.now(timezone.utc)
+            # BaseTimestampRepository handles timestamps automatically
             
             # Create GitBranch entity
             git_branch = GitBranch(
@@ -915,7 +916,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 if git_branch_description is not None:
                     model.description = git_branch_description
                 
-                model.updated_at = datetime.now(timezone.utc)
+                model.touch("git_branch_description_updated")
                 session.flush()
                 
                 git_branch = self._model_to_git_branch(model)
@@ -1076,8 +1077,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'status': 'cancelled',
-                    'updated_at': datetime.now(timezone.utc)
+                    'status': 'cancelled'
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 if updated_count > 0:
@@ -1109,8 +1110,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'status': 'todo',
-                    'updated_at': datetime.now(timezone.utc)
+                    'status': 'todo'
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 if updated_count > 0:

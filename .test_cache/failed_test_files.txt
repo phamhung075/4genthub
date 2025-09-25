@@ -1,0 +1,4 @@
+agenthub_main/src/tests/task_management/domain/value_objects/coordination_test.py
+agenthub_main/src/tests/task_management/interface/api_controllers/agent_api_controller_test.py
+agenthub_main/src/tests/task_management/interface/controllers/task_mcp_controller_comprehensive_test.py
+agenthub_main/src/tests/task_management/interface/mcp_controllers/task_mcp_controller/task_mcp_controller_test.py
