@@ -1,0 +1,124 @@
+# Development Docker Compose Configuration
+# Uses .env.dev for environment variables
+# Includes validation and error handling
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agenthub-postgres
+    env_file:
+      - ../../.env.dev
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: md5
+    ports:
+      - "${DATABASE_PORT}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - agenthub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: agenthub-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.backend.dev
+    container_name: agenthub-backend
+    env_file:
+      - ../../.env.dev
+    environment:
+      # Authentication
+      AUTH_ENABLED: ${AUTH_ENABLED}
+      AUTH_PROVIDER: ${AUTH_PROVIDER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # Override to use container network
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:${DATABASE_PORT}/${DATABASE_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ENV: ${ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      FASTMCP_HOST: 0.0.0.0
+      FASTMCP_PORT: ${FASTMCP_PORT}
+    ports:
+      - "${FASTMCP_PORT}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${FASTMCP_PORT}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.frontend.dev
+    container_name: agenthub-frontend
+    env_file:
+      - ../../.env.dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
+      VITE_ENV: ${VITE_ENV}
+      NODE_ENV: ${NODE_ENV}
+    ports:
+      - "${FRONTEND_PORT}:3800"
+    depends_on:
+      - backend
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3800/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+networks:
+  agenthub-network:
+    external: true
+    name: agenthub-network

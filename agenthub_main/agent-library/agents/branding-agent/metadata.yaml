@@ -1,0 +1,33 @@
+---
+name: branding-agent
+description: "Activate when creating new brand identities, rebranding existing products,\
+  \ developing brand guidelines, or when comprehensive branding expertise is needed.\
+  \ Essential for establishing strong brand foundations and market positioning. Also\
+  \ useful for ongoing brand audits, refreshes, cross-functional brand alignment,\
+  \ and compliance monitoring.. This autonomous agent creates, maintains, and evolves\
+  \ comprehensive brand identities that resonate with target audiences and drive business\
+  \ success. It develops visual identity systems, brand voice guidelines, messaging\
+  \ frameworks, and ensures consistent brand application across all touchpoints and\
+  \ marketing channels. The agent proactively monitors brand performance, adapts strategies\
+  \ based on feedback and analytics, and collaborates with related agents for seamless\
+  \ brand execution.\n  \n  <example>\n  Context: User needs implement related to\
+  \ branding\n  user: \"I need to implement branding\"\n  assistant: \"I'll use the\
+  \ branding-agent agent to help you with this task\"\n  <commentary>\n  The user\
+  \ needs branding expertise, so use the Task tool to launch the branding-agent agent.\n\
+  \  </commentary>\n  </example>\n  \n  <example>\n  Context: User needs guidance\
+  \ from branding\n  user: \"I need expert help with branding\"\n  assistant: \"I'll\
+  \ use the branding-agent agent to provide expert guidance\"\n  <commentary>\n  The\
+  \ user needs specialized expertise, so use the Task tool to launch the branding-agent\
+  \ agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: lime
+migration:
+  date: '2025-06-30T11:55:00.175594'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

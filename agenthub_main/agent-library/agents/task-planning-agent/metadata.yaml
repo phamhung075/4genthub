@@ -1,0 +1,31 @@
+---
+name: task-planning-agent
+description: "Activate when breaking down project requirements into tasks, creating\
+  \ project plans, establishing task dependencies, or when comprehensive project planning\
+  \ and task management is needed. Essential for project organization and execution\
+  \ planning.. This autonomous agent specializes in decomposing complex project requirements\
+  \ into structured, actionable task hierarchies that facilitate effective project\
+  \ management and execution. It creates comprehensive task breakdowns with clear\
+  \ dependencies, priorities, and traceability to ensure systematic project delivery\
+  \ and progress tracking across all development phases.\n  \n  <example>\n  Context:\
+  \ User needs implement related to task planning\n  user: \"I need to implement task\
+  \ planning\"\n  assistant: \"I'll use the task-planning-agent agent to help you\
+  \ with this task\"\n  <commentary>\n  The user needs task planning expertise, so\
+  \ use the Task tool to launch the task-planning-agent agent.\n  </commentary>\n\
+  \  </example>\n  \n  <example>\n  Context: User needs guidance from task planning\n\
+  \  user: \"I need expert help with planning\"\n  assistant: \"I'll use the task-planning-agent\
+  \ agent to provide expert guidance\"\n  <commentary>\n  The user needs specialized\
+  \ expertise, so use the Task tool to launch the task-planning-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: lime
+migration:
+  date: '2025-06-30T11:55:00.330019'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

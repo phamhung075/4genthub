@@ -1,0 +1,285 @@
+/**
+ * WebSocket Animation Styles
+ *
+ * CSS animations triggered by WebSocket events for visual feedback
+ */
+
+/* Shimmer effect for WebSocket events */
+.shimmer-active {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 2.5s ease-in-out;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Task celebration effect */
+.task-celebration {
+  animation: celebration-pulse 3s ease-in-out;
+}
+
+@keyframes celebration-pulse {
+  0%, 100% {
+    filter: none;
+  }
+  25% {
+    filter: brightness(1.1) saturate(1.2);
+  }
+  50% {
+    filter: brightness(1.2) saturate(1.3);
+  }
+  75% {
+    filter: brightness(1.1) saturate(1.2);
+  }
+}
+
+/* Subtle border flash for created items */
+.websocket-flash {
+  animation: border-flash 1.5s ease-in-out;
+}
+
+@keyframes border-flash {
+  0%, 100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.5);
+  }
+}
+
+/* Fade effect for deleted items */
+.websocket-fade {
+  animation: fade-out 2s ease-in-out;
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Update pulse effect */
+.websocket-update {
+  animation: update-pulse 1s ease-in-out;
+}
+
+@keyframes update-pulse {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* Ripple effect for new items */
+.websocket-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.websocket-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.3);
+  transform: translate(-50%, -50%);
+  animation: ripple-expand 2s ease-out;
+  pointer-events: none;
+}
+
+@keyframes ripple-expand {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 200%;
+    height: 200%;
+    opacity: 0;
+  }
+}
+
+/* Glow effect for completed items */
+.websocket-glow {
+  animation: success-glow 2s ease-in-out;
+}
+
+@keyframes success-glow {
+  0%, 100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+  }
+}
+
+/* Bounce effect for important notifications */
+.websocket-bounce {
+  animation: gentle-bounce 1s ease-in-out;
+}
+
+@keyframes gentle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-1px);
+  }
+}
+
+/* Scale effect for emphasis */
+.websocket-scale {
+  animation: scale-emphasis 1.5s ease-in-out;
+}
+
+@keyframes scale-emphasis {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* Slide-in effect for new content */
+.websocket-slide-in {
+  animation: slide-in-right 1s ease-out;
+}
+
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Global celebration sparkle effect */
+body.task-celebration::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 20% 80%,
+    rgba(34, 197, 94, 0.1) 0%,
+    transparent 50%
+  ),
+  radial-gradient(
+    circle at 80% 20%,
+    rgba(59, 130, 246, 0.1) 0%,
+    transparent 50%
+  );
+  animation: sparkle-celebration 3s ease-in-out;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes sparkle-celebration {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Utility classes for manual triggering */
+.animate-websocket-flash {
+  @apply websocket-flash;
+}
+
+.animate-websocket-glow {
+  @apply websocket-glow;
+}
+
+.animate-websocket-bounce {
+  @apply websocket-bounce;
+}
+
+.animate-websocket-scale {
+  @apply websocket-scale;
+}
+
+/* Responsive adjustments */
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-active::before,
+  .task-celebration,
+  .websocket-flash,
+  .websocket-fade,
+  .websocket-update,
+  .websocket-ripple::after,
+  .websocket-glow,
+  .websocket-bounce,
+  .websocket-scale,
+  .websocket-slide-in,
+  body.task-celebration::before {
+    animation: none;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .shimmer-active::before {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+  }
+
+  .websocket-update {
+    background-color: rgba(59, 130, 246, 0.05);
+  }
+}

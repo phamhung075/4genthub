@@ -1,0 +1,91 @@
+research_methodology:
+  objective: |
+    To understand how the system works, identify all relevant files, and locate where a problem is situated.
+    This comprehensive understanding prevents cascading errors and ensures accurate implementation.
+    
+  importance: |
+    A misunderstanding at the research stage can lead to thousands of bad lines of code later in the process.
+    It is crucial to dedicate time to properly specify the problem and ensure the agent comprehends the system's operation.
+    Human review of the research output helps in catching problems early.
+    
+  critical_areas:
+    - system_architecture: How components interact and communicate
+    - data_flows: Where data originates, transforms, and terminates  
+    - file_locations: Exact paths to relevant implementations
+    - dependencies: What depends on what, dependency chains
+    - problem_context: Where issues are situated in the system
+    
+  method:
+    description: Use detailed research prompts designed to produce precise, actionable information
+    deliverables:
+      - file_names_with_paths: Complete absolute paths to all relevant files
+      - line_numbers: Specific line numbers for implementations
+      - data_flow_mappings: Visual and textual representation of data movement
+      - system_architecture: Component diagrams and interaction maps
+      - dependencies: Dependency graphs and interaction matrices
+      
+  output_specification:
+    file_inventory:
+      - complete_file_list: All relevant files with absolute paths
+      - line_references: Key functions/classes with file:line_number format
+      - file_relationships: How files depend on and interact with each other
+      - file_purpose: Brief description of each file's role
+      
+    system_understanding:
+      - architecture_diagrams: Text-based architectural representations
+      - data_flow_docs: Complete data journey documentation
+      - component_maps: Interaction and dependency mappings
+      - integration_points: External system touchpoints
+      
+    problem_location:
+      - exact_references: file:line_number for problem areas
+      - context_analysis: Surrounding code and logic flow
+      - affected_files: List of files that might be impacted
+      - ripple_effects: Potential downstream impacts
+      
+    implementation_details:
+      - current_approach: How it's currently implemented
+      - technology_stack: Languages, frameworks, libraries used
+      - patterns: Design patterns and conventions followed
+      - constraints: Technical or business constraints
+      
+  research_process:
+    steps:
+      - initial_survey:
+          description: Broad search to understand project structure
+          tools: [find, ls, tree, grep]
+          output: Project overview and structure map
+          
+      - deep_dive:
+          description: Focused investigation of specific areas
+          tools: [grep, read, analyze]
+          output: Detailed component analysis
+          
+      - cross_reference:
+          description: Validate findings across multiple sources
+          tools: [grep, read, compare]
+          output: Validated findings with confidence scores
+          
+      - documentation:
+          description: Compile precise file:line_number references
+          tools: [write, format]
+          output: Structured research report
+          
+      - validation:
+          description: Ensure understanding is correct before proceeding
+          tools: [test, verify]
+          output: Validation report with corrections
+          
+  quality_metrics:
+    - accuracy: All file paths and line numbers must be exact
+    - completeness: No relevant files or dependencies missed
+    - clarity: Research output must be easily understandable
+    - actionability: Findings must directly enable next steps
+    - traceability: All findings must be traceable to sources
+    
+  risk_mitigation:
+    - multiple_verification: Cross-check findings from multiple angles
+    - human_review: Critical findings flagged for human validation
+    - confidence_scoring: Assign confidence levels to findings
+    - fallback_strategies: Alternative approaches if primary fails
+    - edge_case_handling: Identify and document edge cases

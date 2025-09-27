@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or "Oracle Server" }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #007cba; padding-bottom: 20px; margin-bottom: 20px; }
+        .logo { color: #007cba; font-size: 24px; font-weight: bold; }
+        .content { margin: 20px 0; }
+        .button { display: inline-block; background: #007cba; color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+        .button:hover { background: #005a87; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 4px; margin: 15px 0; }
+        .code { font-family: monospace; background: #f8f9fa; padding: 8px 12px; border-radius: 4px; letter-spacing: 2px; font-size: 18px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">{{ company_name or "Oracle Server" }}</div>
+            {% if subtitle %}<p style="margin: 10px 0 0 0; color: #666;">{{ subtitle }}</p>{% endif %}
+        </div>
+        
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent from {{ company_name or "Oracle Server" }}.</p>
+            <p>If you didn't request this email, please ignore it or contact support.</p>
+            <p>&copy; {{ current_year or "2025" }} {{ company_name or "Oracle Server" }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

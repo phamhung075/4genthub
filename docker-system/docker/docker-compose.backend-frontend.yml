@@ -1,0 +1,77 @@
+# Backend and Frontend Only Docker Compose Configuration
+# Uses external PostgreSQL database (must be running separately)
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.backend.dev
+    container_name: agenthub-backend
+    env_file:
+      - ../../.env.dev
+    environment:
+      # Authentication
+      AUTH_ENABLED: ${AUTH_ENABLED}
+      AUTH_PROVIDER: ${AUTH_PROVIDER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # Connect to PostgreSQL container on the same network
+      DATABASE_HOST: agenthub-postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@agenthub-postgres:5432/${DATABASE_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ENV: ${ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      FASTMCP_HOST: 0.0.0.0
+      FASTMCP_PORT: ${FASTMCP_PORT}
+      # Mark as Docker environment for logging
+      CONTAINER_ENV: docker
+    ports:
+      - "${FASTMCP_PORT}:8000"
+    volumes:
+      # Mount logs directory to persist logs outside container
+      - ../../logs:/data/logs
+      # Mount data directory for other persistent data
+      - ../../data:/data/resources
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+    external_links:
+      - agenthub-postgres:postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${FASTMCP_PORT}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.frontend.dev
+    container_name: agenthub-frontend
+    env_file:
+      - ../../.env.dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
+      VITE_ENV: ${VITE_ENV}
+      NODE_ENV: ${NODE_ENV}
+    ports:
+      - "${FRONTEND_PORT}:3800"
+    depends_on:
+      - backend
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+
+networks:
+  agenthub-network:
+    external: true
+    name: agenthub-network

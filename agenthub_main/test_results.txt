@@ -1,0 +1,128 @@
+
+🧪 Starting agenthub Test Suite
+🛡️  Test data isolation enabled
+🧹 Automatic cleanup configured
+........................................................................ [  0%]
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+...........................ssssss....................................... [  6%]
+........................................................................ [  7%]
+...........................................................ssssss....... [  8%]
+.....................................................sss..........sss.ss [  9%]
+s....................................................................... [ 10%]
+........................................................................ [ 10%]
+.........................s.............................................. [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+...................................................................F
+🧹 Performing final test data cleanup...
+🧹 Final cleanup completed:
+   - 0 test data files removed
+   - 0 temporary directories removed
+✅ Test environment is clean
+
+=============================== warnings summary ===============================
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: auth/interface/auth_endpoints_test.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: integration/test_bulk_api.py)
+    class MockFastAPIClient:
+
+../../../.local/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:298: 7 warnings
+server/auth/providers/jwt_bearer_test.py: 3 warnings
+  /home/daihungpham/.local/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:298: PydanticDeprecatedSince20: `json_encoders` is deprecated. See https://docs.pydantic.dev/2.11/concepts/serialization/#custom-serializers for alternatives. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(
+
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: integration/test_websocket_server.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: security/websocket/test_websocket_integration.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: security/websocket/test_websocket_security.py)
+    class MockFastAPIClient:
+
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: task_management/infrastructure/monitoring/metrics_integration_test.py)
+    class MockFastAPIClient:
+
+src/tests/task_management/infrastructure/websocket/agent_communication_hub_test.py:540
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/websocket/agent_communication_hub_test.py:540: PytestUnknownMarkWarning: Unknown pytest.mark.timeout - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.timeout(5)  # Prevent infinite hanging
+
+src/tests/conftest.py:413
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py:413: PytestCollectionWarning: cannot collect test class 'MockFastAPIClient' because it has a __init__ constructor (from: unit/auth/interface/auth_endpoints_test.py)
+    class MockFastAPIClient:
+
+src/tests/unit/task_management/domain/entities/test_base_timestamp_entity.py:22
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/entities/test_base_timestamp_entity.py:22: PytestCollectionWarning: cannot collect test class 'TestEntity' because it has a __init__ constructor (from: unit/task_management/domain/entities/test_base_timestamp_entity.py)
+    class TestEntity(BaseTimestampEntity):
+
+integration/agent_assignment_flow_test.py::TestEdgeCasesAndErrorHandling::test_validate_large_assignee_list
+  /home/daihungpham/.local/lib/python3.12/site-packages/sqlalchemy/sql/compiler.py:3809: RuntimeWarning: coroutine 'TaskApplicationFacade._derive_context_from_git_branch_id' was never awaited
+    ckbm[cb].append(bindparam)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+integration/agent_assignment_flow_test.py::TestEdgeCasesAndErrorHandling::test_validate_large_assignee_list
+  /home/daihungpham/.local/lib/python3.12/site-packages/sqlalchemy/sql/compiler.py:3809: RuntimeWarning: coroutine 'TaskContextSyncService.sync_context_and_get_task' was never awaited
+    ckbm[cb].append(bindparam)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_list_tasks_filters_by_branch_a
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_list_tasks_filters_by_branch_b
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_list_tasks_without_filter_returns_all_tasks
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_optimized_repository_direct_filtering
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_optimized_repository_parameter_override
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/task_management/application/services/websocket_notification_service.py:724: RuntimeWarning: coroutine 'broadcast_data_change' was never awaited
+    new_loop.close()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_optimized_repository_parameter_override
+  /home/daihungpham/.local/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:811: RuntimeWarning: coroutine 'TaskApplicationFacade._derive_context_from_git_branch_id' was never awaited
+    def _instance_processor(
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+integration/task_management/interface/git_branch_filtering_integration_test.py::TestGitBranchFilteringIntegration::test_optimized_repository_parameter_override
+  /home/daihungpham/.local/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:811: RuntimeWarning: coroutine 'TaskContextSyncService.sync_context_and_get_task' was never awaited
+    def _instance_processor(
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+integration/test_websocket_server.py::TestConnectionManager::test_message_validation
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/websocket/protocol.py:131: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    logger.warning(f"Failed to calculate cascade for {entity_id}: {e}")
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+security/websocket/test_performance_security.py::TestSecurityMemoryLeaks::test_authentication_memory_leaks
+  /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/security/websocket/test_performance_security.py:455: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    gc.collect()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+server/auth/providers/jwt_bearer_test.py::TestJWTBearerAuthProvider::test_validate_token_in_database_inactive
+  /home/daihungpham/.local/lib/python3.12/site-packages/pydantic/_internal/_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED src/tests/task_management/application/use_cases/delete_task_test.py::TestDeleteTaskUseCase::test_init
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1485 passed, 28 skipped, 31 warnings in 92.39s (0:01:32)

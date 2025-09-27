@@ -1,0 +1,58 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+keeping
+
+Clean Relationship Chain:
+
+  subtasks → tasks → git_branch → project → user
+  context → task → git_branch → project → user
+  agents → project → user
+
+
+Core Tables:
+
+  - ✅ tasks: Now uses only git_branch_id
+  - ✅ task_subtasks: Now uses only task_id
+  - ✅ task_assignees: Uses task_id + proper foreign keys
+  - ✅ task_labels: Uses task_id + proper foreign keys
+  - ✅ task_dependencies: Uses task_id + proper foreign keys
+
+Context Tables:
+
+  - ✅ contexts: Now uses only task_id as primary key
+  - ✅ context_assignees: Uses task_id + proper foreign keys
+  - ✅ context_labels: Uses task_id + proper foreign keys
+  - ✅ context_insights_new: Uses task_id + proper foreign keys
+  - ✅ context_progress_actions: Uses task_id + proper foreign keys
+  - ✅ enhanced_context: Uses task_id + proper foreign keys
+
+Template Tables:
+
+  - ✅ template_usage: Removed redundant project_id, git_branch_name
+  - ✅ template_cache: Added proper foreign keys
+  - ✅ glob_pattern_monitoring: Uses task_id + proper foreign keys
+  - ✅ file_change_events: Uses task_id + proper foreign keys
+
+Checklist Tables:
+
+  - ✅ task_checklists: Uses task_id + proper foreign keys
+  - ✅ checklist_items: Uses checklist_id + proper foreign keys
+  - ✅ checklist_completion_stats: Uses checklist_id + proper foreign keys
+  - ✅ quality_gates: Uses task_id + proper foreign keys
+  - ✅ validation_cache: Uses item_id + proper foreign keys
+
+Project Tables:
+
+  - ✅ project_agent_assignments: Now uses git_branch_id instead of name
+  - ✅ project_work_sessions: Now uses git_branch_id + proper foreign keys
+
+Benefits:
+
+  - ✅ Single source of truth for each piece of data
+  - ✅ No redundant information
+  - ✅ Proper foreign key integrity
+  - ✅ Clean, maintainable code
+  - ✅ No legacy technical debt

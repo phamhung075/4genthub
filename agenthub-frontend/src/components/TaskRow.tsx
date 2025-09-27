@@ -1,0 +1,749 @@
+import { ChevronDown, ChevronRight, Eye, Pencil, Trash2, Users } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Task } from "../api";
+import ClickableAssignees from "./ClickableAssignees";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
+import { TableCell, TableRow } from "./ui/table";
+import logger from "../utils/logger";
+import { ProgressDisplayEnhanced } from "./ui/ProgressDisplay";
+
+import LazySubtaskList from "./LazySubtaskList";
+
+// Lightweight task summary interface
+interface TaskSummary {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  subtask_count: number;
+  assignees_count: number;
+  assignees: string[];
+  has_dependencies: boolean;
+  dependency_count: number;
+}
+
+interface TaskRowProps {
+  summary: TaskSummary;
+  isExpanded: boolean;
+  isLoading: boolean;
+  fullTask: Task | null;
+  isHighlighted: boolean;
+  isHovered: boolean;
+  projectId: string;
+  taskTreeId: string;
+  isMobile: boolean;
+
+  // Animation event callbacks from parent (placeholders)
+  onPlayCreateAnimation: () => void;
+  onPlayDeleteAnimation: () => void;
+  onPlayUpdateAnimation: () => void;
+
+  // Other callbacks
+  onToggleExpansion: () => void;
+  onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
+  onHover: (taskId: string | null) => void;
+
+  // Callback registration function from parent
+  onRegisterCallbacks?: (taskId: string, callbacks: {
+    playCreateAnimation: () => void;
+    playDeleteAnimation: () => void;
+    playUpdateAnimation: () => void;
+  }) => void;
+  onUnregisterCallbacks?: (taskId: string) => void;
+}
+
+const TaskRow: React.FC<TaskRowProps> = ({
+  summary,
+  isExpanded,
+  isLoading,
+  fullTask,
+  isHighlighted,
+  isHovered,
+  projectId,
+  taskTreeId,
+  isMobile,
+  onPlayCreateAnimation,
+  onPlayDeleteAnimation,
+  onPlayUpdateAnimation,
+  onToggleExpansion,
+  onOpenDialog,
+  onHover,
+  onRegisterCallbacks,
+  onUnregisterCallbacks
+}) => {
+  // Navigation hook for task detail URLs
+  const navigate = useNavigate();
+
+  // Internal animation state
+  const [animationState, setAnimationState] = useState<'none' | 'creating' | 'deleting' | 'updating'>('none');
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Animation handlers
+  const playCreateAnimation = useCallback(() => {
+    setAnimationState('creating');
+    setTimeout(() => setAnimationState('none'), 500); // Clear after animation (0.5s as per requirements)
+  }, []);
+
+  const playDeleteAnimation = useCallback(() => {
+    logger.debug('TaskRow starting delete animation', { component: 'TaskRow', taskId: summary.id });
+    setAnimationState('deleting');
+    // After animation completes, hide the row
+    setTimeout(() => {
+      logger.debug('TaskRow delete animation complete, hiding', { component: 'TaskRow', taskId: summary.id });
+      setIsVisible(false);
+    }, 800); // Animation duration (longer)
+  }, [summary.id]);
+
+  const playUpdateAnimation = useCallback(() => {
+    setAnimationState('updating');
+    setTimeout(() => setAnimationState('none'), 5000); // Clear after 5 seconds as requested
+  }, []);
+
+  // Register animation callbacks with parent
+  useEffect(() => {
+    if (onRegisterCallbacks) {
+      logger.debug('TaskRow registering callbacks for task', { component: 'TaskRow', taskId: summary.id });
+      onRegisterCallbacks(summary.id, {
+        playCreateAnimation,
+        playDeleteAnimation,
+        playUpdateAnimation
+      });
+    } else {
+      logger.warn('TaskRow: No onRegisterCallbacks provided for task', { component: 'TaskRow', taskId: summary.id });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (onUnregisterCallbacks) {
+        logger.debug('TaskRow unregistering callbacks for task', { component: 'TaskRow', taskId: summary.id });
+        onUnregisterCallbacks(summary.id);
+      }
+    };
+  }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, onRegisterCallbacks, onUnregisterCallbacks]);
+
+  // Listen for WebSocket animation events (for cross-user animations)
+  useEffect(() => {
+    const handleWebSocketFade = (event: CustomEvent) => {
+      const { taskId: eventTaskId } = event.detail || {};
+
+      // Only respond to events for this specific task
+      if (eventTaskId !== summary.id) {
+        return;
+      }
+
+      logger.debug('TaskRow received WebSocket fade event for this task', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        eventTaskId
+      });
+
+      // Only trigger if the row is still visible (not already deleted optimistically)
+      if (isVisible) {
+        logger.debug('TaskRow playing WebSocket delete animation', { component: 'TaskRow', taskId: summary.id });
+        playDeleteAnimation();
+      } else {
+        logger.debug('TaskRow ignoring WebSocket fade - already invisible', { component: 'TaskRow', taskId: summary.id });
+      }
+    };
+
+    const handleWebSocketCelebration = (event: CustomEvent) => {
+      const { taskId: eventTaskId } = event.detail || {};
+
+      // Only respond to events for this specific task
+      if (eventTaskId && eventTaskId !== summary.id) {
+        return;
+      }
+
+      logger.debug('TaskRow received WebSocket celebration event for this task', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        eventTaskId
+      });
+
+      // Trigger completion animation
+      playUpdateAnimation();
+    };
+
+    const handleWebSocketAnimation = (event: CustomEvent) => {
+      const { type, taskId: eventTaskId } = event.detail || {};
+
+      // Only respond to events for this specific task (if taskId is provided)
+      if (eventTaskId && eventTaskId !== summary.id) {
+        return;
+      }
+
+      logger.debug('TaskRow received WebSocket animation event for this task', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        eventTaskId,
+        type
+      });
+
+      switch (type) {
+        case 'task-created':
+          playCreateAnimation();
+          break;
+        case 'task-updated':
+          playUpdateAnimation();
+          break;
+        case 'task-completed':
+          // Use update animation for completion
+          playUpdateAnimation();
+          break;
+        default:
+          logger.debug('TaskRow unknown WebSocket animation type', { component: 'TaskRow', type });
+      }
+    };
+
+    // Add event listeners for WebSocket-triggered animations
+    window.addEventListener('task-fade', handleWebSocketFade as EventListener);
+    window.addEventListener('task-celebration', handleWebSocketCelebration as EventListener);
+    window.addEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('task-fade', handleWebSocketFade as EventListener);
+      window.removeEventListener('task-celebration', handleWebSocketCelebration as EventListener);
+      window.removeEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
+    };
+  }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, isVisible]);
+
+  // Don't render if not visible (after delete animation)
+  if (!isVisible) {
+    return null;
+  }
+
+  // Animation styles
+  const getAnimationStyle = () => {
+    switch (animationState) {
+      case 'creating':
+        return {
+          animation: 'slideInFromLeft 0.5s ease-out forwards'
+        };
+      case 'deleting':
+        return {
+          animation: 'slideOutToRight 0.8s ease-in forwards'
+        };
+      case 'updating':
+        return {
+          animation: 'shimmerBackground 2s linear infinite'
+        };
+      default:
+        return {};
+    }
+  };
+
+  // Animation classes
+  const getAnimationClasses = () => {
+    const baseClasses = 'transition-all duration-200';
+
+    switch (animationState) {
+      case 'creating':
+        return `${baseClasses} border-teal-500 bg-teal-100 dark:bg-teal-950`;
+      case 'deleting':
+        return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
+      case 'updating':
+        return `${baseClasses} task-updating-animation`;
+      default:
+        return baseClasses + (
+          isHighlighted
+            ? ' border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md'
+            : isHovered
+            ? ' border-violet-400 shadow-lg bg-violet-200 dark:bg-violet-950'
+            : ' border-surface-border dark:border-gray-700'
+        );
+    }
+  };
+
+  if (isMobile) {
+    // Mobile Card View
+    return (
+      <>
+        {/* Animation CSS */}
+        <style>{`
+          @keyframes slideInFromLeft {
+            from {
+              transform: translateX(-20px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+          @keyframes slideOutToRight {
+            0% {
+              transform: translateX(0);
+              opacity: 1;
+              height: auto;
+              max-height: 1000px;
+            }
+            40% {
+              transform: translateX(30%);
+              opacity: 0.6;
+              height: auto;
+              max-height: 1000px;
+            }
+            70% {
+              transform: translateX(80%);
+              opacity: 0.2;
+              height: auto;
+              max-height: 1000px;
+            }
+            85% {
+              transform: translateX(100%);
+              opacity: 0;
+              height: auto;
+              max-height: 1000px;
+            }
+            100% {
+              transform: translateX(100%);
+              opacity: 0;
+              height: 0;
+              max-height: 0;
+              margin: 0;
+              padding: 0;
+              border: 0;
+              overflow: hidden;
+            }
+          }
+          @keyframes shimmerBackground {
+            0% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: -100% 50%;
+            }
+          }
+
+          .task-updating-animation {
+            background: linear-gradient(90deg,
+              transparent 0%,
+              transparent 30%,
+              rgba(59, 130, 246, 0.3) 40%,
+              rgba(96, 165, 250, 0.3) 50%,
+              rgba(147, 197, 253, 0.3) 60%,
+              transparent 70%,
+              transparent 100%);
+            background-size: 200% 100%;
+            animation: shimmerBackground 2s linear infinite;
+          }
+        `}</style>
+
+        <div
+          className={`rounded-lg mb-3 cursor-pointer ${getAnimationClasses()}`}
+          onMouseEnter={() => onHover(summary.id)}
+          onMouseLeave={() => onHover(null)}
+        >
+          {/* Inner content */}
+          <div className={`bg-surface dark:bg-gray-800 rounded-lg shadow-sm border w-full h-full`}>
+          <div className="p-4">
+            {/* Task Header */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <h3 className="font-medium text-base mb-2 pr-2">{summary.title}</h3>
+                {/* Enhanced Progress Display with cleaned text and tooltips */}
+                <div className="mb-2">
+                  <ProgressDisplayEnhanced
+                    status={fullTask?.status || summary.status}
+                    progressPercentage={fullTask?.progress_percentage}
+                    progressState={fullTask?.progress_state}
+                    progressHistory={fullTask?.progress_history}
+                    size="sm"
+                    variant="compact"
+                    showLabels={false}
+                    animate={true}
+                    compactLayout={true}
+                    maxTextLength={80}
+                  />
+                </div>
+                {/* Single line with no wrap, truncation for overflow */}
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <HolographicStatusBadge status={summary.status as any} size="xs" />
+                    <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
+                  </div>
+                  <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                    {summary.subtask_count > 0 && (
+                      <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
+                        {summary.subtask_count} subtasks
+                      </Badge>
+                    )}
+                    {summary.has_dependencies && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs cursor-help whitespace-nowrap flex-shrink-0"
+                        title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+                      >
+                        {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
+                      </Badge>
+                    )}
+                    {summary.assignees && summary.assignees.length > 0 && (
+                      <div className="min-w-0 overflow-hidden">
+                        <ClickableAssignees
+                          assignees={summary.assignees}
+                          task={fullTask || summary as any}
+                          onAgentClick={(agentName, task) => {
+                            onOpenDialog('agent-info', undefined, { agentName, taskTitle: task.title });
+                          }}
+                          variant="secondary"
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpansion();
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                ) : isExpanded ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-1 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`);
+                }}
+                className="flex-1 min-w-[60px]"
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                View
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('edit', summary.id);
+                }}
+                className="flex-1 min-w-[60px]"
+              >
+                <Pencil className="w-3 h-3 mr-1" />
+                Edit
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('assign', summary.id);
+                }}
+                className="flex-1 min-w-[60px]"
+              >
+                <Users className="w-3 h-3 mr-1" />
+                Assign
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('delete', summary.id);
+                }}
+                title="Delete task"
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Expanded Content - Only render LazySubtaskList if task has subtasks */}
+          {isExpanded && fullTask && summary.subtask_count > 0 && (
+            <div className="border-t border-surface-border dark:border-gray-700">
+              <div className="border-blue-400 dark:border-blue-600">
+                <LazySubtaskList
+                  projectId={projectId}
+                  taskTreeId={taskTreeId}
+                  parentTaskId={summary.id}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Show message when expanded but no subtasks */}
+          {isExpanded && fullTask && summary.subtask_count === 0 && (
+            <div className="border-t border-surface-border dark:border-gray-700 p-4 text-center text-sm text-muted-foreground">
+              No subtasks for this task.
+            </div>
+          )}
+          </div>
+        </div>
+      </>
+    );
+  } else {
+    // Desktop Table View
+    return (
+      <>
+        {/* Animation CSS */}
+        <style>{`
+          @keyframes slideInFromLeft {
+            from {
+              transform: translateX(-20px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+          @keyframes slideOutToRight {
+            0% {
+              transform: translateX(0);
+              opacity: 1;
+              height: auto;
+              max-height: 1000px;
+            }
+            40% {
+              transform: translateX(30%);
+              opacity: 0.6;
+              height: auto;
+              max-height: 1000px;
+            }
+            70% {
+              transform: translateX(80%);
+              opacity: 0.2;
+              height: auto;
+              max-height: 1000px;
+            }
+            85% {
+              transform: translateX(100%);
+              opacity: 0;
+              height: auto;
+              max-height: 1000px;
+            }
+            100% {
+              transform: translateX(100%);
+              opacity: 0;
+              height: 0;
+              max-height: 0;
+              margin: 0;
+              padding: 0;
+              border: 0;
+              overflow: hidden;
+            }
+          }
+          @keyframes shimmerBackground {
+            0% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: -100% 50%;
+            }
+          }
+
+          .task-updating-animation {
+            background: linear-gradient(90deg,
+              transparent 0%,
+              transparent 30%,
+              rgba(59, 130, 246, 0.3) 40%,
+              rgba(96, 165, 250, 0.3) 50%,
+              rgba(147, 197, 253, 0.3) 60%,
+              transparent 70%,
+              transparent 100%);
+            background-size: 200% 100%;
+            animation: shimmerBackground 2s linear infinite;
+          }
+        `}</style>
+
+        <TableRow
+          className={`cursor-pointer ${getAnimationClasses()}`}
+          style={getAnimationStyle()}
+          onMouseEnter={() => onHover(summary.id)}
+          onMouseLeave={() => onHover(null)}
+        >
+          <TableCell className="w-[50px]">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpansion();
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+              ) : isExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </Button>
+          </TableCell>
+
+          <TableCell className="">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span>{summary.title}</span>
+                {summary.subtask_count > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {summary.subtask_count}
+                  </Badge>
+                )}
+              </div>
+              {/* Enhanced Progress Display with cleaned text and tooltips */}
+              <ProgressDisplayEnhanced
+                status={fullTask?.status || summary.status}
+                progressPercentage={fullTask?.progress_percentage}
+                progressState={fullTask?.progress_state}
+                progressHistory={fullTask?.progress_history}
+                size="sm"
+                variant="compact"
+                showLabels={false}
+                animate={true}
+                compactLayout={true}
+                maxTextLength={60}
+              />
+            </div>
+          </TableCell>
+
+          <TableCell className="hidden sm:table-cell">
+            <HolographicStatusBadge status={summary.status as any} size="sm" />
+          </TableCell>
+
+          <TableCell className="hidden md:table-cell">
+            <HolographicPriorityBadge priority={summary.priority as any} size="sm" />
+          </TableCell>
+
+          <TableCell className="hidden lg:table-cell">
+            {summary.has_dependencies ? (
+              <Badge
+                variant="outline"
+                className="text-xs cursor-help"
+                title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+              >
+                {summary.dependency_count} {summary.dependency_count === 1 ? 'dependency' : 'dependencies'}
+              </Badge>
+            ) : (
+              <span className="text-xs text-muted-foreground">None</span>
+            )}
+          </TableCell>
+
+          <TableCell className="hidden md:table-cell max-w-[200px] p-2 align-top">
+            {summary.assignees && summary.assignees.length > 0 ? (
+              <ClickableAssignees
+                assignees={summary.assignees}
+                task={fullTask || summary as any}
+                onAgentClick={(agentName, task) => {
+                  onOpenDialog('agent-info', undefined, { agentName, taskTitle: task.title });
+                }}
+                variant="secondary"
+                className=""
+                compact={true}
+              />
+            ) : (
+              <span className="text-xs text-muted-foreground">Unassigned</span>
+            )}
+          </TableCell>
+
+          <TableCell className="">
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${summary.id}`);
+                }}
+                title="View details"
+                className="h-8 w-8"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('assign', summary.id);
+                }}
+                title="Assign agents"
+                className="h-8 w-8 hidden sm:inline-flex"
+              >
+                <Users className="w-4 h-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('edit', summary.id);
+                }}
+                title="Edit task"
+                className="h-8 w-8"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDialog('delete', summary.id);
+                }}
+                title="Delete task"
+                className="h-8 w-8"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+
+        {/* Only render LazySubtaskList if task has subtasks */}
+        {isExpanded && fullTask && summary.subtask_count > 0 && (
+          <TableRow className="theme-context-section">
+            <TableCell colSpan={7} className="p-0">
+              <div className="border-blue-400 dark:border-blue-600 ml-8">
+                <LazySubtaskList
+                  projectId={projectId}
+                  taskTreeId={taskTreeId}
+                  parentTaskId={summary.id}
+                />
+              </div>
+            </TableCell>
+          </TableRow>
+        )}
+
+        {/* Show message when expanded but no subtasks */}
+        {isExpanded && fullTask && summary.subtask_count === 0 && (
+          <TableRow className="theme-context-section">
+            <TableCell colSpan={7} className="p-4 text-center text-sm text-muted-foreground">
+              No subtasks for this task.
+            </TableCell>
+          </TableRow>
+        )}
+      </>
+    );
+  }
+};
+
+export default TaskRow;

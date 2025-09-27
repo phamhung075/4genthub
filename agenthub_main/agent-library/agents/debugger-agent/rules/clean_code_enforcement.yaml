@@ -1,0 +1,27 @@
+clean_code_enforcement:
+  fix_and_improve: "Don't just fix bugs - improve code quality"
+
+  while_debugging:
+    identify_root_causes:
+      - "Duplication often causes inconsistent fixes"
+      - "SOLID violations create brittle code"
+      - "Complex functions hide bugs"
+
+    fix_approach:
+      - "Fix bug AND refactor code"
+      - "Eliminate duplication causing bug"
+      - "Simplify complex logic"
+      - "Add proper error handling"
+
+  refactor_opportunities:
+    - "Duplicate bug fixes → Shared function"
+    - "Complex conditionals → Simplify logic"
+    - "God classes → Split responsibilities"
+    - "Tight coupling → Add abstractions"
+
+  quality_checklist:
+    after_fix:
+      - "No new duplication"
+      - "Code cleaner than before"
+      - "Better abstractions"
+      - "Prevents similar bugs"

@@ -1,0 +1,34 @@
+clean_code_enforcement:
+  mandatory: "ALL code MUST follow Clean Code, DRY, and SOLID principles"
+
+  while_coding:
+    check_continuously:
+      - "No duplication → Extract immediately"
+      - "Function > 30 lines → Split it"
+      - "Class doing multiple things → Separate"
+      - "Hardcoded values → Use constants"
+      - "Deep nesting → Extract methods"
+
+  factory_detection:
+    auto_detect:
+      - "3+ similar objects → Create factory"
+      - "4+ setup steps → Factory with presets"
+      - "If-else types → Factory method"
+      - "5+ params → Builder pattern"
+
+    auto_refactor: "Generate factory code automatically"
+
+  quality_gates:
+    must_pass:
+      - "Zero duplication"
+      - "Functions < 30 lines"
+      - "Classes < 300 lines"
+      - "Meaningful names"
+      - "Single responsibility"
+
+  examples:
+    bad: "def proc(d): return [i*2 for i in d if i>0]"
+    good: |
+      def process_positive_values(data: List[int]) -> List[int]:
+          MULTIPLIER = 2
+          return [value * MULTIPLIER for value in data if value > 0]

@@ -1,0 +1,157 @@
+# Production Backend Dockerfile for agenthub with MCP Support
+# Multi-stage build optimized for production deployment with full MCP protocol support
+# Features: Security hardening, minimal image size, optimized layers, SSE/MCP support, multi-platform support
+# Version: 2.0.2 - Removed hardcoded platform defaults to fix ARM64/AMD64 compatibility (2025-09-17)
+
+# syntax=docker/dockerfile:1
+# Enable BuildKit for multi-platform builds
+
+# Stage 1: Builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} python:3.11-slim as builder
+
+WORKDIR /build
+
+# Accept build arguments (even if not used in builder stage)
+ARG CAPROVER_GIT_COMMIT_SHA
+
+# Install build dependencies and uv in single layer
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir uv
+
+# Copy dependency files
+COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md agenthub_main/requirements.txt ./agenthub_main/
+
+# Install dependencies in a virtual environment (single layer)
+WORKDIR /build/agenthub_main
+RUN uv venv /opt/venv && \
+    uv pip install --python /opt/venv/bin/python --no-cache . && \
+    uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
+
+# Stage 2: Production Runtime
+FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.11-slim
+
+# Build arguments grouped by frequency of change (optimization for Docker layer caching)
+# Group 1: Static/Rarely Changed - Environment type, ports, defaults, and basic configurations
+ARG NODE_ENV=production
+ARG ENV=production
+ARG FASTMCP_HOST=0.0.0.0
+ARG FASTMCP_PORT=8000
+ARG FASTMCP_TRANSPORT=streamable-http
+ARG DATABASE_PORT=5432
+ARG DATABASE_SSL_MODE=disable
+ARG DATABASE_TYPE=postgresql
+ARG DATABASE_NAME=agenthub
+ARG DATABASE_USER=postgres
+ARG AUTH_PROVIDER=keycloak
+ARG APP_DEBUG=false
+ARG APP_LOG_LEVEL=info
+
+# Group 2: Feature Flags/Config - Feature toggles and application settings (change occasionally)
+ARG AUTH_ENABLED=true
+ARG AUTO_MIGRATE=false
+ARG CORS_ALLOW_CREDENTIALS=true
+ARG FEATURE_HIERARCHICAL_CONTEXT=true
+ARG FEATURE_MULTI_AGENT=true
+ARG FEATURE_RATE_LIMITING=true
+ARG FEATURE_REQUEST_LOGGING=false
+ARG FEATURE_VISION_SYSTEM=true
+
+# Group 3: External Services - Database, Keycloak, and service connections (change per deployment)
+ARG DATABASE_HOST
+ARG DATABASE_PASSWORD
+ARG CORS_ORIGINS
+ARG KEYCLOAK_URL
+ARG KEYCLOAK_REALM
+ARG KEYCLOAK_CLIENT_ID
+ARG KEYCLOAK_CLIENT_SECRET
+ARG JWT_SECRET_KEY
+
+# Group 4: Build Metadata - Changes with every build (most frequently changed)
+ARG CAPROVER_GIT_COMMIT_SHA
+
+# Create non-root user and install runtime dependencies (optimized single layer)
+RUN groupadd -r appuser && useradd -r -g appuser appuser && \
+    apt-get update && apt-get install -y \
+    libpq-dev \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+WORKDIR /app
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy application code
+COPY --chown=appuser:appuser agenthub_main/ ./agenthub_main/
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /data /data/logs /data/resources /app/.cache \
+    && chown -R appuser:appuser /data /app/.cache
+
+# Set Python environment for production
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="/app/agenthub_main/src:/app:$PYTHONPATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Convert build args to environment variables with defaults
+ENV APP_DEBUG=${APP_DEBUG}
+ENV APP_LOG_LEVEL=${APP_LOG_LEVEL}
+ENV AUTH_ENABLED=${AUTH_ENABLED}
+ENV AUTH_PROVIDER=${AUTH_PROVIDER}
+ENV AUTO_MIGRATE=${AUTO_MIGRATE}
+ENV CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS}
+ENV CORS_ORIGINS=${CORS_ORIGINS}
+ENV DATABASE_HOST=${DATABASE_HOST}
+ENV DATABASE_NAME=${DATABASE_NAME}
+ENV DATABASE_PASSWORD=${DATABASE_PASSWORD}
+ENV DATABASE_PORT=${DATABASE_PORT}
+ENV DATABASE_SSL_MODE=${DATABASE_SSL_MODE}
+ENV DATABASE_TYPE=${DATABASE_TYPE}
+ENV DATABASE_USER=${DATABASE_USER}
+ENV ENV=${ENV}
+ENV FASTMCP_HOST=${FASTMCP_HOST}
+ENV FASTMCP_PORT=${FASTMCP_PORT}
+ENV FASTMCP_TRANSPORT=${FASTMCP_TRANSPORT}
+ENV FEATURE_HIERARCHICAL_CONTEXT=${FEATURE_HIERARCHICAL_CONTEXT}
+ENV FEATURE_MULTI_AGENT=${FEATURE_MULTI_AGENT}
+ENV FEATURE_RATE_LIMITING=${FEATURE_RATE_LIMITING}
+ENV FEATURE_REQUEST_LOGGING=${FEATURE_REQUEST_LOGGING}
+ENV FEATURE_VISION_SYSTEM=${FEATURE_VISION_SYSTEM}
+ENV JWT_SECRET_KEY=${JWT_SECRET_KEY}
+ENV KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+ENV KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+ENV KEYCLOAK_REALM=${KEYCLOAK_REALM}
+ENV KEYCLOAK_URL=${KEYCLOAK_URL}
+ENV NODE_ENV=${NODE_ENV}
+
+# CapRover-specific environment variables
+ENV CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}
+
+# Security settings
+ENV PYTHONHASHSEED=random
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create production entrypoint script for MCP server
+RUN printf '#!/bin/sh\nset -e\n\necho "Starting agenthub Production Server with MCP Support..."\necho "================================================"\n\n# Validate required environment variables\nREQUIRED_VARS="DATABASE_TYPE DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD FASTMCP_PORT JWT_SECRET_KEY"\nMISSING_VARS=""\n\nfor VAR in $REQUIRED_VARS; do\n    eval VALUE=\\$$VAR\n    if [ -z "$VALUE" ]; then\n        MISSING_VARS="$MISSING_VARS $VAR"\n        echo "❌ Missing required variable: $VAR"\n    fi\ndone\n\nif [ -n "$MISSING_VARS" ]; then\n    echo ""\n    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"\n    echo "Please ensure all production environment variables are set"\n    exit 1\nfi\n\n# Security check for JWT secret\nif [ ${#JWT_SECRET_KEY} -lt 32 ]; then\n    echo "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"\n    exit 1\nfi\n\n# Validate database connection\necho "Validating database connection..."\nRETRIES=10\nwhile [ $RETRIES -gt 0 ]; do\n    if pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} 2>/dev/null; then\n        echo "✅ Database connection verified"\n        break\n    fi\n    echo "  Waiting for database... ($RETRIES retries left)"\n    RETRIES=$((RETRIES - 1))\n    sleep 3\ndone\n\nif [ $RETRIES -eq 0 ]; then\n    echo "❌ ERROR: Database connection failed"\n    exit 1\nfi\n\n# Run database migrations if enabled\nif [ "${AUTO_MIGRATE:-false}" = "true" ]; then\n    echo "Running database migrations..."\n    cd /app/agenthub_main\n    python scripts/init_database.py || {\n        echo "❌ ERROR: Database migration failed"\n        exit 1\n    }\nfi\n\necho ""\necho "Configuration:"\necho "  Environment: ${ENV}"\necho "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"\necho "  Server Port: ${FASTMCP_PORT}"\necho "  MCP Transport: ${FASTMCP_TRANSPORT}"\necho "  Auth Enabled: ${AUTH_ENABLED:-true}"\necho "  Rate Limiting: ${FEATURE_RATE_LIMITING:-true}"\necho "  CORS Origins: ${CORS_ORIGINS:-*}"\necho "================================================"\n\n# Start the MCP server with full SSE support\necho ""\necho "🚀 Starting agenthub server with full MCP protocol support..."\ncd /app/agenthub_main/src\n\n# Use the MCP entry point for full protocol support\nexec python -m fastmcp.server.mcp_entry_point --transport=${FASTMCP_TRANSPORT:-streamable-http}\n' > /app/docker-entrypoint.sh
+
+# Set proper permissions and ensure Unix line endings
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Switch to non-root user
+USER appuser
+
+EXPOSE 8000
+
+# Production health check with tighter constraints
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:${FASTMCP_PORT:-8000}/health || exit 1
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

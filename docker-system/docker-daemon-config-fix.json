@@ -1,0 +1,22 @@
+{
+  "experimental": false,
+  "features": {
+    "buildkit": true
+  },
+  "builder": {
+    "gc": {
+      "defaultKeepStorage": "20GB",
+      "policy": [
+        {"keepStorage": "512MB", "filter": ["unused-for=24h"]},
+        {"keepStorage": "30GB", "all": true}
+      ]
+    }
+  },
+  "buildx": {
+    "default": {
+      "attestations": false,
+      "provenance": false,
+      "sbom": false
+    }
+  }
+}

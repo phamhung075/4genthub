@@ -1,0 +1,876 @@
+// API V2 Service - User-Isolated Endpoints with JWT Authentication
+import Cookies from 'js-cookie';
+import { API_BASE_URL } from '../config/environment';
+import logger from '../utils/logger';
+import { deduplicateRequest } from '../utils/requestDeduplication';
+
+// Get current auth token
+const getAuthToken = (): string | null => {
+  return Cookies.get('access_token') || null;
+};
+
+// Create headers with authentication
+const getAuthHeaders = (noCacheBypass: boolean = false): HeadersInit => {
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  // Add aggressive cache busting headers when needed
+  if (noCacheBypass) {
+    headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    headers['Pragma'] = 'no-cache';
+    headers['Expires'] = '0';
+    headers['X-Cache-Bypass'] = Date.now().toString();
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    logger.debug('API V2: Adding auth header with token starting:', token.substring(0, 50) + '...');
+  } else {
+    logger.warn('API V2: No auth token found in cookies!');
+  }
+
+  return headers;
+};
+
+// Handle API responses with automatic token refresh
+const handleResponse = async <T>(response: Response, originalUrl?: string, originalInit?: RequestInit): Promise<T> => {
+  // Handle 204 No Content responses (successful deletion with no body)
+  if (response.status === 204) {
+    return { success: true, message: 'Operation completed successfully' } as T;
+  }
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+
+    if (response.status === 401) {
+      logger.info('V2 API: Got 401, attempting token refresh...');
+
+      // Try to refresh the token
+      try {
+        await refreshTokenAndRetry();
+
+        // Retry the original request with new token if we have the original request info
+        if (originalUrl && originalInit) {
+          const newToken = Cookies.get('access_token');
+          if (newToken) {
+            const newHeaders = { ...originalInit.headers };
+            newHeaders['Authorization'] = `Bearer ${newToken}`;
+
+            const retryResponse = await fetch(originalUrl, {
+              ...originalInit,
+              headers: newHeaders,
+              credentials: 'include', // Include cookies for CORS
+            });
+
+            if (retryResponse.ok) {
+              return retryResponse.json();
+            }
+          }
+        }
+      } catch (refreshError) {
+        logger.info('V2 API: Token refresh failed, clearing tokens...');
+        Cookies.remove('access_token');
+        Cookies.remove('refresh_token');
+        // Dispatch event to notify AuthContext to logout
+        window.dispatchEvent(new CustomEvent('auth-logout'));
+        throw new Error('Authentication required. Please log in again.');
+      }
+
+      throw new Error('Authentication required. Please log in again.');
+    }
+
+    // Enhanced 404 error handling for better debugging
+    if (response.status === 404) {
+      const url = originalUrl || response.url;
+      const resourceType = url.includes('/subtasks/') ? 'subtask' :
+                          url.includes('/tasks/') ? 'task' : 'resource';
+      const resourceId = url.substring(url.lastIndexOf('/') + 1);
+
+      // Create a structured 404 error with context
+      const notFoundError = new Error(`${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`) as any;
+      notFoundError.name = 'NotFoundError';
+      notFoundError.status = 404;
+      notFoundError.resourceType = resourceType;
+      notFoundError.resourceId = resourceId;
+      notFoundError.url = url;
+
+      // Log 404 as debug level instead of error to reduce console noise
+      logger.debug(`V2 API: ${resourceType} not found`, {
+        resourceType,
+        resourceId,
+        url,
+        status: 404,
+        userFriendly: `The ${resourceType} you're looking for may have been deleted or moved.`
+      });
+
+      throw notFoundError;
+    }
+
+    // Handle 422 Unprocessable Entity (validation errors)
+    if (response.status === 422) {
+      // Try to extract validation details from the response
+      let validationDetails = 'Validation failed';
+
+      if (error.detail) {
+        // If detail is an array of validation errors (FastAPI format)
+        if (Array.isArray(error.detail)) {
+          const errors = error.detail.map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : 'field';
+            return `${field}: ${err.msg}`;
+          }).join(', ');
+          validationDetails = `Validation errors: ${errors}`;
+        } else if (typeof error.detail === 'string') {
+          validationDetails = error.detail;
+        } else if (typeof error.detail === 'object') {
+          // Handle object-based error details
+          validationDetails = JSON.stringify(error.detail);
+        }
+      }
+
+      const validationError = new Error(validationDetails) as any;
+      validationError.name = 'ValidationError';
+      validationError.status = 422;
+      validationError.detail = error.detail;
+      validationError.userFriendly = 'Please check your input and try again';
+
+      logger.error('V2 API: Validation error', {
+        status: 422,
+        detail: error.detail,
+        url: originalUrl || response.url,
+        message: validationDetails
+      });
+
+      throw validationError;
+    }
+
+    throw new Error(error.detail || `Request failed with status ${response.status}`);
+  }
+  
+  return response.json();
+};
+
+// Token refresh function
+const refreshTokenAndRetry = async (): Promise<void> => {
+  const refresh_token = Cookies.get('refresh_token');
+  
+  if (!refresh_token) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    credentials: 'include', // Include cookies for CORS
+    body: JSON.stringify({ refresh_token }),
+  });
+
+  if (!response.ok) {
+    // If refresh fails, clear tokens and redirect to login
+    if (response.status === 401) {
+      logger.error('V2 API: Refresh token expired or invalid, clearing tokens');
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      // The handleResponse function will redirect to login
+    }
+    throw new Error('Token refresh failed');
+  }
+
+  const data = await response.json();
+  
+  // Update cookies with new tokens
+  Cookies.set('access_token', data.access_token, { 
+    expires: 7,
+    sameSite: 'strict',
+    secure: import.meta.env.MODE === 'production'
+  });
+  
+  // Only update refresh token if a new one is provided
+  if (data.refresh_token) {
+    Cookies.set('refresh_token', data.refresh_token, { 
+      expires: 30,
+      sameSite: 'strict',
+      secure: import.meta.env.MODE === 'production'
+    });
+  }
+
+  logger.info('V2 API: Token refreshed successfully');
+};
+
+// Enhanced fetch with automatic retry and request deduplication
+const fetchWithRetry = async (url: string, init?: RequestInit) => {
+  const method = init?.method || 'GET';
+  const body = init?.body;
+
+  // Check for duplicate request first
+  const duplicatePromise = deduplicateRequest(url, method, body);
+  if (duplicatePromise) {
+    logger.debug(`🔄 Using deduplicated request for ${method} ${url}`);
+    return duplicatePromise;
+  }
+
+  // Execute new request with deduplication tracking
+  return deduplicateRequest(url, method, body, async () => {
+    const response = await fetch(url, {
+      ...init,
+      credentials: 'include', // Include cookies for CORS
+    });
+    return handleResponse(response, url, init);
+  });
+};
+
+// Task API V2 - User-isolated endpoints
+export const taskApiV2 = {
+  // Get all tasks for current user, optionally filtered by git_branch_id
+  getTasks: async (params?: { git_branch_id?: string }) => {
+    const url = new URL(`${API_BASE_URL}/api/v2/tasks/`);
+    
+    // Add git_branch_id as query parameter if provided
+    if (params?.git_branch_id) {
+      url.searchParams.set('git_branch_id', params.git_branch_id);
+    }
+    
+    return fetchWithRetry(url.toString(), {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+  },
+
+  // Get a specific task (only if owned by user)
+  getTask: async (taskId: string) => {
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+  },
+
+  // Create a new task (automatically assigned to user)
+  createTask: async (taskData: {
+    title: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    git_branch_id?: string;
+    assignees?: string | string[]; // Can be string or array
+  }) => {
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(taskData),
+      credentials: 'include',
+    });
+  },
+
+  // Update a task (only if owned by user)
+  updateTask: async (taskId: string, updates: {
+    title?: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    progress_percentage?: number;
+    assignees?: string[];
+    labels?: string[];
+    estimated_effort?: string;
+    due_date?: string;
+    dependencies?: string[];
+    context_data?: any;
+    details?: string;  // Progress notes field
+  }) => {
+    console.log('=== API V2 UPDATE TASK ===');
+    console.log('Task ID:', taskId);
+    console.log('Updates:', updates);
+
+    // Include task_id in the request body as required by backend
+    const requestBody = {
+      task_id: taskId,
+      ...updates
+    };
+
+    console.log('=== Progress API 1 ===');
+    console.log('Request body to backend:', JSON.stringify(requestBody, null, 2));
+    console.log('URL:', `${API_BASE_URL}/api/v2/tasks/${taskId}`);
+
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(requestBody),
+    }).then(response => {
+      console.log('=== Progress API 2 ===');
+      console.log('Response from backend:', response);
+      return response;
+    }).catch(error => {
+      console.error('=== API UPDATE ERROR ===');
+      console.error('Error:', error);
+      throw error;
+    });
+  },
+
+  // Delete a task (only if owned by user)
+  deleteTask: async (taskId: string) => {
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+  },
+
+  // Complete a task - fix parameter format for backend
+  completeTask: async (taskId: string, completionData: {
+    completion_summary: string;
+    testing_notes?: string;
+  }) => {
+    const formData = new URLSearchParams();
+    formData.append('completion_summary', completionData.completion_summary);
+    if (completionData.testing_notes) {
+      formData.append('testing_notes', completionData.testing_notes);
+    }
+
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}/complete`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+  },
+};
+
+// Project API V2 - User-isolated endpoints
+export const projectApiV2 = {
+  // Get all projects for current user
+  getProjects: async () => {
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/projects/`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+  },
+
+  // Create a new project (automatically assigned to user)
+  createProject: async (projectData: {
+    name: string;
+    description?: string;
+  }) => {
+    const formData = new URLSearchParams();
+    formData.append('name', projectData.name);
+    if (projectData.description) {
+      formData.append('description', projectData.description);
+    }
+
+    return fetchWithRetry(`${API_BASE_URL}/api/v2/projects/`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+  },
+
+  // Update a project (only if owned by user)
+  updateProject: async (projectId: string, updates: {
+    name?: string;
+    description?: string;
+  }) => {
+    const formData = new URLSearchParams();
+    if (updates.name !== undefined) {
+      formData.append('name', updates.name);
+    }
+    if (updates.description !== undefined) {
+      formData.append('description', updates.description || '');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/projects/${projectId}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Delete a project (only if owned by user)
+  deleteProject: async (projectId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/projects/${projectId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+};
+
+// Subtask API V2 - User-isolated endpoints
+export const subtaskApiV2 = {
+  // Create a new subtask
+  createSubtask: async (taskId: string, subtaskData: {
+    title: string;
+    description?: string;
+  }) => {
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('task_id', taskId);
+    params.append('title', subtaskData.title);
+    if (subtaskData.description) {
+      params.append('description', subtaskData.description);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+      },
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get a specific subtask - simple endpoint with authentication
+  getSubtask: async (subtaskId: string) => {
+    // Validate UUID format before making API call
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(subtaskId)) {
+      logger.warn('Invalid subtask ID format, skipping API call', { subtaskId });
+      throw new Error('Invalid subtask ID format');
+    }
+
+    // Use simple endpoint with proper authentication headers
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(), // This includes the Bearer token
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Update a subtask
+  updateSubtask: async (subtaskId: string, updates: {
+    title?: string;
+    description?: string;
+    status?: string;
+    progress_percentage?: number;
+  }) => {
+    const formData = new URLSearchParams();
+    if (updates.title) formData.append('title', updates.title);
+    if (updates.description) formData.append('description', updates.description);
+    if (updates.status) formData.append('status', updates.status);
+    if (updates.progress_percentage !== undefined) {
+      formData.append('progress_percentage', updates.progress_percentage.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Delete a subtask
+  deleteSubtask: async (subtaskId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // List subtasks for a task
+  listSubtasksForTask: async (taskId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/task/${taskId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Complete a subtask
+  completeSubtask: async (subtaskId: string, completionNotes?: string) => {
+    const formData = new URLSearchParams();
+    if (completionNotes) {
+      formData.append('completion_notes', completionNotes);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}/complete`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+};
+
+// Context API V2 - User-isolated endpoints
+export const contextApiV2 = {
+  // Get context at specified level
+  getContext: async (level: string, contextId: string, includeInherited?: boolean) => {
+    const url = new URL(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`);
+    if (includeInherited) {
+      url.searchParams.set('include_inherited', 'true');
+    }
+
+    return fetchWithRetry(url.toString(), {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+  },
+
+  // Create or update context
+  updateContext: async (level: string, contextId: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Delete context
+  deleteContext: async (level: string, contextId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Resolve context with inheritance
+  resolveContext: async (level: string, contextId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/contexts/${level}/${contextId}/resolve`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+};
+
+// Branch API V2 - User-isolated endpoints
+export const branchApiV2 = {
+  // List branches for a project
+  getBranches: async (projectId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/project/${projectId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get a specific branch
+  getBranch: async (branchId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Create a new branch
+  createBranch: async (projectId: string, branchData: {
+    git_branch_name: string;
+    description?: string;
+  }) => {
+    const formData = new URLSearchParams();
+    formData.append('project_id', projectId);
+    formData.append('git_branch_name', branchData.git_branch_name);
+    if (branchData.description) {
+      formData.append('description', branchData.description);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+
+  // Update a branch
+  updateBranch: async (branchId: string, updates: {
+    git_branch_name?: string;
+    description?: string;
+    is_active?: boolean;
+  }) => {
+    const formData = new URLSearchParams();
+    if (updates.git_branch_name) formData.append('git_branch_name', updates.git_branch_name);
+    if (updates.description) formData.append('description', updates.description);
+    if (updates.is_active !== undefined) {
+      formData.append('is_active', updates.is_active.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+
+  // Delete a branch
+  deleteBranch: async (branchId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Assign agent to branch
+  assignAgent: async (branchId: string, agentId: string) => {
+    const formData = new URLSearchParams();
+    formData.append('agent_id', agentId);
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/assign-agent`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+
+  // Get branch health
+  getBranchHealth: async (branchId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/health`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get bulk summaries for all or selected projects
+  getBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false, bustCache: boolean = false) => {
+    const requestBody: any = {
+      project_ids: projectIds,
+      include_archived: includeArchived
+    };
+
+    // Add cache busting parameter when requested
+    if (bustCache) {
+      requestBody._t = Date.now();
+    }
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/v2/branches/summaries/bulk`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(requestBody),
+    });
+    return response;
+  },
+
+  // Force refresh bulk summaries with aggressive cache busting
+  forceGetBulkSummaries: async (projectIds?: string[], includeArchived: boolean = false) => {
+    const requestBody: any = {
+      project_ids: projectIds,
+      include_archived: includeArchived,
+      // Aggressive cache busting
+      _t: Date.now(),
+      _r: Math.random().toString(36).substring(7),
+      _force: true
+    };
+
+    // Create unique URL to bypass request deduplication entirely
+    const url = `${API_BASE_URL}/api/v2/branches/summaries/bulk?_bust=${Date.now()}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getAuthHeaders(true), // Enable aggressive cache busting headers
+      body: JSON.stringify(requestBody),
+      credentials: 'include',
+      // Additional cache busting
+      cache: 'no-store',
+    });
+
+    return handleResponse(response, url);
+  },
+};
+
+// Connection API V2 - User-isolated endpoints
+export const connectionApiV2 = {
+  // Health check
+  healthCheck: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/connections/health`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // System status
+  systemStatus: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/connections/status`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Test connection
+  testConnection: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/connections/test`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+};
+
+// Agent API V2 - User-isolated endpoints
+export const agentApiV2 = {
+  // Get metadata for all agents
+  getAgentsMetadata: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/metadata`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get metadata for a specific agent
+  getAgentMetadata: async (agentName: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/${agentName}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Assign agent to branch
+  assignAgentToBranch: async (branchId: string, agentId: string) => {
+    const formData = new URLSearchParams();
+    formData.append('branch_id', branchId);
+    formData.append('agent_id', agentId);
+
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/assign`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+
+  // Unassign agent from branch
+  unassignAgentFromBranch: async (branchId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/unassign/${branchId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get branch agent assignment
+  getBranchAgentAssignment: async (branchId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/branch/${branchId}/assignment`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get project agent assignments
+  getProjectAgentAssignments: async (projectId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/project/${projectId}/assignments`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Get agent capabilities
+  getAgentCapabilities: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/capabilities`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    return handleResponse(response);
+  },
+
+  // Call an agent
+  callAgent: async (agentName: string, params?: any) => {
+    // Normalize agent name: remove @ prefix and ensure kebab-case
+    let normalizedName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
+    normalizedName = normalizedName.replace(/_/g, '-').toLowerCase();
+    
+    const response = await fetch(`${API_BASE_URL}/api/v2/agents/call`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        agent_name: normalizedName,
+        params: params || {}
+      }),
+    });
+    return handleResponse(response);
+  },
+};
+
+// Export a function to check if user is authenticated
+export const isAuthenticated = (): boolean => {
+  return !!getAuthToken();
+};
+
+// Export a function to get current user ID from token
+export const getCurrentUserId = (): string | null => {
+  const token = getAuthToken();
+  if (!token) return null;
+  
+  try {
+    // Decode JWT token (basic base64 decode of payload)
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.sub || payload.user_id || null;
+  } catch (error) {
+    logger.error('Error decoding token:', error);
+    return null;
+  }
+};

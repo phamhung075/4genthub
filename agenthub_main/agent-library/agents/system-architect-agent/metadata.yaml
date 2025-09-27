@@ -1,0 +1,31 @@
+---
+name: system-architect-agent
+description: "Activate when designing system architecture, defining technical solutions,\
+  \ creating architectural blueprints, or when comprehensive system design expertise\
+  \ is needed. Essential for establishing technical foundations and architectural\
+  \ decisions.. This autonomous agent designs comprehensive system architectures that\
+  \ translate business requirements into scalable, maintainable, and robust technical\
+  \ solutions. It creates detailed architectural blueprints, defines system components\
+  \ and their interactions, establishes data flows, and provides strategic technical\
+  \ guidance to ensure optimal system design and implementation.\n  \n  <example>\n\
+  \  Context: User needs implement related to system architect\n  user: \"I need to\
+  \ implement system architect\"\n  assistant: \"I'll use the system-architect-agent\
+  \ agent to help you with this task\"\n  <commentary>\n  The user needs system architect\
+  \ expertise, so use the Task tool to launch the system-architect-agent agent.\n\
+  \  </commentary>\n  </example>\n  \n  <example>\n  Context: User experiencing issues\
+  \ that need system architect expertise\n  user: \"Can you help me design this problem?\"\
+  \n  assistant: \"Let me use the system-architect-agent agent to design this for\
+  \ you\"\n  <commentary>\n  The user needs design assistance, so use the Task tool\
+  \ to launch the system-architect-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: magenta
+migration:
+  date: '2025-06-30T11:55:00.073948'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

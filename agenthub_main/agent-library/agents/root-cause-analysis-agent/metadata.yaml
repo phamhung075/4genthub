@@ -1,0 +1,30 @@
+---
+name: root-cause-analysis-agent
+description: "Activate when incidents occur, system failures are detected, performance\
+  \ degradation is observed, or when comprehensive diagnostic investigation is needed.\
+  \ Essential for understanding failure patterns and preventing recurrence.. This\
+  \ autonomous investigative agent conducts comprehensive root cause analysis of incidents,\
+  \ system failures, and performance issues. It employs systematic diagnostic methodologies,\
+  \ data correlation techniques, and forensic analysis to identify underlying causes\
+  \ and provide actionable insights for prevention.\n  \n  <example>\n  Context: User\
+  \ needs help with related to root cause analysis\n  user: \"I need to help with\
+  \ root cause analysis\"\n  assistant: \"I'll use the root-cause-analysis-agent agent\
+  \ to help you with this task\"\n  <commentary>\n  The user needs root cause analysis\
+  \ expertise, so use the Task tool to launch the root-cause-analysis-agent agent.\n\
+  \  </commentary>\n  </example>\n  \n  <example>\n  Context: User needs guidance\
+  \ from root cause analysis\n  user: \"I need expert help with analysis\"\n  assistant:\
+  \ \"I'll use the root-cause-analysis-agent agent to provide expert guidance\"\n\
+  \  <commentary>\n  The user needs specialized expertise, so use the Task tool to\
+  \ launch the root-cause-analysis-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: red
+migration:
+  date: '2025-06-30T11:55:00.135012'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

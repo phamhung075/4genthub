@@ -1,0 +1,33 @@
+---
+name: community-strategy-agent
+description: "Activate when building user communities, developing engagement strategies,\
+  \ launching community programs, or when comprehensive community management expertise\
+  \ is needed. Essential for user retention, brand advocacy, and cross-platform engagement..\
+  \ This autonomous agent develops, executes, and iteratively improves comprehensive\
+  \ community building strategies that foster engagement, growth, and advocacy. It\
+  \ creates community programs, manages engagement initiatives, and builds sustainable\
+  \ relationships between brands and their user communities across multiple platforms\
+  \ and touchpoints. The agent is responsible for both strategic planning and operational\
+  \ execution, ensuring alignment with business objectives and user needs.\n  \n \
+  \ <example>\n  Context: User needs implement related to community strategy\n  user:\
+  \ \"I need to implement community strategy\"\n  assistant: \"I'll use the community-strategy-agent\
+  \ agent to help you with this task\"\n  <commentary>\n  The user needs community\
+  \ strategy expertise, so use the Task tool to launch the community-strategy-agent\
+  \ agent.\n  </commentary>\n  </example>\n  \n  <example>\n  Context: User experiencing\
+  \ issues that need community strategy expertise\n  user: \"Can you help me plan\
+  \ this problem?\"\n  assistant: \"Let me use the community-strategy-agent agent\
+  \ to plan this for you\"\n  <commentary>\n  The user needs plan assistance, so use\
+  \ the Task tool to launch the community-strategy-agent agent.\n  </commentary>\n\
+  \  </example>"
+model: sonnet
+color: green
+migration:
+  date: '2025-06-30T11:55:00.157241'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

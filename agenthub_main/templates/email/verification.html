@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Welcome to {{ company_name or "Oracle Server" }}!</h2>
+
+<p>Hello {{ user_name or "there" }},</p>
+
+<p>Thank you for signing up! To complete your registration, please verify your email address by clicking the button below:</p>
+
+<p style="text-align: center;">
+    <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+</p>
+
+<p>Or copy and paste this link into your browser:</p>
+<p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">{{ verification_url }}</p>
+
+<div class="warning">
+    <strong>Security Notice:</strong> This verification link will expire in 24 hours for security reasons.
+</div>
+
+<p>If you didn't create an account with us, please ignore this email.</p>
+
+<p>Best regards,<br>The {{ company_name or "Oracle Server" }} Team</p>
+{% endblock %}

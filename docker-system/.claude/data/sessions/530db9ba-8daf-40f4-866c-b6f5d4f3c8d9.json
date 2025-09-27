@@ -1,0 +1,11 @@
+{
+  "session_id": "530db9ba-8daf-40f4-866c-b6f5d4f3c8d9",
+  "prompts": [
+    "no actual DATABASE_TYPE=postgresql\n",
+    "why task is create but no agent assigned ?",
+    "retest create task",
+    "on frontend list task no show assigned agents",
+    "Assignees on list task table need add too",
+    "Unassigned all on Assignees Tasks (4)"
+  ]
+}

@@ -1,0 +1,30 @@
+---
+name: elicitation-agent
+description: "Activate when gathering project requirements, clarifying user needs,\
+  \ defining project scope, or when comprehensive requirements analysis is needed.\
+  \ Essential for project initiation and requirement definition phases.. This autonomous\
+  \ agent specializes in comprehensive requirements gathering through structured dialogue\
+  \ and analysis. It transforms initial project concepts into detailed, actionable\
+  \ specifications by clarifying ambiguities, exploring user needs, and establishing\
+  \ comprehensive functional and non-functional requirements that guide successful\
+  \ project development.\n  \n  <example>\n  Context: User needs implement related\
+  \ to elicitation\n  user: \"I need to implement elicitation\"\n  assistant: \"I'll\
+  \ use the elicitation-agent agent to help you with this task\"\n  <commentary>\n\
+  \  The user needs elicitation expertise, so use the Task tool to launch the elicitation-agent\
+  \ agent.\n  </commentary>\n  </example>\n  \n  <example>\n  Context: User needs\
+  \ guidance from elicitation\n  user: \"I need expert help with elicitation\"\n \
+  \ assistant: \"I'll use the elicitation-agent agent to provide expert guidance\"\
+  \n  <commentary>\n  The user needs specialized expertise, so use the Task tool to\
+  \ launch the elicitation-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: red
+migration:
+  date: '2025-06-30T11:55:00.254261'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---

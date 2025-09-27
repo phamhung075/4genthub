@@ -1,0 +1,30 @@
+---
+name: coding-agent
+description: "Activate when specifications are complete and ready for implementation.\
+  \ Essential for translating designs into working code, implementing new features,\
+  \ refactoring existing code, and creating comprehensive test suites.. This autonomous\
+  \ agent transforms detailed specifications and algorithmic designs into high-quality,\
+  \ production-ready code. It specializes in implementing features across multiple\
+  \ programming languages and frameworks, complete with comprehensive testing, documentation,\
+  \ and adherence to best practices. The agent is a core executor in the development\
+  \ workflow, collaborating with design, architecture, and testing agents to ensure\
+  \ seamless delivery.\n  \n  <example>\n  Context: User needs implement related to\
+  \ coding\n  user: \"I need to implement coding\"\n  assistant: \"I'll use the coding-agent\
+  \ agent to help you with this task\"\n  <commentary>\n  The user needs coding expertise,\
+  \ so use the Task tool to launch the coding-agent agent.\n  </commentary>\n  </example>\n\
+  \  \n  <example>\n  Context: User experiencing issues that need coding expertise\n\
+  \  user: \"Can you help me test this problem?\"\n  assistant: \"Let me use the coding-agent\
+  \ agent to test this for you\"\n  <commentary>\n  The user needs test assistance,\
+  \ so use the Task tool to launch the coding-agent agent.\n  </commentary>\n  </example>"
+model: sonnet
+color: stone
+migration:
+  date: '2025-06-30T11:55:00.153277'
+  source: agent-library
+  target: agent-library
+  version: 1.0.0
+validation:
+  backward_compatible: true
+  capabilities_mapped: true
+  structure_valid: true
+---
