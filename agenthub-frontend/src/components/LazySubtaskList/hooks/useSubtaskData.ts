@@ -5,7 +5,7 @@ import { useState, useCallback, useRef } from "react";
 import { deleteSubtask, getSubtask, listSubtasks, Subtask } from "../../../api";
 import { getSubtaskSummaries } from "../../../api-lazy";
 import { SubtaskSummary } from "../../../types/taskTypes";
-import type { UseSubtaskDataReturn } from "../types/subtaskTypes";
+import type { UseSubtaskDataReturn } from "../../../types/subtaskTypes";
 import {
   subtaskToSummary,
   isValidSubtaskId,

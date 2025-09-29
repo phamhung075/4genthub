@@ -8,7 +8,7 @@ import type {
   UseSubtaskExpansionReturn,
   AnimationTriggers,
   RowAnimationCallbacks
-} from "../types/subtaskTypes";
+} from "../../../types/subtaskTypes";
 import { detectSubtaskChanges } from "../utils/subtaskHelpers";
 import { ANIMATION_CONFIG } from "../constants/subtaskConstants";
 import logger from "../../../utils/logger";

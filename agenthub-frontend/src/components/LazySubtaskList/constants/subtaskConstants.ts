@@ -1,7 +1,7 @@
 // LazySubtaskList constants
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import type { BadgeVariant } from "../types/subtaskTypes";
+import type { BadgeVariant } from "../../../types/subtaskTypes";
 
 /**
  * Status color mapping for badges

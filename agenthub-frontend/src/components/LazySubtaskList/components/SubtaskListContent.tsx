@@ -6,7 +6,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "../../ui/tab
 import { SubtaskSummary } from "../../../types/taskTypes";
 import { Subtask } from "../../../api";
 import SubtaskRow from "../../SubtaskRow";
-import type { RowAnimationCallbacks } from "../types/subtaskTypes";
+import type { RowAnimationCallbacks } from "../../../types/subtaskTypes";
 
 interface SubtaskListContentProps {
   subtaskSummaries: SubtaskSummary[];

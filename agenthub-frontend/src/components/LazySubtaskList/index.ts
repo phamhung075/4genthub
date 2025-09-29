@@ -38,7 +38,7 @@ export type {
   UseSubtaskWebSocketReturn,
   UseSubtaskExpansionReturn,
   UseSubtaskDialogsReturn
-} from "./types/subtaskTypes";
+} from "../../types/subtaskTypes";
 
 // Utility exports
 export {

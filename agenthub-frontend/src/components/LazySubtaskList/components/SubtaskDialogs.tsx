@@ -10,7 +10,7 @@ import type {
   DeleteDialogState,
   ActiveDialogState,
   DetailsDialogState
-} from "../types/subtaskTypes";
+} from "../../../types/subtaskTypes";
 import logger from "../../../utils/logger";
 
 // Lazy load heavy dialog components

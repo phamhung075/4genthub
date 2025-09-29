@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { SubtaskSummary } from "../../../types/taskTypes";
-import type { SubtaskFilterOptions, UseSubtaskFiltersReturn } from "../types/subtaskTypes";
+import type { SubtaskFilterOptions, UseSubtaskFiltersReturn } from "../../../types/subtaskTypes";
 import { filterSubtasks, sortSubtasks } from "../utils/subtaskHelpers";
 
 /**

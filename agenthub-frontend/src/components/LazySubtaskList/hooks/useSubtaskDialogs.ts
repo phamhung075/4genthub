@@ -9,7 +9,7 @@ import type {
   DeleteDialogState,
   ActiveDialogState,
   DetailsDialogState
-} from "../types/subtaskTypes";
+} from "../../../types/subtaskTypes";
 import { generateBranchUrl } from "../utils/subtaskHelpers";
 import { DIALOG_CONFIG } from "../constants/subtaskConstants";
 import logger from "../../../utils/logger";

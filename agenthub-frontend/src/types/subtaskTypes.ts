@@ -175,15 +175,42 @@ export interface UseSubtaskDialogsReturn extends DialogState {
 // ============================================
 
 export interface SubtaskRowProps {
-  subtask: SubtaskSummary;
-  fullSubtask?: any; // Full Subtask from API
-  projectId: string;
-  taskTreeId: string;
+  summary: SubtaskSummary;
+  fullSubtask: any | null; // Full Subtask from API
+  isLoading: boolean;
+  showDetails: boolean;
   parentTaskId: string;
-  onEdit?: (subtask: any) => void;
-  onDelete?: (subtaskId: string) => void;
-  onComplete?: (subtask: any) => void;
-  onViewDetails?: (subtask: any) => void;
-  isHighlighted?: boolean;
-  animationCallbacks?: RowAnimationCallbacks;
+  onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void;
+  onAgentInfoClick: (agentName: string) => void;
+  onDeleteSubtask: (subtaskId: string) => void;
+  onRegisterCallbacks?: (subtaskId: string, callbacks: AnimationCallbacks) => void;
+  onUnregisterCallbacks?: (subtaskId: string) => void;
+}
+
+export interface AnimationCallbacks {
+  playCreateAnimation: () => void;
+  playDeleteAnimation: () => void;
+  playUpdateAnimation: () => void;
+}
+
+export type SubtaskAnimationState = 'none' | 'creating' | 'deleting' | 'updating';
+
+export interface SubtaskRowActionsProps {
+  subtaskId: string;
+  onView: () => void;
+  onEdit: () => void;
+  onComplete: () => void;
+  onDelete: () => void;
+}
+
+export interface SubtaskRowBadgesProps {
+  status: string;
+  priority: string;
+  progressPercentage?: number;
+}
+
+export interface SubtaskRowAssigneesProps {
+  assignees?: string[];
+  assigneesCount: number;
+  onAgentInfoClick: (agentName: string) => void;
 }

@@ -3,7 +3,7 @@
 
 import { useEffect, useCallback, useState } from "react";
 import { useChangeSubscription } from "../../../hooks/useChangeSubscription";
-import type { UseSubtaskWebSocketReturn, SubtaskChangePayload } from "../types/subtaskTypes";
+import type { UseSubtaskWebSocketReturn, SubtaskChangePayload } from "../../../types/subtaskTypes";
 import { LOADING_CONFIG } from "../constants/subtaskConstants";
 import { debounce } from "../utils/subtaskHelpers";
 import logger from "../../../utils/logger";

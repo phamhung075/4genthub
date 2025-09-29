@@ -22,7 +22,7 @@ import { SubtaskDialogs } from "./components/SubtaskDialogs";
 import { calculateProgressSummary } from "./utils/subtaskHelpers";
 
 // Import types
-import type { LazySubtaskListProps } from "./types/subtaskTypes";
+import type { LazySubtaskListProps } from "../../types/subtaskTypes";
 
 /**
  * LazySubtaskList - Refactored orchestrator component

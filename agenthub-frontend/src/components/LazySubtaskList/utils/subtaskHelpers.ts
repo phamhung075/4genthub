@@ -3,7 +3,7 @@
 
 import type { Subtask } from "../../../api";
 import type { SubtaskSummary } from "../../../types/taskTypes";
-import type { SubtaskFilterOptions } from "../types/subtaskTypes";
+import type { SubtaskFilterOptions } from "../../../types/subtaskTypes";
 import logger from "../../../utils/logger";
 
 /**
