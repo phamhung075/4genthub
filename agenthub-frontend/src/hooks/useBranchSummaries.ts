@@ -7,24 +7,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { branchService } from '../services/branchService';
-import { BranchSummary, ProjectSummary } from '../types/api.types';
+import type { BranchSummary, ProjectSummary } from '../types/api.types';
+import type { UseBranchSummariesOptions, UseBranchSummariesResult } from '../types/hookTypes';
 import logger from '../utils/logger';
-
-export interface UseBranchSummariesOptions {
-  projectIds?: string[];
-  autoRefresh?: boolean;
-  refreshInterval?: number; // in milliseconds
-}
-
-export interface UseBranchSummariesResult {
-  summaries: BranchSummary[];
-  projects: ProjectSummary[];
-  loading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-  forceRefresh: () => Promise<void>;
-  refreshing: boolean;
-}
 
 export function useBranchSummaries(options: UseBranchSummariesOptions = {}): UseBranchSummariesResult {
   const { projectIds, autoRefresh = false, refreshInterval = 30000 } = options;

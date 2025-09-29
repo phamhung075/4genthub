@@ -1,7 +1,7 @@
 import { Check, Eye, Pencil, Trash2 } from "lucide-react";
 import React, { useState, useCallback, useEffect } from "react";
 import { Subtask } from "../api";
-import { SubtaskSummary } from "../api-lazy";
+import { SubtaskSummary } from "../types/taskTypes";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";

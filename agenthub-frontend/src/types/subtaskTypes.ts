@@ -1,0 +1,189 @@
+// ============================================
+// Subtask Types - Consolidated from LazySubtaskList
+// ============================================
+
+import type { SubtaskSummary } from "./taskTypes";
+
+/**
+ * Main props for LazySubtaskList component
+ */
+export interface LazySubtaskListProps {
+  projectId: string;
+  taskTreeId: string;
+  parentTaskId: string;
+}
+
+/**
+ * Badge variant type (from UI library)
+ */
+export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
+/**
+ * Animation trigger state
+ */
+export interface AnimationTriggers {
+  created: Set<string>;
+  updated: Set<string>;
+  deleted: Set<string>;
+}
+
+/**
+ * Row animation callback functions
+ */
+export interface RowAnimationCallbacks {
+  playCreateAnimation: () => void;
+  playDeleteAnimation: () => void;
+  playUpdateAnimation: () => void;
+}
+
+/**
+ * Delete dialog state
+ */
+export interface DeleteDialogState {
+  open: boolean;
+  subtaskId: string | null;
+}
+
+/**
+ * Active dialog state with union type for type safety
+ */
+export interface ActiveDialogState {
+  type: 'details' | 'edit' | 'complete' | null;
+  subtaskId?: string;
+  subtask?: any; // Subtask from API
+}
+
+/**
+ * Details dialog state
+ */
+export interface DetailsDialogState {
+  open: boolean;
+  subtask: any | null; // Subtask from API
+}
+
+/**
+ * Subtask data management state
+ */
+export interface SubtaskDataState {
+  subtaskSummaries: SubtaskSummary[];
+  fullSubtasks: Map<string, any>; // Map of Subtask from API
+  loading: boolean;
+  error: string | null;
+  loadingSubtasks: Set<string>;
+  hasLoaded: boolean;
+  subscriptionEnabled: boolean;
+}
+
+/**
+ * Subtask expansion state
+ */
+export interface SubtaskExpansionState {
+  previousSubtaskIds: Set<string>;
+  animationTriggers: AnimationTriggers;
+  isOpeningDialog: boolean;
+  editingSubtask: any | null; // Subtask from API
+  showDetails: string | null;
+}
+
+/**
+ * Dialog management state
+ */
+export interface DialogState {
+  deleteDialog: DeleteDialogState;
+  activeDialog: ActiveDialogState;
+  detailsDialog: DetailsDialogState;
+  selectedAgentForInfo: string | null;
+  agentInfoDialogOpen: boolean;
+  createSubtaskDialogOpen: boolean;
+}
+
+/**
+ * WebSocket change subscription payload
+ */
+export interface SubtaskChangePayload {
+  type: 'created' | 'updated' | 'deleted';
+  subtask: any | SubtaskSummary; // Subtask from API or summary
+  timestamp: string;
+}
+
+/**
+ * Subtask filter options
+ */
+export interface SubtaskFilterOptions {
+  status?: string[];
+  priority?: string[];
+  assignees?: string[];
+  searchTerm?: string;
+}
+
+/**
+ * Subtask list configuration
+ */
+export interface SubtaskListConfig {
+  enableAnimations: boolean;
+  enableRealTimeUpdates: boolean;
+  showProgressPercentage: boolean;
+  showAssigneeCount: boolean;
+  defaultSortField: 'created_at' | 'updated_at' | 'priority' | 'status';
+  defaultSortDirection: 'asc' | 'desc';
+}
+
+/**
+ * Hook return types for custom hooks
+ */
+export interface UseSubtaskDataReturn extends SubtaskDataState {
+  loadSubtaskSummaries: () => Promise<void>;
+  loadFullSubtasksFallback: () => Promise<Map<string, any>>; // Map of Subtask from API
+  handleSubtaskCreated: (newSubtask: any) => void; // Subtask from API
+  refreshData: () => Promise<void>;
+}
+
+export interface UseSubtaskFiltersReturn {
+  filteredSubtasks: SubtaskSummary[];
+  filterOptions: SubtaskFilterOptions;
+  setFilterOptions: (options: SubtaskFilterOptions) => void;
+  clearFilters: () => void;
+}
+
+export interface UseSubtaskWebSocketReturn {
+  isConnected: boolean;
+  reconnect: () => void;
+  disconnect: () => void;
+}
+
+export interface UseSubtaskExpansionReturn extends SubtaskExpansionState {
+  registerRowCallbacks: (subtaskId: string, callbacks: RowAnimationCallbacks) => void;
+  unregisterRowCallbacks: (subtaskId: string) => void;
+  triggerAnimation: (subtaskId: string, type: 'create' | 'update' | 'delete') => void;
+  setShowDetails: (subtaskId: string | null) => void;
+  setEditingSubtask: (subtask: any | null) => void; // Subtask from API
+}
+
+export interface UseSubtaskDialogsReturn extends DialogState {
+  handleSubtaskDialogClose: () => void;
+  handleAgentInfoClick: (agentName: string) => void;
+  handleOpenCreateSubtask: () => void;
+  openDetailsDialog: (subtask: any) => void; // Subtask from API
+  openEditDialog: (subtask: any) => void; // Subtask from API
+  openCompleteDialog: (subtask: any) => void; // Subtask from API
+  openDeleteDialog: (subtaskId: string) => void;
+  closeAllDialogs: () => void;
+}
+
+// ============================================
+// SubtaskRow Types
+// ============================================
+
+export interface SubtaskRowProps {
+  subtask: SubtaskSummary;
+  fullSubtask?: any; // Full Subtask from API
+  projectId: string;
+  taskTreeId: string;
+  parentTaskId: string;
+  onEdit?: (subtask: any) => void;
+  onDelete?: (subtaskId: string) => void;
+  onComplete?: (subtask: any) => void;
+  onViewDetails?: (subtask: any) => void;
+  isHighlighted?: boolean;
+  animationCallbacks?: RowAnimationCallbacks;
+}

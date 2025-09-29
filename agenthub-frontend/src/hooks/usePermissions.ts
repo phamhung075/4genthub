@@ -1,21 +1,11 @@
 // React Hook for CRUD Permissions
 // Provides easy access to user permissions in React components
 
-import { useState, useEffect, useCallback } from 'react';
-import { TokenPermissionParser, TokenPermissions } from '../utils/tokenPermissions';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { TokenPermissionParser } from '../utils/tokenPermissions';
+import type { TokenPermissions } from '../types/authTypes';
+import type { UsePermissionsReturn } from '../types/hookTypes';
 import logger from '../utils/logger';
-
-export interface UsePermissionsReturn {
-  permissions: TokenPermissions;
-  hasPermission: (permission: keyof TokenPermissions) => boolean;
-  hasFullCrud: boolean;
-  canAccessResource: (resource: string) => boolean;
-  allowedResources: string[];
-  userRoles: string[];
-  isLoading: boolean;
-  error: string | null;
-  refreshPermissions: () => void;
-}
 
 export function usePermissions(): UsePermissionsReturn {
   const [permissions, setPermissions] = useState<TokenPermissions>({
@@ -123,7 +113,7 @@ export function withPermission<P extends object>(
     const { permissions, hasFullCrud, isLoading } = usePermissions();
 
     if (isLoading) {
-      return <div>Loading permissions...</div>;
+      return React.createElement('div', null, 'Loading permissions...');
     }
 
     const hasRequiredPermission = 
@@ -132,25 +122,22 @@ export function withPermission<P extends object>(
         : permissions[requiredPermission];
 
     if (!hasRequiredPermission) {
-      return <div>You don't have permission to access this feature.</div>;
+      return React.createElement('div', null, "You don't have permission to access this feature.");
     }
 
-    return <Component {...props} />;
+    return React.createElement(Component, props);
   };
 }
-
-// Context provider for permissions (optional, for deeper component trees)
-import React, { createContext, useContext } from 'react';
 
 const PermissionsContext = createContext<UsePermissionsReturn | null>(null);
 
 export function PermissionsProvider({ children }: { children: React.ReactNode }) {
   const permissions = usePermissions();
-  
-  return (
-    <PermissionsContext.Provider value={permissions}>
-      {children}
-    </PermissionsContext.Provider>
+
+  return React.createElement(
+    PermissionsContext.Provider,
+    { value: permissions },
+    children
   );
 }
 

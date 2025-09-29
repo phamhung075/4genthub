@@ -6,39 +6,8 @@
 import logger from '../utils/logger';
 import { toastEventBus } from './toastEventBus';
 
-export type NotificationType = 'success' | 'error' | 'info' | 'warning';
-export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
-export type EventType = 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned' | 'archived' | 'restored';
-
-interface WSMessage {
-  id: string;
-  version: '2.0';
-  type: 'update' | 'bulk' | 'sync' | 'heartbeat' | 'error';
-  timestamp: string;
-  sequence: number;
-  payload: {
-    entity: string;
-    action: string;
-    data: {
-      primary: any | any[];
-      cascade?: any;
-    };
-  };
-  metadata: {
-    source: 'mcp-ai' | 'user' | 'system';
-    userId?: string;
-    sessionId?: string;
-    correlationId?: string;
-    batchId?: string;
-  };
-}
-
-interface NotificationOptions {
-  duration?: number;
-  position?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
-  icon?: string;
-  showBrowserNotification?: boolean;
-}
+import type { NotificationType, EntityType, EventType, NotificationOptions } from '../types/serviceTypes';
+import type { WSMessage } from '../types/websocketTypes';
 
 class NotificationService {
   private browserNotificationsEnabled = false;

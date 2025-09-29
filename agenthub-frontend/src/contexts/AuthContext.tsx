@@ -4,36 +4,8 @@ import Cookies from 'js-cookie';
 import logger from '../utils/logger';
 import { useWebSocket } from '../hooks/useWebSocketV2';
 
-// Types for authentication
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  roles: string[];
-}
-
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-}
-
-export interface SignupResult {
-  success: boolean;
-  requires_email_verification?: boolean;
-  message?: string;
-  access_token?: string;
-  refresh_token?: string;
-}
-
-export interface JWTPayload {
-  sub: string;
-  email: string;
-  username?: string;
-  roles?: string[];
-  exp: number;
-  iat: number;
-  type: string;
-}
+// Import types from centralized location
+import type { User, AuthTokens, SignupResult, JWTPayload } from '../types/authTypes';
 
 export interface AuthContextType {
   user: User | null;
@@ -106,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const decoded = jwtDecode<JWTPayload>(token);
       
       // Check if token is expired
-      if (decoded.exp * 1000 < Date.now()) {
+      if (decoded.exp && decoded.exp * 1000 < Date.now()) {
         return null;
       }
 
@@ -385,7 +357,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!tokens?.access_token) return;
 
     const decoded = jwtDecode<JWTPayload>(tokens.access_token);
-    const expiresIn = decoded.exp * 1000 - Date.now();
+    const expiresIn = decoded.exp ? decoded.exp * 1000 - Date.now() : 0;
     
     // Refresh token 1 minute before expiry
     const refreshTime = Math.max(0, expiresIn - 60000);

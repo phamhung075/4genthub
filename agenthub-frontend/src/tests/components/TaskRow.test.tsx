@@ -9,6 +9,7 @@ import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
 import TaskRow from '../../components/TaskRow';
 import animationFactory from '../../services/AnimationFactory';
+import { TaskSummary } from '../../types/taskTypes';
 
 // Mock the animation factory
 vi.mock('../../services/AnimationFactory', () => {
@@ -68,20 +69,6 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Mock task summary interfaces
-interface TaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  subtask_count: number;
-  assignees_count: number;
-  assignees: string[];
-  has_dependencies: boolean;
-  dependency_count: number;
-  created_at?: string;
-}
-
 const mockTaskSummary: TaskSummary = {
   id: 'test-task-123',
   title: 'Test Task',
@@ -107,9 +94,7 @@ const mockTaskRowProps = {
   isMobile: false,
   onToggleExpansion: vi.fn(),
   onOpenDialog: vi.fn(),
-  onHover: vi.fn(),
-  onRegisterCallbacks: vi.fn(),
-  onUnregisterCallbacks: vi.fn()
+  onHover: vi.fn()
 };
 
 describe('TaskRow Animation System', () => {

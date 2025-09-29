@@ -5,28 +5,13 @@
  * Provides clean API, prevents double-triggering, and ensures consistent behavior.
  */
 
-export type AnimationType = 'create' | 'delete' | 'update' | 'complete';
-export type AnimationSource = 'websocket' | 'callback' | 'mount';
-
-interface AnimationDefinition {
-  cssClass: string;
-  duration: number; // milliseconds
-  description: string;
-}
-
-interface AnimationState {
-  type: AnimationType;
-  startTime: number;
-  source: AnimationSource;
-}
-
-interface ElementRegistration {
-  element: HTMLElement;
-  callbacks?: {
-    onAnimationStart?: (type: AnimationType) => void;
-    onAnimationEnd?: (type: AnimationType) => void;
-  };
-}
+import type {
+  AnimationType,
+  AnimationSource,
+  AnimationDefinition,
+  AnimationState,
+  ElementRegistration
+} from '../types/animationTypes';
 
 class AnimationFactory {
   // Animation definitions with synchronized CSS durations
