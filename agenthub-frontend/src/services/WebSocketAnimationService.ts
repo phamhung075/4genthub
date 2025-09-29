@@ -1,12 +1,14 @@
 /**
- * WebSocket Animation Service
+ * WebSocket Animation Service - Refactored
  *
  * This service handles ONLY visual animations for WebSocket events.
  * It does NOT handle notifications - that's the responsibility of WebSocketNotificationService.
+ * Uses centralized AnimationFactory for all animation coordination.
  * Follows single responsibility principle for clean architecture.
  */
 
 import { WSMessage } from './WebSocketClient';
+import { animationFactory, AnimationType } from './AnimationFactory';
 
 export type AnimationTriggerType = 'created' | 'updated' | 'deleted' | 'completed';
 
@@ -40,8 +42,9 @@ class WebSocketAnimationService {
 
   /**
    * Handle incoming WebSocket messages and trigger animations
+   * Made public for debugging purposes
    */
-  private handleWebSocketMessage(message: WSMessage) {
+  handleWebSocketMessage(message: WSMessage) {
     const { payload } = message;
     const { entity, action } = payload;
 
@@ -85,14 +88,14 @@ class WebSocketAnimationService {
   }
 
   /**
-   * Trigger animations for task operations (ANIMATIONS ONLY - no notifications)
+   * Trigger animations for task operations using centralized AnimationFactory
    */
   private triggerTaskAnimation(action: string, message: WSMessage) {
     const { metadata } = message;
     const taskTitle = metadata?.task_title || 'Task';
     const branchTitle = metadata?.parent_branch_title || 'Branch';
 
-    console.log('🎯 WebSocketAnimationService: Triggering task animation:', {
+    console.log('🎯 WebSocketAnimationService: Triggering task animation via AnimationFactory:', {
       action,
       taskTitle,
       branchTitle
@@ -105,210 +108,168 @@ class WebSocketAnimationService {
     const metadataId = message.metadata?.entity_id;
     const taskId = primaryId || directDataId || metadataId;
 
-    console.log('🔍 ENHANCED Task ID extraction debug:', {
+    console.log('🔍 Task ID extraction debug:', {
       primaryId,
       directDataId,
       metadataId,
       finalTaskId: taskId,
-      action,
-      // Only show structure if task ID is missing for debugging
-      ...(taskId ? {} : { fullPayload: message.payload, fullMetadata: message.metadata })
+      action
     });
 
-    // Report which extraction path succeeded for debugging
-    if (taskId) {
-      const extractionPath = primaryId ? 'payload.data.primary.id' :
-                            directDataId ? 'payload.data.id' :
-                            'metadata.entity_id';
-      console.log(`✅ Task ID extracted via: ${extractionPath}`);
-    } else {
-      console.warn('❌ No task ID found in any extraction path - animation may fail');
+    if (!taskId) {
+      console.warn('❌ No task ID found - cannot trigger targeted animation');
+      return;
     }
 
+    // Map WebSocket actions to animation types
+    let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
-        // Trigger visual effects with task ID (NO notifications)
-        this.triggerShimmerEffect('task-created', taskId);
-        this.emit('task-created', { action, message });
+        animationType = 'create';
         break;
-
       case 'updated':
-        // Trigger visual effects with task ID (NO notifications)
-        this.triggerShimmerEffect('task-updated', taskId);
-        this.emit('task-updated', { action, message });
+        animationType = 'update';
         break;
-
       case 'completed':
-        // Trigger celebration effect with task ID (NO notifications)
-        this.triggerCelebrationEffect(taskId);
-        this.emit('task-completed', { action, message });
+        animationType = 'complete';
         break;
-
       case 'delete':
       case 'deleted':
-        console.warn('🗑️ DELETE CASE MATCHED in triggerTaskAnimation');
-        console.warn('  Task ID:', taskId);
-        console.warn('  Task Title:', taskTitle);
-        console.warn('  Branch Title:', branchTitle);
-        console.warn('  About to trigger fade effect...');
-
-        // Trigger fade effect with task ID for targeted animation (NO notifications)
-        this.triggerFadeEffect(taskId);
-
-        console.warn('✅ DELETE fade effect triggered');
-        console.warn('  About to emit task-deleted event...');
-
-        this.emit('task-deleted', { action, message });
-
-        console.warn('✅ DELETE task-deleted event emitted');
+        animationType = 'delete';
         break;
-
       default:
         console.log('🎬 WebSocketAnimationService: Unknown task action:', action);
+        return;
     }
+
+    // Trigger animation via centralized factory
+    const success = animationFactory.animate(taskId, animationType, 'websocket');
+
+    console.log('🎬 WebSocketAnimationService: Animation request result:', {
+      taskId,
+      animationType,
+      success
+    });
+
+    // Emit event for listeners (backwards compatibility)
+    this.emit(`task-${action}`, { action, message });
   }
 
   /**
-   * Trigger animations for subtask operations (ANIMATIONS ONLY - no notifications)
+   * Trigger animations for subtask operations using centralized AnimationFactory
    */
   private triggerSubtaskAnimation(action: string, message: WSMessage) {
     const { metadata } = message;
     const subtaskTitle = metadata?.subtask_title || 'Subtask';
     const parentTaskTitle = metadata?.parent_task_title || 'Task';
 
-    console.log('🎯 WebSocketAnimationService: Triggering subtask animation:', {
+    console.log('🎯 WebSocketAnimationService: Triggering subtask animation via AnimationFactory:', {
       action,
       subtaskTitle,
       parentTaskTitle
     });
 
+    // Extract subtask ID from message for targeted animations
+    const primaryId = message.payload?.data?.primary?.id;
+    const directDataId = message.payload?.data?.id;
+    const metadataId = message.metadata?.entity_id;
+    const subtaskId = primaryId || directDataId || metadataId;
+
+    if (!subtaskId) {
+      console.warn('❌ No subtask ID found - cannot trigger targeted animation');
+      return;
+    }
+
+    // Map WebSocket actions to animation types (same mapping as tasks)
+    let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
-        // Trigger visual effects only (NO notifications)
-        this.triggerShimmerEffect('subtask-created');
+        animationType = 'create';
         break;
-
+      case 'updated':
+        animationType = 'update';
+        break;
       case 'completed':
-        // Trigger visual effects only (NO notifications)
-        this.triggerShimmerEffect('subtask-completed');
+        animationType = 'complete';
         break;
-
+      case 'delete':
+      case 'deleted':
+        animationType = 'delete';
+        break;
       default:
         console.log('🎬 WebSocketAnimationService: Unknown subtask action:', action);
+        return;
     }
+
+    // Trigger animation via centralized factory
+    const success = animationFactory.animate(subtaskId, animationType, 'websocket');
+
+    console.log('🎬 WebSocketAnimationService: Subtask animation request result:', {
+      subtaskId,
+      animationType,
+      success
+    });
   }
 
   /**
-   * Trigger animations for branch operations (ANIMATIONS ONLY - no notifications)
+   * Trigger animations for branch operations using centralized AnimationFactory
    */
   private triggerBranchAnimation(action: string, message: WSMessage) {
     const { metadata } = message;
     const branchTitle = metadata?.branch_title || 'Branch';
 
-    console.log('🎯 WebSocketAnimationService: Triggering branch animation:', {
+    console.log('🎯 WebSocketAnimationService: Triggering branch animation via AnimationFactory:', {
       action,
       branchTitle
     });
 
+    // Extract branch ID from message for targeted animations
+    const primaryId = message.payload?.data?.primary?.id;
+    const directDataId = message.payload?.data?.id;
+    const metadataId = message.metadata?.entity_id;
+    const branchId = primaryId || directDataId || metadataId;
+
+    if (!branchId) {
+      console.warn('❌ No branch ID found - cannot trigger targeted animation');
+      return;
+    }
+
+    // Map WebSocket actions to animation types (same mapping as tasks)
+    let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
-        // Trigger visual effects only (NO notifications)
-        this.triggerShimmerEffect('branch-created');
+        animationType = 'create';
         break;
-
+      case 'updated':
+        animationType = 'update';
+        break;
+      case 'delete':
+      case 'deleted':
+        animationType = 'delete';
+        break;
       default:
         console.log('🎬 WebSocketAnimationService: Unknown branch action:', action);
-    }
-  }
-
-  /**
-   * Trigger shimmer effect on UI elements
-   */
-  private triggerShimmerEffect(eventType: string, taskId?: string) {
-    console.log('✨ WebSocketAnimationService: Triggering shimmer effect:', eventType, 'for task:', taskId);
-
-    // Find shimmer-capable elements and trigger their animations
-    const shimmerElements = document.querySelectorAll('.shimmer-button, [data-shimmer]');
-
-    console.log(`🎯 DEBUG: Found ${shimmerElements.length} shimmer-capable elements for animation`);
-    if (shimmerElements.length === 0) {
-      console.warn('⚠️ No shimmer-capable elements found! Looking for .shimmer-button or [data-shimmer]');
-      // Debug: Show what elements are actually available
-      const allButtons = document.querySelectorAll('button');
-      console.log(`Available buttons: ${allButtons.length}`);
-    } else {
-      console.log('✅ Shimmer elements found:', Array.from(shimmerElements).map(el => el.className));
+        return;
     }
 
-    shimmerElements.forEach((element) => {
-      // Add temporary shimmer class
-      element.classList.add('shimmer-active');
+    // Trigger animation via centralized factory
+    const success = animationFactory.animate(branchId, animationType, 'websocket');
 
-      // Remove after animation duration
-      setTimeout(() => {
-        element.classList.remove('shimmer-active');
-      }, 2500);
+    console.log('🎬 WebSocketAnimationService: Branch animation request result:', {
+      branchId,
+      animationType,
+      success
     });
-
-    // Dispatch custom event for other components to listen to
-    window.dispatchEvent(new CustomEvent('websocket-animation', {
-      detail: {
-        type: eventType,
-        timestamp: Date.now(),
-        taskId: taskId
-      }
-    }));
   }
 
-  /**
-   * Trigger celebration effect for completed tasks
-   */
-  private triggerCelebrationEffect(taskId?: string) {
-    console.log('🎉 WebSocketAnimationService: Triggering celebration effect for task:', taskId);
+  // REMOVED: All direct animation methods replaced by centralized AnimationFactory
+  // - triggerFadeInAnimation
+  // - triggerFadeOutAnimation
+  // - triggerContentUpdateAnimation
+  // - triggerCelebrationEffect
+  //
+  // These are now handled by AnimationFactory.animate() with proper coordination
 
-    // Add celebration class to body for global effects
-    document.body.classList.add('task-celebration');
-
-    // Remove after animation
-    setTimeout(() => {
-      document.body.classList.remove('task-celebration');
-    }, 3000);
-
-    // Dispatch celebration event with task ID
-    window.dispatchEvent(new CustomEvent('task-celebration', {
-      detail: {
-        timestamp: Date.now(),
-        taskId: taskId
-      }
-    }));
-  }
-
-  /**
-   * Trigger fade effect for deleted items
-   */
-  private triggerFadeEffect(taskId?: string) {
-    console.warn('💨 🗑️ DELETE: WebSocketAnimationService: Triggering fade effect for task:', taskId);
-
-    // Check if there are any listeners for the task-fade event
-    console.warn('  About to dispatch task-fade CustomEvent...');
-    console.warn('  Task ID:', taskId);
-    console.warn('  Timestamp:', Date.now());
-
-    // Dispatch fade event with task ID
-    const event = new CustomEvent('task-fade', {
-      detail: {
-        timestamp: Date.now(),
-        taskId: taskId
-      }
-    });
-
-    console.warn('  CustomEvent created:', event);
-    console.warn('  Event detail:', event.detail);
-
-    window.dispatchEvent(event);
-
-    console.warn('✅ DELETE task-fade CustomEvent dispatched to window');
-  }
 
   /**
    * Subscribe to animation events
@@ -336,33 +297,61 @@ class WebSocketAnimationService {
   }
 
   /**
-   * Manually trigger an animation (for testing - ANIMATIONS ONLY)
+   * Manually trigger an animation (for testing) - now uses AnimationFactory
    */
-  triggerTestAnimation(type: AnimationTriggerType, entity: string = 'task') {
-    console.log('🧪 WebSocketAnimationService: Triggering test animation:', type, entity);
+  triggerTestAnimation(type: AnimationTriggerType, entity: string = 'task', elementId: string = 'test-element') {
+    console.log('🧪 WebSocketAnimationService: Triggering test animation via AnimationFactory:', {
+      type,
+      entity,
+      elementId
+    });
 
-    const mockMessage: WSMessage = {
-      id: `test-${Date.now()}`,
-      version: '2.0',
-      type: 'update',
-      timestamp: new Date().toISOString(),
-      sequence: 1,
-      payload: {
-        entity,
-        action: type,
-        data: { primary: { id: 'test-id' } }
-      },
-      metadata: {
-        source: 'user',
-        task_title: 'Test Task',
-        parent_branch_title: 'Test Branch'
+    // Map animation trigger type to AnimationType
+    let animationType: AnimationType;
+    switch (type) {
+      case 'created':
+        animationType = 'create';
+        break;
+      case 'updated':
+        animationType = 'update';
+        break;
+      case 'deleted':
+        animationType = 'delete';
+        break;
+      case 'completed':
+        animationType = 'complete';
+        break;
+      default:
+        console.warn('🧪 Unknown test animation type:', type);
+        return;
+    }
+
+    // Trigger animation directly via factory
+    const success = animationFactory.animate(elementId, animationType, 'websocket');
+
+    console.log('🧪 Test animation result:', {
+      elementId,
+      animationType,
+      success
+    });
+
+    // Also emit event for backwards compatibility
+    this.emit(`${entity}-${type}`, {
+      action: type,
+      message: {
+        id: `test-${Date.now()}`,
+        payload: { entity, action: type },
+        metadata: { entity_id: elementId }
       }
-    };
-
-    // Only trigger animations, not notifications
-    this.handleWebSocketMessage(mockMessage);
+    });
   }
 }
 
 // Export singleton instance
 export const webSocketAnimationService = new WebSocketAnimationService();
+
+// DEBUG: Export to window for debugging and testing
+if (typeof window !== 'undefined') {
+  (window as any).webSocketAnimationService = webSocketAnimationService;
+  console.log('🎬 WebSocketAnimationService: Exposed to window.webSocketAnimationService for debugging');
+}

@@ -20,11 +20,6 @@ interface SubtaskRowProps {
   showDetails: boolean;
   parentTaskId: string; // Add parent task ID for context display
 
-  // Animation event callbacks from parent (placeholders)
-  onPlayCreateAnimation: () => void;
-  onPlayDeleteAnimation: () => void;
-  onPlayUpdateAnimation: () => void;
-
   // Other callbacks
   onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void;
   onAgentInfoClick: (agentName: string) => void;
@@ -45,9 +40,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   isLoading,
   showDetails,
   parentTaskId,
-  onPlayCreateAnimation,
-  onPlayDeleteAnimation,
-  onPlayUpdateAnimation,
   onSubtaskAction,
   onAgentInfoClick,
   onDeleteSubtask,

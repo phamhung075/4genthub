@@ -76,11 +76,11 @@
           "size": 17136
         },
         {
-          "hash": "7139bdd726e8644f2548747192b361e3",
-          "modified": "2025-09-26T19:58:37.908947",
+          "hash": "8f610de844586ecf15f3e1efd80842f3",
+          "modified": "2025-09-27T22:44:48.469607",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 6368409
+          "size": 7143770
         },
         {
           "hash": "bd9976592660c396c4a8e543e8cc3e25",
@@ -90,11 +90,11 @@
           "size": 4197
         },
         {
-          "hash": "10ae22c1a423a23bae6f121f67c29bf9",
-          "modified": "2025-09-26T19:58:37.878803",
+          "hash": "ae9695c27ac27f183a023dc839876337",
+          "modified": "2025-09-27T22:41:23.955688",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 58323
+          "size": 54400
         },
         {
           "hash": "10c99f4a959a54ecda36092c042f082c",
@@ -1999,8 +1999,15 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 12,
+      "count": 37,
       "files": [
+        {
+          "hash": "f16eaf013552f40d59a3e2f938e34186",
+          "modified": "2025-09-27T11:05:07.327145",
+          "name": "test-fix-iteration-10-summary.md",
+          "path": "testing-qa/test-fix-iteration-10-summary.md",
+          "size": 3066
+        },
         {
           "hash": "1985049208d9a0e794e6723c90f14a29",
           "modified": "2025-09-19T10:21:27.556152",
@@ -2009,11 +2016,53 @@
           "size": 6116
         },
         {
+          "hash": "ccf5ea8bb51275b8780b7fcffdb7edd5",
+          "modified": "2025-09-27T12:41:55.817820",
+          "name": "test-fix-iteration-24-summary.md",
+          "path": "testing-qa/test-fix-iteration-24-summary.md",
+          "size": 2208
+        },
+        {
+          "hash": "4d23d6b200b0c12e7456e30b90716425",
+          "modified": "2025-09-27T13:49:23.853935",
+          "name": "test-fix-iteration-37-cache-synchronization.md",
+          "path": "testing-qa/test-fix-iteration-37-cache-synchronization.md",
+          "size": 2359
+        },
+        {
+          "hash": "657c2be1e22bf500138cd3d088e28721",
+          "modified": "2025-09-27T13:36:44.212101",
+          "name": "test-fix-iteration-35-sql-fixes.md",
+          "path": "testing-qa/test-fix-iteration-35-sql-fixes.md",
+          "size": 2326
+        },
+        {
+          "hash": "9e7f4cec453cff1ee7f858fdc85b20d4",
+          "modified": "2025-09-27T11:10:39.359117",
+          "name": "test-fix-iteration-11-summary.md",
+          "path": "testing-qa/test-fix-iteration-11-summary.md",
+          "size": 2753
+        },
+        {
           "hash": "1ab1eabc6919aaf6d105b43bc7a8d748",
           "modified": "2025-09-17T00:40:29.826987",
           "name": "hook-testing-techniques.md",
           "path": "testing-qa/hook-testing-techniques.md",
           "size": 16277
+        },
+        {
+          "hash": "094cc8c5ee8bd9cb46ace5d48cb1f6c3",
+          "modified": "2025-09-27T12:57:52.893129",
+          "name": "test-fix-iteration-28-healthy-status.md",
+          "path": "testing-qa/test-fix-iteration-28-healthy-status.md",
+          "size": 1906
+        },
+        {
+          "hash": "c205ca3435031de9da77fbc6b7444cd9",
+          "modified": "2025-09-27T14:01:56.354446",
+          "name": "test-fix-iteration-40-perfect-health-stability.md",
+          "path": "testing-qa/test-fix-iteration-40-perfect-health-stability.md",
+          "size": 3253
         },
         {
           "hash": "378aa13e352250d85c6226e253e6e8a8",
@@ -2030,11 +2079,39 @@
           "size": 17880
         },
         {
+          "hash": "c52ac239a5be90535bdb3455c9bebcb1",
+          "modified": "2025-09-27T11:17:32.154022",
+          "name": "test-fix-iteration-12-summary.md",
+          "path": "testing-qa/test-fix-iteration-12-summary.md",
+          "size": 2338
+        },
+        {
           "hash": "57e431659b4d64fd8366c37c56aecfaf",
           "modified": "2025-09-17T00:40:29.826987",
           "name": "hook-test-fixing-progress.md",
           "path": "testing-qa/hook-test-fixing-progress.md",
           "size": 7759
+        },
+        {
+          "hash": "2a9c1091301b5941fdf745f1045f1168",
+          "modified": "2025-09-27T22:37:25.105472",
+          "name": "test-fix-iteration-403-summary.md",
+          "path": "testing-qa/test-fix-iteration-403-summary.md",
+          "size": 3041
+        },
+        {
+          "hash": "333939b67b25c7632cd106d6ee48d037",
+          "modified": "2025-09-27T12:44:38.217495",
+          "name": "test-fix-iteration-25-summary.md",
+          "path": "testing-qa/test-fix-iteration-25-summary.md",
+          "size": 1988
+        },
+        {
+          "hash": "5edd53e95ec51ee5ff121268221c6203",
+          "modified": "2025-09-27T12:46:42.311545",
+          "name": "test-fix-iteration-26-summary.md",
+          "path": "testing-qa/test-fix-iteration-26-summary.md",
+          "size": 1980
         },
         {
           "hash": "762e177de10f2c7e6561ae6feecb0a98",
@@ -2044,11 +2121,74 @@
           "size": 15883
         },
         {
-          "hash": "1d6a82484c194d44eac83aec11c826a5",
-          "modified": "2025-09-26T19:57:21.359706",
-          "name": "test-fix-iteration-360-unit-test-creation.md",
-          "path": "testing-qa/test-fix-iteration-360-unit-test-creation.md",
-          "size": 3322
+          "hash": "5793bc50bdc4c1603ee69dd0f66ff4a0",
+          "modified": "2025-09-27T22:40:59.564946",
+          "name": "test-fix-iteration-404-summary.md",
+          "path": "testing-qa/test-fix-iteration-404-summary.md",
+          "size": 2497
+        },
+        {
+          "hash": "b5a057eab0a0bdc41cc8fe0b89fa70fc",
+          "modified": "2025-09-27T22:44:31.198512",
+          "name": "test-fix-iteration-405-summary.md",
+          "path": "testing-qa/test-fix-iteration-405-summary.md",
+          "size": 2077
+        },
+        {
+          "hash": "621e7fc1e77a799d1551623d1278ec41",
+          "modified": "2025-09-27T13:01:13.409187",
+          "name": "test-fix-iteration-29-healthy-status.md",
+          "path": "testing-qa/test-fix-iteration-29-healthy-status.md",
+          "size": 1798
+        },
+        {
+          "hash": "88993cfeef36d6a6ca5379c63cf56f63",
+          "modified": "2025-09-27T13:54:38.308078",
+          "name": "test-fix-iteration-38-perfect-health.md",
+          "path": "testing-qa/test-fix-iteration-38-perfect-health.md",
+          "size": 3365
+        },
+        {
+          "hash": "95141e6e82a92cf32664dc20e9f48e4c",
+          "modified": "2025-09-27T14:07:14.460821",
+          "name": "test-fix-iteration-41-perfect-health-maintained.md",
+          "path": "testing-qa/test-fix-iteration-41-perfect-health-maintained.md",
+          "size": 3762
+        },
+        {
+          "hash": "4eeb6ecf398d0837413a3ffd402fe185",
+          "modified": "2025-09-27T13:12:04.672479",
+          "name": "test-fix-iteration-31-excellent-health.md",
+          "path": "testing-qa/test-fix-iteration-31-excellent-health.md",
+          "size": 3486
+        },
+        {
+          "hash": "5ccd53669c63bd8aa49c8dc2597ed06a",
+          "modified": "2025-09-27T13:44:49.683235",
+          "name": "test-fix-iteration-36-excellent-health.md",
+          "path": "testing-qa/test-fix-iteration-36-excellent-health.md",
+          "size": 2715
+        },
+        {
+          "hash": "9380171ab7716fd2dbebe08c66ad2ec5",
+          "modified": "2025-09-27T13:20:16.977984",
+          "name": "test-fix-iteration-33-excellent-health.md",
+          "path": "testing-qa/test-fix-iteration-33-excellent-health.md",
+          "size": 2588
+        },
+        {
+          "hash": "69c3d084fded0f5886a32fd6d39be55e",
+          "modified": "2025-09-27T12:37:19.340668",
+          "name": "test-fix-iteration-23-summary.md",
+          "path": "testing-qa/test-fix-iteration-23-summary.md",
+          "size": 2203
+        },
+        {
+          "hash": "3516c288aa7b8c790c668ec35f78c5ef",
+          "modified": "2025-09-27T13:16:24.049021",
+          "name": "test-fix-iteration-32-excellent-health.md",
+          "path": "testing-qa/test-fix-iteration-32-excellent-health.md",
+          "size": 2423
         },
         {
           "hash": "b81aae68a7f9663ca9d3db5239614fc9",
@@ -2056,6 +2196,13 @@
           "name": "documentation-quality-prevention-strategy.md",
           "path": "testing-qa/documentation-quality-prevention-strategy.md",
           "size": 20177
+        },
+        {
+          "hash": "a28fb8c6f188bde2fec2db2764deb634",
+          "modified": "2025-09-27T13:26:19.674254",
+          "name": "test-fix-iteration-34-healthy-status.md",
+          "path": "testing-qa/test-fix-iteration-34-healthy-status.md",
+          "size": 1851
         },
         {
           "hash": "a479d2820089f544a14eccf1a5996c95",
@@ -2079,11 +2226,39 @@
           "size": 9798
         },
         {
+          "hash": "54c01948af8cd58e81d166ee18ac171c",
+          "modified": "2025-09-27T14:19:27.123144",
+          "name": "test-fix-iteration-42-summary.md",
+          "path": "testing-qa/test-fix-iteration-42-summary.md",
+          "size": 2011
+        },
+        {
+          "hash": "706f99503c88f5fcc24491033e9ec7fb",
+          "modified": "2025-09-27T13:07:01.010103",
+          "name": "test-fix-iteration-30-healthy-status.md",
+          "path": "testing-qa/test-fix-iteration-30-healthy-status.md",
+          "size": 3508
+        },
+        {
+          "hash": "31acc41bdb8a2ab82e0e2798315c0b04",
+          "modified": "2025-09-27T13:59:23.766554",
+          "name": "test-fix-iteration-39-perfect-health-confirmed.md",
+          "path": "testing-qa/test-fix-iteration-39-perfect-health-confirmed.md",
+          "size": 1598
+        },
+        {
           "hash": "c72c9368ecfb2053a743dbbe3ef5a6f3",
           "modified": "2025-09-19T10:21:27.556152",
           "name": "complete-test-victory-summary.md",
           "path": "testing-qa/complete-test-victory-summary.md",
           "size": 6028
+        },
+        {
+          "hash": "e4891e00913a47f6abefa8ce097da241",
+          "modified": "2025-09-27T12:12:54.556211",
+          "name": "test-fix-iteration-20-summary.md",
+          "path": "testing-qa/test-fix-iteration-20-summary.md",
+          "size": 2127
         }
       ],
       "path": "testing-qa"
@@ -2102,7 +2277,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 35,
+      "count": 36,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2301,6 +2476,13 @@
           "size": 5975
         },
         {
+          "hash": "2d956ecca1ac957c17965e5a08a9e512",
+          "modified": "2025-09-27T23:45:57.788595",
+          "name": "animation-debug-instructions.md",
+          "path": "troubleshooting-guides/animation-debug-instructions.md",
+          "size": 4066
+        },
+        {
           "hash": "f8992d46220dc3202a5a3c844fa94a7e",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "DMAIC-D1-Authentication-Security-Requirements.md",
@@ -2366,7 +2548,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-27T08:49:17.490398",
+  "generated_at": "2025-09-27T23:45:57.852636",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2742,7 +2924,32 @@
         "hook-system-architecture.md",
         "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
-        "test-fix-iteration-360-unit-test-creation.md",
+        "test-fix-iteration-10-summary.md",
+        "test-fix-iteration-11-summary.md",
+        "test-fix-iteration-12-summary.md",
+        "test-fix-iteration-20-summary.md",
+        "test-fix-iteration-23-summary.md",
+        "test-fix-iteration-24-summary.md",
+        "test-fix-iteration-25-summary.md",
+        "test-fix-iteration-26-summary.md",
+        "test-fix-iteration-28-healthy-status.md",
+        "test-fix-iteration-29-healthy-status.md",
+        "test-fix-iteration-30-healthy-status.md",
+        "test-fix-iteration-31-excellent-health.md",
+        "test-fix-iteration-32-excellent-health.md",
+        "test-fix-iteration-33-excellent-health.md",
+        "test-fix-iteration-34-healthy-status.md",
+        "test-fix-iteration-35-sql-fixes.md",
+        "test-fix-iteration-36-excellent-health.md",
+        "test-fix-iteration-37-cache-synchronization.md",
+        "test-fix-iteration-38-perfect-health.md",
+        "test-fix-iteration-39-perfect-health-confirmed.md",
+        "test-fix-iteration-40-perfect-health-stability.md",
+        "test-fix-iteration-403-summary.md",
+        "test-fix-iteration-404-summary.md",
+        "test-fix-iteration-405-summary.md",
+        "test-fix-iteration-41-perfect-health-maintained.md",
+        "test-fix-iteration-42-summary.md",
         "testing.md"
       ]
     },
@@ -2755,6 +2962,7 @@
         "FIX_KEYCLOAK_TOKEN_INTEGRATION.md",
         "README.md",
         "TROUBLESHOOTING.md",
+        "animation-debug-instructions.md",
         "clean-timestamp-troubleshooting.md",
         "comprehensive-branch-cascade-deletion-fix.md",
         "frontend-debugging-summary.md",
@@ -2792,5 +3000,5 @@
     }
   },
   "total_directories": 30,
-  "total_files": 312
+  "total_files": 338
 }

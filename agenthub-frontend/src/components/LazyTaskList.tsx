@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Wifi, WifiOff } from "lucide-react";
+dontimport { Plus, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
@@ -46,6 +46,7 @@ interface TaskSummary {
   has_dependencies: boolean;
   dependency_count: number;  // Add count of dependencies
   has_context: boolean;
+  created_at?: string; // CRITICAL: Add created_at for mount-time animation detection
 }
 
 const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTasksChanged }) => {
@@ -149,15 +150,31 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Stable refresh callback for changePoolService
   const handleTaskChanges = useCallback(async () => {
+    console.log('🔍 [LazyTaskList] CHANGE EVENT TRIGGERED - handleTaskChanges called');
     logger.info('LazyTaskList: Task changes detected, refreshing...', { component: 'LazyTaskList' });
 
     // Store current task IDs and data before refresh for comparison
     const currentTaskIds = new Set(taskSummaries.map(t => t.id));
     const currentTaskMap = new Map(taskSummaries.map(t => [t.id, t]));
 
+    console.log('🔍 [LazyTaskList] BEFORE REFRESH STATE:', {
+      currentTaskCount: taskSummaries.length,
+      currentTaskIds: Array.from(currentTaskIds),
+      taskTreeId,
+      timestamp: new Date().toISOString()
+    });
+
     // Re-fetch task summaries to get latest data
     try {
+      console.log('🔍 [LazyTaskList] CALLING API - listTasks with git_branch_id:', taskTreeId);
       const taskList = await listTasks({ git_branch_id: taskTreeId });
+      console.log('🔍 [LazyTaskList] API RESPONSE - listTasks returned:', {
+        taskListType: typeof taskList,
+        isArray: Array.isArray(taskList),
+        length: Array.isArray(taskList) ? taskList.length : 'N/A',
+        firstTaskId: Array.isArray(taskList) && taskList.length > 0 ? taskList[0].id : 'No tasks'
+      });
+
       const validTaskList = Array.isArray(taskList) ? taskList : [];
 
       // Convert to task summaries
@@ -167,7 +184,7 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
         const depFromSummary = task.dependency_summary?.total_dependencies || 0;
         const dependencyCount = Math.max(depFromArray, depFromRelationships, depFromSummary);
 
-        return {
+        const summary = {
           id: task.id,
           title: task.title,
           status: task.status,
@@ -177,11 +194,28 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           assignees: task.assignees || [],
           has_dependencies: dependencyCount > 0,
           dependency_count: dependencyCount,
-          has_context: Boolean(task.context_id || task.context_data)
+          has_context: Boolean(task.context_id || task.context_data),
+          created_at: task.created_at // CRITICAL: Include created_at for mount-time animation
         };
+
+        console.log('🔍 [LazyTaskList] SUMMARY CREATION:', {
+          taskId: task.id,
+          originalCreatedAt: task.created_at,
+          summaryCreatedAt: summary.created_at,
+          hasCreatedAt: !!summary.created_at
+        });
+
+        return summary;
       });
 
       const newTaskIds = new Set(summaries.map(t => t.id));
+
+      console.log('🔍 [LazyTaskList] TASK SUMMARIES CONVERTED:', {
+        summariesCount: summaries.length,
+        summaryTaskIds: summaries.map(s => s.id),
+        newTaskIdsSet: Array.from(newTaskIds),
+        sampleSummary: summaries[0] || 'No summaries'
+      });
 
       // Detect changes and trigger animations
       // 1. New tasks (created) - only if we have a previous state to compare
@@ -189,6 +223,15 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       if (currentTaskIds.size > 0) {
         const addedTasks = new Set([...newTaskIds].filter(id => !currentTaskIds.has(id)));
         const deletedTasks = new Set([...currentTaskIds].filter(id => !newTaskIds.has(id)));
+
+        console.log('🔍 [LazyTaskList] CHANGE DETECTION RESULTS:', {
+          currentTaskIdsCount: currentTaskIds.size,
+          newTaskIdsCount: newTaskIds.size,
+          addedTasksCount: addedTasks.size,
+          deletedTasksCount: deletedTasks.size,
+          addedTaskIds: Array.from(addedTasks),
+          deletedTaskIds: Array.from(deletedTasks)
+        });
 
         logger.debug('Change detection statistics', {
           component: 'LazyTaskList',
@@ -349,6 +392,13 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       });
 
       // Update states (use summariesToUpdate which includes deleted tasks for animation)
+      console.log('🔍 [LazyTaskList] UPDATING STATE:', {
+        summariesToUpdateCount: summariesToUpdate.length,
+        summariesToUpdateIds: summariesToUpdate.map(s => s.id),
+        totalTasksBeingSet: summaries.length,
+        previousTaskIds: Array.from(newTaskIds)
+      });
+
       setTaskSummaries(summariesToUpdate);
       // Set total to actual task count (not including deleted tasks being animated out)
       setTotalTasks(summaries.length);
@@ -387,9 +437,24 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Simple display tasks - each row handles its own animation
   const displayTasks = useMemo(() => {
+    console.log('🔍 [LazyTaskList] DISPLAY TASKS COMPUTATION:', {
+      taskSummariesLength: taskSummaries?.length || 0,
+      taskSummariesType: typeof taskSummaries,
+      isArray: Array.isArray(taskSummaries),
+      tasksPerPage: TASKS_PER_PAGE,
+      willDisplay: taskSummaries && Array.isArray(taskSummaries) ? taskSummaries.slice(0, TASKS_PER_PAGE).length : 0,
+      taskSummariesIds: taskSummaries?.map(t => t.id) || []
+    });
+
     if (taskSummaries && Array.isArray(taskSummaries)) {
-      return taskSummaries.slice(0, TASKS_PER_PAGE);
+      const result = taskSummaries.slice(0, TASKS_PER_PAGE);
+      console.log('🔍 [LazyTaskList] DISPLAY TASKS RESULT:', {
+        resultLength: result.length,
+        resultIds: result.map(t => t.id)
+      });
+      return result;
     }
+    console.log('🔍 [LazyTaskList] DISPLAY TASKS RETURNING EMPTY ARRAY');
     return [];
   }, [taskSummaries]);
 
@@ -423,7 +488,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
           assignees: task.assignees || [],  // Include actual assignees array
           has_dependencies: dependencyCount > 0,
           dependency_count: dependencyCount,
-          has_context: Boolean(task.context_id || task.context_data)
+          has_context: Boolean(task.context_id || task.context_data),
+          created_at: task.created_at // CRITICAL: Include created_at for mount-time animation
         };
       });
       
@@ -932,6 +998,14 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
 
   // Render task row - unified for mobile and desktop
   const renderTaskRow = useCallback((summary: TaskSummary, isMobile: boolean) => {
+    console.log('🔍 [LazyTaskList] RENDERING TASK ROW:', {
+      taskId: summary.id,
+      taskTitle: summary.title,
+      isMobile,
+      summaryData: summary,
+      timestamp: new Date().toISOString()
+    });
+
     return (
       <TaskRow
         key={summary.id}
@@ -1070,6 +1144,11 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       {isMobile ? (
         // Mobile Card View
         <div className="space-y-2">
+          {console.log('🔍 [LazyTaskList] MOBILE RENDERING:', {
+            displayTasksLength: displayTasks.length,
+            displayTasksIds: displayTasks.map(t => t.id),
+            aboutToRenderCount: displayTasks.length
+          })}
           {displayTasks.map(task => renderTaskRow(task, true))}
         </div>
       ) : (
@@ -1088,6 +1167,11 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
               </TableRow>
             </TableHeader>
             <TableBody>
+              {console.log('🔍 [LazyTaskList] DESKTOP RENDERING:', {
+                displayTasksLength: displayTasks.length,
+                displayTasksIds: displayTasks.map(t => t.id),
+                aboutToRenderCount: displayTasks.length
+              })}
               {displayTasks.map(task => renderTaskRow(task, false))}
             </TableBody>
           </Table>

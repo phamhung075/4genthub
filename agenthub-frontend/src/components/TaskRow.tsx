@@ -1,14 +1,16 @@
 import { ChevronDown, ChevronRight, Eye, Pencil, Trash2, Users } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Task } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { ShimmerButton } from "./ui/shimmer-button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
 import logger from "../utils/logger";
 import { ProgressDisplayEnhanced } from "./ui/ProgressDisplay";
+import { animationFactory, AnimationType } from "../services/AnimationFactory";
 
 import LazySubtaskList from "./LazySubtaskList";
 
@@ -23,6 +25,7 @@ interface TaskSummary {
   assignees: string[];
   has_dependencies: boolean;
   dependency_count: number;
+  created_at?: string; // Added for mount-time animation detection
 }
 
 interface TaskRowProps {
@@ -35,11 +38,6 @@ interface TaskRowProps {
   projectId: string;
   taskTreeId: string;
   isMobile: boolean;
-
-  // Animation event callbacks from parent (placeholders)
-  onPlayCreateAnimation: () => void;
-  onPlayDeleteAnimation: () => void;
-  onPlayUpdateAnimation: () => void;
 
   // Other callbacks
   onToggleExpansion: () => void;
@@ -65,51 +63,148 @@ const TaskRow: React.FC<TaskRowProps> = ({
   projectId,
   taskTreeId,
   isMobile,
-  onPlayCreateAnimation,
-  onPlayDeleteAnimation,
-  onPlayUpdateAnimation,
   onToggleExpansion,
   onOpenDialog,
   onHover,
   onRegisterCallbacks,
   onUnregisterCallbacks
 }) => {
+  // CRITICAL DEBUG: Log TaskRow component mount
+  console.log('🎬 [TaskRow] COMPONENT MOUNT/RENDER (using AnimationFactory):', {
+    taskId: summary.id,
+    taskTitle: summary.title,
+    componentMounted: true,
+    timestamp: new Date().toISOString(),
+    hasCreatedAt: !!summary.created_at,
+    createdAt: summary.created_at
+  });
+
   // Navigation hook for task detail URLs
   const navigate = useNavigate();
 
-  // Internal animation state
-  const [animationState, setAnimationState] = useState<'none' | 'creating' | 'deleting' | 'updating'>('none');
+  // Simplified state - visibility only (animations handled by factory)
   const [isVisible, setIsVisible] = useState(true);
 
-  // Animation handlers
-  const playCreateAnimation = useCallback(() => {
-    setAnimationState('creating');
-    setTimeout(() => setAnimationState('none'), 500); // Clear after animation (0.5s as per requirements)
-  }, []);
+  // Refs for DOM elements to register with AnimationFactory
+  const mobileElementRef = useRef<HTMLDivElement>(null);
+  const desktopElementRef = useRef<HTMLTableRowElement>(null);
 
-  const playDeleteAnimation = useCallback(() => {
-    logger.debug('TaskRow starting delete animation', { component: 'TaskRow', taskId: summary.id });
-    setAnimationState('deleting');
-    // After animation completes, hide the row
-    setTimeout(() => {
-      logger.debug('TaskRow delete animation complete, hiding', { component: 'TaskRow', taskId: summary.id });
-      setIsVisible(false);
-    }, 800); // Animation duration (longer)
+  // Simplified animation handlers using centralized AnimationFactory
+  const playCreateAnimation = useCallback((source: 'callback' | 'websocket' | 'mount' = 'callback') => {
+    console.log('🎬 [TaskRow] playCreateAnimation called (delegating to AnimationFactory):', {
+      taskId: summary.id,
+      source
+    });
+
+    const success = animationFactory.animate(summary.id, 'create', source);
+
+    logger.debug('TaskRow delegated create animation to factory', {
+      component: 'TaskRow',
+      taskId: summary.id,
+      source,
+      success
+    });
+
+    return success;
   }, [summary.id]);
 
-  const playUpdateAnimation = useCallback(() => {
-    setAnimationState('updating');
-    setTimeout(() => setAnimationState('none'), 5000); // Clear after 5 seconds as requested
-  }, []);
+  const playDeleteAnimation = useCallback((source: 'callback' | 'websocket' | 'mount' = 'callback') => {
+    console.log('🎬 [TaskRow] playDeleteAnimation called (delegating to AnimationFactory):', {
+      taskId: summary.id,
+      source
+    });
 
-  // Register animation callbacks with parent
+    const success = animationFactory.animate(summary.id, 'delete', source);
+
+    logger.debug('TaskRow delegated delete animation to factory', {
+      component: 'TaskRow',
+      taskId: summary.id,
+      source,
+      success
+    });
+
+    // Handle visibility after delete animation
+    if (success) {
+      setTimeout(() => {
+        logger.debug('TaskRow hiding after delete animation', { component: 'TaskRow', taskId: summary.id });
+        setIsVisible(false);
+      }, 1000); // 1s duration from AnimationFactory (enhanced)
+    }
+
+    return success;
+  }, [summary.id]);
+
+  const playUpdateAnimation = useCallback((source: 'callback' | 'websocket' | 'mount' = 'callback') => {
+    console.log('🎬 [TaskRow] playUpdateAnimation called (delegating to AnimationFactory):', {
+      taskId: summary.id,
+      source
+    });
+
+    const success = animationFactory.animate(summary.id, 'update', source);
+
+    logger.debug('TaskRow delegated update animation to factory', {
+      component: 'TaskRow',
+      taskId: summary.id,
+      source,
+      success
+    });
+
+    return success;
+  }, [summary.id]);
+
+  // Register element with AnimationFactory on mount
+  useEffect(() => {
+    const currentElement = isMobile ? mobileElementRef.current : desktopElementRef.current;
+
+    if (currentElement) {
+      console.log('🎬 [TaskRow] Registering element with AnimationFactory:', {
+        taskId: summary.id,
+        elementType: isMobile ? 'mobile' : 'desktop',
+        element: currentElement.tagName
+      });
+
+      animationFactory.registerElement(summary.id, currentElement, {
+        onAnimationStart: (type: AnimationType) => {
+          console.log('🎬 [TaskRow] Animation started:', { taskId: summary.id, type });
+        },
+        onAnimationEnd: (type: AnimationType) => {
+          console.log('🎬 [TaskRow] Animation completed:', { taskId: summary.id, type });
+        }
+      });
+
+      logger.debug('TaskRow registered with AnimationFactory', {
+        component: 'TaskRow',
+        taskId: summary.id,
+        isMobile
+      });
+    } else {
+      console.warn('🎬 [TaskRow] Failed to register - element ref not available:', {
+        taskId: summary.id,
+        isMobile,
+        mobileRef: !!mobileElementRef.current,
+        desktopRef: !!desktopElementRef.current
+      });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🎬 [TaskRow] Unregistering from AnimationFactory:', summary.id);
+      animationFactory.unregisterElement(summary.id);
+      logger.debug('TaskRow unregistered from AnimationFactory', {
+        component: 'TaskRow',
+        taskId: summary.id
+      });
+    };
+  }, [summary.id, isMobile]); // Re-register if mobile/desktop mode changes
+
+  // Register animation callbacks with parent (simplified)
   useEffect(() => {
     if (onRegisterCallbacks) {
-      logger.debug('TaskRow registering callbacks for task', { component: 'TaskRow', taskId: summary.id });
+      logger.debug('TaskRow registering simplified callbacks for task', { component: 'TaskRow', taskId: summary.id });
       onRegisterCallbacks(summary.id, {
-        playCreateAnimation,
-        playDeleteAnimation,
-        playUpdateAnimation
+        playCreateAnimation: () => playCreateAnimation('callback'),
+        playDeleteAnimation: () => playDeleteAnimation('callback'),
+        playUpdateAnimation: () => playUpdateAnimation('callback')
       });
     } else {
       logger.warn('TaskRow: No onRegisterCallbacks provided for task', { component: 'TaskRow', taskId: summary.id });
@@ -124,217 +219,68 @@ const TaskRow: React.FC<TaskRowProps> = ({
     };
   }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, onRegisterCallbacks, onUnregisterCallbacks]);
 
-  // Listen for WebSocket animation events (for cross-user animations)
+  // Mount-time animation check for newly created tasks (simplified with AnimationFactory)
   useEffect(() => {
-    const handleWebSocketFade = (event: CustomEvent) => {
-      const { taskId: eventTaskId } = event.detail || {};
+    // Check if this task was recently created and should trigger fade-in animation
+    if (summary.created_at) {
+      const createdTime = new Date(summary.created_at).getTime();
+      const now = Date.now();
+      const timeSinceCreated = now - createdTime;
 
-      // Only respond to events for this specific task
-      if (eventTaskId !== summary.id) {
-        return;
-      }
+      // If task was created within the last 10 seconds, trigger fade-in animation
+      const isNewlyCreated = timeSinceCreated < 10000; // 10 seconds
 
-      logger.debug('TaskRow received WebSocket fade event for this task', {
-        component: 'TaskRow',
+      console.log('🎬 [TaskRow] MOUNT-TIME ANIMATION CHECK (AnimationFactory):', {
         taskId: summary.id,
-        eventTaskId
+        createdAt: summary.created_at,
+        createdTime,
+        currentTime: now,
+        timeSinceCreated,
+        isNewlyCreated,
+        willTriggerAnimation: isNewlyCreated
       });
 
-      // Only trigger if the row is still visible (not already deleted optimistically)
-      if (isVisible) {
-        logger.debug('TaskRow playing WebSocket delete animation', { component: 'TaskRow', taskId: summary.id });
-        playDeleteAnimation();
-      } else {
-        logger.debug('TaskRow ignoring WebSocket fade - already invisible', { component: 'TaskRow', taskId: summary.id });
+      if (isNewlyCreated) {
+        // Add small delay to ensure DOM is ready and AnimationFactory registration is complete
+        setTimeout(() => {
+          console.log('🎬 [TaskRow] MOUNT-TIME ANIMATION TRIGGERED for newly created task:', summary.id);
+          playCreateAnimation('mount');
+        }, 100); // 100ms delay for DOM and registration readiness
       }
-    };
+    }
+  }, []); // Empty dependency array - only run on mount
 
-    const handleWebSocketCelebration = (event: CustomEvent) => {
-      const { taskId: eventTaskId } = event.detail || {};
-
-      // Only respond to events for this specific task
-      if (eventTaskId && eventTaskId !== summary.id) {
-        return;
-      }
-
-      logger.debug('TaskRow received WebSocket celebration event for this task', {
-        component: 'TaskRow',
-        taskId: summary.id,
-        eventTaskId
-      });
-
-      // Trigger completion animation
-      playUpdateAnimation();
-    };
-
-    const handleWebSocketAnimation = (event: CustomEvent) => {
-      const { type, taskId: eventTaskId } = event.detail || {};
-
-      // Only respond to events for this specific task (if taskId is provided)
-      if (eventTaskId && eventTaskId !== summary.id) {
-        return;
-      }
-
-      logger.debug('TaskRow received WebSocket animation event for this task', {
-        component: 'TaskRow',
-        taskId: summary.id,
-        eventTaskId,
-        type
-      });
-
-      switch (type) {
-        case 'task-created':
-          playCreateAnimation();
-          break;
-        case 'task-updated':
-          playUpdateAnimation();
-          break;
-        case 'task-completed':
-          // Use update animation for completion
-          playUpdateAnimation();
-          break;
-        default:
-          logger.debug('TaskRow unknown WebSocket animation type', { component: 'TaskRow', type });
-      }
-    };
-
-    // Add event listeners for WebSocket-triggered animations
-    window.addEventListener('task-fade', handleWebSocketFade as EventListener);
-    window.addEventListener('task-celebration', handleWebSocketCelebration as EventListener);
-    window.addEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
-
-    // Cleanup event listeners
-    return () => {
-      window.removeEventListener('task-fade', handleWebSocketFade as EventListener);
-      window.removeEventListener('task-celebration', handleWebSocketCelebration as EventListener);
-      window.removeEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
-    };
-  }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, isVisible]);
+  // REMOVED: Complex WebSocket event listeners - now handled by AnimationFactory
+  // AnimationFactory receives WebSocket calls directly from WebSocketAnimationService
+  // No need for CustomEvent coordination - factory handles everything centrally
 
   // Don't render if not visible (after delete animation)
   if (!isVisible) {
     return null;
   }
 
-  // Animation styles
-  const getAnimationStyle = () => {
-    switch (animationState) {
-      case 'creating':
-        return {
-          animation: 'slideInFromLeft 0.5s ease-out forwards'
-        };
-      case 'deleting':
-        return {
-          animation: 'slideOutToRight 0.8s ease-in forwards'
-        };
-      case 'updating':
-        return {
-          animation: 'shimmerBackground 2s linear infinite'
-        };
-      default:
-        return {};
-    }
-  };
 
-  // Animation classes
-  const getAnimationClasses = () => {
+  // Simplified CSS classes - animations handled by AnimationFactory
+  const getBaseClasses = () => {
     const baseClasses = 'transition-all duration-200';
 
-    switch (animationState) {
-      case 'creating':
-        return `${baseClasses} border-teal-500 bg-teal-100 dark:bg-teal-950`;
-      case 'deleting':
-        return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
-      case 'updating':
-        return `${baseClasses} task-updating-animation`;
-      default:
-        return baseClasses + (
-          isHighlighted
-            ? ' border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md'
-            : isHovered
-            ? ' border-violet-400 shadow-lg bg-violet-200 dark:bg-violet-950'
-            : ' border-surface-border dark:border-gray-700'
-        );
-    }
+    return baseClasses + (
+      isHighlighted
+        ? ' border-blue-400 bg-orange-100 dark:bg-blue-950 shadow-md'
+        : isHovered
+        ? ' border-violet-400 shadow-lg bg-violet-200 dark:bg-violet-950'
+        : ' border-surface-border dark:border-gray-700'
+    );
   };
 
   if (isMobile) {
     // Mobile Card View
     return (
       <>
-        {/* Animation CSS */}
-        <style>{`
-          @keyframes slideInFromLeft {
-            from {
-              transform: translateX(-20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          @keyframes slideOutToRight {
-            0% {
-              transform: translateX(0);
-              opacity: 1;
-              height: auto;
-              max-height: 1000px;
-            }
-            40% {
-              transform: translateX(30%);
-              opacity: 0.6;
-              height: auto;
-              max-height: 1000px;
-            }
-            70% {
-              transform: translateX(80%);
-              opacity: 0.2;
-              height: auto;
-              max-height: 1000px;
-            }
-            85% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: auto;
-              max-height: 1000px;
-            }
-            100% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: 0;
-              max-height: 0;
-              margin: 0;
-              padding: 0;
-              border: 0;
-              overflow: hidden;
-            }
-          }
-          @keyframes shimmerBackground {
-            0% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: -100% 50%;
-            }
-          }
-
-          .task-updating-animation {
-            background: linear-gradient(90deg,
-              transparent 0%,
-              transparent 30%,
-              rgba(59, 130, 246, 0.3) 40%,
-              rgba(96, 165, 250, 0.3) 50%,
-              rgba(147, 197, 253, 0.3) 60%,
-              transparent 70%,
-              transparent 100%);
-            background-size: 200% 100%;
-            animation: shimmerBackground 2s linear infinite;
-          }
-        `}</style>
 
         <div
-          className={`rounded-lg mb-3 cursor-pointer ${getAnimationClasses()}`}
+          ref={mobileElementRef}
+          className={`rounded-lg mb-3 cursor-pointer ${getBaseClasses()}`}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >
@@ -419,7 +365,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
             {/* Action Buttons */}
             <div className="flex gap-1 flex-wrap">
-              <Button
+              <ShimmerButton
                 variant="outline"
                 size="sm"
                 onClick={(e) => {
@@ -430,9 +376,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
               >
                 <Eye className="w-3 h-3 mr-1" />
                 View
-              </Button>
+              </ShimmerButton>
 
-              <Button
+              <ShimmerButton
                 variant="outline"
                 size="sm"
                 onClick={(e) => {
@@ -443,9 +389,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
               >
                 <Pencil className="w-3 h-3 mr-1" />
                 Edit
-              </Button>
+              </ShimmerButton>
 
-              <Button
+              <ShimmerButton
                 variant="outline"
                 size="sm"
                 onClick={(e) => {
@@ -456,9 +402,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
               >
                 <Users className="w-3 h-3 mr-1" />
                 Assign
-              </Button>
+              </ShimmerButton>
 
-              <Button
+              <ShimmerButton
                 variant="outline"
                 size="sm"
                 onClick={(e) => {
@@ -468,7 +414,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 title="Delete task"
               >
                 <Trash2 className="w-3 h-3" />
-              </Button>
+              </ShimmerButton>
             </div>
           </div>
 
@@ -499,80 +445,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
     // Desktop Table View
     return (
       <>
-        {/* Animation CSS */}
-        <style>{`
-          @keyframes slideInFromLeft {
-            from {
-              transform: translateX(-20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          @keyframes slideOutToRight {
-            0% {
-              transform: translateX(0);
-              opacity: 1;
-              height: auto;
-              max-height: 1000px;
-            }
-            40% {
-              transform: translateX(30%);
-              opacity: 0.6;
-              height: auto;
-              max-height: 1000px;
-            }
-            70% {
-              transform: translateX(80%);
-              opacity: 0.2;
-              height: auto;
-              max-height: 1000px;
-            }
-            85% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: auto;
-              max-height: 1000px;
-            }
-            100% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: 0;
-              max-height: 0;
-              margin: 0;
-              padding: 0;
-              border: 0;
-              overflow: hidden;
-            }
-          }
-          @keyframes shimmerBackground {
-            0% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: -100% 50%;
-            }
-          }
-
-          .task-updating-animation {
-            background: linear-gradient(90deg,
-              transparent 0%,
-              transparent 30%,
-              rgba(59, 130, 246, 0.3) 40%,
-              rgba(96, 165, 250, 0.3) 50%,
-              rgba(147, 197, 253, 0.3) 60%,
-              transparent 70%,
-              transparent 100%);
-            background-size: 200% 100%;
-            animation: shimmerBackground 2s linear infinite;
-          }
-        `}</style>
 
         <TableRow
-          className={`cursor-pointer ${getAnimationClasses()}`}
-          style={getAnimationStyle()}
+          ref={desktopElementRef}
+          className={`cursor-pointer ${getBaseClasses()}`}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >
@@ -663,7 +539,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
           <TableCell className="">
             <div className="flex gap-1">
-              <Button
+              <ShimmerButton
                 variant="ghost"
                 size="icon"
                 onClick={(e) => {
@@ -674,9 +550,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 className="h-8 w-8"
               >
                 <Eye className="w-4 h-4" />
-              </Button>
+              </ShimmerButton>
 
-              <Button
+              <ShimmerButton
                 variant="ghost"
                 size="icon"
                 onClick={(e) => {
@@ -687,9 +563,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 className="h-8 w-8 hidden sm:inline-flex"
               >
                 <Users className="w-4 h-4" />
-              </Button>
+              </ShimmerButton>
 
-              <Button
+              <ShimmerButton
                 variant="ghost"
                 size="icon"
                 onClick={(e) => {
@@ -700,9 +576,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 className="h-8 w-8"
               >
                 <Pencil className="w-4 h-4" />
-              </Button>
+              </ShimmerButton>
 
-              <Button
+              <ShimmerButton
                 variant="ghost"
                 size="icon"
                 onClick={(e) => {
@@ -713,7 +589,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 className="h-8 w-8"
               >
                 <Trash2 className="w-4 h-4" />
-              </Button>
+              </ShimmerButton>
             </div>
           </TableCell>
         </TableRow>

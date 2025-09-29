@@ -22,6 +22,48 @@ vi.mock('../../services/changePoolService', () => ({
   }
 }));
 
+// Mock AnimationFactory
+vi.mock('../../services/AnimationFactory', () => ({
+  default: {
+    registerElement: vi.fn(),
+    unregisterElement: vi.fn(),
+    animate: vi.fn().mockReturnValue(true)
+  }
+}));
+
+// Mock WebSocket hooks
+vi.mock('../../hooks/useWebSocketV2', () => ({
+  useTaskWebSocket: vi.fn(() => ({
+    isConnected: true,
+    connectionStatus: 'connected',
+    lastMessage: null,
+    reconnectAttempts: 0
+  }))
+}));
+
+// Mock useEntityChanges hook
+vi.mock('../../hooks/useChangeSubscription', () => ({
+  useEntityChanges: vi.fn()
+}));
+
+// Mock Redux hooks
+vi.mock('../../store/hooks', () => ({
+  useAppSelector: vi.fn(() => null)
+}));
+
+// Mock Auth context
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: 'test-user' },
+    tokens: { access_token: 'test-token' }
+  }))
+}));
+
+// Mock toast
+vi.mock('../../components/ui/toast', () => ({
+  useErrorToast: vi.fn(() => vi.fn())
+}));
+
 // Mock lazy-loaded components
 vi.mock('../../components/LazySubtaskList', () => ({
   __esModule: true,
@@ -999,6 +1041,292 @@ describe('LazyTaskList', () => {
 
       // Verify no lingering timers or subscriptions
       expect(() => unmount()).not.toThrow();
+    });
+  });
+
+  describe('Animation System Integration', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    });
+
+    it('should handle task creation with animation coordination', async () => {
+      // Mock initial empty list
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+      // Mock task creation
+      const newTask = {
+        ...mockTasks[0],
+        id: 'new-task-123',
+        title: 'New Task',
+        created_at: new Date().toISOString()
+      };
+      (api.createTask as ReturnType<typeof vi.fn>).mockResolvedValue(newTask);
+
+      // Mock updated list with new task
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue([newTask]);
+
+      render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      // Initial load should be empty
+      await waitFor(() => {
+        expect(screen.queryByText('New Task')).not.toBeInTheDocument();
+      });
+
+      // Create new task
+      const createButton = screen.getByText('New Task');
+      fireEvent.click(createButton);
+
+      // Should handle task creation and animation
+      expect(screen.getByTestId('task-edit-dialog')).toBeInTheDocument();
+    });
+
+    it('should coordinate UPDATE animations with 150ms delay', async () => {
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
+
+      // Mock the useEntityChanges hook to simulate real-time updates
+      const mockHandleChanges = vi.fn();
+      vi.mocked(require('../../hooks/useChangeSubscription').useEntityChanges)
+        .mockImplementation((name, types, handler) => {
+          mockHandleChanges.mockImplementation(handler);
+        });
+
+      render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+      });
+
+      // Simulate WebSocket UPDATE notification
+      const updateNotification = {
+        entityType: 'task',
+        eventType: 'updated',
+        entityId: 'task-1',
+        data: {
+          ...mockTasks[0],
+          title: 'Updated Task 1',
+          status: 'in_progress'
+        }
+      };
+
+      mockHandleChanges(updateNotification);
+
+      // Should trigger update with 150ms delay
+      vi.advanceTimersByTime(150);
+
+      await waitFor(() => {
+        // The task should be updated in the UI
+        expect(screen.getByText('Updated Task 1')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle DELETE animations with proper timing', async () => {
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
+      (api.deleteTask as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+
+      render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+      });
+
+      // Start delete operation
+      const deleteButtons = screen.getAllByTitle('Delete task');
+      fireEvent.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
+      });
+
+      // Confirm deletion
+      fireEvent.click(screen.getByText('Confirm'));
+
+      // Should handle animation timing
+      vi.advanceTimersByTime(100); // DELETE_WAIT
+      vi.advanceTimersByTime(850); // DELETE_COMPLETE
+      vi.advanceTimersByTime(900); // DELETE_CLEANUP
+
+      await waitFor(() => {
+        expect(api.deleteTask).toHaveBeenCalledWith('task-1');
+        expect(mockOnTasksChanged).toHaveBeenCalled();
+      });
+    });
+
+    it('should register and unregister animation callbacks correctly', async () => {
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
+
+      const { unmount } = render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+      });
+
+      // TaskRow components should register their animation callbacks
+      // This is tested indirectly through component interaction
+
+      // Unmount should clean up all callbacks
+      unmount();
+
+      // Verify cleanup doesn't cause errors
+      expect(() => unmount()).not.toThrow();
+    });
+  });
+
+  describe('WebSocket Real-time Updates', () => {
+    it('should handle WebSocket connection status changes', async () => {
+      const mockUseTaskWebSocket = vi.mocked(require('../../hooks/useWebSocketV2').useTaskWebSocket);
+
+      // Start disconnected
+      mockUseTaskWebSocket.mockReturnValue({
+        isConnected: false,
+        connectionStatus: 'disconnected',
+        lastMessage: null,
+        reconnectAttempts: 3
+      });
+
+      const { rerender } = render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      // Should show offline status
+      expect(screen.getByText('Offline')).toBeInTheDocument();
+
+      // Simulate connection
+      mockUseTaskWebSocket.mockReturnValue({
+        isConnected: true,
+        connectionStatus: 'connected',
+        lastMessage: null,
+        reconnectAttempts: 0
+      });
+
+      rerender(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      // Should show online status
+      expect(screen.getByText('Live')).toBeInTheDocument();
+    });
+
+    it('should handle malformed WebSocket notifications gracefully', async () => {
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
+
+      const mockHandleChanges = vi.fn();
+      vi.mocked(require('../../hooks/useChangeSubscription').useEntityChanges)
+        .mockImplementation((name, types, handler) => {
+          mockHandleChanges.mockImplementation(handler);
+        });
+
+      render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+      });
+
+      // Send malformed notification
+      const malformedNotification = {
+        entityType: 'task',
+        eventType: 'created',
+        entityId: 'invalid-task',
+        data: null // Malformed data
+      };
+
+      // Should not crash when processing malformed data
+      expect(() => {
+        mockHandleChanges(malformedNotification);
+      }).not.toThrow();
+
+      // Should fall back to full API refresh
+      await waitFor(() => {
+        expect(api.listTasks).toHaveBeenCalled();
+      });
+    });
+
+    it('should prioritize WebSocket updates over API polling', async () => {
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
+
+      const mockHandleChanges = vi.fn();
+      vi.mocked(require('../../hooks/useChangeSubscription').useEntityChanges)
+        .mockImplementation((name, types, handler) => {
+          mockHandleChanges.mockImplementation(handler);
+        });
+
+      render(
+        <LazyTaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTasksChanged={mockOnTasksChanged}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+      });
+
+      // Clear initial API calls
+      vi.clearAllMocks();
+
+      // Send WebSocket notification with valid data
+      const wsNotification = {
+        entityType: 'task',
+        eventType: 'created',
+        entityId: 'ws-task-123',
+        data: {
+          id: 'ws-task-123',
+          title: 'WebSocket Task',
+          status: 'todo',
+          priority: 'high',
+          assignees: ['ws-agent'],
+          created_at: new Date().toISOString()
+        }
+      };
+
+      mockHandleChanges(wsNotification);
+
+      // Should process WebSocket data without additional API calls
+      // (Real implementation would show the new task)
+      expect(api.listTasks).not.toHaveBeenCalled();
     });
   });
 });

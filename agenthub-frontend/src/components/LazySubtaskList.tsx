@@ -730,9 +730,6 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
         isLoading={isLoadingFull}
         showDetails={isShowingDetails}
         parentTaskId={parentTaskId}
-        onPlayCreateAnimation={() => {}}
-        onPlayDeleteAnimation={() => {}}
-        onPlayUpdateAnimation={() => {}}
         onSubtaskAction={handleSubtaskAction}
         onAgentInfoClick={handleAgentInfoClick}
         onDeleteSubtask={(subtaskId) => setDeleteDialog({ open: true, subtaskId })}

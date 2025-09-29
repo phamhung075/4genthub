@@ -4,6 +4,9 @@
 /* Import theme CSS variables */
 @import './styles/theme.css';
 
+/* Import WebSocket animation styles */
+@import './styles/websocket-animations.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

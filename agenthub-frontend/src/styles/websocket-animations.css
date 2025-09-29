@@ -4,36 +4,86 @@
  * CSS animations triggered by WebSocket events for visual feedback
  */
 
-/* Shimmer effect for WebSocket events */
-.shimmer-active {
-  position: relative;
-  overflow: hidden;
+/* Draw In Animation - Task Creation (Left to Right Draw Effect) */
+.draw-in-left-to-right {
+  animation: drawInLeftToRight 1s ease-out forwards;
 }
 
-.shimmer-active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
-  animation: shimmer-sweep 2.5s ease-in-out;
-  z-index: 1;
-  pointer-events: none;
-}
-
-@keyframes shimmer-sweep {
+@keyframes drawInLeftToRight {
   0% {
-    left: -100%;
+    transform: scaleX(0) translateX(-100px);
+    transform-origin: left center;
+    opacity: 0.8;
+    background-color: rgba(29, 78, 216, 0.15); /* Dark blue background */
+  }
+  60% {
+    transform: scaleX(1) translateX(-20px);
+    transform-origin: left center;
+    opacity: 1;
+    background-color: rgba(29, 78, 216, 0.1);
   }
   100% {
-    left: 100%;
+    transform: scaleX(1) translateX(0);
+    transform-origin: left center;
+    opacity: 1;
+    background-color: transparent;
+  }
+}
+
+/* Fade Out Animation - Task Deletion (Left to Right) */
+.fade-out-left-to-right {
+  animation: fadeOutLeftToRight 1s ease-in forwards;
+}
+
+@keyframes fadeOutLeftToRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    height: auto;
+    max-height: 1000px;
+    background-color: rgba(220, 38, 38, 0.15); /* Red background */
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(150px);
+    height: auto;
+    max-height: 1000px;
+    background-color: rgba(220, 38, 38, 0.1);
+  }
+  70% {
+    opacity: 0.3;
+    transform: translateX(200px);
+    height: auto;
+    max-height: 1000px;
+    background-color: rgba(220, 38, 38, 0.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(250px);
+    height: 0;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    background-color: transparent;
+  }
+}
+
+/* Content Update Animation - Task Updates (No fade, just content refresh) */
+.content-update {
+  animation: contentUpdateFlash 1.2s ease-in-out;
+}
+
+@keyframes contentUpdateFlash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  25% {
+    background-color: rgba(59, 130, 246, 0.15);
+  }
+  75% {
+    background-color: rgba(59, 130, 246, 0.05);
   }
 }
 
@@ -193,12 +243,19 @@
 
 @keyframes slide-in-right {
   0% {
-    transform: translateX(20px);
+    transform: translateX(100px);
     opacity: 0;
+    background-color: rgba(29, 78, 216, 0.1); /* Dark blue background */
+  }
+  50% {
+    transform: translateX(20px);
+    opacity: 0.7;
+    background-color: rgba(29, 78, 216, 0.05);
   }
   100% {
     transform: translateX(0);
     opacity: 1;
+    background-color: transparent;
   }
 }
 

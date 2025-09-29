@@ -34,7 +34,7 @@ export interface ComponentSubscription {
   entityIds?: string[]; // Specific entity IDs to watch (optional)
   projectId?: string;   // Filter by project
   branchId?: string;    // Filter by branch
-  refreshCallback: () => void;
+  refreshCallback: (notification?: ChangeNotification) => void; // Now accepts optional notification data
   shouldRefresh?: (notification: ChangeNotification) => boolean; // Custom filter
 }
 
@@ -97,11 +97,11 @@ class ChangePoolService {
         componentsToRefresh.push(componentId);
         console.log(`✅ ChangePool: Will refresh ${componentId}`);
 
-        // Execute the refresh callback
+        // Execute the refresh callback with notification data
         try {
-          subscription.refreshCallback();
-          console.log(`✅ ChangePool: Successfully refreshed ${componentId} for ${notification.entityType} ${notification.eventType}`);
-          logger.debug(`✅ ChangePool: Refreshed ${componentId} for ${notification.entityType} ${notification.eventType}`);
+          subscription.refreshCallback(notification);
+          console.log(`✅ ChangePool: Successfully refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`);
+          logger.debug(`✅ ChangePool: Refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`);
         } catch (error) {
           console.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error);
           logger.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error);
@@ -194,7 +194,7 @@ class ChangePoolService {
 
       if (hasMatchingType) {
         try {
-          subscription.refreshCallback();
+          subscription.refreshCallback(); // Force refresh without notification data
           logger.debug(`✅ ChangePool: Force refreshed ${componentId}`);
         } catch (error) {
           logger.error(`❌ ChangePool: Failed to force refresh ${componentId}:`, error);
