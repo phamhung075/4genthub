@@ -2,7 +2,7 @@
 // Refactored from original 993-line LazySubtaskList.tsx following SOLID principles
 // Target: Under 150 lines, pure orchestration without implementation details
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 // Import custom hooks (business logic)
@@ -67,6 +67,7 @@ export function LazySubtaskListRefactored({
     hasLoaded,
     subscriptionEnabled,
     loadSubtaskSummaries,
+    loadSubtaskById,
     handleSubtaskCreated,
     refreshData
   } = useSubtaskData(parentTaskId);
@@ -107,13 +108,52 @@ export function LazySubtaskListRefactored({
     openEditDialog,
     openCompleteDialog,
     openDeleteDialog,
-    closeAllDialogs
+    closeAllDialogs,
+    isClosingRef // Get the ref from the hook
   } = useSubtaskDialogs(projectId, taskTreeId);
+
+  // Track the last processed subtaskId to prevent reopening loops
+  const lastProcessedSubtaskIdRef = useRef<string | undefined>(undefined);
 
   // Load data on mount
   useEffect(() => {
     loadSubtaskSummaries();
   }, [loadSubtaskSummaries]);
+
+  // Auto-open subtask dialog from URL
+  useEffect(() => {
+    const autoOpenSubtask = async () => {
+      // Skip if we're in the middle of closing
+      if (isClosingRef.current) {
+        return;
+      }
+
+      // Only process if subtaskId actually changed
+      if (subtaskId !== lastProcessedSubtaskIdRef.current) {
+        lastProcessedSubtaskIdRef.current = subtaskId;
+
+        if (subtaskId && !detailsDialog.open) {
+          // Check if subtask is already loaded
+          let subtask = fullSubtasks.get(subtaskId);
+
+          // If not loaded, fetch it
+          if (!subtask && loadSubtaskById) {
+            subtask = await loadSubtaskById(subtaskId);
+          }
+
+          // Open dialog if subtask found
+          if (subtask) {
+            openDetailsDialog(subtask);
+          }
+        } else if (!subtaskId && detailsDialog.open) {
+          // URL changed (back button) - close dialog
+          closeAllDialogs();
+        }
+      }
+    };
+
+    autoOpenSubtask();
+  }, [subtaskId, detailsDialog.open, fullSubtasks, loadSubtaskById, openDetailsDialog, closeAllDialogs]);
 
   // Calculate progress summary
   const progressSummary = useMemo(() => {
@@ -190,7 +230,7 @@ export function LazySubtaskListRefactored({
           parentTaskId={parentTaskId}
           onDeleteDialogChange={(open) => !open && closeAllDialogs()}
           onActiveDialogChange={(dialog) => {/* handle */}}
-          onDetailsDialogChange={(open) => !open && closeAllDialogs()}
+          onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
           onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
           onCreateDialogChange={(open) => !open && closeAllDialogs()}
           onEditingSubtaskChange={setEditingSubtask}
@@ -245,7 +285,7 @@ export function LazySubtaskListRefactored({
         parentTaskId={parentTaskId}
         onDeleteDialogChange={(open) => !open && closeAllDialogs()}
         onActiveDialogChange={(dialog) => {/* handle */}}
-        onDetailsDialogChange={(open) => !open && closeAllDialogs()}
+        onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
         onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
         onCreateDialogChange={(open) => !open && closeAllDialogs()}
         onEditingSubtaskChange={setEditingSubtask}

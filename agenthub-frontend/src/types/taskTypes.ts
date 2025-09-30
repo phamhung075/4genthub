@@ -76,6 +76,12 @@ export interface ActiveDialog {
   data?: any;
 }
 
+export interface DialogManagerState {
+  activeDialog: ActiveDialog;
+  saving: boolean;
+  isClosingRef: React.MutableRefObject<boolean>; // Ref to prevent race condition on close
+}
+
 // ============================================
 // TaskRow Types
 // ============================================

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -103,17 +103,42 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   }, [loadedAgents]);
 
   // Dialog management
-  const navigateBack = useCallback(() => {
-    navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}`);
-  }, [navigate, projectId, taskTreeId]);
-
-  const { activeDialog, openDialog, closeDialog, saving, setSaving } = useDialogManager(
+  const { activeDialog, openDialog, closeDialog, saving, setSaving, isClosingRef } = useDialogManager(
+    projectId,
+    taskTreeId,
     urlTaskId,
     subtaskId,
-    navigateBack,
     loadFullTask,
     loadAgentsOnDemand
   );
+
+  // Track the last processed taskId to prevent reopening loops
+  const lastProcessedTaskIdRef = useRef<string | undefined>(undefined);
+
+  // Auto-open task dialog from URL
+  useEffect(() => {
+    const autoOpenTask = async () => {
+      // Skip if we're in the middle of closing
+      if (isClosingRef.current) {
+        return;
+      }
+
+      // Only process if taskId actually changed
+      if (urlTaskId !== lastProcessedTaskIdRef.current) {
+        lastProcessedTaskIdRef.current = urlTaskId;
+
+        if (urlTaskId && activeDialog.type === null) {
+          // Load the task and open dialog
+          openDialog('details', urlTaskId);
+        } else if (!urlTaskId && activeDialog.type === 'details') {
+          // URL changed (back button) - close dialog
+          closeDialog();
+        }
+      }
+    };
+
+    autoOpenTask();
+  }, [urlTaskId, activeDialog.type, openDialog, closeDialog, isClosingRef]);
 
   // Task expansion
   const toggleTaskExpansion = useCallback(async (taskId: string) => {

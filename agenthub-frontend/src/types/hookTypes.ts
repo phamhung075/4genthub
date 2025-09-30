@@ -149,6 +149,7 @@ export interface UseDialogManagerReturn {
   closeDialog: () => void;
   saving: boolean;
   setSaving: (saving: boolean) => void;
+  isClosingRef: React.MutableRefObject<boolean>; // Ref to prevent race condition on close
 }
 
 // =============================================================================

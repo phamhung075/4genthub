@@ -134,6 +134,7 @@ export interface SubtaskListConfig {
 export interface UseSubtaskDataReturn extends SubtaskDataState {
   loadSubtaskSummaries: () => Promise<void>;
   loadFullSubtasksFallback: () => Promise<Map<string, any>>; // Map of Subtask from API
+  loadSubtaskById: (subtaskId: string) => Promise<any | null>; // Load individual subtask
   handleSubtaskCreated: (newSubtask: any) => void; // Subtask from API
   refreshData: () => Promise<void>;
 }
@@ -168,7 +169,14 @@ export interface UseSubtaskDialogsReturn extends DialogState {
   openEditDialog: (subtask: any) => void; // Subtask from API
   openCompleteDialog: (subtask: any) => void; // Subtask from API
   openDeleteDialog: (subtaskId: string) => void;
+  closeDeleteDialog: () => void;
+  closeDetailsDialog: () => void;
+  closeAgentInfoDialog: () => void;
+  closeCreateSubtaskDialog: () => void;
   closeAllDialogs: () => void;
+  handleDialogAction: (action: 'details' | 'edit' | 'complete', subtaskId: string, subtask?: any) => void;
+  hasOpenDialog: boolean;
+  isClosingRef: React.MutableRefObject<boolean>; // Ref to prevent race condition on close
 }
 
 // ============================================

@@ -1,7 +1,7 @@
 // useSubtaskDialogs hook - Dialog state management for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Subtask } from "../../../api";
 import type {
@@ -44,20 +44,39 @@ export function useSubtaskDialogs(
   const [agentInfoDialogOpen, setAgentInfoDialogOpen] = useState(false);
   const [createSubtaskDialogOpen, setCreateSubtaskDialogOpen] = useState(false);
 
+  // Track if we're in the middle of closing to prevent race conditions
+  const isClosingRef = useRef(false);
+
   /**
    * Handle subtask dialog close - navigate back to branch URL
+   * Uses navigation timing to prevent race condition with useEffect
    */
   const handleSubtaskDialogClose = useCallback(() => {
-    // Close the details dialog first
-    setDetailsDialog({ open: false, subtask: null });
+    logger.debug('Starting dialog close process');
 
-    // Clear any active dialog state
-    setActiveDialog({ type: null });
+    // Set closing flag to prevent useEffect from reopening
+    isClosingRef.current = true;
 
+    // Navigate first to remove subtaskId from URL
     const branchUrl = generateBranchUrl(projectId, taskTreeId);
     navigate(branchUrl);
 
-    logger.debug('Closed details dialog and navigated back to branch URL:', branchUrl);
+    // Use setTimeout to allow navigation to complete before clearing state
+    setTimeout(() => {
+      // Close the details dialog
+      setDetailsDialog({ open: false, subtask: null });
+
+      // Clear any active dialog state
+      setActiveDialog({ type: null });
+
+      // Reset closing flag after state updates complete
+      setTimeout(() => {
+        isClosingRef.current = false;
+        logger.debug('Dialog close complete, reopening protection reset');
+      }, 100);
+    }, 50);
+
+    logger.debug('Navigated to branch URL:', branchUrl);
   }, [navigate, projectId, taskTreeId]);
 
   /**
@@ -96,7 +115,10 @@ export function useSubtaskDialogs(
       subtaskId: subtask.id,
       subtask
     });
-  }, []);
+
+    // Navigate to subtask URL
+    navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/subtask/${subtask.id}`);
+  }, [navigate, projectId, taskTreeId]);
 
   /**
    * Open edit dialog for a subtask
@@ -258,6 +280,7 @@ export function useSubtaskDialogs(
     handleDialogAction,
 
     // State helpers
-    hasOpenDialog
+    hasOpenDialog,
+    isClosingRef // Expose ref for race condition prevention
   };
 }

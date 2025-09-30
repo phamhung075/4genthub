@@ -117,7 +117,7 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
       const subtask = await getSubtask(parentTaskId, subtaskId);
 
       // Verify subtask belongs to parent task
-      if (subtask && subtask.parent_task_id === parentTaskId) {
+      if (subtask && subtask.task_id === parentTaskId) {
         return subtask;
       }
 
@@ -181,6 +181,7 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
     // Actions
     loadSubtaskSummaries,
     loadFullSubtasksFallback,
+    loadSubtaskById,
     handleSubtaskCreated,
     refreshData
   };
