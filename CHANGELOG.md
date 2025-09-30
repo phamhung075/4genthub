@@ -6,7 +6,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added - 2025-09-30
+- **Frontend: Standardized task animations to match subtask animations**: Tasks now have identical animation behavior as subtasks for consistent UX
+  - Added fallback animation mechanism to tasks (matching subtask implementation)
+  - Created `/agenthub-frontend/src/components/TaskRow/TaskRow.module.css` with fallback animation classes
+  - Enhanced `useTaskAnimation.ts` hook with:
+    - Animation state management (`creating`, `deleting`, `updating`)
+    - Visibility state tracking
+    - `playDeleteAnimation` and `playUpdateAnimation` callbacks
+    - `getAnimationClass()` helper function for CSS class mapping
+  - Updated TaskRowDesktop and TaskRowMobile components to apply animation classes
+  - Added `animationClass` prop to TaskRowDesktopProps and TaskRowMobileProps interfaces
+  - Animation Strategy:
+    - Primary: AnimationFactory applies CSS animations from `websocket-animations.css`
+    - Fallback: If AnimationFactory fails, uses local module CSS animations
+    - Same animation classes for both tasks and subtasks: `draw-in-left-to-right`, `fade-out-left-to-right`, `content-update`, `task-celebration`
+  - Benefits:
+    - Consistent animation experience across tasks and subtasks
+    - Improved reliability with fallback mechanism
+    - Better visual feedback for CRUD operations
+    - Professional, polished user experience
+  - Files Modified:
+    - `/agenthub-frontend/src/components/TaskRow/TaskRow.module.css` (new file)
+    - `/agenthub-frontend/src/components/TaskRow/hooks/useTaskAnimation.ts`
+    - `/agenthub-frontend/src/components/TaskRow/TaskRowRefactored.tsx`
+    - `/agenthub-frontend/src/components/TaskRow/components/TaskRowDesktop.tsx`
+    - `/agenthub-frontend/src/components/TaskRow/components/TaskRowMobile.tsx`
+    - `/agenthub-frontend/src/types/taskTypes.ts`
+  - Task ID: 9efdf578-f182-4a8a-ac69-cea9b3206815
+
 ### Fixed - 2025-09-30
+- **Frontend: TypeScript ref type error in TaskRow components**: Fixed type mismatch between React's useRef return type and component prop types
+  - Issue: Type 'RefObject<HTMLTableRowElement | null>' is not assignable to type 'RefObject<HTMLTableRowElement>' at TaskRowRefactored.tsx:97:7
+  - Root Cause: React's useRef hook returns RefObject<T | null> when initialized with null, but type definitions only specified RefObject<T>
+  - Solution: Updated TaskRowMobileProps and TaskRowDesktopProps elementRef types to allow null values
+  - Files Modified:
+    - `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/types/taskTypes.ts` (lines 116, 132)
+  - Impact: TypeScript compilation now succeeds without ref type errors
+  - Task ID: 1712b4fa-7d1a-43c6-80d5-04e23df320be
 - **Frontend: CRITICAL FIX - changePoolService initialization skipped on WebSocket reuse**: Fixed early return that prevented service initialization when reusing existing WebSocket client
   - Issue: When useWebSocket hook reused an existing global WebSocket client (on component remount/re-render), it returned early without calling initializeWebSocketIntegration(), causing changePoolService to never initialize
   - Root Cause: Lines 66-75 in useWebSocketV2.ts had an early return that skipped all service initialization when credentials matched existing client

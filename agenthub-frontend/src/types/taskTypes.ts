@@ -113,7 +113,8 @@ export interface TaskRowMobileProps {
   onToggleExpansion: () => void;
   onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
   onHover: (taskId: string | null) => void;
-  elementRef: React.RefObject<HTMLDivElement>;
+  elementRef: React.RefObject<HTMLDivElement | null>;
+  animationClass?: string; // Fallback animation CSS class
 }
 
 export interface TaskRowDesktopProps {
@@ -128,7 +129,8 @@ export interface TaskRowDesktopProps {
   onToggleExpansion: () => void;
   onOpenDialog: (type: string, taskId?: string, extraData?: any) => void;
   onHover: (taskId: string | null) => void;
-  elementRef: React.RefObject<HTMLTableRowElement>;
+  elementRef: React.RefObject<HTMLTableRowElement | null>;
+  animationClass?: string; // Fallback animation CSS class
 }
 
 export interface TaskRowActionsProps {
