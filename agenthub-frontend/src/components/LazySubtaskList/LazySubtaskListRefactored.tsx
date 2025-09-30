@@ -47,14 +47,6 @@ export function LazySubtaskListRefactored({
   parentTaskId
 }: LazySubtaskListProps) {
 
-  // Debug logging for component mount
-  console.log('🎬 [LazySubtaskListRefactored] Component mount:', {
-    projectId,
-    taskTreeId,
-    parentTaskId,
-    timestamp: new Date().toISOString()
-  });
-
   // URL parameter monitoring - safely handle when not in a route context
   let subtaskId: string | undefined;
   try {
@@ -158,20 +150,8 @@ export function LazySubtaskListRefactored({
     console.log('Complete subtask:', subtask);
   };
 
-  // Debug logging for rendering state
-  console.log('🎨 [LazySubtaskListRefactored] Rendering state:', {
-    parentTaskId,
-    error,
-    loading,
-    hasLoaded,
-    filteredSubtasksCount: filteredSubtasks.length,
-    subtaskSummariesCount: subtaskSummaries.length,
-    timestamp: new Date().toISOString()
-  });
-
   // Error state
   if (error) {
-    console.log('❌ [LazySubtaskListRefactored] Rendering error state');
     return (
       <div className="p-4 text-center text-sm text-red-500">
         Error loading subtasks: {error}
@@ -181,7 +161,6 @@ export function LazySubtaskListRefactored({
 
   // Loading state (only during initial load)
   if (loading && !hasLoaded && filteredSubtasks.length === 0) {
-    console.log('⏳ [LazySubtaskListRefactored] Rendering loading state');
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
         Loading subtasks...
@@ -191,7 +170,6 @@ export function LazySubtaskListRefactored({
 
   // Empty state
   if (filteredSubtasks.length === 0) {
-    console.log('📭 [LazySubtaskListRefactored] Rendering empty state');
     return (
       <>
         <SubtaskListHeader

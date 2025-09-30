@@ -143,39 +143,17 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
         </TableCell>
       </TableRow>
 
-      {/* Subtask List */}
-      {(() => {
-        // Debug logging for subtask rendering conditions
-        console.log('🔍 [TaskRowDesktop] Subtask rendering check:', {
-          taskId: summary.id,
-          taskTitle: summary.title,
-          isExpanded,
-          hasFullTask: !!fullTask,
-          subtaskCount: summary.subtask_count,
-          shouldRender: isExpanded && fullTask && summary.subtask_count > 0,
-          timestamp: new Date().toISOString()
-        });
-
-        return isExpanded && fullTask && summary.subtask_count > 0 && (
-          <TableRow className="theme-context-section">
-            <TableCell colSpan={7} className="p-0">
-              <div className="border-blue-400 dark:border-blue-600 ml-8">
-                <LazySubtaskList
-                  projectId={projectId}
-                  taskTreeId={taskTreeId}
-                  parentTaskId={summary.id}
-                />
-              </div>
-            </TableCell>
-          </TableRow>
-        );
-      })()}
-
-      {/* No subtasks message */}
-      {isExpanded && fullTask && summary.subtask_count === 0 && (
+      {/* Always show LazySubtaskList when expanded */}
+      {isExpanded && fullTask && (
         <TableRow className="theme-context-section">
-          <TableCell colSpan={7} className="p-4 text-center text-sm text-muted-foreground">
-            No subtasks for this task.
+          <TableCell colSpan={7} className="p-0">
+            <div className="border-blue-400 dark:border-blue-600 ml-8">
+              <LazySubtaskList
+                projectId={projectId}
+                taskTreeId={taskTreeId}
+                parentTaskId={summary.id}
+              />
+            </div>
           </TableCell>
         </TableRow>
       )}

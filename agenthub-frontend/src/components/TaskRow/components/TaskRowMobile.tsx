@@ -112,7 +112,7 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
                   e.stopPropagation();
                   onToggleExpansion();
                 }}
-                disabled={isLoading || summary.subtask_count === 0}
+                disabled={isLoading}
                 className="flex-shrink-0"
               >
                 {isLoading ? (
@@ -137,21 +137,14 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
             </div>
           </div>
 
-          {/* Subtasks section when expanded */}
-          {isExpanded && fullTask && summary.subtask_count > 0 && (
+          {/* Always show LazySubtaskList when expanded */}
+          {isExpanded && fullTask && (
             <div className="border-t border-surface-border dark:border-gray-700 p-4">
               <LazySubtaskList
                 projectId={projectId}
                 taskTreeId={taskTreeId}
                 parentTaskId={summary.id}
               />
-            </div>
-          )}
-
-          {/* No subtasks message */}
-          {isExpanded && fullTask && summary.subtask_count === 0 && (
-            <div className="border-t border-surface-border dark:border-gray-700 p-4 text-center text-sm text-muted-foreground">
-              No subtasks for this task.
             </div>
           )}
         </div>

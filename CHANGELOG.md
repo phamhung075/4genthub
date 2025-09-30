@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed - 2025-09-30
+- **Frontend: UI Coherence - Task Expansion**: Fixed inconsistent subtask display behavior
+  - Always show LazySubtaskList component when task is expanded (removed subtask_count condition)
+  - Removed duplicate "No subtasks for this task" message
+  - LazySubtaskList now handles all states: loading, empty (with "Add Subtask" button), error, and data
+  - Single source of truth for subtask display eliminates confusion between different empty states
+  - Mobile expand button no longer disabled when subtask_count is 0
+  - Fixed issue where incorrect subtask_count cache would show wrong message
+  - Files: `/agenthub-frontend/src/components/TaskRow/components/TaskRowDesktop.tsx:146-159`, `/agenthub-frontend/src/components/TaskRow/components/TaskRowMobile.tsx:107-149`
+
+### Fixed - 2025-09-30
 - **Frontend: Global Context Dialog Import Error**: Fixed missing icon imports
   - Added Info and Copy icons back to imports (still used in templates and editor toolbar)
   - Fixed TypeScript compilation errors: "Cannot find name 'Info'" and "Cannot find name 'Copy'"

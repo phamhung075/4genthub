@@ -22,8 +22,9 @@ class RemoveSubtaskUseCase:
         # Remove the subtask
         success = self._subtask_repository.remove_subtask(task_id, id)
 
-        # Update parent task progress
+        # Update parent task progress and subtask_count
         if success:
+            self._decrement_parent_subtask_count(str(task_id))
             self._update_parent_task_progress(str(task_id))
 
             # Dispatch domain event for subtask deletion
@@ -72,7 +73,28 @@ class RemoveSubtaskUseCase:
             return TaskId.from_int(task_id)
         else:
             return TaskId.from_string(str(task_id))
-    
+
+    def _decrement_parent_subtask_count(self, task_id: str) -> None:
+        """Decrement the parent task's subtask_count by 1."""
+        try:
+            task_id_obj = self._convert_to_task_id(task_id)
+            task = self._task_repository.find_by_id(task_id_obj)
+            if task:
+                # The ORM model has subtask_count column - update it directly
+                from ...infrastructure.database.models import Task as TaskModel
+                from ...infrastructure.database.session_manager import SessionManager
+                import logging
+
+                session = SessionManager.get_session()
+                task_orm = session.query(TaskModel).filter(TaskModel.id == str(task_id)).first()
+                if task_orm and task_orm.subtask_count > 0:
+                    task_orm.subtask_count = task_orm.subtask_count - 1
+                    session.commit()
+                    logging.info(f"Decremented subtask_count for task {task_id} to {task_orm.subtask_count}")
+        except Exception as e:
+            import logging
+            logging.warning(f"Failed to decrement parent subtask_count: {e}")
+
     def _update_parent_task_progress(self, task_id: str) -> None:
         """Update parent task progress based on subtask completion."""
         try:
