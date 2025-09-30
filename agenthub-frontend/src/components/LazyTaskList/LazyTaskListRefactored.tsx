@@ -41,6 +41,9 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     setTotalTasks
   } = useTaskData({ taskTreeId, onTasksChanged });
 
+  // Track WebSocket-deleted tasks to prevent duplicate delete attempts
+  const wsDeletedTasksRef = useRef<Set<string>>(new Set());
+
   // WebSocket update handler
   const updateTaskFromWebSocket = useCallback((notification: any) => {
     console.log('🎯 [LazyTaskList] WebSocket notification received:', {
@@ -96,7 +99,16 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       return true;
     } else if (eventType === 'deleted') {
       console.log('✅ [LazyTaskList] Deleting task from WebSocket:', { entityId });
+
+      // Track this deletion to prevent duplicate attempts in API callback
+      wsDeletedTasksRef.current.add(entityId);
       removeTask(entityId);
+
+      // Clear from tracking after animation completes (5 seconds)
+      setTimeout(() => {
+        wsDeletedTasksRef.current.delete(entityId);
+      }, 5000);
+
       return true;
     }
 
@@ -235,12 +247,22 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     closeDialog();
     try {
       await deleteTask(taskId);
-      // WebSocket will handle the update via removeTask, no need for manual refresh
+
+      // Only update UI if WebSocket hasn't already handled it
+      // This prevents duplicate delete attempts and 404 errors
+      if (!wsDeletedTasksRef.current.has(taskId)) {
+        removeTask(taskId);
+      }
+
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
-      showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
+      // Only show error if WebSocket didn't already delete it
+      // WebSocket deletion means the task was successfully removed
+      if (!wsDeletedTasksRef.current.has(taskId)) {
+        showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
+      }
     }
-  }, [closeDialog, onTasksChanged, showError]);
+  }, [closeDialog, onTasksChanged, showError, removeTask]);
 
   // Effects
   // Load initial tasks when taskTreeId changes

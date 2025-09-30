@@ -295,7 +295,8 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
       // Extract entity information from v2.0 protocol structure
       const entityType = message.payload?.entity || message.metadata?.entity_type;
       const action = message.payload?.action || message.metadata?.event_type || 'updated';
-      const entityId = message.metadata?.entity_id || 'unknown';
+      // Extract entityId from primary data or metadata
+      const entityId = message.payload?.data?.primary?.id || message.metadata?.entity_id || 'unknown';
 
       console.log('📡 ChangePool: Processing v2.0 update message:', {
         entityType,
@@ -316,7 +317,13 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         eventType: action as EventType,
         userId: message.metadata?.userId || 'system',
         data: message.payload?.data?.primary || message.data || {},
-        metadata: message.metadata,
+        metadata: {
+          ...message.metadata,
+          // Extract git_branch_id from payload data if available
+          git_branch_id: message.payload?.data?.primary?.git_branch_id ||
+                         message.payload?.data?.cascade?.git_branch_id ||
+                         message.metadata?.git_branch_id
+        },
         timestamp: message.timestamp || new Date().toISOString()
       };
 

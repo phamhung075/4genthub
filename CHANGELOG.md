@@ -7,6 +7,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed - 2025-09-30
+- **Frontend: Race condition in task deletion causing duplicate delete attempts and 404 errors**: Fixed WebSocket and API callback coordination
+  - Issue: Task delete operation triggered multiple delete attempts - WebSocket handler removed task, then API callback tried to remove it again causing 404 errors
+  - Root Cause: Both WebSocket delete handler and API callback's finally block called removeTask(taskId) independently
+  - Solution: Added tracking mechanism to prevent duplicate delete attempts
+  - Changes:
+    - Line 45: Added `wsDeletedTasksRef = useRef<Set<string>>(new Set())` to track WebSocket-deleted tasks
+    - Lines 100-113: Enhanced WebSocket delete handler to add taskId to tracking set and clear after 5 seconds
+    - Lines 246-265: Modified handleDeleteTask to skip local state removal if WebSocket already handled deletion
+    - Added conditional error display - only show error if WebSocket didn't delete the task
+  - Impact: Tasks deleted once without duplicate attempts, no 404 errors, no error toasts for successful deletions
+  - Files Modified: `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/components/LazyTaskList/LazyTaskListRefactored.tsx`
+  - Task ID: 63d8cd6e-99af-4ef0-a54d-c372eeb36450
+
+### Fixed - 2025-09-30
+- **Frontend: WebSocket notification structure mismatch preventing LazyTaskList updates**: Fixed changePoolService to properly extract entityId and git_branch_id from WebSocket messages
+  - Issue: LazyTaskList expected `{entityType, eventType, entityId, data, metadata}` but entityId was undefined
+  - Root Cause: changePoolService was extracting entityId only from metadata, missing payload.data.primary.id location
+  - Solution: Enhanced notification transformation in changePoolService.ts
+  - Changes:
+    - Line 299: Enhanced entityId extraction to prioritize `message.payload.data.primary.id || message.metadata.entity_id`
+    - Lines 320-326: Enhanced metadata to include git_branch_id from multiple sources (payload.data.primary, payload.data.cascade, metadata)
+  - Impact: Task creation, updates, and deletions now appear immediately in LazyTaskList via WebSocket without manual refresh
+  - Files Modified: `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/services/changePoolService.ts`
+  - Task ID: 92c797e2-b83b-4207-b829-2974284d7e32
+
 - **Backend: DTO Converters Performance Mode Support**: Fixed all converter functions to handle both dict and entity object inputs
   - Issue: Performance mode returns dicts but converters expected entity objects with attributes (e.g., `task.id`)
   - Error: `AttributeError: 'dict' object has no attribute 'id'` when performance mode enabled
