@@ -38,6 +38,14 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
     try {
       const response = await getSubtaskSummaries(parentTaskId);
       setSubtaskSummaries(response.subtasks);
+
+      // Populate fullSubtasks Map with the same data
+      const newFullSubtasks = new Map<string, Subtask>();
+      response.subtasks.forEach(subtask => {
+        newFullSubtasks.set(subtask.id, subtask as Subtask);
+      });
+      setFullSubtasks(newFullSubtasks);
+
       setHasLoaded(true);
 
       // Enable subscription after first successful load

@@ -1314,7 +1314,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 15,
+      "count": 16,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1343,6 +1343,13 @@
           "name": "mcp-task-creation-fix-prompt-2025-09-05.md",
           "path": "issues/mcp-task-creation-fix-prompt-2025-09-05.md",
           "size": 11911
+        },
+        {
+          "hash": "a3b70847f8e381a068ebbaaa0100fe09",
+          "modified": "2025-09-30T10:47:30.488516",
+          "name": "file-protection-bypass-via-bash-commands.md",
+          "path": "issues/file-protection-bypass-via-bash-commands.md",
+          "size": 9161
         },
         {
           "hash": "6af8abafb3b8930e81993768f389a7f1",
@@ -2548,7 +2555,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-30T08:50:08.355865",
+  "generated_at": "2025-09-30T10:47:30.580752",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2799,6 +2806,7 @@
     },
     "issues": {
       "files": [
+        "file-protection-bypass-via-bash-commands.md",
         "index.md",
         "mcp-authentication-fix-prompts-2025-09-05.md",
         "mcp-authentication-testing-blocker-2025-09-05.md",
@@ -3001,5 +3009,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 338
+  "total_files": 339
 }

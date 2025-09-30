@@ -48,13 +48,16 @@ export function useSubtaskDialogs(
    * Handle subtask dialog close - navigate back to branch URL
    */
   const handleSubtaskDialogClose = useCallback(() => {
-    const branchUrl = generateBranchUrl(projectId, taskTreeId);
-    navigate(branchUrl);
+    // Close the details dialog first
+    setDetailsDialog({ open: false, subtask: null });
 
     // Clear any active dialog state
     setActiveDialog({ type: null });
 
-    logger.debug('Navigated back to branch URL:', branchUrl);
+    const branchUrl = generateBranchUrl(projectId, taskTreeId);
+    navigate(branchUrl);
+
+    logger.debug('Closed details dialog and navigated back to branch URL:', branchUrl);
   }, [navigate, projectId, taskTreeId]);
 
   /**
