@@ -1,9 +1,6 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
-
-export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "default" | "secondary" | "destructive" | "outline";
-}
+import type { BadgeProps } from "../../types/componentTypes";
 
 const badgeVariants = {
   default: "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100 hover:bg-green-100 dark:hover:bg-green-800",

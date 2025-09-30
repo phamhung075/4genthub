@@ -7,6 +7,7 @@ import { ProgressDisplayEnhanced } from '../../ui/ProgressDisplay';
 import ClickableAssignees from '../../ClickableAssignees';
 import LazySubtaskList from '../../LazySubtaskList';
 import { TaskRowActions } from './TaskRowActions';
+import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowMobileProps } from '../../../types/taskTypes';
 import { useTaskRowState } from '../hooks/useTaskRowState';
 
@@ -39,7 +40,15 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
             {/* Task Header */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h3 className="font-medium text-base mb-2 pr-2">{summary.title}</h3>
+                <div className="flex items-start gap-2 mb-2">
+                  <TaskCopyButtons
+                    taskId={summary.id}
+                    taskName={summary.title}
+                    size="sm"
+                    className="flex-shrink-0 mt-0.5"
+                  />
+                  <h3 className="font-medium text-base pr-2">{summary.title}</h3>
+                </div>
 
                 {/* Progress Display */}
                 <div className="mb-2">

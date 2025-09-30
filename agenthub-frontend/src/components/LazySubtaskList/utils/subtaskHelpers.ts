@@ -50,6 +50,12 @@ export function filterSubtasks(
   subtasks: SubtaskSummary[],
   filterOptions: SubtaskFilterOptions
 ): SubtaskSummary[] {
+  // Ensure subtasks is an array
+  if (!Array.isArray(subtasks)) {
+    console.warn('filterSubtasks received non-array value:', subtasks);
+    return [];
+  }
+
   return subtasks.filter(subtask => {
     // Filter by status
     if (filterOptions.status?.length &&

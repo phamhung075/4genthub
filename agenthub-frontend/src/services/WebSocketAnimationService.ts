@@ -9,16 +9,7 @@
 
 import { WSMessage } from './WebSocketClient';
 import { animationFactory, AnimationType } from './AnimationFactory';
-
-export type AnimationTriggerType = 'created' | 'updated' | 'deleted' | 'completed';
-
-export interface AnimationEvent {
-  type: AnimationTriggerType;
-  entity: string;
-  entityId: string;
-  data?: any;
-  metadata?: any;
-}
+import type { AnimationTriggerType, AnimationEvent } from '../types/serviceTypes';
 
 class WebSocketAnimationService {
   private animationListeners: Map<string, Set<Function>> = new Map();

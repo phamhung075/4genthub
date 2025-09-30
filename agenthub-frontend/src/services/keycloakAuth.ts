@@ -2,19 +2,12 @@
 // Direct authentication with Keycloak server using resource owner password credentials flow
 
 import logger from '../utils/logger';
+import type { KeycloakTokenResponse } from '../types/serviceTypes';
 
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'https://your-keycloak-server.com';
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM || 'your-realm';
 const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'your-client-id';
 const KEYCLOAK_CLIENT_SECRET = import.meta.env.VITE_KEYCLOAK_CLIENT_SECRET || 'your-client-secret';
-
-export interface KeycloakTokenResponse {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  refresh_expires_in: number;
-  token_type: string;
-}
 
 export class KeycloakAuthService {
   private tokenEndpoint: string;

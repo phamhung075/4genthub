@@ -13,9 +13,7 @@
 
 import { notificationService } from './notificationService';
 import logger from '../utils/logger';
-
-export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
-export type EventType = 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned' | 'archived' | 'restored';
+import type { EntityType, EventType } from '../types/serviceTypes';
 
 interface WSMessage {
   id: string;

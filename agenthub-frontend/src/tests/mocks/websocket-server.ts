@@ -11,31 +11,7 @@
  */
 
 import { WSMessage } from '../../services/WebSocketClient';
-
-export interface MockWebSocketServerConfig {
-  url: string;
-  autoConnect: boolean;
-  connectionDelay: number;
-  heartbeatInterval: number;
-  reconnectDelay: number;
-  maxReconnectAttempts: number;
-  simulateNetworkIssues: boolean;
-}
-
-export interface ClientSubscription {
-  clientId: string;
-  scope: 'branch' | 'task' | 'project' | 'global';
-  filters: Record<string, any>;
-  active: boolean;
-}
-
-export interface MockWebSocketClient {
-  id: string;
-  connected: boolean;
-  subscriptions: ClientSubscription[];
-  messageQueue: WSMessage[];
-  lastSeen: number;
-}
+import type { MockWebSocketServerConfig, ClientSubscription, MockWebSocketClient } from '../../types/testTypes';
 
 export class MockWebSocketServer {
   private config: MockWebSocketServerConfig;

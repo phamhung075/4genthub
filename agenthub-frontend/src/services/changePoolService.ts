@@ -8,10 +8,12 @@
  */
 
 import logger from '../utils/logger';
+import type { EntityType, EventType } from '../types/serviceTypes';
 
-export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
-export type EventType = 'created' | 'updated' | 'deleted' | 'completed' | 'archived' | 'restored';
-
+/**
+ * Extended change notification with additional metadata
+ * This extends the base ChangeNotification from serviceTypes with extra fields
+ */
 export interface ChangeNotification {
   entityType: EntityType;
   entityId: string;
@@ -28,6 +30,9 @@ export interface ChangeNotification {
   timestamp: string;
 }
 
+/**
+ * Component subscription configuration for change notifications
+ */
 export interface ComponentSubscription {
   componentId: string;
   entityTypes: EntityType[];

@@ -47,8 +47,15 @@ export function LazySubtaskListRefactored({
   parentTaskId
 }: LazySubtaskListProps) {
 
-  // URL parameter monitoring
-  const { subtaskId } = useParams<{ subtaskId?: string }>();
+  // URL parameter monitoring - safely handle when not in a route context
+  let subtaskId: string | undefined;
+  try {
+    const params = useParams<{ subtaskId?: string }>();
+    subtaskId = params?.subtaskId;
+  } catch {
+    // Component may not be within a Router context
+    subtaskId = undefined;
+  }
 
   // Data management hook
   const {

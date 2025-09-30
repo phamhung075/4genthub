@@ -6,18 +6,7 @@ import { useWebSocket } from '../hooks/useWebSocketV2';
 
 // Import types from centralized location
 import type { User, AuthTokens, SignupResult, JWTPayload } from '../types/authTypes';
-
-export interface AuthContextType {
-  user: User | null;
-  tokens: AuthTokens | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, username: string, password: string) => Promise<SignupResult>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
-  setTokens: (tokens: AuthTokens) => void;
-}
+import type { AuthContextType } from '../types/componentTypes';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

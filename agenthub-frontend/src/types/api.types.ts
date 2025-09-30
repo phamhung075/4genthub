@@ -59,7 +59,8 @@ export interface Project {
   status?: string;
   branch_count?: number;
   task_count?: number;
-  branches?: Branch[];
+  git_branchs?: Record<string, Branch>; // API returns branches as a Record with branch IDs as keys
+  branches?: Branch[]; // Legacy array format for backward compatibility
 }
 
 export interface Branch {

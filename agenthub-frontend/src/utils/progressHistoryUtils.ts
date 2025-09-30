@@ -2,22 +2,7 @@
  * Utility functions for parsing and handling progress history
  */
 
-export interface ProgressEntry {
-  number: number;
-  content: string;
-  timestamp?: string;
-}
-
-// Interface for the new backend progress history object format
-interface ProgressHistoryEntry {
-  content: string;
-  timestamp: string;
-  progress_number: number;
-}
-
-interface ProgressHistoryObject {
-  [key: string]: ProgressHistoryEntry;
-}
+import type { ProgressEntry, ProgressHistoryEntry, ProgressHistoryObject } from '../types/utilityTypes';
 
 /**
  * Parse progress history from either string (legacy) or object (new format) into individual progress entries

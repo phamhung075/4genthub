@@ -1,13 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { DialogType, ActiveDialog } from '../../../types/taskTypes';
-
-export interface UseDialogManagerReturn {
-  activeDialog: ActiveDialog;
-  openDialog: (type: string, taskId?: string, extraData?: any) => void;
-  closeDialog: () => void;
-  saving: boolean;
-  setSaving: (saving: boolean) => void;
-}
+import type { UseDialogManagerReturn } from '../../../types/hookTypes';
 
 export function useDialogManager(
   urlTaskId?: string,

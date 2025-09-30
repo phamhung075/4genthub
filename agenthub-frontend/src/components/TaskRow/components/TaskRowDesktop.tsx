@@ -8,6 +8,7 @@ import { ProgressDisplayEnhanced } from '../../ui/ProgressDisplay';
 import ClickableAssignees from '../../ClickableAssignees';
 import LazySubtaskList from '../../LazySubtaskList';
 import { TaskRowActions } from './TaskRowActions';
+import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowDesktopProps } from '../../../types/taskTypes';
 import { useTaskRowState } from '../hooks/useTaskRowState';
 
@@ -60,6 +61,11 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
         <TableCell className="">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
+              <TaskCopyButtons
+                taskId={summary.id}
+                taskName={summary.title}
+                size="sm"
+              />
               <span>{summary.title}</span>
               {summary.subtask_count > 0 && (
                 <Badge variant="outline" className="text-xs">

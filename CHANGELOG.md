@@ -6,6 +6,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added - 2025-09-30
+- **Frontend: Task Row Copy Buttons**: Added icon buttons to copy task ID and task name
+  - Created new `TaskCopyButtons` component with icon-only buttons positioned before task title
+  - Copy Task ID button (Copy icon) - copies full UUID to clipboard
+  - Copy Task Name button (FileText icon) - copies task title to clipboard
+  - Visual feedback with green checkmark on successful copy (2-second duration)
+  - Tooltips indicate what will be copied ("Copy Task ID" / "Copy Task Name")
+  - Implemented in both desktop and mobile task row views
+  - Uses existing copy utilities for consistent behavior
+  - Files:
+    - New: `/agenthub-frontend/src/components/TaskRow/components/TaskCopyButtons.tsx`
+    - Modified: `/agenthub-frontend/src/components/TaskRow/components/TaskRowDesktop.tsx:64-68`
+    - Modified: `/agenthub-frontend/src/components/TaskRow/components/TaskRowMobile.tsx:43-51`
+
+### Fixed - 2025-09-30
+- **Frontend: Task Detail Button**: Fixed task detail button (Eye icon) not opening dialog
+  - Changed `handleView` in TaskRowActions to call `onOpenDialog('details', taskId)` instead of navigate
+  - Removed unnecessary `useNavigate` import and navigation logic
+  - Button now opens TaskDetailsDialog inline instead of navigating to route
+  - Consistent behavior with other action buttons (assign, edit, delete)
+  - File: `/agenthub-frontend/src/components/TaskRow/components/TaskRowActions.tsx:13-16`
+
 ### Fixed - 2025-09-29
 - **Test: Docker Configuration Integration Test**: Fixed flaky `test_caprover_postgres_docker_compose_configuration` test
   - Replaced actual Docker container execution with direct configuration logic testing

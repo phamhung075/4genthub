@@ -5,17 +5,7 @@
  * to trigger toast notifications using the app's existing toast system.
  */
 
-export type ToastEventType = 'success' | 'error' | 'warning' | 'info';
-
-export interface ToastEvent {
-  type: ToastEventType;
-  title: string;
-  description?: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-}
+import type { ToastEventType, ToastEvent } from '../types/serviceTypes';
 
 class ToastEventBus {
   private listeners: Map<string, Set<Function>> = new Map();

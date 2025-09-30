@@ -11,7 +11,7 @@ import { filterSubtasks, sortSubtasks } from "../utils/subtaskHelpers";
  * Provides filtered results and filter state management
  */
 export function useSubtaskFilters(
-  subtasks: SubtaskSummary[],
+  subtasks: SubtaskSummary[] = [],
   defaultSortField: 'title' | 'status' | 'priority' | 'progress_percentage' = 'title',
   defaultSortDirection: 'asc' | 'desc' = 'asc'
 ): UseSubtaskFiltersReturn {
@@ -25,8 +25,11 @@ export function useSubtaskFilters(
    * Apply filters and sorting to subtasks
    */
   const filteredSubtasks = useMemo(() => {
+    // Ensure subtasks is an array
+    const safeSubtasks = Array.isArray(subtasks) ? subtasks : [];
+
     // First apply filters
-    let filtered = filterSubtasks(subtasks, filterOptions);
+    let filtered = filterSubtasks(safeSubtasks, filterOptions);
 
     // Then apply sorting
     filtered = sortSubtasks(filtered, sortField, sortDirection);
@@ -101,7 +104,8 @@ export function useSubtaskFilters(
    * Get filter statistics
    */
   const filterStats = useMemo(() => {
-    const totalCount = subtasks.length;
+    const safeSubtasks = Array.isArray(subtasks) ? subtasks : [];
+    const totalCount = safeSubtasks.length;
     const filteredCount = filteredSubtasks.length;
     const isFiltered = Object.keys(filterOptions).some(key =>
       filterOptions[key as keyof SubtaskFilterOptions] !== undefined
@@ -113,15 +117,16 @@ export function useSubtaskFilters(
       isFiltered,
       hiddenCount: totalCount - filteredCount
     };
-  }, [subtasks.length, filteredSubtasks.length, filterOptions]);
+  }, [subtasks, filteredSubtasks.length, filterOptions]);
 
   /**
    * Get available filter values from current subtasks
    */
   const availableFilterValues = useMemo(() => {
-    const statuses = [...new Set(subtasks.map(s => s.status))];
-    const priorities = [...new Set(subtasks.map(s => s.priority))];
-    const assignees = [...new Set(subtasks.flatMap(s => s.assignees || []))];
+    const safeSubtasks = Array.isArray(subtasks) ? subtasks : [];
+    const statuses = [...new Set(safeSubtasks.map(s => s.status))];
+    const priorities = [...new Set(safeSubtasks.map(s => s.priority))];
+    const assignees = [...new Set(safeSubtasks.flatMap(s => s.assignees || []))];
 
     return {
       statuses: statuses.sort(),

@@ -1,20 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
-
-export interface Toast {
-  id: string;
-  type: ToastType;
-  title: string;
-  description?: string;
-  duration?: number;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-}
+import type { ToastType, Toast } from '../../types/componentTypes';
 
 interface ToastContextType {
   toasts: Toast[];
