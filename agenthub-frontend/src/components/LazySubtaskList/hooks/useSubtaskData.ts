@@ -36,14 +36,14 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
     setError(null);
 
     try {
-      const summaries = await getSubtaskSummaries(parentTaskId);
-      setSubtaskSummaries(summaries);
+      const response = await getSubtaskSummaries(parentTaskId);
+      setSubtaskSummaries(response.subtasks);
       setHasLoaded(true);
 
       // Enable subscription after first successful load
       setTimeout(() => setSubscriptionEnabled(true), 100);
 
-      logger.debug(`Loaded ${summaries.length} subtask summaries for task ${parentTaskId}`);
+      logger.debug(`Loaded ${response.subtasks.length} subtask summaries for task ${parentTaskId}`);
 
     } catch (e: any) {
       // Handle 400 errors gracefully (task might not exist)

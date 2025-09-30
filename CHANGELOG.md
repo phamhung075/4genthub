@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed - 2025-09-30
+- **Frontend: LazySubtaskList Rendering Bug**: Fixed subtasks not displaying despite valid API response
+  - Root cause: useSubtaskData hook was setting entire API response object instead of extracting subtasks array
+  - API returns `{ subtasks: SubtaskSummary[], total: number }` but code was treating it as just the array
+  - Fixed by extracting `response.subtasks` from API response before setting state
+  - Component now correctly receives array instead of object, allowing length checks and rendering to work
+  - File: `/agenthub-frontend/src/components/LazySubtaskList/hooks/useSubtaskData.ts:39-40`
+
+### Fixed - 2025-09-30
 - **Frontend: UI Coherence - Task Expansion**: Fixed inconsistent subtask display behavior
   - Always show LazySubtaskList component when task is expanded (removed subtask_count condition)
   - Removed duplicate "No subtasks for this task" message
