@@ -31,6 +31,7 @@ export interface Task {
   details?: string;
   progress_percentage?: number;
   subtasks?: Subtask[];
+  parent_task_id?: string; // Identifies if this task is actually a subtask
 }
 
 export interface Subtask {

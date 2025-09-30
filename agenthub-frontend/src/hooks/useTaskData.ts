@@ -88,13 +88,17 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
       // Ensure taskList is a valid array
       const validTaskList = Array.isArray(taskList) ? taskList : [];
 
-      // Convert to task summaries
-      const summaries: TaskSummary[] = validTaskList.map(convertToTaskSummary);
+      // CRITICAL FIX: Filter out subtasks (tasks with parent_task_id)
+      // Subtasks should only appear nested under their parent, not as top-level tasks
+      const topLevelTasks = validTaskList.filter(task => !task.parent_task_id);
+
+      // Convert to task summaries (only top-level tasks)
+      const summaries: TaskSummary[] = topLevelTasks.map(convertToTaskSummary);
 
       setTaskSummaries(summaries);
       setTotalTasks(summaries.length);
 
-      // Store full tasks for immediate access
+      // Store full tasks for immediate access (including subtasks for expansion)
       const taskMap = new Map();
       validTaskList.forEach(task => taskMap.set(task.id, task));
       setFullTasks(taskMap);
@@ -199,6 +203,23 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
 
   // Update task from external data (e.g., WebSocket)
   const updateTaskFromData = useCallback((taskData: Task) => {
+    // CRITICAL FIX: Don't update summaries for subtasks
+    // Subtasks should only be stored in fullTasks map
+    if (taskData.parent_task_id) {
+      // This is a subtask - only update in fullTasks map
+      setFullTasks(prev => {
+        const newMap = new Map(prev);
+        newMap.set(taskData.id, taskData);
+        return newMap;
+      });
+
+      if (onTasksChanged) {
+        onTasksChanged();
+      }
+      return;
+    }
+
+    // This is a top-level task - update summaries
     const updatedSummary = convertToTaskSummary(taskData);
 
     setTaskSummaries(prev => prev.map(task =>
@@ -218,6 +239,23 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
 
   // Add new task
   const addNewTask = useCallback((taskData: Task) => {
+    // CRITICAL FIX: Don't add subtasks to main task list
+    // Subtasks should only appear nested under their parent task
+    if (taskData.parent_task_id) {
+      // This is a subtask - only store in fullTasks map, don't add to summaries
+      setFullTasks(prev => {
+        const newMap = new Map(prev);
+        newMap.set(taskData.id, taskData);
+        return newMap;
+      });
+
+      if (onTasksChanged) {
+        onTasksChanged();
+      }
+      return;
+    }
+
+    // This is a top-level task - add to summaries
     const newSummary = convertToTaskSummary(taskData);
 
     setTaskSummaries(prev => {
