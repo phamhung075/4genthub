@@ -529,26 +529,9 @@ class ContextTemplateService:
         return [self._template_to_dict(t) for t in templates]
     
     def _template_to_dict(self, template: ContextTemplate) -> Dict[str, Any]:
-        """Convert template to dictionary"""
-        return {
-            'id': template.id,
-            'name': template.name,
-            'description': template.description,
-            'category': template.category.value,
-            'level': template.level.value,
-            'tags': template.tags,
-            'variables': [
-                {
-                    'name': v.name,
-                    'description': v.description,
-                    'default': v.default_value,
-                    'required': v.required
-                }
-                for v in template.variables
-            ],
-            'usage_count': template.usage_count,
-            'version': template.version
-        }
+        """Convert template to dictionary using dataclass conversion"""
+        from dataclasses import asdict
+        return asdict(template)
     
     async def apply_template(
         self,

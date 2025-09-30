@@ -99,7 +99,7 @@ MANAGE_AGENT_PARAMETERS_DESCRIPTION = {
     "name": "[OPTIONAL] Agent name. Required for register, optional for update",
     "call_agent": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
     "git_branch_id": "[OPTIONAL] Task tree identifier. Required for assign/unassign actions",
-    "user_id": "[OPTIONAL] User identifier for authentication and audit trails"
+    "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
 }
 
 MANAGE_AGENT_PARAMS = {
@@ -108,52 +108,53 @@ MANAGE_AGENT_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["action"]
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Agent identification parameters
         "project_id": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["project_id"]
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["project_id"],
         },
         "agent_id": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["agent_id"]
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["agent_id"],
         },
-        
         # Agent configuration parameters
         "name": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["name"]
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["name"],
         },
         "call_agent": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["call_agent"]
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["call_agent"],
         },
-        
         # Context parameters
         "git_branch_id": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["git_branch_id"]
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["git_branch_id"],
         },
-        
         # Authentication parameters
         "user_id": {
             "type": "string",
-            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["user_id"]
-        }
+            "description": MANAGE_AGENT_PARAMETERS_DESCRIPTION["user_id"],
+        },
     },
-    "required": ["action"],  # Only action required at schema level - business logic validates per action
-    "additionalProperties": False
+    "required": [
+        "action"
+    ],  # Only action required at schema level - business logic validates per action
+    "additionalProperties": False,
 }
+
 
 def get_manage_agent_parameters():
     """Get manage agent parameters for use in controller."""
     return MANAGE_AGENT_PARAMS["properties"]
 
+
 def get_manage_agent_description():
     """Get manage agent description for use in controller."""
     return MANAGE_AGENT_DESCRIPTION
+
 
 # Legacy support for existing imports
 MANAGE_AGENT_PARAMETERS = {
@@ -162,5 +163,5 @@ MANAGE_AGENT_PARAMETERS = {
     "agent_id": "Agent identifier. Required for most actions except register/list/rebalance. (string)",
     "name": "Agent name. Required for register, optional for update. (string)",
     "call_agent": "Call agent string or configuration. Optional, for register/update actions. (string)",
-    "git_branch_id": "Task tree identifier. Required for assign/unassign actions. (string)"
+    "git_branch_id": "Task tree identifier. Required for assign/unassign actions. (string)",
 }

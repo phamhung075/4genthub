@@ -158,7 +158,7 @@ UNIFIED_AGENT_PARAMETERS_DESCRIPTION = {
     "call_agent": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
     "git_branch_id": "[OPTIONAL] Task tree identifier. Required for assign/unassign actions",
     "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
-    "name_agent": "[REQUIRED for call action] Name of the agent to load and invoke. Must be a valid, registered agent name with @ prefix (e.g., 'master-orchestrator-agent')"
+    "name_agent": "[REQUIRED for call action] Name of the agent to load and invoke. Must be a valid, registered agent name with @ prefix (e.g., 'master-orchestrator-agent')",
 }
 
 UNIFIED_AGENT_PARAMS = {
@@ -167,58 +167,58 @@ UNIFIED_AGENT_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["action"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Agent identification parameters
         "project_id": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["project_id"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["project_id"],
         },
         "agent_id": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["agent_id"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["agent_id"],
         },
-        
         # Agent configuration parameters
         "name": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["name"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["name"],
         },
         "call_agent": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["call_agent"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["call_agent"],
         },
-        
         # Context parameters
         "git_branch_id": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["git_branch_id"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["git_branch_id"],
         },
-        
         # Authentication parameters
         "user_id": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["user_id"]
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["user_id"],
         },
-        
         # Agent invocation parameters
         "name_agent": {
             "type": "string",
-            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["name_agent"]
-        }
+            "description": UNIFIED_AGENT_PARAMETERS_DESCRIPTION["name_agent"],
+        },
     },
-    "required": ["action"],  # Only action required at schema level - business logic validates per action
-    "additionalProperties": False
+    "required": [
+        "action"
+    ],  # Only action required at schema level - business logic validates per action
+    "additionalProperties": False,
 }
+
 
 def get_unified_agent_parameters():
     """Get unified agent parameters for use in controller."""
     return UNIFIED_AGENT_PARAMS["properties"]
 
+
 def get_unified_agent_description():
     """Get unified agent description for use in controller."""
     return UNIFIED_AGENT_DESCRIPTION
+
 
 # Legacy support for existing imports - maintain backward compatibility
 MANAGE_AGENT_PARAMETERS = {
@@ -228,5 +228,5 @@ MANAGE_AGENT_PARAMETERS = {
     "name": "Agent name. Required for register, optional for update. (string)",
     "call_agent": "Call agent string or configuration. Optional, for register/update actions. (string)",
     "git_branch_id": "Task tree identifier. Required for assign/unassign actions. (string)",
-    "name_agent": "Name of the agent to load and invoke. Required for call action. Use @ prefix. (string)"
+    "name_agent": "Name of the agent to load and invoke. Required for call action. Use @ prefix. (string)",
 }

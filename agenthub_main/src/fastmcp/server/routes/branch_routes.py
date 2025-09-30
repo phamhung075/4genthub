@@ -53,18 +53,16 @@ async def create_branch(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        # ✅ FIX: result is a BranchResponse Pydantic model, not a dict
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to create branch")
+                detail=result.message or "Failed to create branch"
             )
-        
-        return {
-            "success": True,
-            "branch": result.get("branch"),
-            "message": f"Branch created successfully for user {current_user.email}"
-        }
+
+        # Return the Pydantic model directly - FastAPI will serialize it
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -97,19 +95,16 @@ async def list_branches(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        # ✅ FIX: result is a BranchesResponse Pydantic model, not a dict
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to list branches")
+                detail=result.message or "Failed to list branches"
             )
-        
-        return {
-            "success": True,
-            "branches": result.get("branches", []),
-            "total": len(result.get("branches", [])),
-            "message": f"Branches retrieved for user {current_user.email}"
-        }
+
+        # Return the Pydantic model directly - FastAPI will serialize it
+        return result.model_dump(by_alias=True)
         
     except Exception as e:
         logger.error(f"Error listing branches for user {current_user.id}: {e}")
@@ -141,17 +136,13 @@ async def get_branch(
             session=db
         )
         
-        if not result.get("success"):
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Branch not found or access denied"
             )
         
-        return {
-            "success": True,
-            "branch": result.get("branch"),
-            "message": f"Branch retrieved for user {current_user.email}"
-        }
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -191,8 +182,8 @@ async def update_branch(
             session=db
         )
         
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Branch not found or access denied"
@@ -200,14 +191,10 @@ async def update_branch(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to update branch")
+                    detail=result.message or "Failed to update branch"
                 )
         
-        return {
-            "success": True,
-            "branch": result.get("branch"),
-            "message": f"Branch updated successfully for user {current_user.email}"
-        }
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -242,8 +229,8 @@ async def delete_branch(
             session=db
         )
         
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Branch not found or access denied"
@@ -251,13 +238,11 @@ async def delete_branch(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to delete branch")
+                    detail=result.message or "Failed to delete branch"
                 )
-        
-        return {
-            "success": True,
-            "message": f"Branch {branch_id} deleted successfully for user {current_user.email}"
-        }
+
+        # Return the Pydantic model directly - FastAPI will serialize it
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -293,8 +278,8 @@ async def assign_agent_to_branch(
             session=db
         )
         
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Branch not found or access denied"
@@ -302,14 +287,10 @@ async def assign_agent_to_branch(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to assign agent")
+                    detail=result.message or "Failed to assign agent"
                 )
         
-        return {
-            "success": True,
-            "assignment": result.get("assignment"),
-            "message": f"Agent assigned successfully for user {current_user.email}"
-        }
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -344,8 +325,8 @@ async def get_branch_task_counts(
             session=db
         )
         
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Branch not found or access denied"
@@ -353,14 +334,11 @@ async def get_branch_task_counts(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to get task counts")
+                    detail=result.message or "Failed to get task counts"
                 )
-        
-        return {
-            "success": True,
-            "task_counts": result.get("task_counts"),
-            "message": f"Task counts retrieved for user {current_user.email}"
-        }
+
+        # Return the Pydantic model directly - FastAPI will serialize it
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -394,19 +372,14 @@ async def get_project_branches_with_task_counts(
             session=db
         )
 
-        if not result.get("success"):
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to fetch branch summaries")
+                detail=result.message or "Failed to fetch branch summaries"
             )
 
-        return {
-            "success": True,
-            "branches": result.get("branches", []),
-            "project_summary": result.get("project_summary", {}),
-            "total_branches": result.get("total_branches", 0),
-            "message": f"Branch summaries retrieved for user {current_user.email}"
-        }
+        # Return the Pydantic model directly - FastAPI will serialize it
+        return result.model_dump(by_alias=True)
 
     except HTTPException:
         raise
@@ -449,20 +422,15 @@ async def get_bulk_summaries(
             session=db
         )
 
-        if not result.get("success"):
+        # ✅ FIX: result is a BulkSummaryResponse Pydantic model, not a dict
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "Failed to fetch bulk summaries")
+                detail=result.message or "Failed to fetch bulk summaries"
             )
 
-        return {
-            "success": True,
-            "summaries": result.get("summaries", {}),
-            "projects": result.get("projects", {}),
-            "metadata": result.get("metadata", {}),
-            "timestamp": result.get("timestamp"),
-            "message": f"Bulk summaries retrieved for user {current_user.email}"
-        }
+        # Return the Pydantic model directly - FastAPI will serialize it
+        return result.model_dump(by_alias=True)
 
     except HTTPException:
         raise

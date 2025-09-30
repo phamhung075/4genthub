@@ -2,4 +2,4 @@
 
 from .agent_discovery_service import AgentDiscoveryService
 
-__all__ = ['AgentDiscoveryService']
+__all__ = ["AgentDiscoveryService"]

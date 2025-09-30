@@ -134,7 +134,7 @@
       "path": "api-behavior"
     },
     "api-integration": {
-      "count": 15,
+      "count": 17,
       "files": [
         {
           "hash": "677ae44155bbd2b3ca5ab9b6e533aa76",
@@ -151,6 +151,20 @@
           "size": 25135
         },
         {
+          "hash": "8c7fe2973b3068e5cef037a2abc80a9f",
+          "modified": "2025-09-30T12:53:09.022569",
+          "name": "dto-response-types.md",
+          "path": "api-integration/dto-response-types.md",
+          "size": 19888
+        },
+        {
+          "hash": "fd4698e9fd1bfb84ff8df0b74f653e67",
+          "modified": "2025-09-30T12:54:27.631333",
+          "name": "api-endpoints-reference.md",
+          "path": "api-integration/api-endpoints-reference.md",
+          "size": 17356
+        },
+        {
           "hash": "1418838288008d5fce256cb6b5b06411",
           "modified": "2025-09-17T14:11:39.075923",
           "name": "MCP_SERVER_ARCHITECTURE_GUIDE.md",
@@ -158,11 +172,11 @@
           "size": 12193
         },
         {
-          "hash": "44e43f2ced870e2b39e1b188e132ba40",
-          "modified": "2025-09-17T14:11:39.075923",
+          "hash": "fc9edc49af69ac6857d6c46e48a3a6e5",
+          "modified": "2025-09-30T12:54:45.812104",
           "name": "README.md",
           "path": "api-integration/README.md",
-          "size": 2018
+          "size": 2249
         },
         {
           "hash": "8d076339c70683f0034db1d7583861e7",
@@ -889,7 +903,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 57,
+      "count": 58,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -1205,6 +1219,13 @@
           "name": "parameter-enforcement-technical-spec.md",
           "path": "development-guides/parameter-enforcement-technical-spec.md",
           "size": 28713
+        },
+        {
+          "hash": "4b83e4a66684e9313702434a14020133",
+          "modified": "2025-09-30T12:00:55.174070",
+          "name": "dto-refactoring-guide.md",
+          "path": "development-guides/dto-refactoring-guide.md",
+          "size": 13038
         },
         {
           "hash": "047dc306f8cacd7d4e00d32889e5761b",
@@ -2006,7 +2027,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 37,
+      "count": 38,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2147,6 +2168,13 @@
           "name": "test-fix-iteration-29-healthy-status.md",
           "path": "testing-qa/test-fix-iteration-29-healthy-status.md",
           "size": 1798
+        },
+        {
+          "hash": "7837ae8544a5431f924ecd9bafa52550",
+          "modified": "2025-09-30T12:40:21.303391",
+          "name": "phase-2-dto-integration-testing-report.md",
+          "path": "testing-qa/phase-2-dto-integration-testing-report.md",
+          "size": 5112
         },
         {
           "hash": "88993cfeef36d6a6ca5379c63cf56f63",
@@ -2555,7 +2583,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-30T10:47:30.580752",
+  "generated_at": "2025-09-30T12:54:45.876309",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2608,9 +2636,11 @@
         "MCP_SERVER_ARCHITECTURE_GUIDE.md",
         "README.md",
         "agent-assignment-enhancement.md",
+        "api-endpoints-reference.md",
         "api-reference.md",
         "api-verification-status.md",
         "configuration.md",
+        "dto-response-types.md",
         "implementation-phases-detailed.md",
         "mcp-client-api-reference.md",
         "mcp-client-configuration-guide.md",
@@ -2760,6 +2790,7 @@
         "controller-overlap-analysis.md",
         "docker-system-guide.md",
         "domain-driven-design.md",
+        "dto-refactoring-guide.md",
         "email-authentication-setup.md",
         "error-handling-and-logging.md",
         "factory-refactoring-example.md",
@@ -2932,6 +2963,7 @@
         "hook-system-architecture.md",
         "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
+        "phase-2-dto-integration-testing-report.md",
         "test-fix-iteration-10-summary.md",
         "test-fix-iteration-11-summary.md",
         "test-fix-iteration-12-summary.md",
@@ -3009,5 +3041,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 339
+  "total_files": 343
 }

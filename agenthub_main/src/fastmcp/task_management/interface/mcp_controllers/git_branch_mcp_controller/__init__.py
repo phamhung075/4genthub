@@ -7,4 +7,4 @@ The controller delegates operations to specialized handlers through factory patt
 
 from .git_branch_mcp_controller import GitBranchMCPController
 
-__all__ = ['GitBranchMCPController']
+__all__ = ["GitBranchMCPController"]

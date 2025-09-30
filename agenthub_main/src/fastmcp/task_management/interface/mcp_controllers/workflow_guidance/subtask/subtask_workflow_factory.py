@@ -1,32 +1,32 @@
 """Subtask workflow guidance factory."""
 
-from typing import Dict, Any
+from typing import Any
 
-from .subtask_workflow_guidance import SubtaskWorkflowGuidance
 from ..base import WorkflowGuidanceInterface
+from .subtask_workflow_guidance import SubtaskWorkflowGuidance
 
 
 class SubtaskWorkflowFactory:
     """Factory for creating subtask workflow guidance instances."""
-    
+
     @staticmethod
     def create() -> WorkflowGuidanceInterface:
         """
         Create a new subtask workflow guidance instance.
-        
+
         Returns:
             SubtaskWorkflowGuidance instance
         """
         return SubtaskWorkflowGuidance()
-    
+
     @staticmethod
-    def create_with_config(config: Dict[str, Any]) -> WorkflowGuidanceInterface:
+    def create_with_config(config: dict[str, Any]) -> WorkflowGuidanceInterface:
         """
         Create a subtask workflow guidance instance with configuration.
-        
+
         Args:
             config: Configuration dictionary
-            
+
         Returns:
             Configured SubtaskWorkflowGuidance instance
         """

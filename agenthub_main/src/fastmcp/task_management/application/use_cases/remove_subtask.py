@@ -62,11 +62,21 @@ class RemoveSubtaskUseCase:
                     "completion_percentage": 0
                 }
         
-        return {
-            "success": success,
-            "subtask": {"id": str(id)},
-            "progress": progress
-        }
+        # Use dataclass for clean response structure
+        from dataclasses import dataclass, asdict
+
+        @dataclass
+        class RemoveSubtaskResponse:
+            success: bool
+            subtask: dict
+            progress: dict
+
+        response = RemoveSubtaskResponse(
+            success=success,
+            subtask={"id": str(id)},
+            progress=progress
+        )
+        return asdict(response)
 
     def _convert_to_task_id(self, task_id: Union[str, int]) -> TaskId:
         if isinstance(task_id, int):

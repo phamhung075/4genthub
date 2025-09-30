@@ -107,7 +107,7 @@ MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION = {
     "category": "[OPTIONAL] Insight category for add_insight operations. Valid: 'technical', 'business', 'performance', 'risk', 'discovery'",
     "importance": "[OPTIONAL] Importance level for insights and progress updates. Valid: 'low', 'medium', 'high', 'critical'",
     "agent": "[OPTIONAL] Agent identifier that created the insight or progress update. String identifier for tracking agent contributions",
-    "filters": "[OPTIONAL] Filter criteria for list operations as JSON string. Supports filtering by data fields, creation dates, agents, and other metadata"
+    "filters": "[OPTIONAL] Filter criteria for list operations as JSON string. Supports filtering by data fields, creation dates, agents, and other metadata",
 }
 
 MANAGE_UNIFIED_CONTEXT_PARAMS = {
@@ -116,102 +116,112 @@ MANAGE_UNIFIED_CONTEXT_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["action"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Context hierarchy parameters
         "level": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["level"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["level"],
         },
         "context_id": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["context_id"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["context_id"],
         },
-        
         # Data and content parameters
         "data": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["data"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["data"],
         },
         "content": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["content"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["content"],
         },
-        
         # Authentication and identification
         "user_id": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["user_id"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["user_id"],
         },
         "project_id": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["project_id"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["project_id"],
         },
         "git_branch_id": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["git_branch_id"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION[
+                "git_branch_id"
+            ],
         },
-        
         # Operation modifiers (handled as strings)
         "force_refresh": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["force_refresh"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION[
+                "force_refresh"
+            ],
         },
         "include_inherited": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["include_inherited"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION[
+                "include_inherited"
+            ],
         },
         "propagate_changes": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["propagate_changes"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION[
+                "propagate_changes"
+            ],
         },
-        
         # Delegation parameters
         "delegate_to": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["delegate_to"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["delegate_to"],
         },
         "delegate_data": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["delegate_data"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION[
+                "delegate_data"
+            ],
         },
         "delegation_reason": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["delegation_reason"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION[
+                "delegation_reason"
+            ],
         },
-        
         # Insight and progress parameters
         "category": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["category"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["category"],
         },
         "importance": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["importance"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["importance"],
         },
         "agent": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["agent"]
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["agent"],
         },
-        
         # List and filter parameters
         "filters": {
             "type": "string",
-            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["filters"]
-        }
+            "description": MANAGE_UNIFIED_CONTEXT_PARAMETERS_DESCRIPTION["filters"],
+        },
     },
-    "required": ["action"],  # Only action required at schema level - business logic validates per action
-    "additionalProperties": False
+    "required": [
+        "action"
+    ],  # Only action required at schema level - business logic validates per action
+    "additionalProperties": False,
 }
+
 
 def get_manage_unified_context_parameters():
     """Get manage unified context parameters for use in controller."""
     return MANAGE_UNIFIED_CONTEXT_PARAMS["properties"]
 
+
 def get_manage_unified_context_description():
     """Get manage unified context description for use in controller."""
     return MANAGE_UNIFIED_CONTEXT_DESCRIPTION
+
 
 # Legacy parameter descriptions for backward compatibility
 MANAGE_UNIFIED_CONTEXT_PARAMETERS = {
@@ -230,7 +240,6 @@ MANAGE_UNIFIED_CONTEXT_PARAMETERS = {
     "delegation_reason": "Reason for context delegation for audit trails and team communication. Helps track why data was moved between hierarchy levels",
     "content": "Content for insight or progress operations. String content that will be categorized and added to the specified context level",
     "category": "Insight category for add_insight operations. Valid: 'technical', 'business', 'performance', 'risk', 'discovery'. Helps organize and filter insights",
-
     # Legacy parameters (marked for backward compatibility)
     "task_id": "Legacy: Context identifier for task-specific contexts. Automatically converted to context_id with level='task'. Use context_id with level parameter instead",
     "data_title": "Legacy: Context title data. Automatically merged into data object as {'title': value}. Use data parameter with structured content instead",
@@ -241,5 +250,5 @@ MANAGE_UNIFIED_CONTEXT_PARAMETERS = {
     "data_metadata": "Legacy: Context metadata. Automatically merged into data object as {'metadata': value}. Use data parameter with structured content instead",
     "importance": "Importance level for insights and progress updates. Valid: 'low', 'medium', 'high', 'critical'. Used for prioritization and filtering",
     "agent": "Agent identifier that created the insight or progress update. String identifier for tracking agent contributions and coordination",
-    "filters": "Filter criteria for list operations as dictionary object or JSON string. Supports filtering by data fields, creation dates, agents, and other metadata"
+    "filters": "Filter criteria for list operations as dictionary object or JSON string. Supports filtering by data fields, creation dates, agents, and other metadata",
 }

@@ -79,7 +79,7 @@ MANAGE_PROJECT_PARAMETERS_DESCRIPTION = {
     "name": "[OPTIONAL] Project name. Required for create, can be used instead of project_id for get action",
     "description": "[OPTIONAL] Project description. Optional for create/update operations",
     "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
-    "force": "[OPTIONAL] Force parameter to bypass safety checks for maintenance operations"
+    "force": "[OPTIONAL] Force parameter to bypass safety checks for maintenance operations",
 }
 
 MANAGE_PROJECT_PARAMS = {
@@ -88,44 +88,44 @@ MANAGE_PROJECT_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["action"]
+            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Project identification parameters
         "project_id": {
             "type": "string",
-            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["project_id"]
+            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["project_id"],
         },
         "name": {
             "type": "string",
-            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["name"]
+            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["name"],
         },
-        
         # Project configuration parameters
         "description": {
             "type": "string",
-            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["description"]
+            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["description"],
         },
-        
         # Authentication parameters
         "user_id": {
             "type": "string",
-            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["user_id"]
+            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["user_id"],
         },
-        
         # Maintenance parameters
         "force": {
             "type": "string",
-            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["force"]
-        }
+            "description": MANAGE_PROJECT_PARAMETERS_DESCRIPTION["force"],
+        },
     },
-    "required": ["action"],  # Only action required at schema level - business logic validates per action
-    "additionalProperties": False
+    "required": [
+        "action"
+    ],  # Only action required at schema level - business logic validates per action
+    "additionalProperties": False,
 }
+
 
 def get_manage_project_parameters():
     """Get manage project parameters for use in controller."""
     return MANAGE_PROJECT_PARAMS["properties"]
+
 
 def get_manage_project_description():
     """Get manage project description for use in controller."""

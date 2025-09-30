@@ -1,16 +1,17 @@
 """Description Service for Dependency Controller"""
 
-from typing import Dict, Any
+from typing import Any
+
 from ....utils import description_loader
 
 
 class DescriptionService:
     """Service for managing dependency descriptions"""
-    
-    def get_dependency_management_descriptions(self) -> Dict[str, Any]:
+
+    def get_dependency_management_descriptions(self) -> dict[str, Any]:
         """
         Flatten dependency descriptions for robust access.
-        
+
         Returns:
             Dictionary containing dependency management descriptions
         """

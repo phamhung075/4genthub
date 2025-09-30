@@ -6,6 +6,8 @@ This folder contains comprehensive API documentation, integration guides, and co
 
 - **[API Reference](api-reference.md)** - Complete MCP tools and HTTP API documentation with examples
 - **[Configuration Guide](configuration.md)** - Environment variables, settings, and configuration management
+- **[DTO Response Types](dto-response-types.md)** - Comprehensive type-safe response structures documentation
+- **[API Endpoints Reference](api-endpoints-reference.md)** - Complete REST API endpoints with request/response examples
 
 ## 🔌 API Categories
 

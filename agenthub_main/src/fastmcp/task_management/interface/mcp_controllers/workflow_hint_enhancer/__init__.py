@@ -7,4 +7,4 @@ The module exports the main WorkflowHintEnhancer class for backward compatibilit
 
 from .workflow_hint_enhancer import WorkflowHintEnhancer
 
-__all__ = ['WorkflowHintEnhancer']
+__all__ = ["WorkflowHintEnhancer"]

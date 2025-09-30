@@ -7,6 +7,93 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed - 2025-09-30
+- **Backend: DTO Converters Performance Mode Support**: Fixed all converter functions to handle both dict and entity object inputs
+  - Issue: Performance mode returns dicts but converters expected entity objects with attributes (e.g., `task.id`)
+  - Error: `AttributeError: 'dict' object has no attribute 'id'` when performance mode enabled
+  - Solution: Added `isinstance(task, dict)` checks to all converter functions
+  - Changes:
+    - `task_to_dto()`: Lines 31-103 - Handle dict input with `task['id']` access, entity with `task.id`
+    - `subtask_to_dto()`: Lines 106-148 - Handle dict input with `subtask['id']` access, entity with `subtask.id`
+    - `task_summary_to_dto()`: Lines 151-193 - Handle dict input with dict access, entity with attribute access
+    - `subtask_summary_to_dto()`: Lines 196-230 - Handle dict input with dict access, entity with attribute access
+    - Added `_format_datetime()` helper: Lines 20-28 - Safely format datetime/string/None values
+    - Added `_get_value()` helper: Lines 13-17 - Universal getter for dict or object (currently unused)
+  - Impact: DTO conversion works with both standard ORM mode and performance mode, eliminates crashes
+  - Files Modified: `/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/types/converters.py`
+
+- **Backend: Task User Routes Pydantic Model Access**: Fixed task_user_routes.py to use direct attribute access on Pydantic models
+  - Issue: Routes used `.get()` method on TasksResponse, TaskResponse, StatisticsResponse, SubtasksResponse Pydantic models
+  - Solution: Replaced all `.get()` calls with direct attribute access (e.g., `result.success` instead of `result.get("success")`)
+  - Changes:
+    - Line 122-127: `controller_result.get("success")` → `controller_result.success`, `controller_result.get("tasks")` → `controller_result.tasks`
+    - All controller result accesses throughout file converted to direct attributes
+    - Applied pattern consistent with task_routes.py lines 163-169
+  - Impact: Proper Pydantic model usage, eliminates potential AttributeError, improves code consistency
+  - Files Modified: `/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/server/routes/task_user_routes.py`
+
+- **Backend: Context API Controller 500 Error**: Refactored `context_api_controller.py` to return Pydantic DTOs instead of plain dicts
+  - Issue: Routes expected models with `.success` attribute but controller returned plain dictionaries
+  - Solution: Applied same DTO pattern used in task_api_controller and branch_api_controller
+  - Changes:
+    - Import `ContextResponse` and `DeleteResponse` from `fastmcp.types`
+    - `create_context()` now returns `ContextResponse` with success, context, level, message fields
+    - `get_context()` now returns `ContextResponse` with success, context, level, inherited fields
+    - `update_context()` now returns `ContextResponse` with success, context, level, message fields
+    - `delete_context()` now returns `DeleteResponse` with success, deleted, id, message fields
+    - `resolve_context()` now returns `ContextResponse` with success, context, level, inherited fields
+    - Added `force_refresh` parameter to `resolve_context()` matching route signature
+  - Impact: Eliminates 500 errors in context routes caused by dict vs Pydantic model type mismatch
+  - File: `/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/task_management/interface/api_controllers/context_api_controller.py`
+
+### Added - 2025-09-30
+- **Backend: DTO Refactoring Task Structure**: Created complete 3-phase implementation plan with 20 subtasks
+  - **Phase 1 Task**: Non-Breaking DTO Addition (ID: 634f8e9b-d323-488a-a8be-be761e262104)
+    - 6 subtasks for adding DTO imports to all controllers without breaking changes
+    - Priority: High | Estimated: 4 hours | Assignee: coding-agent
+    - Status: Ready to start (no dependencies)
+  - **Phase 2 Task**: Gradual Replacement with DTO Returns (ID: cb95a4b0-9675-42bc-b98d-92935c47dbe3)
+    - 7 subtasks for replacing dict returns with DTOs method-by-method
+    - Priority: High | Estimated: 2 days | Assignees: coding-agent, test-orchestrator-agent
+    - Dependencies: Blocked by Phase 1
+  - **Phase 3 Task**: Cleanup and Optimization (ID: 8547b870-1977-4064-9e3a-e1c3ce46a654)
+    - 7 subtasks for removing legacy code and updating type hints
+    - Priority: Medium | Estimated: 1 day | Assignees: coding-agent, code-reviewer-agent, documentation-agent
+    - Dependencies: Blocked by Phase 2
+  - **Dependency Chain**: Phase 1 → Phase 2 → Phase 3 (sequential execution enforced)
+  - **Automatic Workflow Guidance**: System shows blocking status and next actions
+  - **Total Effort**: ~3.5 days with 20 granular subtasks for progress tracking
+  - All tasks created in git branch 'dev-005' (caf4a2b2-dbb5-460b-8f3e-61c99da16503)
+
+- **Backend: DTO Refactoring Guide**: Comprehensive guide for converting API controllers to use `fastmcp/types` DTOs
+  - Complete refactoring process with step-by-step examples
+  - Before/after code comparisons showing improvements
+  - 4 detailed refactoring examples: get single, list, create, delete
+  - Priority order for controller refactoring (task → subtask → project → branch)
+  - Refactoring checklist for each controller method
+  - Common patterns for single object, list, error, and delete responses
+  - Testing strategy: unit tests, integration tests, contract tests
+  - Migration strategy: non-breaking addition → gradual replacement → cleanup
+  - Benefits summary: 25+ lines → 15 lines per method, type safety, consistency
+  - File: `/ai_docs/development-guides/dto-refactoring-guide.md`
+
+- **Backend: API Response Models (DTOs)**: Created Pydantic models matching frontend TypeScript interfaces
+  - Purpose: Ensure exact type matching between backend Python and frontend TypeScript
+  - Prevents API contract violations and type mismatches at development time
+  - 40+ Pydantic models mirroring frontend types in `api.types.ts`, `taskTypes.ts`, `subtaskTypes.ts`
+  - Organized by category for easy management:
+    - `entities.py`: Core domain objects (TaskDTO, SubtaskDTO, ProjectDTO, BranchDTO, RuleDTO)
+    - `summaries.py`: Lightweight list view objects (TaskSummaryDTO, SubtaskSummaryDTO, etc.)
+    - `responses.py`: API response wrappers (TaskResponse, TasksResponse, SubtaskResponse, etc.)
+    - `bulk.py`: Bulk operation models (BulkSummaryRequest, BulkSummaryResponse, BulkSummaryMetadata)
+    - `converters.py`: Domain to DTO conversion helpers (task_to_dto(), subtask_to_dto(), etc.)
+  - Field name mapping: Handles domain → API naming (e.g., parent_task_id → task_id)
+  - Pydantic validation: Runtime type checking ensures all required fields present
+  - Benefits: Type-safe API contracts, early error detection, guaranteed frontend compatibility, easy navigation
+  - Comprehensive guide: API_MODELS_GUIDE.md with 15+ usage patterns and examples
+  - Tested and verified: All models serialize correctly to JSON matching frontend expectations
+  - Files: `/agenthub_main/src/fastmcp/types/` (8 files: __init__.py, entities.py, summaries.py, responses.py, bulk.py, converters.py, README.md, API_MODELS_GUIDE.md)
+
+### Fixed - 2025-09-30
 - **Frontend: LazySubtaskList Rendering Bug**: Fixed subtasks not displaying despite valid API response
   - Root cause: useSubtaskData hook was setting entire API response object instead of extracting subtasks array
   - API returns `{ subtasks: SubtaskSummary[], total: number }` but code was treating it as just the array

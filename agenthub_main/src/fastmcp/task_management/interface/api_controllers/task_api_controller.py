@@ -2,4 +2,4 @@
 
 from .task_api_controller.task_api_controller import TaskAPIController
 
-__all__ = ['TaskAPIController']
+__all__ = ["TaskAPIController"]

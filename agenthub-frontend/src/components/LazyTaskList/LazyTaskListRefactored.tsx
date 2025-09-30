@@ -172,43 +172,40 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         git_branch_id: taskTreeId,
         assignees: taskData.assignees || []
       });
-      addNewTask(newTask);
+      // WebSocket will handle the update via addNewTask, no need for manual refresh
       closeDialog();
-      await loadTaskSummaries(1);
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
       showError(`Failed to create task: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, addNewTask, loadTaskSummaries, onTasksChanged, taskTreeId, showError, setSaving]);
+  }, [closeDialog, onTasksChanged, taskTreeId, showError, setSaving]);
 
   const handleUpdateTask = useCallback(async (taskId: string, updates: any) => {
     setSaving(true);
     try {
       const updatedTask = await updateTask(taskId, updates);
-      updateTaskFromData(updatedTask);
+      // WebSocket will handle the update via updateTaskFromData, no need for manual refresh
       closeDialog();
-      await loadTaskSummaries(1);
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
       showError(`Failed to update task: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
-  }, [closeDialog, updateTaskFromData, loadTaskSummaries, onTasksChanged, showError, setSaving]);
+  }, [closeDialog, onTasksChanged, showError, setSaving]);
 
   const handleDeleteTask = useCallback(async (taskId: string) => {
     closeDialog();
     try {
       await deleteTask(taskId);
-      removeTask(taskId);
-      await loadTaskSummaries(1);
+      // WebSocket will handle the update via removeTask, no need for manual refresh
       if (onTasksChanged) onTasksChanged();
     } catch (error: any) {
       showError(`Failed to delete task: ${error.message || 'Unknown error'}`);
     }
-  }, [closeDialog, removeTask, loadTaskSummaries, onTasksChanged, showError]);
+  }, [closeDialog, onTasksChanged, showError]);
 
   // Effects
   // Load initial tasks when taskTreeId changes

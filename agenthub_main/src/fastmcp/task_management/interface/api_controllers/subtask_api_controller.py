@@ -6,11 +6,22 @@ It serves as the interface layer, delegating business logic to application facad
 """
 
 import logging
-from typing import Dict, Any, Optional
+from datetime import datetime, timezone
+from typing import Any
 
-from ...application.facades.subtask_application_facade import SubtaskApplicationFacade
+from fastmcp.types import (
+    DeleteResponse,
+    SubtaskResponse,
+    SubtasksResponse,
+    subtask_summary_to_dto,
+    subtask_to_dto,
+)
+
 from ...application.services.facade_service import FacadeService
-from ...infrastructure.repositories.subtask_repository_factory import SubtaskRepositoryFactory
+from ...infrastructure.repositories.subtask_repository_factory import (
+    SubtaskRepositoryFactory,
+)
+
 # FacadeService handles all facade creation (DDD compliant)
 
 logger = logging.getLogger(__name__)
@@ -19,17 +30,17 @@ logger = logging.getLogger(__name__)
 class SubtaskAPIController:
     """
     API Controller for subtask management operations.
-    
+
     This controller provides a clean interface between frontend routes and
     application services, ensuring proper separation of concerns.
     """
-    
+
     def __init__(self):
         """Initialize the controller"""
         # Use FacadeService for DDD compliance - no direct factory access
         self.facade_service = FacadeService.get_instance()
 
-    def _get_task_id_from_subtask(self, subtask_id: str, user_id: str) -> Optional[str]:
+    def _get_task_id_from_subtask(self, subtask_id: str, user_id: str) -> str | None:
         """
         Helper method to get task_id from subtask_id by looking up the subtask.
 
@@ -44,7 +55,11 @@ class SubtaskAPIController:
             # Create subtask repository factory and repository
             subtask_repository_factory = SubtaskRepositoryFactory()
             # Use create_orm_subtask_repository which accepts user_id
-            subtask_repository = subtask_repository_factory.create_orm_subtask_repository(user_id=user_id)
+            subtask_repository = (
+                subtask_repository_factory.create_orm_subtask_repository(
+                    user_id=user_id
+                )
+            )
 
             # Look up the subtask
             subtask = subtask_repository.find_by_id(subtask_id)
@@ -58,7 +73,9 @@ class SubtaskAPIController:
             logger.error(f"Error looking up task_id for subtask {subtask_id}: {e}")
             return None
 
-    def create_subtask(self, task_id: str, title: str, description: Optional[str], user_id: str, session) -> Dict[str, Any]:
+    def create_subtask(
+        self, task_id: str, title: str, description: str | None, user_id: str, session
+    ) -> SubtaskResponse:
         """
         Create a new subtask.
 
@@ -78,22 +95,24 @@ class SubtaskAPIController:
             temp_facade = self.facade_service.get_task_facade(
                 project_id=None,  # Will be determined from task lookup
                 git_branch_id=None,  # Will be determined from task lookup
-                user_id=user_id
+                user_id=user_id,
             )
             parent_task = temp_facade.get_task(task_id)
-            if not parent_task or not parent_task.get('task'):
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {task_id} not found")
 
             # Extract project context from parent task
-            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
             if not parent_git_branch_id:
-                raise ValueError(f"Parent task {task_id} missing git_branch_id required for context derivation")
+                raise ValueError(
+                    f"Parent task {task_id} missing git_branch_id required for context derivation"
+                )
 
             # Now get the proper SUBTASK facade with derived context
             subtask_facade = self.facade_service.get_subtask_facade(
                 project_id=None,  # Will be derived from git_branch_id
                 git_branch_id=parent_git_branch_id,
-                user_id=user_id
+                user_id=user_id,
             )
 
             # Create subtask request data
@@ -102,33 +121,47 @@ class SubtaskAPIController:
                 "title": title,
                 "description": description or "",
                 "status": "todo",
-                "priority": "medium"
+                "priority": "medium",
             }
 
             # Delegate to SUBTASK facade using handle_manage_subtask
             result = subtask_facade.handle_manage_subtask(
-                action="create",
-                task_id=task_id,
-                subtask_data=subtask_data
+                action="create", task_id=task_id, subtask_data=subtask_data
             )
 
-            logger.info(f"Subtask created successfully for user {user_id}: {result.get('subtask', {}).get('id')}")
+            logger.info(
+                f"Subtask created successfully for user {user_id}: {result.get('subtask', {}).get('id')}"
+            )
 
-            return {
-                "success": True,
-                "subtask": result.get("subtask"),
-                "message": "Subtask created successfully"
-            }
+            # Convert subtask dict to DTO
+            subtask_dict = result.get("subtask")
+
+            # Create a simple object to pass to converter
+            class SubtaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+
+            subtask_obj = SubtaskObj(subtask_dict)
+
+            return SubtaskResponse(
+                success=True,
+                subtask=subtask_to_dto(subtask_obj),
+                message="Subtask created successfully",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
         except Exception as e:
             logger.error(f"Error creating subtask for user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "message": "Failed to create subtask"
-            }
-    
-    def list_subtasks(self, task_id: str, user_id: str, session) -> Dict[str, Any]:
+            return SubtaskResponse(
+                success=False,
+                subtask=None,
+                error=str(e),
+                message="Failed to create subtask",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def list_subtasks(self, task_id: str, user_id: str, session) -> SubtasksResponse:
         """
         List subtasks for a parent task.
 
@@ -143,50 +176,64 @@ class SubtaskAPIController:
         try:
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
-                project_id=None,
-                git_branch_id=None,
-                user_id=user_id
+                project_id=None, git_branch_id=None, user_id=user_id
             )
             parent_task = temp_facade.get_task(task_id)
-            if not parent_task or not parent_task.get('task'):
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {task_id} not found")
 
-            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
             if not parent_git_branch_id:
                 raise ValueError(f"Parent task {task_id} missing git_branch_id")
 
             # Get SUBTASK facade for listing operations
             subtask_facade = self.facade_service.get_subtask_facade(
-                project_id=None,
-                git_branch_id=parent_git_branch_id,
-                user_id=user_id
+                project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
 
             # Delegate to SUBTASK facade
             result = subtask_facade.handle_manage_subtask(
-                action="list",
-                task_id=task_id
+                action="list", task_id=task_id
             )
 
-            logger.info(f"Listed {len(result.get('subtasks', []))} subtasks for task {task_id} by user {user_id}")
+            logger.info(
+                f"Listed {len(result.get('subtasks', []))} subtasks for task {task_id} by user {user_id}"
+            )
 
-            return {
-                "success": True,
-                "subtasks": result.get("subtasks", []),
-                "count": len(result.get("subtasks", [])),
-                "parent_task_id": task_id,
-                "user_id": user_id
-            }
+            # Convert subtasks to DTOs
+            subtasks_list = result.get("subtasks", [])
+
+            # Create objects for converter
+            class SubtaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+
+            subtask_dtos = [
+                subtask_summary_to_dto(SubtaskObj(st)) for st in subtasks_list
+            ]
+
+            return SubtasksResponse(
+                success=True,
+                subtasks=subtask_dtos,
+                total=len(subtask_dtos),
+                message=f"Retrieved {len(subtask_dtos)} subtasks",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
         except Exception as e:
-            logger.error(f"Error listing subtasks for task {task_id} by user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "message": "Failed to list subtasks"
-            }
-    
-    def get_subtask(self, subtask_id: str, user_id: str, session) -> Dict[str, Any]:
+            logger.error(
+                f"Error listing subtasks for task {task_id} by user {user_id}: {e}"
+            )
+            return SubtasksResponse(
+                success=False,
+                subtasks=[],
+                error=str(e),
+                message="Failed to list subtasks",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def get_subtask(self, subtask_id: str, user_id: str, session) -> SubtaskResponse:
         """
         Get a specific subtask.
 
@@ -202,63 +249,74 @@ class SubtaskAPIController:
             # First, look up the subtask to get its task_id
             task_id = self._get_task_id_from_subtask(subtask_id, user_id)
             if not task_id:
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return SubtaskResponse(
+                    success=False,
+                    subtask=None,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
-                project_id=None,
-                git_branch_id=None,
-                user_id=user_id
+                project_id=None, git_branch_id=None, user_id=user_id
             )
             parent_task = temp_facade.get_task(task_id)
-            if not parent_task or not parent_task.get('task'):
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {task_id} not found")
 
-            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
             if not parent_git_branch_id:
                 raise ValueError(f"Parent task {task_id} missing git_branch_id")
 
             # Get SUBTASK facade for get operations
             subtask_facade = self.facade_service.get_subtask_facade(
-                project_id=None,
-                git_branch_id=parent_git_branch_id,
-                user_id=user_id
+                project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
 
             # Delegate to SUBTASK facade
             result = subtask_facade.handle_manage_subtask(
-                action="get",
-                task_id=task_id,
-                subtask_id=subtask_id
+                action="get", task_id=task_id, subtask_id=subtask_id
             )
 
             if not result.get("success"):
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return SubtaskResponse(
+                    success=False,
+                    subtask=None,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             logger.info(f"Retrieved subtask {subtask_id} for user {user_id}")
 
-            return {
-                "success": True,
-                "subtask": result.get("subtask")
-            }
+            # Convert subtask to DTO
+            subtask_dict = result.get("subtask")
+
+            class SubtaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+
+            return SubtaskResponse(
+                success=True,
+                subtask=subtask_to_dto(SubtaskObj(subtask_dict)),
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
         except Exception as e:
             logger.error(f"Error getting subtask {subtask_id} for user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "message": "Failed to get subtask"
-            }
-    
-    def update_subtask(self, subtask_id: str, update_data: Dict[str, Any], user_id: str, session) -> Dict[str, Any]:
+            return SubtaskResponse(
+                success=False,
+                subtask=None,
+                error=str(e),
+                message="Failed to get subtask",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def update_subtask(
+        self, subtask_id: str, update_data: dict[str, Any], user_id: str, session
+    ) -> SubtaskResponse:
         """
         Update a subtask.
 
@@ -275,71 +333,79 @@ class SubtaskAPIController:
             # First, look up the subtask to get its task_id
             task_id = self._get_task_id_from_subtask(subtask_id, user_id)
             if not task_id:
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return SubtaskResponse(
+                    success=False,
+                    subtask=None,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
-                project_id=None,
-                git_branch_id=None,
-                user_id=user_id
+                project_id=None, git_branch_id=None, user_id=user_id
             )
             parent_task = temp_facade.get_task(task_id)
-            if not parent_task or not parent_task.get('task'):
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {task_id} not found")
 
-            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
             if not parent_git_branch_id:
                 raise ValueError(f"Parent task {task_id} missing git_branch_id")
 
             # Get SUBTASK facade for update operations
             subtask_facade = self.facade_service.get_subtask_facade(
-                project_id=None,
-                git_branch_id=parent_git_branch_id,
-                user_id=user_id
+                project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
 
             # Prepare update data with subtask_id
-            update_data_with_id = {
-                "subtask_id": subtask_id,
-                **update_data
-            }
+            update_data_with_id = {"subtask_id": subtask_id, **update_data}
 
             # Delegate to SUBTASK facade
             result = subtask_facade.handle_manage_subtask(
                 action="update",
                 task_id=task_id,
                 subtask_data=update_data_with_id,
-                subtask_id=subtask_id
+                subtask_id=subtask_id,
             )
 
             if not result.get("success"):
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return SubtaskResponse(
+                    success=False,
+                    subtask=None,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             logger.info(f"Updated subtask {subtask_id} for user {user_id}")
 
-            return {
-                "success": True,
-                "subtask": result.get("subtask"),
-                "message": "Subtask updated successfully"
-            }
+            # Convert subtask to DTO
+            subtask_dict = result.get("subtask")
+
+            class SubtaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+
+            return SubtaskResponse(
+                success=True,
+                subtask=subtask_to_dto(SubtaskObj(subtask_dict)),
+                message="Subtask updated successfully",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
         except Exception as e:
             logger.error(f"Error updating subtask {subtask_id} for user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "message": "Failed to update subtask"
-            }
-    
-    def delete_subtask(self, subtask_id: str, user_id: str, session) -> Dict[str, Any]:
+            return SubtaskResponse(
+                success=False,
+                subtask=None,
+                error=str(e),
+                message="Failed to update subtask",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def delete_subtask(self, subtask_id: str, user_id: str, session) -> DeleteResponse:
         """
         Delete a subtask.
 
@@ -355,63 +421,68 @@ class SubtaskAPIController:
             # First, look up the subtask to get its task_id
             task_id = self._get_task_id_from_subtask(subtask_id, user_id)
             if not task_id:
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return DeleteResponse(
+                    success=False,
+                    deleted=False,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
-                project_id=None,
-                git_branch_id=None,
-                user_id=user_id
+                project_id=None, git_branch_id=None, user_id=user_id
             )
             parent_task = temp_facade.get_task(task_id)
-            if not parent_task or not parent_task.get('task'):
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {task_id} not found")
 
-            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
             if not parent_git_branch_id:
                 raise ValueError(f"Parent task {task_id} missing git_branch_id")
 
             # Get SUBTASK facade for delete operations
             subtask_facade = self.facade_service.get_subtask_facade(
-                project_id=None,
-                git_branch_id=parent_git_branch_id,
-                user_id=user_id
+                project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
 
             # Delegate to SUBTASK facade
             result = subtask_facade.handle_manage_subtask(
-                action="delete",
-                task_id=task_id,
-                subtask_id=subtask_id
+                action="delete", task_id=task_id, subtask_id=subtask_id
             )
 
             if not result.get("success"):
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return DeleteResponse(
+                    success=False,
+                    deleted=False,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             logger.info(f"Deleted subtask {subtask_id} for user {user_id}")
 
-            return {
-                "success": True,
-                "message": "Subtask deleted successfully"
-            }
+            return DeleteResponse(
+                success=True,
+                deleted=True,
+                id=subtask_id,
+                message="Subtask deleted successfully",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
         except Exception as e:
             logger.error(f"Error deleting subtask {subtask_id} for user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "message": "Failed to delete subtask"
-            }
-    
-    def complete_subtask(self, subtask_id: str, completion_summary: str, user_id: str, session) -> Dict[str, Any]:
+            return DeleteResponse(
+                success=False,
+                deleted=False,
+                error=str(e),
+                message="Failed to delete subtask",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def complete_subtask(
+        self, subtask_id: str, completion_summary: str, user_id: str, session
+    ) -> SubtaskResponse:
         """
         Complete a subtask.
 
@@ -428,37 +499,35 @@ class SubtaskAPIController:
             # First, look up the subtask to get its task_id
             task_id = self._get_task_id_from_subtask(subtask_id, user_id)
             if not task_id:
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return SubtaskResponse(
+                    success=False,
+                    subtask=None,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             # DDD Compliance: No hardcoded project IDs - derive from parent task
             temp_facade = self.facade_service.get_task_facade(
-                project_id=None,
-                git_branch_id=None,
-                user_id=user_id
+                project_id=None, git_branch_id=None, user_id=user_id
             )
             parent_task = temp_facade.get_task(task_id)
-            if not parent_task or not parent_task.get('task'):
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {task_id} not found")
 
-            parent_git_branch_id = parent_task['task'].get('git_branch_id')
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
             if not parent_git_branch_id:
                 raise ValueError(f"Parent task {task_id} missing git_branch_id")
 
             # Get SUBTASK facade for complete operations
             subtask_facade = self.facade_service.get_subtask_facade(
-                project_id=None,
-                git_branch_id=parent_git_branch_id,
-                user_id=user_id
+                project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
 
             # Prepare completion data
             completion_data = {
                 "subtask_id": subtask_id,
-                "completion_summary": completion_summary
+                "completion_summary": completion_summary,
             }
 
             # Delegate to SUBTASK facade
@@ -466,77 +535,118 @@ class SubtaskAPIController:
                 action="complete",
                 task_id=task_id,
                 subtask_data=completion_data,
-                subtask_id=subtask_id
+                subtask_id=subtask_id,
             )
 
             if not result.get("success"):
-                return {
-                    "success": False,
-                    "error": "Subtask not found",
-                    "message": "Subtask not found or access denied"
-                }
+                return SubtaskResponse(
+                    success=False,
+                    subtask=None,
+                    error="Subtask not found",
+                    message="Subtask not found or access denied",
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
 
             logger.info(f"Completed subtask {subtask_id} for user {user_id}")
 
-            return {
-                "success": True,
-                "subtask": result.get("subtask"),
-                "message": "Subtask completed successfully"
-            }
+            # Convert subtask to DTO
+            subtask_dict = result.get("subtask")
+
+            class SubtaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+
+            return SubtaskResponse(
+                success=True,
+                subtask=subtask_to_dto(SubtaskObj(subtask_dict)),
+                message="Subtask completed successfully",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
 
         except Exception as e:
-            logger.error(f"Error completing subtask {subtask_id} for user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "message": "Failed to complete subtask"
-            }
-    
-    def list_subtasks_summary(self, parent_task_id: str, include_counts: bool, user_id: str, session) -> Dict[str, Any]:
+            logger.error(
+                f"Error completing subtask {subtask_id} for user {user_id}: {e}"
+            )
+            return SubtaskResponse(
+                success=False,
+                subtask=None,
+                error=str(e),
+                message="Failed to complete subtask",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def list_subtasks_summary(
+        self, parent_task_id: str, include_counts: bool, user_id: str, session
+    ) -> SubtasksResponse:
         """
         List subtasks with summary data for performance optimization.
-        
+
         Args:
             parent_task_id: Parent task identifier
             include_counts: Whether to include counts
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             Subtask summary list result
         """
         try:
-            # Get parent task to extract project context
-            task_repository = self.task_repository_factory.create(user_id, session)
-            parent_task = task_repository.find_by_id(parent_task_id)
-            
-            if not parent_task:
+            # DDD Compliance: No hardcoded project IDs - derive from parent task
+            temp_facade = self.facade_service.get_task_facade(
+                project_id=None, git_branch_id=None, user_id=user_id
+            )
+            parent_task = temp_facade.get_task(parent_task_id)
+            if not parent_task or not parent_task.get("task"):
                 raise ValueError(f"Parent task {parent_task_id} not found")
-            
-            # Create task facade with proper user context from parent task
-            task_facade_factory = TaskFacadeFactory(
-                self.task_repository_factory,
-                self.subtask_repository_factory
+
+            parent_git_branch_id = parent_task["task"].get("git_branch_id")
+            if not parent_git_branch_id:
+                raise ValueError(f"Parent task {parent_task_id} missing git_branch_id")
+
+            # Get SUBTASK facade for listing operations
+            subtask_facade = self.facade_service.get_subtask_facade(
+                project_id=None, git_branch_id=parent_git_branch_id, user_id=user_id
             )
-            
-            task_facade = task_facade_factory.create_task_facade(
-                project_id=parent_task.project_id if parent_task.project_id else parent_task.git_branch_id,
-                git_branch_id=parent_task.git_branch_id,
-                user_id=user_id
+
+            # Delegate to SUBTASK facade
+            result = subtask_facade.handle_manage_subtask(
+                action="list", task_id=parent_task_id
             )
-            
-            # Get subtask summaries
-            result = task_facade.list_subtasks_summary(
-                parent_task_id=parent_task_id,
-                include_counts=include_counts
+
+            logger.info(
+                f"Listed {len(result.get('subtasks', []))} subtask summaries for task {parent_task_id} by user {user_id}"
             )
-            
-            return result
-            
+
+            # Convert subtasks to summary DTOs
+            subtasks_list = result.get("subtasks", [])
+
+            # Create objects for converter
+            class SubtaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+
+            subtask_dtos = [
+                subtask_summary_to_dto(SubtaskObj(st)) for st in subtasks_list
+            ]
+
+            return SubtasksResponse(
+                success=True,
+                subtasks=subtask_dtos,
+                total=len(subtask_dtos),
+                message=f"Retrieved {len(subtask_dtos)} subtask summaries",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+
         except Exception as e:
-            logger.error(f"Error listing subtask summaries for task {parent_task_id} by user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "subtasks": []
-            }
+            logger.error(
+                f"Error listing subtask summaries for task {parent_task_id} by user {user_id}: {e}"
+            )
+            return SubtasksResponse(
+                success=False,
+                subtasks=[],
+                error=str(e),
+                message="Failed to list subtask summaries",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
