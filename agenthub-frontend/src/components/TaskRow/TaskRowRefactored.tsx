@@ -21,26 +21,37 @@ const TaskRowRefactored: React.FC<TaskRowProps> = ({
   onHover
 }) => {
   // Log component mount for debugging
-  //console.log('🎬 [TaskRowRefactored] Component mount:', {
-  //  taskId: summary.id,
-  //  taskTitle: summary.title,
-  //  isMobile,
-  //  timestamp: new Date().toISOString(),
-  //  hasCreatedAt: !!summary.created_at,
-  //  createdAt: summary.created_at
-  //});
+  console.log('🎬 [TaskRowRefactored] Component mount:', {
+    taskId: summary.id,
+    taskTitle: summary.title,
+    isMobile,
+    timestamp: new Date().toISOString(),
+    hasCreatedAt: !!summary.created_at,
+    createdAt: summary.created_at
+  });
 
   // Animation management
-  const { mobileElementRef, desktopElementRef } = useTaskAnimation(summary, isMobile);
+  const {
+    animationState,
+    isVisible: isAnimationVisible,
+    animationClass,
+    mobileElementRef,
+    desktopElementRef
+  } = useTaskAnimation(summary, isMobile);
 
   // State management
-  const { isVisible } = useTaskRowState();
+  const { isVisible: isStateVisible } = useTaskRowState();
+
+  // Combined visibility check
+  const isVisible = isAnimationVisible && isStateVisible;
 
   // Log render decision
   logger.debug('TaskRowRefactored rendering', {
     component: 'TaskRowRefactored',
     taskId: summary.id,
     isVisible,
+    animationState,
+    animationClass,
     isMobile
   });
 
@@ -65,6 +76,7 @@ const TaskRowRefactored: React.FC<TaskRowProps> = ({
         onOpenDialog={onOpenDialog}
         onHover={onHover}
         elementRef={mobileElementRef}
+        animationClass={animationClass}
       />
     );
   }
@@ -83,6 +95,7 @@ const TaskRowRefactored: React.FC<TaskRowProps> = ({
       onOpenDialog={onOpenDialog}
       onHover={onHover}
       elementRef={desktopElementRef}
+      animationClass={animationClass}
     />
   );
 };

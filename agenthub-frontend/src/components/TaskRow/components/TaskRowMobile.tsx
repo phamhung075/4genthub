@@ -10,6 +10,7 @@ import { TaskRowActions } from './TaskRowActions';
 import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowMobileProps } from '../../../types/taskTypes';
 import { useTaskRowState } from '../hooks/useTaskRowState';
+import styles from '../TaskRow.module.css';
 
 export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
   summary,
@@ -23,15 +24,20 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
   onToggleExpansion,
   onOpenDialog,
   onHover,
-  elementRef
+  elementRef,
+  animationClass = ''
 }) => {
   const { getBaseClasses } = useTaskRowState();
+
+  // Combine animation classes with loading state
+  const loadingClass = isLoading ? styles.loading : '';
+  const containerClasses = `rounded-lg mb-3 cursor-pointer ${getBaseClasses(isHighlighted, isHovered)} ${animationClass} ${loadingClass}`.trim();
 
   return (
     <>
       <div
         ref={elementRef}
-        className={`rounded-lg mb-3 cursor-pointer ${getBaseClasses(isHighlighted, isHovered)}`}
+        className={containerClasses}
         onMouseEnter={() => onHover(summary.id)}
         onMouseLeave={() => onHover(null)}
       >

@@ -11,6 +11,7 @@ import { TaskRowActions } from './TaskRowActions';
 import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowDesktopProps } from '../../../types/taskTypes';
 import { useTaskRowState } from '../hooks/useTaskRowState';
+import styles from '../TaskRow.module.css';
 
 export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
   summary,
@@ -24,15 +25,20 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
   onToggleExpansion,
   onOpenDialog,
   onHover,
-  elementRef
+  elementRef,
+  animationClass = ''
 }) => {
   const { getBaseClasses } = useTaskRowState();
+
+  // Combine animation classes with loading state
+  const loadingClass = isLoading ? styles.loading : '';
+  const rowClasses = `cursor-pointer ${getBaseClasses(isHighlighted, isHovered)} ${animationClass} ${loadingClass}`.trim();
 
   return (
     <>
       <TableRow
         ref={elementRef}
-        className={`cursor-pointer ${getBaseClasses(isHighlighted, isHovered)}`}
+        className={rowClasses}
         onMouseEnter={() => onHover(summary.id)}
         onMouseLeave={() => onHover(null)}
       >
