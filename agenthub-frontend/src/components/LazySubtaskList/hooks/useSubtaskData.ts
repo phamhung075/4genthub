@@ -32,11 +32,24 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
    * Load subtask summaries (lightweight data for list display)
    */
   const loadSubtaskSummaries = useCallback(async () => {
+    console.log('📡 [useSubtaskData] Loading subtask summaries:', {
+      parentTaskId,
+      timestamp: new Date().toISOString()
+    });
+
     setLoading(true);
     setError(null);
 
     try {
       const summaries = await getSubtaskSummaries(parentTaskId);
+
+      console.log('✅ [useSubtaskData] Subtask summaries loaded:', {
+        parentTaskId,
+        count: summaries.length,
+        summaries,
+        timestamp: new Date().toISOString()
+      });
+
       setSubtaskSummaries(summaries);
       setHasLoaded(true);
 
