@@ -116,7 +116,7 @@ export function calculateProgressSummary(subtasks: SubtaskSummary[]) {
     inProgress,
     todo,
     blocked,
-    completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0
   };
 }
 
