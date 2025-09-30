@@ -43,29 +43,64 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
   // WebSocket update handler
   const updateTaskFromWebSocket = useCallback((notification: any) => {
+    console.log('🎯 [LazyTaskList] WebSocket notification received:', {
+      entityId: notification?.entityId,
+      eventType: notification?.eventType,
+      hasData: !!notification?.data,
+      data: notification?.data,
+      metadata: notification?.metadata,
+      taskTreeId,
+      timestamp: new Date().toISOString()
+    });
+
     const { entityId, eventType, data, metadata } = notification;
 
     // Check if this change is for our current branch
     if (metadata?.git_branch_id && metadata.git_branch_id !== taskTreeId) {
+      console.log('🚫 [LazyTaskList] Ignoring notification for different branch:', {
+        notificationBranch: metadata.git_branch_id,
+        currentBranch: taskTreeId
+      });
       return false;
     }
 
     if (eventType === 'api_fallback_needed') {
+      console.log('🔄 [LazyTaskList] API fallback needed, reloading task summaries');
       loadTaskSummaries(1);
       return true;
     }
 
     if (eventType === 'created' && data) {
+      console.log('✅ [LazyTaskList] Creating new task from WebSocket:', {
+        taskId: data.id,
+        title: data.title,
+        hasAllFields: !!(data.id && data.title && data.status)
+      });
       addNewTask(data);
       return true;
+    } else if (eventType === 'created' && !data) {
+      console.warn('⚠️ [LazyTaskList] CREATE event received but data is missing!', {
+        entityId,
+        metadata
+      });
+      // Fallback: reload all tasks
+      console.log('🔄 [LazyTaskList] Falling back to full task list reload');
+      loadTaskSummaries(1);
+      return true;
     } else if (eventType === 'updated' && data) {
+      console.log('✅ [LazyTaskList] Updating task from WebSocket:', {
+        taskId: data.id,
+        title: data.title
+      });
       updateTaskFromData(data);
       return true;
     } else if (eventType === 'deleted') {
+      console.log('✅ [LazyTaskList] Deleting task from WebSocket:', { entityId });
       removeTask(entityId);
       return true;
     }
 
+    console.warn('⚠️ [LazyTaskList] Unhandled notification:', { eventType, hasData: !!data });
     return false;
   }, [taskTreeId, addNewTask, updateTaskFromData, removeTask, loadTaskSummaries]);
 

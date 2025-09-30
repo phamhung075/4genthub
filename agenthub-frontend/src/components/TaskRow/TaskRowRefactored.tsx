@@ -1,10 +1,10 @@
 import React from 'react';
 import { TaskRowProps } from '../../types/taskTypes';
+import logger from '../../utils/logger';
+import { TaskRowDesktop } from './components/TaskRowDesktop';
+import { TaskRowMobile } from './components/TaskRowMobile';
 import { useTaskAnimation } from './hooks/useTaskAnimation';
 import { useTaskRowState } from './hooks/useTaskRowState';
-import { TaskRowMobile } from './components/TaskRowMobile';
-import { TaskRowDesktop } from './components/TaskRowDesktop';
-import logger from '../../utils/logger';
 
 const TaskRowRefactored: React.FC<TaskRowProps> = ({
   summary,
@@ -21,14 +21,14 @@ const TaskRowRefactored: React.FC<TaskRowProps> = ({
   onHover
 }) => {
   // Log component mount for debugging
-  console.log('🎬 [TaskRowRefactored] Component mount:', {
-    taskId: summary.id,
-    taskTitle: summary.title,
-    isMobile,
-    timestamp: new Date().toISOString(),
-    hasCreatedAt: !!summary.created_at,
-    createdAt: summary.created_at
-  });
+  //console.log('🎬 [TaskRowRefactored] Component mount:', {
+  //  taskId: summary.id,
+  //  taskTitle: summary.title,
+  //  isMobile,
+  //  timestamp: new Date().toISOString(),
+  //  hasCreatedAt: !!summary.created_at,
+  //  createdAt: summary.created_at
+  //});
 
   // Animation management
   const { mobileElementRef, desktopElementRef } = useTaskAnimation(summary, isMobile);

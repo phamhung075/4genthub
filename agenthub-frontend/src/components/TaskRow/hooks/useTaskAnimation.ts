@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../../../services/AnimationFactory';
-import logger from '../../../utils/logger';
 import { TaskSummary } from '../../../types/taskTypes';
+import logger from '../../../utils/logger';
 
 export function useTaskAnimation(
   summary: TaskSummary,
@@ -11,10 +11,10 @@ export function useTaskAnimation(
   const desktopElementRef = useRef<HTMLTableRowElement>(null);
 
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
-    console.log('🎬 [useTaskAnimation] playCreateAnimation called:', {
-      taskId: summary.id,
-      source
-    });
+    //console.log('🎬 [useTaskAnimation] playCreateAnimation called:', {
+    //  taskId: summary.id,
+    //  source
+    //});
 
     const success = animationFactory.animate(summary.id, 'create', source);
 
@@ -33,11 +33,11 @@ export function useTaskAnimation(
     const currentElement = isMobile ? mobileElementRef.current : desktopElementRef.current;
 
     if (currentElement) {
-      console.log('🎬 [useTaskAnimation] Registering element:', {
-        taskId: summary.id,
-        elementType: isMobile ? 'mobile' : 'desktop',
-        element: currentElement.tagName
-      });
+      //console.log('🎬 [useTaskAnimation] Registering element:', {
+      //  taskId: summary.id,
+      //  elementType: isMobile ? 'mobile' : 'desktop',
+      //  element: currentElement.tagName
+      //});
 
       animationFactory.registerElement(summary.id, currentElement, {
         onAnimationStart: (type: AnimationType) => {
@@ -57,7 +57,7 @@ export function useTaskAnimation(
 
     // Cleanup on unmount
     return () => {
-      console.log('🎬 [useTaskAnimation] Unregistering:', summary.id);
+      //console.log('🎬 [useTaskAnimation] Unregistering:', summary.id);
       animationFactory.unregisterElement(summary.id);
       logger.debug('Element unregistered from AnimationFactory', {
         component: 'useTaskAnimation',
@@ -74,17 +74,17 @@ export function useTaskAnimation(
       const timeSinceCreated = now - createdTime;
       const isNewlyCreated = timeSinceCreated < 10000; // 10 seconds
 
-      console.log('🎬 [useTaskAnimation] Mount-time check:', {
-        taskId: summary.id,
-        createdAt: summary.created_at,
-        timeSinceCreated,
-        isNewlyCreated
-      });
+      //console.log('🎬 [useTaskAnimation] Mount-time check:', {
+      //  taskId: summary.id,
+      //  createdAt: summary.created_at,
+      //  timeSinceCreated,
+      //  isNewlyCreated
+      //});
 
       if (isNewlyCreated) {
         // Small delay to ensure DOM is ready
         setTimeout(() => {
-          console.log('🎬 Mount-time animation triggered:', summary.id);
+          //console.log('🎬 Mount-time animation triggered:', summary.id);
           playCreateAnimation('mount');
         }, 100);
       }

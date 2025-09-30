@@ -49,7 +49,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
   onUnregisterCallbacks
 }) => {
   // Use animation hook for all animation logic
-  const { animationState, isVisible, animationClass } = useSubtaskAnimation({
+  const { animationState, isVisible, animationClass, elementRef } = useSubtaskAnimation({
     subtaskId: summary.id,
     onRegisterCallbacks,
     onUnregisterCallbacks
@@ -80,7 +80,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
   const rowClasses = `${animationClass} ${loadingClass}`.trim();
 
   return (
-    <TableRow className={rowClasses}>
+    <TableRow ref={elementRef} className={rowClasses}>
       {/* ID Column */}
       <TableCell className="w-[100px]">
         <CopyableId id={summary.id} prefix="S" />

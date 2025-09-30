@@ -6,10 +6,10 @@
  */
 
 import type {
-  AnimationType,
-  AnimationSource,
   AnimationDefinition,
+  AnimationSource,
   AnimationState,
+  AnimationType,
   ElementRegistration
 } from '../types/animationTypes';
 
@@ -58,11 +58,11 @@ class AnimationFactory {
       onAnimationEnd?: (type: AnimationType) => void;
     }
   ): void {
-    console.log('🎬 [AnimationFactory] Registering element:', {
-      elementId,
-      elementType: element.tagName,
-      hasCallbacks: !!callbacks
-    });
+    //console.log('🎬 [AnimationFactory] Registering element:', {
+    //  elementId,
+    //  elementType: element.tagName,
+    //  hasCallbacks: !!callbacks
+    //});
 
     this.elementRegistry.set(elementId, { element, callbacks });
   }
@@ -71,7 +71,7 @@ class AnimationFactory {
    * Unregister an element from animations
    */
   unregisterElement(elementId: string): void {
-    console.log('🎬 [AnimationFactory] Unregistering element:', elementId);
+    //console.log('🎬 [AnimationFactory] Unregistering element:', elementId);
 
     // Clean up any active animation state
     this.animationStates.delete(elementId);
@@ -82,12 +82,12 @@ class AnimationFactory {
    * Trigger animation for a specific element
    */
   animate(elementId: string, type: AnimationType, source: AnimationSource = 'callback'): boolean {
-    console.log('🎬 [AnimationFactory] Animation request:', {
-      elementId,
-      type,
-      source,
-      timestamp: new Date().toISOString()
-    });
+    //console.log('🎬 [AnimationFactory] Animation request:', {
+    //  elementId,
+    //  type,
+    //  source,
+    //  timestamp: new Date().toISOString()
+    //});
 
     // Check if element is registered
     const registration = this.elementRegistry.get(elementId);
@@ -98,18 +98,18 @@ class AnimationFactory {
 
     // Check if animation should be allowed (coordination logic)
     if (!this.shouldAllowAnimation(elementId, type, source)) {
-      console.log('🎬 [AnimationFactory] Animation blocked by coordination logic:', {
-        elementId,
-        type,
-        source
-      });
+      //console.log('🎬 [AnimationFactory] Animation blocked by coordination logic:', {
+      //  elementId,
+      //  type,
+      //  source
+      //});
       return false;
     }
 
     // Get animation definition
     const animationDef = this.animationRegistry[type];
     if (!animationDef) {
-      console.error('🎬 [AnimationFactory] Unknown animation type:', type);
+      //console.error('🎬 [AnimationFactory] Unknown animation type:', type);
       return false;
     }
 
@@ -120,13 +120,13 @@ class AnimationFactory {
       source
     });
 
-    console.log('🎬 [AnimationFactory] Applying animation:', {
-      elementId,
-      type,
-      cssClass: animationDef.cssClass,
-      duration: animationDef.duration,
-      description: animationDef.description
-    });
+    //console.log('🎬 [AnimationFactory] Applying animation:', {
+    //  elementId,
+    //  type,
+    //  cssClass: animationDef.cssClass,
+    //  duration: animationDef.duration,
+    //  description: animationDef.description
+    //});
 
     // Apply animation
     this.applyAnimation(registration, animationDef, type);
@@ -189,11 +189,11 @@ class AnimationFactory {
     // Add animation class
     element.classList.add(animationDef.cssClass);
 
-    console.log('🎬 [AnimationFactory] CSS class applied:', {
-      className: animationDef.cssClass,
-      element: element.tagName,
-      currentClasses: Array.from(element.classList)
-    });
+    //console.log('🎬 [AnimationFactory] CSS class applied:', {
+    //  className: animationDef.cssClass,
+    //  element: element.tagName,
+    //  currentClasses: Array.from(element.classList)
+    //});
 
     // Schedule cleanup
     setTimeout(() => {
@@ -205,10 +205,10 @@ class AnimationFactory {
       // Trigger end callback
       callbacks?.onAnimationEnd?.(type);
 
-      console.log('🎬 [AnimationFactory] Animation cleanup completed:', {
-        className: animationDef.cssClass,
-        type
-      });
+      //console.log('🎬 [AnimationFactory] Animation cleanup completed:', {
+      //  className: animationDef.cssClass,
+      //  type
+      //});
     }, animationDef.duration);
   }
 
@@ -238,35 +238,35 @@ class AnimationFactory {
 
     // Allow mount-time animations to override others
     if (source === 'mount') {
-      console.log('🎬 [AnimationFactory] Mount-time animation overriding current:', {
-        elementId,
-        newType: type,
-        currentType: currentState.type,
-        source
-      });
+      //console.log('🎬 [AnimationFactory] Mount-time animation overriding current:', {
+      //  elementId,
+      //  newType: type,
+      //  currentType: currentState.type,
+      //  source
+      //});
       return true;
     }
 
     // Allow WebSocket animations to override callbacks
     if (source === 'websocket' && currentState.source === 'callback') {
-      console.log('🎬 [AnimationFactory] WebSocket animation overriding callback:', {
-        elementId,
-        newType: type,
-        currentType: currentState.type
-      });
+      //console.log('🎬 [AnimationFactory] WebSocket animation overriding callback:', {
+      //  elementId,
+      //  newType: type,
+      //  currentType: currentState.type
+      //});
       return true;
     }
 
     // Block everything else
-    console.log('🎬 [AnimationFactory] Animation blocked by coordination:', {
-      elementId,
-      requestedType: type,
-      requestedSource: source,
-      currentType: currentState.type,
-      currentSource: currentState.source,
-      timeSinceLastAnimation,
-      reason: timeSinceLastAnimation <= this.ANIMATION_COOLDOWN ? 'cooldown' : 'priority'
-    });
+    //console.log('🎬 [AnimationFactory] Animation blocked by coordination:', {
+    //  elementId,
+    //  requestedType: type,
+    //  requestedSource: source,
+    //  currentType: currentState.type,
+    //  currentSource: currentState.source,
+    //  timeSinceLastAnimation,
+    //  reason: timeSinceLastAnimation <= this.ANIMATION_COOLDOWN ? 'cooldown' : 'priority'
+    //});
 
     return false;
   }

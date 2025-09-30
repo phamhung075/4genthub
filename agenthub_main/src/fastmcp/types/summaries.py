@@ -29,6 +29,7 @@ class TaskSummaryDTO(BaseModel):
 class SubtaskSummaryDTO(BaseModel):
     """Subtask summary matching frontend SubtaskSummary interface"""
     id: str
+    task_id: str  # Parent task ID - required by frontend validation
     title: str
     status: str
     priority: str

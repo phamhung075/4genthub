@@ -205,6 +205,7 @@ def subtask_summary_to_dto(subtask: Any) -> SubtaskSummaryDTO:
         assignees = subtask.get('assignees') or []
         return SubtaskSummaryDTO(
             id=str(subtask['id']),
+            task_id=str(subtask.get('parent_task_id', subtask.get('task_id', ''))),  # Frontend expects task_id
             title=subtask['title'],
             status=str(subtask['status']),
             priority=str(subtask['priority']),
@@ -219,6 +220,7 @@ def subtask_summary_to_dto(subtask: Any) -> SubtaskSummaryDTO:
     assignees = subtask.assignees if subtask.assignees else []
     return SubtaskSummaryDTO(
         id=str(subtask.id),
+        task_id=str(subtask.parent_task_id),  # Frontend expects task_id
         title=subtask.title,
         status=str(subtask.status),
         priority=str(subtask.priority),
