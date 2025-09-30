@@ -157,6 +157,7 @@ export interface UseSubtaskExpansionReturn extends SubtaskExpansionState {
   triggerAnimation: (subtaskId: string, type: 'create' | 'update' | 'delete') => void;
   setShowDetails: (subtaskId: string | null) => void;
   setEditingSubtask: (subtask: any | null) => void; // Subtask from API
+  setIsOpeningDialog: (opening: boolean) => void;
 }
 
 export interface UseSubtaskDialogsReturn extends DialogState {
