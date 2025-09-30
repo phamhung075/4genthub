@@ -283,11 +283,13 @@ export const changePoolService = new ChangePoolService();
  */
 function initializeWebSocketIntegration(webSocketClient: any): () => void {
   console.log('🔌 ChangePool: Initializing WebSocket integration...');
+  console.log('🔌 ChangePool: WebSocket client type:', typeof webSocketClient);
+  console.log('🔌 ChangePool: WebSocket client has .on:', typeof webSocketClient?.on === 'function');
   logger.info('🔌 ChangePool: Initializing WebSocket integration');
 
   // Create the handler function so we can reference it later for cleanup
   const updateHandler = (message: any) => {
-    console.log('📡 ChangePool: Received WebSocket update message:', message);
+    console.log('📡 ChangePool: ⚡⚡⚡ HANDLER INVOKED ⚡⚡⚡ Received WebSocket update message:', message);
     logger.debug('📡 ChangePool: Received WebSocket update message:', message);
 
     // Process v2.0 protocol messages (check both payload and metadata for entity info)
@@ -298,11 +300,30 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
       // Extract entityId from primary data or metadata
       const entityId = message.payload?.data?.primary?.id || message.metadata?.entity_id || 'unknown';
 
+      // CRITICAL DEBUG: Log data extraction paths
+      console.log('🔍 [ChangePool] Data extraction debug:', {
+        'message.payload?.data?.primary': message.payload?.data?.primary,
+        'message.data': message.data,
+        'hasPrimary': !!message.payload?.data?.primary,
+        'hasMessageData': !!message.data,
+        'primaryKeys': message.payload?.data?.primary ? Object.keys(message.payload.data.primary) : [],
+        'messageDataKeys': message.data ? Object.keys(message.data) : []
+      });
+
+      const extractedData = message.payload?.data?.primary || message.data || {};
+
+      console.log('🔍 [ChangePool] Extracted data for notification:', {
+        hasExtractedData: !!extractedData && Object.keys(extractedData).length > 0,
+        extractedDataKeys: Object.keys(extractedData),
+        extractedData: extractedData
+      });
+
       console.log('📡 ChangePool: Processing v2.0 update message:', {
         entityType,
         entityId,
         action,
-        version: message.version
+        version: message.version,
+        hasData: !!extractedData && Object.keys(extractedData).length > 0
       });
       logger.info('📡 ChangePool: Processing v2.0 update message:', {
         entityType,
@@ -316,7 +337,7 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         entityId: entityId,
         eventType: action as EventType,
         userId: message.metadata?.userId || 'system',
-        data: message.payload?.data?.primary || message.data || {},
+        data: extractedData,
         metadata: {
           ...message.metadata,
           // Extract git_branch_id from payload data if available
@@ -326,6 +347,15 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         },
         timestamp: message.timestamp || new Date().toISOString()
       };
+
+      console.log('🔍 [ChangePool] Final notification being sent:', {
+        entityType: notification.entityType,
+        entityId: notification.entityId,
+        eventType: notification.eventType,
+        hasData: !!notification.data && Object.keys(notification.data).length > 0,
+        dataKeys: notification.data ? Object.keys(notification.data) : [],
+        data: notification.data
+      });
 
       changePoolService.processChange(notification);
     } else {
@@ -345,9 +375,16 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
   };
 
   // Subscribe to WebSocket update messages
+  console.log('🔌 ChangePool: About to subscribe to "update" event...');
   webSocketClient.on('update', updateHandler);
+  console.log('🔌 ChangePool: Subscription complete, checking listener count...');
 
+  // Verify subscription was successful
+  const listenerCount = typeof webSocketClient.listenerCount === 'function'
+    ? webSocketClient.listenerCount('update')
+    : 'unknown';
   console.log('📡 ChangePool: Subscribed to WebSocket update events');
+  console.log('📡 ChangePool: Total update listeners:', listenerCount);
   logger.info('📡 ChangePool: Connected to WebSocket service');
 
   // Return cleanup function

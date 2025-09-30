@@ -7,6 +7,80 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 ## [Unreleased]
 
 ### Fixed - 2025-09-30
+- **Frontend: CRITICAL FIX - changePoolService initialization skipped on WebSocket reuse**: Fixed early return that prevented service initialization when reusing existing WebSocket client
+  - Issue: When useWebSocket hook reused an existing global WebSocket client (on component remount/re-render), it returned early without calling initializeWebSocketIntegration(), causing changePoolService to never initialize
+  - Root Cause: Lines 66-75 in useWebSocketV2.ts had an early return that skipped all service initialization when credentials matched existing client
+  - Symptoms:
+    - No "🔌 ChangePool: Initializing..." logs on page load
+    - No "⚡⚡⚡ HANDLER INVOKED" logs when tasks were created
+    - Real-time task updates completely broken despite WebSocket being connected
+  - Solution: Added service initialization calls (webSocketAnimationService, changePoolService, notificationService) in the early return path before returning cleanup function
+  - Impact: Real-time updates now work consistently even when WebSocket client is reused
+  - Files Modified:
+    - `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/hooks/useWebSocketV2.ts` (lines 66-82)
+  - Task ID: b0ff1dcc-78f3-4ed2-bae5-936b607e1561
+
+### Changed - 2025-09-30
+- **Frontend: Added diagnostic logging to trace changePoolService WebSocket integration**: Enhanced debug logging in useWebSocketV2 and changePoolService
+  - Purpose: Investigate missing changePoolService logs during WebSocket updates
+  - Changes:
+    - `useWebSocketV2.ts:173-182`: Added verbose logging before/after initializeWebSocketIntegration() call
+      - Logs client object type and .on method availability
+      - Tracks update listener count before and after changePool subscription
+      - Verifies cleanup function is returned
+    - `changePoolService.ts:285-293`: Enhanced initialization logging in initializeWebSocketIntegration()
+      - Logs WebSocket client validation (type, .on method)
+      - Added ⚡⚡⚡ HANDLER INVOKED marker in updateHandler for visibility
+      - Tracks listener count after subscription (lines 377-388)
+  - Impact: Full diagnostic visibility into changePoolService subscription lifecycle
+  - Files Modified:
+    - `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/hooks/useWebSocketV2.ts`
+    - `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/services/changePoolService.ts`
+  - Task ID: 1f0ef33c-3086-4b24-aa21-96a391fe0b30
+
+### Changed - 2025-09-30
+- **Frontend: Added comprehensive debug logging to trace WebSocket data flow**: Enhanced logging in useTaskData and changePoolService
+  - Purpose: Investigate critical bug where tasks/subtasks show toast notifications but don't appear in UI
+  - Changes:
+    - `useTaskData.ts:241-311`: Added detailed console.log statements in addNewTask function
+      - Logs incoming task data structure, validation checks, state updates
+      - Tracks subtask vs top-level task handling separately
+      - Shows taskSummaries and fullTasks map updates
+    - `changePoolService.ts:301-356`: Added data extraction debugging in updateHandler
+      - Logs WebSocket message structure and all data extraction paths
+      - Traces message.payload.data.primary vs message.data
+      - Shows final notification object being sent to subscribers
+  - Impact: Full visibility into WebSocket data transformation pipeline for debugging
+  - Files Modified:
+    - `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/hooks/useTaskData.ts`
+    - `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/services/changePoolService.ts`
+  - Task ID: cfc08395-36e1-4b26-a3a1-e28a5ca76181
+
+### Fixed - 2025-09-30
+- **Frontend: Task real-time updates stopped working after subtask fix**: Removed redundant branch filtering that was blocking task notifications
+  - Issue: After fixing subtask WebSocket notifications, task updates stopped appearing in real-time UI
+  - Root Cause: Added git_branch_id filtering in LazyTaskListRefactored.tsx lines 62-68 that was rejecting valid task notifications. This filtering was redundant since changePoolService and useTaskWebSocket already filter by branchId
+  - Solution: Removed the duplicate git_branch_id check in updateTaskFromWebSocket callback
+  - Changes:
+    - Lines 61-62: Removed `if (metadata?.git_branch_id && metadata.git_branch_id !== taskTreeId)` check
+    - Added comment explaining branch filtering is already handled upstream
+  - Impact: Task updates now appear in real-time again while maintaining subtask fix
+  - Files Modified: `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/components/LazyTaskList/LazyTaskListRefactored.tsx`
+  - Task ID: 1baf5f97-a4fd-4576-a86a-68fc2f754c3b
+
+### Fixed - 2025-09-30
+- **Frontend: Subtask WebSocket notifications not updating UI in real-time**: Fixed subscription filter to properly handle subtask notifications
+  - Issue: Subtask create/update operations sent WebSocket notifications but UI never updated - subtasks didn't appear in LazySubtaskList
+  - Root Cause: useSubtaskWebSocket subscribed with `entityIds: [parentTaskId]` but subtask notifications have `entityId = subtaskId`, causing changePoolService to reject all subtask notifications (line 142: `if (!subscription.entityIds.includes(notification.entityId))`)
+  - Solution: Changed subscription from entityIds filtering to shouldRefresh custom filter using metadata.parent_task_id
+  - Changes:
+    - Lines 79-96: Replaced `entityIds: [parentTaskId]` with `shouldRefresh: (notification) => notification.metadata?.parent_task_id === parentTaskId`
+    - Added detailed comments explaining why entityIds doesn't work for subtask filtering
+  - Impact: Subtask create/update/delete operations now appear immediately in UI, real-time updates work correctly
+  - Files Modified: `/home/daihungpham/__projects__/4genthub/agenthub-frontend/src/components/LazySubtaskList/hooks/useSubtaskWebSocket.ts`
+  - Task ID: 08b627c4-7132-4845-a961-8844beedd2af
+
+### Fixed - 2025-09-30
 - **Frontend: Race condition in task deletion causing duplicate delete attempts and 404 errors**: Fixed WebSocket and API callback coordination
   - Issue: Task delete operation triggered multiple delete attempts - WebSocket handler removed task, then API callback tried to remove it again causing 404 errors
   - Root Cause: Both WebSocket delete handler and API callback's finally block called removeTask(taskId) independently

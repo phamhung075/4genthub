@@ -58,14 +58,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
     const { entityId, eventType, data, metadata } = notification;
 
-    // Check if this change is for our current branch
-    if (metadata?.git_branch_id && metadata.git_branch_id !== taskTreeId) {
-      console.log('🚫 [LazyTaskList] Ignoring notification for different branch:', {
-        notificationBranch: metadata.git_branch_id,
-        currentBranch: taskTreeId
-      });
-      return false;
-    }
+    // Branch filtering is already handled by changePoolService and useTaskWebSocket
+    // No need for additional filtering here - it was causing task updates to be rejected
 
     if (eventType === 'api_fallback_needed') {
       console.log('🔄 [LazyTaskList] API fallback needed, reloading task summaries');

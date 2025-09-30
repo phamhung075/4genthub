@@ -78,11 +78,19 @@ export function useSubtaskWebSocket(
 
   /**
    * Subscribe to WebSocket changes using the new API
+   * NOTE: For subtasks, we filter by parent_task_id in metadata, not entityIds
+   * because entityId in the notification is the subtask ID, not parent task ID
    */
   useChangeSubscription({
     componentId: `LazySubtaskList-${parentTaskId}`,
     entityTypes: ['subtask'],
-    entityIds: subscriptionEnabled ? [parentTaskId] : [],
+    // Don't filter by entityIds - let all subtask notifications through
+    // We'll filter by parent_task_id in the shouldRefresh custom filter
+    shouldRefresh: (notification) => {
+      // For subtasks, check if the parent_task_id matches
+      const notificationParentTaskId = notification.metadata?.parent_task_id;
+      return notificationParentTaskId === parentTaskId;
+    },
     refreshCallback: handleWebSocketChange,
     enabled: subscriptionEnabled
   });

@@ -239,13 +239,28 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
 
   // Add new task
   const addNewTask = useCallback((taskData: Task) => {
+    console.log('🔍 [useTaskData] addNewTask called with:', {
+      hasData: !!taskData,
+      taskId: taskData?.id,
+      taskTitle: taskData?.title,
+      isSubtask: !!taskData?.parent_task_id,
+      dataKeys: taskData ? Object.keys(taskData) : [],
+      fullData: taskData
+    });
+
     // CRITICAL FIX: Don't add subtasks to main task list
     // Subtasks should only appear nested under their parent task
     if (taskData.parent_task_id) {
+      console.log('✅ [useTaskData] Adding subtask to fullTasks map:', {
+        subtaskId: taskData.id,
+        parentTaskId: taskData.parent_task_id
+      });
+
       // This is a subtask - only store in fullTasks map, don't add to summaries
       setFullTasks(prev => {
         const newMap = new Map(prev);
         newMap.set(taskData.id, taskData);
+        console.log('✅ [useTaskData] Subtask added, fullTasks size:', newMap.size);
         return newMap;
       });
 
@@ -255,26 +270,42 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
       return;
     }
 
+    console.log('✅ [useTaskData] Adding top-level task to summaries:', {
+      taskId: taskData.id,
+      taskTitle: taskData.title
+    });
+
     // This is a top-level task - add to summaries
     const newSummary = convertToTaskSummary(taskData);
+    console.log('✅ [useTaskData] Converted to summary:', newSummary);
 
     setTaskSummaries(prev => {
       // Prevent duplicates
       if (prev.some(t => t.id === taskData.id)) {
+        console.log('⚠️ [useTaskData] Task already exists in summaries, skipping duplicate');
         return prev;
       }
-      return [newSummary, ...prev];
+      console.log('✅ [useTaskData] Adding task to summaries, previous count:', prev.length);
+      const newSummaries = [newSummary, ...prev];
+      console.log('✅ [useTaskData] New summaries count:', newSummaries.length);
+      return newSummaries;
     });
 
-    setTotalTasks(prev => prev + 1);
+    setTotalTasks(prev => {
+      const newTotal = prev + 1;
+      console.log('✅ [useTaskData] Updated totalTasks:', prev, '->', newTotal);
+      return newTotal;
+    });
 
     setFullTasks(prev => {
       const newMap = new Map(prev);
       newMap.set(taskData.id, taskData);
+      console.log('✅ [useTaskData] Added task to fullTasks, size:', newMap.size);
       return newMap;
     });
 
     if (onTasksChanged) {
+      console.log('✅ [useTaskData] Calling onTasksChanged callback');
       onTasksChanged();
     }
   }, [convertToTaskSummary, onTasksChanged]);

@@ -66,7 +66,20 @@ export function useWebSocket(userId: string, token: string) {
       if (existingClientUserId === userId && existingClientToken === token) {
         console.log('[useWebSocket] Reusing existing WebSocket client');
         clientRef.current = globalWebSocketClient;
-        return; // Keep existing connection
+
+        // CRITICAL FIX: Initialize services even when reusing existing client
+        // These initializations are idempotent and set up event listeners for this component instance
+        webSocketAnimationService.init(globalWebSocketClient);
+        const cleanupChangePool = initializeWebSocketIntegration(globalWebSocketClient);
+        const cleanupNotifications = notificationService.initializeWebSocketListener(globalWebSocketClient);
+
+        // Return cleanup function for this component instance
+        return () => {
+          console.log('[useWebSocket] Component cleanup (reused client)');
+          cleanupChangePool();
+          cleanupNotifications();
+          clientRef.current = null;
+        };
       } else {
         console.log('[useWebSocket] Credentials changed, disconnecting old client');
         globalWebSocketClient.disconnect();
@@ -170,7 +183,16 @@ export function useWebSocket(userId: string, token: string) {
     webSocketAnimationService.init(client);
 
     // Initialize the change pool service with the WebSocket client
+    console.log('[useWebSocket] 🔧 DEBUG: About to call initializeWebSocketIntegration');
+    console.log('[useWebSocket] 🔧 DEBUG: Client object:', client);
+    console.log('[useWebSocket] 🔧 DEBUG: Client has .on method:', typeof client.on === 'function');
+    console.log('[useWebSocket] 🔧 DEBUG: Update listener count BEFORE changePool:', client.listenerCount('update'));
+
     const cleanupChangePool = initializeWebSocketIntegration(client);
+
+    console.log('[useWebSocket] 🔧 DEBUG: initializeWebSocketIntegration returned');
+    console.log('[useWebSocket] 🔧 DEBUG: Update listener count AFTER changePool:', client.listenerCount('update'));
+    console.log('[useWebSocket] 🔧 DEBUG: Cleanup function type:', typeof cleanupChangePool);
 
     // Initialize the unified notification service with the WebSocket client
     const cleanupNotifications = notificationService.initializeWebSocketListener(client);
