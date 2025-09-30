@@ -76,11 +76,11 @@
           "size": 17136
         },
         {
-          "hash": "8f610de844586ecf15f3e1efd80842f3",
-          "modified": "2025-09-27T22:44:48.469607",
+          "hash": "41ec81d598ca1b61893af8ba48868209",
+          "modified": "2025-09-29T21:21:16.006389",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 7143770
+          "size": 35390
         },
         {
           "hash": "bd9976592660c396c4a8e543e8cc3e25",
@@ -90,11 +90,11 @@
           "size": 4197
         },
         {
-          "hash": "ae9695c27ac27f183a023dc839876337",
-          "modified": "2025-09-27T22:41:23.955688",
+          "hash": "e24863c3f33a172434badb324e842543",
+          "modified": "2025-09-29T21:21:16.002383",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 54400
+          "size": 50917
         },
         {
           "hash": "10c99f4a959a54ecda36092c042f082c",
@@ -331,18 +331,18 @@
           "size": 5364
         },
         {
-          "hash": "576ab38f40fc155697ed3e0ed33084a7",
-          "modified": "2025-09-26T01:02:32.712356",
+          "hash": "88d4be6d9d7cdd703bac4ddc5dba4611",
+          "modified": "2025-09-30T08:49:47.977223",
           "name": "PRD.md",
           "path": "architecture-design/PRD.md",
-          "size": 9217
+          "size": 9678
         },
         {
-          "hash": "1dc325ff94aedef9078200d4c249ad4d",
-          "modified": "2025-09-26T01:02:32.712356",
+          "hash": "3384c6763e32bb4ea7702fcc98e24961",
+          "modified": "2025-09-30T08:50:08.283533",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
-          "size": 16026
+          "size": 16633
         }
       ],
       "path": "architecture-design"
@@ -2017,7 +2017,7 @@
         },
         {
           "hash": "ccf5ea8bb51275b8780b7fcffdb7edd5",
-          "modified": "2025-09-27T12:41:55.817820",
+          "modified": "2025-09-28T06:57:48.700466",
           "name": "test-fix-iteration-24-summary.md",
           "path": "testing-qa/test-fix-iteration-24-summary.md",
           "size": 2208
@@ -2101,14 +2101,14 @@
         },
         {
           "hash": "333939b67b25c7632cd106d6ee48d037",
-          "modified": "2025-09-27T12:44:38.217495",
+          "modified": "2025-09-28T06:57:48.700466",
           "name": "test-fix-iteration-25-summary.md",
           "path": "testing-qa/test-fix-iteration-25-summary.md",
           "size": 1988
         },
         {
           "hash": "5edd53e95ec51ee5ff121268221c6203",
-          "modified": "2025-09-27T12:46:42.311545",
+          "modified": "2025-09-28T06:57:48.700466",
           "name": "test-fix-iteration-26-summary.md",
           "path": "testing-qa/test-fix-iteration-26-summary.md",
           "size": 1980
@@ -2178,7 +2178,7 @@
         },
         {
           "hash": "69c3d084fded0f5886a32fd6d39be55e",
-          "modified": "2025-09-27T12:37:19.340668",
+          "modified": "2025-09-28T06:57:48.700466",
           "name": "test-fix-iteration-23-summary.md",
           "path": "testing-qa/test-fix-iteration-23-summary.md",
           "size": 2203
@@ -2227,7 +2227,7 @@
         },
         {
           "hash": "54c01948af8cd58e81d166ee18ac171c",
-          "modified": "2025-09-27T14:19:27.123144",
+          "modified": "2025-09-28T06:57:48.700466",
           "name": "test-fix-iteration-42-summary.md",
           "path": "testing-qa/test-fix-iteration-42-summary.md",
           "size": 2011
@@ -2255,7 +2255,7 @@
         },
         {
           "hash": "e4891e00913a47f6abefa8ce097da241",
-          "modified": "2025-09-27T12:12:54.556211",
+          "modified": "2025-09-28T06:57:48.700466",
           "name": "test-fix-iteration-20-summary.md",
           "path": "testing-qa/test-fix-iteration-20-summary.md",
           "size": 2127
@@ -2548,7 +2548,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-27T23:45:57.852636",
+  "generated_at": "2025-09-30T08:50:08.355865",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2951,7 +2951,8 @@
         "test-fix-iteration-41-perfect-health-maintained.md",
         "test-fix-iteration-42-summary.md",
         "testing.md"
-      ]
+      ],
+      "test-fix-logs": {}
     },
     "troubleshooting-guides": {
       "files": [
@@ -2999,6 +3000,6 @@
       ]
     }
   },
-  "total_directories": 30,
+  "total_directories": 31,
   "total_files": 338
 }

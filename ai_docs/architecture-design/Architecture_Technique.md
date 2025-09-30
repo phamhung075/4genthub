@@ -120,9 +120,15 @@ src/
 ├── components/           // Reusable UI components
 │   ├── common/          // Shared components
 │   ├── dashboard/       // Dashboard widgets
-│   └── agents/          // Agent-specific components
+│   ├── agents/          // Agent-specific components
+│   ├── TaskRow/         // Task row components with copy buttons
+│   └── LazyTaskList.tsx // Optimized task list with custom hooks
 ├── contexts/            // React contexts
-├── hooks/              // Custom hooks
+├── hooks/              // Custom hooks (architecture layer)
+│   ├── useTaskData.ts      // Data fetching and task state management
+│   ├── useTaskWebSocket.ts // WebSocket integration and real-time updates
+│   ├── useTaskFilters.ts   // Search, priority, status, assignee filters
+│   └── useTaskGrouping.ts  // Task grouping and sorting logic
 ├── services/           // API services
 │   ├── api/           // REST API clients
 │   └── websocket/     // WebSocket clients
@@ -140,8 +146,9 @@ src/
 - **State Management**: Redux Toolkit
 - **Routing**: React Router 7.1
 - **UI Components**: Radix UI, shadcn/ui
-- **WebSocket**: native WebSocket API
+- **WebSocket**: native WebSocket API with custom hooks
 - **HTTP Client**: Axios
+- **Architecture Pattern**: Custom hooks for separation of concerns (Data, WebSocket, Filters, Grouping)
 
 ### 3.2 Backend Architecture (Python + FastMCP)
 

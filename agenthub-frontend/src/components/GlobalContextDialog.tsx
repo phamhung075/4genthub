@@ -1,14 +1,8 @@
-import { AlertCircle, Bot, Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, GitBranch, Globe, Info, LayoutDashboard, Package, Save, Settings, Shield, Tag, X } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Package, Save, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getGlobalContext, updateGlobalContext } from "../api";
-import {
-  categorizeField,
-  ContextFieldMetadata,
-  GLOBAL_CONTEXT_FIELD_METADATA,
-  GlobalContext
-} from "../types/context.types";
+import { GlobalContext } from "../types/context.types";
 import logger from "../utils/logger";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -32,8 +26,8 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [jsonCopied, setJsonCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'view' | 'edit'>('view');
+  const [isExpanded, setIsExpanded] = useState(true); // Track expansion state
 
   // Store the entire nested data structure for editing
   const [editingData, setEditingData] = useState<GlobalContext | null>(null);
@@ -41,9 +35,6 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   // Raw JSON editing state
   const [rawJsonText, setRawJsonText] = useState<string>('');
   const [jsonValidationError, setJsonValidationError] = useState<string>('');
-
-  // Accordion state for controlling which sections are expanded
-  const [expandedSections, setExpandedSections] = useState<string[]>(['claude_md_rules']);
 
   // Fetch global context when dialog opens
   useEffect(() => {
@@ -60,74 +51,149 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     }
   }, [open]);
 
+  // Helper function to check if a value has actual data (non-recursive for objects)
+  const hasData = (value: any): boolean => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'number' || typeof value === 'boolean') return true;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') {
+      // For objects, just check if they have keys - don't recurse
+      return Object.keys(value).length > 0;
+    }
+    return false;
+  };
+
+  // Helper function to recursively filter out properties with no data
+  const filterEmptyProperties = (obj: any): any => {
+    if (!obj || typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) {
+      // Filter out null/undefined/empty arrays
+      return obj
+        .filter(item => item !== null && item !== undefined)
+        .map(filterEmptyProperties)
+        .filter(item => {
+          if (Array.isArray(item)) return item.length > 0;
+          if (typeof item === 'object') return Object.keys(item).length > 0;
+          return true;
+        });
+    }
+
+    const filtered: any = {};
+    Object.entries(obj).forEach(([key, value]) => {
+      // Skip null and undefined
+      if (value === null || value === undefined) {
+        return;
+      }
+
+      // Handle strings - keep if not empty
+      if (typeof value === 'string') {
+        if (value.trim().length > 0) {
+          filtered[key] = value;
+        }
+        return;
+      }
+
+      // Always keep numbers and booleans
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        filtered[key] = value;
+        return;
+      }
+
+      // Handle arrays - recurse and keep if not empty
+      if (Array.isArray(value)) {
+        const arrayFiltered = filterEmptyProperties(value);
+        if (arrayFiltered.length > 0) {
+          filtered[key] = arrayFiltered;
+        }
+        return;
+      }
+
+      // Handle objects - recurse and keep if not empty
+      if (typeof value === 'object') {
+        const nestedFiltered = filterEmptyProperties(value);
+        if (Object.keys(nestedFiltered).length > 0) {
+          filtered[key] = nestedFiltered;
+        }
+        return;
+      }
+
+      // Default: keep the value
+      filtered[key] = value;
+    });
+
+    return filtered;
+  };
+
   const fetchGlobalContext = async () => {
     setLoading(true);
     try {
       const response = await getGlobalContext();
       logger.debug('Fetched global context response:', response);
-      
+
+      // If response is null, undefined, or error, show empty
+      if (!response || response === null) {
+        logger.warn('No global context data available');
+        setGlobalContext(null);
+        setEditingData(null);
+        setRawJsonText('{}');
+        return;
+      }
+
       // Extract the actual context data from the nested structure
-      let contextData = {};
-      
+      let contextData = response;
+
+      // Try different nested paths for context data
       if (response?.global_settings) {
         contextData = response.global_settings;
       } else if (response?.data?.global_settings) {
         contextData = response.data.global_settings;
       } else if (response?.context?.global_settings) {
         contextData = response.context.global_settings;
-      } else if (response) {
-        contextData = response;
+      } else if (response?.data) {
+        contextData = response.data;
+      } else if (response?.context) {
+        contextData = response.context;
       }
-      
+
       logger.debug('Extracted context data:', contextData);
-      
-      // Set a default structure if context is empty
-      const defaultContext = {
-        user_preferences: {},
-        ai_agent_settings: { preferred_agents: [] },
-        workflow_preferences: {},
-        development_tools: {},
-        security_settings: {},
-        dashboard_settings: {},
-        autonomous_rules: {},
-        security_policies: {},
-        coding_standards: {},
-        workflow_templates: {},
-        delegation_rules: {},
-        version: '1.0.0'
-      };
-      
-      // Merge with defaults to ensure we always have a structure
-      const finalContextData = { ...defaultContext, ...contextData };
-      
-      // Store both the raw context and a copy for editing
-      setGlobalContext(finalContextData);
-      setEditingData(JSON.parse(JSON.stringify(finalContextData))); // Deep copy for editing
+      logger.debug('Context data type:', typeof contextData);
+      logger.debug('Context data keys:', contextData ? Object.keys(contextData) : 'none');
 
-      // Initialize raw JSON text for editing
-      setRawJsonText(JSON.stringify(finalContextData, null, 2));
+      // Filter out empty properties to only show data that exists
+      const filteredContextData = filterEmptyProperties(contextData);
 
-      logger.debug('Final context data:', finalContextData);
+      logger.debug('Filtered context data:', filteredContextData);
+      logger.debug('Filtered data keys:', filteredContextData ? Object.keys(filteredContextData) : 'none');
+
+      // Check if filtered data is truly empty
+      const hasAnyData = filteredContextData &&
+                         typeof filteredContextData === 'object' &&
+                         Object.keys(filteredContextData).length > 0;
+
+      logger.debug('Has any data:', hasAnyData);
+
+      if (!hasAnyData) {
+        logger.info('Global context exists but contains no data after filtering');
+        // Set to null to show "No data" message, but keep empty object for editing
+        setGlobalContext(null);
+        setEditingData({});
+        setRawJsonText('{}');
+      } else {
+        // Store both the raw context and a copy for editing
+        setGlobalContext(filteredContextData);
+        setEditingData(JSON.parse(JSON.stringify(filteredContextData))); // Deep copy for editing
+        setRawJsonText(JSON.stringify(filteredContextData, null, 2));
+      }
+
+      logger.debug('Final context data:', filteredContextData);
     } catch (error) {
       logger.error('Error fetching global context:', error);
-      // Initialize with empty structure on error
-      const emptyContext = {
-        user_preferences: {},
-        ai_agent_settings: { preferred_agents: [] },
-        workflow_preferences: {},
-        development_tools: {},
-        security_settings: {},
-        dashboard_settings: {},
-        autonomous_rules: {},
-        security_policies: {},
-        coding_standards: {},
-        workflow_templates: {},
-        delegation_rules: {},
-        version: '1.0.0'
-      };
-      setGlobalContext(emptyContext);
-      setEditingData(JSON.parse(JSON.stringify(emptyContext)));
-      setRawJsonText(JSON.stringify(emptyContext, null, 2));
+      // Initialize with empty object on error (no defaults)
+      setGlobalContext(null);
+      setEditingData({});
+      setRawJsonText('{}');
     } finally {
       setLoading(false);
     }
@@ -200,117 +266,6 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     }
   };
 
-  // Update nested field value for edit mode (legacy - not used in raw JSON mode)
-  const updateNestedField = (path: string[], value: any) => {
-    if (!editingData) return;
-
-    const newData = { ...editingData };
-    let current: any = newData;
-
-    for (let i = 0; i < path.length - 1; i++) {
-      if (!current[path[i]]) {
-        current[path[i]] = {};
-      }
-      current = current[path[i]];
-    }
-
-    const lastKey = path[path.length - 1];
-    if (value === '' || value === null || value === undefined) {
-      delete current[lastKey];
-    } else {
-      current[lastKey] = value;
-    }
-
-    setEditingData(newData);
-  };
-
-  // Get icon component for field metadata
-  const getIconComponent = (iconName: string) => {
-    const iconMap: Record<string, any> = {
-      FileText,
-      Settings,
-      Bot,
-      Shield,
-      GitBranch,
-      Code,
-      LayoutDashboard,
-      Package,
-      Tag,
-      Info,
-      Database
-    };
-    return iconMap[iconName] || Tag;
-  };
-
-  // Render a context section with proper styling and metadata
-  const renderContextSection = (key: string, value: any, metadata: ContextFieldMetadata) => {
-    const IconComponent = getIconComponent(metadata.icon || 'Package');
-    const colorClasses = {
-      blue: 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300',
-      green: 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300',
-      purple: 'bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300',
-      red: 'bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700 text-red-700 dark:text-red-300',
-      orange: 'bg-orange-50 dark:bg-orange-900 border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300',
-      indigo: 'bg-indigo-50 dark:bg-indigo-900 border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
-      cyan: 'bg-cyan-50 dark:bg-cyan-900 border-cyan-200 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300',
-      gray: 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-    };
-
-    const colorClass = colorClasses[metadata.color as keyof typeof colorClasses] || colorClasses.gray;
-
-    return (
-      <Card key={key} className="overflow-hidden">
-        <CardHeader className={`${colorClass} p-3 border-l-4`}>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <IconComponent className="w-4 h-4" />
-            {metadata.label}
-          </CardTitle>
-          {metadata.description && (
-            <CardDescription className="text-xs">
-              {metadata.description}
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent className="p-4">
-          <EnhancedJSONViewer
-            data={value}
-            defaultExpanded={metadata.defaultExpanded || false}
-            maxHeight="max-h-64"
-          />
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Get organized sections from context data
-  const getOrganizedSections = (context: GlobalContext) => {
-    const sections: Array<{ key: string; value: any; metadata: ContextFieldMetadata }> = [];
-    const processedKeys = new Set<string>();
-
-    // First, add known fields with metadata
-    GLOBAL_CONTEXT_FIELD_METADATA.forEach(metadata => {
-      if (context[metadata.key] && !processedKeys.has(metadata.key)) {
-        sections.push({
-          key: metadata.key,
-          value: context[metadata.key],
-          metadata
-        });
-        processedKeys.add(metadata.key);
-      }
-    });
-
-    // Then, add unknown fields
-    const knownMetadataKeys = ['version', 'last_updated', 'created_at', 'updated_at', 'user_id', 'id'];
-    Object.entries(context).forEach(([key, value]) => {
-      if (!processedKeys.has(key) && !knownMetadataKeys.includes(key) && !key.startsWith('_')) {
-        const metadata = categorizeField(key, value);
-        sections.push({ key, value, metadata });
-        processedKeys.add(key);
-      }
-    });
-
-    return sections;
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -619,123 +574,82 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                   </div>
                 )}
                 
-                {/* Modern Accordion-Based Context Sections */}
+                {/* Enhanced JSON Display - Interactive Tree View */}
                 <div className="space-y-6">
-                  {/* Priority Section: CLAUDE.md Rules - Always show first and expanded */}
-                  {globalContext.claude_md_rules && (
-                    <Card className="border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-gray-800">
-                      <CardHeader className="bg-blue-50 dark:bg-gray-800 p-4 border-l-4 border-blue-400 dark:border-blue-600">
-                        <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                          <FileText className="w-5 h-5" />
-                          CLAUDE.md Rules
-                          <Badge variant="secondary" className="ml-2 text-xs">Priority</Badge>
-                        </CardTitle>
-                        <CardDescription className="text-blue-600 dark:text-blue-400">
-                          Core AI agent rules and guidelines from CLAUDE.md
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {Object.entries(globalContext.claude_md_rules).map(([ruleKey, ruleValue]) => (
-                            <div key={ruleKey} className="bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-700 p-3">
-                              <h4 className="font-medium text-sm text-blue-700 dark:text-blue-300 mb-1">
-                                {ruleKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </h4>
-                              <p className="text-sm text-gray-700 dark:text-gray-300">
-                                {String(ruleValue)}
-                              </p>
-                            </div>
-                          ))}
+                  {/* Enhanced JSON Viewer with expand/collapse */}
+                  <Card className="border-2 border-primary/20 bg-background">
+                    <CardHeader className="bg-muted/50 p-4 border-l-4 border-primary/60">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center gap-2 text-foreground">
+                            <Database className="w-5 h-5" />
+                            Global Context Data
+                            <Badge variant="secondary" className="ml-2 text-xs">Interactive</Badge>
+                          </CardTitle>
+                          <CardDescription className="text-muted-foreground mt-1">
+                            Expand and collapse sections to explore the nested data structure
+                          </CardDescription>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Regular Context Sections using Accordion */}
-                  <Accordion
-                    type="multiple"
-                    value={expandedSections}
-                    onValueChange={setExpandedSections}
-                    className="space-y-4"
-                  >
-                    {getOrganizedSections(globalContext).map(({ key, value, metadata }) => {
-                      // Skip claude_md_rules as it's handled separately above
-                      if (key === 'claude_md_rules') return null;
-
-                      return (
-                        <AccordionItem key={key} value={key} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                          <AccordionTrigger className="hover:no-underline px-4 py-3 bg-gray-50 dark:bg-gray-800">
-                            <div className="flex items-center gap-3 text-left">
-                              {React.createElement(getIconComponent(metadata.icon || 'Package'), { className: 'w-4 h-4' })}
-                              <div>
-                                <div className="font-medium text-sm">{metadata.label}</div>
-                                {metadata.description && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {metadata.description}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="ml-auto flex items-center gap-2">
-                                <Badge variant={metadata.category === 'core' ? 'default' : 'secondary'} className="text-xs">
-                                  {metadata.category}
-                                </Badge>
-                              </div>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-4">
-                            <EnhancedJSONViewer
-                              data={value}
-                              defaultExpanded={metadata.defaultExpanded || false}
-                              maxHeight="max-h-64"
-                            />
-                          </AccordionContent>
-                        </AccordionItem>
-                      );
-                    })}
-                  </Accordion>
-
-                  {/* Metadata */}
-                  {(globalContext.version || globalContext.last_updated) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gray-50 dark:bg-gray-800 p-3 border-l-4 border-gray-400 dark:border-gray-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
-                          <Info className="w-4 h-4" />
-                          Metadata
-                        </h3>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (isExpanded) {
+                                // Collapse all
+                                window.dispatchEvent(new CustomEvent('json-collapse-all', {
+                                  detail: { viewerId: 'global-context-main' }
+                                }));
+                                setIsExpanded(false);
+                              } else {
+                                // Expand all
+                                window.dispatchEvent(new CustomEvent('json-expand-all', {
+                                  detail: { viewerId: 'global-context-main' }
+                                }));
+                                setIsExpanded(true);
+                              }
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronRight className="w-4 h-4" />
+                                Collapse All
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-4 h-4" />
+                                Expand All
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="p-4">
-                        {globalContext.version && (
-                          <div className="mb-2 text-sm">
-                            <span className="text-gray-500 dark:text-gray-400">Version:</span>
-                            <span className="ml-2 text-gray-700 dark:text-gray-300">{globalContext.version}</span>
-                          </div>
-                        )}
-                        {globalContext.last_updated && (
-                          <div className="text-sm">
-                            <span className="text-gray-500 dark:text-gray-400">Last Updated:</span>
-                            <span className="ml-2 text-gray-700 dark:text-gray-300">
-                              {new Date(globalContext.last_updated).toLocaleString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <EnhancedJSONViewer
+                        data={globalContext}
+                        defaultExpanded={true}
+                        maxHeight="max-h-[60vh]"
+                        viewerId="global-context-main"
+                      />
+                    </CardContent>
+                  </Card>
 
-                  {/* Raw JSON View - Always at the bottom */}
+                  {/* Raw JSON View - Collapsed by default */}
                   <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <summary className="cursor-pointer">
                       <div className="bg-gray-50 dark:bg-gray-800 p-3 border-l-4 border-gray-400 dark:border-gray-600">
                         <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                           <FileText className="w-4 h-4" />
-                          Complete Raw Context
+                          Raw JSON (Copy/Export)
                         </h3>
                       </div>
                     </summary>
                     <div className="p-4">
-                      <RawJSONDisplay 
+                      <RawJSONDisplay
                         jsonData={globalContext}
-                        title="Global Context Data"
+                        title=""
                         fileName="global_context.json"
                       />
                     </div>
@@ -747,23 +661,17 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                 <Globe className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Global Context Available</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Global context has not been initialized yet.
+                  Global context has not been initialized yet. Add your own properties as needed.
                 </p>
-                <Button 
-                  variant="default" 
+                <Button
+                  variant="default"
                   className="mt-4"
                   onClick={() => {
-                    const initialData = {
-                      user_preferences: {},
-                      ai_agent_settings: { preferred_agents: [] },
-                      workflow_preferences: {},
-                      development_tools: {},
-                      security_settings: {},
-                      dashboard_settings: {},
-                      version: '1.0.0'
-                    };
+                    // Start with empty object - user can add properties as needed
+                    const initialData = {};
                     setGlobalContext(initialData);
                     setEditingData(initialData);
+                    setRawJsonText('{\n  \n}'); // Empty JSON with space for editing
                     setEditMode(true);
                     setActiveTab('edit');
                   }}
@@ -776,75 +684,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
           </div>
         </div>
         
-        <DialogFooter className="flex justify-between">
-          <div className="flex gap-2">
-            {activeTab === 'view' && globalContext && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Expand all accordion sections
-                    const allSectionKeys = getOrganizedSections(globalContext)
-                      .map(section => section.key)
-                      .filter(key => key !== 'claude_md_rules');
-                    setExpandedSections(allSectionKeys);
-
-                    // Also expand all JSON viewers
-                    window.dispatchEvent(new CustomEvent('json-expand-all', {
-                      detail: { viewerId: 'all' }
-                    }));
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                  Expand All
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Collapse all accordion sections
-                    setExpandedSections([]);
-
-                    // Also collapse all JSON viewers
-                    window.dispatchEvent(new CustomEvent('json-collapse-all', {
-                      detail: { viewerId: 'all' }
-                    }));
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                  Collapse All
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (globalContext) {
-                      const jsonString = JSON.stringify(globalContext, null, 2);
-                      navigator.clipboard.writeText(jsonString).then(() => {
-                        setJsonCopied(true);
-                        setTimeout(() => setJsonCopied(false), 2000);
-                      }).catch(err => {
-                        logger.error('Failed to copy JSON:', err);
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  {jsonCopied ? (
-                    <>
-                      <CheckIcon className="w-4 h-4" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copy JSON
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-          </div>
+        <DialogFooter className="flex justify-end">
           {!editMode && (
             <Button variant="outline" onClick={onClose}>
               Close
