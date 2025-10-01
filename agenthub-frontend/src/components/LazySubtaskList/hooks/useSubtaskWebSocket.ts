@@ -15,7 +15,8 @@ import logger from "../../../utils/logger";
 export function useSubtaskWebSocket(
   parentTaskId: string,
   subscriptionEnabled: boolean,
-  onSubtaskChanges: () => Promise<void>
+  onSubtaskChanges: () => Promise<void>,
+  onSubtaskDeleted?: (subtaskId: string) => void
 ): UseSubtaskWebSocketReturn {
 
   const [isConnected, setIsConnected] = useState(false);
@@ -38,16 +39,27 @@ export function useSubtaskWebSocket(
         return;
       }
 
+      const eventType = data.eventType || data.type;
+      const subtaskId = data.entityId || data.subtask?.id;
+
       logger.debug('Subtask WebSocket change received:', {
-        type: data.type,
-        subtaskId: data.subtask?.id,
+        eventType,
+        subtaskId,
         parentTaskId: data.subtask?.parent_task_id || data.parent_task_id
       });
 
       // Check if this change is relevant to our parent task
-      const changeParentTaskId = data.subtask?.parent_task_id || data.parent_task_id;
+      const changeParentTaskId = data.subtask?.parent_task_id || data.parent_task_id || data.metadata?.parent_task_id;
       if (changeParentTaskId && changeParentTaskId !== parentTaskId) {
         logger.debug('Change not relevant to this parent task, ignoring');
+        return;
+      }
+
+      // Handle delete events specially to trigger animations
+      if (eventType === 'deleted' && subtaskId && onSubtaskDeleted) {
+        console.log('🗑️ [useSubtaskWebSocket] Subtask deleted, triggering animation:', subtaskId);
+        onSubtaskDeleted(subtaskId);
+        // Don't reload immediately - let animation complete
         return;
       }
 
@@ -59,7 +71,7 @@ export function useSubtaskWebSocket(
     } catch (error) {
       logger.error('Error processing WebSocket change:', error);
     }
-  }, [parentTaskId, debouncedHandleChanges]);
+  }, [parentTaskId, debouncedHandleChanges, onSubtaskDeleted]);
 
   /**
    * Handle connection state changes

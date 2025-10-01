@@ -1,0 +1,71 @@
+/**
+ * BRANCH (TASK TREE) ANIMATIONS
+ * All animations for Git Branch/Task Tree components
+ * Used by: Branch selection, task tree views
+ */
+
+/* ========================================
+   CREATE ANIMATION (Fade In)
+   ======================================== */
+@keyframes branchFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.branchCreateAnimation {
+  animation: branchFadeIn 0.5s ease-out;
+}
+
+/* ========================================
+   UPDATE ANIMATION (Subtle Highlight)
+   ======================================== */
+@keyframes branchHighlight {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+}
+
+.branchUpdateAnimation {
+  animation: branchHighlight 0.8s ease-in-out;
+}
+
+/* ========================================
+   DELETE ANIMATION (Fade Out)
+   ======================================== */
+@keyframes branchFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.branchDeleteAnimation {
+  animation: branchFadeOut 0.5s ease-in;
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .branchCreateAnimation,
+  .branchUpdateAnimation,
+  .branchDeleteAnimation {
+    animation: none;
+  }
+}

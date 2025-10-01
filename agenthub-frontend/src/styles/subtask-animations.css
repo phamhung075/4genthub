@@ -1,10 +1,12 @@
-/* ========================================
-   SUBTASK ROW ANIMATIONS
-   ======================================== */
+/**
+ * SUBTASK ROW ANIMATIONS
+ * All animations for SubtaskRow components
+ * Used by: SubtaskRow, SubtaskRowDesktop, SubtaskRowMobile
+ */
 
-/* ----------------------------------------
-   1. CREATE ANIMATION (Slide In from Right)
-   ---------------------------------------- */
+/* ========================================
+   CREATE ANIMATION (Slide In from Right)
+   ======================================== */
 @keyframes subtaskRowSlideIn {
   0% {
     transform: translateX(100%);
@@ -28,9 +30,9 @@
   animation: subtaskRowSlideIn 0.8s ease-out;
 }
 
-/* ----------------------------------------
-   2. UPDATE ANIMATION (Flash Background)
-   ---------------------------------------- */
+/* ========================================
+   UPDATE ANIMATION (Flash Background 3x)
+   ======================================== */
 @keyframes subtaskRowFlash {
   0%, 100% {
     background-color: transparent;
@@ -61,9 +63,9 @@
   animation: subtaskRowFlash 1.7s ease-in-out;
 }
 
-/* ----------------------------------------
-   3. DELETE ANIMATION (Slide Out to Right)
-   ---------------------------------------- */
+/* ========================================
+   DELETE ANIMATION (Slide Out to Right)
+   ======================================== */
 @keyframes subtaskRowSlideOut {
   0% {
     transform: translateX(0);
@@ -92,4 +94,16 @@
 
 .subtaskRowDeleteAnimation {
   animation: subtaskRowSlideOut 0.8s ease-in;
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .subtaskRowCreateAnimation,
+  .subtaskRowUpdateAnimation,
+  .subtaskUpdatingAnimation,
+  .subtaskRowDeleteAnimation {
+    animation: none;
+  }
 }

@@ -1,10 +1,12 @@
-/* ========================================
-   TASK ROW ANIMATIONS
-   ======================================== */
+/**
+ * TASK ROW ANIMATIONS
+ * All animations for TaskRow components
+ * Used by: TaskRow, TaskRowDesktop, TaskRowMobile
+ */
 
-/* ----------------------------------------
-   1. CREATE ANIMATION (Slide In from Right)
-   ---------------------------------------- */
+/* ========================================
+   CREATE ANIMATION (Slide In from Right)
+   ======================================== */
 @keyframes taskRowSlideIn {
   0% {
     transform: translateX(100%);
@@ -28,9 +30,9 @@
   animation: taskRowSlideIn 0.8s ease-out;
 }
 
-/* ----------------------------------------
-   2. UPDATE ANIMATION (Flash Background)
-   ---------------------------------------- */
+/* ========================================
+   UPDATE ANIMATION (Flash Background 3x)
+   ======================================== */
 @keyframes taskRowFlash {
   0%, 100% {
     background-color: transparent;
@@ -56,9 +58,9 @@
   animation: taskRowFlash 1.7s ease-in-out;
 }
 
-/* ----------------------------------------
-   3. DELETE ANIMATION (Slide Out to Right)
-   ---------------------------------------- */
+/* ========================================
+   DELETE ANIMATION (Slide Out to Right)
+   ======================================== */
 @keyframes taskRowSlideOut {
   0% {
     transform: translateX(0);
@@ -89,10 +91,21 @@
   animation: taskRowSlideOut 0.8s ease-in;
 }
 
-/* ----------------------------------------
-   4. LOADING STATE
-   ---------------------------------------- */
+/* ========================================
+   LOADING STATE
+   ======================================== */
 .loading {
   opacity: 0.6;
   pointer-events: none;
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .taskRowCreateAnimation,
+  .taskRowUpdateAnimation,
+  .taskRowDeleteAnimation {
+    animation: none;
+  }
 }

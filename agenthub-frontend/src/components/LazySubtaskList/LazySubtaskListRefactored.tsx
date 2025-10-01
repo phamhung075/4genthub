@@ -2,8 +2,9 @@
 // Refactored from original 993-line LazySubtaskList.tsx following SOLID principles
 // Target: Under 150 lines, pure orchestration without implementation details
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { taskDeletionTracker } from "../../services/taskDeletionTracker";
 
 // Import custom hooks (business logic)
 import { useSubtaskData } from "./hooks/useSubtaskData";
@@ -75,11 +76,27 @@ export function LazySubtaskListRefactored({
   // Filtering and sorting hook
   const { filteredSubtasks } = useSubtaskFilters(subtaskSummaries);
 
+  // Handle subtask deletion with animation
+  const handleSubtaskDeleted = useCallback((subtaskId: string) => {
+    console.log('🗑️ [LazySubtaskList] Subtask deleted, marking for animation:', subtaskId);
+
+    // Mark for deletion so SubtaskRow can detect and animate
+    taskDeletionTracker.markForDeletion(subtaskId);
+
+    // Remove after animation completes (800ms)
+    setTimeout(() => {
+      console.log('🗑️ [LazySubtaskList] Removing subtask after animation:', subtaskId);
+      refreshData();
+      taskDeletionTracker.clearDeletion(subtaskId);
+    }, 800);
+  }, [refreshData]);
+
   // Real-time updates hook
   const { isConnected } = useSubtaskWebSocket(
     parentTaskId,
     subscriptionEnabled,
-    refreshData
+    refreshData,
+    handleSubtaskDeleted
   );
 
   // Animation and expansion state hook

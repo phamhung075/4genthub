@@ -17,8 +17,7 @@ import { SubtaskRowAssignees } from "./components/SubtaskRowAssignees";
 // Types
 import type { SubtaskRowProps } from "../../types/subtaskTypes";
 
-// Styles
-import styles from "./SubtaskRow.module.css";
+// CSS classes are now global (defined in src/styles/subtask-animations.css)
 
 /**
  * SubtaskRowRefactored - Clean orchestrator component
@@ -76,7 +75,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
   if (!isVisible) return null;
 
   // Loading state
-  const loadingClass = isLoading ? styles.loading : '';
+  const loadingClass = isLoading ? 'loading' : '';
   const rowClasses = `${animationClass} ${loadingClass}`.trim();
 
   return (

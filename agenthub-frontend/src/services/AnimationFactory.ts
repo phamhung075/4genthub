@@ -15,26 +15,27 @@ import type {
 
 class AnimationFactory {
   // Animation definitions with synchronized CSS durations
+  // CSS classes are defined in: src/styles/task-animations.css
   private readonly animationRegistry: Record<AnimationType, AnimationDefinition> = {
     create: {
-      cssClass: 'draw-in-left-to-right',
-      duration: 1000, // 1s - enhanced duration for better visibility
-      description: 'Fade in animation for newly created tasks'
+      cssClass: 'taskRowCreateAnimation',
+      duration: 800, // 0.8s - matches taskRowSlideIn animation
+      description: 'Slide in animation for newly created tasks'
     },
     delete: {
-      cssClass: 'fade-out-left-to-right',
-      duration: 1000, // 1s - enhanced duration for better visibility
-      description: 'Fade out animation for deleted tasks'
+      cssClass: 'taskRowDeleteAnimation',
+      duration: 800, // 0.8s - matches taskRowSlideOut animation
+      description: 'Slide out animation for deleted tasks'
     },
     update: {
-      cssClass: 'content-update',
-      duration: 1200, // 1.2s - matches CSS animation duration
-      description: 'Content flash animation for updated tasks'
+      cssClass: 'taskRowUpdateAnimation',
+      duration: 1700, // 1.7s - matches taskRowFlash animation (3 flashes)
+      description: 'Flash background animation for updated tasks'
     },
     complete: {
-      cssClass: 'task-celebration',
-      duration: 3000, // 3s - matches CSS animation duration
-      description: 'Celebration animation for completed tasks'
+      cssClass: 'taskRowUpdateAnimation', // Complete uses same flash as update
+      duration: 1700, // 1.7s - matches taskRowFlash animation (3 flashes)
+      description: 'Flash background animation for completed tasks'
     }
   };
 

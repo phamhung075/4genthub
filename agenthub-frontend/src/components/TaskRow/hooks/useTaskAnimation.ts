@@ -2,8 +2,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../../../services/AnimationFactory';
 import { TaskSummary } from '../../../types/taskTypes';
 import logger from '../../../utils/logger';
-import styles from '../TaskRow.module.css';
 import { taskDeletionTracker } from '../../../services/taskDeletionTracker';
+
+// Animation CSS classes are defined in: src/styles/task-animations.css
+// They are applied globally via AnimationFactory
 
 // Animation state types matching subtask implementation
 type TaskAnimationState = 'none' | 'creating' | 'deleting' | 'updating';
@@ -43,7 +45,7 @@ export function useTaskAnimation(
       console.log('🎬 [useTaskAnimation] AnimationFactory failed, using CSS fallback:', {
         taskId: summary.id,
         animationState: 'creating',
-        cssClass: styles.taskRowCreateAnimation
+        cssClass: 'taskRowCreateAnimation'
       });
       setAnimationState('creating');
       setTimeout(() => setAnimationState('none'), 800);
@@ -185,14 +187,15 @@ export function useTaskAnimation(
   }, [summary.id, playDeleteAnimation]);
 
   // Helper function to get fallback animation class - matches subtask implementation
+  // CSS classes are now global (defined in src/styles/task-animations.css)
   const getAnimationClass = (): string => {
     switch (animationState) {
       case 'creating':
-        return styles.taskRowCreateAnimation;
+        return 'taskRowCreateAnimation';
       case 'deleting':
-        return styles.taskRowDeleteAnimation;
+        return 'taskRowDeleteAnimation';
       case 'updating':
-        return styles.taskRowUpdateAnimation;
+        return 'taskRowUpdateAnimation';
       default:
         return '';
     }

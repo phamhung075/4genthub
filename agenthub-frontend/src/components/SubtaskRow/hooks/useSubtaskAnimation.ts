@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../../../services/AnimationFactory';
 import logger from '../../../utils/logger';
+import { taskDeletionTracker } from '../../../services/taskDeletionTracker';
 import type { SubtaskAnimationState, AnimationCallbacks } from '../../../types/subtaskTypes';
 
 interface UseSubtaskAnimationProps {
@@ -133,14 +134,29 @@ export function useSubtaskAnimation({
     };
   }, [subtaskId, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, onRegisterCallbacks, onUnregisterCallbacks]);
 
+  // Detect when subtask is marked for deletion and trigger delete animation
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      if (taskDeletionTracker.isMarkedForDeletion(subtaskId)) {
+        console.log('🗑️ [useSubtaskAnimation] Subtask marked for deletion, triggering animation:', subtaskId);
+        playDeleteAnimation('websocket');
+        // Stop checking once we've triggered the animation
+        clearInterval(checkInterval);
+      }
+    }, 50); // Check every 50ms
+
+    // Cleanup interval on unmount
+    return () => clearInterval(checkInterval);
+  }, [subtaskId, playDeleteAnimation]);
+
   const getAnimationClass = (): string => {
     switch (animationState) {
       case 'creating':
-        return 'subtask-row-create-animation';
+        return 'subtaskRowCreateAnimation';
       case 'deleting':
-        return 'subtask-row-delete-animation';
+        return 'subtaskRowDeleteAnimation';
       case 'updating':
-        return 'subtask-row-update-animation';
+        return 'subtaskRowUpdateAnimation';
       default:
         return '';
     }

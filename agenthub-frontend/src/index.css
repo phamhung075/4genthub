@@ -4,8 +4,10 @@
 /* Import theme CSS variables */
 @import './styles/theme.css';
 
-/* Import WebSocket animation styles */
-@import './styles/websocket-animations.css';
+/* Import animation styles */
+@import './styles/task-animations.css';
+@import './styles/subtask-animations.css';
+@import './styles/branch-animations.css';
 
 @tailwind base;
 @tailwind components;

@@ -10,7 +10,8 @@ import { TaskRowActions } from './TaskRowActions';
 import { TaskCopyButtons } from './TaskCopyButtons';
 import { TaskRowMobileProps } from '../../../types/taskTypes';
 import { useTaskRowState } from '../hooks/useTaskRowState';
-import styles from '../TaskRow.module.css';
+
+// CSS classes are now global (defined in src/styles/task-animations.css)
 
 export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
   summary,
@@ -30,7 +31,7 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
   const { getBaseClasses } = useTaskRowState();
 
   // Combine animation classes with loading state
-  const loadingClass = isLoading ? styles.loading : '';
+  const loadingClass = isLoading ? 'loading' : '';
   const containerClasses = `rounded-lg mb-3 cursor-pointer ${getBaseClasses(isHighlighted, isHovered)} ${animationClass} ${loadingClass}`.trim();
 
   return (
