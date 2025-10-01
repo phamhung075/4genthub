@@ -70,20 +70,29 @@
   }
 }
 
-/* Content Update Animation - Task Updates (No fade, just content refresh) */
+/* Content Update Animation - Task Updates (3 flashes for visibility) */
 .content-update {
-  animation: contentUpdateFlash 1.2s ease-in-out;
+  animation: contentUpdateFlash 1.7s ease-in-out;
 }
 
 @keyframes contentUpdateFlash {
   0%, 100% {
     background-color: transparent;
   }
-  25% {
-    background-color: rgba(59, 130, 246, 0.15);
+  16.67% {
+    background-color: rgba(59, 130, 246, 0.3);
   }
-  75% {
-    background-color: rgba(59, 130, 246, 0.05);
+  33.33% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  66.67% {
+    background-color: transparent;
+  }
+  83.33% {
+    background-color: rgba(59, 130, 246, 0.3);
   }
 }
 

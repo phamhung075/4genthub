@@ -1,7 +1,11 @@
-/* Animation styles for TaskRow component */
-/* Matches SubtaskRow.module.css for consistency */
+/* ========================================
+   TASK ROW ANIMATIONS
+   ======================================== */
 
-@keyframes slideInFromRight {
+/* ----------------------------------------
+   1. CREATE ANIMATION (Slide In from Right)
+   ---------------------------------------- */
+@keyframes taskRowSlideIn {
   0% {
     transform: translateX(100%);
     opacity: 0;
@@ -20,7 +24,42 @@
   }
 }
 
-@keyframes slideOutToRight {
+.taskRowCreateAnimation {
+  animation: taskRowSlideIn 0.8s ease-out;
+}
+
+/* ----------------------------------------
+   2. UPDATE ANIMATION (Flash Background)
+   ---------------------------------------- */
+@keyframes taskRowFlash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  16.67% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  33.33% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  66.67% {
+    background-color: transparent;
+  }
+  83.33% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+.taskRowUpdateAnimation {
+  animation: taskRowFlash 1.7s ease-in-out;
+}
+
+/* ----------------------------------------
+   3. DELETE ANIMATION (Slide Out to Right)
+   ---------------------------------------- */
+@keyframes taskRowSlideOut {
   0% {
     transform: translateX(0);
     opacity: 1;
@@ -46,41 +85,13 @@
   }
 }
 
-@keyframes flashBackground {
-  0%, 100% {
-    background-color: transparent;
-  }
-  16.67% {
-    background-color: rgba(59, 130, 246, 0.3);
-  }
-  33.33% {
-    background-color: transparent;
-  }
-  50% {
-    background-color: rgba(59, 130, 246, 0.3);
-  }
-  66.67% {
-    background-color: transparent;
-  }
-  83.33% {
-    background-color: rgba(59, 130, 246, 0.3);
-  }
-}
-
-/* Fallback animation classes - match subtask naming pattern */
-.taskRowCreateAnimation {
-  animation: slideInFromRight 0.8s ease-out;
-}
-
 .taskRowDeleteAnimation {
-  animation: slideOutToRight 0.8s ease-in;
+  animation: taskRowSlideOut 0.8s ease-in;
 }
 
-.taskRowUpdateAnimation {
-  animation: flashBackground 1.7s ease-in-out;
-}
-
-/* Loading state */
+/* ----------------------------------------
+   4. LOADING STATE
+   ---------------------------------------- */
 .loading {
   opacity: 0.6;
   pointer-events: none;
