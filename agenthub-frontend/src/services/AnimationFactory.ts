@@ -305,6 +305,9 @@ class AnimationFactory {
 // Export singleton instance
 export const animationFactory = new AnimationFactory();
 
+// Re-export types for convenience
+export type { AnimationType, AnimationSource, AnimationState, AnimationDefinition } from '../types/animationTypes';
+
 // DEBUG: Export to window for debugging and testing
 if (typeof window !== 'undefined') {
   (window as any).animationFactory = animationFactory;

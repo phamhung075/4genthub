@@ -4,6 +4,7 @@ import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents } fr
 import { useAuth } from "../../contexts/AuthContext";
 import { useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
+import { taskDeletionTracker } from "../../services/taskDeletionTracker";
 
 // Hooks
 import { useTaskData } from "../../hooks/useTaskData";
@@ -96,12 +97,18 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
       // Track this deletion to prevent duplicate attempts in API callback
       wsDeletedTasksRef.current.add(entityId);
-      removeTask(entityId);
 
-      // Clear from tracking after animation completes (5 seconds)
+      // Mark for deletion so TaskRow can detect and animate
+      taskDeletionTracker.markForDeletion(entityId);
+
+      // DON'T remove immediately - let the TaskRow component animate first
+      // The TaskRow will detect it's marked and play delete animation
+      // Then remove after animation completes (800ms)
       setTimeout(() => {
+        removeTask(entityId);
         wsDeletedTasksRef.current.delete(entityId);
-      }, 5000);
+        taskDeletionTracker.clearDeletion(entityId);
+      }, 1000); // Slightly longer than animation duration (800ms)
 
       return true;
     }
