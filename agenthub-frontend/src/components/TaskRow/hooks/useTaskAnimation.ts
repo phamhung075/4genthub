@@ -26,10 +26,10 @@ export function useTaskAnimation(
   const hasMountedRef = useRef(false);
 
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
-    console.log('🎬 [useTaskAnimation] playCreateAnimation called:', {
+    logger.debug('🎬 [useTaskAnimation] playCreateAnimation called', {
       taskId: summary.id,
       source
-    });
+    }, 'useTaskAnimation.ts');
 
     const success = animationFactory.animate(summary.id, 'create', source);
 
@@ -38,15 +38,15 @@ export function useTaskAnimation(
       taskId: summary.id,
       source,
       success
-    });
+    }, 'useTaskAnimation.ts');
 
     // Fallback to local state if factory fails
     if (!success) {
-      console.log('🎬 [useTaskAnimation] AnimationFactory failed, using CSS fallback:', {
+      logger.debug('🎬 [useTaskAnimation] AnimationFactory failed, using CSS fallback', {
         taskId: summary.id,
         animationState: 'creating',
         cssClass: 'taskRowCreateAnimation'
-      });
+      }, 'useTaskAnimation.ts');
       setAnimationState('creating');
       setTimeout(() => setAnimationState('none'), 800);
     }
@@ -89,18 +89,18 @@ export function useTaskAnimation(
     const currentElement = isMobile ? mobileElementRef.current : desktopElementRef.current;
 
     if (currentElement) {
-      //console.log('🎬 [useTaskAnimation] Registering element:', {
-      //  taskId: summary.id,
-      //  elementType: isMobile ? 'mobile' : 'desktop',
-      //  element: currentElement.tagName
-      //});
+      logger.debug('🎬 [useTaskAnimation] Registering element', {
+        taskId: summary.id,
+        elementType: isMobile ? 'mobile' : 'desktop',
+        element: currentElement.tagName
+      }, 'useTaskAnimation.ts');
 
       animationFactory.registerElement(summary.id, currentElement, {
         onAnimationStart: (type: AnimationType) => {
-          console.log('🎬 Animation started:', { taskId: summary.id, type });
+          logger.debug('🎬 Animation started', { taskId: summary.id, type }, 'useTaskAnimation.ts');
         },
         onAnimationEnd: (type: AnimationType) => {
-          console.log('🎬 Animation completed:', { taskId: summary.id, type });
+          logger.debug('🎬 Animation completed', { taskId: summary.id, type }, 'useTaskAnimation.ts');
         }
       });
 
@@ -113,7 +113,7 @@ export function useTaskAnimation(
 
     // Cleanup on unmount
     return () => {
-      //console.log('🎬 [useTaskAnimation] Unregistering:', summary.id);
+      logger.debug('🎬 [useTaskAnimation] Unregistering', { taskId: summary.id }, 'useTaskAnimation.ts');
       animationFactory.unregisterElement(summary.id);
       logger.debug('Element unregistered from AnimationFactory', {
         component: 'useTaskAnimation',
@@ -125,15 +125,15 @@ export function useTaskAnimation(
   // Mount-time animation check for newly created tasks
   useEffect(() => {
     // ALWAYS try to animate on first mount - the component only mounts when a task is added
-    console.log('🎬 [useTaskAnimation] Mount-time check:', {
+    logger.debug('🎬 [useTaskAnimation] Mount-time check', {
       taskId: summary.id,
       hasCreatedAt: !!summary.created_at,
       createdAt: summary.created_at
-    });
+    }, 'useTaskAnimation.ts');
 
     // Small delay to ensure DOM is ready, then trigger animation
     setTimeout(() => {
-      console.log('🎬 Mount-time animation triggered:', summary.id);
+      logger.debug('🎬 Mount-time animation triggered', { taskId: summary.id }, 'useTaskAnimation.ts');
       playCreateAnimation('mount');
       hasMountedRef.current = true;
     }, 50);
@@ -152,14 +152,14 @@ export function useTaskAnimation(
     const progressChanged = prevProgressRef.current !== summary.subtask_count;
 
     if (statusChanged || titleChanged || progressChanged) {
-      console.log('🎬 [useTaskAnimation] Task update detected:', {
+      logger.debug('🎬 [useTaskAnimation] Task update detected', {
         taskId: summary.id,
         statusChanged,
         titleChanged,
         progressChanged,
         oldStatus: prevStatusRef.current,
         newStatus: summary.status
-      });
+      }, 'useTaskAnimation.ts');
 
       // Trigger update animation
       playUpdateAnimation('websocket');
@@ -175,7 +175,7 @@ export function useTaskAnimation(
   useEffect(() => {
     const checkInterval = setInterval(() => {
       if (taskDeletionTracker.isMarkedForDeletion(summary.id)) {
-        console.log('🗑️ [useTaskAnimation] Task marked for deletion, triggering animation:', summary.id);
+        logger.debug('🗑️ [useTaskAnimation] Task marked for deletion, triggering animation', { taskId: summary.id }, 'useTaskAnimation.ts');
         playDeleteAnimation('websocket');
         // Stop checking once we've triggered the animation
         clearInterval(checkInterval);

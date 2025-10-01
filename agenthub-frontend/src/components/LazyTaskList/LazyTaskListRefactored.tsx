@@ -47,7 +47,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
   // WebSocket update handler
   const updateTaskFromWebSocket = useCallback((notification: any) => {
-    console.log('🎯 [LazyTaskList] WebSocket notification received:', {
+    logger.debug('🎯 [LazyTaskList] WebSocket notification received', {
       entityId: notification?.entityId,
       eventType: notification?.eventType,
       hasData: !!notification?.data,
@@ -55,7 +55,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       metadata: notification?.metadata,
       taskTreeId,
       timestamp: new Date().toISOString()
-    });
+    }, 'LazyTaskListRefactored.tsx');
 
     const { entityId, eventType, data, metadata } = notification;
 
@@ -63,37 +63,37 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     // No need for additional filtering here - it was causing task updates to be rejected
 
     if (eventType === 'api_fallback_needed') {
-      console.log('🔄 [LazyTaskList] API fallback needed, reloading task summaries');
+      logger.debug('🔄 [LazyTaskList] API fallback needed, reloading task summaries', {}, 'LazyTaskListRefactored.tsx');
       loadTaskSummaries(1);
       return true;
     }
 
     if (eventType === 'created' && data) {
-      console.log('✅ [LazyTaskList] Creating new task from WebSocket:', {
+      logger.debug('✅ [LazyTaskList] Creating new task from WebSocket', {
         taskId: data.id,
         title: data.title,
         hasAllFields: !!(data.id && data.title && data.status)
-      });
+      }, 'LazyTaskListRefactored.tsx');
       addNewTask(data);
       return true;
     } else if (eventType === 'created' && !data) {
-      console.warn('⚠️ [LazyTaskList] CREATE event received but data is missing!', {
+      logger.warn('⚠️ [LazyTaskList] CREATE event received but data is missing!', {
         entityId,
         metadata
-      });
+      }, 'LazyTaskListRefactored.tsx');
       // Fallback: reload all tasks
-      console.log('🔄 [LazyTaskList] Falling back to full task list reload');
+      logger.debug('🔄 [LazyTaskList] Falling back to full task list reload', {}, 'LazyTaskListRefactored.tsx');
       loadTaskSummaries(1);
       return true;
     } else if (eventType === 'updated' && data) {
-      console.log('✅ [LazyTaskList] Updating task from WebSocket:', {
+      logger.debug('✅ [LazyTaskList] Updating task from WebSocket', {
         taskId: data.id,
         title: data.title
-      });
+      }, 'LazyTaskListRefactored.tsx');
       updateTaskFromData(data);
       return true;
     } else if (eventType === 'deleted') {
-      console.log('✅ [LazyTaskList] Deleting task from WebSocket:', { entityId });
+      logger.debug('✅ [LazyTaskList] Deleting task from WebSocket', { entityId }, 'LazyTaskListRefactored.tsx');
 
       // Track this deletion to prevent duplicate attempts in API callback
       wsDeletedTasksRef.current.add(entityId);
@@ -113,7 +113,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       return true;
     }
 
-    console.warn('⚠️ [LazyTaskList] Unhandled notification:', { eventType, hasData: !!data });
+    logger.warn('⚠️ [LazyTaskList] Unhandled notification:', { eventType, hasData: !!data });
     return false;
   }, [taskTreeId, addNewTask, updateTaskFromData, removeTask, loadTaskSummaries]);
 

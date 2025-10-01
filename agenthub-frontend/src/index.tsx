@@ -10,6 +10,7 @@ import './styles/notifications.css';
 // Initialize extension error filter at the earliest possible point
 // This must happen before any other code to catch all extension errors
 import { initializeExtensionErrorFilter } from './utils/extensionErrorFilter';
+import logger from './utils/logger';
 initializeExtensionErrorFilter();
 
 // Initialize logging system safely - only for errors

@@ -113,9 +113,22 @@ class TaskCrudHandler:
                 user_id=user_id,
             )
 
-            # Delegate to facade
-            task = task_facade.get_task(task_id)
+            # Delegate to facade - returns {"success": bool, "action": str, "task": dict}
+            result = task_facade.get_task(task_id)
 
+            # Check if the facade call was successful
+            if not result.get("success"):
+                error_msg = result.get("error", "Task not found")
+                return TaskResponse(
+                    success=False,
+                    task=None,
+                    error=error_msg,
+                    message=error_msg,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                )
+
+            # Extract the actual task data from the result
+            task = result.get("task")
             if not task:
                 return TaskResponse(
                     success=False,

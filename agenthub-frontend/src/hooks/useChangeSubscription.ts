@@ -55,7 +55,7 @@ export function useChangeSubscription(options: UseChangeSubscriptionOptions) {
 
   // Stable reference to refresh callback - FIXED: Pass notification data through
   const stableRefreshCallback = useCallback((notification?: ChangeNotification) => {
-    console.log(`🔧 [useChangeSubscription] ${componentId}: Passing notification to refreshCallback`, {
+    logger.debug(`🔧 [useChangeSubscription] ${componentId}: Passing notification to refreshCallback`, {
       hasNotification: !!notification,
       entityType: notification?.entityType,
       eventType: notification?.eventType,

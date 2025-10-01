@@ -1,6 +1,7 @@
 import { EventEmitter } from '../utils/EventEmitter';
 import { config } from '../config/environment';
 import type { WebSocketConfig, WSMessage } from '../types/websocketTypes';
+import logger from '../utils/logger';
 
 /**
  * WebSocket Client v2.0 - Clean Implementation
@@ -42,7 +43,7 @@ export class WebSocketClient extends EventEmitter {
    */
   connect(): void {
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.OPEN)) {
-      console.log('[WebSocket v2.0] Already connecting or connected, skipping');
+      logger.debug('[WebSocket v2.0] Already connecting or connected, skipping');
       return;
     }
 
@@ -51,17 +52,17 @@ export class WebSocketClient extends EventEmitter {
     const wsBaseUrl = config.websocket.url;
 
     // Enhanced debugging for WebSocket URL configuration
-    console.log('[WebSocket v2.0] 🔍 DEBUG: WebSocket Configuration Check:');
-    console.log('  - config.websocket.url:', wsBaseUrl);
-    console.log('  - config object:', config);
-    console.log('  - typeof wsBaseUrl:', typeof wsBaseUrl);
-    console.log('  - wsBaseUrl length:', wsBaseUrl?.length);
-    console.log('  - Environment check completed');
+    logger.debug('[WebSocket v2.0] 🔍 DEBUG: WebSocket Configuration Check:');
+    logger.debug('  - config.websocket.url:', wsBaseUrl);
+    logger.debug('  - config object:', config);
+    logger.debug('  - typeof wsBaseUrl:', typeof wsBaseUrl);
+    logger.debug('  - wsBaseUrl length:', wsBaseUrl?.length);
+    logger.debug('  - Environment check completed');
 
     if (!wsBaseUrl) {
-      console.error('[WebSocket v2.0] ❌ WebSocket URL is not configured');
-      console.error('[WebSocket v2.0] 🚨 CRITICAL: config.websocket.url is:', wsBaseUrl);
-      console.error('[WebSocket v2.0] 🚨 CRITICAL: Full config object:', JSON.stringify(config, null, 2));
+      logger.error('[WebSocket v2.0] ❌ WebSocket URL is not configured');
+      logger.error('[WebSocket v2.0] 🚨 CRITICAL: config.websocket.url is:', wsBaseUrl);
+      logger.error('[WebSocket v2.0] 🚨 CRITICAL: Full config object:', JSON.stringify(config, null, 2));
       this.emit('error', new Error('WebSocket URL not configured'));
       this.isConnecting = false;
       return;
@@ -69,18 +70,18 @@ export class WebSocketClient extends EventEmitter {
 
     const wsUrl = `${wsBaseUrl}/ws/realtime?token=${this.token}`;
 
-    console.log('[WebSocket v2.0] 🔌 DEBUG: Attempting WebSocket connection');
-    console.log('  - Full WebSocket URL:', wsUrl.replace(/token=[^&]+/, 'token=***'));
-    console.log('  - Base URL:', wsBaseUrl);
-    console.log('  - Token length:', this.token ? this.token.length : 0);
-    console.log('  - User ID:', this.userId);
-    console.log('  - About to create WebSocket object...');
+    logger.debug('[WebSocket v2.0] 🔌 DEBUG: Attempting WebSocket connection');
+    logger.debug('  - Full WebSocket URL:', wsUrl.replace(/token=[^&]+/, 'token=***'));
+    logger.debug('  - Base URL:', wsBaseUrl);
+    logger.debug('  - Token length:', this.token ? this.token.length : 0);
+    logger.debug('  - User ID:', this.userId);
+    logger.debug('  - About to create WebSocket object...');
 
     this.ws = new WebSocket(wsUrl);
 
-    console.log('[WebSocket v2.0] ✅ WebSocket object created successfully');
-    console.log('  - WebSocket readyState:', this.ws.readyState);
-    console.log('  - WebSocket URL:', this.ws.url.replace(/token=[^&]+/, 'token=***'));
+    logger.debug('[WebSocket v2.0] ✅ WebSocket object created successfully');
+    logger.debug('  - WebSocket readyState:', this.ws.readyState);
+    logger.debug('  - WebSocket URL:', this.ws.url.replace(/token=[^&]+/, 'token=***'));
 
     this.ws.onopen = this.handleOpen.bind(this);
     this.ws.onmessage = this.handleMessage.bind(this);
@@ -89,23 +90,23 @@ export class WebSocketClient extends EventEmitter {
   }
 
   private handleOpen(): void {
-    console.log('[WebSocket v2.0] ✅ Connected successfully');
-    console.log('[WebSocket v2.0] 📡 Connection state:', this.ws?.readyState);
-    console.log('[WebSocket v2.0] 🎯 Event listeners count:', this.listenerCount('connected'));
+    logger.debug('[WebSocket v2.0] ✅ Connected successfully');
+    logger.debug('[WebSocket v2.0] 📡 Connection state:', this.ws?.readyState);
+    logger.debug('[WebSocket v2.0] 🎯 Event listeners count:', this.listenerCount('connected'));
 
     this.isConnecting = false;
     this.reconnectAttempts = 0;
 
-    console.log('[WebSocket v2.0] 🔊 Emitting "connected" event');
+    logger.debug('[WebSocket v2.0] 🔊 Emitting "connected" event');
     this.emit('connected');
 
     // Start heartbeat
     this.startHeartbeat();
-    console.log('[WebSocket v2.0] 💓 Heartbeat started');
+    logger.debug('[WebSocket v2.0] 💓 Heartbeat started');
   }
 
   private handleMessage(event: MessageEvent): void {
-    console.log('[WebSocket v2.0] 📨 🚨 DELETE DEBUG: Raw message received:', {
+    logger.debug('[WebSocket v2.0] 📨 🚨 DELETE DEBUG: Raw message received:', {
       type: typeof event.data,
       length: event.data?.length,
       preview: event.data?.substring(0, 200)
@@ -114,7 +115,7 @@ export class WebSocketClient extends EventEmitter {
     try {
       const message: WSMessage = JSON.parse(event.data);
 
-      console.log('[WebSocket v2.0] 📋 🚨 DELETE DEBUG: Parsed message:', {
+      logger.debug('[WebSocket v2.0] 📋 🚨 DELETE DEBUG: Parsed message:', {
         id: message.id,
         version: message.version,
         type: message.type,
@@ -125,48 +126,48 @@ export class WebSocketClient extends EventEmitter {
 
       // Special detailed logging for DELETE operations
       if (message.payload?.action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE MESSAGE RECEIVED IN WEBSOCKET CLIENT:');
-        console.warn('  Message ID:', message.id);
-        console.warn('  Entity:', message.payload?.entity);
-        console.warn('  Action:', message.payload?.action);
-        console.warn('  Data:', message.payload?.data);
-        console.warn('  Metadata:', message.metadata);
-        console.warn('  Full message:', message);
+        logger.warn('🗑️ DELETE MESSAGE RECEIVED IN WEBSOCKET CLIENT:');
+        logger.warn('  Message ID:', message.id);
+        logger.warn('  Entity:', message.payload?.entity);
+        logger.warn('  Action:', message.payload?.action);
+        logger.warn('  Data:', message.payload?.data);
+        logger.warn('  Metadata:', message.metadata);
+        logger.warn('  Full message:', message);
       }
 
       // ONLY accept v2.0 messages - reject all others
       if (message.version !== '2.0') {
-        console.error('[WebSocket] ❌ Rejected non-v2.0 message:', message.version);
+        logger.error('[WebSocket] ❌ Rejected non-v2.0 message:', message.version);
         return;
       }
 
       // Handle heartbeat
       if (message.type === 'heartbeat') {
-        console.log('[WebSocket v2.0] 💓 Heartbeat received');
+        logger.debug('[WebSocket v2.0] 💓 Heartbeat received');
         return;
       }
 
-      console.log('[WebSocket v2.0] 🎯 🚨 DELETE DEBUG: Routing message based on source:', message.metadata?.source);
+      logger.debug('[WebSocket v2.0] 🎯 🚨 DELETE DEBUG: Routing message based on source:', message.metadata?.source);
 
       // Route based on source for dual-track processing
       if (message.metadata?.source === 'mcp-ai') {
         if (message.payload?.action?.toLowerCase().includes('delete')) {
-          console.warn('[WebSocket v2.0] 🤖 🗑️ DELETE: Buffering AI update');
+          logger.warn('[WebSocket v2.0] 🤖 🗑️ DELETE: Buffering AI update');
         } else {
-          console.log('[WebSocket v2.0] 🤖 Buffering AI update');
+          logger.debug('[WebSocket v2.0] 🤖 Buffering AI update');
         }
         this.bufferAIUpdate(message);
       } else {
         if (message.payload?.action?.toLowerCase().includes('delete')) {
-          console.warn('[WebSocket v2.0] ⚡ 🗑️ DELETE: Processing immediate update');
+          logger.warn('[WebSocket v2.0] ⚡ 🗑️ DELETE: Processing immediate update');
         } else {
-          console.log('[WebSocket v2.0] ⚡ Processing immediate update');
+          logger.debug('[WebSocket v2.0] ⚡ Processing immediate update');
         }
         this.processImmediateUpdate(message);
       }
     } catch (error) {
-      console.error('[WebSocket] ❌ Failed to parse message:', error);
-      console.error('[WebSocket] 📝 Raw data:', event.data);
+      logger.error('[WebSocket] ❌ Failed to parse message:', error);
+      logger.error('[WebSocket] 📝 Raw data:', event.data);
     }
   }
 
@@ -203,14 +204,14 @@ export class WebSocketClient extends EventEmitter {
     this.aiBuffer = [];
     this.aiBufferTimer = null;
 
-    console.log(`[WebSocket] Processed batch of ${batchSize} AI updates`);
+    logger.debug(`[WebSocket] Processed batch of ${batchSize} AI updates`);
   }
 
   /**
    * Process user updates immediately (no batching)
    */
   private processImmediateUpdate(message: WSMessage): void {
-    console.log('[WebSocket v2.0] ⚡ 🚨 DELETE DEBUG: Processing immediate update:', {
+    logger.debug('[WebSocket v2.0] ⚡ 🚨 DELETE DEBUG: Processing immediate update:', {
       entity: message.payload?.entity,
       action: message.payload?.action,
       updateListeners: this.listenerCount('update'),
@@ -219,28 +220,28 @@ export class WebSocketClient extends EventEmitter {
 
     // Special detailed logging for DELETE operations
     if (message.payload?.action?.toLowerCase().includes('delete')) {
-      console.warn('🗑️ DELETE IMMEDIATE UPDATE PROCESSING:');
-      console.warn('  Entity:', message.payload?.entity);
-      console.warn('  Action:', message.payload?.action);
-      console.warn('  Update Listeners:', this.listenerCount('update'));
-      console.warn('  User Action Listeners:', this.listenerCount('userAction'));
-      console.warn('  About to emit "update" event...');
+      logger.warn('🗑️ DELETE IMMEDIATE UPDATE PROCESSING:');
+      logger.warn('  Entity:', message.payload?.entity);
+      logger.warn('  Action:', message.payload?.action);
+      logger.warn('  Update Listeners:', this.listenerCount('update'));
+      logger.warn('  User Action Listeners:', this.listenerCount('userAction'));
+      logger.warn('  About to emit "update" event...');
     }
 
-    console.log('[WebSocket v2.0] 🔊 🚨 DELETE DEBUG: Emitting "update" event');
+    logger.debug('[WebSocket v2.0] 🔊 🚨 DELETE DEBUG: Emitting "update" event');
     this.emit('update', message);
 
     if (message.payload?.action?.toLowerCase().includes('delete')) {
-      console.warn('✅ DELETE "update" event emitted successfully');
+      logger.warn('✅ DELETE "update" event emitted successfully');
     }
 
     // Special handling for user actions
     if (message.metadata?.source === 'user') {
-      console.log('[WebSocket v2.0] 🔊 Emitting "userAction" event');
+      logger.debug('[WebSocket v2.0] 🔊 Emitting "userAction" event');
       this.emit('userAction', message);
 
       if (message.payload?.action?.toLowerCase().includes('delete')) {
-        console.warn('✅ DELETE "userAction" event emitted successfully');
+        logger.warn('✅ DELETE "userAction" event emitted successfully');
       }
     }
   }
@@ -327,7 +328,7 @@ export class WebSocketClient extends EventEmitter {
    */
   send(message: Record<string, unknown> & { type?: string }): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('[WebSocket] Not connected');
+      logger.error('[WebSocket] Not connected');
       return;
     }
 
@@ -345,14 +346,14 @@ export class WebSocketClient extends EventEmitter {
   }
 
   private handleError(error: Event): void {
-    console.error('[WebSocket v2.0] ❌ Connection error:', error);
-    console.error('[WebSocket v2.0] 📊 Connection state:', this.ws?.readyState);
-    console.error('[WebSocket v2.0] 🔗 URL:', this.ws?.url?.replace(/token=[^&]+/, 'token=***'));
+    logger.error('[WebSocket v2.0] ❌ Connection error:', error);
+    logger.error('[WebSocket v2.0] 📊 Connection state:', this.ws?.readyState);
+    logger.error('[WebSocket v2.0] 🔗 URL:', this.ws?.url?.replace(/token=[^&]+/, 'token=***'));
     this.emit('error', error);
   }
 
   private handleClose(event?: CloseEvent): void {
-    console.log('[WebSocket v2.0] 🔌 Connection closed:', {
+    logger.debug('[WebSocket v2.0] 🔌 Connection closed:', {
       code: event?.code,
       reason: event?.reason,
       wasClean: event?.wasClean,
@@ -364,7 +365,7 @@ export class WebSocketClient extends EventEmitter {
 
     // Check for authentication failure (code 1008 or 4001-4003)
     if (event?.code === 1008 || (event?.code && event.code >= 4001 && event.code <= 4003)) {
-      console.error('[WebSocket] Authentication failed - not attempting reconnect');
+      logger.error('[WebSocket] Authentication failed - not attempting reconnect');
       this.emit('authenticationFailed', event.reason || 'Authentication failed');
       return;
     }
@@ -377,10 +378,10 @@ export class WebSocketClient extends EventEmitter {
         this.wsConfig.maxReconnectDelay
       );
 
-      console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.wsConfig.maxReconnectAttempts})`);
+      logger.debug(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.wsConfig.maxReconnectAttempts})`);
       setTimeout(() => this.connect(), delay);
     } else {
-      console.error('[WebSocket] Max reconnection attempts reached');
+      logger.error('[WebSocket] Max reconnection attempts reached');
       this.emit('reconnectFailed');
     }
   }

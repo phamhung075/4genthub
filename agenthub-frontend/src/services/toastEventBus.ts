@@ -6,6 +6,7 @@
  */
 
 import type { ToastEventType, ToastEvent } from '../types/serviceTypes';
+import logger from '../utils/logger';
 
 class ToastEventBus {
   private listeners: Map<string, Set<Function>> = new Map();
@@ -16,7 +17,7 @@ class ToastEventBus {
    * Subscribe to toast events (legacy API - expects ToastEvent objects)
    */
   subscribe(callback: (event: ToastEvent) => void): () => void {
-    console.log('📝 ToastEventBus.subscribe() called - adding legacy listener');
+    logger.debug('📝 ToastEventBus.subscribe() called - adding legacy listener');
 
     // Add to legacy listeners for direct ToastEvent objects
     if (!this.listeners.has('legacy')) {
@@ -25,11 +26,11 @@ class ToastEventBus {
     this.listeners.get('legacy')!.add(callback);
 
     const legacyCount = this.listeners.get('legacy')!.size;
-    console.log(`📝 ToastEventBus: Now have ${legacyCount} legacy listeners`);
+    logger.debug(`📝 ToastEventBus: Now have ${legacyCount} legacy listeners`);
 
     // Return unsubscribe function
     return () => {
-      console.log('📝 ToastEventBus: Unsubscribing legacy listener');
+      logger.debug('📝 ToastEventBus: Unsubscribing legacy listener');
       this.listeners.get('legacy')?.delete(callback);
     };
   }
@@ -69,7 +70,7 @@ class ToastEventBus {
     const lastEmitted = this.recentMessages.get(key);
 
     if (lastEmitted && (now - lastEmitted) < this.DEDUPLICATION_WINDOW) {
-      console.log(`🚫 ToastEventBus: DEDUPLICATING message with key "${key}" (last emitted ${now - lastEmitted}ms ago)`);
+      logger.debug(`🚫 ToastEventBus: DEDUPLICATING message with key "${key}" (last emitted ${now - lastEmitted}ms ago)`);
       return true;
     }
 
@@ -90,7 +91,7 @@ class ToastEventBus {
    * Emit a toast event (overloaded method for both APIs)
    */
   emit(typeOrEvent: 'success' | 'error' | 'warning' | 'info' | 'dismiss' | ToastEvent, message?: string, options?: any): void {
-    console.log('📡 ToastEventBus.emit() called with:', typeOrEvent, message, options);
+    logger.debug('📡 ToastEventBus.emit() called with:', typeOrEvent, message, options);
 
     // Check for deduplication
     const deduplicationKey = this.createDeduplicationKey(typeOrEvent, message);
@@ -101,7 +102,7 @@ class ToastEventBus {
     if (typeof typeOrEvent === 'string') {
       // New simplified API for NotificationService: emit(type, message, options)
       const listeners = this.listeners.get(typeOrEvent);
-      console.log(`📡 ToastEventBus: String API - found ${listeners?.size || 0} listeners for type "${typeOrEvent}"`);
+      logger.debug(`📡 ToastEventBus: String API - found ${listeners?.size || 0} listeners for type "${typeOrEvent}"`);
       if (listeners) {
         listeners.forEach(listener => (listener as Function)(message, options));
       }
@@ -109,10 +110,10 @@ class ToastEventBus {
       // Legacy API for backward compatibility: emit(event)
       const event = typeOrEvent as ToastEvent;
       const legacyListeners = this.listeners.get('legacy') || new Set();
-      console.log(`📡 ToastEventBus: Object API - found ${legacyListeners.size} legacy listeners for event:`, event);
+      logger.debug(`📡 ToastEventBus: Object API - found ${legacyListeners.size} legacy listeners for event:`, event);
 
       legacyListeners.forEach(listener => {
-        console.log('📡 ToastEventBus: Calling legacy listener with event:', event);
+        logger.debug('📡 ToastEventBus: Calling legacy listener with event:', event);
         (listener as Function)(event);
       });
 
@@ -121,7 +122,7 @@ class ToastEventBus {
       // toastEventBus.success() were called, as they triggered both legacy AND type-specific listeners
       // const typeListeners = this.listeners.get(event.type);
       // if (typeListeners) {
-      //   console.log(`📡 ToastEventBus: Also notifying ${typeListeners.size} specific type listeners for "${event.type}"`);
+      //   logger.debug(`📡 ToastEventBus: Also notifying ${typeListeners.size} specific type listeners for "${event.type}"`);
       //   typeListeners.forEach(listener => (listener as Function)(event.title, {
       //     description: event.description,
       //     action: event.action

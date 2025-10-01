@@ -67,14 +67,14 @@ export function SubtaskListContent({
     <Table className="bg-white/50 dark:bg-gray-900/50 rounded-lg overflow-hidden">
       <TableHeader>
         <TableRow className="bg-gray-100/50 dark:bg-gray-800/20 border-b border-gray-200 dark:border-gray-700">
-          <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
-            Subtask
+          <TableHead className="w-[100px] text-xs text-blue-700 dark:text-blue-300 font-semibold">
+            ID
           </TableHead>
           <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
-            Status
+            Title
           </TableHead>
           <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
-            Priority
+            Status & Priority
           </TableHead>
           <TableHead className="text-xs text-blue-700 dark:text-blue-300 font-semibold">
             Assignees

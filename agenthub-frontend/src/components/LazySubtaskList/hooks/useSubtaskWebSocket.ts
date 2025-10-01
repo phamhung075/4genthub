@@ -57,7 +57,7 @@ export function useSubtaskWebSocket(
 
       // Handle delete events specially to trigger animations
       if (eventType === 'deleted' && subtaskId && onSubtaskDeleted) {
-        console.log('🗑️ [useSubtaskWebSocket] Subtask deleted, triggering animation:', subtaskId);
+        logger.debug('🗑️ [useSubtaskWebSocket] Subtask deleted, triggering animation', { subtaskId }, 'useSubtaskWebSocket.ts');
         onSubtaskDeleted(subtaskId);
         // Don't reload immediately - let animation complete
         return;

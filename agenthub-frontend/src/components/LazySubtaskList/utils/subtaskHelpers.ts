@@ -52,7 +52,7 @@ export function filterSubtasks(
 ): SubtaskSummary[] {
   // Ensure subtasks is an array
   if (!Array.isArray(subtasks)) {
-    console.warn('filterSubtasks received non-array value:', subtasks);
+    logger.warn('filterSubtasks received non-array value:', subtasks);
     return [];
   }
 

@@ -66,6 +66,8 @@ def task_to_dto(task: Any, include_subtasks: bool = False) -> TaskDTO:
             labels=labels,
             details=task.get('details'),
             progress_percentage=task.get('progress_percentage'),
+            progress_history=task.get('progress_history'),
+            progress_count=task.get('progress_count'),
             subtasks=[subtask_to_dto(st) for st in subtasks] if include_subtasks and subtasks else None
         )
 
@@ -99,6 +101,8 @@ def task_to_dto(task: Any, include_subtasks: bool = False) -> TaskDTO:
         labels=labels,
         details=getattr(task, 'details', None),
         progress_percentage=getattr(task, 'progress_percentage', None),
+        progress_history=getattr(task, 'progress_history', None),
+        progress_count=getattr(task, 'progress_count', None),
         subtasks=[subtask_to_dto(st) for st in subtasks] if include_subtasks and subtasks else None
     )
 

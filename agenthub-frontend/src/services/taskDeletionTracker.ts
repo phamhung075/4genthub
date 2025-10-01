@@ -6,7 +6,7 @@ class TaskDeletionTracker {
   private pendingDeletions = new Set<string>();
 
   markForDeletion(taskId: string): void {
-    console.log('🗑️ [TaskDeletionTracker] Marking task for deletion:', taskId);
+    logger.debug('🗑️ [TaskDeletionTracker] Marking task for deletion:', taskId);
     this.pendingDeletions.add(taskId);
   }
 

@@ -21,14 +21,14 @@ const TaskRowRefactored: React.FC<TaskRowProps> = ({
   onHover
 }) => {
   // Log component mount for debugging
-  console.log('🎬 [TaskRowRefactored] Component mount:', {
+  logger.debug('🎬 [TaskRowRefactored] Component mount', {
     taskId: summary.id,
     taskTitle: summary.title,
     isMobile,
     timestamp: new Date().toISOString(),
     hasCreatedAt: !!summary.created_at,
     createdAt: summary.created_at
-  });
+  }, 'TaskRowRefactored.tsx');
 
   // Animation management
   const {

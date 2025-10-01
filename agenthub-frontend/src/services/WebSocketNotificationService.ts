@@ -46,12 +46,11 @@ class WebSocketNotificationService {
    */
   init(webSocketClient: any): () => void {
     if (this.initialized) {
-      console.warn('🔔 WebSocketNotificationService: Already initialized');
+      logger.warn('🔔 WebSocketNotificationService: Already initialized', undefined, 'WebSocketNotificationService.ts');
       return () => {};
     }
 
-    console.log('🔔 WebSocketNotificationService: Initializing...');
-    logger.info('🔔 WebSocketNotificationService: Initializing WebSocket notification bridge');
+    logger.info('🔔 WebSocketNotificationService: Initializing WebSocket notification bridge', undefined, 'WebSocketNotificationService.ts');
 
     // Subscribe to WebSocket update messages
     const unsubscribe = webSocketClient.on('update', (message: WSMessage) => {
@@ -59,13 +58,11 @@ class WebSocketNotificationService {
     });
 
     this.initialized = true;
-    console.log('🔔 WebSocketNotificationService: Successfully initialized and subscribed to WebSocket events');
-    logger.info('🔔 WebSocketNotificationService: Successfully initialized');
+    logger.info('🔔 WebSocketNotificationService: Successfully initialized and subscribed to WebSocket events', undefined, 'WebSocketNotificationService.ts');
 
     // Return cleanup function
     return () => {
-      console.log('🔔 WebSocketNotificationService: Cleaning up...');
-      logger.debug('🔔 WebSocketNotificationService: Cleaning up');
+      logger.debug('🔔 WebSocketNotificationService: Cleaning up...', undefined, 'WebSocketNotificationService.ts');
 
       if (typeof unsubscribe === 'function') {
         unsubscribe();
@@ -83,11 +80,12 @@ class WebSocketNotificationService {
     if (message.type !== 'update' || message.metadata?.source === 'mcp-ai') {
       // Log if we're skipping a DELETE message
       if (message.payload?.action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE MESSAGE SKIPPED by WebSocketNotificationService:');
-        console.warn('  Reason: Not update type or from mcp-ai');
-        console.warn('  Type:', message.type);
-        console.warn('  Source:', message.metadata?.source);
-        console.warn('  Action:', message.payload?.action);
+        logger.warn('🗑️ DELETE MESSAGE SKIPPED by WebSocketNotificationService:', {
+          reason: 'Not update type or from mcp-ai',
+          type: message.type,
+          source: message.metadata?.source,
+          action: message.payload?.action
+        }, 'WebSocketNotificationService.ts');
       }
       return;
     }
@@ -95,41 +93,44 @@ class WebSocketNotificationService {
     const { entity, action } = message.payload;
     const data = message.payload.data.primary;
 
-    console.log('🔔 🚨 DELETE DEBUG: WebSocketNotificationService: Processing message:', {
+    logger.debug('🔔 🚨 DELETE DEBUG: WebSocketNotificationService: Processing message:', {
       entity,
       action,
       source: message.metadata?.source,
       messageId: message.id
-    });
+    }, 'WebSocketNotificationService.ts');
 
     // Special detailed logging for DELETE operations
     if (action?.toLowerCase().includes('delete')) {
-      console.warn('🗑️ DELETE MESSAGE PROCESSING in WebSocketNotificationService:');
-      console.warn('  Entity:', entity);
-      console.warn('  Action:', action);
-      console.warn('  Source:', message.metadata?.source);
-      console.warn('  Message ID:', message.id);
-      console.warn('  Data:', data);
-      console.warn('  Full message:', message);
+      logger.warn('🗑️ DELETE MESSAGE PROCESSING in WebSocketNotificationService:', {
+        entity,
+        action,
+        source: message.metadata?.source,
+        messageId: message.id,
+        data,
+        fullMessage: message
+      }, 'WebSocketNotificationService.ts');
     }
 
     // Map WebSocket actions to notification event types
     const eventType = this.mapActionToEventType(action);
     if (!eventType) {
       if (action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE ACTION NOT MAPPED:', action);
-        console.warn('  Available mappings:', Object.keys({
-          'create': 'created', 'created': 'created', 'update': 'updated', 'updated': 'updated',
-          'delete': 'deleted', 'deleted': 'deleted', 'complete': 'completed', 'completed': 'completed'
-        }));
+        logger.warn('🗑️ DELETE ACTION NOT MAPPED:', {
+          action,
+          availableMappings: Object.keys({
+            'create': 'created', 'created': 'created', 'update': 'updated', 'updated': 'updated',
+            'delete': 'deleted', 'deleted': 'deleted', 'complete': 'completed', 'completed': 'completed'
+          })
+        }, 'WebSocketNotificationService.ts');
       } else {
-        console.log('🔔 WebSocketNotificationService: Ignoring unmapped action:', action);
+        logger.debug('🔔 WebSocketNotificationService: Ignoring unmapped action:', action, 'WebSocketNotificationService.ts');
       }
       return;
     }
 
     if (action?.toLowerCase().includes('delete')) {
-      console.warn('✅ DELETE ACTION MAPPED SUCCESSFULLY:', action, '→', eventType);
+      logger.warn('✅ DELETE ACTION MAPPED SUCCESSFULLY:', { action, eventType }, 'WebSocketNotificationService.ts');
     }
 
     // Extract entity information
@@ -137,22 +138,23 @@ class WebSocketNotificationService {
     const entityId = this.extractEntityId(data);
     const userName = this.extractUserName(message.metadata);
 
-    console.log('🔔 🚨 DELETE DEBUG: WebSocketNotificationService: Triggering notification:', {
+    logger.debug('🔔 🚨 DELETE DEBUG: WebSocketNotificationService: Triggering notification:', {
       entityType: entity,
       eventType,
       entityName,
       entityId,
       userName
-    });
+    }, 'WebSocketNotificationService.ts');
 
     if (action?.toLowerCase().includes('delete')) {
-      console.warn('🗑️ DELETE NOTIFICATION TRIGGER DETAILS:');
-      console.warn('  Entity Type:', entity);
-      console.warn('  Event Type:', eventType);
-      console.warn('  Entity Name:', entityName);
-      console.warn('  Entity ID:', entityId);
-      console.warn('  User Name:', userName);
-      console.warn('  About to call notificationService.notifyEntityChange...');
+      logger.warn('🗑️ DELETE NOTIFICATION TRIGGER DETAILS:', {
+        entityType: entity,
+        eventType,
+        entityName,
+        entityId,
+        userName,
+        info: 'About to call notificationService.notifyEntityChange...'
+      }, 'WebSocketNotificationService.ts');
     }
 
     // Trigger notification
@@ -166,18 +168,16 @@ class WebSocketNotificationService {
       );
 
       if (action?.toLowerCase().includes('delete')) {
-        console.warn(`✅ 🗑️ DELETE NOTIFICATION TRIGGERED SUCCESSFULLY: ${eventType} notification for ${entity}`);
+        logger.warn(`✅ 🗑️ DELETE NOTIFICATION TRIGGERED SUCCESSFULLY: ${eventType} notification for ${entity}`, undefined, 'WebSocketNotificationService.ts');
       } else {
-        console.log(`✅ WebSocketNotificationService: Successfully triggered ${eventType} notification for ${entity}`);
+        logger.debug(`✅ WebSocketNotificationService: Successfully triggered ${eventType} notification for ${entity}`, undefined, 'WebSocketNotificationService.ts');
       }
-      logger.debug(`✅ WebSocketNotificationService: Triggered ${eventType} notification for ${entity}`);
     } catch (error) {
       if (action?.toLowerCase().includes('delete')) {
-        console.error('❌ 🗑️ DELETE NOTIFICATION FAILED:', error);
+        logger.error('❌ 🗑️ DELETE NOTIFICATION FAILED:', error, 'WebSocketNotificationService.ts');
       } else {
-        console.error('❌ WebSocketNotificationService: Failed to trigger notification:', error);
+        logger.error('❌ WebSocketNotificationService: Failed to trigger notification:', error, 'WebSocketNotificationService.ts');
       }
-      logger.error('❌ WebSocketNotificationService: Failed to trigger notification:', error);
     }
   }
 

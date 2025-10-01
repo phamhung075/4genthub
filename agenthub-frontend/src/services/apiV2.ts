@@ -282,9 +282,9 @@ export const taskApiV2 = {
     context_data?: any;
     details?: string;  // Progress notes field
   }) => {
-    console.log('=== API V2 UPDATE TASK ===');
-    console.log('Task ID:', taskId);
-    console.log('Updates:', updates);
+    logger.debug('=== API V2 UPDATE TASK ===');
+    logger.debug('Task ID:', taskId);
+    logger.debug('Updates:', updates);
 
     // Include task_id in the request body as required by backend
     const requestBody = {
@@ -292,21 +292,21 @@ export const taskApiV2 = {
       ...updates
     };
 
-    console.log('=== Progress API 1 ===');
-    console.log('Request body to backend:', JSON.stringify(requestBody, null, 2));
-    console.log('URL:', `${API_BASE_URL}/api/v2/tasks/${taskId}`);
+    logger.debug('=== Progress API 1 ===');
+    logger.debug('Request body to backend:', JSON.stringify(requestBody, null, 2));
+    logger.debug('URL:', `${API_BASE_URL}/api/v2/tasks/${taskId}`);
 
     return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(requestBody),
     }).then(response => {
-      console.log('=== Progress API 2 ===');
-      console.log('Response from backend:', response);
+      logger.debug('=== Progress API 2 ===');
+      logger.debug('Response from backend:', response);
       return response;
     }).catch(error => {
-      console.error('=== API UPDATE ERROR ===');
-      console.error('Error:', error);
+      logger.error('=== API UPDATE ERROR ===');
+      logger.error('Error:', error);
       throw error;
     });
   },

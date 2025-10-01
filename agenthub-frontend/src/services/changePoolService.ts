@@ -52,23 +52,21 @@ class ChangePoolService {
    * Register a component to receive updates when entities change
    */
   subscribe(subscription: ComponentSubscription): () => void {
-    console.log(`📡 ChangePool: Subscribing ${subscription.componentId} to ${subscription.entityTypes.join(', ')}`, {
+    logger.debug(`📡 ChangePool: Subscribing ${subscription.componentId} to ${subscription.entityTypes.join(', ')}`, {
       entityTypes: subscription.entityTypes,
       entityIds: subscription.entityIds,
       projectId: subscription.projectId,
       branchId: subscription.branchId
-    });
-    logger.debug(`📡 ChangePool: Subscribing ${subscription.componentId} to ${subscription.entityTypes.join(', ')}`);
+    }, 'changePoolService.ts');
 
     this.subscriptions.set(subscription.componentId, subscription);
-    console.log(`📡 ChangePool: Total subscriptions now: ${this.subscriptions.size}`);
+    logger.debug(`📡 ChangePool: Total subscriptions now: ${this.subscriptions.size}`, undefined, 'changePoolService.ts');
 
     // Return unsubscribe function
     return () => {
-      console.log(`📡 ChangePool: Unsubscribing ${subscription.componentId}`);
-      logger.debug(`📡 ChangePool: Unsubscribing ${subscription.componentId}`);
+      logger.debug(`📡 ChangePool: Unsubscribing ${subscription.componentId}`, undefined, 'changePoolService.ts');
       this.subscriptions.delete(subscription.componentId);
-      console.log(`📡 ChangePool: Total subscriptions now: ${this.subscriptions.size}`);
+      logger.debug(`📡 ChangePool: Total subscriptions now: ${this.subscriptions.size}`, undefined, 'changePoolService.ts');
     };
   }
 
@@ -76,9 +74,8 @@ class ChangePoolService {
    * Process incoming change notification and refresh relevant components
    */
   processChange(notification: ChangeNotification): void {
-    console.log(`📡 ChangePool: Processing ${notification.entityType} ${notification.eventType} for ${notification.entityId}`);
-    console.log(`📡 ChangePool: Current subscriptions count: ${this.subscriptions.size}`);
-    logger.debug(`📡 ChangePool: Processing ${notification.entityType} ${notification.eventType} for ${notification.entityId}`);
+    logger.debug(`📡 ChangePool: Processing ${notification.entityType} ${notification.eventType} for ${notification.entityId}`, undefined, 'changePoolService.ts');
+    logger.debug(`📡 ChangePool: Current subscriptions count: ${this.subscriptions.size}`, undefined, 'changePoolService.ts');
 
     // Add to history
     this.changeHistory.unshift(notification);
@@ -89,39 +86,35 @@ class ChangePoolService {
     // Find all components that should be refreshed
     const componentsToRefresh: string[] = [];
 
-    console.log('📡 ChangePool: Checking subscriptions for matching components...');
+    logger.debug('📡 ChangePool: Checking subscriptions for matching components...', undefined, 'changePoolService.ts');
     this.subscriptions.forEach((subscription, componentId) => {
-      console.log(`📡 ChangePool: Checking subscription ${componentId}:`, {
+      logger.debug(`📡 ChangePool: Checking subscription ${componentId}:`, {
         entityTypes: subscription.entityTypes,
         entityIds: subscription.entityIds,
         projectId: subscription.projectId,
         branchId: subscription.branchId
-      });
+      }, 'changePoolService.ts');
 
       if (this.shouldComponentRefresh(subscription, notification)) {
         componentsToRefresh.push(componentId);
-        console.log(`✅ ChangePool: Will refresh ${componentId}`);
+        logger.debug(`✅ ChangePool: Will refresh ${componentId}`, undefined, 'changePoolService.ts');
 
         // Execute the refresh callback with notification data
         try {
           subscription.refreshCallback(notification);
-          console.log(`✅ ChangePool: Successfully refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`);
-          logger.debug(`✅ ChangePool: Refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`);
+          logger.debug(`✅ ChangePool: Successfully refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`, undefined, 'changePoolService.ts');
         } catch (error) {
-          console.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error);
-          logger.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error);
+          logger.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error, 'changePoolService.ts');
         }
       } else {
-        console.log(`❌ ChangePool: ${componentId} does not match notification`);
+        logger.debug(`❌ ChangePool: ${componentId} does not match notification`, undefined, 'changePoolService.ts');
       }
     });
 
     if (componentsToRefresh.length > 0) {
-      console.log(`📊 ChangePool: Refreshed ${componentsToRefresh.length} components:`, componentsToRefresh);
-      logger.debug(`📊 ChangePool: Refreshed ${componentsToRefresh.length} components:`, componentsToRefresh);
+      logger.debug(`📊 ChangePool: Refreshed ${componentsToRefresh.length} components:`, componentsToRefresh, 'changePoolService.ts');
     } else {
-      console.log(`📊 ChangePool: No components needed refresh for ${notification.entityType} ${notification.eventType}`);
-      logger.debug(`📊 ChangePool: No components needed refresh for ${notification.entityType} ${notification.eventType}`);
+      logger.debug(`📊 ChangePool: No components needed refresh for ${notification.entityType} ${notification.eventType}`, undefined, 'changePoolService.ts');
     }
   }
 
@@ -256,20 +249,18 @@ class ChangePoolService {
   debugSubscriptions(): void {
     const stats = this.getSubscriptionStats();
 
-    console.group('📡 ChangePool Subscription Debug');
-    console.log(`Total subscriptions: ${stats.total}`);
-    console.log('By component:', stats.byComponent);
-    console.log('By entity type:', stats.byEntityType);
+    logger.debug('📡 ChangePool Subscription Debug', undefined, 'changePoolService.ts');
+    logger.debug(`Total subscriptions: ${stats.total}`, undefined, 'changePoolService.ts');
+    logger.debug('By component:', stats.byComponent, 'changePoolService.ts');
+    logger.debug('By entity type:', stats.byEntityType, 'changePoolService.ts');
 
     if (stats.potentialDuplicates.length > 0) {
-      console.warn('⚠️ Potential duplicate component patterns:', stats.potentialDuplicates);
+      logger.warn('⚠️ Potential duplicate component patterns:', stats.potentialDuplicates, 'changePoolService.ts');
     }
 
     if (stats.total > 5) {
-      console.warn(`⚠️ High subscription count: ${stats.total} (expected: 1-3 for typical usage)`);
+      logger.warn(`⚠️ High subscription count: ${stats.total} (expected: 1-3 for typical usage)`, undefined, 'changePoolService.ts');
     }
-
-    console.groupEnd();
   }
 }
 
@@ -282,15 +273,13 @@ export const changePoolService = new ChangePoolService();
  * This should be called with the WebSocket client instance from useWebSocket hook
  */
 function initializeWebSocketIntegration(webSocketClient: any): () => void {
-  console.log('🔌 ChangePool: Initializing WebSocket integration...');
-  console.log('🔌 ChangePool: WebSocket client type:', typeof webSocketClient);
-  console.log('🔌 ChangePool: WebSocket client has .on:', typeof webSocketClient?.on === 'function');
-  logger.info('🔌 ChangePool: Initializing WebSocket integration');
+  logger.info('🔌 ChangePool: Initializing WebSocket integration...', undefined, 'changePoolService.ts');
+  logger.debug('🔌 ChangePool: WebSocket client type:', typeof webSocketClient, 'changePoolService.ts');
+  logger.debug('🔌 ChangePool: WebSocket client has .on:', typeof webSocketClient?.on === 'function', 'changePoolService.ts');
 
   // Create the handler function so we can reference it later for cleanup
   const updateHandler = (message: any) => {
-    console.log('📡 ChangePool: ⚡⚡⚡ HANDLER INVOKED ⚡⚡⚡ Received WebSocket update message:', message);
-    logger.debug('📡 ChangePool: Received WebSocket update message:', message);
+    logger.debug('📡 ChangePool: ⚡⚡⚡ HANDLER INVOKED ⚡⚡⚡ Received WebSocket update message:', message, 'changePoolService.ts');
 
     // Process v2.0 protocol messages (check both payload and metadata for entity info)
     if (message.type === 'update' && (message.payload?.entity || message.metadata?.entity_type)) {
@@ -301,36 +290,30 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
       const entityId = message.payload?.data?.primary?.id || message.metadata?.entity_id || 'unknown';
 
       // CRITICAL DEBUG: Log data extraction paths
-      console.log('🔍 [ChangePool] Data extraction debug:', {
+      logger.debug('🔍 [ChangePool] Data extraction debug:', {
         'message.payload?.data?.primary': message.payload?.data?.primary,
         'message.data': message.data,
         'hasPrimary': !!message.payload?.data?.primary,
         'hasMessageData': !!message.data,
         'primaryKeys': message.payload?.data?.primary ? Object.keys(message.payload.data.primary) : [],
         'messageDataKeys': message.data ? Object.keys(message.data) : []
-      });
+      }, 'changePoolService.ts');
 
       const extractedData = message.payload?.data?.primary || message.data || {};
 
-      console.log('🔍 [ChangePool] Extracted data for notification:', {
+      logger.debug('🔍 [ChangePool] Extracted data for notification:', {
         hasExtractedData: !!extractedData && Object.keys(extractedData).length > 0,
         extractedDataKeys: Object.keys(extractedData),
         extractedData: extractedData
-      });
+      }, 'changePoolService.ts');
 
-      console.log('📡 ChangePool: Processing v2.0 update message:', {
+      logger.info('📡 ChangePool: Processing v2.0 update message:', {
         entityType,
         entityId,
         action,
         version: message.version,
         hasData: !!extractedData && Object.keys(extractedData).length > 0
-      });
-      logger.info('📡 ChangePool: Processing v2.0 update message:', {
-        entityType,
-        entityId,
-        action,
-        version: message.version
-      });
+      }, 'changePoolService.ts');
 
       const notification: ChangeNotification = {
         entityType: entityType as EntityType,
@@ -348,70 +331,60 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         timestamp: message.timestamp || new Date().toISOString()
       };
 
-      console.log('🔍 [ChangePool] Final notification being sent:', {
+      logger.debug('🔍 [ChangePool] Final notification being sent:', {
         entityType: notification.entityType,
         entityId: notification.entityId,
         eventType: notification.eventType,
         hasData: !!notification.data && Object.keys(notification.data).length > 0,
         dataKeys: notification.data ? Object.keys(notification.data) : [],
         data: notification.data
-      });
+      }, 'changePoolService.ts');
 
       changePoolService.processChange(notification);
     } else {
-      console.log('📡 ChangePool: Ignoring non-update message:', {
-        type: message.type,
-        version: message.version,
-        hasPayload: !!message.payload,
-        entityType: message.payload?.entity || message.metadata?.entity_type
-      });
       logger.debug('📡 ChangePool: Ignoring non-update message:', {
         type: message.type,
         version: message.version,
         hasPayload: !!message.payload,
         entityType: message.payload?.entity || message.metadata?.entity_type
-      });
+      }, 'changePoolService.ts');
     }
   };
 
   // Subscribe to WebSocket update messages
-  console.log('🔌 ChangePool: About to subscribe to "update" event...');
+  logger.debug('🔌 ChangePool: About to subscribe to "update" event...', undefined, 'changePoolService.ts');
   webSocketClient.on('update', updateHandler);
-  console.log('🔌 ChangePool: Subscription complete, checking listener count...');
+  logger.debug('🔌 ChangePool: Subscription complete, checking listener count...', undefined, 'changePoolService.ts');
 
   // Verify subscription was successful
   const listenerCount = typeof webSocketClient.listenerCount === 'function'
     ? webSocketClient.listenerCount('update')
     : 'unknown';
-  console.log('📡 ChangePool: Subscribed to WebSocket update events');
-  console.log('📡 ChangePool: Total update listeners:', listenerCount);
-  logger.info('📡 ChangePool: Connected to WebSocket service');
+  logger.info('📡 ChangePool: Subscribed to WebSocket update events', undefined, 'changePoolService.ts');
+  logger.debug('📡 ChangePool: Total update listeners:', listenerCount, 'changePoolService.ts');
 
   // Return cleanup function
   return () => {
     try {
       // Properly unsubscribe using the off method with the specific handler
       if (webSocketClient && typeof webSocketClient.off === 'function') {
-        console.log('🔌 ChangePool: Unsubscribing from WebSocket events');
-        logger.debug('🔌 ChangePool: Unsubscribing from WebSocket events');
+        logger.debug('🔌 ChangePool: Unsubscribing from WebSocket events', undefined, 'changePoolService.ts');
         webSocketClient.off('update', updateHandler);
       } else if (webSocketClient && typeof webSocketClient.removeAllListeners === 'function') {
         // Fallback for EventEmitter-like objects
-        console.log('🔌 ChangePool: Using removeAllListeners for cleanup');
+        logger.debug('🔌 ChangePool: Using removeAllListeners for cleanup', undefined, 'changePoolService.ts');
         webSocketClient.removeAllListeners('update');
       } else {
         // Log warning but don't throw - this is not critical
-        console.log('🔌 ChangePool: WebSocket client cleanup skipped (no suitable method found)');
+        logger.debug('🔌 ChangePool: WebSocket client cleanup skipped (no suitable method found)', undefined, 'changePoolService.ts');
       }
     } catch (error) {
       // Catch any errors during cleanup to prevent app crashes
-      console.warn('🔌 ChangePool: Error during WebSocket cleanup:', error);
-      logger.warn('🔌 ChangePool: Error during WebSocket cleanup:', error);
+      logger.warn('🔌 ChangePool: Error during WebSocket cleanup:', error, 'changePoolService.ts');
     }
 
     // Always clear subscriptions regardless of WebSocket cleanup success
-    console.log('🔌 ChangePool: Clearing all change pool subscriptions');
-    logger.debug('🔌 ChangePool: Clearing all change pool subscriptions');
+    logger.debug('🔌 ChangePool: Clearing all change pool subscriptions', undefined, 'changePoolService.ts');
     changePoolService.clearAllSubscriptions();
   };
 }

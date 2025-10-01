@@ -86,10 +86,10 @@ export const useProjectData = ({
 
   const refreshBranchSummaries = useCallback(async () => {
     // Use the bulk API hook's refresh function instead of manual refresh
-    console.log('🚀 REFRESH DEBUG: refreshBranchSummaries called - this will update counts');
+    logger.debug('🚀 REFRESH DEBUG: refreshBranchSummaries called - this will update counts');
     logger.info('🔄 Refreshing branch summaries using optimized bulk API');
     await refreshBulkSummaries();
-    console.log('🚀 REFRESH DEBUG: refreshBranchSummaries completed');
+    logger.debug('🚀 REFRESH DEBUG: refreshBranchSummaries completed');
   }, [refreshBulkSummaries]);
 
   // Initial load only - real-time updates handled by useEntityChanges hook
@@ -101,11 +101,11 @@ export const useProjectData = ({
 
   // Create stable refresh callback for change pool
   const handleDataChange = useCallback(() => {
-    console.log('🚀 CHANGE DEBUG: handleDataChange called - WebSocket event detected');
+    logger.debug('🚀 CHANGE DEBUG: handleDataChange called - WebSocket event detected');
     logger.debug('📡 ProjectList: Data change detected, refreshing...');
     // Refresh when entity events occur - bulk API returns both projects and branches
     refreshBranchSummaries();
-    console.log('🚀 CHANGE DEBUG: handleDataChange completed refresh call');
+    logger.debug('🚀 CHANGE DEBUG: handleDataChange completed refresh call');
   }, [refreshBranchSummaries]);
 
   // Unified refresh function for UI buttons

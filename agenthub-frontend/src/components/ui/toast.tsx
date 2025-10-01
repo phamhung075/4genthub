@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useEff
 import { X, CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { ToastType, Toast } from '../../types/componentTypes';
+import logger from '../../utils/logger';
 
 interface ToastContextType {
   toasts: Toast[];
@@ -180,16 +181,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
-    console.log('🍞 ToastProvider.showToast() called with:', toast);
+    logger.debug('🍞 ToastProvider.showToast() called with:', toast);
 
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = { ...toast, id };
 
-    console.log('🍞 ToastProvider: Creating toast with ID:', id, 'toast:', newToast);
+    logger.debug('🍞 ToastProvider: Creating toast with ID:', id, 'toast:', newToast);
 
     setToasts(prev => {
       const newToasts = [...prev, newToast];
-      console.log('🍞 ToastProvider: Updated toasts array, now have', newToasts.length, 'toasts');
+      logger.debug('🍞 ToastProvider: Updated toasts array, now have', newToasts.length, 'toasts');
       return newToasts;
     });
 

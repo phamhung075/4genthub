@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { taskDeletionTracker } from "../../services/taskDeletionTracker";
+import logger from "../../utils/logger";
 
 // Import custom hooks (business logic)
 import { useSubtaskData } from "./hooks/useSubtaskData";
@@ -78,14 +79,14 @@ export function LazySubtaskListRefactored({
 
   // Handle subtask deletion with animation
   const handleSubtaskDeleted = useCallback((subtaskId: string) => {
-    console.log('🗑️ [LazySubtaskList] Subtask deleted, marking for animation:', subtaskId);
+    logger.debug('🗑️ [LazySubtaskList] Subtask deleted, marking for animation', { subtaskId }, 'LazySubtaskListRefactored.tsx');
 
     // Mark for deletion so SubtaskRow can detect and animate
     taskDeletionTracker.markForDeletion(subtaskId);
 
     // Remove after animation completes (800ms)
     setTimeout(() => {
-      console.log('🗑️ [LazySubtaskList] Removing subtask after animation:', subtaskId);
+      logger.debug('🗑️ [LazySubtaskList] Removing subtask after animation', { subtaskId }, 'LazySubtaskListRefactored.tsx');
       refreshData();
       taskDeletionTracker.clearDeletion(subtaskId);
     }, 800);
@@ -198,13 +199,13 @@ export function LazySubtaskListRefactored({
   // Handle delete subtask
   const handleDeleteSubtask = async (subtaskId: string) => {
     // Implementation would go here - delegated to parent or service
-    console.log('Delete subtask:', subtaskId);
+    logger.debug('Delete subtask:', subtaskId);
   };
 
   // Handle complete subtask
   const handleCompleteSubtask = (subtask: any) => {
     // Implementation would go here - delegated to parent or service
-    console.log('Complete subtask:', subtask);
+    logger.debug('Complete subtask:', subtask);
   };
 
   // Error state

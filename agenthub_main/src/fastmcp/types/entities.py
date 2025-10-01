@@ -32,6 +32,8 @@ class TaskDTO(BaseModel):
     labels: Optional[List[str]] = None
     details: Optional[str] = None
     progress_percentage: Optional[int] = None
+    progress_history: Optional[Dict[str, Any]] = None
+    progress_count: Optional[int] = None
     subtasks: Optional[List['SubtaskDTO']] = None
 
     class Config:

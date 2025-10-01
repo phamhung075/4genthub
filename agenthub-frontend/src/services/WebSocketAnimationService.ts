@@ -10,6 +10,7 @@
 import { WSMessage } from './WebSocketClient';
 import { animationFactory, AnimationType } from './AnimationFactory';
 import type { AnimationTriggerType, AnimationEvent } from '../types/serviceTypes';
+import logger from '../utils/logger';
 
 class WebSocketAnimationService {
   private animationListeners: Map<string, Set<Function>> = new Map();
@@ -18,17 +19,17 @@ class WebSocketAnimationService {
    * Initialize the service by connecting to WebSocket message events
    */
   init(webSocketClient: any) {
-    console.log('🎬 WebSocketAnimationService: Initializing...');
-    console.log('🎬 WebSocketAnimationService: Client type:', typeof webSocketClient);
-    console.log('🎬 WebSocketAnimationService: Client has "on" method:', typeof webSocketClient.on);
+    logger.debug('🎬 WebSocketAnimationService: Initializing...');
+    logger.debug('🎬 WebSocketAnimationService: Client type:', typeof webSocketClient);
+    logger.debug('🎬 WebSocketAnimationService: Client has "on" method:', typeof webSocketClient.on);
 
     // Listen for WebSocket update messages
     webSocketClient.on('update', (message: WSMessage) => {
-      console.log('🎬 WebSocketAnimationService: 📨 Received update message');
+      logger.debug('🎬 WebSocketAnimationService: 📨 Received update message');
       this.handleWebSocketMessage(message);
     });
 
-    console.log('✅ WebSocketAnimationService: Connected to WebSocket events');
+    logger.debug('✅ WebSocketAnimationService: Connected to WebSocket events');
   }
 
   /**
@@ -39,7 +40,7 @@ class WebSocketAnimationService {
     const { payload } = message;
     const { entity, action } = payload;
 
-    console.log('🎬 🚨 DELETE DEBUG: WebSocketAnimationService: Processing message:', {
+    logger.debug('🎬 🚨 DELETE DEBUG: WebSocketAnimationService: Processing message:', {
       entity,
       action,
       messageId: message.id
@@ -47,33 +48,33 @@ class WebSocketAnimationService {
 
     // Special detailed logging for DELETE operations
     if (action?.toLowerCase().includes('delete')) {
-      console.warn('🗑️ DELETE MESSAGE RECEIVED in WebSocketAnimationService:');
-      console.warn('  Entity:', entity);
-      console.warn('  Action:', action);
-      console.warn('  Message ID:', message.id);
-      console.warn('  Full message:', message);
-      console.warn('  Checking if entity matches supported types (task/subtask/branch)...');
+      logger.warn('🗑️ DELETE MESSAGE RECEIVED in WebSocketAnimationService:');
+      logger.warn('  Entity:', entity);
+      logger.warn('  Action:', action);
+      logger.warn('  Message ID:', message.id);
+      logger.warn('  Full message:', message);
+      logger.warn('  Checking if entity matches supported types (task/subtask/branch)...');
     }
 
     // Only handle task-related operations that should trigger animations
     if (entity === 'task') {
       if (action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE: Triggering task animation');
+        logger.warn('🗑️ DELETE: Triggering task animation');
       }
       this.triggerTaskAnimation(action, message);
     } else if (entity === 'subtask') {
       if (action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE: Triggering subtask animation');
+        logger.warn('🗑️ DELETE: Triggering subtask animation');
       }
       this.triggerSubtaskAnimation(action, message);
     } else if (entity === 'branch') {
       if (action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE: Triggering branch animation');
+        logger.warn('🗑️ DELETE: Triggering branch animation');
       }
       this.triggerBranchAnimation(action, message);
     } else {
       if (action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE: Entity not supported for animations:', entity);
+        logger.warn('🗑️ DELETE: Entity not supported for animations:', entity);
       }
     }
   }
@@ -86,7 +87,7 @@ class WebSocketAnimationService {
     const taskTitle = metadata?.task_title || 'Task';
     const branchTitle = metadata?.parent_branch_title || 'Branch';
 
-    console.log('🎯 WebSocketAnimationService: Triggering task animation via AnimationFactory:', {
+    logger.debug('🎯 WebSocketAnimationService: Triggering task animation via AnimationFactory:', {
       action,
       taskTitle,
       branchTitle
@@ -99,7 +100,7 @@ class WebSocketAnimationService {
     const metadataId = message.metadata?.entity_id;
     const taskId = primaryId || directDataId || metadataId;
 
-    console.log('🔍 Task ID extraction debug:', {
+    logger.debug('🔍 Task ID extraction debug:', {
       primaryId,
       directDataId,
       metadataId,
@@ -108,7 +109,7 @@ class WebSocketAnimationService {
     });
 
     if (!taskId) {
-      console.warn('❌ No task ID found - cannot trigger targeted animation');
+      logger.warn('❌ No task ID found - cannot trigger targeted animation');
       return;
     }
 
@@ -129,14 +130,14 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        console.log('🎬 WebSocketAnimationService: Unknown task action:', action);
+        logger.debug('🎬 WebSocketAnimationService: Unknown task action:', action);
         return;
     }
 
     // Trigger animation via centralized factory
     const success = animationFactory.animate(taskId, animationType, 'websocket');
 
-    console.log('🎬 WebSocketAnimationService: Animation request result:', {
+    logger.debug('🎬 WebSocketAnimationService: Animation request result:', {
       taskId,
       animationType,
       success
@@ -154,7 +155,7 @@ class WebSocketAnimationService {
     const subtaskTitle = metadata?.subtask_title || 'Subtask';
     const parentTaskTitle = metadata?.parent_task_title || 'Task';
 
-    console.log('🎯 WebSocketAnimationService: Triggering subtask animation via AnimationFactory:', {
+    logger.debug('🎯 WebSocketAnimationService: Triggering subtask animation via AnimationFactory:', {
       action,
       subtaskTitle,
       parentTaskTitle
@@ -167,7 +168,7 @@ class WebSocketAnimationService {
     const subtaskId = primaryId || directDataId || metadataId;
 
     if (!subtaskId) {
-      console.warn('❌ No subtask ID found - cannot trigger targeted animation');
+      logger.warn('❌ No subtask ID found - cannot trigger targeted animation');
       return;
     }
 
@@ -188,14 +189,14 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        console.log('🎬 WebSocketAnimationService: Unknown subtask action:', action);
+        logger.debug('🎬 WebSocketAnimationService: Unknown subtask action:', action);
         return;
     }
 
     // Trigger animation via centralized factory
     const success = animationFactory.animate(subtaskId, animationType, 'websocket');
 
-    console.log('🎬 WebSocketAnimationService: Subtask animation request result:', {
+    logger.debug('🎬 WebSocketAnimationService: Subtask animation request result:', {
       subtaskId,
       animationType,
       success
@@ -209,7 +210,7 @@ class WebSocketAnimationService {
     const { metadata } = message;
     const branchTitle = metadata?.branch_title || 'Branch';
 
-    console.log('🎯 WebSocketAnimationService: Triggering branch animation via AnimationFactory:', {
+    logger.debug('🎯 WebSocketAnimationService: Triggering branch animation via AnimationFactory:', {
       action,
       branchTitle
     });
@@ -221,7 +222,7 @@ class WebSocketAnimationService {
     const branchId = primaryId || directDataId || metadataId;
 
     if (!branchId) {
-      console.warn('❌ No branch ID found - cannot trigger targeted animation');
+      logger.warn('❌ No branch ID found - cannot trigger targeted animation');
       return;
     }
 
@@ -239,14 +240,14 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        console.log('🎬 WebSocketAnimationService: Unknown branch action:', action);
+        logger.debug('🎬 WebSocketAnimationService: Unknown branch action:', action);
         return;
     }
 
     // Trigger animation via centralized factory
     const success = animationFactory.animate(branchId, animationType, 'websocket');
 
-    console.log('🎬 WebSocketAnimationService: Branch animation request result:', {
+    logger.debug('🎬 WebSocketAnimationService: Branch animation request result:', {
       branchId,
       animationType,
       success
@@ -291,7 +292,7 @@ class WebSocketAnimationService {
    * Manually trigger an animation (for testing) - now uses AnimationFactory
    */
   triggerTestAnimation(type: AnimationTriggerType, entity: string = 'task', elementId: string = 'test-element') {
-    console.log('🧪 WebSocketAnimationService: Triggering test animation via AnimationFactory:', {
+    logger.debug('🧪 WebSocketAnimationService: Triggering test animation via AnimationFactory:', {
       type,
       entity,
       elementId
@@ -313,14 +314,14 @@ class WebSocketAnimationService {
         animationType = 'complete';
         break;
       default:
-        console.warn('🧪 Unknown test animation type:', type);
+        logger.warn('🧪 Unknown test animation type:', type);
         return;
     }
 
     // Trigger animation directly via factory
     const success = animationFactory.animate(elementId, animationType, 'websocket');
 
-    console.log('🧪 Test animation result:', {
+    logger.debug('🧪 Test animation result:', {
       elementId,
       animationType,
       success
@@ -344,5 +345,5 @@ export const webSocketAnimationService = new WebSocketAnimationService();
 // DEBUG: Export to window for debugging and testing
 if (typeof window !== 'undefined') {
   (window as any).webSocketAnimationService = webSocketAnimationService;
-  console.log('🎬 WebSocketAnimationService: Exposed to window.webSocketAnimationService for debugging');
+  logger.debug('🎬 WebSocketAnimationService: Exposed to window.webSocketAnimationService for debugging');
 }

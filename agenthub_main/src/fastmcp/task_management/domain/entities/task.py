@@ -1315,7 +1315,7 @@ class Task(BaseTimestampEntity):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "context_id": self.context_id,
             "overall_progress": self.overall_progress,
-            "progress_percentage": getattr(self, 'progress_percentage', 0)  # Include progress_percentage from DB
+            "progress_percentage": self.overall_progress  # FIXED: Use overall_progress (entity field) instead of non-existent progress_percentage
         }
         
         # Include progress timeline if exists

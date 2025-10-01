@@ -24,10 +24,10 @@ export function useSubtaskAnimation({
 
   // Animation handlers that delegate to AnimationFactory
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
-    console.log('🎬 [useSubtaskAnimation] playCreateAnimation called:', {
+    logger.debug('🎬 [useSubtaskAnimation] playCreateAnimation called', {
       subtaskId,
       source
-    });
+    }, 'useSubtaskAnimation.ts');
 
     const success = animationFactory.animate(subtaskId, 'create', source);
 
@@ -36,7 +36,7 @@ export function useSubtaskAnimation({
       subtaskId,
       source,
       success
-    });
+    }, 'useSubtaskAnimation.ts');
 
     // Fallback to local state if factory fails
     if (!success) {
@@ -82,17 +82,17 @@ export function useSubtaskAnimation({
     const currentElement = elementRef.current;
 
     if (currentElement) {
-      console.log('🎬 [useSubtaskAnimation] Registering element:', {
+      logger.debug('🎬 [useSubtaskAnimation] Registering element', {
         subtaskId,
         element: currentElement.tagName
-      });
+      }, 'useSubtaskAnimation.ts');
 
       animationFactory.registerElement(subtaskId, currentElement, {
         onAnimationStart: (type: AnimationType) => {
-          console.log('🎬 Subtask animation started:', { subtaskId, type });
+          logger.debug('🎬 Subtask animation started', { subtaskId, type }, 'useSubtaskAnimation.ts');
         },
         onAnimationEnd: (type: AnimationType) => {
-          console.log('🎬 Subtask animation completed:', { subtaskId, type });
+          logger.debug('🎬 Subtask animation completed', { subtaskId, type }, 'useSubtaskAnimation.ts');
         }
       });
 
@@ -104,7 +104,7 @@ export function useSubtaskAnimation({
 
     // Cleanup on unmount
     return () => {
-      console.log('🎬 [useSubtaskAnimation] Unregistering:', subtaskId);
+      logger.debug('🎬 [useSubtaskAnimation] Unregistering', { subtaskId }, 'useSubtaskAnimation.ts');
       animationFactory.unregisterElement(subtaskId);
       logger.debug('Subtask element unregistered from AnimationFactory', {
         component: 'useSubtaskAnimation',
@@ -138,7 +138,7 @@ export function useSubtaskAnimation({
   useEffect(() => {
     const checkInterval = setInterval(() => {
       if (taskDeletionTracker.isMarkedForDeletion(subtaskId)) {
-        console.log('🗑️ [useSubtaskAnimation] Subtask marked for deletion, triggering animation:', subtaskId);
+        logger.debug('🗑️ [useSubtaskAnimation] Subtask marked for deletion, triggering animation', { subtaskId }, 'useSubtaskAnimation.ts');
         playDeleteAnimation('websocket');
         // Stop checking once we've triggered the animation
         clearInterval(checkInterval);

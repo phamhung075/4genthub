@@ -12,6 +12,7 @@ import type {
   AnimationType,
   ElementRegistration
 } from '../types/animationTypes';
+import logger from '../utils/logger';
 
 class AnimationFactory {
   // Animation definitions with synchronized CSS durations
@@ -59,7 +60,7 @@ class AnimationFactory {
       onAnimationEnd?: (type: AnimationType) => void;
     }
   ): void {
-    //console.log('🎬 [AnimationFactory] Registering element:', {
+    //logger.debug('🎬 [AnimationFactory] Registering element:', {
     //  elementId,
     //  elementType: element.tagName,
     //  hasCallbacks: !!callbacks
@@ -72,7 +73,7 @@ class AnimationFactory {
    * Unregister an element from animations
    */
   unregisterElement(elementId: string): void {
-    //console.log('🎬 [AnimationFactory] Unregistering element:', elementId);
+    //logger.debug('🎬 [AnimationFactory] Unregistering element:', elementId);
 
     // Clean up any active animation state
     this.animationStates.delete(elementId);
@@ -83,7 +84,7 @@ class AnimationFactory {
    * Trigger animation for a specific element
    */
   animate(elementId: string, type: AnimationType, source: AnimationSource = 'callback'): boolean {
-    //console.log('🎬 [AnimationFactory] Animation request:', {
+    //logger.debug('🎬 [AnimationFactory] Animation request:', {
     //  elementId,
     //  type,
     //  source,
@@ -93,13 +94,13 @@ class AnimationFactory {
     // Check if element is registered
     const registration = this.elementRegistry.get(elementId);
     if (!registration) {
-      console.warn('🎬 [AnimationFactory] Element not registered:', elementId);
+      logger.warn('🎬 [AnimationFactory] Element not registered:', elementId);
       return false;
     }
 
     // Check if animation should be allowed (coordination logic)
     if (!this.shouldAllowAnimation(elementId, type, source)) {
-      //console.log('🎬 [AnimationFactory] Animation blocked by coordination logic:', {
+      //logger.debug('🎬 [AnimationFactory] Animation blocked by coordination logic:', {
       //  elementId,
       //  type,
       //  source
@@ -110,7 +111,7 @@ class AnimationFactory {
     // Get animation definition
     const animationDef = this.animationRegistry[type];
     if (!animationDef) {
-      //console.error('🎬 [AnimationFactory] Unknown animation type:', type);
+      //logger.error('🎬 [AnimationFactory] Unknown animation type:', type);
       return false;
     }
 
@@ -121,7 +122,7 @@ class AnimationFactory {
       source
     });
 
-    //console.log('🎬 [AnimationFactory] Applying animation:', {
+    //logger.debug('🎬 [AnimationFactory] Applying animation:', {
     //  elementId,
     //  type,
     //  cssClass: animationDef.cssClass,
@@ -190,7 +191,7 @@ class AnimationFactory {
     // Add animation class
     element.classList.add(animationDef.cssClass);
 
-    //console.log('🎬 [AnimationFactory] CSS class applied:', {
+    //logger.debug('🎬 [AnimationFactory] CSS class applied:', {
     //  className: animationDef.cssClass,
     //  element: element.tagName,
     //  currentClasses: Array.from(element.classList)
@@ -206,7 +207,7 @@ class AnimationFactory {
       // Trigger end callback
       callbacks?.onAnimationEnd?.(type);
 
-      //console.log('🎬 [AnimationFactory] Animation cleanup completed:', {
+      //logger.debug('🎬 [AnimationFactory] Animation cleanup completed:', {
       //  className: animationDef.cssClass,
       //  type
       //});
@@ -239,7 +240,7 @@ class AnimationFactory {
 
     // Allow mount-time animations to override others
     if (source === 'mount') {
-      //console.log('🎬 [AnimationFactory] Mount-time animation overriding current:', {
+      //logger.debug('🎬 [AnimationFactory] Mount-time animation overriding current:', {
       //  elementId,
       //  newType: type,
       //  currentType: currentState.type,
@@ -250,7 +251,7 @@ class AnimationFactory {
 
     // Allow WebSocket animations to override callbacks
     if (source === 'websocket' && currentState.source === 'callback') {
-      //console.log('🎬 [AnimationFactory] WebSocket animation overriding callback:', {
+      //logger.debug('🎬 [AnimationFactory] WebSocket animation overriding callback:', {
       //  elementId,
       //  newType: type,
       //  currentType: currentState.type
@@ -259,7 +260,7 @@ class AnimationFactory {
     }
 
     // Block everything else
-    //console.log('🎬 [AnimationFactory] Animation blocked by coordination:', {
+    //logger.debug('🎬 [AnimationFactory] Animation blocked by coordination:', {
     //  elementId,
     //  requestedType: type,
     //  requestedSource: source,
@@ -312,7 +313,7 @@ export type { AnimationType, AnimationSource, AnimationState, AnimationDefinitio
 // DEBUG: Export to window for debugging and testing
 if (typeof window !== 'undefined') {
   (window as any).animationFactory = animationFactory;
-  console.log('🎬 AnimationFactory: Exposed to window.animationFactory for debugging');
+  logger.debug('🎬 AnimationFactory: Exposed to window.animationFactory for debugging', {}, 'AnimationFactory.ts');
 }
 
 export default animationFactory;

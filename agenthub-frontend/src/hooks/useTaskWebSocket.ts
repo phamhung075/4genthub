@@ -62,7 +62,7 @@ export function useTaskWebSocket({
 
   // Optimized task change handler with WebSocket-first strategy and debouncing
   const handleTaskChanges = useCallback(async (notification?: any) => {
-    console.log('🚀 [useTaskWebSocket] OPTIMIZED CHANGE EVENT - WebSocket-first strategy');
+    logger.debug('🚀 [useTaskWebSocket] OPTIMIZED CHANGE EVENT - WebSocket-first strategy');
 
     // Clear any existing debounce timer
     if (debounceTimerRef.current) {
@@ -72,7 +72,7 @@ export function useTaskWebSocket({
 
     // PHASE 1: Try to process with WebSocket data first (0 API calls)
     if (notification && onTaskUpdate) {
-      console.log('🚀 [useTaskWebSocket] Attempting WebSocket-first update:', {
+      logger.debug('🚀 [useTaskWebSocket] Attempting WebSocket-first update:', {
         entityType: notification.entityType,
         entityId: notification.entityId,
         eventType: notification.eventType,
@@ -84,7 +84,7 @@ export function useTaskWebSocket({
       const wasProcessed = onTaskUpdate(notification);
 
       if (wasProcessed) {
-        console.log('✅ [useTaskWebSocket] Successfully processed via WebSocket - NO API CALL NEEDED');
+        logger.debug('✅ [useTaskWebSocket] Successfully processed via WebSocket - NO API CALL NEEDED');
         logger.info('Task update processed via WebSocket (performance optimized)', {
           component: 'useTaskWebSocket',
           entityId: notification.entityId,
@@ -92,27 +92,27 @@ export function useTaskWebSocket({
         });
         return; // EARLY EXIT - no API call needed!
       } else {
-        console.log('⚠️ [useTaskWebSocket] WebSocket processing failed, falling back to API call');
+        logger.debug('⚠️ [useTaskWebSocket] WebSocket processing failed, falling back to API call');
       }
     }
 
     // PHASE 2: Debounced fallback to API call (only when WebSocket data insufficient)
-    console.log('🚀 [useTaskWebSocket] Setting up debounced API fallback (200ms delay)');
+    logger.debug('🚀 [useTaskWebSocket] Setting up debounced API fallback (200ms delay)');
 
     debounceTimerRef.current = setTimeout(async () => {
       // Prevent duplicate calls during debounce period
       if (isLoadingRef.current) {
-        console.log('🚀 [useTaskWebSocket] API call already in progress, skipping debounced call');
+        logger.debug('🚀 [useTaskWebSocket] API call already in progress, skipping debounced call');
         return;
       }
 
-      console.log('🚀 [useTaskWebSocket] Executing debounced API fallback');
+      logger.debug('🚀 [useTaskWebSocket] Executing debounced API fallback');
       isLoadingRef.current = true;
 
       try {
         // Signal that we need to fallback to API call
         // This will be handled by the component using this hook
-        console.log('🚀 [useTaskWebSocket] API fallback needed - signaling to parent component');
+        logger.debug('🚀 [useTaskWebSocket] API fallback needed - signaling to parent component');
 
         // The actual API call should be handled by the parent component
         // since it has access to the task data state
@@ -127,13 +127,13 @@ export function useTaskWebSocket({
           });
         }
 
-        console.log('✅ [useTaskWebSocket] API fallback signal sent');
+        logger.debug('✅ [useTaskWebSocket] API fallback signal sent');
         logger.info('Task update fallback signal sent', {
           component: 'useTaskWebSocket'
         });
 
       } catch (error: any) {
-        console.error('❌ [useTaskWebSocket] Fallback signaling failed:', error);
+        logger.error('❌ [useTaskWebSocket] Fallback signaling failed:', error);
         logger.error('Failed to signal API fallback', {
           component: 'useTaskWebSocket',
           error

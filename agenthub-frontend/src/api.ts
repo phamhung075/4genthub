@@ -69,9 +69,9 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
 };
 
 export const updateTask = async (task_id: string, updates: Partial<Task>): Promise<Task> => {
-    console.log('=== UPDATE TASK DEBUG ===');
-    console.log('Task ID:', task_id);
-    console.log('Updates received:', updates);
+    logger.debug('=== UPDATE TASK DEBUG ===');
+    logger.debug('Task ID:', task_id);
+    logger.debug('Updates received:', updates);
 
     // Filter out undefined values and only send defined fields
     const updatePayload: any = {};
@@ -89,33 +89,33 @@ export const updateTask = async (task_id: string, updates: Partial<Task>): Promi
     // Add progress_notes - maps to 'details' field in backend
     if ((updates as any).progress_notes !== undefined) updatePayload.details = (updates as any).progress_notes;
 
-    console.log('=== Progress 1 ===');
-    console.log('Sending update payload to backend:', updatePayload);
+    logger.debug('=== Progress 1 ===');
+    logger.debug('Sending update payload to backend:', updatePayload);
 
     try {
         const response = await taskApiV2.updateTask(task_id, updatePayload) as TaskResponse;
 
-        console.log('=== Progress 2 ===');
-        console.log('Response from backend:', response);
+        logger.debug('=== Progress 2 ===');
+        logger.debug('Response from backend:', response);
 
         const result = response.task || response;
 
-        console.log('=== Progress 3 ===');
-        console.log('Returning updated task:', result);
+        logger.debug('=== Progress 3 ===');
+        logger.debug('Returning updated task:', result);
 
         return result;
     } catch (error) {
-        console.error('=== UPDATE ERROR ===');
-        console.error('Error updating task:', error);
+        logger.error('=== UPDATE ERROR ===');
+        logger.error('Error updating task:', error);
         throw error;
     }
 };
 
 export const deleteTask = async (task_id: string): Promise<void> => {
-    console.log('🚀 DELETE DEBUG: API deleteTask called for task_id:', task_id);
-    console.log('🚀 DELETE DEBUG: About to call taskApiV2.deleteTask');
+    logger.debug('🚀 DELETE DEBUG: API deleteTask called for task_id:', task_id);
+    logger.debug('🚀 DELETE DEBUG: About to call taskApiV2.deleteTask');
     await taskApiV2.deleteTask(task_id);
-    console.log('🚀 DELETE DEBUG: taskApiV2.deleteTask completed for task_id:', task_id);
+    logger.debug('🚀 DELETE DEBUG: taskApiV2.deleteTask completed for task_id:', task_id);
 };
 
 export const completeTask = async (

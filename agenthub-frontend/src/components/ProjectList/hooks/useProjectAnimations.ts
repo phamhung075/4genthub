@@ -26,7 +26,7 @@ export const useProjectAnimations = ({
       if (previousCount !== undefined && previousCount !== count) {
         const direction = count > previousCount ? 'up' : 'down';
         changedBranches.set(branchId, direction);
-        console.log('🎯 COUNT ANIMATION: Count changed for branch', branchId, 'from', previousCount, 'to', count, 'direction:', direction);
+        logger.debug('🎯 COUNT ANIMATION: Count changed for branch', branchId, 'from', previousCount, 'to', count, 'direction:', direction);
       }
     });
 
