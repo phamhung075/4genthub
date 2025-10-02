@@ -1,21 +1,3 @@
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/facades/git_branch_application_facade_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/agent_assignment_flow_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_assignees_fix.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_auth_websocket_integration.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_direct_task_creation.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_id_validation_api_flows.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_mcp_tools_inclusion.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_selective_field_queries.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_service_account_auth.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/infrastructure/messaging/event_bus_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/test_shared_init.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_cascade_deletion_fix_verification.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/database/database_config_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_priority_service_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_rule_value_objects.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/auth/service_account_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/ai_task_planning/application/services/ai_planning_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/ai_task_planning/application/test_application_init.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/ai_task_planning/domain/entities/planning_request_test.py
@@ -38,6 +20,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/auth/mcp_keycloak_auth_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/auth/middleware/request_context_middleware_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/auth/models/api_token_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/auth/service_account_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/connection_management/interface/controllers/connection_mcp_controller_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/connection_management/test_secure_health_check.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/hooks/test_agent_state_manager.py
@@ -48,8 +31,22 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/hooks/test_hook_system_comprehensive.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/hooks/test_hooks_basic.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/hooks/test_session_tracker.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/agent_assignment_flow_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/task_management/interface/git_branch_filtering_integration_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/task_management/interface/git_branch_zero_tasks_deletion_integration_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/task_management/test_critical_fixes_verification.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/task_management/test_subtask_user_id_fix.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_assignees_fix.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_auth_websocket_integration.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_direct_task_creation.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_docker_config.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_id_validation_api_flows.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_manual_task_creation.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_mcp_authentication_fixes.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_mcp_tools_inclusion.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_selective_field_queries.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_service_account_auth.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_service_layer_timestamp_integration.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_server.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_websocket_v2.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/security/websocket/test_jwt_websocket_auth.py
@@ -60,6 +57,10 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/security/websocket/test_websocket_security.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/server/auth/providers/jwt_bearer_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/server/http_server_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/infrastructure/messaging/event_bus_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/infrastructure/messaging/test_messaging_init.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/infrastructure/test_infrastructure_init.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/shared/test_shared_init.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/exceptions_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/facades/subtask_application_facade_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/facades/token_application_facade_test.py
@@ -82,6 +83,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/use_cases/ai_task_creation_use_case_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/use_cases/batch_context_operations_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/use_cases/context_search_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/use_cases/context_templates_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/use_cases/context_versioning_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/application/use_cases/create_project_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/assignees_validation_fix_test.py
@@ -92,6 +94,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/domain/value_objects/coordination_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/ai_services/ml_dependency_predictor_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/ai_services/test_ai_services_init.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/database/database_config_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/database/models_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/database/supabase_config_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/infrastructure/debug_context_data_persistence_test.py
@@ -125,6 +128,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/test_call_agent_conversion.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/task_management/test_role_based_agents.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_agent_role_display.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_cascade_deletion_fix_verification.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_cascade_deletion_verification.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_context_cascade_deletion_verification.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/test_db_connection.py
@@ -190,6 +194,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/dtos/context/context_request_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/dtos/task/create_task_request_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/dtos/task/test_progress_history_fix.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/facades/git_branch_application_facade_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/facades/project_application_facade_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/facades/test_agent_application_facade_comprehensive.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/facades/test_agent_application_facade_patterns.py
@@ -221,6 +226,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/services/work_distribution_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/services/workflow_analysis_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/create_git_branch_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/next_task_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/test_add_subtask_with_inheritance.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/application/use_cases/test_assign_agent.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/entities/agent_test.py
@@ -268,6 +274,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/project_name_validator_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/rule_composition_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_completion_service_test.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_priority_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_progress_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_state_transition_service_test.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/services/task_validation_service_test.py
@@ -287,6 +294,7 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_hints.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_priority.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_progress.py
+/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_rule_value_objects.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_subtask_id.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_task_id.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/task_management/domain/value_objects/test_task_status.py
@@ -345,5 +353,3 @@
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/utilities/test_id_validator_performance.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/unit/utilities/test_id_validator_security.py
 /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/validation_test.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/test_docker_config.py
-/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/integration/task_management/test_subtask_user_id_fix.py

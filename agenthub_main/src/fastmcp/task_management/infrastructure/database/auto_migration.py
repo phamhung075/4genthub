@@ -23,6 +23,7 @@ class AutoMigration:
             # Run individual migrations
             AutoMigration._rename_subtasks_table()
             AutoMigration._add_progress_state_columns()
+            AutoMigration._add_subtask_count_column()
 
             logger.info("✅ All database migrations completed successfully")
             return True
@@ -126,6 +127,53 @@ class AutoMigration:
 
         except SQLAlchemyError as e:
             logger.error(f"Failed to add progress_state columns: {e}")
+            raise
+
+    @staticmethod
+    def _add_subtask_count_column():
+        """Add subtask_count column to tasks table."""
+        try:
+            with get_session() as session:
+                inspector = inspect(session.bind)
+                
+                # Check if tasks table exists
+                if 'tasks' not in inspector.get_table_names():
+                    logger.info("Table tasks doesn't exist yet - will be created by ORM")
+                    return
+                
+                # Check if column exists
+                columns = [col['name'] for col in inspector.get_columns('tasks')]
+                
+                if 'subtask_count' not in columns:
+                    logger.info("Adding subtask_count column to tasks table...")
+                    
+                    # Determine database type
+                    dialect_name = session.bind.dialect.name
+                    
+                    if dialect_name == 'postgresql':
+                        # PostgreSQL syntax
+                        session.execute(text(
+                            "ALTER TABLE tasks ADD COLUMN subtask_count INTEGER DEFAULT 0"
+                        ))
+                    else:
+                        # SQLite syntax
+                        session.execute(text(
+                            "ALTER TABLE tasks ADD COLUMN subtask_count INTEGER DEFAULT 0"
+                        ))
+                    
+                    session.commit()
+                    logger.info("✅ Added subtask_count column to tasks table")
+                else:
+                    logger.info("✅ subtask_count column already exists in tasks table")
+        
+        except OperationalError as e:
+            if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
+                logger.info("subtask_count column already exists in tasks table")
+            else:
+                logger.error(f"Failed to add subtask_count column: {e}")
+                raise
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to add subtask_count column: {e}")
             raise
 
 

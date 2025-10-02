@@ -35,7 +35,16 @@ class TestServiceLayerTimestampIntegration:
     @pytest.fixture
     def db_session(self):
         """Shared database session for all repositories"""
+        from fastmcp.task_management.infrastructure.database.auto_migration import run_auto_migrations
+        
         db_config = get_db_config()
+        
+        # Force database initialization to ensure schema is up to date
+        db_config.create_tables()
+        
+        # Run migrations to add any missing columns
+        run_auto_migrations()
+        
         session = db_config.get_session()
         yield session
         session.close()
