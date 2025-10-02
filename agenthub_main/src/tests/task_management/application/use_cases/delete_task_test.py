@@ -63,18 +63,24 @@ class TestDeleteTaskUseCase:
             }
             mock_cascade.return_value = mock_cascade_instance
             
-            use_case = DeleteTaskUseCase(
-                task_repository=mock_task_repository,
-                subtask_repository=mock_subtask_repository,
-                branch_repository=None,
-                project_repository=None,
-                context_repository=None,
-                db_session_factory=mock_db_session_factory,
-                logging_service=mock_logging_service
-            )
-            # Attach the mocked cascade service for tests to use
-            use_case._mock_cascade_service = mock_cascade_instance
-            return use_case
+            # Mock websocket notification to prevent database queries
+            with patch.object(DeleteTaskUseCase, '_send_websocket_notification') as mock_send_notification:
+                mock_send_notification.return_value = None
+                
+                use_case = DeleteTaskUseCase(
+                    task_repository=mock_task_repository,
+                    subtask_repository=mock_subtask_repository,
+                    branch_repository=None,
+                    project_repository=None,
+                    context_repository=None,
+                    db_session_factory=mock_db_session_factory,
+                    logging_service=mock_logging_service
+                )
+                # Attach the mocked cascade service for tests to use
+                use_case._mock_cascade_service = mock_cascade_instance
+                # Attach the mock websocket notification
+                use_case._send_websocket_notification = mock_send_notification
+                return use_case
     
     @pytest.fixture
     def sample_task(self):
@@ -123,8 +129,7 @@ class TestDeleteTaskUseCase:
             context_repository=None
         )
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_with_string_id_success(self, mock_send_notification, use_case, mock_task_repository, sample_task):
+    def test_execute_with_string_id_success(self, use_case, mock_task_repository, sample_task):
         """Test successful task deletion with string ID"""
         task_id = "123"
         
@@ -174,8 +179,7 @@ class TestDeleteTaskUseCase:
         # Verify cascade service was not called
         use_case._mock_cascade_service.delete_task_cascade.assert_not_called()
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_delete_fails(self, mock_send_notification, use_case, mock_task_repository, sample_task):
+    def test_execute_delete_fails(self, use_case, mock_task_repository, sample_task):
         """Test when repository delete fails"""
         task_id = "123"
         
@@ -194,10 +198,9 @@ class TestDeleteTaskUseCase:
         assert result["task_deleted"] is False
         
         # Don't expect websocket notification on failure
-        mock_send_notification.assert_not_called()
+        use_case._send_websocket_notification.assert_not_called()
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_with_git_branch_update(self, mock_send_notification, use_case, mock_task_repository, sample_task, mock_logger):
+    def test_execute_with_git_branch_update(self, use_case, mock_task_repository, sample_task, mock_logger):
         """Test deletion with git branch task count update"""
         task_id = "123"
         
@@ -209,8 +212,8 @@ class TestDeleteTaskUseCase:
         assert result["task_deleted"] is True
         
         # Verify websocket notification was called with branch info
-        mock_send_notification.assert_called_once()
-        call_args = mock_send_notification.call_args[1]
+        use_case._send_websocket_notification.assert_called_once()
+        call_args = use_case._send_websocket_notification.call_args[1]
         assert call_args['branch_id'] == sample_task.git_branch_id
     
     def test_execute_without_git_branch(self, use_case, mock_task_repository, mock_logger):
@@ -239,8 +242,7 @@ class TestDeleteTaskUseCase:
             for call in mock_logger.info.call_args_list
         )
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_branch_update_exception(self, mock_send_notification, use_case, mock_task_repository, sample_task,
+    def test_execute_branch_update_exception(self, use_case, mock_task_repository, sample_task,
                                            mock_db_session_factory, mock_logger):
         """Test handling of exception during websocket notification"""
         task_id = "123"
@@ -258,10 +260,9 @@ class TestDeleteTaskUseCase:
         assert result["task_deleted"] is True
         
         # Verify websocket notification was attempted
-        mock_send_notification.assert_called_once()
+        use_case._send_websocket_notification.assert_called_once()
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_with_task_deleted_event(self, mock_send_notification, use_case, mock_task_repository, sample_task):
+    def test_execute_with_task_deleted_event(self, use_case, mock_task_repository, sample_task):
         """Test handling of TaskDeleted domain event"""
         task_id = "123"
         
@@ -274,8 +275,7 @@ class TestDeleteTaskUseCase:
         assert result["success"] is True
         assert result["task_deleted"] is True
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_multiple_events(self, mock_send_notification, use_case, mock_task_repository, sample_task):
+    def test_execute_multiple_events(self, use_case, mock_task_repository, sample_task):
         """Test handling of multiple domain events"""
         task_id = "123"
         
@@ -312,8 +312,7 @@ class TestDeleteTaskUseCase:
         # Verify cascade service was called with string ID
         use_case._mock_cascade_service.delete_task_cascade.assert_called_once_with(string_id, DeleteScope.TASK_FULL)
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_logging_calls(self, mock_send_notification, use_case, mock_task_repository, sample_task, mock_logger):
+    def test_execute_logging_calls(self, use_case, mock_task_repository, sample_task, mock_logger):
         """Test all logging calls during execution"""
         task_id = "123"
         
@@ -328,8 +327,7 @@ class TestDeleteTaskUseCase:
         info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
         assert any("Successfully deleted task" in str(msg) for msg in info_calls)
     
-    @patch.object(DeleteTaskUseCase, '_send_websocket_notification')
-    def test_execute_git_branch_with_hasattr_check(self, mock_send_notification, use_case, mock_task_repository):
+    def test_execute_git_branch_with_hasattr_check(self, use_case, mock_task_repository):
         """Test hasattr check for git_branch_id"""
         task_id = "123"
         
@@ -348,6 +346,6 @@ class TestDeleteTaskUseCase:
         assert hasattr(task, 'git_branch_id') is False
         
         # Verify websocket notification was called with None branch_id
-        mock_send_notification.assert_called_once()
-        call_args = mock_send_notification.call_args[1]
+        use_case._send_websocket_notification.assert_called_once()
+        call_args = use_case._send_websocket_notification.call_args[1]
         assert call_args['branch_id'] is None

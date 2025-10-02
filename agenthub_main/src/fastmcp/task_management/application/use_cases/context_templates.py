@@ -531,7 +531,15 @@ class ContextTemplateService:
     def _template_to_dict(self, template: ContextTemplate) -> Dict[str, Any]:
         """Convert template to dictionary using dataclass conversion"""
         from dataclasses import asdict
-        return asdict(template)
+        result = asdict(template)
+        
+        # Convert enum values to strings for JSON serialization
+        if isinstance(result.get('category'), TemplateCategory):
+            result['category'] = result['category'].value
+        if isinstance(result.get('level'), ContextLevel):
+            result['level'] = result['level'].value
+            
+        return result
     
     async def apply_template(
         self,
