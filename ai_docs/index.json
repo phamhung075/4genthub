@@ -76,11 +76,11 @@
           "size": 17136
         },
         {
-          "hash": "41ec81d598ca1b61893af8ba48868209",
-          "modified": "2025-09-29T21:21:16.006389",
+          "hash": "0bc165a7bad199ac77185ac5d4960f7e",
+          "modified": "2025-10-02T01:50:18.279349",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 35390
+          "size": 159771
         },
         {
           "hash": "bd9976592660c396c4a8e543e8cc3e25",
@@ -90,8 +90,8 @@
           "size": 4197
         },
         {
-          "hash": "e24863c3f33a172434badb324e842543",
-          "modified": "2025-09-29T21:21:16.002383",
+          "hash": "6155d6ad39e35fcc25b37f9018e4e805",
+          "modified": "2025-10-02T01:50:18.194184",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
           "size": 50917
@@ -1335,7 +1335,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 16,
+      "count": 18,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1380,6 +1380,13 @@
           "size": 3829
         },
         {
+          "hash": "0fef152c6cfafffa71e0a1227c1b2788",
+          "modified": "2025-10-02T02:30:44.951576",
+          "name": "subtask-creation-nonetype-fix.md",
+          "path": "issues/subtask-creation-nonetype-fix.md",
+          "size": 6347
+        },
+        {
           "hash": "c5a298b27a64d7416898e5e718236348",
           "modified": "2025-09-13T23:31:32.155125",
           "name": "mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
@@ -1399,6 +1406,13 @@
           "name": "mcp-authentication-testing-blocker-2025-09-05.md",
           "path": "issues/mcp-authentication-testing-blocker-2025-09-05.md",
           "size": 8112
+        },
+        {
+          "hash": "dac3fa2dadbb3ba7041686d938af4896",
+          "modified": "2025-10-02T02:33:51.154612",
+          "name": "git-branch-statistics-parameter-fix.md",
+          "path": "issues/git-branch-statistics-parameter-fix.md",
+          "size": 6423
         },
         {
           "hash": "51342589ccfb945d5bd444eba43ce66f",
@@ -2027,7 +2041,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 38,
+      "count": 40,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2042,6 +2056,13 @@
           "name": "complete-test-suite-victory.md",
           "path": "testing-qa/complete-test-suite-victory.md",
           "size": 6116
+        },
+        {
+          "hash": "719abadcb488f6fd933b73f7b5ea937d",
+          "modified": "2025-10-02T02:26:13.717239",
+          "name": "mcp-tools-test-results.md",
+          "path": "testing-qa/mcp-tools-test-results.md",
+          "size": 13715
         },
         {
           "hash": "ccf5ea8bb51275b8780b7fcffdb7edd5",
@@ -2280,6 +2301,13 @@
           "name": "test-fix-iteration-39-perfect-health-confirmed.md",
           "path": "testing-qa/test-fix-iteration-39-perfect-health-confirmed.md",
           "size": 1598
+        },
+        {
+          "hash": "736e41f88783e35791d47acf58aeaa69",
+          "modified": "2025-10-02T02:39:51.131194",
+          "name": "mcp-tools-fixes-summary.md",
+          "path": "testing-qa/mcp-tools-fixes-summary.md",
+          "size": 9940
         },
         {
           "hash": "c72c9368ecfb2053a743dbbe3ef5a6f3",
@@ -2583,7 +2611,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-09-30T12:54:45.876309",
+  "generated_at": "2025-10-02T02:39:51.223354",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2838,6 +2866,7 @@
     "issues": {
       "files": [
         "file-protection-bypass-via-bash-commands.md",
+        "git-branch-statistics-parameter-fix.md",
         "index.md",
         "mcp-authentication-fix-prompts-2025-09-05.md",
         "mcp-authentication-testing-blocker-2025-09-05.md",
@@ -2850,6 +2879,7 @@
         "mcp-task-creation-fix-prompt-2025-09-05.md",
         "mcp-task-creation-import-error-2025-09-09.md",
         "project-deletion-fix-2025-09-06.md",
+        "subtask-creation-nonetype-fix.md",
         "task-context-cascade-deletion-analysis.md",
         "task-count-fix.md",
         "task-creation-assignees-bug.md"
@@ -2963,6 +2993,8 @@
         "hook-system-architecture.md",
         "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
+        "mcp-tools-fixes-summary.md",
+        "mcp-tools-test-results.md",
         "phase-2-dto-integration-testing-report.md",
         "test-fix-iteration-10-summary.md",
         "test-fix-iteration-11-summary.md",
@@ -3041,5 +3073,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 343
+  "total_files": 347
 }

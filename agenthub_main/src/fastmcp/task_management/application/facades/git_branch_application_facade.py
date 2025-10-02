@@ -665,7 +665,6 @@ class GitBranchApplicationFacade:
             # ✅ CRITICAL FIX: Use denormalized count fields from database triggers
             # Get branch data to access task_count and completed_task_count fields
             git_branch_repo = repo_service.get_git_branch_repository(
-                project_id=project_id,
                 user_id=self._user_id
             )
 
@@ -694,16 +693,18 @@ class GitBranchApplicationFacade:
             # Extract status from dictionary format (get_tasks_by_git_branch_id returns dicts)
             def get_task_status(task):
                 return task.get("status") if isinstance(task, dict) else None
-            
+
             completed_tasks = getattr(branch, 'completed_task_count', 0) or 0
 
             logger.info(f"🎯 Using trigger-maintained counts: {total_tasks} total, {completed_tasks} completed")
             in_progress_tasks = len([t for t in tasks if get_task_status(t) == "in_progress"])
             todo_tasks = len([t for t in tasks if get_task_status(t) == "todo"])
             blocked_tasks = len([t for t in tasks if get_task_status(t) == "blocked"])
-            
-            # Calculate progress percentage
-            progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
+
+            # ✅ FIXED: Calculate progress from all tasks (including partial progress)
+            # Sum all task progress percentages and divide by total task count
+            total_progress = sum(task.get("progress_percentage", 0) for task in tasks)
+            progress_percentage = (total_progress / total_tasks) if total_tasks > 0 else 0.0
             
             # Find last activity (most recent task update)
             last_activity = None
@@ -815,9 +816,11 @@ class GitBranchApplicationFacade:
                         todo_tasks += 1
                     elif status == "blocked":
                         blocked_tasks += 1
-                
-                # Calculate progress
-                progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
+
+                # ✅ FIXED: Calculate progress from all tasks (including partial progress)
+                # Sum all task progress percentages and divide by total task count
+                total_progress = sum(task.get("progress_percentage", 0) for task in tasks)
+                progress_percentage = (total_progress / total_tasks) if total_tasks > 0 else 0.0
                 
                 
                 enhanced_branch = {
@@ -1001,9 +1004,11 @@ class GitBranchApplicationFacade:
                     todo_tasks += 1
                 elif status == "blocked":
                     blocked_tasks += 1
-            
-            # Calculate progress
-            progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
+
+            # ✅ FIXED: Calculate progress from all tasks (including partial progress)
+            # Sum all task progress percentages and divide by total task count
+            total_progress = sum(task.get("progress_percentage", 0) for task in tasks)
+            progress_percentage = (total_progress / total_tasks) if total_tasks > 0 else 0.0
             
             
             branch_summary = {

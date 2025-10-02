@@ -338,6 +338,34 @@ class TaskApplicationFacade:
                             task_data=task_dict
                         )
                         logger.info(f"Broadcasted task update notification for MEANINGFUL update of task {task_id}")
+
+                        # ✅ CRITICAL FIX: When task progress changes, broadcast branch update
+                        # Sidebar displays branch progress, so it needs branch update events
+                        if hasattr(request, 'progress_percentage') and request.progress_percentage is not None:
+                            try:
+                                git_branch_id = task_dict.get('git_branch_id')
+                                if git_branch_id:
+                                    # Get updated branch statistics with new progress calculation
+                                    from ..services.facade_service import FacadeService
+                                    facade_service = FacadeService.get_instance()
+                                    git_branch_facade = facade_service.get_git_branch_facade(user_id=user_id)
+
+                                    # Get branch info for WebSocket broadcast
+                                    branch_result = git_branch_facade.get_git_branch_by_id(git_branch_id)
+                                    if branch_result.get("success"):
+                                        branch_data = branch_result.get("git_branch", {})
+
+                                        # Broadcast branch update event with updated progress
+                                        WebSocketNotificationService.sync_broadcast_branch_event(
+                                            event_type="updated",
+                                            branch_id=git_branch_id,
+                                            project_id=branch_data.get("project_id", ""),
+                                            user_id=user_id,
+                                            branch_data=branch_data
+                                        )
+                                        logger.info(f"✅ Broadcasted branch update for progress change in task {task_id}")
+                            except Exception as branch_error:
+                                logger.warning(f"Failed to broadcast branch update after task progress change: {branch_error}")
                     except Exception as e:
                         logger.warning(f"Failed to broadcast task update: {e}")
                 elif not was_actually_updated:

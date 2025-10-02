@@ -6,6 +6,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - Git Branch Statistics Parameter Mismatch - Thu Oct 2 03:15:00 CEST 2025
+- **Git Branch Statistics**: Fixed parameter signature mismatch in get_statistics operation
+  - **Error**: "RepositoryProviderService.get_git_branch_repository() got an unexpected keyword argument 'project_id'"
+  - **Error Code**: STATISTICS_FAILED
+  - **Root Cause**: MCP controller/handler passes `project_id` to `get_git_branch_repository()`, but method signature only accepts `session` and `user_id`
+  - **Location**: `agenthub_main/src/fastmcp/task_management/application/facades/git_branch_application_facade.py:667-669`
+  - **Fix**: Removed `project_id` parameter from repository call - method signature at `repository_provider_service.py:142` only accepts `session` and `user_id`
+  - **Validation**: Verified all other usages (lines 28, 287) already correct
+  - **Testing**: All git branch statistics tests passing (unit + integration)
+  - **Impact**: get_statistics action now works correctly for all git branches
+
+### Fixed - Subtask Creation NoneType Error - Thu Oct 2 02:30:00 CEST 2025
+- **Subtask Creation**: Fixed "object of type 'NoneType' has no len()" error
+  - **Root Cause**: `description` parameter was passed as `None` to subtask_data, causing `len(None)` error in Subtask validation
+  - **Location**: `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers/crud_handler.py:90`
+  - **Fix**: Convert `None` description to empty string `""` before passing to subtask_data
+  - **Validation**: Subtask entity validation at line 106 in subtask.py expects string for `len(self.description)` check
+  - **Testing**: Verified with minimal parameters (task_id + title only) - subtask creation now successful
+  - **Impact**: All subtask creation operations with optional description field now work correctly
+
 ### Verified - Iteration 14 Complete - Thu Oct 2 01:50:00 CEST 2025
 - **Test Suite Verification**: Confirmed all tests remain passing
   - Total: 406 test files (378 actual tests + 28 infrastructure files)
