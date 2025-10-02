@@ -84,9 +84,10 @@ class SubtaskCRUDHandler:
 
         try:
             # Create the subtask
+            # CRITICAL FIX: Ensure description is never None to prevent NoneType error in len() validation
             subtask_data = {
                 "title": title,
-                "description": description,
+                "description": description if description is not None else "",
                 "priority": priority,
                 "assignees": assignees,
             }
