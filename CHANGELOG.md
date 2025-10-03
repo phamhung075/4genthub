@@ -6,6 +6,36 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed - WebSocket Delete Notifications for Tasks and Subtasks - Fri Oct 3 15:30:00 CEST 2025
+- **WebSocket Delete Events**: Fixed WebSocket "deleted" notifications for tasks and subtasks not working
+  - **Symptom**: Deleting tasks/subtasks via MCP left items visible in frontend instead of disappearing instantly
+  - **Root Cause**: Duplicate WebSocket broadcasts and missing user_id parameter
+    - Use cases (delete_task.py, remove_subtask.py) sent WebSocket notifications
+    - Facades (task_application_facade.py, subtask_application_facade.py) ALSO sent notifications
+    - Use case notifications used hardcoded `user_id="system"` instead of actual user
+    - DeleteTaskUseCase.execute() and RemoveSubtaskUseCase.execute() didn't accept user_id parameter
+  - **Impact**:
+    - Duplicate WebSocket events sent for each deletion
+    - Notifications may not reach correct users due to "system" user_id
+    - Frontend LazyTaskList didn't remove deleted items from UI
+  - **Fix Applied**:
+    - **Removed duplicate notifications from use cases** - facades already broadcast correctly
+    - **Added user_id parameter** to DeleteTaskUseCase.execute() and RemoveSubtaskUseCase.execute()
+    - **Updated facades** to pass user_id to use cases: task_application_facade.py line 614
+    - **Maintained single source of truth** - facades handle all WebSocket broadcasts with proper context
+  - **Files Modified**:
+    - `agenthub_main/src/fastmcp/task_management/application/use_cases/delete_task.py` (lines 44, 82-85, removed lines 123-146)
+    - `agenthub_main/src/fastmcp/task_management/application/use_cases/remove_subtask.py` (lines 12, 22-34, removed lines 128-152)
+    - `agenthub_main/src/fastmcp/task_management/application/facades/task_application_facade.py` (line 614)
+  - **Architecture Pattern**:
+    - ✅ Use cases: Execute business logic, dispatch domain events
+    - ✅ Facades: Handle WebSocket notifications with proper user context
+    - ✅ Single broadcast per operation (no duplicates)
+  - **Expected Behavior After Fix**:
+    - Delete task → Disappears from frontend instantly (like projects)
+    - Delete subtask → Disappears from subtask list instantly
+    - WebSocket "deleted" events sent with correct user_id for proper authorization
+
 ### Fixed - Project Delete Missing User Context - Fri Oct 3 14:00:00 CEST 2025
 - **Project Delete Operation**: Fixed missing user context causing authentication failures in delete operations
   - **Error**: "User authentication required for branch operations" during project deletion

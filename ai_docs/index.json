@@ -2347,7 +2347,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 37,
+      "count": 38,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2467,6 +2467,13 @@
           "name": "subtask-wrong-task-id-api-calls.md",
           "path": "troubleshooting-guides/subtask-wrong-task-id-api-calls.md",
           "size": 12567
+        },
+        {
+          "hash": "4ede8e04d0361cac124b2af34d0be832",
+          "modified": "2025-10-03T09:09:32.245865",
+          "name": "websocket-delete-notifications-fix.md",
+          "path": "troubleshooting-guides/websocket-delete-notifications-fix.md",
+          "size": 7888
         },
         {
           "hash": "cbbcdc5819ef08506226b64432fc7a09",
@@ -2625,7 +2632,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-03T07:49:23.828474",
+  "generated_at": "2025-10-03T09:09:32.320446",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3079,7 +3086,8 @@
         "test-import-errors-fix.md",
         "test-menu-fix-applied.md",
         "v2-api-git-branch-filtering-fix.md",
-        "websocket-connection-fix-verification.md"
+        "websocket-connection-fix-verification.md",
+        "websocket-delete-notifications-fix.md"
       ]
     },
     "video-production": {
@@ -3089,5 +3097,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 349
+  "total_files": 350
 }

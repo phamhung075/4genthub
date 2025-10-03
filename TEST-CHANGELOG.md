@@ -2,6 +2,50 @@
 
 This document tracks significant changes, fixes, and improvements to the agenthub test suite.
 
+## [Unreleased] - 2025-10-03
+
+### Updated
+- **useChangeSubscription Hook Test** - `agenthub-frontend/src/tests/hooks/useChangeSubscription.test.ts`
+  - **Status**: Verified test is already up-to-date with latest hook changes
+  - **Note**: Test correctly handles notification data passing through refreshCallback
+  - **Result**: No updates needed - test already matches current implementation
+
+- **Create Project Use Case Test** - `agenthub_main/src/tests/task_management/application/use_cases/create_project_test.py`
+  - **Added Test Class**: `TestWebSocketNotifications` - Tests WebSocket notification broadcasting
+  - **New Tests Added**: 6 comprehensive tests for WebSocket functionality:
+    - `test_websocket_notification_success` - Tests successful notification broadcast
+    - `test_websocket_notification_with_string_user_id` - Tests string user_id handling
+    - `test_websocket_notification_with_user_id_attribute` - Tests user object with 'id' attribute
+    - `test_websocket_notification_no_user_id` - Tests skipping when no user_id available
+    - `test_websocket_notification_failure_doesnt_break_creation` - Tests graceful failure handling
+    - `test_websocket_notification_data_format` - Tests exact notification format and ISO timestamps
+  - **Coverage**: Tests match recent code changes including WebSocket notifications and user context handling
+
+### Added
+- **ProjectList Component Test** - `agenthub-frontend/src/tests/components/ProjectList/ProjectList.test.tsx`
+  - **Coverage**: Complete test coverage for main ProjectList component
+  - **Test Count**: 13 test suites covering rendering, selection, CRUD operations
+  - **Features Tested**: Loading states, error handling, WebSocket integration, animations
+  - **Mocking Strategy**: Comprehensive mocking of custom hooks and child components
+
+- **ProjectListHeader Component Test** - `agenthub-frontend/src/tests/components/ProjectList/components/ProjectListHeader.test.tsx`
+  - **Coverage**: Full test coverage for header component functionality
+  - **Test Count**: 17 tests covering all UI elements and interactions
+  - **Features Tested**: WebSocket status display, responsive design, button actions
+  - **Accessibility**: Tests for ARIA labels and proper semantic HTML
+
+- **ComponentTypes TypeScript Test** - `agenthub-frontend/src/tests/types/componentTypes.test.ts`
+  - **Coverage**: Comprehensive type validation for all component type definitions
+  - **Test Count**: 14 test suites validating interface structures and type safety
+  - **Features Tested**: Props validation, optional properties, callback signatures, type constants
+  - **Type Safety**: Ensures TypeScript interfaces match expected shapes
+
+- **Project Application Facade Test** - `agenthub_main/src/tests/task_management/application/facades/project_application_facade_test.py`
+  - **Coverage**: Complete test coverage for project facade layer
+  - **Test Count**: 9 test classes with 45+ test methods
+  - **Features Tested**: All CRUD operations, user scoping, validation, error handling
+  - **Integration**: Tests facade interaction with service and repository layers
+
 ## [Unreleased] - 2025-10-02
 
 ### Updated

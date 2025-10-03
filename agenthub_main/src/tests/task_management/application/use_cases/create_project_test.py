@@ -819,5 +819,219 @@ class TestIntegrationScenarios:
                 project_ids = [result["project"]["id"] for result in results]
                 assert len(set(project_ids)) == 3
 
+class TestWebSocketNotifications:
+    """Test WebSocket notification broadcasting"""
+    
+    def setup_method(self):
+        """Setup test fixtures"""
+        self.mock_repository = Mock(spec=ProjectRepository)
+        self.mock_repository.save = AsyncMock()
+        self.use_case = CreateProjectUseCase(self.mock_repository)
+    
+    @pytest.mark.asyncio
+    async def test_websocket_notification_success(self):
+        """Test successful WebSocket notification broadcast"""
+        # Mock repository with user context
+        mock_user_context = Mock()
+        mock_user_context.user_id = "ws-user-123"
+        self.mock_repository.user_id = mock_user_context
+        
+        # Mock context creation
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class, \
+             patch('fastmcp.task_management.application.services.websocket_notification_service.WebSocketNotificationService') as mock_ws_service:
+            
+            # Setup context mocks
+            mock_factory = Mock()
+            mock_facade = Mock()
+            mock_factory_class.return_value = mock_factory
+            mock_factory.auto_create_global_context.return_value = True
+            mock_factory.create_facade.return_value = mock_facade
+            mock_facade.create_context.return_value = {"success": True}
+            
+            # Execute use case
+            result = await self.use_case.execute(None, "WS Test Project", "WebSocket test")
+            
+            assert result["success"] is True
+            
+            # Verify WebSocket notification was called
+            mock_ws_service.sync_broadcast_project_event.assert_called_once()
+            
+            # Verify notification parameters
+            call_args = mock_ws_service.sync_broadcast_project_event.call_args[1]
+            assert call_args["event_type"] == "created"
+            assert call_args["project_id"] == result["project"]["id"]
+            assert call_args["user_id"] == "ws-user-123"
+            
+            # Verify project data in notification
+            project_data = call_args["project_data"]
+            assert project_data["id"] == result["project"]["id"]
+            assert project_data["name"] == "WS Test Project"
+            assert project_data["description"] == "WebSocket test"
+            assert "created_at" in project_data
+            assert "updated_at" in project_data
+    
+    @pytest.mark.asyncio
+    async def test_websocket_notification_with_string_user_id(self):
+        """Test WebSocket notification when user_id is a string"""
+        # Mock repository with string user_id
+        self.mock_repository.user_id = "string-user-id"
+        
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class, \
+             patch('fastmcp.task_management.application.services.websocket_notification_service.WebSocketNotificationService') as mock_ws_service:
+            
+            # Setup mocks
+            mock_factory = Mock()
+            mock_facade = Mock()
+            mock_factory_class.return_value = mock_factory
+            mock_factory.auto_create_global_context.return_value = True
+            mock_factory.create_facade.return_value = mock_facade
+            mock_facade.create_context.return_value = {"success": True}
+            
+            result = await self.use_case.execute(None, "Test Project")
+            
+            assert result["success"] is True
+            
+            # Verify WebSocket was called with string user_id
+            mock_ws_service.sync_broadcast_project_event.assert_called_once()
+            call_args = mock_ws_service.sync_broadcast_project_event.call_args[1]
+            assert call_args["user_id"] == "string-user-id"
+    
+    @pytest.mark.asyncio
+    async def test_websocket_notification_with_user_id_attribute(self):
+        """Test WebSocket notification when user has 'id' instead of 'user_id'"""
+        # Mock repository with user having 'id' attribute
+        mock_user = Mock()
+        mock_user.id = "user-with-id-attr"
+        # Ensure user_id attribute doesn't exist
+        if hasattr(mock_user, 'user_id'):
+            delattr(mock_user, 'user_id')
+        self.mock_repository.user_id = mock_user
+        
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class, \
+             patch('fastmcp.task_management.application.services.websocket_notification_service.WebSocketNotificationService') as mock_ws_service:
+            
+            # Setup mocks
+            mock_factory = Mock()
+            mock_facade = Mock()
+            mock_factory_class.return_value = mock_factory
+            mock_factory.auto_create_global_context.return_value = True
+            mock_factory.create_facade.return_value = mock_facade
+            mock_facade.create_context.return_value = {"success": True}
+            
+            result = await self.use_case.execute(None, "Test Project")
+            
+            assert result["success"] is True
+            
+            # Verify WebSocket was called with correct user_id
+            mock_ws_service.sync_broadcast_project_event.assert_called_once()
+            call_args = mock_ws_service.sync_broadcast_project_event.call_args[1]
+            assert call_args["user_id"] == "user-with-id-attr"
+    
+    @pytest.mark.asyncio
+    async def test_websocket_notification_no_user_id(self):
+        """Test that WebSocket notification is skipped when no user_id available"""
+        # Repository without user_id attribute
+        assert not hasattr(self.mock_repository, 'user_id')
+        
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class, \
+             patch('fastmcp.task_management.application.services.websocket_notification_service.WebSocketNotificationService') as mock_ws_service, \
+             patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', side_effect=Exception("No user")):
+            
+            # Setup mocks (context creation will fail due to no user, but project should still be created)
+            mock_factory = Mock()
+            mock_facade = Mock()
+            mock_factory_class.return_value = mock_factory
+            mock_factory.auto_create_global_context.return_value = False
+            mock_factory.create_facade.return_value = mock_facade
+            mock_facade.create_context.return_value = {"success": False}
+            
+            result = await self.use_case.execute(None, "Test Project")
+            
+            # Project creation should succeed
+            assert result["success"] is True
+            
+            # WebSocket notification should NOT be called (no user_id)
+            mock_ws_service.sync_broadcast_project_event.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_websocket_notification_failure_doesnt_break_creation(self):
+        """Test that WebSocket notification failures don't break project creation"""
+        # Mock repository with user context
+        self.mock_repository.user_id = "user-123"
+        
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class, \
+             patch('fastmcp.task_management.application.services.websocket_notification_service.WebSocketNotificationService') as mock_ws_service:
+            
+            # Setup context mocks
+            mock_factory = Mock()
+            mock_facade = Mock()
+            mock_factory_class.return_value = mock_factory
+            mock_factory.auto_create_global_context.return_value = True
+            mock_factory.create_facade.return_value = mock_facade
+            mock_facade.create_context.return_value = {"success": True}
+            
+            # Make WebSocket broadcast fail
+            mock_ws_service.sync_broadcast_project_event.side_effect = Exception("WebSocket error")
+            
+            # Execute use case
+            result = await self.use_case.execute(None, "Test Project")
+            
+            # Project creation should still succeed
+            assert result["success"] is True
+            assert "project" in result
+            
+            # Verify WebSocket was attempted
+            mock_ws_service.sync_broadcast_project_event.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_websocket_notification_data_format(self):
+        """Test the exact format of WebSocket notification data"""
+        # Mock repository with user context
+        mock_user_context = Mock()
+        mock_user_context.user_id = "format-test-user"
+        self.mock_repository.user_id = mock_user_context
+        
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.UnifiedContextFacadeFactory') as mock_factory_class, \
+             patch('fastmcp.task_management.application.services.websocket_notification_service.WebSocketNotificationService') as mock_ws_service:
+            
+            # Setup mocks
+            mock_factory = Mock()
+            mock_facade = Mock()
+            mock_factory_class.return_value = mock_factory
+            mock_factory.auto_create_global_context.return_value = True
+            mock_factory.create_facade.return_value = mock_facade
+            mock_facade.create_context.return_value = {"success": True}
+            
+            # Execute with specific data
+            result = await self.use_case.execute(
+                project_id="format-project-123",
+                name="Format Test Project",
+                description="Testing notification format"
+            )
+            
+            assert result["success"] is True
+            
+            # Verify notification format
+            call_args = mock_ws_service.sync_broadcast_project_event.call_args[1]
+            
+            # Verify all required fields
+            assert call_args["event_type"] == "created"
+            assert call_args["project_id"] == "format-project-123"
+            assert call_args["user_id"] == "format-test-user"
+            
+            # Verify project_data structure
+            project_data = call_args["project_data"]
+            assert project_data["id"] == "format-project-123"
+            assert project_data["name"] == "Format Test Project"
+            assert project_data["description"] == "Testing notification format"
+            
+            # Verify timestamps are ISO format strings
+            assert isinstance(project_data["created_at"], str)
+            assert isinstance(project_data["updated_at"], str)
+            # Should be able to parse as ISO format
+            from datetime import datetime
+            datetime.fromisoformat(project_data["created_at"])
+            datetime.fromisoformat(project_data["updated_at"])
+
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -9,7 +9,7 @@ class RemoveSubtaskUseCase:
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
 
-    def execute(self, task_id: Union[str, int], id: Union[str, int]) -> Dict[str, Any]:
+    def execute(self, task_id: Union[str, int], id: Union[str, int], user_id: str = None) -> Dict[str, Any]:
         subtask = self._subtask_repository.find_by_id(id)
         if not subtask:
             raise ValueError(f"Subtask {id} not found in task {task_id}")
@@ -26,6 +26,9 @@ class RemoveSubtaskUseCase:
         if success:
             self._decrement_parent_subtask_count(str(task_id))
             self._update_parent_task_progress(str(task_id))
+
+            # NOTE: WebSocket notification is sent by the facade layer (subtask_application_facade.py)
+            # to maintain consistency with task deletion pattern
 
             # Dispatch domain event for subtask deletion
             # This will trigger branch statistics update
