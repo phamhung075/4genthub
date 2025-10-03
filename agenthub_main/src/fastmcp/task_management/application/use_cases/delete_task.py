@@ -41,13 +41,14 @@ class DeleteTaskUseCase:
             context_repository=context_repository
         )
 
-    def execute(self, task_id: Union[str, int], cascade: bool = True) -> Dict[str, Any]:
+    def execute(self, task_id: Union[str, int], cascade: bool = True, user_id: str = None) -> Dict[str, Any]:
         """
         Execute the delete task use case with cascade deletion.
 
         Args:
             task_id: ID of the task to delete
             cascade: Whether to cascade delete subtasks and contexts
+            user_id: User performing the deletion (for WebSocket notifications)
 
         Returns:
             Dictionary with deletion statistics and success status
@@ -78,16 +79,10 @@ class DeleteTaskUseCase:
         scope = DeleteScope.TASK_FULL if cascade else DeleteScope.TASK_ONLY
         stats = self._cascade_service.delete_task_cascade(task_id_str, scope)
 
-        # Send WebSocket notification for frontend
+        # NOTE: WebSocket notification is sent by the facade layer (task_application_facade.py)
+        # to use pre-fetched context and avoid querying deleted tasks
+        # Dispatch TaskDeletedEvent to update branch task counts
         if stats["task_deleted"]:
-            self._send_websocket_notification(
-                task_id=task_id_str,
-                branch_id=git_branch_id,
-                title=task_title,
-                stats=stats
-            )
-
-            # Dispatch TaskDeletedEvent to update branch task counts
             try:
                 from ...domain.services.event_dispatcher import dispatch_domain_event
                 from ...domain.events.task_lifecycle_events import TaskDeletedEvent
@@ -116,29 +111,4 @@ class DeleteTaskUseCase:
         return {
             "success": stats["task_deleted"],
             **stats
-        }
-
-    def _send_websocket_notification(self, task_id: str, branch_id: Optional[str],
-                                    title: str, stats: Dict[str, Any]) -> None:
-        """Send WebSocket notification for task deletion."""
-        try:
-            # Import WebSocket notification service
-            from ..services.websocket_notification_service import WebSocketNotificationService
-
-            # Create task deletion notification via WebSocket notification service
-            WebSocketNotificationService.sync_broadcast_task_event(
-                event_type="deleted",
-                task_id=task_id,
-                user_id="system",  # Could be passed from use case if available
-                task_data={
-                    "id": task_id,
-                    "title": title,
-                    "status": "deleted"
-                },
-                git_branch_id=branch_id
-            )
-
-            self._logger.info(f"Sent WebSocket notification for task {task_id} deletion")
-
-        except Exception as e:
-            self._logger.warning(f"Failed to send WebSocket notification: {e}") 
+        } 

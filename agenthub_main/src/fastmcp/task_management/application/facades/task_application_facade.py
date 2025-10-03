@@ -611,7 +611,7 @@ class TaskApplicationFacade:
                 }
 
             # Execute use case with cascade deletion
-            result = self._delete_task_use_case.execute(task_id, cascade=True)
+            result = self._delete_task_use_case.execute(task_id, cascade=True, user_id=user_id)
             success = result.get("success", False)
 
             if success:
