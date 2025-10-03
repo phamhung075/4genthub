@@ -1,4 +1,4 @@
-import { Globe, Plus } from "lucide-react";
+import { Globe, Plus, Wifi, WifiOff } from "lucide-react";
 import React from "react";
 import { RefreshButton } from "../../ui/refresh-button";
 import { ShimmerButton } from "../../ui/shimmer-button";
@@ -7,6 +7,7 @@ import type { ProjectListHeaderProps } from "../../../types/componentTypes";
 export const ProjectListHeader: React.FC<ProjectListHeaderProps> = ({
   loading,
   loadingBulkSummaries,
+  isConnected,
   onRefresh,
   onShowGlobalContext,
   onCreateProject,
@@ -15,7 +16,27 @@ export const ProjectListHeader: React.FC<ProjectListHeaderProps> = ({
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-2">
       {/* Title section */}
       <div className="flex items-center justify-between sm:justify-start">
-        <span className="font-bold text-base sm:text-lg">Projects</span>
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-base sm:text-lg">Projects</span>
+          {/* WebSocket Connection Status - matches TaskListHeader pattern */}
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+            isConnected
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+              : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+          }`}>
+            {isConnected ? (
+              <>
+                <Wifi className="w-3 h-3" />
+                <span>Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3 h-3" />
+                <span>Offline</span>
+              </>
+            )}
+          </div>
+        </div>
         {/* Refresh button on mobile - next to title */}
         <RefreshButton
           onClick={onRefresh}

@@ -88,10 +88,10 @@ def get_repository_config() -> Dict[str, Any]:
         config = {
             'environment': environment,
             'database_type': database_type,
-            'redis_enabled': os.getenv('REDIS_ENABLED', 'true').lower() == 'true',
-            'use_cache': os.getenv('USE_CACHE', 'true').lower() == 'true',
+            'redis_enabled': os.getenv('REDIS_ENABLED', 'false').lower() == 'true',
+            'use_cache': os.getenv('USE_CACHE', 'false').lower() == 'true',
             'debug_mode': environment in ('development', 'testing'),
-            'performance_mode': os.getenv('PERFORMANCE_MODE', 'true').lower() == 'true',
+            'performance_mode': os.getenv('PERFORMANCE_MODE', 'false').lower() == 'true',
             'timestamp_events_enabled': True,  # Always enabled in clean architecture
             'clean_architecture_mode': True   # Always enabled
         }

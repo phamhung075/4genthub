@@ -2041,7 +2041,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 40,
+      "count": 41,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2275,6 +2275,13 @@
           "size": 20706
         },
         {
+          "hash": "aaead8650e80beab7b5fbeee02a16ef0",
+          "modified": "2025-10-02T02:53:25.482058",
+          "name": "live-updates-verification-summary.md",
+          "path": "testing-qa/live-updates-verification-summary.md",
+          "size": 9738
+        },
+        {
           "hash": "e276321787d5df7d90fb9cd9bba91d66",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "comprehensive-mcp-tools-test-suite.md",
@@ -2340,7 +2347,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 36,
+      "count": 37,
       "files": [
         {
           "hash": "233907fb0caebbb2033eba14d5665a52",
@@ -2474,6 +2481,13 @@
           "name": "task-persistence-issue-analysis.md",
           "path": "troubleshooting-guides/task-persistence-issue-analysis.md",
           "size": 7003
+        },
+        {
+          "hash": "da11f86974cad0e883a81588710daee8",
+          "modified": "2025-10-03T07:49:23.763525",
+          "name": "projectlist-live-updates-fix.md",
+          "path": "troubleshooting-guides/projectlist-live-updates-fix.md",
+          "size": 5630
         },
         {
           "hash": "f8bad23dee0bddecb2655fcdc56d40e7",
@@ -2611,7 +2625,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-02T02:39:51.223354",
+  "generated_at": "2025-10-03T07:49:23.828474",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2993,6 +3007,7 @@
         "hook-system-architecture.md",
         "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
+        "live-updates-verification-summary.md",
         "mcp-tools-fixes-summary.md",
         "mcp-tools-test-results.md",
         "phase-2-dto-integration-testing-report.md",
@@ -3050,6 +3065,7 @@
         "memory-leak-diagnosis-report.md",
         "orchestrator-bypass-analysis.md",
         "production-deployment-issues.md",
+        "projectlist-live-updates-fix.md",
         "subtask-persistence-debugging-guide.md",
         "subtask-url-revert-fix.md",
         "subtask-wrong-task-id-api-calls.md",
@@ -3073,5 +3089,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 347
+  "total_files": 349
 }

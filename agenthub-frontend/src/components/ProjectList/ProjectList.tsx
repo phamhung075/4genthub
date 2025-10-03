@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { ProjectListProps } from "../../types";
 import { ProjectDialogs, ProjectListContent, ProjectListHeader } from "./components";
 import { useProjectAnimations, useProjectData, useProjectDialogs } from "./hooks";
+import { useWebSocket } from "../../hooks/useWebSocketV2";
+import { useAuth } from "../../contexts/AuthContext";
 
 const ProjectList: React.FC<ProjectListProps> = ({
   onSelect,
@@ -23,6 +25,10 @@ const ProjectList: React.FC<ProjectListProps> = ({
       setOpenProjects(prev => ({ ...prev, [selectedProjectId]: true }));
     }
   }, [selectedProjectId, openProjects]);
+
+  // WebSocket connection status
+  const { user, tokens } = useAuth();
+  const { isConnected } = useWebSocket(user?.id || '', tokens?.access_token || '');
 
   // Custom hooks for data management
   const projectData = useProjectData({ selectedProjectId });
@@ -212,6 +218,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
       <ProjectListHeader
         loading={loading}
         loadingBulkSummaries={loadingBulkSummaries}
+        isConnected={isConnected}
         onRefresh={handleRefresh}
         onShowGlobalContext={onShowGlobalContext}
         onCreateProject={openCreateDialog}
