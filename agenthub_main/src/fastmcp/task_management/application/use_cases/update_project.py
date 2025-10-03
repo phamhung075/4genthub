@@ -42,7 +42,45 @@ class UpdateProjectUseCase:
         
         # Save to repository
         await self._project_repository.update(project)
-        
+
+        # Broadcast WebSocket notification for real-time frontend updates
+        try:
+            from ..services.websocket_notification_service import WebSocketNotificationService
+
+            # Get user_id for WebSocket broadcast
+            user_id = None
+            if hasattr(self._project_repository, 'user_id'):
+                user_context = getattr(self._project_repository, 'user_id', None)
+                if user_context is not None:
+                    if hasattr(user_context, 'user_id'):
+                        user_id = user_context.user_id
+                    elif hasattr(user_context, 'id'):
+                        user_id = user_context.id
+                    elif isinstance(user_context, str):
+                        user_id = user_context
+
+            if user_id:
+                WebSocketNotificationService.sync_broadcast_project_event(
+                    event_type="updated",
+                    project_id=project.id,
+                    user_id=user_id,
+                    project_data={
+                        "id": project.id,
+                        "name": project.name,
+                        "description": project.description,
+                        "updated_at": project.updated_at.isoformat(),
+                        "updated_fields": updated_fields
+                    }
+                )
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"✅ Broadcasted WebSocket notification for project update: {project.id}")
+        except Exception as ws_error:
+            # Log WebSocket errors but don't fail project update
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to broadcast WebSocket notification for project {project.id}: {ws_error}")
+
         return {
             "success": True,
             "project": {

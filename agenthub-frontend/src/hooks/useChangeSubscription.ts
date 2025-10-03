@@ -5,6 +5,7 @@ import {
   EntityType,
   ChangeNotification
 } from '../services/changePoolService';
+import logger from '../utils/logger';
 
 interface UseChangeSubscriptionOptions {
   componentId: string;

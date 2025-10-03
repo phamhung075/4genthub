@@ -58,7 +58,22 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             self.optimizer = None
 
         logger.info(f"ORMGitBranchRepository initialized for user: {user_id}, performance_mode: {performance_mode}")
-    
+
+    def with_user(self, user_id: str) -> 'ORMGitBranchRepository':
+        """
+        Create a new repository instance scoped to a specific user.
+
+        This method enables user-scoped repository operations by creating
+        a new instance with the specified user_id.
+
+        Args:
+            user_id: User identifier for repository isolation
+
+        Returns:
+            New ORMGitBranchRepository instance with user_id set
+        """
+        return ORMGitBranchRepository(user_id=user_id, performance_mode=self.performance_mode)
+
     def _model_to_git_branch(self, model: ProjectGitBranch) -> GitBranch:
         """
         Convert ProjectGitBranch model to GitBranch domain entity.

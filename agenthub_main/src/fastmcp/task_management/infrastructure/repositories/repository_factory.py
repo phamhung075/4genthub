@@ -170,7 +170,7 @@ class RepositoryFactory:
     def get_git_branch_repository(user_id: Optional[str] = None):
         """Get git branch repository based on environment configuration"""
         config = RepositoryFactory.get_environment_config()
-        
+
         logger.debug(f"[RepositoryFactory] Creating git branch repository with config: {config}")
         
         # Test environment - use mock repository

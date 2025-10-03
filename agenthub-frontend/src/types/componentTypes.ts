@@ -151,6 +151,7 @@ import type { BranchSummary } from './api.types';
 export interface ProjectListHeaderProps {
   loading: boolean;
   loadingBulkSummaries: boolean;
+  isConnected: boolean;
   onRefresh: () => void;
   onShowGlobalContext?: () => void;
   onCreateProject: () => void;

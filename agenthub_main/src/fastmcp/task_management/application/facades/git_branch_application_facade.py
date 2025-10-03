@@ -319,6 +319,18 @@ class GitBranchApplicationFacade:
                 "error_code": "GET_FAILED"
             }
 
+    async def _get_branch_entity(self, git_branch_id: str, git_branch_repo):
+        """Helper method to get the branch entity for denormalized fields."""
+        try:
+            # Call find_by_id with just the branch_id
+            branch = await git_branch_repo.find_by_id(git_branch_id)
+            return branch
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to get branch entity: {e}")
+            return None
+
     def delete_git_branch(self, git_branch_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
         """Delete a git branch - synchronous version for MCP controller."""
         try:
@@ -664,23 +676,37 @@ class GitBranchApplicationFacade:
             
             # ✅ CRITICAL FIX: Use denormalized count fields from database triggers
             # Get branch data to access task_count and completed_task_count fields
+            # Get the actual branch entity for denormalized fields
             git_branch_repo = repo_service.get_git_branch_repository(
                 user_id=self._user_id
             )
 
-            # Get the branch to access denormalized count fields
+            # Use async helper to get the branch entity with threading pattern
             import asyncio
-            try:
-                branch = asyncio.run(git_branch_repo.find_by_id(git_branch_id))
-            except RuntimeError:
+            import threading
+
+            result = None
+            exception = None
+
+            def run_in_thread():
+                nonlocal result, exception
                 try:
-                    loop = asyncio.get_event_loop()
-                    branch = loop.run_until_complete(git_branch_repo.find_by_id(git_branch_id))
-                except Exception:
-                    branch = None
+                    result = asyncio.run(self._get_branch_entity(git_branch_id, git_branch_repo))
+                except Exception as e:
+                    exception = e
+
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            thread.join()
+
+            if exception:
+                logger.error(f"Failed to get branch entity: {exception}")
+                branch = None
+            else:
+                branch = result
 
             if not branch:
-                logger.warning(f"Branch {git_branch_id} not found")
+                logger.warning(f"Branch entity {git_branch_id} not found")
                 return {
                     "success": False,
                     "error": f"Branch {git_branch_id} not found",

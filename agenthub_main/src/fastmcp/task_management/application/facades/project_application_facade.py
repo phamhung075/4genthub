@@ -124,7 +124,10 @@ class ProjectApplicationFacade:
         elif action == "delete":
             if not project_id:
                 return {"success": False, "error": "Missing required field: project_id"}
-            return await self._project_service.delete_project(project_id, force)
+            # Use user-scoped service like CREATE and LIST
+            effective_user_id = user_id or self._user_id
+            service = self._project_service.with_user(effective_user_id) if effective_user_id else self._project_service
+            return await service.delete_project(project_id, force)
             
         else:
             return {"success": False, "error": f"Invalid action: {action}"}

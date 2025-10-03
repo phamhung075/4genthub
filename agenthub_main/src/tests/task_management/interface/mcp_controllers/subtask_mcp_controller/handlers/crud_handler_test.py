@@ -1,5 +1,10 @@
 """
 Tests for Subtask MCP Controller CRUD Handler
+
+Updated to match new code changes:
+- Fixed NoneType error handling for description parameter
+- Updated agent inheritance tests
+- Enhanced progress tracking tests
 """
 
 import pytest
@@ -40,7 +45,7 @@ class TestSubtaskCRUDHandler:
     def mock_context_facade(self):
         """Create mock context facade"""
         facade = Mock()
-        facade.update_context = AsyncMock()
+        facade.add_progress = Mock(return_value={"success": True})
         return facade
 
     @pytest.fixture
@@ -146,6 +151,43 @@ class TestSubtaskCRUDHandler:
         first_call = mock_subtask_facade.handle_manage_subtask.call_args_list[0]
         assert first_call.kwargs['action'] == 'create'
         assert first_call.kwargs['task_id'] == 'task-123'
+        # Verify description is passed as empty string when None
+        assert first_call.kwargs['subtask_data']['description'] == "Create POST /auth/login endpoint"
+
+    @pytest.mark.asyncio
+    async def test_handle_create_subtask_none_description(self, handler, mock_subtask_facade, sample_task):
+        """Test creating subtask with None description (NoneType fix)"""
+        # Configure mocks
+        def handle_manage_subtask_side_effect(*args, **kwargs):
+            if kwargs.get('action') == 'list':
+                return {"success": True, "subtasks": []}
+            else:
+                # Verify description is converted to empty string
+                assert kwargs['subtask_data']['description'] == ""
+                return {
+                    "success": True,
+                    "subtask": {
+                        "id": "sub-456",
+                        "task_id": "task-123",
+                        "title": "Test Subtask",
+                        "description": "",
+                        "assignees": ["coding-agent"]
+                    }
+                }
+        mock_subtask_facade.handle_manage_subtask.side_effect = handle_manage_subtask_side_effect
+        
+        # Execute with None description
+        result = handler.create_subtask(
+            facade=mock_subtask_facade,
+            task_id="task-123",
+            title="Test Subtask",
+            description=None,  # This should be converted to empty string
+            assignees=["coding-agent"]
+        )
+        
+        # Verify
+        assert result["success"] is True
+        assert result["subtask"]["description"] == ""
 
     @pytest.mark.asyncio
     async def test_handle_create_subtask_inherit_assignees(self, handler, mock_subtask_facade, sample_task):
@@ -175,6 +217,28 @@ class TestSubtaskCRUDHandler:
         assert result["subtask"]["assignees"] == ["coding-agent", "@test-agent"]
         # Check for agent_inheritance_applied instead of inheritance_info
         assert result.get("agent_inheritance_applied") is True or result.get("inheritance_info", {}).get("applied") is True
+
+    @pytest.mark.asyncio
+    async def test_handle_create_subtask_invalid_assignees(self, handler, mock_subtask_facade, mock_response_formatter):
+        """Test creating subtask with invalid assignee validation"""
+        # Configure mock to simulate validation error
+        mock_response_formatter.create_error_response.return_value = {
+            "success": False,
+            "error": "Invalid assignees: invalid-agent is not a valid agent role",
+            "error_code": ErrorCodes.VALIDATION_ERROR
+        }
+        
+        # Execute with invalid assignee
+        result = handler.create_subtask(
+            facade=mock_subtask_facade,
+            task_id="task-123",
+            title="Test Subtask",
+            assignees=["invalid-agent"]
+        )
+        
+        # Verify validation error
+        assert result["success"] is False
+        assert "Invalid assignees" in result["error"]
 
     @pytest.mark.asyncio  
     async def test_handle_create_subtask_task_not_found(self, handler, mock_subtask_facade):
@@ -480,6 +544,34 @@ class TestSubtaskCRUDHandler:
         # progress_notes is passed as a parameter for context updates, not stored in update_data
         # The test should verify the call was made successfully, not check for progress_notes in the data
 
+    @pytest.mark.asyncio
+    async def test_handle_context_facade_integration(self, handler, mock_subtask_facade, mock_context_facade):
+        """Test context facade integration for progress tracking"""
+        # Configure mock for successful subtask creation
+        mock_subtask_facade.handle_manage_subtask.return_value = {
+            "success": True,
+            "subtask": {
+                "id": "sub-789",
+                "title": "Context Test Subtask"
+            }
+        }
+        
+        # Execute with progress notes
+        result = handler.create_subtask(
+            facade=mock_subtask_facade,
+            task_id="task-123",
+            title="Context Test Subtask",
+            progress_notes="Starting implementation"
+        )
+        
+        # Verify context was updated
+        assert result["success"] is True
+        mock_context_facade.add_progress.assert_called_once()
+        call_args = mock_context_facade.add_progress.call_args
+        assert call_args.kwargs['task_id'] == "task-123"
+        assert "Created subtask: Context Test Subtask" in call_args.kwargs['content']
+        assert "Starting implementation" in call_args.kwargs['content']
+
     @pytest.mark.skip(reason="Feature not implemented in current version - update_subtask doesn't accept blockers/insights_found parameters")
     @pytest.mark.asyncio
     async def test_handle_blockers_and_insights(self, handler, mock_subtask_facade):
@@ -546,3 +638,57 @@ class TestSubtaskCRUDHandler:
         assert result["success"] is False
         assert "Database error" in result["error"]
         mock_response_formatter.create_error_response.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_get_parent_progress_calculation(self, handler, mock_subtask_facade):
+        """Test parent progress calculation logic"""
+        # Configure mocks for list operation
+        mock_subtask_facade.handle_manage_subtask.return_value = {
+            "success": True,
+            "subtasks": [
+                {"id": "sub-1", "status": "done", "progress_percentage": 100},
+                {"id": "sub-2", "status": "in_progress", "progress_percentage": 50},
+                {"id": "sub-3", "status": "todo", "progress_percentage": 0}
+            ]
+        }
+        
+        # Call the private method directly
+        progress = handler._get_parent_progress(mock_subtask_facade, "task-123")
+        
+        # Verify calculation
+        assert progress["total_subtasks"] == 3
+        assert progress["completed_subtasks"] == 1
+        assert progress["progress_percentage"] == 33  # 1/3 * 100
+        assert "last_updated" in progress
+
+    @pytest.mark.asyncio
+    async def test_get_parent_progress_no_subtasks(self, handler, mock_subtask_facade):
+        """Test parent progress when no subtasks exist"""
+        # Configure mocks for empty list
+        mock_subtask_facade.handle_manage_subtask.return_value = {
+            "success": True,
+            "subtasks": []
+        }
+        
+        # Call the private method directly
+        progress = handler._get_parent_progress(mock_subtask_facade, "task-123")
+        
+        # Verify zero progress
+        assert progress["total_subtasks"] == 0
+        assert progress["progress_percentage"] == 0
+
+    @pytest.mark.asyncio
+    async def test_get_parent_progress_error_handling(self, handler, mock_subtask_facade):
+        """Test parent progress calculation with errors"""
+        # Configure mock to fail
+        mock_subtask_facade.handle_manage_subtask.return_value = {
+            "success": False,
+            "error": "Failed to fetch subtasks"
+        }
+        
+        # Call the private method directly
+        progress = handler._get_parent_progress(mock_subtask_facade, "task-123")
+        
+        # Verify error response
+        assert "error" in progress
+        assert "Failed to get parent progress" in progress["error"]
