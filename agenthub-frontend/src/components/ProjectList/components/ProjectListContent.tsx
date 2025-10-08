@@ -6,6 +6,7 @@ import { BranchSummary } from "../../../types";
 import { ShimmerBadge } from "../../ui/shimmer-badge";
 import { ShimmerButton } from "../../ui/shimmer-button";
 import type { ProjectListContentProps } from "../../../types/componentTypes";
+import { BranchItem } from "./BranchItem";
 
 export const ProjectListContent: React.FC<ProjectListContentProps> = ({
   projects,
@@ -116,141 +117,40 @@ export const ProjectListContent: React.FC<ProjectListContentProps> = ({
               {branchSummaries[project.id] ? (
                 // Use optimized branch summaries if available
                 branchSummaries[project.id].map((branch) => (
-                  <li key={branch.id}>
-                    <div className={cn(
-                      "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
-                      // Fade-in animation for new branches
-                      newBranches.has(branch.id) && "opacity-0 -translate-x-2.5",
-                      !newBranches.has(branch.id) && "opacity-100 translate-x-0",
-                      // Fade-out animation for deleting branches
-                      fadingOutBranches.has(branch.id) && "opacity-0 -translate-x-2.5 pointer-events-none",
-                      // Loading state for deletion process
-                      deletingBranches.has(branch.id) && !fadingOutBranches.has(branch.id) && "opacity-50 pointer-events-none"
-                    )}>
-                      <span className="text-muted-foreground">—</span>
-                      <ShimmerButton
-                        size="sm"
-                        variant={selected === `${project.id}:${branch.id}` ? "default" : "ghost"}
-                        className={cn(
-                          "flex-1 justify-start text-xs text-left",
-                          selected === `${project.id}:${branch.id}` && "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700"
-                        )}
-                        onClick={() => {
-                          onSelectBranch && onSelectBranch(project.id, branch.id);
-                        }}
-                      >
-                        <span className="truncate text-left flex-1">{branch.git_branch_name || branch.name}</span>
-                        <div className="flex items-center gap-1">
-                          <ShimmerBadge
-                            variant="secondary"
-                            className={cn(
-                              "text-xs",
-                              animatingCounts.get(branch.id) === 'up' && "count-change-up",
-                              animatingCounts.get(branch.id) === 'down' && "count-change-down",
-                              animatingCounts.has(branch.id) && "count-pulse"
-                            )}
-                          >
-                            {taskCounts[branch.id] ?? 0}
-                          </ShimmerBadge>
-                        </div>
-                      </ShimmerButton>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                        <ShimmerButton
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={() => onShowBranchDetails && onShowBranchDetails(project, branch)}
-                          aria-label="View Branch Details"
-                          title="View Branch Details"
-                        >
-                          <Eye className="w-3 h-3" />
-                        </ShimmerButton>
-                        {(branch.git_branch_name || branch.name) !== 'main' && (
-                          <ShimmerButton
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6"
-                            onClick={() => onDeleteBranch({ project, branch })}
-                            disabled={deletingBranches.has(branch.id)}
-                            aria-label={deletingBranches.has(branch.id) ? "Deleting Branch..." : "Delete Branch"}
-                          >
-                            {deletingBranches.has(branch.id) ? (
-                              <div className="animate-spin h-3 w-3 border-2 border-destructive border-t-transparent rounded-full" />
-                            ) : (
-                              <Trash2 className="w-3 h-3 text-destructive" />
-                            )}
-                          </ShimmerButton>
-                        )}
-                      </div>
-                    </div>
-                  </li>
+                  <BranchItem
+                    key={branch.id}
+                    branch={branch}
+                    projectId={project.id}
+                    selected={selected}
+                    isNew={newBranches.has(branch.id)}
+                    isFadingOut={fadingOutBranches.has(branch.id)}
+                    isDeleting={deletingBranches.has(branch.id)}
+                    taskCount={taskCounts[branch.id] ?? 0}
+                    isAnimatingCount={animatingCounts.get(branch.id) || null}
+                    onSelect={onSelectBranch}
+                    onShowDetails={onShowBranchDetails}
+                    onDelete={onDeleteBranch}
+                    project={project}
+                  />
                 ))
               ) : project.git_branchs ? (
                 // Fallback to original branch data if optimized not loaded
                 Object.values(project.git_branchs as Record<string, any>).map((tree: any) => (
-                  <li key={tree.id}>
-                    <div className={cn(
-                      "group relative flex items-center gap-1 transition-all duration-300 ease-in-out",
-                      // Fade-in animation for new branches
-                      newBranches.has(tree.id) && "opacity-0 -translate-x-2.5",
-                      !newBranches.has(tree.id) && "opacity-100 translate-x-0",
-                      // Fade-out animation for deleting branches
-                      fadingOutBranches.has(tree.id) && "opacity-0 -translate-x-2.5 pointer-events-none",
-                      // Loading state for deletion process
-                      deletingBranches.has(tree.id) && !fadingOutBranches.has(tree.id) && "opacity-50 pointer-events-none"
-                    )}>
-                      <span className="text-muted-foreground">—</span>
-                      <ShimmerButton
-                        size="sm"
-                        variant={selected === `${project.id}:${tree.id}` ? "secondary" : "ghost"}
-                        className="flex-1 justify-start text-xs text-left"
-                        onClick={() => {
-                          onSelectBranch && onSelectBranch(project.id, tree.id);
-                        }}
-                      >
-                        <span className="truncate text-left flex-1">{tree.git_branch_name || tree.name}</span>
-                        <ShimmerBadge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs ml-2",
-                            animatingCounts.get(tree.id) === 'up' && "count-change-up",
-                            animatingCounts.get(tree.id) === 'down' && "count-change-down",
-                            animatingCounts.has(tree.id) && "count-pulse"
-                          )}
-                        >
-                          {tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
-                        </ShimmerBadge>
-                      </ShimmerButton>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                        <ShimmerButton
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={() => onShowBranchDetails && onShowBranchDetails(project, tree)}
-                          aria-label="View Branch Details"
-                          title="View Branch Details"
-                        >
-                          <Eye className="w-3 h-3" />
-                        </ShimmerButton>
-                        {(tree.git_branch_name || tree.name) !== 'main' && (
-                          <ShimmerButton
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6"
-                            onClick={() => onDeleteBranch({ project, branch: tree })}
-                            disabled={deletingBranches.has(tree.id)}
-                            aria-label={deletingBranches.has(tree.id) ? "Deleting Branch..." : "Delete Branch"}
-                          >
-                            {deletingBranches.has(tree.id) ? (
-                              <div className="animate-spin h-3 w-3 border-2 border-destructive border-t-transparent rounded-full" />
-                            ) : (
-                              <Trash2 className="w-3 h-3 text-destructive" />
-                            )}
-                          </ShimmerButton>
-                        )}
-                      </div>
-                    </div>
-                  </li>
+                  <BranchItem
+                    key={tree.id}
+                    branch={tree}
+                    projectId={project.id}
+                    selected={selected}
+                    isNew={newBranches.has(tree.id)}
+                    isFadingOut={fadingOutBranches.has(tree.id)}
+                    isDeleting={deletingBranches.has(tree.id)}
+                    taskCount={tree.task_count !== undefined ? tree.task_count : (taskCounts[tree.id as string] ?? 0)}
+                    isAnimatingCount={animatingCounts.get(tree.id) || null}
+                    onSelect={onSelectBranch}
+                    onShowDetails={onShowBranchDetails}
+                    onDelete={onDeleteBranch}
+                    project={project}
+                  />
                 ))
               ) : null}
             </ul>
