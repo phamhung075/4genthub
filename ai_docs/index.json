@@ -1335,7 +1335,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 18,
+      "count": 19,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1357,6 +1357,13 @@
           "name": "index.md",
           "path": "issues/index.md",
           "size": 15526
+        },
+        {
+          "hash": "d59639782fe3cca50d729fe5137c9dc0",
+          "modified": "2025-10-08T14:54:53.572583",
+          "name": "mcp-tools-integration-test-2025-10-08.md",
+          "path": "issues/mcp-tools-integration-test-2025-10-08.md",
+          "size": 9888
         },
         {
           "hash": "7d639dd1ed8b29ab0c01ecbde1c91d25",
@@ -2632,7 +2639,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-03T09:09:32.320446",
+  "generated_at": "2025-10-08T14:54:53.630689",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2899,6 +2906,7 @@
         "mcp-subtask-session-management-fix-2025-09-05.md",
         "mcp-task-creation-fix-prompt-2025-09-05.md",
         "mcp-task-creation-import-error-2025-09-09.md",
+        "mcp-tools-integration-test-2025-10-08.md",
         "project-deletion-fix-2025-09-06.md",
         "subtask-creation-nonetype-fix.md",
         "task-context-cascade-deletion-analysis.md",
@@ -3097,5 +3105,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 350
+  "total_files": 351
 }

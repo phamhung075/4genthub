@@ -4,7 +4,40 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 
 ## [Unreleased] - 2025-10-08
 
+### Added
+- **UpdateTaskUseCase Tests** - `agenthub_main/src/tests/task_management/application/use_cases/update_task_test.py`
+  - **Created**: Comprehensive test suite for update task use case
+  - **Test Coverage**:
+    - Task not found error handling
+    - Updating individual fields (title, description, status, priority, etc.)
+    - Updating all fields simultaneously
+    - Skipping unchanged status/priority updates
+    - Domain event dispatching on status changes
+    - WebSocket notification broadcasting with progress_history
+    - Context synchronization with/without async context
+    - Domain event handling
+    - TaskId conversion from different types (string, int, TaskId)
+    - Context ID ordering (ensures set last after other updates)
+    - Error recovery for WebSocket and context sync failures
+  - **Mock Strategy**: Comprehensive mocking of repository, async operations, and external services
+  - **Test Count**: 20+ test cases covering all code paths
+
 ### Updated
+- **TaskContextDialog Component Tests** - `agenthub-frontend/src/tests/components/TaskContextDialog.test.tsx`
+  - **Fixed**: Updated test file to match current component implementation (10 days stale)
+  - **Changes Made**:
+    - Replaced old test structure with new tab-based UI tests
+    - Added tests for WebSocket integration using `useEntityChanges` hook
+    - Added tests for edit mode with markdown editing capabilities
+    - Added tests for tab navigation across 9 different sections
+    - Added tests for context API integration (task, branch, project, global)
+    - Added tests for copy JSON feature and raw JSON expansion
+    - Added tests for initializing empty task context
+    - Added tests for markdown parsing (key:value and list formats)
+    - Updated all assertions to match new component text and structure
+  - **Test Count**: 25+ tests covering all major features
+  - **Coverage**: Complete coverage of dialog functionality including real-time updates
+
 - **TaskDetailsDialog Component Tests** - `agenthub-frontend/src/tests/components/TaskDetailsDialog.test.tsx`
   - **Fixed**: Updated test file to match current component implementation (10 days stale)
   - **Changes Made**:
