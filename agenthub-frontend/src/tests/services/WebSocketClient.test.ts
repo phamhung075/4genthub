@@ -1,4 +1,5 @@
-import { WebSocketClient, WSMessage } from '../../services/WebSocketClient';
+import { WebSocketClient } from '../../services/WebSocketClient';
+import type { WSMessage } from '../../types/websocketTypes';
 import { EventEmitter } from '../../utils/EventEmitter';
 
 // Mock WebSocket
@@ -32,6 +33,33 @@ class MockWebSocket {
 // Mock timers
 jest.useFakeTimers();
 
+// Mock config
+jest.mock('../../config/environment', () => ({
+  config: {
+    websocket: {
+      url: 'ws://localhost:8000',
+      maxReconnectAttempts: 5,
+      reconnectDelay: 1000,
+      aiBufferTimeout: 500,
+      maxReconnectDelay: 30000,
+      heartbeatInterval: 30000
+    }
+  }
+}));
+
+// Mock logger
+jest.mock('../../utils/logger', () => ({
+  __esModule: true,
+  default: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn()
+  }
+}));
+
+import logger from '../../utils/logger';
+
 describe('WebSocketClient', () => {
   let client: WebSocketClient;
   let mockWs: MockWebSocket;
@@ -42,16 +70,15 @@ describe('WebSocketClient', () => {
     jest.clearAllMocks();
     jest.clearAllTimers();
     client = new WebSocketClient(userId, token);
-    
-    // Mock console methods
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
     client.disconnect();
     jest.restoreAllMocks();
+    (logger.debug as jest.Mock).mockClear();
+    (logger.info as jest.Mock).mockClear();
+    (logger.warn as jest.Mock).mockClear();
+    (logger.error as jest.Mock).mockClear();
   });
 
   describe('constructor', () => {
@@ -70,40 +97,38 @@ describe('WebSocketClient', () => {
       });
     });
 
-    it('should create WebSocket connection with correct URL in development', () => {
+    it('should create WebSocket connection with correct URL', () => {
       client.connect();
       
       expect(mockWs).toBeDefined();
-      expect(mockWs.url).toContain('ws://localhost:8000/ws/realtime?token=');
-      expect(mockWs.url).toContain(token);
+      expect(mockWs.url).toBe(`ws://localhost:8000/ws/realtime?token=${token}`);
     });
 
-    it('should use VITE_WS_URL if provided', () => {
-      (import.meta as any).env = { VITE_WS_URL: 'ws://custom.example.com:9000' };
+    it('should handle missing WebSocket URL configuration', () => {
+      // Mock config without websocket URL
+      jest.resetModules();
+      jest.mock('../../config/environment', () => ({
+        config: {
+          websocket: {
+            url: '',
+            maxReconnectAttempts: 5,
+            reconnectDelay: 1000,
+            aiBufferTimeout: 500,
+            maxReconnectDelay: 30000,
+            heartbeatInterval: 30000
+          }
+        }
+      }));
       
-      client.connect();
+      const errorSpy = jest.fn();
+      const { WebSocketClient: WSClient } = require('../../services/WebSocketClient');
+      const testClient = new WSClient(userId, token);
+      testClient.on('error', errorSpy);
       
-      expect(mockWs.url).toBe(`ws://custom.example.com:9000/ws/realtime?token=${token}`);
-    });
-
-    it('should derive WebSocket URL from VITE_BACKEND_URL', () => {
-      (import.meta as any).env = { VITE_BACKEND_URL: 'https://api.example.com' };
+      testClient.connect();
       
-      client.connect();
-      
-      expect(mockWs.url).toBe(`wss://api.example.com/ws/realtime?token=${token}`);
-    });
-
-    it('should detect production environment', () => {
-      Object.defineProperty(window, 'location', {
-        value: { hostname: 'app.4genthub.com' },
-        writable: true
-      });
-      (import.meta as any).env = {};
-      
-      client.connect();
-      
-      expect(mockWs.url).toBe(`wss://api.4genthub.com/ws/realtime?token=${token}`);
+      expect(errorSpy).toHaveBeenCalledWith(new Error('WebSocket URL not configured'));
+      expect(logger.error).toHaveBeenCalledWith('[WebSocket v2.0] ❌ WebSocket URL is not configured');
     });
 
     it('should not reconnect if already connected', () => {
@@ -141,7 +166,7 @@ describe('WebSocketClient', () => {
       mockWs.onopen?.(openEvent);
       
       expect(connectedSpy).toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith('[WebSocket v2.0] ✅ Connected successfully');
+      expect(logger.debug).toHaveBeenCalledWith('[WebSocket v2.0] ✅ Connected successfully');
     });
   });
 
@@ -202,7 +227,7 @@ describe('WebSocketClient', () => {
       mockWs.onmessage?.(messageEvent);
       
       expect(updateSpy).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         '[WebSocket] ❌ Rejected non-v2.0 message:',
         '1.0'
       );
@@ -232,7 +257,7 @@ describe('WebSocketClient', () => {
       mockWs.onmessage?.(messageEvent);
       
       expect(updateSpy).not.toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith('[WebSocket v2.0] 💓 Heartbeat received');
+      expect(logger.debug).toHaveBeenCalledWith('[WebSocket v2.0] 💓 Heartbeat received');
     });
 
     it('should buffer AI updates', () => {
@@ -302,7 +327,7 @@ describe('WebSocketClient', () => {
       
       mockWs.onmessage?.(messageEvent);
       
-      expect(console.warn).toHaveBeenCalledWith('🗑️ DELETE MESSAGE RECEIVED IN WEBSOCKET CLIENT:');
+      expect(logger.warn).toHaveBeenCalledWith('🗑️ DELETE MESSAGE RECEIVED IN WEBSOCKET CLIENT:');
       expect(updateSpy).toHaveBeenCalledWith(deleteMessage);
     });
 
@@ -313,7 +338,7 @@ describe('WebSocketClient', () => {
       
       mockWs.onmessage?.(messageEvent);
       
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         '[WebSocket] ❌ Failed to parse message:',
         expect.any(Error)
       );
@@ -425,7 +450,7 @@ describe('WebSocketClient', () => {
       client.send({ type: 'update' });
       
       expect(mockWs.send).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith('[WebSocket] Not connected');
+      expect(logger.error).toHaveBeenCalledWith('[WebSocket] Not connected');
     });
   });
 
@@ -440,7 +465,7 @@ describe('WebSocketClient', () => {
       mockWs.onerror?.(error);
       
       expect(errorSpy).toHaveBeenCalledWith(error);
-      expect(console.error).toHaveBeenCalledWith('[WebSocket v2.0] ❌ Connection error:', error);
+      expect(logger.error).toHaveBeenCalledWith('[WebSocket v2.0] ❌ Connection error:', error);
     });
   });
 
@@ -514,7 +539,7 @@ describe('WebSocketClient', () => {
       mockWs.onclose?.(new CloseEvent('close', { code: 1006 }));
       
       expect(reconnectFailedSpy).toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith('[WebSocket] Max reconnection attempts reached');
+      expect(logger.error).toHaveBeenCalledWith('[WebSocket] Max reconnection attempts reached');
     });
   });
 
