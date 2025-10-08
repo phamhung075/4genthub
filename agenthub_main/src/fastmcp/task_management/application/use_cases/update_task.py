@@ -124,6 +124,7 @@ class UpdateTaskUseCase:
             from ..services.websocket_notification_service import WebSocketNotificationService
 
             # Create task update notification via WebSocket notification service
+            # CRITICAL FIX: Include progress_history in WebSocket payload for real-time dialog updates
             WebSocketNotificationService.sync_broadcast_task_event(
                 event_type="updated",
                 task_id=str(task.id.value),
@@ -132,12 +133,15 @@ class UpdateTaskUseCase:
                     "id": str(task.id.value),
                     "title": task.title,
                     "status": str(task.status),
-                    "priority": str(task.priority)
+                    "priority": str(task.priority),
+                    "progress_history": task.progress_history if hasattr(task, 'progress_history') else {},
+                    "progress_count": task.progress_count if hasattr(task, 'progress_count') else 0,
+                    "details": task.get_progress_history_text() if hasattr(task, 'get_progress_history_text') else ""
                 },
                 git_branch_id=task.git_branch_id if hasattr(task, 'git_branch_id') else None
             )
 
-            logger.info(f"Sent WebSocket notification for task {task.id.value} update")
+            logger.info(f"Sent WebSocket notification for task {task.id.value} update with progress_history")
 
         except Exception as e:
             logger.warning(f"Failed to send WebSocket notification: {e}")
