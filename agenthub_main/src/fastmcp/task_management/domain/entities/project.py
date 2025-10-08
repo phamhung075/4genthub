@@ -51,7 +51,7 @@ class Project(BaseTimestampEntity):
     
     # Agent management
     registered_agents: Dict[str, Agent] = field(default_factory=dict)
-    agent_assignments: Dict[str, str] = field(default_factory=dict)  # git_branch_name -> agent_id
+    agent_assignments: Dict[str, str] = field(default_factory=dict)  # git_branch_id -> agent_id
     
     # Cross-tree dependencies
     cross_tree_dependencies: Dict[str, Set[str]] = field(default_factory=dict)  # task_id -> dependent_task_ids
@@ -129,20 +129,20 @@ class Project(BaseTimestampEntity):
         self.registered_agents[agent.id] = agent
         self.touch("agent_registered")
     
-    def assign_agent_to_tree(self, agent_id: str, git_branch_name: str) -> None:
+    def assign_agent_to_tree(self, agent_id: str, git_branch_id: str) -> None:
         """Assign an agent to work on a specific task tree"""
         if agent_id not in self.registered_agents:
             raise ValueError(f"Agent {agent_id} not registered")
-        if git_branch_name not in self.git_branchs:
-            raise ValueError(f"Task tree {git_branch_name} not found")
-        
+        if git_branch_id not in self.git_branchs:
+            raise ValueError(f"Task tree {git_branch_id} not found")
+
         # Check if tree is already assigned
-        if git_branch_name in self.agent_assignments:
-            current_agent = self.agent_assignments[git_branch_name]
+        if git_branch_id in self.agent_assignments:
+            current_agent = self.agent_assignments[git_branch_id]
             if current_agent != agent_id:
-                raise ValueError(f"Task tree {git_branch_name} already assigned to agent {current_agent}")
-        
-        self.agent_assignments[git_branch_name] = agent_id
+                raise ValueError(f"Task tree {git_branch_id} already assigned to agent {current_agent}")
+
+        self.agent_assignments[git_branch_id] = agent_id
         self.touch("agent_assigned_to_tree")
     
     def add_cross_tree_dependency(self, dependent_task_id: str, prerequisite_task_id: str) -> None:
@@ -174,20 +174,20 @@ class Project(BaseTimestampEntity):
             raise ValueError(f"Agent {agent_id} not registered")
         
         available_tasks = []
-        
+
         # Find trees assigned to this agent
-        assigned_trees = [git_branch_name for git_branch_name, assigned_agent in self.agent_assignments.items() 
+        assigned_trees = [git_branch_id for git_branch_id, assigned_agent in self.agent_assignments.items()
                          if assigned_agent == agent_id]
-        
-        for git_branch_name in assigned_trees:
-            branch = self.git_branchs[git_branch_name]
+
+        for git_branch_id in assigned_trees:
+            branch = self.git_branchs[git_branch_id]
             branch_tasks = branch.get_available_tasks()
-            
+
             # Filter out tasks blocked by cross-tree dependencies
             for task in branch_tasks:
                 if self._is_task_ready_for_work(task.id.value):
                     available_tasks.append(task)
-        
+
         return available_tasks
     
     def start_work_session(self, agent_id: str, task_id: str, max_duration_hours: Optional[float] = None) -> 'WorkSession':
@@ -273,22 +273,22 @@ class Project(BaseTimestampEntity):
             "cross_tree_dependencies": sum(len(deps) for deps in self.cross_tree_dependencies.values()),
             "resource_locks": len(self.resource_locks),
             "branches": {
-                git_branch_name: {
+                git_branch_id: {
                     "name": branch.name,
-                    "assigned_agent": self.agent_assignments.get(git_branch_name),
+                    "assigned_agent": self.agent_assignments.get(git_branch_id),
                     "total_tasks": branch.get_task_count(),
                     "completed_tasks": branch.get_completed_task_count(),
                     "progress": branch.get_progress_percentage()
                 }
-                for git_branch_name, branch in self.git_branchs.items()
+                for git_branch_id, branch in self.git_branchs.items()
             },
             "agents": {
                 agent_id: {
                     "name": agent.name,
                     "capabilities": [cap.value for cap in agent.capabilities],  # Convert set to list
-                    "assigned_trees": [git_branch_name for git_branch_name, assigned_agent in self.agent_assignments.items() 
+                    "assigned_trees": [git_branch_id for git_branch_id, assigned_agent in self.agent_assignments.items()
                                      if assigned_agent == agent_id],
-                    "active_sessions": [session.id for session in self.active_work_sessions.values() 
+                    "active_sessions": [session.id for session in self.active_work_sessions.values()
                                       if session.agent_id == agent_id]
                 }
                 for agent_id, agent in self.registered_agents.items()
