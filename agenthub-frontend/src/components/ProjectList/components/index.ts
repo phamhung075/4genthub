@@ -6,3 +6,5 @@ export type { ProjectListContentProps } from './ProjectListContent';
 
 export { ProjectDialogs } from './ProjectDialogs';
 export type { ProjectDialogsProps } from './ProjectDialogs';
+
+export { BranchItem } from './BranchItem';
