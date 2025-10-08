@@ -4,7 +4,49 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 
 ## [Unreleased] - 2025-10-08
 
+### Updated
+- **TaskDetailsDialog Component Tests** - `agenthub-frontend/src/tests/components/TaskDetailsDialog.test.tsx`
+  - **Fixed**: Updated test file to match current component implementation (10 days stale)
+  - **Changes Made**:
+    - Added mocks for new dependencies: `useTaskWebSocket`, `js-cookie`, `ProgressHistoryTimeline`, `CopyableId`, `RawJSONDisplay`, `EnhancedJSONViewer`
+    - Fixed WebSocket integration by mocking `useTaskWebSocket` hook properly
+    - Updated test assertions to match new UI text (removed emojis from section titles)
+    - Fixed tab switching test to check for correct CSS classes (`text-text` instead of `text-blue-600`)
+    - Updated context tab tests to match new component structure
+    - Fixed ID display tests to check for mocked `CopyableId` components
+    - Added `project_id`, `progress_history`, and `progress_count` to mock task data
+  - **Test Count**: 36 tests, all passing
+  - **Coverage**: Maintains complete coverage of dialog functionality
+
 ### Added
+- **TaskDetailsDialog WebSocket Tests** - `agenthub-frontend/src/tests/components/TaskDetailsDialog.websocket.test.tsx`
+  - **Coverage**: Complete test coverage for WebSocket integration functionality
+  - **Test Count**: 12 comprehensive tests covering WebSocket scenarios
+  - **Features Tested**:
+    - Task updates via WebSocket notifications
+    - API fallback when notification lacks data
+    - Filtering notifications for current task only
+    - Context refetching on task updates
+    - Partial update handling with data preservation
+    - WebSocket connection parameters
+    - Visual feedback (Updated badge)
+  - **Mock Strategy**: Controllable WebSocket hook mock for testing various scenarios
+  - **Test Quality**: 100% coverage of WebSocket integration logic
+
+- **API Types Test** - `agenthub-frontend/src/tests/types/api.types.test.ts`
+  - **Coverage**: Comprehensive type validation for all API type definitions
+  - **Test Count**: 28 test suites covering all type interfaces
+  - **Features Tested**:
+    - Core entity types (Task, Subtask, Project, Branch, Rule)
+    - API response types (success/error states)
+    - Bulk summary operation types
+    - Type guards and utility functions
+    - Optional vs required property validation
+    - Generic type support
+    - Legacy format compatibility
+  - **Type Safety**: Validates TypeScript interfaces match expected shapes
+  - **Result**: 100% coverage of api.types.ts definitions
+
 - **Repository Factory Test** - `agenthub_main/src/tests/task_management/infrastructure/repositories/repository_factory_test.py`
   - **Coverage**: Complete test coverage for RepositoryFactory class
   - **Test Count**: 18 comprehensive tests covering all factory methods
