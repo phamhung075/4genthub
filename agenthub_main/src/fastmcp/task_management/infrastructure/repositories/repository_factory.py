@@ -39,40 +39,28 @@ class RepositoryFactory:
         base_repository = None
         
         if config['database_type'] == 'sqlite':
-            try:
-                from .sqlite.sqlite_task_repository import SQLiteTaskRepository
-                base_repository = SQLiteTaskRepository(project_id, git_branch_name, user_id)
-                logger.info("[RepositoryFactory] Using SQLiteTaskRepository")
-            except ImportError:
-                logger.warning("SQLiteTaskRepository not available, falling back to ORM")
-                # Set up ORM repository for SQLite fallback
-                from .orm.task_repository import ORMTaskRepository
-                base_repository = ORMTaskRepository(
-                    session=None,
-                    git_branch_id=None,
-                    project_id=project_id,
-                    git_branch_name=git_branch_name,
-                    user_id=user_id
-                )
-                logger.info("[RepositoryFactory] Using ORMTaskRepository as SQLite fallback")
+            # SQLite uses ORM repository directly
+            from .orm.task_repository import ORMTaskRepository
+            base_repository = ORMTaskRepository(
+                session=None,
+                git_branch_id=None,
+                project_id=project_id,
+                git_branch_name=git_branch_name,
+                user_id=user_id
+            )
+            logger.info("[RepositoryFactory] SQLite configured, using ORMTaskRepository")
         
         elif config['database_type'] == 'supabase':
-            try:
-                from .supabase.supabase_task_repository import SupabaseTaskRepository
-                base_repository = SupabaseTaskRepository(project_id, git_branch_name, user_id)
-                logger.info("[RepositoryFactory] Using SupabaseTaskRepository")
-            except ImportError:
-                logger.warning("SupabaseTaskRepository not available, falling back to ORM")
-                # Set up ORM repository for Supabase fallback
-                from .orm.task_repository import ORMTaskRepository
-                base_repository = ORMTaskRepository(
-                    session=None,
-                    git_branch_id=None,
-                    project_id=project_id,
-                    git_branch_name=git_branch_name,
-                    user_id=user_id
-                )
-                logger.info("[RepositoryFactory] Using ORMTaskRepository as Supabase fallback")
+            # Supabase uses ORM repository directly
+            from .orm.task_repository import ORMTaskRepository
+            base_repository = ORMTaskRepository(
+                session=None,
+                git_branch_id=None,
+                project_id=project_id,
+                git_branch_name=git_branch_name,
+                user_id=user_id
+            )
+            logger.info("[RepositoryFactory] Supabase configured, using ORMTaskRepository")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses ORM repository directly
@@ -130,20 +118,16 @@ class RepositoryFactory:
         base_repository = None
         
         if config['database_type'] == 'sqlite':
-            try:
-                from .sqlite.sqlite_project_repository import SQLiteProjectRepository
-                base_repository = SQLiteProjectRepository()
-                logger.info("[RepositoryFactory] Using SQLiteProjectRepository")
-            except ImportError:
-                logger.warning("SQLiteProjectRepository not available, falling back to ORM")
+            # SQLite uses ORM repository directly
+            from .orm.project_repository import ORMProjectRepository
+            base_repository = ORMProjectRepository()
+            logger.info("[RepositoryFactory] SQLite configured, using ORMProjectRepository")
         
         elif config['database_type'] == 'supabase':
-            try:
-                from .supabase.supabase_project_repository import SupabaseProjectRepository
-                base_repository = SupabaseProjectRepository()
-                logger.info("[RepositoryFactory] Using SupabaseProjectRepository")
-            except ImportError:
-                logger.warning("SupabaseProjectRepository not available, falling back to ORM")
+            # Supabase uses ORM repository directly
+            from .orm.project_repository import ORMProjectRepository
+            base_repository = ORMProjectRepository()
+            logger.info("[RepositoryFactory] Supabase configured, using ORMProjectRepository")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses ORM repository directly - no separate implementation needed
@@ -183,20 +167,16 @@ class RepositoryFactory:
         base_repository = None
         
         if config['database_type'] == 'sqlite':
-            try:
-                from .sqlite.sqlite_git_branch_repository import SQLiteGitBranchRepository
-                base_repository = SQLiteGitBranchRepository()
-                logger.info("[RepositoryFactory] Using SQLiteGitBranchRepository")
-            except ImportError:
-                logger.warning("SQLiteGitBranchRepository not available, falling back to ORM")
+            # SQLite uses ORM repository directly
+            from .orm.git_branch_repository import ORMGitBranchRepository
+            base_repository = ORMGitBranchRepository(user_id=user_id)
+            logger.info("[RepositoryFactory] SQLite configured, using ORMGitBranchRepository")
         
         elif config['database_type'] == 'supabase':
-            try:
-                from .supabase.supabase_git_branch_repository import SupabaseGitBranchRepository
-                base_repository = SupabaseGitBranchRepository()
-                logger.info("[RepositoryFactory] Using SupabaseGitBranchRepository")
-            except ImportError:
-                logger.warning("SupabaseGitBranchRepository not available, falling back to ORM")
+            # Supabase uses ORM repository directly
+            from .orm.git_branch_repository import ORMGitBranchRepository
+            base_repository = ORMGitBranchRepository(user_id=user_id)
+            logger.info("[RepositoryFactory] Supabase configured, using ORMGitBranchRepository")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses ORM repository directly - no separate implementation needed
@@ -245,20 +225,16 @@ class RepositoryFactory:
         base_repository = None
         
         if config['database_type'] == 'sqlite':
-            try:
-                from .sqlite.sqlite_subtask_repository import SQLiteSubtaskRepository
-                base_repository = SQLiteSubtaskRepository(user_id=user_id)
-                logger.info("[RepositoryFactory] Using SQLiteSubtaskRepository")
-            except ImportError:
-                logger.warning("SQLiteSubtaskRepository not available, falling back to ORM")
+            # SQLite uses ORM repository directly
+            from .orm.subtask_repository import ORMSubtaskRepository
+            base_repository = ORMSubtaskRepository(user_id=user_id)
+            logger.info("[RepositoryFactory] SQLite configured, using ORMSubtaskRepository")
         
         elif config['database_type'] == 'supabase':
-            try:
-                from .supabase.supabase_subtask_repository import SupabaseSubtaskRepository
-                base_repository = SupabaseSubtaskRepository(user_id=user_id)
-                logger.info("[RepositoryFactory] Using SupabaseSubtaskRepository")
-            except ImportError:
-                logger.warning("SupabaseSubtaskRepository not available, falling back to ORM")
+            # Supabase uses ORM repository directly
+            from .orm.subtask_repository import ORMSubtaskRepository
+            base_repository = ORMSubtaskRepository(user_id=user_id)
+            logger.info("[RepositoryFactory] Supabase configured, using ORMSubtaskRepository")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses ORM repository directly - no separate implementation needed
@@ -298,20 +274,16 @@ class RepositoryFactory:
         base_repository = None
         
         if config['database_type'] == 'sqlite':
-            try:
-                from .sqlite.sqlite_agent_repository import SQLiteAgentRepository
-                base_repository = SQLiteAgentRepository()
-                logger.info("[RepositoryFactory] Using SQLiteAgentRepository")
-            except ImportError:
-                logger.warning("SQLiteAgentRepository not available, falling back to ORM")
+            # SQLite uses ORM repository directly
+            from .orm.agent_repository import ORMAgentRepository
+            base_repository = ORMAgentRepository()
+            logger.info("[RepositoryFactory] SQLite configured, using ORMAgentRepository")
         
         elif config['database_type'] == 'supabase':
-            try:
-                from .supabase.supabase_agent_repository import SupabaseAgentRepository
-                base_repository = SupabaseAgentRepository()
-                logger.info("[RepositoryFactory] Using SupabaseAgentRepository")
-            except ImportError:
-                logger.warning("SupabaseAgentRepository not available, falling back to ORM")
+            # Supabase uses ORM repository directly
+            from .orm.agent_repository import ORMAgentRepository
+            base_repository = ORMAgentRepository()
+            logger.info("[RepositoryFactory] Supabase configured, using ORMAgentRepository")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses ORM repository directly - no separate implementation needed
@@ -356,24 +328,20 @@ class RepositoryFactory:
         base_repository = None
         
         if config['database_type'] == 'sqlite':
-            try:
-                from .sqlite.sqlite_context_repository import SQLiteContextRepository
-                from ..database.database_config import get_db_config
-                db_config = get_db_config()
-                base_repository = SQLiteContextRepository(db_config.SessionLocal)
-                logger.info("[RepositoryFactory] Using SQLiteContextRepository")
-            except ImportError:
-                logger.warning("SQLiteContextRepository not available, falling back to TaskContextRepository")
+            # SQLite uses TaskContextRepository directly
+            from .task_context_repository import TaskContextRepository
+            from ..database.database_config import get_db_config
+            db_config = get_db_config()
+            base_repository = TaskContextRepository(db_config.SessionLocal)
+            logger.info("[RepositoryFactory] SQLite configured, using TaskContextRepository")
         
         elif config['database_type'] == 'supabase':
-            try:
-                from .supabase.supabase_context_repository import SupabaseContextRepository
-                from ..database.database_config import get_db_config
-                db_config = get_db_config()
-                base_repository = SupabaseContextRepository(db_config.SessionLocal)
-                logger.info("[RepositoryFactory] Using SupabaseContextRepository")
-            except ImportError:
-                logger.warning("SupabaseContextRepository not available, falling back to TaskContextRepository")
+            # Supabase uses TaskContextRepository directly
+            from .task_context_repository import TaskContextRepository
+            from ..database.database_config import get_db_config
+            db_config = get_db_config()
+            base_repository = TaskContextRepository(db_config.SessionLocal)
+            logger.info("[RepositoryFactory] Supabase configured, using TaskContextRepository")
         
         elif config['database_type'] == 'postgresql':
             # PostgreSQL uses TaskContextRepository directly - no separate implementation needed
