@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import Cookies from 'js-cookie';
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
-import { Task, Subtask, getTask, getTaskContext } from "../api";
+import { Task, Subtask, getTask, getTaskContext, getCurrentUserId } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
 import logger from "../utils/logger";
@@ -12,6 +13,7 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
 import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
+import { useTaskWebSocket } from '../hooks/useTaskWebSocket';
 
 interface TaskDetailsDialogProps {
   open: boolean;
@@ -34,15 +36,95 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
   const [jsonCopied, setJsonCopied] = useState(false);
+  const [recentlyUpdated, setRecentlyUpdated] = useState(false);
+
+  // Get authentication context for WebSocket - use cookies and JWT decode
+  const token = Cookies.get('access_token') || '';
+  const userId = getCurrentUserId() || '';
+
+  // Use fullTask if available for displayTask - Task type is already the entity itself
+  const displayTask = fullTask || task;
+
+  // WebSocket integration for real-time updates
+  const { isConnected } = useTaskWebSocket({
+    userId: userId || '',
+    token: token || '',
+    taskTreeId: displayTask?.git_branch_id || '',
+    projectId: displayTask?.project_id || '',
+    onTaskUpdate: useCallback((notification: any) => {
+      // Only update if this notification is for the currently displayed task
+      if (!displayTask || !notification?.entityId) return false;
+
+      if (notification.entityId === displayTask.id) {
+        logger.debug('[TaskDetailsDialog] Received WebSocket update for current task:', notification);
+
+        // If notification has full task data, use it directly
+        if (notification.data && notification.eventType === 'updated') {
+          logger.debug('[TaskDetailsDialog] Updating task from WebSocket data');
+          setFullTask(prevTask => ({
+            ...prevTask,
+            ...notification.data,
+            // Preserve nested objects that might not be in notification
+            context_data: notification.data.context_data || prevTask?.context_data
+          }));
+
+          // Show visual feedback
+          setRecentlyUpdated(true);
+          setTimeout(() => setRecentlyUpdated(false), 2000);
+
+          // Also refetch context if available
+          if (notification.entityId) {
+            setContextLoading(true);
+            getTaskContext(notification.entityId)
+              .then(context => {
+                // Same context extraction logic as lines 89-111
+                if (context?.data?.resolved_context) {
+                  setTaskContext(context.data.resolved_context);
+                } else if (context?.resolved_context) {
+                  setTaskContext(context.resolved_context);
+                } else if (context?.data) {
+                  setTaskContext(context.data);
+                } else {
+                  setTaskContext(context);
+                }
+              })
+              .catch(error => logger.error('Error fetching updated context:', error))
+              .finally(() => setContextLoading(false));
+          }
+
+          return true; // Handled successfully
+        }
+
+        // If notification doesn't have full data, trigger API fallback
+        if (notification.eventType === 'api_fallback_needed') {
+          logger.debug('[TaskDetailsDialog] API fallback triggered, refetching task');
+          setLoading(true);
+          getTask(displayTask.id)
+            .then(fetchedTask => {
+              // Task type is already the entity itself, no need to access .task property
+              if (fetchedTask?.id) {
+                setFullTask(fetchedTask);
+                setRecentlyUpdated(true);
+                setTimeout(() => setRecentlyUpdated(false), 2000);
+              }
+            })
+            .catch(error => logger.error('Error refetching task:', error))
+            .finally(() => setLoading(false));
+          return true; // Handled
+        }
+      }
+
+      return false; // Not handled
+    }, [displayTask?.id])
+  });
 
   // Set initial task when it changes - but don't clear if null
   useEffect(() => {
     logger.debug('[TaskDetailsDialog] Task prop changed:', task);
-    // Check if task is the full response object or just the task
-    const taskData = task?.task || task;
-    if (taskData && taskData.id) {
-      logger.debug('[TaskDetailsDialog] Setting fullTask from prop:', taskData);
-      setFullTask(taskData);
+    // Task type is already the entity itself, no wrapper object
+    if (task && task.id) {
+      logger.debug('[TaskDetailsDialog] Setting fullTask from prop:', task);
+      setFullTask(task);
     } else {
       logger.debug('[TaskDetailsDialog] Task prop is null or has no ID, not clearing fullTask');
     }
@@ -63,11 +145,10 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
       getTask(taskId) // Fixed: removed invalid second parameter
         .then(fetchedTask => {
           logger.debug('[TaskDetailsDialog] Fetched task:', fetchedTask);
-          // Extract the task from the response structure
-          const taskData = fetchedTask?.task || fetchedTask;
-          if (taskData && taskData.id) {
-            logger.debug('[TaskDetailsDialog] Setting fullTask to:', taskData);
-            setFullTask(taskData);
+          // Task type is already the entity itself, no wrapper object
+          if (fetchedTask && fetchedTask.id) {
+            logger.debug('[TaskDetailsDialog] Setting fullTask to:', fetchedTask);
+            setFullTask(fetchedTask);
           } else {
             logger.warn('[TaskDetailsDialog] No valid task data in response');
           }
@@ -133,12 +214,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
     }
   }, [open]);
 
-  // Use fullTask if available, otherwise fall back to original task
-  // Handle both response object and direct task object
-  const rawDisplayTask = fullTask || task;
-  const displayTask = rawDisplayTask?.task || rawDisplayTask;
-  logger.debug('[TaskDetailsDialog] DisplayTask being used', { displayTask, rawDisplayTask, fullTask, taskProp: task });
-  
   // Format context data using helper functions
   const contextDisplay = formatContextDisplay(displayTask?.context_data);
   
@@ -185,10 +260,15 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden rounded-lg shadow-xl flex flex-col bg-[var(--color-surface)]">
         <DialogHeader>
-          <DialogTitle className="text-xl text-left">
+          <DialogTitle className="text-xl text-left flex items-center gap-2">
             {displayTask?.title || 'Task Details'}
+            {recentlyUpdated && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                Updated
+              </Badge>
+            )}
           </DialogTitle>
-          
+
           {/* Tab Navigation */}
           <div className="flex gap-1 mt-4 border-b">
             <button
@@ -405,11 +485,24 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                                 View full subtask details in the Subtasks tab
                               </p>
                               {/* Enhanced subtask ID display with copy functionality */}
-                              {displayTask.subtasks.filter((id: any) => typeof id === 'string' && id.length > 0).length > 0 ? (
-                                <div className="mt-3 space-y-2">
-                                  {displayTask.subtasks
-                                    .filter((id: any) => typeof id === 'string' && id.length > 0)
-                                    .map((subtaskId: string, index: number) => (
+                              {(() => {
+                                // Type guard: check if subtasks array contains strings
+                                const subtaskArray = displayTask.subtasks;
+                                if (!Array.isArray(subtaskArray) || subtaskArray.length === 0) {
+                                  return null;
+                                }
+
+                                // Filter for string IDs only
+                                const subtaskIds: string[] = [];
+                                for (const item of subtaskArray) {
+                                  if (typeof item === 'string' && item.length > 0) {
+                                    subtaskIds.push(item);
+                                  }
+                                }
+
+                                return subtaskIds.length > 0 ? (
+                                  <div className="mt-3 space-y-2">
+                                    {subtaskIds.map((subtaskId: string, index: number) => (
                                       <div key={index} className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground">#{index + 1}:</span>
                                         <CopyableId
@@ -422,12 +515,13 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                                         />
                                       </div>
                                     ))}
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground mt-2 italic">
-                                  Subtask IDs not available. View Subtasks tab for details.
-                                </p>
-                              )}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground mt-2 italic">
+                                    Subtask IDs not available. View Subtasks tab for details.
+                                  </p>
+                                );
+                              })()}
                             </>
                           ) : (
                             <p className="text-sm text-muted-foreground">

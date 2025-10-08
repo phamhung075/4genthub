@@ -30,8 +30,10 @@ export interface Task {
   labels?: string[];
   details?: string;
   progress_percentage?: number;
-  subtasks?: Subtask[];
+  subtasks?: Subtask[] | string[]; // Can be array of subtask objects or subtask IDs
   parent_task_id?: string; // Identifies if this task is actually a subtask
+  progress_history?: Record<string, any>; // Progress history entries
+  progress_count?: number; // Total number of progress entries
 }
 
 export interface Subtask {

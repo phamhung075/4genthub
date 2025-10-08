@@ -6,6 +6,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added - Real-time Task Updates in TaskDetailsDialog - Wed Oct 8 2025
+- **WebSocket Integration**: Integrated useTaskWebSocket hook into TaskDetailsDialog component for real-time task updates
+  - **Feature**: Dialog now automatically refreshes when the displayed task is updated anywhere in the system
+  - **Implementation**:
+    - Added WebSocket integration using existing useTaskWebSocket hook
+    - Task updates received via WebSocket automatically refresh dialog content
+    - Context data also refreshes when task is updated
+    - Visual feedback with "Updated" badge shown for 2 seconds after updates
+    - WebSocket-first strategy: Uses notification data directly (0 API calls when sufficient)
+    - Fallback to API call when WebSocket data incomplete
+  - **Files Modified**:
+    - `agenthub-frontend/src/components/TaskDetailsDialog.tsx` (lines 1, 15-16, 39, 41-120, 266-273)
+  - **Performance Optimization**:
+    - WebSocket notifications processed only for currently displayed task
+    - Debounced API fallback (200ms delay) prevents excessive calls
+    - Graceful degradation when WebSocket disconnected
+  - **User Experience**:
+    - Real-time updates without manual refresh
+    - Smooth visual feedback with "Updated" badge
+    - No performance degradation or excessive re-renders
+  - **Testing**: Build successful with no TypeScript errors
+
 ### Fixed - WebSocket Delete Notifications for Tasks and Subtasks - Fri Oct 3 15:30:00 CEST 2025
 - **WebSocket Delete Events**: Fixed WebSocket "deleted" notifications for tasks and subtasks not working
   - **Symptom**: Deleting tasks/subtasks via MCP left items visible in frontend instead of disappearing instantly
