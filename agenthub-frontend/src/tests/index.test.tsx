@@ -19,17 +19,75 @@ vi.mock('react-router-dom', () => ({
 
 // Mock CSS imports
 vi.mock('../index.css', () => ({}));
-vi.mock('../styles/theme.css', () => ({}));
 vi.mock('../theme/global.scss', () => ({}));
+vi.mock('../styles/notifications.css', () => ({}));
+
+// Mock extension error filter
+const mockInitializeExtensionErrorFilter = vi.fn();
+vi.mock('../utils/extensionErrorFilter', () => ({
+  initializeExtensionErrorFilter: mockInitializeExtensionErrorFilter,
+}));
+
+// Mock logger
+vi.mock('../utils/logger', () => ({
+  __esModule: true,
+  default: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+// Mock logger config
+const mockDebugLoggerConfig = vi.fn();
+vi.mock('../config/logger.config', () => ({
+  debugLoggerConfig: mockDebugLoggerConfig,
+}));
+
+// Mock loggerExport
+const mockLoggerExportModule = {
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+};
+
+// Create a mock promise that we can control
+let loggerExportResolve: (value: any) => void;
+let loggerExportReject: (error: Error) => void;
+const mockLoggerExportPromise = new Promise((resolve, reject) => {
+  loggerExportResolve = resolve;
+  loggerExportReject = reject;
+});
+
+vi.mock('../utils/loggerExport', () => ({
+  __esModule: true,
+  default: mockLoggerExportPromise,
+}));
 
 describe('index.tsx', () => {
   let mockRoot: any;
   let mockRender: ReturnType<typeof vi.fn>;
   let container: HTMLElement;
+  let originalImport: typeof import;
 
   beforeEach(() => {
     // Clear all mocks
     vi.clearAllMocks();
+
+    // Store original import
+    originalImport = (global as any).import;
+    
+    // Mock dynamic import
+    (global as any).import = vi.fn((path: string) => {
+      if (path === './utils/loggerExport') {
+        return mockLoggerExportPromise;
+      }
+      return originalImport(path);
+    });
 
     // Create a mock container
     container = document.createElement('div');
@@ -46,11 +104,63 @@ describe('index.tsx', () => {
 
   afterEach(() => {
     // Clean up DOM
-    document.body.removeChild(container);
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
+    
+    // Restore original import
+    (global as any).import = originalImport;
+    
+    // Clear module cache to ensure fresh imports
+    vi.resetModules();
+  });
+
+  it('initializes extension error filter before any other code', () => {
+    // Import index to trigger execution
+    require('../index');
+
+    expect(mockInitializeExtensionErrorFilter).toHaveBeenCalledTimes(1);
+    expect(mockInitializeExtensionErrorFilter).toHaveBeenCalledBefore(mockDebugLoggerConfig);
+  });
+
+  it('calls debugLoggerConfig after extension error filter', () => {
+    require('../index');
+
+    expect(mockDebugLoggerConfig).toHaveBeenCalledTimes(1);
+    expect(mockDebugLoggerConfig).toHaveBeenCalledAfter(mockInitializeExtensionErrorFilter);
+  });
+
+  it('initializes logger export module asynchronously', async () => {
+    require('../index');
+
+    expect((global as any).import).toHaveBeenCalledWith('./utils/loggerExport');
+    
+    // Resolve the promise to test success case
+    loggerExportResolve(mockLoggerExportModule);
+    await mockLoggerExportPromise;
+
+    // Verify the promise was handled
+    expect((global as any).import).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles logger export module initialization failure silently', async () => {
+    require('../index');
+
+    // Reject the promise to test error case
+    const error = new Error('Logger initialization failed');
+    loggerExportReject(error);
+    
+    try {
+      await mockLoggerExportPromise;
+    } catch (e) {
+      // Expected to catch the error
+    }
+
+    // Should not throw and should continue execution
+    expect(mockRender).toHaveBeenCalledTimes(1);
   });
 
   it('creates root with correct element', () => {
-    // Import index to trigger execution
     require('../index');
 
     expect(ReactDOM.createRoot).toHaveBeenCalledWith(container);
@@ -139,5 +249,41 @@ describe('index.tsx', () => {
     expect(strictMode.type).toBe(React.StrictMode);
     expect(browserRouter.type.name).toBe('BrowserRouter');
     expect(app.type.name).toBe('default'); // Default export from App
+  });
+
+  it('handles synchronous import errors gracefully', () => {
+    // Test the try-catch block for synchronous errors
+    const originalImport = (global as any).import;
+    (global as any).import = vi.fn(() => {
+      throw new Error('Synchronous import error');
+    });
+
+    // Should not throw when importing index
+    expect(() => {
+      require('../index');
+    }).not.toThrow();
+
+    // Should still render the app
+    expect(mockRender).toHaveBeenCalledTimes(1);
+
+    (global as any).import = originalImport;
+  });
+
+  it('executes initialization in correct order', () => {
+    require('../index');
+
+    // Verify order of operations
+    const callOrder = [
+      mockInitializeExtensionErrorFilter,
+      mockDebugLoggerConfig,
+      ReactDOM.createRoot,
+      mockRender,
+      reportWebVitals,
+    ];
+
+    // Check each function was called in order
+    for (let i = 0; i < callOrder.length - 1; i++) {
+      expect(callOrder[i]).toHaveBeenCalledBefore(callOrder[i + 1]);
+    }
   });
 });
