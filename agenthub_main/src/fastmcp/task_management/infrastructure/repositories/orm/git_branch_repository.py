@@ -74,13 +74,15 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
         """
         return ORMGitBranchRepository(user_id=user_id, performance_mode=self.performance_mode)
 
-    def _model_to_git_branch(self, model: ProjectGitBranch) -> GitBranch:
+    def _model_to_entity(self, model: ProjectGitBranch) -> GitBranch:
         """
         Convert ProjectGitBranch model to GitBranch domain entity.
-        
+
+        DDD-compliant conversion method following repository pattern.
+
         Args:
             model: ProjectGitBranch model instance
-            
+
         Returns:
             GitBranch domain entity
         """
@@ -119,13 +121,15 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
         
         return git_branch
     
-    def _git_branch_to_model_data(self, git_branch: GitBranch) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, git_branch: GitBranch) -> Dict[str, Any]:
         """
         Convert GitBranch domain entity to model data dictionary.
-        
+
+        DDD-compliant conversion method following repository pattern.
+
         Args:
             git_branch: GitBranch domain entity
-            
+
         Returns:
             Dictionary with model data
         """
@@ -164,7 +168,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                     )
                 ).first()
                 
-                model_data = self._git_branch_to_model_data(git_branch)
+                model_data = self._entity_to_model_dict(git_branch)
                 
                 if existing:
                     # Update existing branch
@@ -219,7 +223,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 if not model:
                     return None
                 
-                return self._model_to_git_branch(model)
+                return self._model_to_entity(model)
         except SQLAlchemyError as e:
             logger.error(f"Error finding git branch by ID {branch_id}: {e}")
             raise DatabaseException(
@@ -242,7 +246,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 if not model:
                     return None
                 
-                return self._model_to_git_branch(model)
+                return self._model_to_entity(model)
         except SQLAlchemyError as e:
             logger.error(f"Error finding git branch by name {branch_name}: {e}")
             raise DatabaseException(
@@ -269,7 +273,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -295,7 +299,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -716,7 +720,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -745,7 +749,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -778,7 +782,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -972,7 +976,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                         "error_code": "NOT_FOUND"
                     }
                 
-                git_branch = self._model_to_git_branch(model)
+                git_branch = self._model_to_entity(model)
                 
                 return {
                     "success": True,
@@ -1089,7 +1093,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
                 model.touch("git_branch_description_updated")
                 session.flush()
                 
-                git_branch = self._model_to_git_branch(model)
+                git_branch = self._model_to_entity(model)
                 
                 return {
                     "success": True,
