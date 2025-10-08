@@ -1,3 +1,5 @@
+import logger from '../utils/logger';
+
 /**
  * Global tracker for tasks pending deletion
  * Used to coordinate delete animations across components

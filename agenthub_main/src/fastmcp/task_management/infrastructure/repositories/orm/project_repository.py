@@ -111,20 +111,58 @@ class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepos
                 entity.git_branchs[db_branch.id] = git_branch
         
         return entity
-    
+
+    def _entity_to_model_dict(self, project: ProjectEntity) -> Dict[str, Any]:
+        """Convert domain entity to model dictionary for ORM updates
+
+        This method follows the DDD pattern by properly converting from domain entities
+        to ORM model dictionaries, ensuring clean separation of concerns.
+
+        Args:
+            project: ProjectEntity to convert
+
+        Returns:
+            Dictionary with ORM model fields and metadata
+        """
+        return {
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "status": getattr(project, 'status', 'active'),
+            "metadata": getattr(project, 'metadata', {}),
+            "model_metadata": {
+                # Complex domain fields stored as metadata for ORM
+                "git_branchs_count": len(project.git_branchs) if hasattr(project, 'git_branchs') else 0,
+                "registered_agents_count": len(project.registered_agents) if hasattr(project, 'registered_agents') else 0,
+                "agent_assignments": dict(project.agent_assignments) if hasattr(project, 'agent_assignments') else {},
+                "cross_tree_dependencies_count": len(project.cross_tree_dependencies) if hasattr(project, 'cross_tree_dependencies') else 0,
+                "active_work_sessions_count": len(project.active_work_sessions) if hasattr(project, 'active_work_sessions') else 0,
+                "resource_locks": dict(project.resource_locks) if hasattr(project, 'resource_locks') else {}
+            }
+        }
+
     async def save(self, project: ProjectEntity) -> None:
         """Save a project to the repository"""
         try:
             with self.get_db_session() as session:
                 existing = session.query(Project).filter(Project.id == project.id).first()
-                
+
                 if existing:
-                    # Update existing project
-                    existing.name = project.name
-                    existing.description = project.description
+                    # Update existing project using DDD conversion pattern
+                    model_dict = self._entity_to_model_dict(project)
+
+                    # Update model attributes from converted dict
+                    for key, value in model_dict.items():
+                        if key != 'model_metadata' and hasattr(existing, key):
+                            setattr(existing, key, value)
+
+                    # Store model_metadata in metadata field
+                    if 'model_metadata' in model_dict:
+                        current_metadata = existing.metadata or {}
+                        current_metadata.update(model_dict['model_metadata'])
+                        existing.metadata = current_metadata
+
                     existing.touch("project_updated")
-                    existing.status = getattr(project, 'status', 'active')
-                    existing.metadata = getattr(project, 'metadata', {})
                 else:
                     # Create new project with user isolation
                     project_data = {
@@ -461,27 +499,60 @@ class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepos
             return self._model_to_entity(project) if project else None
     
     def update_project(self, project_id: str, **updates) -> ProjectEntity:
-        """Update a project with ORM"""
+        """Update a project with ORM using proper DDD conversion pattern"""
         try:
             with self.transaction():
-                # BaseTimestampRepository handles timestamps automatically
-                # Removed manual updated_at assignment
-                
-                updated_project = super().update(project_id, **updates)
-                if not updated_project:
-                    raise ResourceNotFoundException(
-                        resource_type="Project",
-                        resource_id=project_id
-                    )
-                
+                # Get the project entity first
+                with self.get_db_session() as session:
+                    project_model = session.query(Project).filter(
+                        Project.id == project_id
+                    ).first()
+
+                    if not project_model:
+                        raise ResourceNotFoundException(
+                            resource_type="Project",
+                            resource_id=project_id
+                        )
+
+                    # If updating with a ProjectEntity, use conversion method
+                    if 'entity' in updates:
+                        project_entity = updates.pop('entity')
+                        # Convert entity to model dict using DDD pattern
+                        model_dict = self._entity_to_model_dict(project_entity)
+
+                        # Update model attributes from converted dict
+                        for key, value in model_dict.items():
+                            if key != 'model_metadata' and hasattr(project_model, key):
+                                setattr(project_model, key, value)
+
+                        # Store model_metadata in metadata field if exists
+                        if 'model_metadata' in model_dict and hasattr(project_model, 'metadata'):
+                            current_metadata = project_model.metadata or {}
+                            current_metadata.update(model_dict['model_metadata'])
+                            project_model.metadata = current_metadata
+
+                    # Apply any additional direct updates (legacy support)
+                    for key, value in updates.items():
+                        if hasattr(project_model, key):
+                            setattr(project_model, key, value)
+
+                    # Touch for timestamp update
+                    project_model.touch("project_updated")
+
+                    # Commit changes
+                    session.commit()
+
+                    # Convert to entity for return
+                    updated_project = self._model_to_entity(project_model)
+
                 # Invalidate cache after update
                 self.invalidate_cache_for_entity(
                     entity_type="project",
                     entity_id=project_id,
                     operation=CacheOperation.UPDATE
                 )
-                
-                return self._model_to_entity(updated_project)
+
+                return updated_project
         except Exception as e:
             logger.error(f"Failed to update project {project_id}: {e}")
             raise DatabaseException(

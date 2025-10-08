@@ -20,6 +20,8 @@ export class WebSocketClient extends EventEmitter {
   private sequenceNumber = 0;
   private isConnecting = false;
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private processedMessages = new Set<string>();
+  private readonly MAX_PROCESSED_MESSAGES = 1000;
 
   constructor(
     private userId: string,
@@ -214,17 +216,39 @@ export class WebSocketClient extends EventEmitter {
     logger.debug('[WebSocket v2.0] ⚡ 🚨 DELETE DEBUG: Processing immediate update:', {
       entity: message.payload?.entity,
       action: message.payload?.action,
+      messageId: message.id,
       updateListeners: this.listenerCount('update'),
       userActionListeners: this.listenerCount('userAction')
     });
 
+    // CRITICAL FIX: Deduplicate messages by ID to prevent duplicate notifications
+    if (this.processedMessages.has(message.id)) {
+      logger.debug('[WebSocket v2.0] ⏭️ Skipping duplicate message:', {
+        messageId: message.id,
+        entity: message.payload?.entity,
+        action: message.payload?.action
+      });
+      return;
+    }
+
+    // Add to processed messages set
+    this.processedMessages.add(message.id);
+
+    // Prevent memory leak: keep only last MAX_PROCESSED_MESSAGES
+    if (this.processedMessages.size > this.MAX_PROCESSED_MESSAGES) {
+      const firstMessage = this.processedMessages.values().next().value;
+      this.processedMessages.delete(firstMessage);
+    }
+
     // Special detailed logging for DELETE operations
     if (message.payload?.action?.toLowerCase().includes('delete')) {
       logger.warn('🗑️ DELETE IMMEDIATE UPDATE PROCESSING:');
+      logger.warn('  Message ID:', message.id);
       logger.warn('  Entity:', message.payload?.entity);
       logger.warn('  Action:', message.payload?.action);
       logger.warn('  Update Listeners:', this.listenerCount('update'));
       logger.warn('  User Action Listeners:', this.listenerCount('userAction'));
+      logger.warn('  Processed Messages Count:', this.processedMessages.size);
       logger.warn('  About to emit "update" event...');
     }
 
@@ -418,6 +442,25 @@ export class WebSocketClient extends EventEmitter {
    * Disconnect and cleanup
    */
   disconnect(): void {
+    // Guard: Don't disconnect if already disconnected or disconnecting
+    if (!this.ws && !this.isConnecting) {
+      logger.debug('[WebSocket v2.0] Already disconnected, skipping disconnect');
+      return;
+    }
+
+    // Guard: Don't disconnect if WebSocket is already closed
+    if (this.ws && this.ws.readyState === WebSocket.CLOSED) {
+      logger.debug('[WebSocket v2.0] WebSocket already closed, cleaning up');
+      this.ws = null;
+      this.isConnecting = false;
+      return;
+    }
+
+    logger.debug('[WebSocket v2.0] Disconnecting WebSocket', {
+      readyState: this.ws?.readyState,
+      isConnecting: this.isConnecting
+    });
+
     this.reconnectAttempts = this.wsConfig.maxReconnectAttempts; // Prevent auto-reconnect
 
     if (this.ws) {
@@ -432,6 +475,7 @@ export class WebSocketClient extends EventEmitter {
 
     this.stopHeartbeat();
     this.aiBuffer = [];
+    this.processedMessages.clear(); // Clear processed messages on disconnect
     this.isConnecting = false;
   }
 

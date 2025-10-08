@@ -143,7 +143,19 @@ class Agent(BaseTimestampEntity):
         """Assign agent to a task tree"""
         self.assigned_trees.add(git_branch_name)
         self.touch("tree_assignment_added")
-    
+
+    def unassign_from_tree(self, git_branch_name: str) -> None:
+        """Unassign agent from a task tree"""
+        if git_branch_name in self.assigned_trees:
+            self.assigned_trees.remove(git_branch_name)
+            self.touch("tree_assignment_removed")
+
+    def unassign_from_all_trees(self) -> None:
+        """Unassign agent from all task trees"""
+        if self.assigned_trees:
+            self.assigned_trees.clear()
+            self.touch("all_tree_assignments_removed")
+
     def start_task(self, task_id: str) -> None:
         """Start working on a task"""
         if not self.is_available():

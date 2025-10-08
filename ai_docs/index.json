@@ -492,6 +492,40 @@
       ],
       "path": "claude-hooks-docker"
     },
+    "code-quality": {
+      "count": 4,
+      "files": [
+        {
+          "hash": "2808109f315c196873d1e29d86aafc4b",
+          "modified": "2025-10-08T17:51:18.406864",
+          "name": "multiple-inheritance-mro-analysis.md",
+          "path": "code-quality/multiple-inheritance-mro-analysis.md",
+          "size": 15181
+        },
+        {
+          "hash": "1d4d8a20fa5161d3bc42bf05aefd3a50",
+          "modified": "2025-10-08T21:51:47.437701",
+          "name": "ddd-audit-requirements.md",
+          "path": "code-quality/ddd-audit-requirements.md",
+          "size": 9231
+        },
+        {
+          "hash": "9836e391b3b5a622140bba0401bc0e18",
+          "modified": "2025-10-08T17:52:24.187065",
+          "name": "unused-imports-and-parameters.md",
+          "path": "code-quality/unused-imports-and-parameters.md",
+          "size": 14066
+        },
+        {
+          "hash": "3c6a5df84b638d7cbe118ba03921615a",
+          "modified": "2025-10-08T23:05:51.829578",
+          "name": "ddd-architecture-audit-2025-10-08.md",
+          "path": "code-quality/ddd-architecture-audit-2025-10-08.md",
+          "size": 38283
+        }
+      ],
+      "path": "code-quality"
+    },
     "context-system": {
       "count": 21,
       "files": [
@@ -646,7 +680,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 33,
+      "count": 34,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -768,6 +802,13 @@
           "size": 18926
         },
         {
+          "hash": "c4a5176f7a5e4e97b30e49a5249c98cf",
+          "modified": "2025-10-08T22:22:23.003714",
+          "name": "cascade-calculator-ddd-refactoring.md",
+          "path": "core-architecture/cascade-calculator-ddd-refactoring.md",
+          "size": 13572
+        },
+        {
           "hash": "16153ef7c18204a09eced8bd465a0b7a",
           "modified": "2025-09-26T01:02:32.712356",
           "name": "timestamp-query-optimization-analysis.md",
@@ -866,11 +907,11 @@
           "size": 64831
         },
         {
-          "hash": "eb20fbac88336fae04315fcd9947eb63",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "08f1fdd98eef938ebf846aacddf57564",
+          "modified": "2025-10-08T23:42:37.507811",
           "name": "Architecture_Technique.md",
           "path": "core-architecture/Architecture_Technique.md",
-          "size": 19936
+          "size": 29248
         },
         {
           "hash": "24290156b3b8a5cf8accd1b58424eabf",
@@ -903,7 +944,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 58,
+      "count": 59,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -953,6 +994,13 @@
           "name": "index.md",
           "path": "development-guides/index.md",
           "size": 1591
+        },
+        {
+          "hash": "0d9dc4be30c86d44f738e5c0cc768253",
+          "modified": "2025-10-08T17:53:44.196578",
+          "name": "avoiding-mro-conflicts.md",
+          "path": "development-guides/avoiding-mro-conflicts.md",
+          "size": 17286
         },
         {
           "hash": "e06d50e09d25c96b0240676b8ab6f36c",
@@ -1335,7 +1383,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 19,
+      "count": 21,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1357,6 +1405,13 @@
           "name": "index.md",
           "path": "issues/index.md",
           "size": 15526
+        },
+        {
+          "hash": "3f7fa263d4be0bddac76fc5f87628e7c",
+          "modified": "2025-10-08T17:25:12.044646",
+          "name": "issue-001-git-branch-agent-assignment-fix.md",
+          "path": "issues/issue-001-git-branch-agent-assignment-fix.md",
+          "size": 10017
         },
         {
           "hash": "d59639782fe3cca50d729fe5137c9dc0",
@@ -1399,6 +1454,13 @@
           "name": "mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
           "path": "issues/mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
           "size": 4333
+        },
+        {
+          "hash": "c8e70725829ee2a789d38ad3a7d568a4",
+          "modified": "2025-10-08T18:50:51.774368",
+          "name": "issue-002-project-repository-mro-fix.md",
+          "path": "issues/issue-002-project-repository-mro-fix.md",
+          "size": 9517
         },
         {
           "hash": "7079144b055da711052ad6c5bfd18e75",
@@ -1474,8 +1536,15 @@
       "path": "issues"
     },
     "migration-guides": {
-      "count": 11,
+      "count": 12,
       "files": [
+        {
+          "hash": "39924e4a4aca564f7aa897b9d948579b",
+          "modified": "2025-10-08T22:23:12.162415",
+          "name": "cascade-calculator-migration-guide.md",
+          "path": "migration-guides/cascade-calculator-migration-guide.md",
+          "size": 6735
+        },
         {
           "hash": "150a21c9839af22982d0d76b0b3022d2",
           "modified": "2025-09-17T14:11:39.087862",
@@ -1769,17 +1838,17 @@
           "size": 1992
         },
         {
-          "hash": "3a216494407343c6ca5f5b2ab22c253f",
-          "modified": "2025-09-17T14:11:39.091842",
+          "hash": "df495c23d4fa2d33057b3bcb334a83b9",
+          "modified": "2025-10-08T23:40:25.082537",
           "name": "PRD.md",
           "path": "product-requirements/PRD.md",
-          "size": 15717
+          "size": 17607
         }
       ],
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 12,
+      "count": 14,
       "files": [
         {
           "hash": "45809279307daf9847fb05aa5ae3251c",
@@ -1808,6 +1877,13 @@
           "name": "test-fixes-final-status.md",
           "path": "reports-status/test-fixes-final-status.md",
           "size": 3099
+        },
+        {
+          "hash": "3883fdd6c14842ae4c8a60b1495a1117",
+          "modified": "2025-10-08T22:40:30.715971",
+          "name": "git-branch-repository-ddd-fix-completion.md",
+          "path": "reports-status/git-branch-repository-ddd-fix-completion.md",
+          "size": 3245
         },
         {
           "hash": "b535a21f5bc786e04ac1d1562426e87a",
@@ -1857,6 +1933,13 @@
           "name": "ai-task-planning-system-complete-2025-09-12.md",
           "path": "reports-status/ai-task-planning-system-complete-2025-09-12.md",
           "size": 12815
+        },
+        {
+          "hash": "01b026b9c6b180a2871186d5c0e834c4",
+          "modified": "2025-10-08T22:24:57.692920",
+          "name": "cascade-calculator-ddd-fix-completion-report.md",
+          "path": "reports-status/cascade-calculator-ddd-fix-completion-report.md",
+          "size": 11070
         },
         {
           "hash": "a17399e5cc354c23288a1a763c07c01d",
@@ -2048,7 +2131,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 41,
+      "count": 42,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2168,6 +2251,13 @@
           "name": "test-fix-iteration-26-summary.md",
           "path": "testing-qa/test-fix-iteration-26-summary.md",
           "size": 1980
+        },
+        {
+          "hash": "1b229b359ab391a8491d90dd086d82e8",
+          "modified": "2025-10-08T21:30:02.768241",
+          "name": "mcp-tools-comprehensive-test-report-2025-10-08.md",
+          "path": "testing-qa/mcp-tools-comprehensive-test-report-2025-10-08.md",
+          "size": 14837
         },
         {
           "hash": "762e177de10f2c7e6561ae6feecb0a98",
@@ -2639,7 +2729,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-08T14:54:53.630689",
+  "generated_at": "2025-10-08T23:42:37.593123",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2744,6 +2834,14 @@
         "technical-implementation.md"
       ]
     },
+    "code-quality": {
+      "files": [
+        "ddd-architecture-audit-2025-10-08.md",
+        "ddd-audit-requirements.md",
+        "multiple-inheritance-mro-analysis.md",
+        "unused-imports-and-parameters.md"
+      ]
+    },
     "context-system": {
       "files": [
         "00-understanding-mcp-context.md",
@@ -2777,6 +2875,7 @@
         "agent-orchestration-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
+        "cascade-calculator-ddd-refactoring.md",
         "claude-hooks-refactoring-architecture.md",
         "clean-code-enforcement.md",
         "context-hierarchy-system.md",
@@ -2837,6 +2936,7 @@
         "ai-task-planning-prompt.md",
         "authentication-testing-patterns.md",
         "automated-agent-workflow-patterns.md",
+        "avoiding-mro-conflicts.md",
         "claude-code-integration.md",
         "clean-timestamp-best-practices.md",
         "clean-timestamp-developer-training.md",
@@ -2896,6 +2996,8 @@
         "file-protection-bypass-via-bash-commands.md",
         "git-branch-statistics-parameter-fix.md",
         "index.md",
+        "issue-001-git-branch-agent-assignment-fix.md",
+        "issue-002-project-repository-mro-fix.md",
         "mcp-authentication-fix-prompts-2025-09-05.md",
         "mcp-authentication-testing-blocker-2025-09-05.md",
         "mcp-subtask-persistence-blocker-iteration4-2025-09-05.md",
@@ -2923,6 +3025,7 @@
         "agent-name-migration.md",
         "authentication-config-migration-2025-09-05.md",
         "automatic-migration-integration.md",
+        "cascade-calculator-migration-guide.md",
         "database-clean-migration-v3.md",
         "mcp-complete-implementation-plan.md",
         "mcp-implementation-change-plan.md",
@@ -2970,8 +3073,10 @@
     "reports-status": {
       "files": [
         "ai-task-planning-system-complete-2025-09-12.md",
+        "cascade-calculator-ddd-fix-completion-report.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
+        "git-branch-repository-ddd-fix-completion.md",
         "subtask-health-monitoring-report-2025-09-20.md",
         "test-cleanup-report-2025-09-12.md",
         "test-error-resolution-final.md",
@@ -3023,6 +3128,7 @@
         "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
         "live-updates-verification-summary.md",
+        "mcp-tools-comprehensive-test-report-2025-10-08.md",
         "mcp-tools-fixes-summary.md",
         "mcp-tools-test-results.md",
         "phase-2-dto-integration-testing-report.md",
@@ -3104,6 +3210,6 @@
       ]
     }
   },
-  "total_directories": 31,
-  "total_files": 351
+  "total_directories": 32,
+  "total_files": 363
 }

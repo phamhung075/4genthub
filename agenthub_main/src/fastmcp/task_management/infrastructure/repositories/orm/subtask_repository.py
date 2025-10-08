@@ -64,7 +64,7 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
             # CRITICAL FIX: Use transaction context manager to ensure proper commit
             with self.transaction() as session:
                 # Convert domain entity to ORM model data
-                model_data = self._to_model_data(subtask)
+                model_data = self._entity_to_model_dict(subtask)
                 logger.info(f"🔍 SUBTASK_SAVE: Model data prepared with user_id={model_data.get('user_id')}")
                 
                 if subtask.id:
@@ -155,7 +155,7 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
 
                 if model:
                     logger.info(f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}")
-                    return self._to_domain_entity(model)
+                    return self._model_to_entity(model)
                 else:
                     logger.info(f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}")
                     return None
@@ -208,8 +208,8 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                 logger.info(f"🐛 SUBTASK_DEBUG: Found {len(models)} subtask models")
                 for model in models:
                     logger.info(f"🐛 SUBTASK_DEBUG: Model - id={model.id}, task_id={model.task_id}, user_id={model.user_id}, title={model.title}")
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks for task {parent_task_id}: {e}")
@@ -222,10 +222,10 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
     def find_by_assignee(self, assignee: str) -> List[SubtaskEntity]:
         """
         Find subtasks by assignee.
-        
+
         Args:
             assignee: Assignee name/ID
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -235,13 +235,13 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.assignees.contains([assignee])
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.created_at.desc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks by assignee {assignee}: {e}")
@@ -254,10 +254,10 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
     def find_by_status(self, status: str) -> List[SubtaskEntity]:
         """
         Find subtasks by status.
-        
+
         Args:
             status: Status string
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -266,13 +266,13 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.status == status
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.created_at.desc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks by status {status}: {e}")
@@ -285,10 +285,10 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
     def find_completed(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find completed subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             List of completed subtask domain entities
         """
@@ -300,13 +300,13 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                         SubtaskModel.status == 'done'
                     )
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.completed_at.desc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find completed subtasks for task {parent_task_id}: {e}")
@@ -319,10 +319,10 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
     def find_pending(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find pending subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             List of pending subtask domain entities
         """
@@ -334,13 +334,13 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                         SubtaskModel.status.in_(['todo', 'in_progress', 'blocked'])
                     )
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.created_at.asc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find pending subtasks for task {parent_task_id}: {e}")
@@ -759,11 +759,11 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
     def get_subtasks_by_assignee(self, assignee: str, limit: Optional[int] = None) -> List[SubtaskEntity]:
         """
         Get subtasks assigned to a specific assignee.
-        
+
         Args:
             assignee: Assignee name/ID
             limit: Optional limit on number of results
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -772,12 +772,12 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.assignees.contains([assignee])
                 ).order_by(SubtaskModel.updated_at.desc())
-                
+
                 if limit:
                     query = query.limit(limit)
-                
+
                 models = query.all()
-                return [self._to_domain_entity(model) for model in models]
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to get subtasks by assignee {assignee}: {e}")
@@ -789,16 +789,8 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
     
     # Private helper methods
     
-    def _to_model_data(self, subtask: SubtaskEntity) -> Dict[str, Any]:
-        """
-        Convert domain entity to ORM model data.
-        
-        Args:
-            subtask: SubtaskEntity domain entity
-            
-        Returns:
-            Dictionary with model data
-        """
+    def _entity_to_model_dict(self, subtask: SubtaskEntity) -> Dict[str, Any]:
+        """Convert domain entity to model dictionary"""
         # Ensure assignees is a proper list of strings
         assignees = []
         if subtask.assignees:
@@ -833,16 +825,8 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
         
         return model_data
     
-    def _to_domain_entity(self, model: SubtaskModel) -> SubtaskEntity:
-        """
-        Convert ORM model to domain entity.
-
-        Args:
-            model: SubtaskModel ORM model
-
-        Returns:
-            SubtaskEntity domain entity
-        """
+    def _model_to_entity(self, model: SubtaskModel) -> SubtaskEntity:
+        """Convert SQLAlchemy model to domain entity"""
         # Convert assignees from JSON to list
         assignees = model.assignees if model.assignees else []
         

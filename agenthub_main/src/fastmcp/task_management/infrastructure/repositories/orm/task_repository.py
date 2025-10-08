@@ -239,7 +239,44 @@ class ORMTaskRepository(
             entity._completion_summary = task.completion_summary
         
         return entity
-    
+
+    def _entity_to_model_dict(self, task: TaskEntity) -> dict[str, Any]:
+        """Convert domain entity to model dictionary for ORM updates.
+
+        This method implements the DDD pattern of converting domain entities
+        to infrastructure data structures, maintaining clean layer separation.
+
+        Args:
+            task: Domain task entity to convert
+
+        Returns:
+            Dictionary with all fields needed to update the ORM model
+        """
+        model_dict = {
+            "id": str(task.id),
+            "title": task.title,
+            "description": task.description,
+            "git_branch_id": task.git_branch_id,
+            "status": str(task.status),
+            "priority": str(task.priority),
+            "progress_history": task.progress_history,
+            "progress_count": task.progress_count,
+            "estimated_effort": _ensure_estimated_effort_default(task.estimated_effort),
+            "due_date": task.due_date,
+            "context_id": task.context_id,
+        }
+
+        # Handle optional progress percentage field
+        if hasattr(task, 'overall_progress'):
+            model_dict["progress_percentage"] = task.overall_progress
+
+        # Handle Vision System completion summary
+        completion_summary = task.get_completion_summary()
+        if completion_summary is not None:
+            model_dict["completion_summary"] = completion_summary
+
+        return model_dict
+
     def create_task(self, title: str, description: str, priority: str = "medium",
                    assignee_ids: list[str] | None = None, label_names: list[str] | None = None,
                    **kwargs) -> TaskEntity:
@@ -1185,23 +1222,13 @@ class ORMTaskRepository(
                 existing = session.query(Task).filter(Task.id == str(task.id)).first()
 
                 if existing:
-                    existing.title = task.title
-                    existing.description = task.description
-                    existing.git_branch_id = task.git_branch_id
-                    existing.status = str(task.status)
-                    existing.priority = str(task.priority)
-                    existing.progress_history = task.progress_history
-                    existing.progress_count = task.progress_count
-                    existing.estimated_effort = _ensure_estimated_effort_default(task.estimated_effort)
-                    existing.due_date = task.due_date
-                    existing.context_id = task.context_id
+                    # DDD-COMPLIANT: Convert entity to model dict instead of direct assignments
+                    model_dict = self._entity_to_model_dict(task)
 
-                    if hasattr(task, 'overall_progress'):
-                        existing.progress_percentage = task.overall_progress
-
-                    completion_summary = task.get_completion_summary()
-                    if completion_summary is not None:
-                        existing.completion_summary = completion_summary
+                    # Update ORM model with data from entity (excluding id which doesn't change)
+                    for key, value in model_dict.items():
+                        if key != 'id':  # Don't update the primary key
+                            setattr(existing, key, value)
 
                     session.query(TaskDependency).filter(TaskDependency.task_id == str(task.id)).delete()
 

@@ -45,6 +45,9 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   // Track WebSocket-deleted tasks to prevent duplicate delete attempts
   const wsDeletedTasksRef = useRef<Set<string>>(new Set());
 
+  // State to trigger re-render when tasks are marked for deletion
+  const [deletingTasks, setDeletingTasks] = useState<Set<string>>(new Set());
+
   // WebSocket update handler
   const updateTaskFromWebSocket = useCallback((notification: any) => {
     logger.debug('🎯 [LazyTaskList] WebSocket notification received', {
@@ -68,7 +71,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       return true;
     }
 
-    if (eventType === 'created' && data) {
+    // FIX: Add stricter validation - check for required task fields, not just truthiness
+    if (eventType === 'created' && data && data.id && data.title) {
       logger.debug('✅ [LazyTaskList] Creating new task from WebSocket', {
         taskId: data.id,
         title: data.title,
@@ -85,15 +89,43 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       logger.debug('🔄 [LazyTaskList] Falling back to full task list reload', {}, 'LazyTaskListRefactored.tsx');
       loadTaskSummaries(1);
       return true;
-    } else if (eventType === 'updated' && data) {
+    } else if (eventType === 'created' && data && (!data.id || !data.title)) {
+      // NEW: Handle case where data exists but is incomplete (empty object {})
+      logger.warn('⚠️ [LazyTaskList] CREATE event has incomplete task data (missing id or title)', {
+        entityId,
+        hasData: !!data,
+        hasId: !!data.id,
+        hasTitle: !!data.title,
+        dataKeys: Object.keys(data),
+        metadata
+      }, 'LazyTaskListRefactored.tsx');
+      // Fallback: reload all tasks
+      logger.debug('🔄 [LazyTaskList] Falling back to full task list reload due to incomplete data', {}, 'LazyTaskListRefactored.tsx');
+      loadTaskSummaries(1);
+      return true;
+    } else if (eventType === 'updated' && data && data.id) {
       logger.debug('✅ [LazyTaskList] Updating task from WebSocket', {
+        component: 'LazyTaskList',
         taskId: data.id,
         title: data.title
       }, 'LazyTaskListRefactored.tsx');
       updateTaskFromData(data);
       return true;
+    } else if (eventType === 'completed' && data && data.id) {
+      // Completed is semantically an update (task status changed to done)
+      logger.debug('✅ [LazyTaskList] Task completed from WebSocket', {
+        component: 'LazyTaskList',
+        taskId: data.id,
+        title: data.title,
+        status: data.status
+      }, 'LazyTaskListRefactored.tsx');
+      updateTaskFromData(data);
+      return true;
     } else if (eventType === 'deleted') {
-      logger.debug('✅ [LazyTaskList] Deleting task from WebSocket', { entityId }, 'LazyTaskListRefactored.tsx');
+      logger.debug('✅ [LazyTaskList] Deleting task from WebSocket', {
+        component: 'LazyTaskList',
+        entityId
+      }, 'LazyTaskListRefactored.tsx');
 
       // Track this deletion to prevent duplicate attempts in API callback
       wsDeletedTasksRef.current.add(entityId);
@@ -101,14 +133,20 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       // Mark for deletion so TaskRow can detect and animate
       taskDeletionTracker.markForDeletion(entityId);
 
-      // DON'T remove immediately - let the TaskRow component animate first
-      // The TaskRow will detect it's marked and play delete animation
-      // Then remove after animation completes (800ms)
+      // Add to deletingTasks state to trigger re-render and filter out task
+      setDeletingTasks(prev => new Set(prev).add(entityId));
+
+      // Remove from state after animation completes
       setTimeout(() => {
         removeTask(entityId);
         wsDeletedTasksRef.current.delete(entityId);
         taskDeletionTracker.clearDeletion(entityId);
-      }, 1000); // Slightly longer than animation duration (800ms)
+        setDeletingTasks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(entityId);
+          return newSet;
+        });
+      }, 1000); // Cleanup after animation duration (800ms)
 
       return true;
     }
@@ -285,12 +323,19 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Display tasks
+  // Display tasks - filter out tasks marked for deletion
   const displayTasks = useMemo(() => {
-    return taskSummaries && Array.isArray(taskSummaries)
-      ? taskSummaries.slice(0, TASKS_PER_PAGE)
-      : [];
-  }, [taskSummaries]);
+    if (!taskSummaries || !Array.isArray(taskSummaries)) {
+      return [];
+    }
+
+    // Filter out tasks that are being deleted (in deletingTasks state)
+    const filtered = taskSummaries.filter(task =>
+      !deletingTasks.has(task.id)
+    );
+
+    return filtered.slice(0, TASKS_PER_PAGE);
+  }, [taskSummaries, deletingTasks]);
 
   return (
     <>

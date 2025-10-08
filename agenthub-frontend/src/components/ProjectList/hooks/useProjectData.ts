@@ -7,6 +7,7 @@ import { BranchSummary } from "../../../types";
 import logger from "../../../utils/logger";
 import { useErrorToast, useSuccessToast } from "../../ui/toast";
 import type { UseProjectDataOptions, UseProjectDataReturn, ProjectFormData } from "../../../types/hookTypes";
+import type { ChangeNotification } from "../../../services/changePoolService";
 
 export const useProjectData = ({
   selectedProjectId
@@ -100,12 +101,113 @@ export const useProjectData = ({
   }, [refreshBranchSummaries]);
 
   // Create stable refresh callback for change pool
-  const handleDataChange = useCallback(() => {
-    logger.debug('🚀 CHANGE DEBUG: handleDataChange called - WebSocket event detected');
-    logger.debug('📡 ProjectList: Data change detected, refreshing...');
-    // Refresh when entity events occur - bulk API returns both projects and branches
+  const handleDataChange = useCallback((notification?: ChangeNotification) => {
+    logger.debug('🚀 CHANGE DEBUG: handleDataChange called - WebSocket event detected', {
+      component: 'ProjectList',
+      hasNotification: !!notification,
+      entityType: notification?.entityType,
+      eventType: notification?.eventType,
+      entityId: notification?.entityId,
+      hasData: !!notification?.data,
+      dataKeys: notification?.data ? Object.keys(notification.data) : []
+    });
+
+    // VALIDATION: Check if notification has valid data before processing
+    // For CREATE and UPDATE events, validate the data has required fields
+    if (notification?.entityType === 'branch') {
+      const { eventType, data, entityId } = notification;
+
+      // Branch data validation (same pattern as LazyTaskListRefactored.tsx)
+      if (eventType === 'created' && data && data.id && (data.name || data.git_branch_name)) {
+        logger.debug('✅ [ProjectList] Branch CREATE with valid data', {
+          branchId: data.id,
+          name: data.name || data.git_branch_name,
+          hasAllFields: !!(data.id && (data.name || data.git_branch_name))
+        });
+        refreshBranchSummaries();
+        return;
+      } else if (eventType === 'created' && (!data || !data.id || (!data.name && !data.git_branch_name))) {
+        // Missing or incomplete branch data - fallback to refresh
+        logger.warn('⚠️ [ProjectList] Branch CREATE event has incomplete data (missing id or name)', {
+          entityId,
+          hasData: !!data,
+          hasId: !!data?.id,
+          hasName: !!(data?.name || data?.git_branch_name),
+          dataKeys: data ? Object.keys(data) : []
+        });
+        logger.debug('🔄 [ProjectList] Falling back to full refresh due to incomplete branch data');
+        refreshBranchSummaries();
+        return;
+      } else if (eventType === 'updated' && data && data.id) {
+        logger.debug('✅ [ProjectList] Branch UPDATE with valid data', {
+          branchId: data.id,
+          name: data.name || data.git_branch_name
+        });
+        refreshBranchSummaries();
+        return;
+      } else if (eventType === 'deleted') {
+        // Delete events don't need data validation - just ID is enough
+        logger.debug('🗑️ Branch DELETE event detected, triggering immediate refresh:', {
+          component: 'ProjectList',
+          entityId
+        });
+        refreshBranchSummaries();
+        return;
+      }
+    }
+
+    // Project data validation
+    if (notification?.entityType === 'project') {
+      const { eventType, data, entityId } = notification;
+
+      if (eventType === 'created' && data && data.id && data.name) {
+        logger.debug('✅ [ProjectList] Project CREATE with valid data', {
+          projectId: data.id,
+          name: data.name,
+          hasAllFields: !!(data.id && data.name)
+        });
+        refreshBranchSummaries();
+        return;
+      } else if (eventType === 'created' && (!data || !data.id || !data.name)) {
+        // Missing or incomplete project data - fallback to refresh
+        logger.warn('⚠️ [ProjectList] Project CREATE event has incomplete data (missing id or name)', {
+          entityId,
+          hasData: !!data,
+          hasId: !!data?.id,
+          hasName: !!data?.name,
+          dataKeys: data ? Object.keys(data) : []
+        });
+        logger.debug('🔄 [ProjectList] Falling back to full refresh due to incomplete project data');
+        refreshBranchSummaries();
+        return;
+      } else if (eventType === 'updated' && data && data.id) {
+        logger.debug('✅ [ProjectList] Project UPDATE with valid data', {
+          projectId: data.id,
+          name: data.name
+        });
+        refreshBranchSummaries();
+        return;
+      } else if (eventType === 'deleted') {
+        // Delete events don't need data validation - just ID is enough
+        logger.debug('🗑️ Project DELETE event detected, triggering immediate refresh:', {
+          component: 'ProjectList',
+          entityId
+        });
+        refreshBranchSummaries();
+        return;
+      }
+    }
+
+    // For task events or other entity types, standard refresh
+    logger.debug('📡 ProjectList: Data change detected (task or other entity), refreshing...', {
+      component: 'ProjectList',
+      entityType: notification?.entityType
+    });
     refreshBranchSummaries();
-    logger.debug('🚀 CHANGE DEBUG: handleDataChange completed refresh call');
+
+    logger.debug('🚀 CHANGE DEBUG: handleDataChange completed refresh call', {
+      component: 'ProjectList'
+    });
   }, [refreshBranchSummaries]);
 
   // Unified refresh function for UI buttons
@@ -164,10 +266,8 @@ export const useProjectData = ({
     try {
       const result = await deleteProject(projectId);
       if (result.success) {
-        showSuccessToast(
-          'Project deleted successfully',
-          `Project "${projectName}" has been removed.`
-        );
+        // Success - WebSocket will handle notification
+        // Don't show API response notification to avoid duplicates
         // Don't refresh - optimistic update already handled it
       } else {
         // Restore the project on failure
@@ -259,11 +359,8 @@ export const useProjectData = ({
       logger.debug('Delete result:', result);
 
       if (result.success) {
-        // Success! Show success message
-        showSuccessToast(
-          'Branch deleted successfully',
-          `Branch "${branchName}" has been removed from the project.`
-        );
+        // Success - WebSocket will handle notification
+        // Don't show API response notification to avoid duplicates
 
         // Optionally refresh data from server to ensure consistency
         // But we don't need to since we've already optimistically updated

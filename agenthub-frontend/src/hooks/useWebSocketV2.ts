@@ -30,6 +30,7 @@ let globalWebSocketClient: WebSocketClient | null = null;
 export function useWebSocket(userId: string, token: string) {
   const dispatch = useAppDispatch();
   const clientRef = useRef<WebSocketClient | null>(null);
+  const prevCredentialsRef = useRef<{userId: string, token: string} | null>(null);
 
   // Get WebSocket state from Redux store
   const isConnected = useAppSelector(selectIsConnected);
@@ -37,7 +38,41 @@ export function useWebSocket(userId: string, token: string) {
   const wsError = useAppSelector(selectWebSocketError);
 
   useEffect(() => {
-    logger.debug('[useWebSocket] 🚀 DEBUG: Hook called with params:', {
+    // Check if this is a credential CHANGE (logout/expiry) vs mount cycle
+    const hadCredentials = prevCredentialsRef.current !== null;
+    const hasCredentials = !!(userId && token);
+
+    // CRITICAL FIX: Only disconnect on actual logout (had credentials → no credentials)
+    // This prevents premature disconnect during React Strict Mode remount
+    if (hadCredentials && !hasCredentials) {
+      logger.warn('[useWebSocket] 🚨 Logout/expiry detected - disconnecting WebSocket for security', {
+        previousUserId: prevCredentialsRef.current?.userId,
+      }, 'useWebSocketV2.ts');
+
+      // SECURITY FIX: Disconnect global WebSocket singleton when credentials are cleared
+      if (globalWebSocketClient) {
+        const connectionState = globalWebSocketClient.isConnected() ? 'connected' :
+                              (globalWebSocketClient as any).isConnecting ? 'connecting' : 'disconnected';
+
+        if (connectionState === 'connected' || connectionState === 'connecting') {
+          globalWebSocketClient.disconnect();
+          globalWebSocketClient = null;
+        }
+      }
+
+      prevCredentialsRef.current = null;
+      return;
+    }
+
+    // Skip if no credentials (initial mount or React Strict Mode remount)
+    if (!hasCredentials) {
+      logger.debug('[useWebSocket] No credentials yet - waiting (React Strict Mode safe)', {
+        hadPreviousCredentials: hadCredentials,
+      }, 'useWebSocketV2.ts');
+      return;
+    }
+
+    logger.debug('[useWebSocket] 🚀 Hook called with valid credentials:', {
       hasUserId: !!userId,
       hasToken: !!token,
       userIdLength: userId?.length,
@@ -46,18 +81,10 @@ export function useWebSocket(userId: string, token: string) {
       timestamp: new Date().toISOString()
     }, 'useWebSocketV2.ts');
 
-    if (!userId || !token) {
-      logger.warn('[useWebSocket] ❌ Cannot connect - missing credentials:', {
-        hasUserId: !!userId,
-        hasToken: !!token,
-        userIdLength: userId?.length,
-        tokenLength: token?.length,
-        message: 'WebSocket connection aborted due to missing credentials'
-      }, 'useWebSocketV2.ts');
-      return;
-    }
-
     logger.debug('[useWebSocket] ✅ Credentials validated, proceeding with connection setup', undefined, 'useWebSocketV2.ts');
+
+    // Update credential tracking ref for next change detection
+    prevCredentialsRef.current = {userId, token};
 
     // Check if we already have a global client with the same credentials
     if (globalWebSocketClient) {
@@ -202,14 +229,17 @@ export function useWebSocket(userId: string, token: string) {
     // Connect to server
     client.connect();
 
-    // Cleanup on unmount - but don't disconnect the global singleton
+    // Cleanup on unmount or credential change
     return () => {
-      logger.debug('[useWebSocket] Component cleanup (keeping WebSocket connected)', undefined, 'useWebSocketV2.ts');
-      // Don't disconnect the global client - it should persist
-      // Only clean up local references
+      logger.debug('[useWebSocket] Component cleanup', undefined, 'useWebSocketV2.ts');
+
+      // Clean up service integrations
       cleanupChangePool();
       cleanupNotifications();
       clientRef.current = null;
+
+      // NOTE: Global singleton disconnect is now handled in the credential check above
+      // This ensures WebSocket disconnects when userId/token become empty (logout/expiry)
     };
   }, [userId, token, dispatch]);
 

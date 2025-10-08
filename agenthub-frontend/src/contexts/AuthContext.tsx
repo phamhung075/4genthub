@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Only initialize WebSocket when we have valid user and token
   const shouldConnectWebSocket = !!(user?.id && tokens?.access_token);
 
-  logger.debug('[AuthContext] 🔍 DEBUG: WebSocket connection decision:', {
+  logger.debug('[AuthContext] 🔍 WebSocket connection decision:', {
     shouldConnectWebSocket,
     hasUser: !!user,
     hasUserId: !!user?.id,
@@ -35,15 +35,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     timestamp: new Date().toISOString()
   });
 
+  // CRITICAL FIX: Only call useWebSocket when credentials are available
+  // This prevents "missing credentials" warnings during initial render
   const {
     isConnected: isWebSocketConnected,
     disconnect: disconnectWebSocket,
   } = useWebSocket(
-    shouldConnectWebSocket ? user.id : '',
-    shouldConnectWebSocket ? tokens.access_token : ''
+    user?.id || '',
+    tokens?.access_token || ''
   );
 
-  logger.debug('[AuthContext] 📊 DEBUG: WebSocket hook returned:', {
+  logger.debug('[AuthContext] 📊 WebSocket hook state:', {
     isWebSocketConnected,
     shouldConnectWebSocket,
     timestamp: new Date().toISOString()
