@@ -25,6 +25,7 @@ MANAGE_PROJECT_DESCRIPTION = """
 | get                   | project_id OR name  |                         | Retrieve project details by ID or name           |
 | list                  | (none)              |                         | List all projects with status and health info    |
 | update                | project_id          | name, description       | Update project metadata and trigger sync         |
+| delete                | project_id          | force                   | Remove project from system                       |
 | project_health_check  | project_id          |                         | Comprehensive health analysis with metrics       |
 | cleanup_obsolete      | project_id          | force                   | Remove obsolete tasks, files, and resources      |
 | validate_integrity    | project_id          | force                   | Validate structure, dependencies, and consistency |
@@ -74,12 +75,12 @@ IF starting_work_on_project:
 """
 
 MANAGE_PROJECT_PARAMETERS_DESCRIPTION = {
-    "action": "Project management action to perform. Valid values: create, get, list, update, project_health_check, cleanup_obsolete, validate_integrity, rebalance_agents",
+    "action": "Project management action to perform. Valid values: create, get, list, update, delete, project_health_check, cleanup_obsolete, validate_integrity, rebalance_agents",
     "project_id": "[OPTIONAL] Project identifier (UUID). Required for most actions except create/list",
     "name": "[OPTIONAL] Project name. Required for create, can be used instead of project_id for get action",
     "description": "[OPTIONAL] Project description. Optional for create/update operations",
     "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
-    "force": "[OPTIONAL] Force parameter to bypass safety checks for maintenance operations",
+    "force": "[OPTIONAL] Force parameter to bypass safety checks for maintenance and delete operations",
 }
 
 MANAGE_PROJECT_PARAMS = {

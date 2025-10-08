@@ -11,6 +11,35 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 - **Untested**: 28 tests (test infrastructure utilities)
 - **Status**: Production-ready with sustained 100% pass rate
 
+## [Unreleased] - 2025-10-09
+
+### Fixed
+
+#### Frontend Test Updates
+- **index.test.tsx** (`agenthub-frontend/src/tests/index.test.tsx`)
+  - Fixed stale test by removing mock for `../styles/theme.css` which no longer exists in index.tsx
+  - Test was newer than source file (5 minutes) but had outdated import mock
+  - Now correctly mocks only the CSS imports that exist: index.css, theme/global.scss, and notifications.css
+
+### Added
+
+#### Frontend Test Coverage
+- **logger.config.test.ts** (`agenthub-frontend/src/tests/config/logger.config.test.ts`)
+  - Created comprehensive test suite for logger configuration module (448 lines)
+  - 35+ test cases covering all exported functions and edge cases
+  - Tests for getEnvVar with multiple environment fallbacks (import.meta.env, process.env, window._env_)
+  - Tests for getEnvBoolean parsing all accepted values (true, 1, yes, on) with case insensitivity
+  - Tests for getEnvLogLevel validation of all 5 log levels with fallback to 'info'
+  - Tests for getEnvInteger parsing with NaN handling and default values
+  - Tests for main loggerConfig export with all 11 properties
+  - Tests for getLoggerConfig function returning current configuration
+  - Tests for all 4 environment presets (development, staging, production, test)
+  - Tests for debugLoggerConfig with console method mocking
+  - Tests for all 5 legacy exports (baseConfig, developmentConfig, etc.)
+  - Edge case tests for empty strings, whitespace, special characters, negative values
+  - Comprehensive environment mocking with proper cleanup between tests
+  - Achieves 100% code coverage for the 207-line configuration module
+
 ## [Unreleased] - 2025-10-08
 
 ### Added

@@ -6,6 +6,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added - 2025-10-09
+
+#### MCP Tool Enhancement: Project Delete Operation
+- **manage_project MCP Tool**: Added delete action to complete CRUD operations for project management
+  - **File Modified**: `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/manage_project_description.py`
+  - **Changes**:
+    - Added "delete" action to action table documentation (line 28)
+    - Updated action parameter description to include "delete" in valid values list (line 78)
+    - Updated force parameter description to include delete operations (line 83)
+  - **Implementation Status**: Backend implementation already complete
+    - Operation factory routes delete to CRUD handler (operation_factory.py:111-116)
+    - CRUD handler implements delete_project method (crud_handler.py:155-183)
+    - Project controller validates delete action with required project_id (project_mcp_controller.py:271)
+    - Permission checking maps delete to PermissionAction.DELETE (project_mcp_controller.py:317)
+    - Facade implements delete_project with force parameter (project_application_facade.py:197)
+  - **Usage**: `mcp__agenthub_http__manage_project(action="delete", project_id="uuid", force=False)`
+  - **Impact**: Users can now delete projects via MCP tool with proper validation and permissions
+  - **Parameters**:
+    - Required: project_id (UUID)
+    - Optional: force (bool) - bypass safety checks
+  - **Returns**: Success response on valid deletion, validation error if project has dependencies
+  - **Task**: #424cd180-e416-4ca9-9198-b0d36a83b95c
+
 ### Documentation - 2025-10-08
 
 #### Project Documentation Synchronization (Phase 2)
