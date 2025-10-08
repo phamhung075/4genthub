@@ -102,9 +102,16 @@ class ChangePoolService {
         // Execute the refresh callback with notification data
         try {
           subscription.refreshCallback(notification);
-          logger.debug(`✅ ChangePool: Successfully refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`, undefined, 'changePoolService.ts');
+          logger.debug(`✅ ChangePool: Successfully refreshed ${componentId} for ${notification.entityType} ${notification.eventType} with data`, {
+            component: componentId,
+            entityType: notification.entityType,
+            eventType: notification.eventType
+          }, 'changePoolService.ts');
         } catch (error) {
-          logger.error(`❌ ChangePool: Failed to refresh ${componentId}:`, error, 'changePoolService.ts');
+          logger.error(`❌ ChangePool: Failed to refresh ${componentId}:`, {
+            component: componentId,
+            error
+          }, 'changePoolService.ts');
         }
       } else {
         logger.debug(`❌ ChangePool: ${componentId} does not match notification`, undefined, 'changePoolService.ts');
@@ -112,7 +119,12 @@ class ChangePoolService {
     });
 
     if (componentsToRefresh.length > 0) {
-      logger.debug(`📊 ChangePool: Refreshed ${componentsToRefresh.length} components:`, componentsToRefresh, 'changePoolService.ts');
+      logger.info(`📊 ChangePool: Refreshed ${componentsToRefresh.length} component(s) for ${notification.entityType}.${notification.eventType}:`, {
+        components: componentsToRefresh,
+        entityType: notification.entityType,
+        eventType: notification.eventType,
+        entityId: notification.entityId
+      }, 'changePoolService.ts');
     } else {
       logger.debug(`📊 ChangePool: No components needed refresh for ${notification.entityType} ${notification.eventType}`, undefined, 'changePoolService.ts');
     }
@@ -299,20 +311,37 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         'messageDataKeys': message.data ? Object.keys(message.data) : []
       }, 'changePoolService.ts');
 
-      const extractedData = message.payload?.data?.primary || message.data || {};
+      // FIX: Don't default to empty object - let it be undefined if missing
+      const extractedData = message.payload?.data?.primary || message.data;
+
+      // Validate that we have actual task data (not just empty object)
+      const hasValidData = extractedData && typeof extractedData === 'object' && Object.keys(extractedData).length > 0;
 
       logger.debug('🔍 [ChangePool] Extracted data for notification:', {
-        hasExtractedData: !!extractedData && Object.keys(extractedData).length > 0,
-        extractedDataKeys: Object.keys(extractedData),
+        hasExtractedData: hasValidData,
+        extractedDataKeys: extractedData ? Object.keys(extractedData) : [],
         extractedData: extractedData
       }, 'changePoolService.ts');
+
+      // Warn if no data found in expected locations
+      if (!hasValidData) {
+        logger.warn('⚠️ [ChangePool] WebSocket message has no valid task data', {
+          messageId: message.id,
+          entityType,
+          entityId,
+          action,
+          payloadDataPrimary: message.payload?.data?.primary,
+          messageData: message.data,
+          fullPayload: message.payload
+        }, 'changePoolService.ts');
+      }
 
       logger.info('📡 ChangePool: Processing v2.0 update message:', {
         entityType,
         entityId,
         action,
         version: message.version,
-        hasData: !!extractedData && Object.keys(extractedData).length > 0
+        hasData: hasValidData
       }, 'changePoolService.ts');
 
       const notification: ChangeNotification = {
@@ -320,7 +349,8 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
         entityId: entityId,
         eventType: action as EventType,
         userId: message.metadata?.userId || 'system',
-        data: extractedData,
+        // Only assign data if it's valid (not undefined and not empty object)
+        data: hasValidData ? extractedData : undefined,
         metadata: {
           ...message.metadata,
           // Extract git_branch_id from payload data if available
@@ -383,9 +413,9 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
       logger.warn('🔌 ChangePool: Error during WebSocket cleanup:', error, 'changePoolService.ts');
     }
 
-    // Always clear subscriptions regardless of WebSocket cleanup success
-    logger.debug('🔌 ChangePool: Clearing all change pool subscriptions', undefined, 'changePoolService.ts');
-    changePoolService.clearAllSubscriptions();
+    // NOTE: Component subscriptions are managed by useChangeSubscription hook
+    // and should NOT be cleared here. This cleanup only removes the WebSocket listener.
+    logger.debug('🔌 ChangePool: WebSocket integration cleanup complete (subscriptions preserved)', undefined, 'changePoolService.ts');
   };
 }
 

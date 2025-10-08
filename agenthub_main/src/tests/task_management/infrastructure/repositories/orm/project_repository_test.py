@@ -763,3 +763,242 @@ class TestProjectRepository:
         assert len(results) == 10
         assert mock_query.limit.called
         assert mock_query.offset.called
+
+
+class TestProjectRepositoryDDDConversion:
+    """Test DDD conversion methods following the repository pattern audit requirements"""
+
+    @pytest.fixture
+    def repository(self):
+        """Create repository instance with minimal mocking"""
+        with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.ORMProjectRepository.__init__', return_value=None):
+            repo = ProjectRepository(session=None, user_id="test-user")
+            repo.user_id = "test-user"
+            return repo
+
+    @pytest.fixture
+    def sample_project_entity(self):
+        """Create sample ProjectEntity for testing"""
+        from fastmcp.task_management.domain.entities.project import Project as ProjectEntity
+        from fastmcp.task_management.domain.entities.git_branch import GitBranch
+        from fastmcp.task_management.domain.entities.agent import Agent
+
+        project = ProjectEntity(
+            id="proj-uuid-123",
+            name="Test DDD Project",
+            description="Testing DDD conversion patterns",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+
+        # Add complex fields
+        project.status = "active"
+        project.metadata = {"test": "data"}
+
+        # Add git branches
+        branch = GitBranch(
+            id="branch-123",
+            name="main",
+            description="Main branch",
+            project_id="proj-uuid-123"
+        )
+        project.git_branchs = {"branch-123": branch}
+
+        # Add registered agents (empty for this test)
+        project.registered_agents = {}
+        project.agent_assignments = {"branch-123": "agent-1"}
+        project.cross_tree_dependencies = {}
+        project.active_work_sessions = {}
+        project.resource_locks = {"resource-1": "agent-1"}
+
+        return project
+
+    def test_entity_to_model_dict_basic_fields(self, repository, sample_project_entity):
+        """Test _entity_to_model_dict converts basic ProjectEntity fields correctly"""
+        # Execute conversion
+        model_dict = repository._entity_to_model_dict(sample_project_entity)
+
+        # Verify basic fields
+        assert model_dict["id"] == "proj-uuid-123"
+        assert model_dict["name"] == "Test DDD Project"
+        assert model_dict["description"] == "Testing DDD conversion patterns"
+        assert model_dict["status"] == "active"
+        assert model_dict["metadata"] == {"test": "data"}
+
+    def test_entity_to_model_dict_metadata_fields(self, repository, sample_project_entity):
+        """Test _entity_to_model_dict stores complex fields in model_metadata"""
+        # Execute conversion
+        model_dict = repository._entity_to_model_dict(sample_project_entity)
+
+        # Verify model_metadata exists
+        assert "model_metadata" in model_dict
+        metadata = model_dict["model_metadata"]
+
+        # Verify complex fields are stored as metadata
+        assert metadata["git_branchs_count"] == 1
+        assert metadata["registered_agents_count"] == 0
+        assert metadata["agent_assignments"] == {"branch-123": "agent-1"}
+        assert metadata["cross_tree_dependencies_count"] == 0
+        assert metadata["active_work_sessions_count"] == 0
+        assert metadata["resource_locks"] == {"resource-1": "agent-1"}
+
+    def test_entity_to_model_dict_handles_missing_fields(self, repository):
+        """Test _entity_to_model_dict handles entities with missing optional fields"""
+        from fastmcp.task_management.domain.entities.project import Project as ProjectEntity
+
+        # Create minimal entity
+        minimal_entity = ProjectEntity(
+            id="proj-minimal",
+            name="Minimal Project",
+            description="",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+
+        # Execute conversion
+        model_dict = repository._entity_to_model_dict(minimal_entity)
+
+        # Verify defaults are applied
+        assert model_dict["id"] == "proj-minimal"
+        assert model_dict["name"] == "Minimal Project"
+        assert model_dict["status"] == "active"  # Default status
+        assert model_dict["metadata"] == {}  # Default empty metadata
+
+        # Verify model_metadata has zero counts for missing collections
+        metadata = model_dict["model_metadata"]
+        assert metadata["git_branchs_count"] == 0
+        assert metadata["registered_agents_count"] == 0
+        assert metadata["agent_assignments"] == {}
+        assert metadata["cross_tree_dependencies_count"] == 0
+
+    def test_round_trip_conversion_preserves_data(self, repository, sample_project_entity):
+        """Test Entity → Model Dict → Entity preserves all critical data"""
+        # Step 1: Convert entity to model dict
+        model_dict = repository._entity_to_model_dict(sample_project_entity)
+
+        # Step 2: Verify critical fields are in model dict
+        assert model_dict["id"] == sample_project_entity.id
+        assert model_dict["name"] == sample_project_entity.name
+        assert model_dict["description"] == sample_project_entity.description
+        assert model_dict["status"] == sample_project_entity.status
+
+        # Step 3: Verify metadata is preserved
+        assert model_dict["model_metadata"]["agent_assignments"] == dict(sample_project_entity.agent_assignments)
+        assert model_dict["model_metadata"]["resource_locks"] == dict(sample_project_entity.resource_locks)
+
+        # Note: Full round-trip would require _model_to_entity,
+        # but that method already exists and is tested elsewhere
+
+    def test_conversion_method_signature(self, repository):
+        """Test _entity_to_model_dict has correct signature and returns dict"""
+        from fastmcp.task_management.domain.entities.project import Project as ProjectEntity
+        import inspect
+
+        # Verify method exists
+        assert hasattr(repository, '_entity_to_model_dict')
+
+        # Verify signature (self, ProjectEntity) -> Dict
+        sig = inspect.signature(repository._entity_to_model_dict)
+        params = list(sig.parameters.keys())
+        assert len(params) == 1  # Only 'project' parameter (self is implicit)
+        assert params[0] == 'project'
+
+    def test_conversion_used_in_save_method(self, repository, sample_project_entity):
+        """Test that save() method uses _entity_to_model_dict for updates"""
+        # This test verifies the refactoring requirement:
+        # "Refactor all update methods to use conversion"
+
+        # Mock database session
+        mock_session = Mock(spec=Session)
+        repository.get_db_session = MagicMock()
+        repository.get_db_session().__enter__ = Mock(return_value=mock_session)
+        repository.get_db_session().__exit__ = Mock(return_value=False)
+
+        # Create existing project ORM model
+        existing_project = ProjectORM(
+            id="proj-uuid-123",
+            name="Old Name",
+            description="Old Description",
+            user_id="test-user",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            status="active",
+            metadata={}
+        )
+        existing_project.touch = Mock()
+
+        # Configure query mock
+        mock_query = Mock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.first.return_value = existing_project
+
+        # Spy on _entity_to_model_dict
+        with patch.object(repository, '_entity_to_model_dict', wraps=repository._entity_to_model_dict) as spy:
+            # Execute save (which should call _entity_to_model_dict for existing project)
+            import asyncio
+            asyncio.run(repository.save(sample_project_entity))
+
+            # Verify _entity_to_model_dict was called
+            spy.assert_called_once_with(sample_project_entity)
+
+    def test_conversion_used_in_update_project_method(self, repository, sample_project_entity):
+        """Test that update_project() method supports entity-based updates"""
+        # Mock database session
+        mock_session = Mock(spec=Session)
+        repository.get_db_session = MagicMock()
+        repository.get_db_session().__enter__ = Mock(return_value=mock_session)
+        repository.get_db_session().__exit__ = Mock(return_value=False)
+        repository.transaction = MagicMock()
+        repository.transaction().__enter__ = Mock()
+        repository.transaction().__exit__ = Mock(return_value=False)
+        repository.invalidate_cache_for_entity = Mock()
+        repository._model_to_entity = Mock(return_value=sample_project_entity)
+
+        # Create existing project ORM model
+        existing_project = ProjectORM(
+            id="proj-uuid-123",
+            name="Old Name",
+            description="Old Description",
+            user_id="test-user",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            status="active",
+            metadata={}
+        )
+        existing_project.touch = Mock()
+
+        # Configure query mock
+        mock_query = Mock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.first.return_value = existing_project
+
+        # Spy on _entity_to_model_dict
+        with patch.object(repository, '_entity_to_model_dict', wraps=repository._entity_to_model_dict) as spy:
+            # Execute update_project with entity parameter
+            result = repository.update_project("proj-uuid-123", entity=sample_project_entity)
+
+            # Verify _entity_to_model_dict was called
+            spy.assert_called_once_with(sample_project_entity)
+
+            # Verify the update was applied
+            assert existing_project.name == "Test DDD Project"
+            assert existing_project.description == "Testing DDD conversion patterns"
+
+    def test_ddd_pattern_compliance(self, repository):
+        """Test that repository follows DDD pattern requirements from audit"""
+        # Verify both conversion methods exist (requirement from audit)
+        assert hasattr(repository, '_model_to_entity'), \
+            "Repository must have _model_to_entity() for ORM → Entity conversion"
+        assert hasattr(repository, '_entity_to_model_dict'), \
+            "Repository must have _entity_to_model_dict() for Entity → ORM conversion"
+
+        # Verify methods are callable
+        assert callable(repository._model_to_entity)
+        assert callable(repository._entity_to_model_dict)
+
+        # This completes the DDD pattern requirement:
+        # ✅ Repository has _model_to_entity() (ORM → Domain)
+        # ✅ Repository has _entity_to_model_dict() (Domain → ORM)
+        # ✅ All repository updates use proper DDD flow

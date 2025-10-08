@@ -31,11 +31,11 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
     
     def save(self, template: Template) -> bool:
         """
-        Save a template to the database
-        
+        Save a template to the database (DDD-compliant)
+
         Args:
             template: Template entity to save
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -45,36 +45,44 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
                 existing = session.query(ORMTemplate).filter(
                     ORMTemplate.id == str(template.id)
                 ).first()
-                
+
                 if existing:
-                    # Update existing template (timestamps handled automatically)
-                    existing.name = template.name
-                    existing.type = template.template_type.value
-                    existing.content = self._serialize_template_content(template)
-                    existing.category = template.category.value
-                    existing.tags = self._extract_tags_from_template(template)
-                    existing.created_by = getattr(template, 'created_by', 'system')
+                    # DDD-COMPLIANT: Convert entity to model dict
+                    model_dict = self._entity_to_model_dict(template)
+
+                    # Update existing template fields
+                    existing.name = model_dict["name"]
+                    existing.type = model_dict["type"]
+                    existing.content = model_dict["content"]
+                    existing.category = model_dict["category"]
+                    existing.tags = model_dict["tags"]
+                    existing.created_by = model_dict["created_by"]
+                    existing.updated_at = model_dict["updated_at"]
+                    # Preserve existing usage_count
                     existing.touch("template_updated")
                 else:
+                    # DDD-COMPLIANT: Convert entity to model dict
+                    model_dict = self._entity_to_model_dict(template)
+
                     # Create new template
                     orm_template = ORMTemplate(
-                        id=str(template.id),
-                        name=template.name,
-                        type=template.template_type.value,
-                        content=self._serialize_template_content(template),
-                        category=template.category.value,
-                        tags=self._extract_tags_from_template(template),
-                        usage_count=0,
-                        created_at=template.created_at,
-                        updated_at=template.updated_at,
-                        created_by=getattr(template, 'created_by', 'system')
+                        id=model_dict["id"],
+                        name=model_dict["name"],
+                        type=model_dict["type"],
+                        content=model_dict["content"],
+                        category=model_dict["category"],
+                        tags=model_dict["tags"],
+                        usage_count=model_dict["usage_count"],
+                        created_at=model_dict["created_at"],
+                        updated_at=model_dict["updated_at"],
+                        created_by=model_dict["created_by"]
                     )
                     session.add(orm_template)
-                
+
                 session.commit()
                 logger.info(f"Template saved successfully: {template.id}")
                 return True
-                
+
         except Exception as e:
             logger.error(f"Error saving template {template.id}: {e}")
             return False
@@ -96,7 +104,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
                 ).first()
                 
                 if orm_template:
-                    return self._orm_to_domain(orm_template)
+                    return self._model_to_entity(orm_template)
                 return None
                 
         except Exception as e:
@@ -146,7 +154,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
                     query = query.limit(limit)
                 
                 orm_templates = query.all()
-                return [self._orm_to_domain(template) for template in orm_templates]
+                return [self._model_to_entity(template) for template in orm_templates]
                 
         except Exception as e:
             logger.error(f"Error listing templates: {e}")
@@ -226,7 +234,7 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
                 if conditions:
                     query = session.query(ORMTemplate).filter(or_(*conditions))
                     orm_templates = query.order_by(ORMTemplate.usage_count.desc()).all()
-                    return [self._orm_to_domain(template) for template in orm_templates]
+                    return [self._model_to_entity(template) for template in orm_templates]
                 return []
                 
         except Exception as e:
@@ -362,29 +370,6 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
             logger.error(f"Error getting template analytics: {e}")
             return {}
     
-    def _serialize_template_content(self, template: Template) -> Dict[str, Any]:
-        """
-        Serialize template to JSON content for storage
-        
-        Args:
-            template: Template entity
-            
-        Returns:
-            Dictionary representation for JSON storage
-        """
-        return {
-            'description': template.description,
-            'content': template.content,
-            'status': template.status.value,
-            'priority': template.priority.value,
-            'compatible_agents': template.compatible_agents,
-            'file_patterns': template.file_patterns,
-            'variables': template.variables,
-            'metadata': template.metadata,
-            'version': template.version,
-            'is_active': template.is_active
-        }
-    
     def _extract_tags_from_template(self, template: Template) -> List[str]:
         """
         Extract tags from template for search indexing
@@ -412,33 +397,71 @@ class ORMTemplateRepository(BaseTimestampRepository[ORMTemplate], TemplateReposi
         # Remove duplicates and empty strings
         return list(set(tag for tag in tags if tag))
     
-    def _orm_to_domain(self, orm_template: ORMTemplate) -> Template:
+    def _model_to_entity(self, orm_template: ORMTemplate) -> Template:
         """
-        Convert ORM template to domain entity
-        
+        Convert ORM model to domain entity (DDD-compliant)
+
         Args:
             orm_template: ORM template instance
-            
+
         Returns:
             Template domain entity
         """
-        content_data = orm_template.content if isinstance(orm_template.content, dict) else {}
-        
-        return Template(
-            id=TemplateId(orm_template.id),
-            name=orm_template.name,
-            description=content_data.get('description', ''),
-            content=content_data.get('content', ''),
-            template_type=TemplateType(orm_template.type),
-            category=TemplateCategory(orm_template.category),
-            status=TemplateStatus(content_data.get('status', 'active')),
-            priority=TemplatePriority(content_data.get('priority', 'medium')),
-            compatible_agents=content_data.get('compatible_agents', []),
-            file_patterns=content_data.get('file_patterns', []),
-            variables=content_data.get('variables', []),
-            metadata=content_data.get('metadata', {}),
-            created_at=orm_template.created_at,
-            updated_at=orm_template.updated_at,
-            version=content_data.get('version', 1),
-            is_active=content_data.get('is_active', True)
-        )
+        try:
+            content_data = orm_template.content if isinstance(orm_template.content, dict) else {}
+
+            return Template(
+                id=TemplateId(orm_template.id),
+                name=orm_template.name,
+                description=content_data.get('description', ''),
+                content=content_data.get('content', ''),
+                template_type=TemplateType(orm_template.type),
+                category=TemplateCategory(orm_template.category),
+                status=TemplateStatus(content_data.get('status', 'active')),
+                priority=TemplatePriority(content_data.get('priority', 'medium')),
+                compatible_agents=content_data.get('compatible_agents', []),
+                file_patterns=content_data.get('file_patterns', []),
+                variables=content_data.get('variables', []),
+                metadata=content_data.get('metadata', {}),
+                created_at=orm_template.created_at,
+                updated_at=orm_template.updated_at,
+                version=content_data.get('version', 1),
+                is_active=content_data.get('is_active', True)
+            )
+        except Exception as e:
+            logger.error(f"Error converting template model to entity: {e}")
+            raise
+
+    def _entity_to_model_dict(self, template: Template) -> Dict[str, Any]:
+        """
+        Convert domain entity to model dictionary (DDD-compliant)
+
+        Args:
+            template: Template domain entity
+
+        Returns:
+            Dictionary representation for ORM model
+        """
+        return {
+            "id": str(template.id),
+            "name": template.name,
+            "type": template.template_type.value,
+            "content": {
+                'description': template.description,
+                'content': template.content,
+                'status': template.status.value,
+                'priority': template.priority.value,
+                'compatible_agents': template.compatible_agents,
+                'file_patterns': template.file_patterns,
+                'variables': template.variables,
+                'metadata': template.metadata,
+                'version': template.version,
+                'is_active': template.is_active
+            },
+            "category": template.category.value,
+            "tags": self._extract_tags_from_template(template),
+            "usage_count": 0,  # Will be preserved during updates
+            "created_at": template.created_at,
+            "updated_at": template.updated_at,
+            "created_by": getattr(template, 'created_by', 'system')
+        }

@@ -283,26 +283,10 @@ class NotificationService {
     // Show toast with title and description
     this.showToast(title, notificationType, { description });
 
-    // Show browser notification for important events
-    if (eventType === 'deleted' && entityType === 'branch') {
-      this.showBrowserNotification(
-        `Branch Deleted`,
-        `The branch "${entityName || entityId}" has been deleted${by}`,
-        '🗑️'
-      );
-    } else if (eventType === 'deleted' && entityType === 'project') {
-      this.showBrowserNotification(
-        `Project Deleted`,
-        `The project "${entityName || entityId}" has been deleted${by}`,
-        '🗑️'
-      );
-    } else if (eventType === 'completed' && entityType === 'task') {
-      this.showBrowserNotification(
-        `Task Completed`,
-        `"${entityName || entityId}" has been completed${by}`,
-        '✅'
-      );
-    }
+    // NOTE: Browser notifications removed to prevent duplicate notifications
+    // The toast notification already provides all necessary information
+    // Previous implementation was showing both toast + browser notification
+    // for delete events, causing users to see two notifications for one action
   }
 
   /**
@@ -372,7 +356,7 @@ class NotificationService {
    */
   initializeWebSocketListener(webSocketClient: any): () => void {
     if (this.webSocketInitialized) {
-      logger.warn('🔔 NotificationService: WebSocket already initialized');
+      logger.debug('🔔 NotificationService: WebSocket already initialized - reusing existing connection');
       return () => {};
     }
 
@@ -394,6 +378,13 @@ class NotificationService {
         unsubscribe();
       }
 
+      // SECURITY FIX: Clear all pending notifications to prevent stale data
+      // This ensures no notifications persist after logout/token expiration
+      this.recentNotifications.clear();
+      logger.debug('🔔 NotificationService: Cleared all pending notifications');
+
+      // CRITICAL FIX: Reset flag on cleanup to allow re-initialization
+      // This prevents issues with React Strict Mode double mounting
       this.webSocketInitialized = false;
     };
   }
