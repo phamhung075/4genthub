@@ -11,7 +11,11 @@ import './styles/notifications.css';
 // This must happen before any other code to catch all extension errors
 import { initializeExtensionErrorFilter } from './utils/extensionErrorFilter';
 import logger from './utils/logger';
+import { debugLoggerConfig } from './config/logger.config';
 initializeExtensionErrorFilter();
+
+// Debug: Log current logger configuration to verify environment variables loaded
+debugLoggerConfig();
 
 // Initialize logging system safely - only for errors
 try {
