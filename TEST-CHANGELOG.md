@@ -100,6 +100,31 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 
 ## [Unreleased] - 2025-10-09
 
+### Added
+
+#### Backend Test Coverage - Rich Domain Model
+- **test_project_rich_domain.py** (`agenthub_main/src/tests/unit/task_management/domain/entities/test_project_rich_domain.py`)
+  - Created comprehensive test suite for Project Rich Domain Model (520+ lines, 25 tests)
+  - Tests for FEATURE_RICH_DOMAIN_MODEL feature flag behavior (Strangler Fig Pattern)
+  - Tests for validate_agent_assignment() with business rules:
+    - Agent registration and branch existence validation
+    - Agent workload limit enforcement (max 3 concurrent assignments)
+    - Reassignment validation and same-agent edge cases
+  - Tests for calculate_project_health() with health metrics:
+    - Health score calculation (0-100 scale) with 4 weighted factors
+    - Health status classification (excellent, good, fair, poor, critical)
+    - Branch completion, agent utilization, blocked tasks, active work ratios
+    - Legacy vs rich domain model behavior comparison
+  - Tests for check_deadline_risk() with risk assessment:
+    - 5-level risk classification (no_risk to critical_risk)
+    - Completion rate, active work, blocked tasks analysis
+    - Actionable recommendations for each risk level
+  - Integration tests validating complete rich domain workflow
+  - Tests for feature flag toggle during runtime
+  - Tests for legacy behavior preservation when flag disabled
+  - All 25 tests passing with 100% coverage of new business methods
+  - Follows same pattern as test_task_context_unified_rich_domain.py
+
 ### Fixed
 
 #### Frontend Test Updates

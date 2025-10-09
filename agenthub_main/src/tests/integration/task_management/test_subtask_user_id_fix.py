@@ -15,7 +15,7 @@ from fastmcp.task_management.infrastructure.database.models import Project, Proj
 from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 
@@ -107,7 +107,7 @@ class TestSubtaskUserIdFix:
         subtask_repo.transaction = test_transaction
         
         # Create subtask entity
-        subtask_id = SubtaskId(str(uuid.uuid4()))
+        subtask_id = TaskId(str(uuid.uuid4()))
         subtask = Subtask.create(
             id=subtask_id,
             title="Test Subtask",
@@ -146,7 +146,7 @@ class TestSubtaskUserIdFix:
         subtask_repo.transaction = test_transaction
         
         # Create subtask entity
-        subtask_id = SubtaskId(str(uuid.uuid4()))
+        subtask_id = TaskId(str(uuid.uuid4()))
         subtask = Subtask.create(
             id=subtask_id,
             title="Test Subtask System Mode",
@@ -198,7 +198,7 @@ class TestSubtaskUserIdFix:
         try:
             
             # Create subtask entity
-            subtask_id = SubtaskId(str(uuid.uuid4()))
+            subtask_id = TaskId(str(uuid.uuid4()))
             subtask = Subtask.create(
                 id=subtask_id,
                 title="Test Subtask from Factory",

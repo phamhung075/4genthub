@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, Union
 
 from ..value_objects.task_id import TaskId
-from ..value_objects.subtask_id import SubtaskId
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
 from ..value_objects.priority import Priority
 from ..enums.agent_roles import AgentRole, resolve_legacy_role
@@ -20,7 +19,7 @@ class Subtask(BaseTimestampEntity):
     title: str = ""
     description: str = ""
     parent_task_id: Optional[TaskId] = None
-    id: Optional[SubtaskId] = None
+    id: Optional[TaskId] = None
     status: Optional[TaskStatus] = None
     priority: Optional[Priority] = None
     assignees: List[str] = field(default_factory=list)
@@ -460,7 +459,7 @@ class Subtask(BaseTimestampEntity):
         }
     
     @classmethod
-    def create(cls, id: SubtaskId, title: str, description: str, parent_task_id: TaskId,
+    def create(cls, id: TaskId, title: str, description: str, parent_task_id: TaskId,
                status: Optional[TaskStatus] = None, priority: Optional[Priority] = None,
                **kwargs) -> 'Subtask':
         """Factory method to create a new subtask"""
@@ -506,8 +505,8 @@ class Subtask(BaseTimestampEntity):
         status = TaskStatus.from_string(data.get('status', 'todo'))
         priority = Priority.from_string(data.get('priority', 'medium'))
 
-        subtask_id = SubtaskId(data['id']) if data.get('id') else None
-        
+        subtask_id = TaskId(data['id']) if data.get('id') else None
+
         return cls(
             id=subtask_id,
             title=data.get('title', ''),

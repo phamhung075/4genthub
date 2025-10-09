@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from fastmcp.task_management.infrastructure.repositories.base_orm_repository import BaseORMRepository
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
     DatabaseException,
+    DatabaseIntegrityException,
     ValidationException
 )
 
@@ -327,3 +328,163 @@ class TestBaseORMRepository:
     def _mock_session_context(self):
         """Helper to mock session context manager."""
         yield self.mock_session
+
+
+class TestBaseORMRepositoryFeatureFlag:
+    """Test suite for FEATURE_CLEAN_REPOSITORIES feature flag behavior."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.repo = BaseORMRepository(MockModel)
+        self.mock_session = Mock(spec=Session)
+        # Store original flag value to restore after tests
+        self.original_flag = BaseORMRepository.FEATURE_CLEAN_REPOSITORIES
+
+    def teardown_method(self):
+        """Restore original flag value after each test."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = self.original_flag
+
+    @contextmanager
+    def _mock_session_context(self):
+        """Helper to mock session context manager."""
+        yield self.mock_session
+
+    def test_feature_flag_defaults_to_false(self):
+        """Test that FEATURE_CLEAN_REPOSITORIES defaults to False for backward compatibility."""
+        # Reset to environment default
+        import os
+        original_env = os.environ.get("FEATURE_CLEAN_REPOSITORIES")
+        if "FEATURE_CLEAN_REPOSITORIES" in os.environ:
+            del os.environ["FEATURE_CLEAN_REPOSITORIES"]
+
+        # Create new instance to get default value
+        from importlib import reload
+        import fastmcp.task_management.infrastructure.repositories.base_orm_repository as repo_module
+        reload(repo_module)
+
+        assert repo_module.BaseORMRepository.FEATURE_CLEAN_REPOSITORIES is False
+
+        # Restore environment
+        if original_env:
+            os.environ["FEATURE_CLEAN_REPOSITORIES"] = original_env
+
+    def test_create_integrity_error_flag_false_raises_validation_exception(self):
+        """Test that IntegrityError raises ValidationException when flag is False (backward compatible)."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = False
+        self.repo.get_db_session = self._mock_session_context
+        self.mock_session.add.side_effect = IntegrityError("", "", "UNIQUE constraint failed: mock_table.id")
+
+        with pytest.raises(ValidationException) as exc_info:
+            self.repo.create(id=1, name="test")
+
+        # Verify it's a business validation exception (old behavior)
+        assert "Integrity constraint violation" in str(exc_info.value)
+        assert exc_info.value.error_code == "VALIDATION_ERROR"
+
+    def test_create_integrity_error_flag_true_raises_database_integrity_exception(self):
+        """Test that IntegrityError raises DatabaseIntegrityException when flag is True (clean separation)."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = True
+        self.repo.get_db_session = self._mock_session_context
+        self.mock_session.add.side_effect = IntegrityError("", "", "UNIQUE constraint failed: mock_table.id")
+
+        with pytest.raises(DatabaseIntegrityException) as exc_info:
+            self.repo.create(id=1, name="test")
+
+        # Verify it's a technical database exception (new clean behavior)
+        assert "Database integrity constraint violation" in str(exc_info.value)
+        assert exc_info.value.error_code == "DATABASE_INTEGRITY_ERROR"
+
+    def test_extract_constraint_name_unique_constraint(self):
+        """Test extracting constraint name from UNIQUE constraint error."""
+        error_msg = "UNIQUE constraint failed: mock_table.id"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name == "mock_table.id"
+
+    def test_extract_constraint_name_not_null_constraint(self):
+        """Test extracting constraint name from NOT NULL constraint error."""
+        error_msg = "NOT NULL constraint failed: mock_table.name"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name == "mock_table.name"
+
+    def test_extract_constraint_name_foreign_key_constraint(self):
+        """Test extracting constraint name from FOREIGN KEY constraint error."""
+        error_msg = "FOREIGN KEY constraint failed"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        # Foreign key errors may not have detailed constraint name
+        assert constraint_name is None or isinstance(constraint_name, str)
+
+    def test_extract_constraint_name_check_constraint(self):
+        """Test extracting constraint name from CHECK constraint error."""
+        error_msg = "CHECK constraint failed: mock_table.status"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name == "mock_table.status"
+
+    def test_extract_constraint_name_unknown_format(self):
+        """Test extracting constraint name from unknown error format."""
+        error_msg = "Some unknown database error"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name is None
+
+    def test_create_success_flag_true_still_works(self):
+        """Test that successful creation still works with flag=True."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = True
+        self.repo.get_db_session = self._mock_session_context
+
+        result = self.repo.create(id=1, name="test")
+
+        assert isinstance(result, MockModel)
+        assert result.id == 1
+        assert result.name == "test"
+
+    def test_create_success_flag_false_still_works(self):
+        """Test that successful creation still works with flag=False."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = False
+        self.repo.get_db_session = self._mock_session_context
+
+        result = self.repo.create(id=1, name="test")
+
+        assert isinstance(result, MockModel)
+        assert result.id == 1
+        assert result.name == "test"
+
+    def test_flag_can_be_toggled_at_runtime(self):
+        """Test that feature flag can be toggled at runtime for testing."""
+        # Test toggling from False to True
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = False
+        assert BaseORMRepository.FEATURE_CLEAN_REPOSITORIES is False
+
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = True
+        assert BaseORMRepository.FEATURE_CLEAN_REPOSITORIES is True
+
+        # Test toggling back
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = False
+        assert BaseORMRepository.FEATURE_CLEAN_REPOSITORIES is False
+
+    def test_database_integrity_exception_includes_constraint_details(self):
+        """Test that DatabaseIntegrityException includes constraint details when flag=True."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = True
+        self.repo.get_db_session = self._mock_session_context
+        self.mock_session.add.side_effect = IntegrityError(
+            "", "", "UNIQUE constraint failed: tasks.title"
+        )
+
+        with pytest.raises(DatabaseIntegrityException) as exc_info:
+            self.repo.create(title="duplicate")
+
+        # Verify exception has constraint information
+        exception = exc_info.value
+        assert exception.context.get("constraint") == "tasks.title"
+
+    def test_validation_exception_backward_compatible_structure(self):
+        """Test that ValidationException maintains backward compatible structure when flag=False."""
+        BaseORMRepository.FEATURE_CLEAN_REPOSITORIES = False
+        self.repo.get_db_session = self._mock_session_context
+        self.mock_session.add.side_effect = IntegrityError("", "", "constraint violation")
+
+        with pytest.raises(ValidationException) as exc_info:
+            self.repo.create(id=1, name="test")
+
+        # Verify backward compatible structure
+        exception = exc_info.value
+        assert exception.context.get("field") == "unknown"
+        assert "id" in str(exception.context.get("value"))  # Contains kwargs

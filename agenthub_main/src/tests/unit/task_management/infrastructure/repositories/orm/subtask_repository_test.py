@@ -18,7 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import json
 
 from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
@@ -94,7 +94,7 @@ class TestORMSubtaskRepositoryDataConversion:
     def test_to_model_data_minimal_subtask(self):
         """Test converting minimal subtask entity to model data."""
         subtask = Subtask(
-            id=SubtaskId("sub-123"),
+            id=TaskId("sub-123"),
             parent_task_id=TaskId("task-456"),
             title="Test Subtask",
             description="Test Description"
@@ -119,7 +119,7 @@ class TestORMSubtaskRepositoryDataConversion:
     def test_to_model_data_full_subtask(self):
         """Test converting complete subtask entity to model data."""
         subtask = Subtask(
-            id=SubtaskId("sub-123"),
+            id=TaskId("sub-123"),
             parent_task_id=TaskId("task-456"),
             title="Full Subtask",
             description="Full Description",
@@ -167,7 +167,7 @@ class TestORMSubtaskRepositoryDataConversion:
 
         # Create entity directly from model data
         subtask = Subtask(
-            id=SubtaskId(mock_model.id),
+            id=TaskId(mock_model.id),
             parent_task_id=TaskId(mock_model.parent_task_id),
             title=mock_model.title,
             description=mock_model.description,
@@ -234,7 +234,7 @@ class TestORMSubtaskRepositorySaveOperations:
         """Test successfully updating an existing subtask."""
         # Create existing subtask with ID
         subtask = Subtask(
-            id=SubtaskId("sub-123"),
+            id=TaskId("sub-123"),
             parent_task_id=TaskId("task-456"),
             title="Updated Subtask",
             description="Updated Description"
@@ -268,7 +268,7 @@ class TestORMSubtaskRepositorySaveOperations:
     def test_save_existing_subtask_not_found(self):
         """Test updating non-existent subtask creates new one."""
         subtask = Subtask(
-            id=SubtaskId("sub-nonexistent"),
+            id=TaskId("sub-nonexistent"),
             parent_task_id=TaskId("task-456"),
             title="Subtask",
             description="Description"
@@ -355,7 +355,7 @@ class TestORMSubtaskRepositoryFindOperations:
 
         # Mock entity
         mock_entity = create_mock_with_spec(Subtask)
-        mock_entity.id = SubtaskId("sub-123")
+        mock_entity.id = TaskId("sub-123")
 
         # Mock query chain
         mock_query = Mock()
@@ -372,7 +372,7 @@ class TestORMSubtaskRepositoryFindOperations:
         with patch.object(self.repo, 'find_by_id') as mock_find:
             mock_find.return_value = mock_entity
 
-            result = self.repo.find_by_id(SubtaskId("sub-123"))
+            result = self.repo.find_by_id(TaskId("sub-123"))
 
             # Verify result
             assert result == mock_entity
@@ -394,7 +394,7 @@ class TestORMSubtaskRepositoryFindOperations:
         with patch.object(self.repo, 'find_by_id') as mock_find:
             mock_find.return_value = None
 
-            result = self.repo.find_by_id(SubtaskId("sub-nonexistent"))
+            result = self.repo.find_by_id(TaskId("sub-nonexistent"))
 
             # Should return None when not found
             assert result is None
@@ -419,7 +419,7 @@ class TestORMSubtaskRepositoryFindOperations:
         with patch.object(self.repo, 'find_by_id') as mock_find:
             mock_find.return_value = None  # User filter denied
 
-            result = self.repo.find_by_id(SubtaskId("sub-123"))
+            result = self.repo.find_by_id(TaskId("sub-123"))
 
             # Should return None when user filter denies access
             assert result is None
@@ -499,7 +499,7 @@ class TestORMSubtaskRepositoryCompletionOperations:
             mock_complete.return_value = True
 
             result = self.repo.complete_subtask(
-                SubtaskId("sub-123"),
+                TaskId("sub-123"),
                 completion_summary="Task completed successfully",
                 testing_notes="All tests passed"
             )
@@ -525,7 +525,7 @@ class TestORMSubtaskRepositoryCompletionOperations:
             mock_complete.return_value = False
 
             result = self.repo.complete_subtask(
-                SubtaskId("sub-nonexistent"),
+                TaskId("sub-nonexistent"),
                 completion_summary="Trying to complete non-existent"
             )
 
@@ -550,7 +550,7 @@ class TestORMSubtaskRepositoryCompletionOperations:
             mock_complete.return_value = False  # User filter denied
 
             result = self.repo.complete_subtask(
-                SubtaskId("sub-123"),
+                TaskId("sub-123"),
                 completion_summary="Denied by user filter"
             )
 
@@ -595,7 +595,7 @@ class TestORMSubtaskRepositoryProgressOperations:
             mock_update.return_value = True
 
             result = self.repo.update_progress(
-                SubtaskId("sub-123"),
+                TaskId("sub-123"),
                 progress_percentage=75,
                 progress_notes="Making good progress"
             )
@@ -707,7 +707,7 @@ class TestORMSubtaskRepositoryErrorHandling:
             mock_find.return_value = None  # Handle invalid ID gracefully
 
             # Should handle invalid ID gracefully
-            result = self.repo.find_by_id("invalid-id-type")  # String instead of SubtaskId
+            result = self.repo.find_by_id("invalid-id-type")  # String instead of TaskId
 
             # Implementation should handle type conversion or return None
             assert result is None or isinstance(result, Subtask)

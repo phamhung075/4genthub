@@ -19,7 +19,7 @@ import uuid
 
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
 from fastmcp.task_management.domain.enums.agent_roles import AgentRole
@@ -54,7 +54,7 @@ class TestSubtaskCreation:
     
     def test_create_subtask_with_factory(self):
         """Test creating subtask with factory method."""
-        subtask_id = SubtaskId("subtask-456")
+        subtask_id = TaskId("subtask-456")
         parent_task_id = TaskId("parent-789")
         
         subtask = Subtask.create(
@@ -79,7 +79,7 @@ class TestSubtaskCreation:
     
     def test_create_subtask_full_data(self):
         """Test creating subtask with all data."""
-        subtask_id = SubtaskId("subtask-full")
+        subtask_id = TaskId("subtask-full")
         parent_task_id = TaskId("parent-full")
         created_at = datetime.now(timezone.utc)
         updated_at = datetime.now(timezone.utc)
@@ -163,7 +163,7 @@ class TestSubtaskEquality:
     
     def test_subtask_equality_with_id(self):
         """Test subtask equality based on ID."""
-        subtask_id = SubtaskId("same-id")
+        subtask_id = TaskId("same-id")
         parent_task_id = TaskId("parent-123")
         
         subtask1 = Subtask(
@@ -205,13 +205,13 @@ class TestSubtaskEquality:
         """Test subtask inequality."""
         parent_task_id = TaskId("parent-123")
         subtask1 = Subtask(
-            id=SubtaskId("id-1"),
+            id=TaskId("id-1"),
             title="First",
             description="First",
             parent_task_id=parent_task_id
         )
         subtask2 = Subtask(
-            id=SubtaskId("id-2"),
+            id=TaskId("id-2"),
             title="Second",
             description="Second",
             parent_task_id=parent_task_id
@@ -269,7 +269,7 @@ class TestSubtaskStatusUpdates:
     
     def test_update_status_valid_transition(self):
         """Test valid status transition."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -311,7 +311,7 @@ class TestSubtaskStatusUpdates:
     
     def test_update_priority(self):
         """Test updating priority."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -339,7 +339,7 @@ class TestSubtaskFieldUpdates:
     
     def test_update_title(self):
         """Test updating title."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -376,7 +376,7 @@ class TestSubtaskFieldUpdates:
     
     def test_update_description(self):
         """Test updating description."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -401,7 +401,7 @@ class TestSubtaskAssigneeManagement:
     
     def test_update_assignees(self):
         """Test updating assignees."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -426,7 +426,7 @@ class TestSubtaskAssigneeManagement:
     
     def test_add_assignee_string(self):
         """Test adding individual assignee as string."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -464,7 +464,7 @@ class TestSubtaskAssigneeManagement:
     
     def test_remove_assignee(self):
         """Test removing assignee."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -510,7 +510,7 @@ class TestSubtaskProgressTracking:
     
     def test_update_progress_percentage_valid(self):
         """Test updating progress percentage with valid values."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -578,7 +578,7 @@ class TestSubtaskCompletion:
     
     def test_complete_subtask(self):
         """Test completing a subtask."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -624,7 +624,7 @@ class TestSubtaskCompletion:
     
     def test_reopen_subtask(self):
         """Test reopening a completed subtask."""
-        subtask_id = SubtaskId("subtask-1")
+        subtask_id = TaskId("subtask-1")
         parent_task_id = TaskId("parent-123")
         
         subtask = Subtask(
@@ -674,7 +674,7 @@ class TestSubtaskSerialization:
     
     def test_to_dict(self):
         """Test converting subtask to dictionary."""
-        subtask_id = SubtaskId("subtask-123")
+        subtask_id = TaskId("subtask-123")
         parent_task_id = TaskId("parent-456")
         created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
@@ -772,7 +772,7 @@ class TestSubtaskSerialization:
     
     def test_roundtrip_serialization(self):
         """Test that to_dict/from_dict roundtrip preserves data."""
-        subtask_id = SubtaskId("roundtrip-123")
+        subtask_id = TaskId("roundtrip-123")
         parent_task_id = TaskId("parent-roundtrip")
         
         original_subtask = Subtask(
@@ -806,7 +806,7 @@ class TestSubtaskDomainEvents:
     
     def test_get_events_clears_list(self):
         """Test that get_events returns and clears event list."""
-        subtask_id = SubtaskId("event-test")
+        subtask_id = TaskId("event-test")
         parent_task_id = TaskId("parent-events")
         
         subtask = Subtask(
@@ -829,7 +829,7 @@ class TestSubtaskDomainEvents:
     
     def test_event_content(self):
         """Test event content and structure."""
-        subtask_id = SubtaskId("event-content")
+        subtask_id = TaskId("event-content")
         parent_task_id = TaskId("parent-events")
         
         subtask = Subtask(

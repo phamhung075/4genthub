@@ -680,7 +680,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 34,
+      "count": 35,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -828,6 +828,13 @@
           "name": "agent-delegation-fix.md",
           "path": "core-architecture/agent-delegation-fix.md",
           "size": 6273
+        },
+        {
+          "hash": "f240e887594b5d2fc88894b753c1d2a3",
+          "modified": "2025-10-09T16:26:48.137000",
+          "name": "repository-pagination-migration-guide.md",
+          "path": "core-architecture/repository-pagination-migration-guide.md",
+          "size": 12540
         },
         {
           "hash": "0921d1d76da09658371cf2f062cc21f3",
@@ -2750,7 +2757,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-09T15:26:38.954237",
+  "generated_at": "2025-10-09T16:26:48.204224",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2917,6 +2924,7 @@
         "prompt-analyze.md",
         "real-time-context-injection-system.md",
         "real-time-injection-system.md",
+        "repository-pagination-migration-guide.md",
         "session-type-detection.md",
         "sub-agent-instructions.md",
         "system-architecture-overview.md",
@@ -3235,5 +3243,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 366
+  "total_files": 367
 }

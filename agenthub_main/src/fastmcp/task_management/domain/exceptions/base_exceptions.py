@@ -165,7 +165,7 @@ class OperationNotPermittedException(TaskManagementException):
 
 class DatabaseException(TaskManagementException):
     """Base exception for database-related errors."""
-    
+
     def __init__(
         self,
         message: str,
@@ -179,10 +179,13 @@ class DatabaseException(TaskManagementException):
             context["operation"] = operation
         if table:
             context["table"] = table
-        
-        # Remove error_code from kwargs if present to avoid conflict
+
+        # Remove parameters that will be set explicitly to avoid conflicts
         kwargs.pop('error_code', None)
-            
+        kwargs.pop('severity', None)
+        kwargs.pop('recoverable', None)
+        kwargs.pop('context', None)
+
         super().__init__(
             message=message,
             error_code="DATABASE_ERROR",
@@ -207,9 +210,9 @@ class DatabaseConnectionException(DatabaseException):
         )
 
 
-class DatabaseIntegrityException(DatabaseException):
+class DatabaseIntegrityException(TaskManagementException):
     """Raised when database integrity constraints are violated."""
-    
+
     def __init__(
         self,
         message: str,
@@ -220,7 +223,13 @@ class DatabaseIntegrityException(DatabaseException):
         context = kwargs.get("context", {})
         if constraint:
             context["constraint"] = constraint
-            
+
+        # Remove conflicting kwargs that will be set explicitly
+        kwargs.pop('error_code', None)
+        kwargs.pop('severity', None)
+        kwargs.pop('recoverable', None)
+        kwargs.pop('context', None)
+
         super().__init__(
             message=message,
             error_code="DATABASE_INTEGRITY_ERROR",

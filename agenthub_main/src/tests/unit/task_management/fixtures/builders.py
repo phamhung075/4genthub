@@ -11,7 +11,7 @@ from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.entities.work_session import WorkSession
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 
@@ -287,7 +287,7 @@ class SubtaskBuilder:
     
     def reset(self):
         """Reset builder to default state."""
-        self._id = SubtaskId.generate_new()
+        self._id = TaskId.generate_new()
         self._parent_task_id = TaskId.generate_new().value
         self._title = "Test Subtask"
         self._description = "Test subtask description"

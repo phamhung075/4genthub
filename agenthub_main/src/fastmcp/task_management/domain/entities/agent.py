@@ -1,11 +1,12 @@
 """Agent Domain Entity"""
 
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
 from .base.base_timestamp_entity import BaseTimestampEntity
+from ..value_objects.agent_id import AgentId
 
 
 class AgentStatus(Enum):
@@ -32,12 +33,19 @@ class AgentCapability(Enum):
 
 @dataclass
 class Agent(BaseTimestampEntity):
-    """Agent entity representing an AI agent that can work on tasks"""
+    """Agent entity representing an AI agent that can work on tasks
+
+    Rich Domain Model: Contains business logic for agent management, capability matching, and workload analysis.
+    Controlled by FEATURE_RICH_DOMAIN_MODEL flag for zero-downtime migration (Strangler Fig Pattern).
+    """
 
     # Required fields must have defaults since parent has defaults
-    id: str = ""
+    id: AgentId | None = None
     name: str = ""
     description: str = ""
+
+    # Feature flag for Rich Domain Model (Strangler Fig Pattern)
+    FEATURE_RICH_DOMAIN_MODEL: bool = False
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -82,7 +90,7 @@ class Agent(BaseTimestampEntity):
 
     def _validate_entity(self) -> None:
         """Ensure agent core fields are present."""
-        if not self.id or not str(self.id).strip():
+        if not self.id:
             raise ValueError("Agent id cannot be empty")
         if not self.name or not self.name.strip():
             raise ValueError("Agent name cannot be empty")
@@ -223,7 +231,7 @@ class Agent(BaseTimestampEntity):
     def get_agent_profile(self) -> Dict:
         """Get comprehensive agent profile"""
         return {
-            "id": self.id,
+            "id": str(self.id) if self.id else "",
             "name": self.name,
             "description": self.description,
             "status": self.status.value,
@@ -282,6 +290,192 @@ class Agent(BaseTimestampEntity):
         
         return min(100.0, score)
     
+    # Rich Domain Model Business Methods (Strangler Fig Pattern)
+    # These methods are controlled by FEATURE_RICH_DOMAIN_MODEL flag
+
+    def validate_capability_match(self, task_requirements: List[str]) -> bool:
+        """
+        Validate that agent's capabilities match task requirements.
+
+        Args:
+            task_requirements: List of required capability strings
+
+        Returns:
+            bool: True if agent has all required capabilities, False otherwise
+
+        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        - All required capabilities must be present in agent's capabilities
+        - Case-insensitive matching
+        - Handles both string and enum representations
+        - Empty requirements list returns True (no requirements)
+
+        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
+        - Uses existing can_handle_task() method with dict format
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: use existing method
+            task_dict = {"capabilities": task_requirements}
+            return self.can_handle_task(task_dict)
+
+        # Rich Domain Model: enhanced capability matching
+
+        # Empty requirements = no restrictions
+        if not task_requirements:
+            return True
+
+        # Convert agent capabilities to lowercase strings for comparison
+        agent_caps_strings = {cap.value.lower() for cap in self.capabilities}
+
+        # Check each requirement
+        for req in task_requirements:
+            req_lower = req.lower().replace(" ", "_")
+
+            # Try to match as capability enum value
+            matched = False
+            for cap in self.capabilities:
+                if cap.value.lower() == req_lower:
+                    matched = True
+                    break
+
+            # Also check against specializations
+            if not matched:
+                for spec in self.specializations:
+                    if spec.lower() == req_lower:
+                        matched = True
+                        break
+
+            # If no match found, requirement not met
+            if not matched:
+                return False
+
+        return True
+
+    def calculate_workload_score(self) -> float:
+        """
+        Calculate current workload as a score (0.0 to 1.0).
+
+        Returns:
+            float: Workload score where:
+                - 0.0 = completely idle (no tasks)
+                - 0.5 = moderate workload (half capacity)
+                - 1.0 = fully loaded (at max capacity)
+                - >1.0 = overloaded (exceeds capacity)
+
+        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        - Score = current_workload / max_concurrent_tasks
+        - Accounts for agent status (offline = 1.0, paused = current score)
+        - Handles zero max_concurrent_tasks gracefully
+        - Returns exact ratio for precise load balancing
+
+        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
+        - Uses existing get_workload_percentage() / 100
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: use existing percentage method
+            return self.get_workload_percentage() / 100.0
+
+        # Rich Domain Model: comprehensive workload calculation
+
+        # Special cases based on status
+        if self.status == AgentStatus.OFFLINE:
+            return 1.0  # Offline = fully unavailable
+
+        if self.status == AgentStatus.PAUSED:
+            # Paused agents still have workload, just not accepting new work
+            if self.max_concurrent_tasks == 0:
+                return 1.0
+            return self.current_workload / self.max_concurrent_tasks
+
+        # Normal calculation
+        if self.max_concurrent_tasks == 0:
+            # Zero capacity = always fully loaded
+            return 1.0
+
+        workload_score = self.current_workload / self.max_concurrent_tasks
+
+        return workload_score
+
+    def check_availability(self) -> Dict[str, Any]:
+        """
+        Check if agent is available for new work with detailed status.
+
+        Returns:
+            Dict containing:
+                - available: bool - Can accept new work
+                - status: str - Current agent status
+                - workload_score: float - Current workload (0.0-1.0+)
+                - current_tasks: int - Number of active tasks
+                - capacity: int - Maximum concurrent tasks
+                - blocking_reasons: List[str] - Why agent is unavailable (if applicable)
+                - estimated_capacity: int - How many more tasks can be accepted
+
+        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        - Available if: status=AVAILABLE AND workload < max capacity
+        - Provides detailed blocking reasons when unavailable
+        - Calculates remaining capacity
+        - Includes workload score for prioritization
+
+        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
+        - Uses existing is_available() method with basic info
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: basic availability check
+            return {
+                "available": self.is_available(),
+                "status": self.status.value,
+                "current_workload": self.current_workload,
+                "max_concurrent_tasks": self.max_concurrent_tasks
+            }
+
+        # Rich Domain Model: comprehensive availability analysis
+
+        blocking_reasons = []
+        is_available = True
+
+        # Check status
+        if self.status == AgentStatus.OFFLINE:
+            is_available = False
+            blocking_reasons.append("Agent is offline")
+        elif self.status == AgentStatus.PAUSED:
+            is_available = False
+            blocking_reasons.append("Agent is paused")
+        elif self.status == AgentStatus.BUSY:
+            # Busy doesn't necessarily mean unavailable if under capacity
+            if self.current_workload >= self.max_concurrent_tasks:
+                is_available = False
+                blocking_reasons.append("Agent is at maximum capacity")
+
+        # Check workload even if status is AVAILABLE
+        if self.status == AgentStatus.AVAILABLE:
+            if self.current_workload >= self.max_concurrent_tasks:
+                is_available = False
+                blocking_reasons.append("Agent workload at maximum capacity")
+
+        # Calculate workload score
+        workload_score = self.calculate_workload_score()
+
+        # Calculate remaining capacity
+        if is_available:
+            estimated_capacity = max(0, self.max_concurrent_tasks - self.current_workload)
+        else:
+            estimated_capacity = 0
+
+        return {
+            "available": is_available,
+            "status": self.status.value,
+            "workload_score": round(workload_score, 3),
+            "current_tasks": self.current_workload,
+            "capacity": self.max_concurrent_tasks,
+            "blocking_reasons": blocking_reasons,
+            "estimated_capacity": estimated_capacity,
+            "active_task_ids": list(self.active_tasks),
+            "performance_metrics": {
+                "completed_tasks": self.completed_tasks,
+                "success_rate": round(self.success_rate, 2),
+                "average_duration_hours": self.average_task_duration
+            }
+        }
+
     @classmethod
     def create_agent(
         cls,
@@ -293,8 +487,11 @@ class Agent(BaseTimestampEntity):
         preferred_languages: List[str] = None
     ) -> 'Agent':
         """Factory method to create a new agent"""
+        # Convert string id to AgentId value object
+        agent_id_vo = AgentId(agent_id) if isinstance(agent_id, str) else agent_id
+
         agent = cls(
-            id=agent_id,
+            id=agent_id_vo,
             name=name,
             description=description,
             capabilities=set(capabilities or []),

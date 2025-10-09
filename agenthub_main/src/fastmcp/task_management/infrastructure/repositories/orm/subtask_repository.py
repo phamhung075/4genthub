@@ -21,7 +21,6 @@ from ..base_user_scoped_repository import BaseUserScopedRepository
 from ....domain.entities.subtask import Subtask as SubtaskEntity
 from ....domain.repositories.subtask_repository import SubtaskRepository
 from ....domain.value_objects.task_id import TaskId
-from ....domain.value_objects.subtask_id import SubtaskId
 from ....domain.value_objects.task_status import TaskStatus
 from ....domain.value_objects.priority import Priority
 from ....domain.exceptions.base_exceptions import (
@@ -500,17 +499,17 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                 table="subtasks"
             )
     
-    def get_next_id(self, parent_task_id: TaskId) -> SubtaskId:
+    def get_next_id(self, parent_task_id: TaskId) -> TaskId:
         """
         Get next available subtask ID for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
-            New SubtaskId
+            New TaskId
         """
-        return SubtaskId.generate_new()
+        return TaskId.generate_new()
     
     def get_subtask_progress(self, parent_task_id: TaskId) -> Dict[str, Any]:
         """
@@ -829,10 +828,10 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
         """Convert SQLAlchemy model to domain entity"""
         # Convert assignees from JSON to list
         assignees = model.assignees if model.assignees else []
-        
+
         # Create subtask using factory method
         subtask = SubtaskEntity(
-            id=SubtaskId(model.id),
+            id=TaskId(model.id),
             title=model.title,
             description=model.description or "",
             parent_task_id=TaskId(model.task_id),

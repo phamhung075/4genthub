@@ -22,7 +22,6 @@ from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects import TaskId, TaskStatus, Priority
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
     ResourceNotFoundException,
     ValidationException,
@@ -516,10 +515,9 @@ class MockSubtaskRepository(SubtaskRepository):
         return len([s for s in self._subtasks.values() 
                    if str(s.task_id) == task_id_str and s.status == 'completed'])
     
-    def get_next_id(self, parent_task_id: TaskId) -> SubtaskId:
+    def get_next_id(self, parent_task_id: TaskId) -> TaskId:
         """Get next available subtask ID for a parent task"""
-        from ...domain.value_objects.subtask_id import SubtaskId
-        subtask_id = SubtaskId(f"subtask-{self._next_id}")
+        subtask_id = TaskId(f"subtask-{self._next_id}")
         self._next_id += 1
         return subtask_id
     
