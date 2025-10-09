@@ -465,52 +465,32 @@
       ],
       "path": "authentication"
     },
-    "claude-code": {
-      "count": 2,
-      "files": [
-        {
-          "hash": "6835ebaf579f2875b81f964e1e360ca1",
-          "modified": "2025-10-09T11:52:48.796544",
-          "name": "hook-logging-architecture.md",
-          "path": "claude-code/hook-logging-architecture.md",
-          "size": 16652
-        },
-        {
-          "hash": "a2a0c7724a009427ca4ab210307296cc",
-          "modified": "2025-10-09T11:53:11.096137",
-          "name": "claude-hook-logging-structure.md",
-          "path": "claude-code/claude-hook-logging-structure.md",
-          "size": 6532
-        }
-      ],
-      "path": "claude-code"
-    },
-    "claude-hooks-docker": {
+    "claude-hooks-docker-(todo)": {
       "count": 3,
       "files": [
         {
           "hash": "8a4bab22645b9c8fc0c51d524db02844",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "architecture-overview.md",
-          "path": "claude-hooks-docker/architecture-overview.md",
+          "path": "claude-hooks-docker-(todo)/architecture-overview.md",
           "size": 19519
         },
         {
           "hash": "fc25148c6eb7250376e29afb010c28b7",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "docker-configuration.md",
-          "path": "claude-hooks-docker/docker-configuration.md",
+          "path": "claude-hooks-docker-(todo)/docker-configuration.md",
           "size": 26112
         },
         {
           "hash": "46e6c2f41f147872b6a29904dd423a60",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "technical-implementation.md",
-          "path": "claude-hooks-docker/technical-implementation.md",
+          "path": "claude-hooks-docker-(todo)/technical-implementation.md",
           "size": 40004
         }
       ],
-      "path": "claude-hooks-docker"
+      "path": "claude-hooks-docker-(todo)"
     },
     "code-quality": {
       "count": 4,
@@ -964,7 +944,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 59,
+      "count": 60,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -1364,6 +1344,13 @@
           "name": "frontend-ux-enhancements.md",
           "path": "development-guides/frontend-ux-enhancements.md",
           "size": 7919
+        },
+        {
+          "hash": "85b1aba54d6e67740233df93f7936c11",
+          "modified": "2025-10-09T15:05:28.364715",
+          "name": "ddd-refactoring-implementation-plan.md",
+          "path": "development-guides/ddd-refactoring-implementation-plan.md",
+          "size": 115948
         },
         {
           "hash": "7c59956bb7a58d62c8ab9eaf169c0ae7",
@@ -1868,7 +1855,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 14,
+      "count": 15,
       "files": [
         {
           "hash": "45809279307daf9847fb05aa5ae3251c",
@@ -1960,6 +1947,13 @@
           "name": "cascade-calculator-ddd-fix-completion-report.md",
           "path": "reports-status/cascade-calculator-ddd-fix-completion-report.md",
           "size": 11070
+        },
+        {
+          "hash": "3c03ee54adb43974e50d8a284893eb38",
+          "modified": "2025-10-09T14:39:01.868838",
+          "name": "ddd-compliance-review-2025-10-09.md",
+          "path": "reports-status/ddd-compliance-review-2025-10-09.md",
+          "size": 23592
         },
         {
           "hash": "a17399e5cc354c23288a1a763c07c01d",
@@ -2749,7 +2743,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-09T11:53:11.178761",
+  "generated_at": "2025-10-09T15:05:28.437424",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2847,13 +2841,7 @@
         "token-flow.md"
       ]
     },
-    "claude-code": {
-      "files": [
-        "claude-hook-logging-structure.md",
-        "hook-logging-architecture.md"
-      ]
-    },
-    "claude-hooks-docker": {
+    "claude-hooks-docker-(todo)": {
       "files": [
         "architecture-overview.md",
         "docker-configuration.md",
@@ -2970,6 +2958,7 @@
         "clean-timestamp-team-training-sessions.md",
         "complete-agent-workflow-phases.md",
         "controller-overlap-analysis.md",
+        "ddd-refactoring-implementation-plan.md",
         "docker-system-guide.md",
         "domain-driven-design.md",
         "dto-refactoring-guide.md",
@@ -3100,6 +3089,7 @@
       "files": [
         "ai-task-planning-system-complete-2025-09-12.md",
         "cascade-calculator-ddd-fix-completion-report.md",
+        "ddd-compliance-review-2025-10-09.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
         "git-branch-repository-ddd-fix-completion.md",
@@ -3236,6 +3226,6 @@
       ]
     }
   },
-  "total_directories": 33,
+  "total_directories": 32,
   "total_files": 365
 }
