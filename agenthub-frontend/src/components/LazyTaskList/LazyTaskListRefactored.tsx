@@ -45,9 +45,6 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   // Track WebSocket-deleted tasks to prevent duplicate delete attempts
   const wsDeletedTasksRef = useRef<Set<string>>(new Set());
 
-  // State to trigger re-render when tasks are marked for deletion
-  const [deletingTasks, setDeletingTasks] = useState<Set<string>>(new Set());
-
   // WebSocket update handler
   const updateTaskFromWebSocket = useCallback((notification: any) => {
     logger.debug('🎯 [LazyTaskList] WebSocket notification received', {
@@ -133,20 +130,13 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       // Mark for deletion so TaskRow can detect and animate
       taskDeletionTracker.markForDeletion(entityId);
 
-      // Add to deletingTasks state to trigger re-render and filter out task
-      setDeletingTasks(prev => new Set(prev).add(entityId));
-
-      // Remove from state after animation completes
+      // Remove from state after animation completes (800ms animation + 200ms buffer)
       setTimeout(() => {
+        logger.debug('🗑️ [LazyTaskList] Removing task after animation', { entityId }, 'LazyTaskListRefactored.tsx');
         removeTask(entityId);
         wsDeletedTasksRef.current.delete(entityId);
         taskDeletionTracker.clearDeletion(entityId);
-        setDeletingTasks(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(entityId);
-          return newSet;
-        });
-      }, 1000); // Cleanup after animation duration (800ms)
+      }, 1000);
 
       return true;
     }
@@ -323,19 +313,16 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Display tasks - filter out tasks marked for deletion
+  // Display tasks - DON'T filter out deleting tasks (let animation play first)
   const displayTasks = useMemo(() => {
     if (!taskSummaries || !Array.isArray(taskSummaries)) {
       return [];
     }
 
-    // Filter out tasks that are being deleted (in deletingTasks state)
-    const filtered = taskSummaries.filter(task =>
-      !deletingTasks.has(task.id)
-    );
-
-    return filtered.slice(0, TASKS_PER_PAGE);
-  }, [taskSummaries, deletingTasks]);
+    // Keep all tasks including those being deleted
+    // The delete animation will play, then the task will be removed after timeout
+    return taskSummaries.slice(0, TASKS_PER_PAGE);
+  }, [taskSummaries]);
 
   return (
     <>
