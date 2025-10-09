@@ -3,11 +3,13 @@
  * This utility helps debug WebSocket connection issues
  */
 
+import logger from './logger';
+
 export function testWebSocketConnection(userId: string, token: string, backendUrl?: string) {
-  console.log('=== WebSocket Connection Test ===');
-  console.log('User ID:', userId);
-  console.log('Token (first 20 chars):', token?.substring(0, 20) + '...');
-  console.log('Backend URL:', backendUrl || 'Using default');
+  logger.info('=== WebSocket Connection Test ===', { component: 'testWebSocket' });
+  logger.info('User ID', { userId, component: 'testWebSocket' });
+  logger.info('Token (first 20 chars)', { token: token?.substring(0, 20) + '...', component: 'testWebSocket' });
+  logger.info('Backend URL', { backendUrl: backendUrl || 'Using default', component: 'testWebSocket' });
 
   // Determine WebSocket URL
   let wsUrl: string;
@@ -21,15 +23,18 @@ export function testWebSocketConnection(userId: string, token: string, backendUr
     wsUrl = `ws://${host}/ws/realtime?token=${token}`;
   }
 
-  console.log('Attempting connection to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
+  logger.info('Attempting connection', { url: wsUrl.replace(/token=[^&]+/, 'token=***'), component: 'testWebSocket' });
 
   const ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    console.log('✅ WebSocket Connected Successfully!');
-    console.log('Ready State:', ws.readyState);
-    console.log('Protocol:', ws.protocol);
-    console.log('URL:', ws.url?.replace(/token=[^&]+/, 'token=***'));
+    logger.info('WebSocket Connected Successfully!', { component: 'testWebSocket' });
+    logger.info('Connection details', {
+      readyState: ws.readyState,
+      protocol: ws.protocol,
+      url: ws.url?.replace(/token=[^&]+/, 'token=***'),
+      component: 'testWebSocket'
+    });
 
     // Send a test message
     const testMessage = {
@@ -50,43 +55,53 @@ export function testWebSocketConnection(userId: string, token: string, backendUr
       }
     };
 
-    console.log('Sending test message:', testMessage);
+    logger.info('Sending test message', { testMessage, component: 'testWebSocket' });
     ws.send(JSON.stringify(testMessage));
   };
 
   ws.onmessage = (event) => {
-    console.log('📨 Message received:', event.data);
+    logger.info('Message received', { data: event.data, component: 'testWebSocket' });
     try {
       const message = JSON.parse(event.data);
-      console.log('Parsed message:', message);
+      logger.info('Parsed message', { message, component: 'testWebSocket' });
     } catch (e) {
-      console.log('Raw message (not JSON):', event.data);
+      logger.info('Raw message (not JSON)', { data: event.data, component: 'testWebSocket' });
     }
   };
 
   ws.onerror = (error) => {
-    console.error('❌ WebSocket Error:', error);
-    console.error('Ready State:', ws.readyState);
-    console.error('URL:', ws.url?.replace(/token=[^&]+/, 'token=***'));
+    logger.error('WebSocket Error', {
+      error,
+      readyState: ws.readyState,
+      url: ws.url?.replace(/token=[^&]+/, 'token=***'),
+      component: 'testWebSocket'
+    });
   };
 
   ws.onclose = (event) => {
-    console.log('🔌 WebSocket Closed');
-    console.log('Code:', event.code);
-    console.log('Reason:', event.reason || 'No reason provided');
-    console.log('Was Clean:', event.wasClean);
+    logger.info('WebSocket Closed', {
+      code: event.code,
+      reason: event.reason || 'No reason provided',
+      wasClean: event.wasClean,
+      component: 'testWebSocket'
+    });
 
     // Interpret close codes
+    let closeReason = '';
     if (event.code === 1000) {
-      console.log('Normal closure');
+      closeReason = 'Normal closure';
     } else if (event.code === 1001) {
-      console.log('Going away (page navigation)');
+      closeReason = 'Going away (page navigation)';
     } else if (event.code === 1006) {
-      console.log('Abnormal closure - Connection lost');
+      closeReason = 'Abnormal closure - Connection lost';
     } else if (event.code === 1008) {
-      console.log('Policy violation - likely authentication issue');
+      closeReason = 'Policy violation - likely authentication issue';
     } else if (event.code >= 4000 && event.code <= 4999) {
-      console.log('Application error - check authentication and permissions');
+      closeReason = 'Application error - check authentication and permissions';
+    }
+
+    if (closeReason) {
+      logger.info('Close code interpretation', { closeReason, code: event.code, component: 'testWebSocket' });
     }
   };
 
@@ -96,5 +111,5 @@ export function testWebSocketConnection(userId: string, token: string, backendUr
 // Export as window function for console testing
 if (typeof window !== 'undefined') {
   (window as any).testWebSocket = testWebSocketConnection;
-  console.log('WebSocket test utility loaded. Use window.testWebSocket(userId, token) to test connection.');
+  logger.info('WebSocket test utility loaded. Use window.testWebSocket(userId, token) to test connection.', { component: 'testWebSocket' });
 }

@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => {
   const hasEnvDev = fs.existsSync(envDevPath)
   const hasEnv = fs.existsSync(envPath)
 
+  // INTENTIONAL: Using console.log in vite.config.ts (build-time configuration)
+  // This file runs in Node.js during build, not in browser where logger is available
+  // Logger cannot be imported here as it depends on browser APIs and Vite environment
+
   // Log which file will be used - Priority: .env.dev > .env
   if (hasEnvDev) {
     if (hasEnv) {
