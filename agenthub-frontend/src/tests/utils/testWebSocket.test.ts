@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { testWebSocketConnection } from '../../utils/testWebSocket';
 
 // Mock WebSocket
@@ -26,11 +27,17 @@ class MockWebSocket {
 // Global WebSocket mock
 (global as any).WebSocket = MockWebSocket;
 
-// Mock console methods
-const consoleSpy = {
-  log: jest.spyOn(console, 'log').mockImplementation(),
-  error: jest.spyOn(console, 'error').mockImplementation(),
-};
+// Mock logger
+vi.mock('../../utils/logger', () => ({
+  default: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+}));
+
+import logger from '../../utils/logger';
 
 // Mock environment
 const mockEnv = {
@@ -48,20 +55,20 @@ describe('testWebSocketConnection', () => {
   const token = 'test-token-abcdefghijklmnopqrstuvwxyz';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Reset environment
     mockEnv.VITE_BACKEND_URL = '';
     
     // Capture WebSocket instance when created
-    jest.spyOn(global as any, 'WebSocket').mockImplementation((url: string) => {
+    vi.spyOn(global as any, 'WebSocket').mockImplementation((url: string) => {
       mockWs = new MockWebSocket(url);
       return mockWs;
     });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('URL construction', () => {
@@ -69,14 +76,14 @@ describe('testWebSocketConnection', () => {
       const ws = testWebSocketConnection(userId, token);
       
       expect(mockWs.url).toBe(`ws://localhost:8000/ws/realtime?token=${token}`);
-      expect(consoleSpy.log).toHaveBeenCalledWith('Backend URL:', 'Using default');
+      expect(logger.info).toHaveBeenCalledWith('Backend URL', { backendUrl: 'Using default', component: 'testWebSocket' });
     });
 
     it('should use provided backend URL', () => {
       const ws = testWebSocketConnection(userId, token, 'http://custom.backend.com:3000');
       
       expect(mockWs.url).toBe(`ws://custom.backend.com:3000/ws/realtime?token=${token}`);
-      expect(consoleSpy.log).toHaveBeenCalledWith('Backend URL:', 'http://custom.backend.com:3000');
+      expect(logger.info).toHaveBeenCalledWith('Backend URL', { backendUrl: 'http://custom.backend.com:3000', component: 'testWebSocket' });
     });
 
     it('should use WSS for HTTPS backend URLs', () => {
@@ -106,19 +113,19 @@ describe('testWebSocketConnection', () => {
     it('should log connection parameters', () => {
       testWebSocketConnection(userId, token);
       
-      expect(consoleSpy.log).toHaveBeenCalledWith('=== WebSocket Connection Test ===');
-      expect(consoleSpy.log).toHaveBeenCalledWith('User ID:', userId);
-      expect(consoleSpy.log).toHaveBeenCalledWith('Token (first 20 chars):', 'test-token-abcdefghi...');
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        'Attempting connection to:', 
-        'ws://localhost:8000/ws/realtime?token=***'
+      expect(logger.info).toHaveBeenCalledWith('=== WebSocket Connection Test ===', { component: 'testWebSocket' });
+      expect(logger.info).toHaveBeenCalledWith('User ID', { userId, component: 'testWebSocket' });
+      expect(logger.info).toHaveBeenCalledWith('Token (first 20 chars)', { token: 'test-token-abcdefghi...', component: 'testWebSocket' });
+      expect(logger.info).toHaveBeenCalledWith(
+        'Attempting connection', 
+        { url: 'ws://localhost:8000/ws/realtime?token=***', component: 'testWebSocket' }
       );
     });
 
     it('should handle undefined token', () => {
       testWebSocketConnection(userId, undefined as any);
       
-      expect(consoleSpy.log).toHaveBeenCalledWith('Token (first 20 chars):', '...');
+      expect(logger.info).toHaveBeenCalledWith('Token (first 20 chars)', { token: '...', component: 'testWebSocket' });
     });
   });
 
@@ -129,20 +136,23 @@ describe('testWebSocketConnection', () => {
       // Mock WebSocket state
       mockWs.readyState = WebSocket.OPEN;
       mockWs.protocol = 'ws';
-      mockWs.send = jest.fn();
+      mockWs.send = vi.fn();
       
       // Trigger open event
       const openEvent = new Event('open');
       mockWs.onopen?.(openEvent);
       
       // Check connection logs
-      expect(consoleSpy.log).toHaveBeenCalledWith('✅ WebSocket Connected Successfully!');
-      expect(consoleSpy.log).toHaveBeenCalledWith('Ready State:', WebSocket.OPEN);
-      expect(consoleSpy.log).toHaveBeenCalledWith('Protocol:', 'ws');
-      expect(consoleSpy.log).toHaveBeenCalledWith('URL:', expect.stringContaining('token=***'));
+      expect(logger.info).toHaveBeenCalledWith('WebSocket Connected Successfully!', { component: 'testWebSocket' });
+      expect(logger.info).toHaveBeenCalledWith('Connection details', {
+        readyState: WebSocket.OPEN,
+        protocol: 'ws',
+        url: expect.stringContaining('token=***'),
+        component: 'testWebSocket'
+      });
       
       // Check test message sent
-      const sentData = (mockWs.send as jest.Mock).mock.calls[0][0];
+      const sentData = (mockWs.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const sentMessage = JSON.parse(sentData);
       
       expect(sentMessage).toMatchObject({
@@ -182,8 +192,8 @@ describe('testWebSocketConnection', () => {
       
       mockWs.onmessage?.(messageEvent);
       
-      expect(consoleSpy.log).toHaveBeenCalledWith('📨 Message received:', JSON.stringify(testMessage));
-      expect(consoleSpy.log).toHaveBeenCalledWith('Parsed message:', testMessage);
+      expect(logger.info).toHaveBeenCalledWith('Message received', { data: JSON.stringify(testMessage), component: 'testWebSocket' });
+      expect(logger.info).toHaveBeenCalledWith('Parsed message', { message: testMessage, component: 'testWebSocket' });
     });
 
     it('should handle non-JSON messages', () => {
@@ -195,8 +205,8 @@ describe('testWebSocketConnection', () => {
       
       mockWs.onmessage?.(messageEvent);
       
-      expect(consoleSpy.log).toHaveBeenCalledWith('📨 Message received:', 'plain text message');
-      expect(consoleSpy.log).toHaveBeenCalledWith('Raw message (not JSON):', 'plain text message');
+      expect(logger.info).toHaveBeenCalledWith('Message received', { data: 'plain text message', component: 'testWebSocket' });
+      expect(logger.info).toHaveBeenCalledWith('Raw message (not JSON)', { data: 'plain text message', component: 'testWebSocket' });
     });
   });
 
@@ -209,9 +219,12 @@ describe('testWebSocketConnection', () => {
       const errorEvent = new Event('error');
       mockWs.onerror?.(errorEvent);
       
-      expect(consoleSpy.error).toHaveBeenCalledWith('❌ WebSocket Error:', errorEvent);
-      expect(consoleSpy.error).toHaveBeenCalledWith('Ready State:', WebSocket.CLOSED);
-      expect(consoleSpy.error).toHaveBeenCalledWith('URL:', expect.stringContaining('token=***'));
+      expect(logger.error).toHaveBeenCalledWith('WebSocket Error', {
+        error: errorEvent,
+        readyState: WebSocket.CLOSED,
+        url: expect.stringContaining('token=***'),
+        component: 'testWebSocket'
+      });
     });
   });
 
@@ -227,11 +240,13 @@ describe('testWebSocketConnection', () => {
       
       mockWs.onclose?.(closeEvent);
       
-      expect(consoleSpy.log).toHaveBeenCalledWith('🔌 WebSocket Closed');
-      expect(consoleSpy.log).toHaveBeenCalledWith('Code:', 1000);
-      expect(consoleSpy.log).toHaveBeenCalledWith('Reason:', 'Normal closure');
-      expect(consoleSpy.log).toHaveBeenCalledWith('Was Clean:', true);
-      expect(consoleSpy.log).toHaveBeenCalledWith('Normal closure');
+      expect(logger.info).toHaveBeenCalledWith('WebSocket Closed', {
+        code: 1000,
+        reason: 'Normal closure',
+        wasClean: true,
+        component: 'testWebSocket'
+      });
+      expect(logger.info).toHaveBeenCalledWith('Close code interpretation', { closeReason: 'Normal closure', code: 1000, component: 'testWebSocket' });
     });
 
     it('should interpret close codes correctly', () => {
@@ -253,7 +268,7 @@ describe('testWebSocketConnection', () => {
         
         mockWs.onclose?.(closeEvent);
         
-        expect(consoleSpy.log).toHaveBeenCalledWith(message);
+        expect(logger.info).toHaveBeenCalledWith('Close code interpretation', { closeReason: message, code, component: 'testWebSocket' });
       });
     });
 
@@ -267,16 +282,19 @@ describe('testWebSocketConnection', () => {
       
       mockWs.onclose?.(closeEvent);
       
-      expect(consoleSpy.log).toHaveBeenCalledWith('Reason:', 'No reason provided');
+      expect(logger.info).toHaveBeenCalledWith('WebSocket Closed', {
+        code: 1006,
+        reason: 'No reason provided',
+        wasClean: false,
+        component: 'testWebSocket'
+      });
     });
   });
 
   describe('window integration', () => {
     it('should attach test function to window object', () => {
       expect((window as any).testWebSocket).toBe(testWebSocketConnection);
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        'WebSocket test utility loaded. Use window.testWebSocket(userId, token) to test connection.'
-      );
+      expect(logger.info).toHaveBeenCalledWith('WebSocket test utility loaded. Use window.testWebSocket(userId, token) to test connection.', { component: 'testWebSocket' });
     });
 
     it('should not attach to window in non-browser environment', () => {
@@ -287,10 +305,10 @@ describe('testWebSocketConnection', () => {
       delete (global as any).window;
       
       // Clear previous module cache and re-import
-      jest.resetModules();
+      vi.resetModules();
       
       // Re-import should not throw
-      expect(() => require('../../utils/testWebSocket')).not.toThrow();
+      expect(async () => await import('../../utils/testWebSocket')).not.toThrow();
       
       // Restore window
       global.window = originalWindow;

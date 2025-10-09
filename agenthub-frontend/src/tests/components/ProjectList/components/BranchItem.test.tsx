@@ -1,29 +1,39 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BranchItem } from '../../../../components/ProjectList/components/BranchItem';
 import { animationFactory } from '../../../../services/AnimationFactory';
 import type { BranchSummary } from '../../../../types';
 
 // Mock the animation factory
-jest.mock('../../../../services/AnimationFactory', () => ({
+vi.mock('../../../../services/AnimationFactory', () => ({
   animationFactory: {
-    registerElement: jest.fn(),
-    unregisterElement: jest.fn(),
+    registerElement: vi.fn(),
+    unregisterElement: vi.fn(),
   },
   AnimationType: {
     TASK_COMPLETE: 'TASK_COMPLETE',
   },
 }));
 
+// Mock logger
+vi.mock('../../../../utils/logger', () => ({
+  default: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+}));
+
 // Mock the UI components
-jest.mock('../../../../components/ui/shimmer-badge', () => ({
+vi.mock('../../../../components/ui/shimmer-badge', () => ({
   ShimmerBadge: ({ children, className, ...props }: any) => (
     <span className={className} {...props}>{children}</span>
   ),
 }));
 
-jest.mock('../../../../components/ui/shimmer-button', () => ({
+vi.mock('../../../../components/ui/shimmer-button', () => ({
   ShimmerButton: ({ children, onClick, disabled, className, ...props }: any) => (
     <button onClick={onClick} disabled={disabled} className={className} {...props}>
       {children}
@@ -52,14 +62,14 @@ describe('BranchItem', () => {
     isDeleting: false,
     taskCount: 5,
     isAnimatingCount: null as 'up' | 'down' | null,
-    onSelect: jest.fn(),
-    onShowDetails: jest.fn(),
-    onDelete: jest.fn(),
+    onSelect: vi.fn(),
+    onShowDetails: vi.fn(),
+    onDelete: vi.fn(),
     project: mockProject,
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders branch name correctly', () => {

@@ -11,6 +11,93 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 - **Untested**: 28 tests (test infrastructure utilities)
 - **Status**: Production-ready with sustained 100% pass rate
 
+## [Unreleased] - 2025-10-10
+
+### Added
+
+#### Frontend Test Coverage - Missing Tests Created
+- **environment.test.ts** (`agenthub-frontend/src/tests/config/environment.test.ts`)
+  - Created comprehensive test suite for environment configuration module (350+ lines)
+  - Tests for runtime vs build-time environment variable resolution
+  - Tests for HTTPS upgrade functionality
+  - Tests for environment flags (development, production, staging)
+  - Tests for debug mode configuration
+  - Tests for WebSocket URL auto-derivation
+  - Tests for production validation and warnings
+  - Tests for configuration object export
+  - Achieves 100% coverage for environment configuration
+
+- **WebSocketAnimationService.test.ts** (`agenthub-frontend/src/tests/services/WebSocketAnimationService.test.ts`)
+  - Created test suite for WebSocket animation service (400+ lines)
+  - Tests for WebSocket message handling and animation triggering
+  - Tests for task, subtask, and branch animation handling
+  - Tests for entity ID extraction from various message formats
+  - Tests for animation timing and deferred execution (150ms delay)
+  - Tests for event listener registration and cleanup
+  - Tests for AnimationFactory integration
+  - Edge case handling for array primary data and delete/deleted actions
+
+- **setupTests.test.ts** (`agenthub-frontend/src/tests/setupTests.test.ts`)
+  - Created test suite for Vitest setup file (300+ lines)
+  - Tests for window.matchMedia mock functionality
+  - Tests for IntersectionObserver mock
+  - Tests for ResizeObserver mock
+  - Tests for console.error suppression of React warnings
+  - Tests for jest-dom matcher availability
+  - Tests for cleanup after each test
+  - Integration tests with React components using mocked APIs
+
+- **websocketTypes.test.ts** (`agenthub-frontend/src/tests/types/websocketTypes.test.ts`)
+  - Created test suite for WebSocket type definitions (250+ lines)
+  - Tests for WebSocketConfig structure
+  - Tests for WSMessage v2.0 protocol types
+  - Tests for all message types (update, bulk, sync, heartbeat, error)
+  - Tests for cascade data structures
+  - Tests for metadata fields and sources
+  - Tests for dynamic data properties
+  - Validates TypeScript type constraints
+
+- **extensionErrorFilter.test.ts** (`agenthub-frontend/src/tests/utils/extensionErrorFilter.test.ts`)
+  - Created comprehensive test suite for browser extension error filtering (400+ lines)
+  - Tests for browser extension error detection patterns
+  - Tests for error filtering logic
+  - Tests for global error and rejection handlers
+  - Tests for console.error and console.warn interception
+  - Tests for initialization and cleanup functionality
+  - Tests for localStorage and event listener management
+  - Covers all major browser extension patterns
+
+- **logger.test.ts** (`agenthub-frontend/src/tests/utils/logger.test.ts`)
+  - Created comprehensive test suite for logger system (500+ lines)
+  - Tests for logger initialization with custom config
+  - Tests for all log levels (debug, info, warn, error, critical)
+  - Tests for conditional logging (debugIf, infoIf)
+  - Tests for message formatting with timestamps and file paths
+  - Tests for localStorage output and size management
+  - Tests for remote logging with batching
+  - Tests for log grouping functionality
+  - Tests for performance timing features
+  - Tests for stored logs management and download
+  - Tests for configuration updates
+  - Tests for lifecycle events (page unload, visibility change)
+
+### Updated
+
+#### Frontend Test Updates
+- **BranchItem.test.tsx** (`agenthub-frontend/src/tests/components/ProjectList/components/BranchItem.test.tsx`)
+  - Updated to use Vitest instead of Jest
+  - Migrated all mock functions from `jest.fn()` to `vi.fn()`
+  - Added mock for logger module
+  - Maintained all existing test coverage
+  - File was 1 day older than source, updated to match current implementation
+
+- **testWebSocket.test.ts** (`agenthub-frontend/src/tests/utils/testWebSocket.test.ts`)
+  - Updated to match new logger implementation (was 11 days stale)
+  - Migrated from console spy mocks to logger module mocks
+  - Updated all expectations to match logger.info/error calls with correct parameters
+  - Fixed all test cases to match the actual implementation's logging format
+  - Maintained complete test coverage while adapting to new logging system
+
 ## [Unreleased] - 2025-10-09
 
 ### Fixed
