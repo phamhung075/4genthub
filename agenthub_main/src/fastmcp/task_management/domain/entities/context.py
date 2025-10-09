@@ -281,6 +281,9 @@ class BranchContext:
 class TaskContextUnified:
     """Task context entity for unified context system.
     Named TaskContextUnified to avoid conflict with existing TaskContext.
+
+    Rich Domain Model: Contains business logic for context validation, merging, and management.
+    Controlled by FEATURE_RICH_DOMAIN_MODEL flag for zero-downtime migration.
     """
     id: str  # Task UUID
     branch_id: str
@@ -294,7 +297,235 @@ class TaskContextUnified:
     insights: List[Dict[str, Any]] = field(default_factory=list)
     next_steps: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
+    # Feature flag for Rich Domain Model (Strangler Fig Pattern)
+    FEATURE_RICH_DOMAIN_MODEL: bool = False
+
+    def validate_context_data(self) -> tuple[bool, List[str]]:
+        """
+        Validate context data for business rules compliance.
+
+        Returns:
+            tuple[bool, List[str]]: (is_valid, list_of_errors)
+
+        Business Rules:
+        - Progress must be 0-100
+        - Task data must contain at least title
+        - Insights must have required fields (timestamp, category, content)
+        - Blockers must have description
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: no validation
+            return True, []
+
+        errors = []
+
+        # Validate progress
+        if not (0 <= self.progress <= 100):
+            errors.append(f"Progress must be between 0-100, got {self.progress}")
+
+        # Validate task_data has title
+        if not self.task_data.get('title'):
+            errors.append("task_data must contain a title")
+
+        # Validate insights structure
+        for idx, insight in enumerate(self.insights):
+            if not isinstance(insight, dict):
+                errors.append(f"Insight {idx} must be a dictionary")
+                continue
+
+            required_fields = ['timestamp', 'category', 'content']
+            for field in required_fields:
+                if field not in insight:
+                    errors.append(f"Insight {idx} missing required field: {field}")
+
+            # Validate category
+            valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
+            if insight.get('category') and insight['category'] not in valid_categories:
+                errors.append(f"Insight {idx} has invalid category: {insight['category']}")
+
+        # Validate blockers have description
+        if self.blockers:
+            for key, blocker in self.blockers.items():
+                if isinstance(blocker, dict) and not blocker.get('description'):
+                    errors.append(f"Blocker '{key}' must have a description")
+
+        return len(errors) == 0, errors
+
+    def merge_context_updates(self, updates: Dict[str, Any]) -> None:
+        """
+        Merge context updates with business rules.
+
+        Args:
+            updates: Dictionary of updates to merge
+
+        Business Rules:
+        - Progress can only increase (unless explicitly decreasing)
+        - Insights are append-only (no modifications)
+        - Blockers can be added or resolved
+        - metadata updates are merged, not replaced
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: direct update
+            for key, value in updates.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return
+
+        # Business logic for merging
+        for key, value in updates.items():
+            if key == 'progress':
+                # Progress validation: can only increase unless explicitly allowed
+                new_progress = value
+                if new_progress < self.progress and not updates.get('_allow_progress_decrease'):
+                    # Ignore decrease unless explicitly allowed
+                    continue
+                self.progress = max(0, min(100, new_progress))
+
+            elif key == 'insights':
+                # Insights are append-only
+                if isinstance(value, list):
+                    self.insights.extend(value)
+                elif isinstance(value, dict):
+                    self.insights.append(value)
+
+            elif key == 'blockers':
+                # Merge blockers (can add or update)
+                if isinstance(value, dict):
+                    self.blockers.update(value)
+
+            elif key == 'metadata':
+                # Deep merge metadata
+                if isinstance(value, dict):
+                    self.metadata.update(value)
+
+            elif key in ['task_data', 'execution_context', 'discovered_patterns',
+                        'implementation_notes', 'test_results']:
+                # Deep merge for nested dictionaries
+                if isinstance(value, dict) and hasattr(self, key):
+                    current = getattr(self, key)
+                    if isinstance(current, dict):
+                        current.update(value)
+                    else:
+                        setattr(self, key, value)
+                else:
+                    setattr(self, key, value)
+
+            elif key == 'next_steps':
+                # Replace next_steps (not append)
+                self.next_steps = value if isinstance(value, list) else [value]
+
+            elif key.startswith('_'):
+                # Skip internal flags
+                continue
+
+            else:
+                # Default: direct assignment for other fields
+                if hasattr(self, key):
+                    setattr(self, key, value)
+
+    def add_insight(self, category: str, content: str, agent: str = "system",
+                   importance: str = "medium") -> None:
+        """
+        Add categorized insight to the context.
+
+        Args:
+            category: Insight category (insight, challenge, solution, decision, technical, business)
+            content: Insight content
+            agent: Agent that generated the insight
+            importance: Importance level (low, medium, high, critical)
+
+        Raises:
+            ValueError: If category is invalid or content is empty
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: simple append
+            self.insights.append({
+                'category': category,
+                'content': content,
+                'agent': agent
+            })
+            return
+
+        # Validation
+        valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
+        if category not in valid_categories:
+            raise ValueError(f"Invalid category: {category}. Must be one of {valid_categories}")
+
+        if not content or not content.strip():
+            raise ValueError("Insight content cannot be empty")
+
+        valid_importance = ['low', 'medium', 'high', 'critical']
+        if importance not in valid_importance:
+            raise ValueError(f"Invalid importance: {importance}. Must be one of {valid_importance}")
+
+        # Add insight with timestamp
+        insight = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'category': category,
+            'content': content.strip(),
+            'agent': agent,
+            'importance': importance
+        }
+
+        self.insights.append(insight)
+
+    def update_progress(self, new_progress: int, notes: Optional[str] = None,
+                       allow_decrease: bool = False) -> None:
+        """
+        Update progress with validation and tracking.
+
+        Args:
+            new_progress: New progress value (0-100)
+            notes: Optional progress notes
+            allow_decrease: Allow progress to decrease (default: False)
+
+        Raises:
+            ValueError: If progress is invalid or decreasing without permission
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: direct update
+            self.progress = new_progress
+            if notes:
+                self.implementation_notes['progress_notes'] = notes
+            return
+
+        # Validation
+        if not (0 <= new_progress <= 100):
+            raise ValueError(f"Progress must be between 0-100, got {new_progress}")
+
+        # Check for decrease
+        if new_progress < self.progress and not allow_decrease:
+            raise ValueError(
+                f"Progress cannot decrease from {self.progress} to {new_progress}. "
+                f"Set allow_decrease=True to override."
+            )
+
+        # Update progress
+        old_progress = self.progress
+        self.progress = new_progress
+
+        # Track progress change in metadata
+        if 'progress_history' not in self.metadata:
+            self.metadata['progress_history'] = []
+
+        self.metadata['progress_history'].append({
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'old_progress': old_progress,
+            'new_progress': new_progress,
+            'notes': notes
+        })
+
+        # Update implementation notes if provided
+        if notes:
+            if 'progress_updates' not in self.implementation_notes:
+                self.implementation_notes['progress_updates'] = []
+            self.implementation_notes['progress_updates'].append({
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'progress': new_progress,
+                'notes': notes
+            })
+
     def dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {

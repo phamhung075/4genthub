@@ -16,6 +16,7 @@ from ..base_user_scoped_repository import BaseUserScopedRepository
 from ...database.models import Agent
 from ....domain.repositories.agent_repository import AgentRepository
 from ....domain.entities.agent import Agent as AgentEntity, AgentStatus, AgentCapability
+from ....domain.value_objects.agent_id import AgentId
 from ....domain.exceptions.base_exceptions import (
     ResourceNotFoundException,
     ValidationException,
@@ -168,7 +169,7 @@ class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepositor
             active_tasks = set(active_tasks_raw) if isinstance(active_tasks_raw, list) else set()
 
             return AgentEntity(
-                id=agent.id,
+                id=AgentId(agent.id),
                 name=agent.name,
                 description=agent.description or "",
                 created_at=agent.created_at,
@@ -201,7 +202,7 @@ class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepositor
     def _entity_to_model_dict(self, agent: AgentEntity) -> Dict[str, Any]:
         """Convert domain entity to model dictionary"""
         return {
-            "id": agent.id,
+            "id": str(agent.id) if agent.id else "",
             "name": agent.name,
             "description": agent.description,
             "capabilities": [cap.value for cap in agent.capabilities],

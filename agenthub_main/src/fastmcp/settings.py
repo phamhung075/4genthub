@@ -287,5 +287,27 @@ class Settings(BaseSettings):
         ),
     ] = None
 
+    # Feature Flags for DDD Refactoring (Phase 3+)
+    feature_application_orchestrator: Annotated[
+        bool,
+        Field(
+            default=False,
+            description=inspect.cleandoc(
+                """
+                Strangler Fig Pattern: Enable application layer orchestrator.
+
+                If True, uses application/orchestration/project_orchestrator.py
+                If False (default), uses domain/services/orchestrator.py
+
+                Part of DDD refactoring to move multi-aggregate coordination
+                from domain layer to application layer where it belongs.
+
+                Phase 3: Gradual migration with feature flag control
+                Phase 8: Remove domain orchestrator, set default to True
+                """
+            ),
+        ),
+    ] = False
+
 
 settings = Settings()

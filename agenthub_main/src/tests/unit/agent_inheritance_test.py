@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.enums.agent_roles import AgentRole
@@ -76,7 +76,7 @@ class TestSubtaskEntityAgentInheritance:
     def setup_method(self):
         """Setup test data"""
         self.parent_task_id = TaskId("parent-task-123")
-        self.subtask_id = SubtaskId("subtask-456")
+        self.subtask_id = TaskId("subtask-456")
         
         # Subtask with no assignees (should inherit)
         self.subtask_no_assignees = Subtask(
@@ -166,7 +166,7 @@ class TestAgentInheritanceService:
             assignees=["coding-agent", "@test-orchestrator-agent"]
         )
         
-        self.subtask_id = SubtaskId("subtask-456")
+        self.subtask_id = TaskId("subtask-456")
         self.subtask_no_assignees = Subtask(
             id=self.subtask_id,
             title="Subtask",
@@ -297,7 +297,7 @@ class TestAgentInheritanceIntegration:
     def sample_subtask_no_assignees(self, sample_parent_task):
         """Create a sample subtask with no assignees"""
         return Subtask(
-            id=SubtaskId("subtask-no-assignees"),
+            id=TaskId("subtask-no-assignees"),
             title="Subtask Without Assignees",
             description="Should inherit from parent",
             parent_task_id=sample_parent_task.id,
@@ -308,7 +308,7 @@ class TestAgentInheritanceIntegration:
     def sample_subtask_with_assignees(self, sample_parent_task):
         """Create a sample subtask with assignees"""
         return Subtask(
-            id=SubtaskId("subtask-with-assignees"),
+            id=TaskId("subtask-with-assignees"),
             title="Subtask With Assignees", 
             description="Should not inherit from parent",
             parent_task_id=sample_parent_task.id,
@@ -345,7 +345,7 @@ class TestAgentInheritanceIntegration:
         invalid_parent.assignees = ["coding-agent", "invalid-agent"]  # One valid, one invalid
         
         subtask = Subtask(
-            id=SubtaskId("test-subtask"),
+            id=TaskId("test-subtask"),
             title="Test Subtask",
             description="Test",
             parent_task_id=invalid_parent.id,

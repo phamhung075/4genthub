@@ -13,7 +13,7 @@ from fastmcp.task_management.interface.utils.response_formatter import StandardR
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 
 
 class TestAgentAssignmentAtCreation:

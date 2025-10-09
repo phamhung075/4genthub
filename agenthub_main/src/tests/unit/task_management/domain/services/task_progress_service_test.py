@@ -27,7 +27,7 @@ def create_mock_with_spec(spec_class):
         # It's a real class, safe to use as spec
         return Mock(spec=spec_class)
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
@@ -66,7 +66,7 @@ class TestTaskProgressService:
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
         subtask = Subtask(
-            id=SubtaskId.generate(),
+            id=TaskId.generate(),
             parent_task_id=parent_task_id,
             title=title,
             description=f"Description for {title}",
@@ -213,7 +213,7 @@ class TestTaskProgressService:
             from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
             subtask = Subtask(
-                id=SubtaskId.generate(),
+                id=TaskId.generate(),
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
@@ -321,7 +321,7 @@ class TestTaskProgressService:
             from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
             subtask = Subtask(
-                id=SubtaskId.generate(),
+                id=TaskId.generate(),
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
@@ -444,7 +444,7 @@ class TestTaskProgressService:
             from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
             subtask = Subtask(
-                id=SubtaskId.generate(),
+                id=TaskId.generate(),
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
@@ -591,7 +591,7 @@ class TestTaskProgressService:
             from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
             subtask = Subtask(
-                id=SubtaskId.generate(),
+                id=TaskId.generate(),
                 parent_task_id=parent_task_id,
                 title=title,
                 description=f"Description for {title}",
@@ -813,7 +813,7 @@ class TestTaskProgressServiceIntegration:
         from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
         subtask = Subtask(
-            id=SubtaskId.generate(),
+            id=TaskId.generate(),
             parent_task_id=parent_task_id,
             title=title,
             description=f"Description for {title}",

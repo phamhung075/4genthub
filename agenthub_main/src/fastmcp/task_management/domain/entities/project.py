@@ -1,6 +1,6 @@
 """Project Domain Entity"""
 
-from typing import Dict, List, Optional, Set, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 import uuid
@@ -8,6 +8,8 @@ import uuid
 from .base.base_timestamp_entity import BaseTimestampEntity
 
 from ..value_objects.task_id import TaskId
+from ..value_objects.project_id import ProjectId
+from ..value_objects.git_branch_id import GitBranchId
 from .git_branch import GitBranch
 from .agent import Agent
 
@@ -17,11 +19,18 @@ if TYPE_CHECKING:
 
 @dataclass
 class Project(BaseTimestampEntity):
-    """Project aggregate root for multi-agent task orchestration"""
+    """Project aggregate root for multi-agent task orchestration
 
-    id: str = ""
+    Rich Domain Model: Contains business logic for project management, validation, and analysis.
+    Controlled by FEATURE_RICH_DOMAIN_MODEL flag for zero-downtime migration (Strangler Fig Pattern).
+    """
+
+    id: ProjectId | None = None
     name: str = ""
     description: str = ""
+
+    # Feature flag for Rich Domain Model (Strangler Fig Pattern)
+    FEATURE_RICH_DOMAIN_MODEL: bool = False
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -34,17 +43,17 @@ class Project(BaseTimestampEntity):
         description: str = ""
     ) -> 'Project':
         """Create a new project with auto-generated UUID"""
-        project_id = str(uuid.uuid4())
+        project_id = ProjectId.generate_new()
 
         return cls(
             id=project_id,
             name=name,
             description=description
         )
-    
+
     def __hash__(self):
         """Make Project hashable based on its id"""
-        return hash(self.id)
+        return hash(self.id.value) if self.id else hash(None)
 
     # Multi-tree structure
     git_branchs: Dict[str, GitBranch] = field(default_factory=dict)
@@ -66,26 +75,27 @@ class Project(BaseTimestampEntity):
             raise ValueError("Project name cannot be empty")
     
     async def create_git_branch_async(
-        self, 
+        self,
         git_branch_repository: 'GitBranchRepository',
-        branch_name: str, 
+        branch_name: str,
         description: str = ""
     ) -> GitBranch:
         """Create a new git branch/task tree within the project using repository"""
         # Check if branch already exists
-        existing_branch = await git_branch_repository.find_by_name(self.id, branch_name)
+        project_id_str = str(self.id) if self.id else ""
+        existing_branch = await git_branch_repository.find_by_name(project_id_str, branch_name)
         if existing_branch:
             raise ValueError(f"Git branch {branch_name} already exists in project {self.id}")
-        
+
         # Create new branch using repository
         git_branch = await git_branch_repository.create_branch(
-            project_id=self.id,
+            project_id=project_id_str,
             branch_name=branch_name,
             description=description
         )
-        
+
         # Update local cache
-        self.git_branchs[git_branch.id] = git_branch
+        self.git_branchs[str(git_branch.id.value) if git_branch.id else ""] = git_branch
         self.touch("git_branch_added")
         return git_branch
     
@@ -95,26 +105,25 @@ class Project(BaseTimestampEntity):
         for git_branch in self.git_branchs.values():
             if git_branch.git_branch_name == git_branch_name:
                 raise ValueError(f"Git branch {git_branch_name} already exists")
-        
+
         # Generate unique ID for the git branch following clean relationship chain
-        import uuid
-        git_branch_id = str(uuid.uuid4())
-        
+        git_branch_id = GitBranchId.generate_new()
+
         git_branch = GitBranch(
             id=git_branch_id,
             name=name,
             description=description,
-            project_id=self.id,
+            project_id=str(self.id) if self.id else "",
             git_branch_name=git_branch_name
         )
-        
-        self.git_branchs[git_branch_id] = git_branch
+
+        self.git_branchs[str(git_branch_id.value)] = git_branch
         self.touch("git_branch_created")
         return git_branch
     
     def add_git_branch(self, git_branch: GitBranch) -> None:
         """Add a git branch to the project"""
-        self.git_branchs[git_branch.id] = git_branch
+        self.git_branchs[str(git_branch.id.value) if git_branch.id else ""] = git_branch
         self.touch("git_branch_added")
     
     def get_git_branch(self, branch_name: str) -> Optional[GitBranch]:
@@ -126,23 +135,34 @@ class Project(BaseTimestampEntity):
     
     def register_agent(self, agent: Agent) -> None:
         """Register an AI agent to work on this project"""
-        self.registered_agents[agent.id] = agent
+        # Handle both AgentId value object and string ID for backwards compatibility
+        if hasattr(agent.id, 'value'):
+            agent_id_str = str(agent.id.value) if agent.id else ""
+        else:
+            agent_id_str = str(agent.id) if agent.id else ""
+        self.registered_agents[agent_id_str] = agent
         self.touch("agent_registered")
     
     def assign_agent_to_tree(self, agent_id: str, git_branch_id: str) -> None:
         """Assign an agent to work on a specific task tree"""
+        # Convert git_branch_id to string if it's a GitBranchId value object
+        if hasattr(git_branch_id, 'value'):
+            git_branch_id_str = str(git_branch_id.value)
+        else:
+            git_branch_id_str = str(git_branch_id)
+
         if agent_id not in self.registered_agents:
             raise ValueError(f"Agent {agent_id} not registered")
-        if git_branch_id not in self.git_branchs:
-            raise ValueError(f"Task tree {git_branch_id} not found")
+        if git_branch_id_str not in self.git_branchs:
+            raise ValueError(f"Task tree {git_branch_id_str} not found")
 
         # Check if tree is already assigned
-        if git_branch_id in self.agent_assignments:
-            current_agent = self.agent_assignments[git_branch_id]
+        if git_branch_id_str in self.agent_assignments:
+            current_agent = self.agent_assignments[git_branch_id_str]
             if current_agent != agent_id:
-                raise ValueError(f"Task tree {git_branch_id} already assigned to agent {current_agent}")
+                raise ValueError(f"Task tree {git_branch_id_str} already assigned to agent {current_agent}")
 
-        self.agent_assignments[git_branch_id] = agent_id
+        self.agent_assignments[git_branch_id_str] = agent_id
         self.touch("agent_assigned_to_tree")
     
     def add_cross_tree_dependency(self, dependent_task_id: str, prerequisite_task_id: str) -> None:
@@ -158,7 +178,10 @@ class Project(BaseTimestampEntity):
         if not dependent_tree or not prerequisite_tree:
             raise ValueError("One or both tasks not found in project")
         
-        if dependent_tree.id == prerequisite_tree.id:
+        # Compare branch IDs as strings
+        dependent_tree_id = str(dependent_tree.id.value) if dependent_tree.id else ""
+        prerequisite_tree_id = str(prerequisite_tree.id.value) if prerequisite_tree.id else ""
+        if dependent_tree_id == prerequisite_tree_id:
             raise ValueError("Use regular task dependencies for tasks within the same tree")
         
         # Add cross-tree dependency
@@ -202,14 +225,15 @@ class Project(BaseTimestampEntity):
         if not git_branch:
             raise ValueError(f"Task {task_id} not found")
         
-        if self.agent_assignments.get(git_branch.id) != agent_id:
-            raise ValueError(f"Agent {agent_id} not assigned to tree {git_branch.id}")
-        
+        git_branch_id_str = str(git_branch.id.value) if git_branch.id else ""
+        if self.agent_assignments.get(git_branch_id_str) != agent_id:
+            raise ValueError(f"Agent {agent_id} not assigned to tree {git_branch_id_str}")
+
         # Create work session using factory method
         session = WorkSession.create_session(
             agent_id=agent_id,
             task_id=task_id,
-            git_branch_name=git_branch.id,
+            git_branch_name=git_branch_id_str,
             max_duration_hours=max_duration_hours
         )
         
@@ -264,7 +288,7 @@ class Project(BaseTimestampEntity):
     def get_orchestration_status(self) -> Dict:
         """Get comprehensive status for orchestration dashboard"""
         return {
-            "project_id": self.id,
+            "project_id": str(self.id) if self.id else "",
             "project_name": self.name,
             "total_branches": len(self.git_branchs),
             "registered_agents": len(self.registered_agents),
@@ -350,5 +374,329 @@ class Project(BaseTimestampEntity):
                 coordination_result["blocked_tasks"].append(dependent_task_id)
             
             coordination_result["validated_dependencies"] += 1
-        
-        return coordination_result 
+
+        return coordination_result
+
+    # Rich Domain Model Business Methods (Strangler Fig Pattern)
+    # These methods are controlled by FEATURE_RICH_DOMAIN_MODEL flag
+
+    def validate_agent_assignment(self, agent_id: str, task_tree_id: str) -> bool:
+        """
+        Validate that an agent can be assigned to a task tree.
+
+        Args:
+            agent_id: Agent identifier to validate
+            task_tree_id: Task tree (git branch) identifier (can be string or GitBranchId)
+
+        Returns:
+            bool: True if assignment is valid, False otherwise
+
+        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        - Agent must be registered in the project
+        - Task tree must exist in the project
+        - If tree is already assigned, new agent must be different
+        - Agent must not be overloaded (max 3 concurrent tree assignments)
+
+        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
+        - Only checks if agent is registered and tree exists
+        """
+        # Convert task_tree_id to string if it's a GitBranchId value object
+        if hasattr(task_tree_id, 'value'):
+            task_tree_id_str = str(task_tree_id.value)
+        else:
+            task_tree_id_str = str(task_tree_id)
+
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: basic validation only
+            if agent_id not in self.registered_agents:
+                return False
+            if task_tree_id_str not in self.git_branchs:
+                return False
+            return True
+
+        # Rich Domain Model: comprehensive validation
+
+        # Rule 1: Agent must be registered
+        if agent_id not in self.registered_agents:
+            return False
+
+        # Rule 2: Task tree must exist
+        if task_tree_id_str not in self.git_branchs:
+            return False
+
+        # Rule 3: If tree already assigned, check it's different agent
+        if task_tree_id_str in self.agent_assignments:
+            current_agent = self.agent_assignments[task_tree_id_str]
+            if current_agent != agent_id:
+                # Tree is being reassigned - this is allowed
+                pass
+
+        # Rule 4: Check agent workload (max 3 concurrent assignments)
+        agent_current_assignments = sum(
+            1 for assigned_agent in self.agent_assignments.values()
+            if assigned_agent == agent_id
+        )
+
+        # If assigning to new tree (not reassignment), check workload limit
+        if task_tree_id_str not in self.agent_assignments:
+            if agent_current_assignments >= 3:
+                # Agent is overloaded
+                return False
+
+        return True
+
+    def calculate_project_health(self) -> Dict[str, Any]:
+        """
+        Calculate overall project health metrics.
+
+        Returns:
+            Dict with health score, status, and detailed metrics
+
+        Health Metrics:
+        - overall_health_score: 0-100 scale
+        - health_status: "excellent", "good", "fair", "poor", "critical"
+        - branch_completion_rate: percentage of branches with all tasks complete
+        - agent_utilization: percentage of registered agents actively assigned
+        - blocked_task_percentage: percentage of tasks blocked by dependencies
+        - active_work_ratio: active sessions vs total tasks
+
+        Scoring Algorithm (when FEATURE_RICH_DOMAIN_MODEL=True):
+        - Branch completion: 40% weight
+        - Agent utilization: 20% weight
+        - Low blocked tasks: 25% weight
+        - Active work ratio: 15% weight
+
+        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
+        - Returns basic metrics without health score calculation
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: basic metrics only
+            total_branches = len(self.git_branchs)
+            registered_agents = len(self.registered_agents)
+            active_assignments = len(self.agent_assignments)
+
+            return {
+                "total_branches": total_branches,
+                "registered_agents": registered_agents,
+                "active_assignments": active_assignments,
+                "health_score": None,
+                "health_status": "unknown"
+            }
+
+        # Rich Domain Model: comprehensive health analysis
+
+        # Metric 1: Branch completion rate
+        total_branches = len(self.git_branchs)
+        if total_branches == 0:
+            branch_completion_rate = 100.0
+        else:
+            completed_branches = sum(
+                1 for branch in self.git_branchs.values()
+                if branch.get_progress_percentage() == 100.0
+            )
+            branch_completion_rate = (completed_branches / total_branches) * 100
+
+        # Metric 2: Agent utilization
+        total_agents = len(self.registered_agents)
+        if total_agents == 0:
+            agent_utilization = 0.0
+        else:
+            assigned_agents = len(set(self.agent_assignments.values()))
+            agent_utilization = (assigned_agents / total_agents) * 100
+
+        # Metric 3: Blocked task percentage
+        total_tasks = sum(branch.get_task_count() for branch in self.git_branchs.values())
+        if total_tasks == 0:
+            blocked_task_percentage = 0.0
+        else:
+            # Count tasks blocked by cross-tree dependencies
+            blocked_tasks = len(self.cross_tree_dependencies)
+            blocked_task_percentage = (blocked_tasks / total_tasks) * 100
+
+        # Metric 4: Active work ratio
+        active_sessions = len(self.active_work_sessions)
+        if total_tasks == 0:
+            active_work_ratio = 0.0
+        else:
+            active_work_ratio = (active_sessions / total_tasks) * 100
+
+        # Calculate overall health score (0-100)
+        health_score = (
+            (branch_completion_rate * 0.40) +  # 40% weight
+            (agent_utilization * 0.20) +        # 20% weight
+            ((100 - blocked_task_percentage) * 0.25) +  # 25% weight (inverted)
+            (min(active_work_ratio, 50) * 0.30)  # 15% weight (capped at 50% = full score)
+        )
+
+        # Determine health status based on score
+        if health_score >= 90:
+            health_status = "excellent"
+        elif health_score >= 75:
+            health_status = "good"
+        elif health_score >= 60:
+            health_status = "fair"
+        elif health_score >= 40:
+            health_status = "poor"
+        else:
+            health_status = "critical"
+
+        return {
+            "overall_health_score": round(health_score, 2),
+            "health_status": health_status,
+            "metrics": {
+                "branch_completion_rate": round(branch_completion_rate, 2),
+                "agent_utilization": round(agent_utilization, 2),
+                "blocked_task_percentage": round(blocked_task_percentage, 2),
+                "active_work_ratio": round(active_work_ratio, 2)
+            },
+            "counts": {
+                "total_branches": total_branches,
+                "completed_branches": sum(
+                    1 for branch in self.git_branchs.values()
+                    if branch.get_progress_percentage() == 100.0
+                ),
+                "total_agents": total_agents,
+                "assigned_agents": len(set(self.agent_assignments.values())),
+                "total_tasks": total_tasks,
+                "blocked_tasks": len(self.cross_tree_dependencies),
+                "active_sessions": active_sessions
+            }
+        }
+
+    def check_deadline_risk(self) -> Dict[str, str]:
+        """
+        Assess if project is at risk of missing deadlines.
+
+        Returns:
+            Dict with risk level, assessment, and recommendations
+
+        Risk Assessment Criteria (when FEATURE_RICH_DOMAIN_MODEL=True):
+        - "no_risk": All branches on track (completion rate > 75%)
+        - "low_risk": Minor delays possible (completion rate 50-75%)
+        - "medium_risk": Significant delays likely (completion rate 25-50%)
+        - "high_risk": Major delays certain (completion rate < 25%)
+        - "critical_risk": Project stalled (no active work, completion < 10%)
+
+        Factors considered:
+        - Overall project completion rate
+        - Active work sessions vs total tasks
+        - Blocked tasks ratio
+        - Agent utilization
+
+        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
+        - Returns "unknown" risk level with basic info
+        """
+        if not self.FEATURE_RICH_DOMAIN_MODEL:
+            # Legacy behavior: no risk assessment
+            return {
+                "risk_level": "unknown",
+                "assessment": "Deadline risk assessment not available",
+                "recommendation": "Enable FEATURE_RICH_DOMAIN_MODEL for risk assessment"
+            }
+
+        # Rich Domain Model: comprehensive risk assessment
+
+        # Calculate key metrics
+        total_branches = len(self.git_branchs)
+        if total_branches == 0:
+            return {
+                "risk_level": "no_risk",
+                "assessment": "No branches in project",
+                "recommendation": "Create branches and tasks to begin work"
+            }
+
+        # Overall completion rate
+        total_tasks = sum(branch.get_task_count() for branch in self.git_branchs.values())
+        if total_tasks == 0:
+            return {
+                "risk_level": "no_risk",
+                "assessment": "No tasks defined yet",
+                "recommendation": "Define tasks to track progress"
+            }
+
+        completed_tasks = sum(branch.get_completed_task_count() for branch in self.git_branchs.values())
+        completion_rate = (completed_tasks / total_tasks) * 100
+
+        # Active work indicator
+        active_sessions = len(self.active_work_sessions)
+        has_active_work = active_sessions > 0
+
+        # Blocked tasks ratio
+        blocked_tasks = len(self.cross_tree_dependencies)
+        blocked_ratio = (blocked_tasks / total_tasks) * 100 if total_tasks > 0 else 0
+
+        # Agent utilization
+        total_agents = len(self.registered_agents)
+        assigned_agents = len(set(self.agent_assignments.values())) if self.agent_assignments else 0
+        agent_utilization = (assigned_agents / total_agents) * 100 if total_agents > 0 else 0
+
+        # Determine risk level based on multiple factors
+
+        # Critical risk: Project stalled
+        if completion_rate < 10 and not has_active_work:
+            return {
+                "risk_level": "critical_risk",
+                "assessment": f"Project is stalled with only {completion_rate:.1f}% completion and no active work",
+                "recommendation": "Immediately assign agents to tasks and resume development",
+                "metrics": {
+                    "completion_rate": round(completion_rate, 2),
+                    "active_sessions": active_sessions,
+                    "blocked_ratio": round(blocked_ratio, 2),
+                    "agent_utilization": round(agent_utilization, 2)
+                }
+            }
+
+        # High risk: Major delays certain
+        if completion_rate < 25 or (blocked_ratio > 50 and not has_active_work):
+            return {
+                "risk_level": "high_risk",
+                "assessment": f"Project at high risk with {completion_rate:.1f}% completion",
+                "recommendation": "Increase agent assignments, address blockers, and accelerate development",
+                "metrics": {
+                    "completion_rate": round(completion_rate, 2),
+                    "active_sessions": active_sessions,
+                    "blocked_ratio": round(blocked_ratio, 2),
+                    "agent_utilization": round(agent_utilization, 2)
+                }
+            }
+
+        # Medium risk: Significant delays likely
+        if completion_rate < 50 or blocked_ratio > 30:
+            return {
+                "risk_level": "medium_risk",
+                "assessment": f"Project shows moderate risk with {completion_rate:.1f}% completion",
+                "recommendation": "Review and resolve blockers, ensure adequate agent coverage",
+                "metrics": {
+                    "completion_rate": round(completion_rate, 2),
+                    "active_sessions": active_sessions,
+                    "blocked_ratio": round(blocked_ratio, 2),
+                    "agent_utilization": round(agent_utilization, 2)
+                }
+            }
+
+        # Low risk: Minor delays possible
+        if completion_rate < 75:
+            return {
+                "risk_level": "low_risk",
+                "assessment": f"Project on track with {completion_rate:.1f}% completion",
+                "recommendation": "Continue current pace, monitor for emerging blockers",
+                "metrics": {
+                    "completion_rate": round(completion_rate, 2),
+                    "active_sessions": active_sessions,
+                    "blocked_ratio": round(blocked_ratio, 2),
+                    "agent_utilization": round(agent_utilization, 2)
+                }
+            }
+
+        # No risk: All branches on track
+        return {
+            "risk_level": "no_risk",
+            "assessment": f"Project in excellent shape with {completion_rate:.1f}% completion",
+            "recommendation": "Maintain current trajectory to successful completion",
+            "metrics": {
+                "completion_rate": round(completion_rate, 2),
+                "active_sessions": active_sessions,
+                "blocked_ratio": round(blocked_ratio, 2),
+                "agent_utilization": round(agent_utilization, 2)
+            }
+        }

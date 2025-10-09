@@ -22,6 +22,7 @@ from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
+from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
 
 
 class TestGitBranchCreation:
@@ -34,9 +35,10 @@ class TestGitBranchCreation:
             description="Implement user authentication",
             project_id="project-123"
         )
-        
+
         assert git_branch.id is not None
-        assert len(git_branch.id) == 36  # UUID format
+        assert isinstance(git_branch.id, GitBranchId)
+        assert len(str(git_branch.id)) == 36  # UUID format
         assert git_branch.name == "feature/authentication"
         assert git_branch.description == "Implement user authentication"
         assert git_branch.project_id == "project-123"
@@ -53,9 +55,9 @@ class TestGitBranchCreation:
         branch_id = str(uuid.uuid4())
         created_at = datetime.now(timezone.utc)
         updated_at = datetime.now(timezone.utc)
-        
+
         git_branch = GitBranch(
-            id=branch_id,
+            id=GitBranchId(value=branch_id),
             name="direct/branch",
             description="Created directly",
             project_id="project-456",
@@ -64,8 +66,8 @@ class TestGitBranchCreation:
             priority=Priority.high(),
             status=TaskStatus.in_progress()
         )
-        
-        assert git_branch.id == branch_id
+
+        assert str(git_branch.id) == branch_id
         assert git_branch.name == "direct/branch"
         assert git_branch.description == "Created directly"
         assert git_branch.project_id == "project-456"
@@ -78,11 +80,11 @@ class TestGitBranchCreation:
         """Test that each git branch gets a unique UUID."""
         branch1 = GitBranch.create("branch1", "First", "project-1")
         branch2 = GitBranch.create("branch2", "Second", "project-1")
-        
+
         assert branch1.id != branch2.id
         # Verify UUID format
-        uuid.UUID(branch1.id)  # Should not raise exception
-        uuid.UUID(branch2.id)  # Should not raise exception
+        uuid.UUID(str(branch1.id))  # Should not raise exception
+        uuid.UUID(str(branch2.id))  # Should not raise exception
 
 
 class TestTaskHierarchyManagement:
@@ -528,9 +530,9 @@ class TestSerialization:
         from datetime import timezone
         created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
-        
+
         git_branch = GitBranch(
-            id="branch-123",
+            id=GitBranchId(value="550e8400-e29b-41d4-a716-446655440000"),
             name="feature/test",
             description="Test branch",
             project_id="project-456",
@@ -540,14 +542,14 @@ class TestSerialization:
             priority=Priority.high(),
             status=TaskStatus.in_progress()
         )
-        
+
         # Add some tasks
         task = Task(id=TaskId("task-1"), title="Task 1", description="First", status=TaskStatus.done())
         git_branch.add_root_task(task)
 
         data = git_branch.to_dict()
 
-        assert data["id"] == "branch-123"
+        assert data["id"] == str(git_branch.id)  # Convert GitBranchId to string for comparison
         assert data["name"] == "feature/test"
         assert data["description"] == "Test branch"
         assert data["project_id"] == "project-456"
@@ -564,15 +566,15 @@ class TestSerialization:
     def test_repr(self):
         """Test string representation."""
         git_branch = GitBranch.create("test/branch", "Test Branch", "project-123")
-        
+
         # Add a task
         task = Task(id=TaskId("task-1"), title="Task 1", description="First")
         git_branch.add_root_task(task)
-        
+
         repr_str = repr(git_branch)
-        
+
         assert "GitBranch" in repr_str
-        assert git_branch.id in repr_str
+        assert str(git_branch.id) in repr_str
         assert "test/branch" in repr_str
         assert "project-123" in repr_str
         assert "tasks=1" in repr_str

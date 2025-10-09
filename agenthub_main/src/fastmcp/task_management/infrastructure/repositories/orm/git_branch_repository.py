@@ -16,6 +16,7 @@ from sqlalchemy import and_, or_, func, case, text
 
 from ....domain.repositories.git_branch_repository import GitBranchRepository
 from ....domain.entities.git_branch import GitBranch
+from ....domain.value_objects.git_branch_id import GitBranchId
 from ....domain.value_objects.task_status import TaskStatus
 from ....domain.value_objects.priority import Priority
 from ....domain.exceptions.base_exceptions import (
@@ -87,7 +88,7 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
             GitBranch domain entity
         """
         git_branch = GitBranch(
-            id=model.id,
+            id=GitBranchId(model.id),
             name=model.name,
             description=model.description,
             project_id=model.project_id,
@@ -137,9 +138,9 @@ class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranc
         user_id = self.user_id
         if not user_id:
             raise ValueError("user_id is required for git branch operations")
-        
+
         return {
-            'id': git_branch.id,
+            'id': str(git_branch.id) if git_branch.id else "",
             'project_id': git_branch.project_id,
             'name': git_branch.name,
             'description': git_branch.description,

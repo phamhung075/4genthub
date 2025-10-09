@@ -18,6 +18,7 @@ from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOpera
 from ...database.models import Project, ProjectGitBranch
 from ....domain.repositories.project_repository import ProjectRepository
 from ....domain.entities.project import Project as ProjectEntity
+from ....domain.value_objects.project_id import ProjectId
 from ....domain.exceptions.base_exceptions import (
     ResourceNotFoundException,
     ValidationException,
@@ -73,7 +74,7 @@ class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepos
     def _model_to_entity(self, project: Project) -> ProjectEntity:
         """Convert SQLAlchemy model to domain entity"""
         entity = ProjectEntity(
-            id=project.id,
+            id=ProjectId(project.id),
             name=project.name,
             description=project.description,
             created_at=project.created_at,
@@ -125,7 +126,7 @@ class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepos
             Dictionary with ORM model fields and metadata
         """
         return {
-            "id": project.id,
+            "id": str(project.id) if project.id else "",
             "name": project.name,
             "description": project.description,
             "status": getattr(project, 'status', 'active'),

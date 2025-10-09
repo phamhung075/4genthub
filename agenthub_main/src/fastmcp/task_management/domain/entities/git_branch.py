@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from .base.base_timestamp_entity import BaseTimestampEntity
 from .task import Task
 from ..value_objects.task_id import TaskId
+from ..value_objects.git_branch_id import GitBranchId
 from ..value_objects.task_status import TaskStatus
 from ..value_objects.priority import Priority
 
@@ -16,7 +17,7 @@ from ..value_objects.priority import Priority
 class GitBranch(BaseTimestampEntity):
     """GitBranch entity representing a git branch with hierarchical task structure"""
 
-    id: str = ""
+    id: GitBranchId | None = None
     name: str = ""
     description: str = ""
     project_id: str = ""
@@ -24,7 +25,7 @@ class GitBranch(BaseTimestampEntity):
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
-        return str(self.id) if self.id else "unknown"
+        return str(self.id.value) if self.id else "unknown"
     
     # Task hierarchy
     root_tasks: Dict[str, Task] = field(default_factory=dict)  # task_id -> Task
@@ -39,7 +40,7 @@ class GitBranch(BaseTimestampEntity):
 
     def _validate_entity(self) -> None:
         """Ensure branch invariants hold."""
-        if not self.id or not self.id.strip():
+        if not self.id:
             raise ValueError("GitBranch id cannot be empty")
         if not self.name or not self.name.strip():
             raise ValueError("GitBranch name cannot be empty")
@@ -50,7 +51,7 @@ class GitBranch(BaseTimestampEntity):
     def create(cls, name: str, description: str, project_id: str) -> 'GitBranch':
         """Create a new GitBranch with a generated UUID"""
         return cls(
-            id=str(uuid.uuid4()),
+            id=GitBranchId.generate_new(),
             name=name,
             description=description,
             project_id=project_id
@@ -254,7 +255,7 @@ class GitBranch(BaseTimestampEntity):
     def to_dict(self) -> Dict:
         """Convert to dictionary representation"""
         return {
-            'id': self.id,
+            'id': str(self.id.value) if self.id else "",
             'name': self.name,
             'description': self.description,
             'project_id': self.project_id,
@@ -271,4 +272,4 @@ class GitBranch(BaseTimestampEntity):
         }
     
     def __repr__(self) -> str:
-        return f"GitBranch(id='{self.id}', name='{self.name}', project_id='{self.project_id}', tasks={self.get_task_count()})"
+        return f"GitBranch(id='{self.id.value if self.id else None}', name='{self.name}', project_id='{self.project_id}', tasks={self.get_task_count()})"

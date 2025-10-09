@@ -330,9 +330,9 @@ class MockSubtaskRepository(SubtaskRepository):
     
     def get_next_id(self, parent_task_id):
         """Get next available subtask ID for a parent task"""
-        from ...domain.value_objects.subtask_id import SubtaskId
+        from ...domain.value_objects.task_id import TaskId
         next_id = len(self._subtasks) + 1
-        return SubtaskId(f"subtask-{next_id}")
+        return TaskId(f"subtask-{next_id}")
     
     def get_subtask_progress(self, parent_task_id) -> Dict[str, Any]:
         """Get subtask progress statistics for a parent task"""

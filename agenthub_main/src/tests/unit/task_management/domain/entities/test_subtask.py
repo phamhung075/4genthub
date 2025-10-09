@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.enums.agent_roles import AgentRole
@@ -17,7 +17,7 @@ class TestSubtaskCreation:
     def test_create_subtask_with_factory_method(self):
         """Test creating subtask with factory method."""
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
-        subtask_id = SubtaskId("550e8400e29b41d4a716446655440001")
+        subtask_id = TaskId("550e8400e29b41d4a716446655440001")
         
         subtask = Subtask.create(
             id=subtask_id,
@@ -132,7 +132,7 @@ class TestSubtaskCreation:
     def test_subtask_equality(self):
         """Test subtask equality based on ID."""
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
-        subtask_id = SubtaskId("550e8400e29b41d4a716446655440001")
+        subtask_id = TaskId("550e8400e29b41d4a716446655440001")
         
         subtask1 = Subtask.create(
             id=subtask_id,
@@ -149,7 +149,7 @@ class TestSubtaskCreation:
         )
         
         subtask3 = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440002"),
+            id=TaskId("550e8400e29b41d4a716446655440002"),
             title="Test 3",
             description="Test",
             parent_task_id=parent_task_id
@@ -166,13 +166,13 @@ class TestSubtaskCreation:
         """Test that subtasks are hashable based on ID."""
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         subtask1 = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test 1",
             description="Test",
             parent_task_id=parent_task_id
         )
         subtask2 = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440002"),
+            id=TaskId("550e8400e29b41d4a716446655440002"),
             title="Test 2",
             description="Test",
             parent_task_id=parent_task_id
@@ -192,7 +192,7 @@ class TestSubtaskProperties:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -209,7 +209,7 @@ class TestSubtaskProperties:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -235,7 +235,7 @@ class TestSubtaskStatusManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -256,7 +256,7 @@ class TestSubtaskStatusManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
 
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -272,7 +272,7 @@ class TestSubtaskStatusManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -289,7 +289,7 @@ class TestSubtaskStatusManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -306,7 +306,7 @@ class TestSubtaskStatusManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -323,7 +323,7 @@ class TestSubtaskStatusManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -343,7 +343,7 @@ class TestSubtaskPriorityManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -365,7 +365,7 @@ class TestSubtaskContentManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Original title",
             description="Test",
             parent_task_id=parent_task_id
@@ -383,7 +383,7 @@ class TestSubtaskContentManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Original title",
             description="Test",
             parent_task_id=parent_task_id
@@ -397,7 +397,7 @@ class TestSubtaskContentManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Original description",
             parent_task_id=parent_task_id
@@ -418,7 +418,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -436,7 +436,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -452,7 +452,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -467,7 +467,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -482,7 +482,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -496,7 +496,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -511,7 +511,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -528,7 +528,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -544,7 +544,7 @@ class TestSubtaskAssigneeManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id,
@@ -564,7 +564,7 @@ class TestSubtaskEventManagement:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
@@ -588,7 +588,7 @@ class TestSubtaskSerialization:
     def test_to_dict(self):
         """Test converting subtask to dictionary."""
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
-        subtask_id = SubtaskId("550e8400e29b41d4a716446655440001")
+        subtask_id = TaskId("550e8400e29b41d4a716446655440001")
         
         subtask = Subtask.create(
             id=subtask_id,
@@ -670,7 +670,7 @@ class TestSubtaskIntegration:
         
         # Create subtask
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Implement feature",
             description="Add new feature to the system",
             parent_task_id=parent_task_id
@@ -705,7 +705,7 @@ class TestSubtaskIntegration:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Complex task",
             description="Task with multiple transitions",
             parent_task_id=parent_task_id
@@ -736,7 +736,7 @@ class TestSubtaskIntegration:
         parent_task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440000")
         
         subtask = Subtask.create(
-            id=SubtaskId("550e8400e29b41d4a716446655440001"),
+            id=TaskId("550e8400e29b41d4a716446655440001"),
             title="Test",
             description="Test",
             parent_task_id=parent_task_id
