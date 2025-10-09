@@ -8,6 +8,133 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added - 2025-10-09
 
+#### MCP Context Provider Debug Logging Enhancement
+- **Comprehensive Debug Logging for get_context() Method**: Added detailed debug logging to diagnose active task retrieval issues in MCPContextProvider
+  - **File Modified**: `.claude/hooks/session_start.py`
+  - **Method Enhanced**: `get_context()` at lines 253-351
+  - **Implementation**:
+    - Added conditional debug logging controlled by `APP_LOG_LEVEL=DEBUG` environment variable
+    - Created dedicated logger: `logging.getLogger('session_start.mcp_context')`
+    - Configured file handler with timestamp formatter: `%(asctime)s - %(levelname)s - %(message)s`
+    - Log file location: `logs/session_start_mcp_context_debug.log` (using `get_ai_data_path()`)
+    - All debug logging wrapped with `if logger:` checks for zero overhead when disabled
+  - **Debug Points Logged** (8 critical checkpoints):
+    1. Method Entry: Logs start of get_context() execution (line 274-275)
+    2. Authentication: Logs MCP authentication status (lines 285-286)
+    3. Branch Info Result: Logs branch_info and git_branch_id presence (lines 305-306)
+    4. Query Active Tasks Call: Logs when _query_active_tasks is called with git_branch_id (line 316)
+    5. Active Tasks Return: Logs return type and value from _query_active_tasks (lines 320-322)
+    6. Active Tasks Added: Logs when tasks are added to context or why they're not (lines 327, 330)
+    7. Final Context Keys: Logs complete context structure before return (line 342)
+    8. Exception Handling: Logs full traceback for any errors (lines 348-350)
+  - **Benefits**:
+    - ✅ Complete visibility into task retrieval flow in get_context()
+    - ✅ Complements existing _query_active_tasks debug logging
+    - ✅ Together provides end-to-end debugging of "No active tasks" issue
+    - ✅ Controlled by environment variable (zero overhead when disabled)
+    - ✅ Persistent logging with timestamps for timeline analysis
+  - **Usage**:
+    - **Enable debug logging**: Add `APP_LOG_LEVEL=DEBUG` to `.env` file
+    - **Disable debug logging (default)**: Remove or set to different level
+  - **Verification**:
+    1. Set APP_LOG_LEVEL=DEBUG in .env
+    2. Start new Claude session
+    3. Check `logs/session_start_mcp_context_debug.log` for get_context() flow
+    4. Check `logs/session_start_active_tasks_debug.log` for API call details
+    5. Together these logs show exactly where tasks are being lost
+  - **Task**: #fbdc6dfa-a504-4e09-b84b-e4c3d242805c
+
+### Changed - 2025-10-09
+
+#### Session Start Hook Conditional Debug Logging
+- **Made Debug Logging Conditional on Environment Variable**: Debug logging now only runs when `APP_LOG_LEVEL=DEBUG` is set in `.env` file
+  - **File Modified**: `.claude/hooks/session_start.py`
+  - **Method Enhanced**: `_query_active_tasks()` at lines 630-775
+  - **Implementation**:
+    - Added `DEBUG_ENABLED` check at method start (line 633): `os.getenv('APP_LOG_LEVEL', '').upper() == 'DEBUG'`
+    - Logger initialization moved inside conditional block (lines 636-653)
+    - All 28+ `logger.debug()` calls wrapped with `if logger:` checks
+    - Logger set to `None` when debug disabled (zero overhead)
+    - Exception logging wrapped: `logger.exception()` only runs when debug enabled
+  - **Performance Benefits**:
+    - ✅ **Zero overhead when debug disabled**: No logger setup, no file operations, no I/O
+    - ✅ **No log file created** when `APP_LOG_LEVEL` is not set to DEBUG
+    - ✅ **Reduced memory usage**: No logger objects or handlers allocated
+    - ✅ **Faster startup**: Skips 28+ I/O operations on every session start
+    - ✅ **Clean production environments**: No debug noise in production logs
+  - **Usage**:
+    - **Enable debug logging**: Add `APP_LOG_LEVEL=DEBUG` to `.env` file
+    - **Disable debug logging (default)**: Remove or comment out `APP_LOG_LEVEL`, or set to `INFO`/`WARNING`/`ERROR`
+  - **Environment Variable Loading**: Uses `os.getenv()` which automatically loads from `.env` via python-dotenv
+  - **Default Behavior**: Debug logging **OFF** (no performance impact)
+  - **Testing**:
+    - With debug disabled: No `session_start_active_tasks_debug.log` file created
+    - With debug enabled: Full debug logging to `logs/session_start_active_tasks_debug.log`
+  - **Task**: #aad63d00-8f8d-4c2c-aa07-73af598393a8
+
+### Fixed - 2025-10-09
+
+#### Session Start Hook Debug Logging Migration
+- **Replaced Stderr Debug Prints with File Logging**: Converted all debug output in `_query_active_tasks()` to use Python's logging module for persistent debugging
+  - **File Modified**: `.claude/hooks/session_start.py`
+  - **Method Enhanced**: `_query_active_tasks()` at lines 630-754
+  - **Implementation**:
+    - Created dedicated logger: `logging.getLogger('session_start.active_tasks')`
+    - Configured file handler with timestamp formatter: `%(asctime)s - %(levelname)s - %(message)s`
+    - Log file location: `logs/session_start_active_tasks_debug.log` (using `get_ai_data_path()`)
+    - Replaced 28+ `print(..., file=sys.stderr)` statements with `logger.debug()` calls
+    - Exception logging uses `logger.exception()` for full traceback capture
+  - **Debug Points Logged** (all 7 critical checkpoints):
+    1. Method Entry: git_branch_id and query start confirmation
+    2. API Request: status code, headers, and raw response body
+    3. JSON Parse: result structure, keys, error status, full result object
+    4. Content Extraction: array length, item types, content text
+    5. Task Parsing: parsed structure, data keys, task types and content
+    6. Type Normalization: final task list length, content, individual structures
+    7. Method Exit: return value, type, and length
+  - **Benefits**:
+    - ✅ Persistent debug output across sessions (append mode)
+    - ✅ Timestamps for timeline analysis and correlation
+    - ✅ No terminal clutter or stderr pollution
+    - ✅ Easy to search and filter: `grep "DEBUG" logs/session_start_active_tasks_debug.log`
+    - ✅ Proper exception tracebacks with `logger.exception()`
+    - ✅ Follows project logging standards and best practices
+  - **Log File Format Example**:
+    ```
+    2025-10-09 01:54:00,123 - DEBUG - _query_active_tasks called with git_branch_id: 9e94fa57...
+    2025-10-09 01:54:00,234 - DEBUG - Starting active tasks query
+    2025-10-09 01:54:00,345 - DEBUG - Debug log location: /home/.../logs/session_start_active_tasks_debug.log
+    ```
+  - **Testing**: Run new Claude session and verify `logs/session_start_active_tasks_debug.log` contains timestamped debug entries
+  - **Task**: #d65d09e1-20d5-49b4-895c-fe74ed0f4ffe
+
+### Added - 2025-10-09
+
+#### Session Start Hook Debugging
+- **Comprehensive Debug Logging for Active Tasks Query**: Added detailed debug logging to diagnose task loading issues
+  - **File Modified**: `.claude/hooks/session_start.py`
+  - **Method Enhanced**: `_query_active_tasks()` at lines 630-736
+  - **Debug Points Added** (7 critical checkpoints):
+    1. **Method Entry** (lines 634-635): Logs git_branch_id and query start confirmation
+    2. **After API Request** (lines 658-661): Logs status code, response headers, and raw response body
+    3. **After JSON Parse** (lines 666-671): Logs parsed result structure, result key presence, error status, and full result object
+    4. **After Content Extraction** (lines 678-682): Logs content array length, content item type, and raw content text before JSON parsing
+    5. **After Task Parsing** (lines 688-693): Logs parsed_content structure, data object keys, tasks type and content
+    6. **After Type Normalization** (lines 702-706): Logs final tasks list length, content, and individual task structures
+    7. **Method Exit** (lines 712-715): Logs return value, type, and length if applicable
+  - **Error Handling**: Added comprehensive exception logging with full traceback (lines 729-732)
+  - **Debug Output Features**:
+    - Uses sys.stderr for all debug output (won't interfere with hook stdout)
+    - All logs prefixed with [DEBUG] for easy grepping
+    - JSON serialization for structured data inspection
+    - Type checking and safe navigation throughout
+    - Both data type AND content logged at each step
+  - **Impact**: Next Claude session will output complete execution trace to stderr, enabling precise diagnosis of where task retrieval fails
+  - **Usage**: Start new Claude session and check stderr output or logs for [DEBUG] entries to trace data flow
+  - **Task**: #2212b84e-45c1-4b6e-b6d3-87dee87b8a90
+
+### Added - 2025-10-09
+
 #### MCP Tool Enhancement: Project Delete Operation
 - **manage_project MCP Tool**: Added delete action to complete CRUD operations for project management
   - **File Modified**: `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/manage_project_description.py`
