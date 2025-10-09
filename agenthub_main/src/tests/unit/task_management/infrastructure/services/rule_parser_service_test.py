@@ -19,7 +19,7 @@ from fastmcp.task_management.infrastructure.services.rule_parser_service import 
     IRuleParserService
 )
 from fastmcp.task_management.domain.entities.rule_entity import RuleContent, RuleMetadata
-from fastmcp.task_management.domain.enums.rule_enums import RuleFormat, RuleType
+from fastmcp.task_management.domain.value_objects.rule_enums import RuleFormat, RuleType
 
 
 class TestRuleParserService:

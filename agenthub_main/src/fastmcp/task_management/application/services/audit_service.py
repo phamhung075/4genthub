@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Union, Optional
 from datetime import datetime, timezone
 
 # Import compliance enums from proper location
-from ...domain.enums.compliance_enums import ComplianceLevel
+from ...domain.value_objects import ComplianceLevel
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,7 @@ from typing import Dict, Any, List, Tuple, Optional
 from abc import ABC, abstractmethod
 
 from ...domain.entities.rule_entity import RuleContent, RuleMetadata
-from ...domain.enums.rule_enums import RuleFormat, RuleType
+from ...domain.value_objects import RuleFormat, RuleType
 
 
 class IRuleParserService(ABC):

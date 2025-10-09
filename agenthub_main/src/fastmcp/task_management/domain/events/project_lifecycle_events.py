@@ -1,59 +1,29 @@
 """
 Project Lifecycle Domain Events
 
-Clean implementation of project-related domain events.
-NO backward compatibility, NO legacy code.
+Standardized implementation using BaseDomainEvent.
+All project-related events follow consistent patterns.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+from .base import BaseDomainEvent
 
 
-@dataclass
-class ProjectEvent:
-    """Base class for project domain events"""
-    project_id: str
-    timestamp: datetime
-    user_id: Optional[str] = None
-
-    @classmethod
-    def create(cls, **kwargs):
-        """Factory method to create event with timestamp"""
-        if 'timestamp' not in kwargs:
-            kwargs['timestamp'] = datetime.utcnow()
-        return cls(**kwargs)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert event to dictionary for serialization"""
-        return {
-            'project_id': self.project_id,
-            'timestamp': self.timestamp.isoformat(),
-            'user_id': self.user_id,
-            'event_type': self.__class__.__name__
-        }
-
-
-@dataclass
-class ProjectCreatedEvent(ProjectEvent):
+@dataclass(frozen=True)
+class ProjectCreatedEvent(BaseDomainEvent):
     """Event raised when a project is created"""
-    name: str
+    project_id: str = ""
+    name: str = ""
     description: Optional[str] = None
     status: str = 'active'
 
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        data.update({
-            'name': self.name,
-            'description': self.description,
-            'status': self.status
-        })
-        return data
 
-
-@dataclass
-class ProjectUpdatedEvent(ProjectEvent):
+@dataclass(frozen=True)
+class ProjectUpdatedEvent(BaseDomainEvent):
     """Event raised when a project is updated"""
+    project_id: str = ""
     old_name: Optional[str] = None
     new_name: Optional[str] = None
     old_status: Optional[str] = None
@@ -61,58 +31,58 @@ class ProjectUpdatedEvent(ProjectEvent):
     old_description: Optional[str] = None
     new_description: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        data.update({
-            'old_name': self.old_name,
-            'new_name': self.new_name,
-            'old_status': self.old_status,
-            'new_status': self.new_status,
-            'old_description': self.old_description,
-            'new_description': self.new_description
-        })
-        return data
 
-
-@dataclass
-class ProjectDeletedEvent(ProjectEvent):
+@dataclass(frozen=True)
+class ProjectDeletedEvent(BaseDomainEvent):
     """Event raised when a project is deleted"""
-    name: str
+    project_id: str = ""
+    name: str = ""
     branches_deleted: int = 0
     tasks_deleted: int = 0
     subtasks_deleted: int = 0
     contexts_deleted: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        data.update({
-            'name': self.name,
-            'branches_deleted': self.branches_deleted,
-            'tasks_deleted': self.tasks_deleted,
-            'subtasks_deleted': self.subtasks_deleted,
-            'contexts_deleted': self.contexts_deleted
-        })
-        return data
 
-
-@dataclass
-class ProjectStatisticsUpdatedEvent(ProjectEvent):
+@dataclass(frozen=True)
+class ProjectStatisticsUpdatedEvent(BaseDomainEvent):
     """Event raised when project statistics are updated"""
-    branch_count: int
-    total_tasks: int
-    completed_tasks: int
-    in_progress_tasks: int
-    todo_tasks: int
-    overall_progress_percentage: float
+    project_id: str = ""
+    branch_count: int = 0
+    total_tasks: int = 0
+    completed_tasks: int = 0
+    in_progress_tasks: int = 0
+    todo_tasks: int = 0
+    overall_progress_percentage: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
-        data = super().to_dict()
-        data.update({
-            'branch_count': self.branch_count,
-            'total_tasks': self.total_tasks,
-            'completed_tasks': self.completed_tasks,
-            'in_progress_tasks': self.in_progress_tasks,
-            'todo_tasks': self.todo_tasks,
-            'overall_progress_percentage': self.overall_progress_percentage
-        })
-        return data
+
+@dataclass(frozen=True)
+class ProjectHealthChanged(BaseDomainEvent):
+    """
+    Event raised when project health metrics change.
+
+    This is a new event added in Phase 5 to track project health status.
+    """
+    project_id: str = ""
+    old_health_status: str = ""
+    new_health_status: str = ""
+    health_metrics: Dict[str, Any] = field(default_factory=dict)
+    reason: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class ProjectArchived(BaseDomainEvent):
+    """Event raised when a project is archived"""
+    project_id: str = ""
+    name: str = ""
+    archived_by: str = ""
+    reason: Optional[str] = None
+
+
+__all__ = [
+    'ProjectCreatedEvent',
+    'ProjectUpdatedEvent',
+    'ProjectDeletedEvent',
+    'ProjectStatisticsUpdatedEvent',
+    'ProjectHealthChanged',
+    'ProjectArchived',
+]

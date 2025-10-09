@@ -7,7 +7,7 @@ from typing import List, Optional, Dict, Any, Union
 from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
 from ..value_objects.priority import Priority
-from ..enums.agent_roles import AgentRole, resolve_legacy_role
+from ..value_objects import AgentRole, resolve_legacy_role
 from ..events.task_events import TaskUpdated
 from .base.base_timestamp_entity import BaseTimestampEntity
 

@@ -1,144 +1,101 @@
-"""Task Domain Events"""
+"""
+Task Lifecycle Domain Events
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional
-from enum import Enum
+Standardized implementation using BaseDomainEvent.
+All task-related events follow consistent patterns with immutable frozen dataclasses.
+"""
 
-
-class TaskEventType(Enum):
-    """Types of task domain events"""
-    CREATED = "task_created"
-    UPDATED = "task_updated"
-    DELETED = "task_deleted"
-    STATUS_CHANGED = "task_status_changed"
-    ASSIGNED = "task_assigned"
-    UNASSIGNED = "task_unassigned"
-    MOVED_TO_BRANCH = "task_moved_to_branch"
+from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, List
+from .base import BaseDomainEvent
 
 
-@dataclass
-class TaskEvent:
-    """Base class for task domain events"""
-    event_type: TaskEventType
-    task_id: str
-    branch_id: Optional[str]
-    user_id: Optional[str]
-    timestamp: datetime
-
-    @classmethod
-    def now(cls):
-        """Get current timestamp"""
-        return datetime.now(timezone.utc)
-
-
-@dataclass
-class TaskCreatedEvent(TaskEvent):
+@dataclass(frozen=True)
+class TaskCreatedEvent(BaseDomainEvent):
     """Event raised when a task is created"""
-    title: str
-    status: str
-    priority: str
-    assignees: list
-
-    @classmethod
-    def create(cls, task_id: str, branch_id: str, title: str, status: str,
-              priority: str, assignees: list, user_id: Optional[str] = None):
-        return cls(
-            event_type=TaskEventType.CREATED,
-            task_id=task_id,
-            branch_id=branch_id,
-            user_id=user_id,
-            timestamp=cls.now(),
-            title=title,
-            status=status,
-            priority=priority,
-            assignees=assignees
-        )
+    task_id: str = ""
+    branch_id: str = ""
+    title: str = ""
+    status: str = ""
+    priority: str = ""
+    assignees: List[str] = field(default_factory=list)
+    user_id: Optional[str] = None
 
 
-@dataclass
-class TaskUpdatedEvent(TaskEvent):
+@dataclass(frozen=True)
+class TaskUpdatedEvent(BaseDomainEvent):
     """Event raised when a task is updated"""
-    old_status: Optional[str]
-    new_status: Optional[str]
-    old_branch_id: Optional[str]
-    new_branch_id: Optional[str]
-    changes: dict
-
-    @classmethod
-    def create(cls, task_id: str, branch_id: str, old_status: Optional[str],
-              new_status: Optional[str], old_branch_id: Optional[str] = None,
-              new_branch_id: Optional[str] = None, changes: dict = None,
-              user_id: Optional[str] = None):
-        return cls(
-            event_type=TaskEventType.UPDATED,
-            task_id=task_id,
-            branch_id=new_branch_id or branch_id,
-            user_id=user_id,
-            timestamp=cls.now(),
-            old_status=old_status,
-            new_status=new_status,
-            old_branch_id=old_branch_id,
-            new_branch_id=new_branch_id,
-            changes=changes or {}
-        )
+    task_id: str = ""
+    branch_id: str = ""
+    old_status: Optional[str] = None
+    new_status: Optional[str] = None
+    old_branch_id: Optional[str] = None
+    new_branch_id: Optional[str] = None
+    changes: Dict[str, Any] = field(default_factory=dict)
+    user_id: Optional[str] = None
 
 
-@dataclass
-class TaskDeletedEvent(TaskEvent):
+@dataclass(frozen=True)
+class TaskDeletedEvent(BaseDomainEvent):
     """Event raised when a task is deleted"""
-    status: str
-    title: str
-
-    @classmethod
-    def create(cls, task_id: str, branch_id: str, status: str, title: str,
-              user_id: Optional[str] = None):
-        return cls(
-            event_type=TaskEventType.DELETED,
-            task_id=task_id,
-            branch_id=branch_id,
-            user_id=user_id,
-            timestamp=cls.now(),
-            status=status,
-            title=title
-        )
+    task_id: str = ""
+    branch_id: str = ""
+    status: str = ""
+    title: str = ""
+    user_id: Optional[str] = None
 
 
-@dataclass
-class TaskStatusChangedEvent(TaskEvent):
+@dataclass(frozen=True)
+class TaskStatusChangedEvent(BaseDomainEvent):
     """Event raised when task status changes"""
-    old_status: str
-    new_status: str
-
-    @classmethod
-    def create(cls, task_id: str, branch_id: str, old_status: str,
-              new_status: str, user_id: Optional[str] = None):
-        return cls(
-            event_type=TaskEventType.STATUS_CHANGED,
-            task_id=task_id,
-            branch_id=branch_id,
-            user_id=user_id,
-            timestamp=cls.now(),
-            old_status=old_status,
-            new_status=new_status
-        )
+    task_id: str = ""
+    branch_id: str = ""
+    old_status: str = ""
+    new_status: str = ""
+    user_id: Optional[str] = None
 
 
-@dataclass
-class TaskMovedToBranchEvent(TaskEvent):
+@dataclass(frozen=True)
+class TaskCompletedEvent(BaseDomainEvent):
+    """
+    Event raised when a task is completed.
+
+    This is a new event added in Phase 5 to distinguish task completion
+    from generic status changes. Provides rich context about what was accomplished.
+    """
+    task_id: str = ""
+    branch_id: str = ""
+    title: str = ""
+    completion_summary: str = ""
+    testing_notes: Optional[str] = None
+    completed_by: Optional[str] = None
+    time_spent_minutes: Optional[int] = None
+    insights_found: List[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class TaskRetrievedEvent(BaseDomainEvent):
+    """Event raised when a task is retrieved from repository"""
+    task_id: str = ""
+    branch_id: Optional[str] = None
+    user_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class TaskMovedToBranchEvent(BaseDomainEvent):
     """Event raised when task is moved to a different branch"""
-    old_branch_id: str
-    new_branch_id: str
+    task_id: str = ""
+    old_branch_id: str = ""
+    new_branch_id: str = ""
+    user_id: Optional[str] = None
 
-    @classmethod
-    def create(cls, task_id: str, old_branch_id: str, new_branch_id: str,
-              user_id: Optional[str] = None):
-        return cls(
-            event_type=TaskEventType.MOVED_TO_BRANCH,
-            task_id=task_id,
-            branch_id=new_branch_id,
-            user_id=user_id,
-            timestamp=cls.now(),
-            old_branch_id=old_branch_id,
-            new_branch_id=new_branch_id
-        )
+
+__all__ = [
+    'TaskCreatedEvent',
+    'TaskUpdatedEvent',
+    'TaskDeletedEvent',
+    'TaskStatusChangedEvent',
+    'TaskCompletedEvent',
+    'TaskRetrievedEvent',
+    'TaskMovedToBranchEvent',
+]

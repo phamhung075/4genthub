@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import logging
 
 from ...domain.entities.agent import Agent, AgentCapability, AgentStatus
-from ...domain.enums.agent_roles import AgentRole
+from ...domain.value_objects import AgentRole
 
 
 class AgentConverter:

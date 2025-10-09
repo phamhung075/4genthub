@@ -10,7 +10,7 @@ from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.application.services.agent_inheritance_service import AgentInheritanceService
 
 

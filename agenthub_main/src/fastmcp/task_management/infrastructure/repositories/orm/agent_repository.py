@@ -13,6 +13,7 @@ from sqlalchemy import and_, desc
 
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ...database.models import Agent
 from ....domain.repositories.agent_repository import AgentRepository
 from ....domain.entities.agent import Agent as AgentEntity, AgentStatus, AgentCapability
@@ -26,14 +27,17 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepository, AgentRepository):
+class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], BaseUserScopedRepository, AgentRepository):
     """
     Agent repository implementation using SQLAlchemy ORM.
-    
+
     This repository handles all agent-related database operations
     using SQLAlchemy, supporting both SQLite and PostgreSQL.
+
+    DDD Pattern: EventPublishingMixin ensures domain events are published
+    when agent entities are persisted.
     """
-    
+
     def __init__(self, session=None, project_id: Optional[str] = None, user_id: Optional[str] = None):
         """
         Initialize ORM agent repository with user isolation.
@@ -45,17 +49,19 @@ class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepositor
         """
         # Initialize BaseTimestampRepository
         BaseTimestampRepository.__init__(self, Agent)
-        
+
         # Ensure user_id is a valid UUID if provided
         if user_id is not None and not self._is_valid_uuid(user_id):
             # Generate a deterministic UUID for non-UUID user_id values
             user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
             logger.info(f"Converted non-UUID user_id to UUID: {user_id}")
-        
+
         # Initialize BaseUserScopedRepository with user isolation
         from ...database.database_config import get_session
         actual_session = session or get_session()
         BaseUserScopedRepository.__init__(self, actual_session, user_id)
+        # Initialize EventPublishingMixin for domain events
+        EventPublishingMixin.__init__(self)
         self.project_id = project_id
     
     def _is_valid_uuid(self, value: str) -> bool:
@@ -301,9 +307,14 @@ class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepositor
                     # Re-raise other database errors
                     raise create_error
             
-            # Convert back to entity and return
+            # Convert back to entity for event publishing
+            agent_entity = self._model_to_entity(agent_model)
+
+            # Publish domain events after successful registration
+            self.publish_entity_events(agent_entity)
+
             logger.info(f"Successfully registered agent '{agent.name}' (ID: {agent.id}) for project {project_id}")
-            return self._model_to_entity(agent_model)
+            return agent_entity
             
         except ValidationException:
             # Re-raise validation exceptions with their helpful messages
@@ -507,7 +518,10 @@ class ORMAgentRepository(BaseTimestampRepository[Agent], BaseUserScopedRepositor
             with self.get_db_session() as session:
                 session.merge(agent)
                 session.commit()
-            
+
+            # Publish domain events after successful assignment
+            self.publish_entity_events(agent_entity)
+
             logger.info(f"Assigned agent {actual_agent_id} to tree {git_branch_id} in project {project_id}")
             return {
                 "success": True,

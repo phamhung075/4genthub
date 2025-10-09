@@ -331,7 +331,7 @@ class TaskCrudHandler:
                 )
 
         except Exception as e:
-            logger.error(f"Error listing tasks for user {user_id}: {e}")
+            logger.error(f"Error listing tasks for user {user_id}: {e}", exc_info=True)
             return TasksResponse(
                 success=False,
                 tasks=[],

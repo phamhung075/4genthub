@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 class TimestampUpdatedEvent(DomainEvent):
     """Domain event fired when entity timestamp is updated."""
 
-    entity_id: str
-    old_timestamp: datetime | None
-    new_timestamp: datetime
+    entity_id: str = ""
+    old_timestamp: datetime | None = None
+    new_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=create_event_metadata)
 
     @property
@@ -51,8 +51,8 @@ class TimestampUpdatedEvent(DomainEvent):
 class TimestampCreatedEvent(DomainEvent):
     """Domain event fired when entity is first created."""
 
-    entity_id: str
-    created_timestamp: datetime
+    entity_id: str = ""
+    created_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=create_event_metadata)
 
     @property

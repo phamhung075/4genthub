@@ -18,6 +18,7 @@ from ...database.database_config import get_session
 from ..base_orm_repository import BaseORMRepository
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ....domain.entities.subtask import Subtask as SubtaskEntity
 from ....domain.repositories.subtask_repository import SubtaskRepository
 from ....domain.value_objects.task_id import TaskId
@@ -32,21 +33,31 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
+class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
     """
     ORM implementation of SubtaskRepository using SQLAlchemy.
-    
+
     Provides database operations for subtasks with proper data transformation
     between domain objects and ORM models.
+
+    DDD Pattern: EventPublishingMixin ensures domain events are published
+    when subtask entities are persisted.
     """
-    
+
     def __init__(self, session=None, user_id: Optional[str] = None):
         """Initialize the ORM subtask repository with user isolation."""
-        BaseORMRepository.__init__(self, SubtaskModel)
+        # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
+        # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
+        BaseTimestampRepository.__init__(self, SubtaskModel)
         # CRITICAL FIX: Pass None as session to BaseUserScopedRepository
         # This prevents creating an isolated session in __init__
         # The actual session will come from transaction() or get_db_session() context managers
         BaseUserScopedRepository.__init__(self, None, user_id)
+
+        # Initialize mixin attributes manually (DON'T call mixin __init__ - causes MRO issues)
+        # EventPublishingMixin attributes
+        self._event_bus = None
+        self._event_publishing_enabled = True
     
     def save(self, subtask: SubtaskEntity) -> bool:
         """
@@ -111,8 +122,12 @@ class ORMSubtaskRepository(BaseTimestampRepository[SubtaskEntity], BaseUserScope
                 # Update domain entity with persisted timestamps
                 subtask.created_at = new_subtask.created_at
                 subtask.updated_at = new_subtask.updated_at
-                
+
                 logger.info(f"✅ SUBTASK_SAVE: Successfully completed save for subtask ID={new_subtask.id}")
+
+                # Publish domain events after successful save
+                self.publish_entity_events(subtask)
+
                 return True
                 
         except SQLAlchemyError as e:

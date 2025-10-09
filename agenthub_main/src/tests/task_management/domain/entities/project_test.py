@@ -8,7 +8,7 @@ from fastmcp.task_management.domain.entities.project import Project
 from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.agent import Agent
 from fastmcp.task_management.domain.entities.work_session import WorkSession
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.domain.repositories.git_branch_repository import GitBranchRepository
 
 

@@ -3,34 +3,13 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, TypeVar, Generic
-from dataclasses import dataclass
+
+# Import pagination types from value_objects (moved in Phase 5.1)
+# Previously defined here, now properly located in value_objects layer
+from ..value_objects.pagination import PaginationRequest, PaginationResult
 
 # Generic type for entities
 T = TypeVar('T')
-
-
-@dataclass(frozen=True)
-class PaginationRequest:
-    """Standard pagination request parameters"""
-    page: int = 1
-    page_size: int = 20
-    offset: Optional[int] = None
-    
-    def __post_init__(self):
-        if self.offset is None:
-            object.__setattr__(self, 'offset', (self.page - 1) * self.page_size)
-
-
-@dataclass(frozen=True)
-class PaginationResult(Generic[T]):
-    """Standard pagination result wrapper"""
-    items: List[T]
-    total_count: int
-    page: int
-    page_size: int
-    total_pages: int
-    has_next: bool
-    has_previous: bool
 
 
 class BaseRepository(ABC, Generic[T]):

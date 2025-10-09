@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 
 from fastmcp.task_management.infrastructure.services.agent_converter import AgentConverter
 from fastmcp.task_management.domain.entities.agent import Agent, AgentCapability, AgentStatus
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 
 
 class TestAgentConverter:

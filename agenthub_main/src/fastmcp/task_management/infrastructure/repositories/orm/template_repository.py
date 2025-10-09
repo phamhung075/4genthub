@@ -14,7 +14,7 @@ from sqlalchemy import and_, or_, func, text
 
 from ....domain.entities.template import Template, TemplateUsage
 from ....domain.value_objects.template_id import TemplateId
-from ....domain.enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from ....domain.value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from ....domain.repositories.template_repository import TemplateRepositoryInterface
 from ..base_timestamp_repository import BaseTimestampRepository
 from ...database.models import Template as ORMTemplate

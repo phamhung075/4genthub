@@ -22,7 +22,7 @@ from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.domain.events.task_events import TaskUpdated
 
 

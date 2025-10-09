@@ -680,7 +680,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 35,
+      "count": 36,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -823,6 +823,13 @@
           "size": 7604
         },
         {
+          "hash": "83e27d310ea4d30243f3749c7346bc92",
+          "modified": "2025-10-10T00:33:25.684564",
+          "name": "domain-events-catalog.md",
+          "path": "core-architecture/domain-events-catalog.md",
+          "size": 31916
+        },
+        {
           "hash": "f4a833cbce5808865e4222ae40591c1a",
           "modified": "2025-09-24T13:24:47.170491",
           "name": "agent-delegation-fix.md",
@@ -951,7 +958,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 61,
+      "count": 63,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -966,6 +973,13 @@
           "name": "timestamp-management-implementation.md",
           "path": "development-guides/timestamp-management-implementation.md",
           "size": 169054
+        },
+        {
+          "hash": "5296772a451c24bea15722411e04faf8",
+          "modified": "2025-10-10T00:35:19.510228",
+          "name": "domain-events-usage-guide.md",
+          "path": "development-guides/domain-events-usage-guide.md",
+          "size": 26474
         },
         {
           "hash": "75e823852b23cf2187bd63f5b275c7c9",
@@ -1022,6 +1036,13 @@
           "name": "mcp-simple-wrapper-design.md",
           "path": "development-guides/mcp-simple-wrapper-design.md",
           "size": 10581
+        },
+        {
+          "hash": "a3bc48b64f87c8d8ebc0b66c21de48ac",
+          "modified": "2025-10-10T00:37:28.525196",
+          "name": "event-handlers-reference.md",
+          "path": "development-guides/event-handlers-reference.md",
+          "size": 32163
         },
         {
           "hash": "5375deedd2bbf4df8fb7d88156779339",
@@ -1143,11 +1164,11 @@
           "size": 10875
         },
         {
-          "hash": "8e35ee47310996f83857b29b7ba7401b",
-          "modified": "2025-10-09T15:26:38.875661",
+          "hash": "653baf96d2ae048e8b48d23b781fa816",
+          "modified": "2025-10-09T23:38:06.038661",
           "name": "ddd-refactoring-task-roadmap.md",
           "path": "development-guides/ddd-refactoring-task-roadmap.md",
-          "size": 11028
+          "size": 12277
         },
         {
           "hash": "831a13a39e5c59e9f1a3c2397aef3e19",
@@ -2757,7 +2778,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-09T16:26:48.204224",
+  "generated_at": "2025-10-10T00:37:28.594562",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2916,6 +2937,7 @@
         "deprecated-agent-mappings.md",
         "design-patterns-in-architecture.md",
         "domain-driven-design-layers.md",
+        "domain-events-catalog.md",
         "implementation-methodology-pattern.md",
         "index.md",
         "initial-problem.md",
@@ -2977,9 +2999,11 @@
         "ddd-refactoring-task-roadmap.md",
         "docker-system-guide.md",
         "domain-driven-design.md",
+        "domain-events-usage-guide.md",
         "dto-refactoring-guide.md",
         "email-authentication-setup.md",
         "error-handling-and-logging.md",
+        "event-handlers-reference.md",
         "factory-refactoring-example.md",
         "factory-refactoring-templates.md",
         "frontend-ux-enhancements.md",
@@ -3243,5 +3267,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 367
+  "total_files": 370
 }

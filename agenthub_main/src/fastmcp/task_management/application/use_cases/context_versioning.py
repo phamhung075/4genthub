@@ -14,7 +14,7 @@ from enum import Enum
 import logging
 import difflib
 
-from ...domain.models.unified_context import ContextLevel
+from ...domain.value_objects.context_enums import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)
