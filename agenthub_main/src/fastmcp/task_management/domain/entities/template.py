@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from ..value_objects.template_id import TemplateId
-from ..enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from ..value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from .base.base_timestamp_entity import BaseTimestampEntity
 
 

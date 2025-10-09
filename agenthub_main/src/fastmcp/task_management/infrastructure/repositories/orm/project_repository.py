@@ -14,6 +14,7 @@ from sqlalchemy.orm import joinedload
 from ..base_orm_repository import BaseORMRepository
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ...database.models import Project, ProjectGitBranch
 from ....domain.repositories.project_repository import ProjectRepository
@@ -29,29 +30,40 @@ from ....application.services.context_field_selector import ContextFieldSelector
 logger = logging.getLogger(__name__)
 
 
-class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
+class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
     """
     Project repository implementation using SQLAlchemy ORM.
-    
+
     This repository handles all project-related database operations
     using SQLAlchemy, supporting both SQLite and PostgreSQL.
+
+    DDD Pattern: EventPublishingMixin ensures domain events are published
+    when project entities are persisted.
     """
-    
+
     def __init__(self, session=None, user_id: Optional[str] = None):
         """Initialize ORM project repository with user isolation.
-        
+
         Args:
             session: Database session
             user_id: User ID for data isolation
         """
-        # Initialize BaseORMRepository
-        BaseORMRepository.__init__(self, Project)
+        # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
+        # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
+        BaseTimestampRepository.__init__(self, Project)
         # Initialize BaseUserScopedRepository with user isolation
         # If no session provided, use None - the BaseUserScopedRepository will handle it
         BaseUserScopedRepository.__init__(self, session, user_id)
-        # Initialize CacheInvalidationMixin
-        CacheInvalidationMixin.__init__(self)
-        
+
+        # Initialize mixin attributes manually (DON'T call mixin __init__ - causes MRO issues)
+        # EventPublishingMixin attributes
+        self._event_bus = None
+        self._event_publishing_enabled = True
+
+        # CacheInvalidationMixin attributes
+        self._cache = None
+        self._cache_enabled = True
+
         # Initialize field selector for selective queries
         self._field_selector = ContextFieldSelector()
     
@@ -221,7 +233,10 @@ class ORMProjectRepository(BaseTimestampRepository[Project], BaseUserScopedRepos
                             session.add(new_branch)
                 
                 session.commit()
-                
+
+                # Publish domain events after successful save
+                self.publish_entity_events(project)
+
         except Exception as e:
             logger.error(f"Failed to save project: {e}")
             raise DatabaseException(

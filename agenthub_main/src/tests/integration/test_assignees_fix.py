@@ -11,7 +11,7 @@ sys.path.insert(0, project_path)
 def test_agent_role_validation():
     """Test AgentRole validation directly"""
     try:
-        from fastmcp.task_management.domain.enums.agent_roles import AgentRole, resolve_legacy_role
+        from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole, resolve_legacy_role
         
         print("=== Testing AgentRole Validation ===")
         
@@ -97,7 +97,7 @@ def test_agent_role_validation():
 def test_available_roles():
     """Test what roles are actually available"""
     try:
-        from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+        from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
         
         print("=== Available Agent Roles ===")
         all_roles = AgentRole.get_all_roles()

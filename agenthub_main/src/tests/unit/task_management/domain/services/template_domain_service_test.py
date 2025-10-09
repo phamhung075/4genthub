@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 from fastmcp.task_management.domain.services.template_domain_service import TemplateDomainService
 from fastmcp.task_management.domain.entities.template import Template, TemplateRenderRequest, TemplateUsage
 from fastmcp.task_management.domain.value_objects.template_id import TemplateId
-from fastmcp.task_management.domain.enums.template_enums import (
+from fastmcp.task_management.domain.value_objects.template_enums import (
     TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 )
 

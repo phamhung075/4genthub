@@ -12,7 +12,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from ...domain.models.unified_context import ContextLevel
+from ...domain.value_objects.context_enums import ContextLevel
 from ..services.unified_context_service import UnifiedContextService
 
 logger = logging.getLogger(__name__)

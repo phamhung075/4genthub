@@ -17,7 +17,7 @@ from ...domain.events.hint_events import (
     HintPatternDetected
 )
 from ...domain.events.base import DomainEvent
-from ...domain.interfaces.event_store import EventStore
+from ...infrastructure.event_store import EventStore
 
 
 logger = logging.getLogger(__name__)

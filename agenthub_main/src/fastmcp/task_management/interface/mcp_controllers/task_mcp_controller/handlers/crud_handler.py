@@ -71,7 +71,7 @@ class CRUDHandler:
         if assignees:
             try:
                 # Import domain validation functions directly without creating a dummy task
-                from .....domain.enums.agent_roles import AgentRole, resolve_legacy_role
+                from .....domain.value_objects import AgentRole, resolve_legacy_role
 
                 validated_assignees = []
                 invalid_assignees = []

@@ -70,7 +70,7 @@ class ProjectApplicationService:
     async def register_agent(self, project_id: str, agent_id: str, name: str, capabilities: Optional[list] = None) -> Dict[str, Any]:
         """Register an agent to a project"""
         from ...domain.entities.agent import Agent
-        from ...domain.enums.agent_roles import AgentRole
+        from ...domain.value_objects import AgentRole
         from datetime import datetime, timezone
         
         project = await self._get_user_scoped_repository().find_by_id(project_id)

@@ -7,11 +7,9 @@ Controlled by FEATURE_CLEAN_REPOSITORIES flag for zero-downtime migration (Stran
 """
 
 from typing import List, TypeVar, Generic
-from dataclasses import dataclass
 
-# Import pagination types from base repository
-# These will be moved to value_objects in Phase 3
-from ..repositories.base_repository import PaginationRequest, PaginationResult
+# Import pagination types from value_objects (moved from base_repository in Phase 5.1)
+from ..value_objects.pagination import PaginationRequest, PaginationResult
 
 T = TypeVar('T')
 

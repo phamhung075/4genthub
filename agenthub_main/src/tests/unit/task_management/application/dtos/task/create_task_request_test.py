@@ -1,9 +1,9 @@
 """Unit tests for CreateTaskRequest DTO."""
 import pytest
 from fastmcp.task_management.application.dtos.task.create_task_request import CreateTaskRequest
-from fastmcp.task_management.domain.enums.common_labels import CommonLabel
-from fastmcp.task_management.domain.enums.estimated_effort import EstimatedEffort
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.common_labels import CommonLabel
+from fastmcp.task_management.domain.value_objects.estimated_effort import EstimatedEffort
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 
 
 class TestCreateTaskRequest:

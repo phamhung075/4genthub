@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 
 from ..entities.rule_entity import RuleContent, RuleInheritance
 from ..value_objects.rule_value_objects import CompositionResult
-from ..enums.rule_enums import RuleFormat, ConflictResolution, InheritanceType
+from ..value_objects import RuleFormat, ConflictResolution, InheritanceType
 
 
 class IRuleCompositionService(ABC):

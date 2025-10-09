@@ -14,7 +14,7 @@ from fastmcp.task_management.infrastructure.repositories.orm.template_repository
 from fastmcp.task_management.infrastructure.database.models import Template as ORMTemplate
 from fastmcp.task_management.domain.entities.template import Template
 from fastmcp.task_management.domain.value_objects.template_id import TemplateId
-from fastmcp.task_management.domain.enums.template_enums import (
+from fastmcp.task_management.domain.value_objects.template_enums import (
     TemplateType,
     TemplateCategory,
     TemplateStatus,

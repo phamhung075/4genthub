@@ -10,10 +10,13 @@ from .base.base_timestamp_entity import BaseTimestampEntity
 logger = logging.getLogger(__name__)
 
 from ...domain.value_objects.task_status import TaskStatusEnum
-from ..enums.agent_roles import AgentRole, resolve_legacy_role
-from ..enums.common_labels import CommonLabel, LabelValidator
-from ..enums.estimated_effort import EffortLevel, EstimatedEffort
-from ..enums.progress_enums import ProgressState
+from ..value_objects import (
+    AgentRole, resolve_legacy_role,
+    CommonLabel, LabelValidator,
+    EffortLevel, EstimatedEffort,
+    ProgressState,
+    get_role_metadata_from_yaml
+)
 from ..events.progress_events import (
     ProgressMilestoneReached,
     ProgressTypeCompleted,
@@ -429,7 +432,6 @@ class Task(BaseTimestampEntity):
                 # Try to get role from AgentRole enum
                 role = AgentRole.get_role_by_slug(assignee)
                 if role:
-                    from ..enums.agent_roles import get_role_metadata_from_yaml
                     metadata = get_role_metadata_from_yaml(role)
                     assignees_info.append({
                         "role": role.value,
@@ -987,7 +989,6 @@ class Task(BaseTimestampEntity):
             # Try to get role from AgentRole enum
             role = AgentRole.get_role_by_slug(primary_assignee)
             if role:
-                from ..enums.agent_roles import get_role_metadata_from_yaml
                 metadata = get_role_metadata_from_yaml(role)
                 if metadata:
                     return {

@@ -1,15 +1,7 @@
 """Task Domain Exceptions"""
 
 from typing import Optional, Dict, Any, List
-from enum import Enum
-
-
-class ErrorSeverity(Enum):
-    """Error severity levels."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+from ..value_objects import ErrorSeverity
 
 
 class TaskDomainError(Exception):

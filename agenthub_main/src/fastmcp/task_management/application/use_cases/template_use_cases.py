@@ -5,7 +5,7 @@ import logging
 
 from ...domain.entities.template import Template, TemplateResult, TemplateRenderRequest, TemplateUsage
 from ...domain.value_objects.template_id import TemplateId
-from ...domain.enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from ...domain.value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from ...domain.services.template_domain_service import TemplateDomainService
 from ...domain.exceptions.template_exceptions import TemplateNotFoundError, TemplateValidationError, TemplateRenderError
 from ..dtos.template_dtos import (
@@ -38,7 +38,7 @@ class TemplateUseCases:
         try:
             # Create template entity
             template = Template(
-                id=TemplateId.generate(),
+                id=TemplateId.generate_new(),
                 name=create_dto.name,
                 description=create_dto.description,
                 content=create_dto.content,

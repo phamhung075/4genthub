@@ -13,7 +13,7 @@ from datetime import datetime
 @dataclass
 class BranchEvent:
     """Base class for branch domain events"""
-    branch_id: str
+    branch_id: str = ""
     project_id: Optional[str]
     timestamp: datetime
     user_id: Optional[str] = None
@@ -39,7 +39,7 @@ class BranchEvent:
 @dataclass
 class BranchCreatedEvent(BranchEvent):
     """Event raised when a branch is created"""
-    name: str
+    name: str = ""
     description: Optional[str] = None
     status: str = 'active'
 
@@ -79,7 +79,7 @@ class BranchUpdatedEvent(BranchEvent):
 @dataclass
 class BranchDeletedEvent(BranchEvent):
     """Event raised when a branch is deleted"""
-    name: str
+    name: str = ""
     tasks_deleted: int = 0
     subtasks_deleted: int = 0
     contexts_deleted: int = 0
@@ -98,11 +98,11 @@ class BranchDeletedEvent(BranchEvent):
 @dataclass
 class BranchStatisticsUpdatedEvent(BranchEvent):
     """Event raised when branch statistics are updated"""
-    task_count: int
-    completed_task_count: int
-    in_progress_task_count: int
-    todo_task_count: int
-    progress_percentage: float
+    task_count: int = 0
+    completed_task_count: int = 0
+    in_progress_task_count: int = 0
+    todo_task_count: int = 0
+    progress_percentage: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()

@@ -17,7 +17,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from .database_config import Base
 from .uuid_column_type import UnifiedUUID, create_uuid_column
-from ...domain.enums.progress_enums import ProgressState
+from ...domain.value_objects import ProgressState
 # Import clean timestamp infrastructure
 from .timestamp_events import setup_timestamp_events
 

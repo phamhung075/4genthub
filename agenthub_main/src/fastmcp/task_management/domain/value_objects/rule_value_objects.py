@@ -8,7 +8,7 @@ This file contains value objects and DTOs for rule management following DDD prin
 
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
-from ..enums.rule_enums import (
+from ..value_objects import (
     ClientAuthMethod, SyncOperation, SyncStatus, 
     ConflictResolution, RuleType, RuleFormat
 )

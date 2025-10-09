@@ -28,6 +28,7 @@ from ..base_orm_repository import BaseORMRepository
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..clean_timestamp_repository_mixin import CleanTimestampRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ....application.services.context_field_selector import ContextFieldSelector, FieldSet
 from ...performance.task_performance_optimizer import get_performance_optimizer
@@ -46,6 +47,7 @@ def _ensure_estimated_effort_default(value: any) -> str:
 
 
 class ORMTaskRepository(
+    EventPublishingMixin,
     CacheInvalidationMixin,
     CleanTimestampRepository[TaskEntity],
     BaseTimestampRepository[Task],
@@ -54,9 +56,11 @@ class ORMTaskRepository(
 ):
     """
     Task repository implementation using SQLAlchemy ORM.
-    
+
     This repository handles all task-related database operations
     using SQLAlchemy, supporting both SQLite and PostgreSQL.
+
+    Integrates EventPublishingMixin for automatic domain event publishing.
     """
     
     def __init__(self, session=None, git_branch_id: str | None = None, project_id: str | None = None,
@@ -76,12 +80,19 @@ class ORMTaskRepository(
         # Initialize base classes properly
         from ...database.database_config import get_session
         actual_session = session or get_session()
-        
+
         # Initialize parent classes
-        BaseORMRepository.__init__(self, Task)
+        # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
+        # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
+        BaseTimestampRepository.__init__(self, Task)
         BaseUserScopedRepository.__init__(self, actual_session, user_id)
-        
-        # Initialize cache mixin attributes manually to avoid MRO issues
+
+        # Initialize mixin attributes manually (DON'T call mixin __init__ - causes MRO issues)
+        # EventPublishingMixin attributes
+        self._event_bus = None
+        self._event_publishing_enabled = True
+
+        # CacheInvalidationMixin attributes
         self._cache = None
         self._cache_enabled = True
         
@@ -1323,11 +1334,14 @@ class ORMTaskRepository(
                         task.updated_at = existing.updated_at.replace(tzinfo=timezone.utc)
                     else:
                         task.updated_at = existing.updated_at
-                    
+
                     if existing.created_at and not existing.created_at.tzinfo:
                         task.created_at = existing.created_at.replace(tzinfo=timezone.utc)
                     else:
                         task.created_at = existing.created_at
+
+                    # Publish domain events after successful update
+                    self.publish_entity_events(task)
 
                 else:
                     from ....domain.constants import validate_user_id
@@ -1417,11 +1431,14 @@ class ORMTaskRepository(
                         task.created_at = new_task.created_at.replace(tzinfo=timezone.utc)
                     else:
                         task.created_at = new_task.created_at
-                    
+
                     if new_task.updated_at and not new_task.updated_at.tzinfo:
                         task.updated_at = new_task.updated_at.replace(tzinfo=timezone.utc)
                     else:
                         task.updated_at = new_task.updated_at
+
+                    # Publish domain events after successful create
+                    self.publish_entity_events(task)
 
                 session.commit()
                 return task
