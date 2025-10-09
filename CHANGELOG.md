@@ -8,6 +8,58 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added - 2025-10-09
 
+#### Claude Hooks Logging Architecture Documentation
+- **Comprehensive Documentation Created**: Complete reference for Claude hooks logging system and best practices
+  - **File Created**: `ai_docs/claude-code/hook-logging-architecture.md`
+  - **Coverage**: 7 major sections with detailed technical content
+    1. **Logging Configuration**:
+       - AI_DATA environment variable configuration with .env.claude integration
+       - get_ai_data_path() utility function documentation with source code references (env_loader.py:44-63)
+       - Default fallback behavior to logs/ directory
+       - Path resolution algorithm (relative to project root, auto-creation)
+    2. **Directory Structure**:
+       - Complete directory tree: logs/ (application) vs logs/claude-hooks/ (hook system)
+       - Separation of concerns rationale and benefits
+       - File listing with descriptions and purposes
+    3. **Hook Logging Patterns**:
+       - Pattern 1: FileLogger class (recommended) with full implementation (post_tool_use.py:70-106)
+       - Pattern 2: Direct path writing (legacy pattern) with code examples
+       - Pattern 3: Conditional debug logging (APP_LOG_LEVEL=DEBUG) with session_start.py references (690-835)
+       - When to use each pattern with decision tree
+    4. **Log File Types**:
+       - 3 comprehensive tables documenting all log files
+       - Hook system logs with rotation policies (last 100 entries)
+       - Application logs and their management
+       - Debug logs with conditional creation triggers
+    5. **Troubleshooting Guide**:
+       - 5 common issues with complete diagnosis and solutions
+       - Issue 1: Logs not being created (permissions, configuration)
+       - Issue 2: Wrong log location (absolute vs relative paths)
+       - Issue 3: Debug logs not appearing (APP_LOG_LEVEL setting)
+       - Issue 4: Log files growing too large (rotation, cleanup)
+       - Issue 5: Permission denied errors (ownership, chmod)
+    6. **Configuration Examples**:
+       - 4 real-world scenarios (development, production, custom, multi-env)
+       - Complete .env configuration samples
+       - Environment-specific best practices
+    7. **Code Reference Summary**:
+       - Table of key files with exact line numbers
+       - Hook initialization examples from post_tool_use.py and session_start.py
+       - Best practices for hook developers, sysadmins, and troubleshooting
+  - **Technical Quality**:
+    - All code examples extracted from working implementations
+    - File paths and line numbers verified against current codebase
+    - Cross-references to related documentation
+    - Professional technical writing with clear hierarchy
+  - **Documentation Standards**:
+    - Kebab-case folder naming convention followed
+    - Located in appropriate ai_docs/claude-code/ directory
+    - Table of contents for easy navigation
+    - Markdown formatting with syntax highlighting
+  - **Task**: #87a8bbed-cc31-4dc9-b0db-a0827c3bdd33
+
+### Added - 2025-10-09
+
 #### MCP Context Provider Debug Logging Enhancement
 - **Comprehensive Debug Logging for get_context() Method**: Added detailed debug logging to diagnose active task retrieval issues in MCPContextProvider
   - **File Modified**: `.claude/hooks/session_start.py`
