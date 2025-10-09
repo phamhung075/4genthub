@@ -619,7 +619,7 @@ async def broadcast_data_change(
             "entity": entity_type,
             "action": event_type,
             "data": {
-                "primary": data or {}
+                "primary": data if data is not None else None
             }
         },
         "metadata": {
