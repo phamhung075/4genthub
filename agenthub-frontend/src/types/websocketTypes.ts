@@ -29,7 +29,8 @@ export interface WSMessage {
     entity: string;
     action: string;
     data: {
-      primary: any | any[];
+      id?: string;  // Direct data ID access
+      primary: { id?: string; [key: string]: any } | any[];
       cascade?: {
         branches?: any[];
         tasks?: any[];
@@ -37,6 +38,7 @@ export interface WSMessage {
         subtasks?: any[];
         contexts?: any[];
       };
+      [key: string]: any;  // Allow other dynamic properties
     };
   };
   metadata: {
@@ -50,6 +52,12 @@ export interface WSMessage {
     event_type?: string;
     // Task-specific metadata
     task_title?: string;
+    parent_task_title?: string;
+    // Subtask-specific metadata
+    subtask_title?: string;
+    // Branch-specific metadata
+    branch_title?: string;
+    parent_branch_title?: string;
     parent_branch_id?: string;
   };
 }

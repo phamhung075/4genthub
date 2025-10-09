@@ -1,6 +1,10 @@
 /**
  * Setup file for Vitest tests
  * Configures testing environment and global test utilities
+ *
+ * INTENTIONAL: This file overrides console.error for test environment setup
+ * Must use native console methods to suppress noisy React warnings during tests
+ * The override is necessary for clean test output and doesn't affect application code
  */
 
 import '@testing-library/jest-dom';

@@ -4,8 +4,11 @@
  * Ensures no hardcoded values in production
  */
 
-// Note: Cannot import logger here due to circular dependency
-// logger.config.ts depends on this file for API_BASE_URL
+// INTENTIONAL: Using console.* in this file (environment configuration)
+// Cannot import logger here due to circular dependency:
+// - logger.config.ts depends on this file for API_BASE_URL
+// - This file is loaded at app initialization before logger is available
+// - Console usage here is for critical startup configuration errors/warnings only
 
 // Helper to get runtime environment variable if available, fallback to build-time
 function getEnvVar(key: string, defaultValue: string = ''): string {

@@ -69,7 +69,8 @@ class ComprehensiveLogger {
         });
       }
     } catch (error) {
-      // Fallback to console if initialization fails
+      // INTENTIONAL: Fallback to native console when logger system itself fails
+      // Cannot use logger here as it may be the source of the error
       console.error('Logger initialization failed:', error);
     }
   }
@@ -136,6 +137,8 @@ class ComprehensiveLogger {
     }
   }
 
+  // INTENTIONAL: Returns native console methods for outputToConsole()
+  // This is the core logging mechanism - console methods are used intentionally here
   private getConsoleMethod(level: LogLevel): Console['log'] {
     switch (level) {
       case 'debug':
@@ -177,7 +180,8 @@ class ComprehensiveLogger {
 
       localStorage.setItem(storageKey, JSON.stringify(logs));
     } catch (error) {
-      // localStorage might be full or disabled, fallback to console
+      // INTENTIONAL: Fallback to native console when localStorage fails
+      // Cannot use logger here to avoid infinite recursion if localStorage is the issue
       console.warn('Failed to write to localStorage:', error);
     }
   }
@@ -204,7 +208,8 @@ class ComprehensiveLogger {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      // If remote logging fails, don't throw error - just log to console in development
+      // INTENTIONAL: Fallback to native console when remote logging fails
+      // Cannot use logger here to avoid infinite recursion if remote endpoint is the issue
       if (import.meta.env.MODE === 'development') {
         console.warn('Remote logging failed:', error);
       }
@@ -322,6 +327,8 @@ class ComprehensiveLogger {
 
     this.groupStack.push({ name, collapsed });
 
+    // INTENTIONAL: Native console.group API for grouping log output
+    // This is a console-specific feature that must use native console methods
     if (this.config.outputs.console) {
       if (collapsed && console.groupCollapsed) {
         console.groupCollapsed(name);
@@ -342,6 +349,8 @@ class ComprehensiveLogger {
     if (this.groupStack.length > 0) {
       this.groupStack.pop();
 
+      // INTENTIONAL: Native console.groupEnd API for ending grouped log output
+      // This is a console-specific feature that must use native console methods
       if (this.config.outputs.console && console.groupEnd) {
         console.groupEnd();
       }
@@ -361,6 +370,8 @@ class ComprehensiveLogger {
       startTime: performance.now()
     });
 
+    // INTENTIONAL: Native console.time API for performance timing
+    // This is a console-specific feature that must use native console methods
     if (this.config.outputs.console && console.time) {
       console.time(label);
     }
@@ -381,6 +392,8 @@ class ComprehensiveLogger {
       this.timers.delete(label);
     }
 
+    // INTENTIONAL: Native console.timeEnd API for performance timing
+    // This is a console-specific feature that must use native console methods
     if (this.config.outputs.console && console.timeEnd) {
       console.timeEnd(label);
     }
@@ -401,6 +414,8 @@ class ComprehensiveLogger {
       try {
         localStorage.removeItem('app_logs');
       } catch (error) {
+        // INTENTIONAL: Fallback to native console when localStorage operations fail
+        // Cannot use logger here to avoid potential recursion issues
         console.warn('Failed to clear stored logs:', error);
       }
     }
@@ -418,6 +433,8 @@ class ComprehensiveLogger {
       const logs = localStorage.getItem('app_logs');
       return logs ? JSON.parse(logs) : [];
     } catch (error) {
+      // INTENTIONAL: Fallback to native console when localStorage operations fail
+      // Cannot use logger here to avoid potential recursion issues
       console.warn('Failed to retrieve stored logs:', error);
       return [];
     }

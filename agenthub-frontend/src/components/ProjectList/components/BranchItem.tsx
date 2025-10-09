@@ -5,6 +5,7 @@ import { ShimmerBadge } from "../../ui/shimmer-badge";
 import { ShimmerButton } from "../../ui/shimmer-button";
 import { animationFactory, AnimationType } from "../../../services/AnimationFactory";
 import type { BranchSummary } from "../../../types";
+import logger from "../../../utils/logger";
 
 interface BranchItemProps {
   branch: BranchSummary;
@@ -42,19 +43,19 @@ export const BranchItem: React.FC<BranchItemProps> = ({
     if (elementRef.current) {
       animationFactory.registerElement(branch.id, elementRef.current, {
         onAnimationStart: (type) => {
-          console.log(`🎬 Branch animation started: ${type} for ${branch.id}`);
+          logger.debug(`Branch animation started: ${type}`, { branchId: branch.id, component: 'BranchItem' });
         },
         onAnimationEnd: (type) => {
-          console.log(`🎬 Branch animation complete: ${type} for ${branch.id}`);
+          logger.debug(`Branch animation complete: ${type}`, { branchId: branch.id, component: 'BranchItem' });
         }
       });
 
-      console.log(`✅ Registered branch element with AnimationFactory: ${branch.id}`);
+      logger.debug('Registered branch element with AnimationFactory', { branchId: branch.id, component: 'BranchItem' });
     }
 
     return () => {
       animationFactory.unregisterElement(branch.id);
-      console.log(`🗑️ Unregistered branch element from AnimationFactory: ${branch.id}`);
+      logger.debug('Unregistered branch element from AnimationFactory', { branchId: branch.id, component: 'BranchItem' });
     };
   }, [branch.id]);
 

@@ -7,9 +7,9 @@
  * Follows single responsibility principle for clean architecture.
  */
 
-import { WSMessage } from './WebSocketClient';
+import type { WSMessage } from '../types/websocketTypes';
 import { animationFactory, AnimationType } from './AnimationFactory';
-import type { AnimationTriggerType, AnimationEvent } from '../types/serviceTypes';
+import type { AnimationTriggerType } from '../types/serviceTypes';
 import logger from '../utils/logger';
 
 class WebSocketAnimationService {
@@ -95,7 +95,8 @@ class WebSocketAnimationService {
 
     // Extract task ID from message for targeted animations
     // Try multiple extraction paths to handle different backend message formats
-    const primaryId = message.payload?.data?.primary?.id;
+    const primary = message.payload?.data?.primary;
+    const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
     const directDataId = message.payload?.data?.id;
     const metadataId = message.metadata?.entity_id;
     const taskId = primaryId || directDataId || metadataId;
@@ -134,13 +135,20 @@ class WebSocketAnimationService {
         return;
     }
 
-    // Trigger animation via centralized factory
-    const success = animationFactory.animate(taskId, animationType, 'websocket');
+    // FIX: Defer animation until after DOM element exists
+    // WebSocket event → React renders → DOM updated → Animate
+    // Use requestAnimationFrame + setTimeout to ensure React has rendered
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // Trigger animation via centralized factory
+        const success = animationFactory.animate(taskId, animationType!, 'websocket');
 
-    logger.debug('🎬 WebSocketAnimationService: Animation request result:', {
-      taskId,
-      animationType,
-      success
+        logger.debug('🎬 WebSocketAnimationService: Animation request result (deferred):', {
+          taskId,
+          animationType,
+          success
+        });
+      }, 150); // 150ms delay ensures DOM is ready (React render + paint)
     });
 
     // Emit event for listeners (backwards compatibility)
@@ -162,7 +170,8 @@ class WebSocketAnimationService {
     });
 
     // Extract subtask ID from message for targeted animations
-    const primaryId = message.payload?.data?.primary?.id;
+    const primary = message.payload?.data?.primary;
+    const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
     const directDataId = message.payload?.data?.id;
     const metadataId = message.metadata?.entity_id;
     const subtaskId = primaryId || directDataId || metadataId;
@@ -193,13 +202,18 @@ class WebSocketAnimationService {
         return;
     }
 
-    // Trigger animation via centralized factory
-    const success = animationFactory.animate(subtaskId, animationType, 'websocket');
+    // FIX: Defer animation until after DOM element exists
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // Trigger animation via centralized factory
+        const success = animationFactory.animate(subtaskId, animationType!, 'websocket');
 
-    logger.debug('🎬 WebSocketAnimationService: Subtask animation request result:', {
-      subtaskId,
-      animationType,
-      success
+        logger.debug('🎬 WebSocketAnimationService: Subtask animation request result (deferred):', {
+          subtaskId,
+          animationType,
+          success
+        });
+      }, 150); // 150ms delay ensures DOM is ready
     });
   }
 
@@ -216,7 +230,8 @@ class WebSocketAnimationService {
     });
 
     // Extract branch ID from message for targeted animations
-    const primaryId = message.payload?.data?.primary?.id;
+    const primary = message.payload?.data?.primary;
+    const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
     const directDataId = message.payload?.data?.id;
     const metadataId = message.metadata?.entity_id;
     const branchId = primaryId || directDataId || metadataId;
@@ -244,13 +259,18 @@ class WebSocketAnimationService {
         return;
     }
 
-    // Trigger animation via centralized factory
-    const success = animationFactory.animate(branchId, animationType, 'websocket');
+    // FIX: Defer animation until after DOM element exists
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // Trigger animation via centralized factory
+        const success = animationFactory.animate(branchId, animationType!, 'websocket');
 
-    logger.debug('🎬 WebSocketAnimationService: Branch animation request result:', {
-      branchId,
-      animationType,
-      success
+        logger.debug('🎬 WebSocketAnimationService: Branch animation request result (deferred):', {
+          branchId,
+          animationType,
+          success
+        });
+      }, 150); // 150ms delay ensures DOM is ready
     });
   }
 
