@@ -99,13 +99,14 @@ export function useWebSocket(userId: string, token: string) {
         // These initializations are idempotent and set up event listeners for this component instance
         webSocketAnimationService.init(globalWebSocketClient);
         const cleanupChangePool = initializeWebSocketIntegration(globalWebSocketClient);
-        const cleanupNotifications = notificationService.initializeWebSocketListener(globalWebSocketClient);
+        // NOTE: NotificationService is already initialized globally when the client was created
+        // Re-initializing here would create duplicate event listeners causing double notifications
 
         // Return cleanup function for this component instance
         return () => {
           logger.debug('[useWebSocket] Component cleanup (reused client)', undefined, 'useWebSocketV2.ts');
           cleanupChangePool();
-          cleanupNotifications();
+          // NotificationService cleanup is handled globally when the singleton client disconnects
           clientRef.current = null;
         };
       } else {
