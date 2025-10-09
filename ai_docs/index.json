@@ -465,6 +465,26 @@
       ],
       "path": "authentication"
     },
+    "claude-code": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "6835ebaf579f2875b81f964e1e360ca1",
+          "modified": "2025-10-09T11:52:48.796544",
+          "name": "hook-logging-architecture.md",
+          "path": "claude-code/hook-logging-architecture.md",
+          "size": 16652
+        },
+        {
+          "hash": "a2a0c7724a009427ca4ab210307296cc",
+          "modified": "2025-10-09T11:53:11.096137",
+          "name": "claude-hook-logging-structure.md",
+          "path": "claude-code/claude-hook-logging-structure.md",
+          "size": 6532
+        }
+      ],
+      "path": "claude-code"
+    },
     "claude-hooks-docker": {
       "count": 3,
       "files": [
@@ -2729,7 +2749,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-08T23:42:37.593123",
+  "generated_at": "2025-10-09T11:53:11.178761",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2825,6 +2845,12 @@
         "keycloak-service-account-setup.md",
         "keycloak-setup-guide.md",
         "token-flow.md"
+      ]
+    },
+    "claude-code": {
+      "files": [
+        "claude-hook-logging-structure.md",
+        "hook-logging-architecture.md"
       ]
     },
     "claude-hooks-docker": {
@@ -3210,6 +3236,6 @@
       ]
     }
   },
-  "total_directories": 32,
-  "total_files": 363
+  "total_directories": 33,
+  "total_files": 365
 }

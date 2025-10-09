@@ -733,11 +733,28 @@ class TaskApplicationFacade:
             # Broadcast task completion event ONLY if this was a new completion (not an update to already completed task)
             if response.get("success") and not response.get("was_already_completed", False):
                 try:
+                    # Get task data to extract git_branch_id and project_id for proper filtering
+                    task_data = response.get("task")
+                    git_branch_id = task_data.get("git_branch_id") if task_data else None
+
+                    # Derive project_id from git_branch_id if possible
+                    project_id = None
+                    if git_branch_id and self._git_branch_repository:
+                        try:
+                            context = self._await_if_coroutine(
+                                self._derive_context_from_git_branch_id(git_branch_id)
+                            )
+                            project_id = context.get("project_id")
+                        except Exception as e:
+                            logger.warning(f"Could not derive project_id from git_branch_id: {e}")
+
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="completed",
                         task_id=task_id,
                         user_id=user_id or "system",  # Use provided user_id or fallback to "system"
-                        task_data=response.get("task")
+                        task_data=task_data,
+                        git_branch_id=git_branch_id,  # Add git_branch_id for filtering and cascade updates
+                        project_id=project_id  # Add project_id for filtering
                     )
                     logger.info(f"Broadcasted task completion notification for NEW completion of task {task_id}")
                 except Exception as e:
