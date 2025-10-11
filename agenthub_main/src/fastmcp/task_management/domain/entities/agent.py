@@ -36,16 +36,12 @@ class Agent(BaseTimestampEntity):
     """Agent entity representing an AI agent that can work on tasks
 
     Rich Domain Model: Contains business logic for agent management, capability matching, and workload analysis.
-    Controlled by FEATURE_RICH_DOMAIN_MODEL flag for zero-downtime migration (Strangler Fig Pattern).
     """
 
     # Required fields must have defaults since parent has defaults
     id: AgentId | None = None
     name: str = ""
     description: str = ""
-
-    # Feature flag for Rich Domain Model (Strangler Fig Pattern)
-    FEATURE_RICH_DOMAIN_MODEL: bool = False
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -289,9 +285,8 @@ class Agent(BaseTimestampEntity):
             score += 10.0
         
         return min(100.0, score)
-    
-    # Rich Domain Model Business Methods (Strangler Fig Pattern)
-    # These methods are controlled by FEATURE_RICH_DOMAIN_MODEL flag
+
+    # Rich Domain Model Business Methods
 
     def validate_capability_match(self, task_requirements: List[str]) -> bool:
         """
@@ -303,22 +298,12 @@ class Agent(BaseTimestampEntity):
         Returns:
             bool: True if agent has all required capabilities, False otherwise
 
-        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        Business Rules:
         - All required capabilities must be present in agent's capabilities
         - Case-insensitive matching
         - Handles both string and enum representations
         - Empty requirements list returns True (no requirements)
-
-        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
-        - Uses existing can_handle_task() method with dict format
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: use existing method
-            task_dict = {"capabilities": task_requirements}
-            return self.can_handle_task(task_dict)
-
-        # Rich Domain Model: enhanced capability matching
-
         # Empty requirements = no restrictions
         if not task_requirements:
             return True
@@ -361,21 +346,12 @@ class Agent(BaseTimestampEntity):
                 - 1.0 = fully loaded (at max capacity)
                 - >1.0 = overloaded (exceeds capacity)
 
-        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        Business Rules:
         - Score = current_workload / max_concurrent_tasks
         - Accounts for agent status (offline = 1.0, paused = current score)
         - Handles zero max_concurrent_tasks gracefully
         - Returns exact ratio for precise load balancing
-
-        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
-        - Uses existing get_workload_percentage() / 100
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: use existing percentage method
-            return self.get_workload_percentage() / 100.0
-
-        # Rich Domain Model: comprehensive workload calculation
-
         # Special cases based on status
         if self.status == AgentStatus.OFFLINE:
             return 1.0  # Offline = fully unavailable
@@ -409,26 +385,12 @@ class Agent(BaseTimestampEntity):
                 - blocking_reasons: List[str] - Why agent is unavailable (if applicable)
                 - estimated_capacity: int - How many more tasks can be accepted
 
-        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        Business Rules:
         - Available if: status=AVAILABLE AND workload < max capacity
         - Provides detailed blocking reasons when unavailable
         - Calculates remaining capacity
         - Includes workload score for prioritization
-
-        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
-        - Uses existing is_available() method with basic info
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: basic availability check
-            return {
-                "available": self.is_available(),
-                "status": self.status.value,
-                "current_workload": self.current_workload,
-                "max_concurrent_tasks": self.max_concurrent_tasks
-            }
-
-        # Rich Domain Model: comprehensive availability analysis
-
         blocking_reasons = []
         is_available = True
 

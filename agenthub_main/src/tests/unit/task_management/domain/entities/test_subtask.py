@@ -9,7 +9,7 @@ from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
-from fastmcp.task_management.domain.events.task_events import TaskUpdated
+from fastmcp.task_management.domain.events import TaskUpdated
 
 class TestSubtaskCreation:
     """Test entity."""

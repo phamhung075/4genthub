@@ -157,8 +157,11 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     async def save(self, project: ProjectEntity) -> None:
         """Save a project to the repository"""
         try:
+            # Convert project ID to string for database query
+            project_id_str = str(project.id.value if hasattr(project.id, 'value') else project.id) if project.id else ""
+
             with self.get_db_session() as session:
-                existing = session.query(Project).filter(Project.id == project.id).first()
+                existing = session.query(Project).filter(Project.id == project_id_str).first()
 
                 if existing:
                     # Update existing project using DDD conversion pattern
@@ -179,7 +182,7 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                 else:
                     # Create new project with user isolation
                     project_data = {
-                        'id': project.id,
+                        'id': project_id_str,
                         'name': project.name,
                         'description': project.description,
                         'created_at': project.created_at,
@@ -201,14 +204,14 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                         # Check if branch already exists
                         existing_branch = session.query(ProjectGitBranch).filter(
                             ProjectGitBranch.id == branch_id,
-                            ProjectGitBranch.project_id == project.id
+                            ProjectGitBranch.project_id == project_id_str
                         ).first()
-                        
+
                         if not existing_branch:
                             # Create new branch with user_id for data isolation
                             branch_data = {
                                 'id': branch_id,
-                                'project_id': project.id,
+                                'project_id': project_id_str,
                                 'name': branch.name,
                                 'description': branch.description,
                                 'created_at': branch.created_at,
@@ -298,13 +301,16 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
     async def update(self, project: ProjectEntity) -> None:
         """Update an existing project"""
         try:
+            # Convert project ID to string for database query
+            project_id_str = str(project.id.value if hasattr(project.id, 'value') else project.id) if project.id else ""
+
             # Check if project exists first
             with self.get_db_session() as session:
-                existing = session.query(Project).filter(Project.id == project.id).first()
+                existing = session.query(Project).filter(Project.id == project_id_str).first()
                 if not existing:
                     raise ResourceNotFoundException(
                         resource_type="Project",
-                        resource_id=project.id
+                        resource_id=project_id_str
                     )
             
             # Touch the entity to update timestamp

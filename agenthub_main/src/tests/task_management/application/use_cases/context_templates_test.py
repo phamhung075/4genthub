@@ -18,7 +18,7 @@ from fastmcp.task_management.application.use_cases.context_templates import (
     TemplateVariable,
     TemplateCategory
 )
-from fastmcp.task_management.domain.models.unified_context import ContextLevel
+from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
 
 
 class TestTemplateRegistry:

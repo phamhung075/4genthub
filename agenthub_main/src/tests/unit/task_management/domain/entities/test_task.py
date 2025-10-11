@@ -8,7 +8,7 @@ from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
-from fastmcp.task_management.domain.events.task_events import (
+from fastmcp.task_management.domain.events import (
     TaskCreated, TaskUpdated, TaskDeleted
 )
 

@@ -22,7 +22,7 @@ from ..events.progress_events import (
     ProgressTypeCompleted,
     ProgressUpdated,
 )
-from ..events.task_events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
+from ..events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
 from ..exceptions.vision_exceptions import MissingCompletionSummaryError
 from ..value_objects.priority import Priority
 from ..value_objects.progress import (

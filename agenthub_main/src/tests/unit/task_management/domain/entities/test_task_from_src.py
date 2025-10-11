@@ -12,7 +12,7 @@ from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.events.task_events import TaskCreated, TaskUpdated, TaskDeleted
+from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated, TaskDeleted
 from fastmcp.task_management.domain.exceptions.vision_exceptions import MissingCompletionSummaryError
 
 

@@ -43,7 +43,7 @@ class TestORMGitBranchRepository:
             
             # Check if it's the Task model
             if hasattr(model, '__name__') and model.__name__ == 'Task':
-                # Return an empty task list for _model_to_git_branch
+                # Return an empty task list for _model_to_entity
                 mock_task_query = Mock()
                 mock_task_query.filter.return_value.all.return_value = []
                 return mock_task_query
@@ -82,7 +82,7 @@ class TestORMGitBranchRepository:
 
         def query_side_effect(model):
             if hasattr(model, '__name__') and model.__name__ == 'Task':
-                return mock_task_query  # For Task queries in _model_to_git_branch
+                return mock_task_query  # For Task queries in _model_to_entity
             else:
                 return mock_project_query  # For ProjectGitBranch queries
 
@@ -94,29 +94,29 @@ class TestORMGitBranchRepository:
     def sample_git_branch(self):
         """Create a sample GitBranch entity"""
         branch = GitBranch(
-            id="branch-123",
+            id="550e8400-e29b-41d4-a716-446655440001",  # Valid UUID
             name="feature/test",
             description="Test branch",
-            project_id="project-456",
+            project_id="550e8400-e29b-41d4-a716-446655440002",  # Valid UUID
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
-        branch.assigned_agent_id = "agent-789"
+        branch.assigned_agent_id = "550e8400-e29b-41d4-a716-446655440003"  # Valid UUID
         branch.priority = Priority.high()
         branch.status = TaskStatus.in_progress()
         return branch
-    
+
     @pytest.fixture
     def sample_model(self):
         """Create a sample ProjectGitBranch model"""
         model = ProjectGitBranch()
-        model.id = "branch-123"
+        model.id = "550e8400-e29b-41d4-a716-446655440001"  # Valid UUID
         model.name = "feature/test"
         model.description = "Test branch"
-        model.project_id = "project-456"
+        model.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         model.created_at = datetime.now(timezone.utc)
         model.updated_at = datetime.now(timezone.utc)
-        model.assigned_agent_id = "agent-789"
+        model.assigned_agent_id = "550e8400-e29b-41d4-a716-446655440003"  # Valid UUID
         model.priority = "high"
         model.status = "in_progress"
         model.task_count = 10
@@ -131,12 +131,12 @@ class TestORMGitBranchRepository:
         assert repo.user_id == "test-user"
         assert repo.model_class == ProjectGitBranch
     
-    def test_model_to_git_branch(self, repository, sample_model):
+    def test_model_to_entity(self, repository, sample_model):
         """Test converting model to domain entity"""
-        git_branch = repository._model_to_git_branch(sample_model)
-        
+        git_branch = repository._model_to_entity(sample_model)
+
         assert isinstance(git_branch, GitBranch)
-        assert git_branch.id == sample_model.id
+        assert str(git_branch.id) == sample_model.id  # Compare string representation of GitBranchId
         assert git_branch.name == sample_model.name
         assert git_branch.description == sample_model.description
         assert git_branch.project_id == sample_model.project_id
@@ -148,13 +148,13 @@ class TestORMGitBranchRepository:
         assert git_branch.get_task_count() == 0  # No tasks added to the branch yet
         assert git_branch.get_completed_task_count() == 0
     
-    def test_git_branch_to_model_data(self, repository, sample_git_branch):
+    def test_entity_to_model_dict(self, repository, sample_git_branch):
         """Test converting domain entity to model data"""
         # Mock get_task_count and get_completed_task_count
         sample_git_branch.get_task_count = Mock(return_value=5)
         sample_git_branch.get_completed_task_count = Mock(return_value=2)
-        
-        data = repository._git_branch_to_model_data(sample_git_branch)
+
+        data = repository._entity_to_model_dict(sample_git_branch)
         
         assert data["id"] == sample_git_branch.id
         assert data["project_id"] == sample_git_branch.project_id
@@ -255,17 +255,17 @@ class TestORMGitBranchRepository:
         # Set up mock queries for both ProjectGitBranch and Task models
         self.setup_mock_queries(mock_session, mock_query)
 
-        # Find branch
-        result = await repository.find_by_id("project-456", "branch-123")
-        
+        # Find branch (use UUIDs from fixture)
+        result = await repository.find_by_id("550e8400-e29b-41d4-a716-446655440002", "550e8400-e29b-41d4-a716-446655440001")
+
         # Verify query - should be called with ProjectGitBranch (and also Task internally)
         calls = mock_session.query.call_args_list
         assert any(call[0][0] == ProjectGitBranch for call in calls), "ProjectGitBranch query not found"
-        
+
         # Verify result
         assert isinstance(result, GitBranch)
-        assert result.id == "branch-123"
-        assert result.project_id == "project-456"
+        assert str(result.id) == "550e8400-e29b-41d4-a716-446655440001"
+        assert result.project_id == "550e8400-e29b-41d4-a716-446655440002"
     
     @pytest.mark.asyncio
     async def test_find_by_id_not_found(self, repository, mock_session):
@@ -306,13 +306,13 @@ class TestORMGitBranchRepository:
         # Set up mock queries for both ProjectGitBranch and Task models
         self.setup_mock_queries(mock_session, mock_query)
 
-        # Find branch
-        result = await repository.find_by_name("project-456", "feature/test")
-        
+        # Find branch (use UUIDs from fixture)
+        result = await repository.find_by_name("550e8400-e29b-41d4-a716-446655440002", "feature/test")
+
         # Verify result
         assert isinstance(result, GitBranch)
         assert result.name == "feature/test"
-        assert result.project_id == "project-456"
+        assert result.project_id == "550e8400-e29b-41d4-a716-446655440002"
     
     @pytest.mark.asyncio
     async def test_find_by_name_not_found(self, repository, mock_session):
@@ -335,10 +335,10 @@ class TestORMGitBranchRepository:
         """Test finding all branches for a project"""
         # Create multiple models with all required attributes
         model1 = Mock(spec=ProjectGitBranch)
-        model1.id = "branch-1"
+        model1.id = "550e8400-e29b-41d4-a716-446655440011"  # Valid UUID
         model1.name = "feature/1"
         model1.description = "Feature 1 description"
-        model1.project_id = "project-456"
+        model1.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         model1.created_at = datetime.now()
         model1.updated_at = datetime.now()
         model1.assigned_agent_id = None
@@ -348,10 +348,10 @@ class TestORMGitBranchRepository:
         model1.completed_task_count = 0
 
         model2 = Mock(spec=ProjectGitBranch)
-        model2.id = "branch-2"
+        model2.id = "550e8400-e29b-41d4-a716-446655440012"  # Valid UUID
         model2.name = "feature/2"
         model2.description = "Feature 2 description"
-        model2.project_id = "project-456"
+        model2.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         model2.created_at = datetime.now()
         model2.updated_at = datetime.now()
         model2.assigned_agent_id = None
@@ -373,8 +373,8 @@ class TestORMGitBranchRepository:
         # Verify result
         assert len(result) == 2
         assert all(isinstance(b, GitBranch) for b in result)
-        assert result[0].id == "branch-1"
-        assert result[1].id == "branch-2"
+        assert str(result[0].id) == "550e8400-e29b-41d4-a716-446655440011"
+        assert str(result[1].id) == "550e8400-e29b-41d4-a716-446655440012"
     
     @pytest.mark.asyncio
     async def test_find_all_by_project_with_conversion_error(self, repository, mock_session, caplog):
@@ -384,10 +384,10 @@ class TestORMGitBranchRepository:
 
         # Create models, one will fail conversion
         good_model = Mock(spec=ProjectGitBranch)
-        good_model.id = "branch-1"
+        good_model.id = "550e8400-e29b-41d4-a716-446655440011"  # Valid UUID
         good_model.name = "feature/1"
         good_model.description = "Good branch description"  # Add missing attribute
-        good_model.project_id = "project-456"
+        good_model.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         good_model.created_at = datetime.now()  # Add missing attribute
         good_model.updated_at = datetime.now()  # Add missing attribute
         good_model.assigned_agent_id = None  # Add missing attribute
@@ -424,7 +424,7 @@ class TestORMGitBranchRepository:
 
         # Only good model should be converted
         assert len(result) == 1
-        assert result[0].id == "branch-1"
+        assert str(result[0].id) == "550e8400-e29b-41d4-a716-446655440011"
         assert "Error converting model branch-bad" in caplog.text
     
     @pytest.mark.asyncio
@@ -593,13 +593,13 @@ class TestORMGitBranchRepository:
         """Test finding branches by assigned agent"""
         # Create models with all required attributes
         model1 = Mock(spec=ProjectGitBranch)
-        model1.id = "branch-1"
+        model1.id = "550e8400-e29b-41d4-a716-446655440011"  # Valid UUID
         model1.name = "feature/agent-work"
         model1.description = "Agent assigned work"
-        model1.project_id = "project-456"
+        model1.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         model1.created_at = datetime.now()
         model1.updated_at = datetime.now()
-        model1.assigned_agent_id = "agent-789"
+        model1.assigned_agent_id = "550e8400-e29b-41d4-a716-446655440003"  # Valid UUID
         model1.priority = "high"
         model1.status = "todo"
         model1.task_count = 5
@@ -617,17 +617,17 @@ class TestORMGitBranchRepository:
         
         # Verify result
         assert len(result) == 1
-        assert result[0].assigned_agent_id == "agent-789"
+        assert result[0].assigned_agent_id == "550e8400-e29b-41d4-a716-446655440003"
     
     @pytest.mark.asyncio
     async def test_find_by_status(self, repository, mock_session):
         """Test finding branches by status"""
         # Create models with all required attributes
         model1 = Mock(spec=ProjectGitBranch)
-        model1.id = "branch-1"
+        model1.id = "550e8400-e29b-41d4-a716-446655440011"  # Valid UUID
         model1.name = "feature/status-test"
         model1.description = "Status test description"
-        model1.project_id = "project-456"
+        model1.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         model1.created_at = datetime.now()
         model1.updated_at = datetime.now()
         model1.assigned_agent_id = None
@@ -655,10 +655,10 @@ class TestORMGitBranchRepository:
         """Test finding branches available for assignment"""
         # Create models with all required attributes
         model1 = Mock(spec=ProjectGitBranch)
-        model1.id = "branch-1"
+        model1.id = "550e8400-e29b-41d4-a716-446655440011"  # Valid UUID
         model1.name = "feature/available"
         model1.description = "Available for assignment"
-        model1.project_id = "project-456"
+        model1.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         model1.created_at = datetime.now()
         model1.updated_at = datetime.now()
         model1.assigned_agent_id = None
@@ -850,12 +850,12 @@ class TestORMGitBranchRepository:
         # Set up mock queries for both ProjectGitBranch and Task models using the established pattern
         self.setup_mock_queries(mock_session, mock_query)
 
-        # Get branch
-        result = await repository.get_git_branch_by_id("branch-123")
+        # Get branch (use UUID from fixture)
+        result = await repository.get_git_branch_by_id("550e8400-e29b-41d4-a716-446655440001")
 
         # Verify result
         assert result["success"] is True
-        assert result["git_branch"]["id"] == "branch-123"
+        assert str(result["git_branch"]["id"]) == "550e8400-e29b-41d4-a716-446655440001"
         assert result["git_branch"]["name"] == "feature/test"
     
     @pytest.mark.asyncio
@@ -881,10 +881,10 @@ class TestORMGitBranchRepository:
         """Test listing git branches"""
         # Mock find_all_by_project
         branch1 = Mock(spec=GitBranch)
-        branch1.id = "branch-1"
+        branch1.id = "550e8400-e29b-41d4-a716-446655440011"  # Valid UUID
         branch1.name = "feature/1"
         branch1.description = "Feature 1"
-        branch1.project_id = "project-456"
+        branch1.project_id = "550e8400-e29b-41d4-a716-446655440002"  # Valid UUID
         branch1.created_at = datetime.now(timezone.utc)
         branch1.updated_at = datetime.now(timezone.utc)
         branch1.assigned_agent_id = None
@@ -899,7 +899,7 @@ class TestORMGitBranchRepository:
         # Verify result
         assert result["success"] is True
         assert len(result["git_branchs"]) == 1
-        assert result["git_branchs"][0]["id"] == "branch-1"
+        assert result["git_branchs"][0]["id"] == "550e8400-e29b-41d4-a716-446655440011"
         assert result["count"] == 1
     
     @pytest.mark.asyncio

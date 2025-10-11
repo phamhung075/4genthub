@@ -31,6 +31,7 @@ from ..workflow_guidance.agent.agent_workflow_factory import AgentWorkflowFactor
 
 # Operation coordination factory
 from .factories.operation_factory import AgentOperationFactory
+from .factories.response_factory import AgentResponseFactory
 from .manage_agent_description import (
     get_manage_agent_description,
     get_manage_agent_parameters,
@@ -82,6 +83,7 @@ class AgentMCPController:
         # Initialize modular components
         self._response_formatter = StandardResponseFormatter()
         self._operation_factory = AgentOperationFactory(self._response_formatter)
+        self._response_factory = AgentResponseFactory(self._response_formatter)
 
         logger.info(
             "AgentMCPController initialized with modular architecture (factory pattern and workflow guidance)"
@@ -265,7 +267,7 @@ class AgentMCPController:
         if action == "register" and not name:
             return {
                 "valid": False,
-                "response": self._create_missing_field_error("name", action),
+                "response": self._response_factory.create_missing_field_error("name", action),
             }
 
         if (
@@ -274,13 +276,13 @@ class AgentMCPController:
         ):
             return {
                 "valid": False,
-                "response": self._create_missing_field_error("agent_id", action),
+                "response": self._response_factory.create_missing_field_error("agent_id", action),
             }
 
         if action in ["assign", "unassign"] and not git_branch_id:
             return {
                 "valid": False,
-                "response": self._create_missing_field_error("git_branch_id", action),
+                "response": self._response_factory.create_missing_field_error("git_branch_id", action),
             }
 
         return {"valid": True}
@@ -296,18 +298,6 @@ class AgentMCPController:
             if isinstance(sub, dict) and "manage_agent" in sub:
                 flat["manage_agent"] = sub["manage_agent"]
         return flat
-
-    def _create_missing_field_error(self, field: str, action: str) -> dict[str, Any]:
-        """Create standardized missing field error response."""
-        return {
-            "success": False,
-            "error": f"Missing required field: {field}",
-            "error_code": "MISSING_FIELD",
-            "field": field,
-            "action": action,
-            "expected": f"A valid {field} value",
-            "hint": f"Include '{field}' in your request for action '{action}'",
-        }
 
     # Backward compatibility methods for tests - delegate to factory
     def handle_crud_operations(

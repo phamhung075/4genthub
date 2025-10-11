@@ -27,7 +27,7 @@ from fastmcp.task_management.domain.value_objects.progress import ProgressType, 
 from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.domain.value_objects.common_labels import CommonLabel
 from fastmcp.task_management.domain.exceptions.vision_exceptions import MissingCompletionSummaryError
-from fastmcp.task_management.domain.events.task_events import TaskCreated, TaskUpdated, TaskDeleted
+from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated, TaskDeleted
 from fastmcp.task_management.domain.events.progress_events import ProgressUpdated
 
 

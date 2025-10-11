@@ -8,7 +8,7 @@ import pytest
 import os
 import sys
 from unittest.mock import patch, MagicMock, call
-from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory import RepositoryFactory
+from fastmcp.task_management.infrastructure.repositories.repository_factory import RepositoryFactory
 
 
 class TestRepositoryFactory:
@@ -35,7 +35,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockTaskRepository
+            from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockTaskRepository
             
             repo = RepositoryFactory.get_task_repository()
             
@@ -53,7 +53,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
             
             repo = RepositoryFactory.get_task_repository(
                 project_id='proj-123',
@@ -75,7 +75,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
             
             repo = RepositoryFactory.get_task_repository()
             
@@ -93,7 +93,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
             
             repo = RepositoryFactory.get_task_repository()
             
@@ -131,7 +131,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockProjectRepository
+            from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockProjectRepository
             
             repo = RepositoryFactory.get_project_repository()
             
@@ -149,8 +149,8 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.cached.cached_project_repository import CachedProjectRepository
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
+            from fastmcp.task_management.infrastructure.repositories.cached.cached_project_repository import CachedProjectRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
             
             repo = RepositoryFactory.get_project_repository()
             
@@ -169,7 +169,7 @@ class TestRepositoryFactory:
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
             with patch.dict('sys.modules', {'agenthub_main.src.fastmcp.task_management.infrastructure.repositories.cached.cached_project_repository': None}):
-                from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
+                from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
                 
                 repo = RepositoryFactory.get_project_repository()
                 
@@ -190,7 +190,7 @@ class TestRepositoryFactory:
             }
             
             with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-                from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+                from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
                 
                 repo = RepositoryFactory.get_git_branch_repository(user_id='user-789')
                 
@@ -216,7 +216,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockSubtaskRepository
+            from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockSubtaskRepository
             
             repo = RepositoryFactory.get_subtask_repository(user_id='user-123')
             
@@ -234,7 +234,7 @@ class TestRepositoryFactory:
         }
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockAgentRepository
+            from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockAgentRepository
             
             repo = RepositoryFactory.get_agent_repository()
             
@@ -254,11 +254,11 @@ class TestRepositoryFactory:
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
             # Try MockContextRepository first, fall back to MockTaskContextRepository
             try:
-                from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockContextRepository
+                from fastmcp.task_management.infrastructure.repositories.mock_repository_factory import MockContextRepository
                 expected_type = MockContextRepository
                 expected_log = "[RepositoryFactory] Using MockContextRepository for test environment"
             except ImportError:
-                from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.mock_task_context_repository import MockTaskContextRepository
+                from fastmcp.task_management.infrastructure.repositories.mock_task_context_repository import MockTaskContextRepository
                 expected_type = MockTaskContextRepository
                 expected_log = "MockContextRepository not available, using mock task context"
             
@@ -285,7 +285,7 @@ class TestRepositoryFactory:
                 mock_session = MagicMock()
                 mock_db_config.return_value.SessionLocal = mock_session
                 
-                from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.task_context_repository import TaskContextRepository
+                from fastmcp.task_management.infrastructure.repositories.task_context_repository import TaskContextRepository
                 
                 repo = RepositoryFactory.get_context_repository()
                 
@@ -330,19 +330,19 @@ class TestRepositoryFactory:
         
         with patch('agenthub_main.src.fastmcp.task_management.infrastructure.repositories.repository_factory.logger') as mock_logger:
             # Test project repository fallback
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.project_repository import ORMProjectRepository
             repo = RepositoryFactory.get_project_repository()
             assert isinstance(repo, ORMProjectRepository)
             mock_logger.info.assert_any_call("[RepositoryFactory] Using ORMProjectRepository (fallback)")
             
             # Test git branch repository fallback
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
             repo = RepositoryFactory.get_git_branch_repository()
             assert isinstance(repo, ORMGitBranchRepository)
             mock_logger.info.assert_any_call("[RepositoryFactory] Using ORMGitBranchRepository (fallback)")
             
             # Test subtask repository fallback
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
             repo = RepositoryFactory.get_subtask_repository(user_id='user-999')
             assert isinstance(repo, ORMSubtaskRepository)
             mock_logger.info.assert_any_call("[RepositoryFactory] Using ORMSubtaskRepository (fallback) with user_id: user-999")
@@ -358,7 +358,7 @@ class TestRepositoryFactory:
                 'use_cache': True
             }
             
-            from agenthub_main.src.fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+            from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
             
             repo = RepositoryFactory.get_task_repository()
             

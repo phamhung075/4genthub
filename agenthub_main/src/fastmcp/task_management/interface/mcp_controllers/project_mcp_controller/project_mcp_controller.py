@@ -28,6 +28,7 @@ from ...utils.response_formatter import (
 )
 from ..auth_helper import get_authenticated_user_id, log_authentication_details
 from .factories.operation_factory import ProjectOperationFactory
+from .factories.response_factory import ProjectResponseFactory
 
 # Import existing dependencies
 # Import the description directly from the local file
@@ -121,6 +122,11 @@ class ProjectMCPController(ContextPropagationMixin):
 
         # Initialize modular operation factory
         self._operation_factory = ProjectOperationFactory(
+            response_formatter=self._response_formatter
+        )
+
+        # Initialize response factory
+        self._response_factory = ProjectResponseFactory(
             response_formatter=self._response_formatter
         )
 
@@ -255,7 +261,7 @@ class ProjectMCPController(ContextPropagationMixin):
         if action == "create":
             name = kwargs.get("name")
             if not name or not str(name).strip():
-                return self._create_missing_field_error("name", action)
+                return self._response_factory.create_missing_field_error("name", action)
 
         elif action == "get":
             if not kwargs.get("project_id") and not kwargs.get("name"):
@@ -275,23 +281,9 @@ class ProjectMCPController(ContextPropagationMixin):
             "rebalance_agents",
         ]:
             if not kwargs.get("project_id"):
-                return self._create_missing_field_error("project_id", action)
+                return self._response_factory.create_missing_field_error("project_id", action)
 
         return None
-
-    def _create_missing_field_error(self, field: str, action: str) -> dict[str, Any]:
-        """Create a standardized missing field error response."""
-
-        return self._response_formatter.create_error_response(
-            operation=action,
-            error=f"Missing required field: {field}. Expected: A valid {field} string",
-            error_code=ErrorCodes.VALIDATION_ERROR,
-            metadata={
-                "field": field,
-                "hint": f"Include '{field}' in your request",
-                "action": action,
-            },
-        )
 
     def _check_project_permissions(
         self, action: str, user_id: str, project_id: str | None = None
@@ -492,7 +484,7 @@ class ProjectMCPController(ContextPropagationMixin):
         try:
             # Validate project_id is provided for maintenance operations
             if not project_id:
-                return self._create_missing_field_error("project_id", action)
+                return self._response_factory.create_missing_field_error("project_id", action)
 
             # Delegate to _handle_maintenance_action (this is what tests mock)
             return self._handle_maintenance_action(

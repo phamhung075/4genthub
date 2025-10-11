@@ -308,11 +308,13 @@ class TestUnifiedContextFacade:
     def test_get_context_exception(self, facade, mock_unified_service):
         """Test get_context exception handling"""
         mock_unified_service.get_context.side_effect = RuntimeError("Service error")
-        
+
         result = facade.get_context("task", "task-123")
-        
+
         assert result["success"] is False
-        assert "Service error" in result["error"]
+        # Unexpected errors return generic message for security
+        assert result["error"] == "An unexpected error occurred"
+        assert result["error_type"] == "unexpected"
 
     def test_get_context_summary_with_context(self, facade, mock_unified_service):
         """Test get_context_summary when context exists"""
@@ -355,12 +357,14 @@ class TestUnifiedContextFacade:
     def test_get_context_summary_exception(self, facade, mock_unified_service):
         """Test get_context_summary exception handling"""
         mock_unified_service.get_context.side_effect = RuntimeError("Service error")
-        
+
         result = facade.get_context_summary("task-123")
-        
+
         assert result["success"] is False
         assert result["has_context"] is False
-        assert "Service error" in result["error"]
+        # Unexpected errors return generic message for security
+        assert result["error"] == "An unexpected error occurred"
+        assert result["error_type"] == "unexpected"
 
     def test_update_context_success(self, facade, mock_unified_service):
         """Test successful update_context operation"""
@@ -531,12 +535,14 @@ class TestUnifiedContextFacade:
     def test_bootstrap_context_hierarchy_exception(self, facade, mock_unified_service):
         """Test bootstrap_context_hierarchy exception handling"""
         mock_unified_service.bootstrap_context_hierarchy.side_effect = RuntimeError("Bootstrap failed")
-        
+
         result = facade.bootstrap_context_hierarchy()
-        
+
         assert result["success"] is False
         assert result["bootstrap_completed"] is False
-        assert "Bootstrap failed" in result["error"]
+        # Unexpected errors return generic message for security
+        assert result["error"] == "An unexpected error occurred"
+        assert result["error_type"] == "unexpected"
 
     def test_create_context_flexible_with_auto_create(self, facade, mock_unified_service):
         """Test create_context_flexible with auto-create enabled"""

@@ -205,8 +205,7 @@ class TaskApplicationFacade:
             derived_user_id = validate_user_id(derived_user_id, "Task creation")
             logger.info(f"✅ TaskApplicationFacade: Final validated user_id: {derived_user_id}")
             
-            # Validate request at application boundary
-            self._validate_create_task_request(request)
+            # Validation will be performed by domain entity during creation
             
             # Check for recent duplicate creation attempts (following completion deduplication pattern)
             was_already_created = self._check_for_duplicate_creation(request, derived_user_id)
@@ -307,8 +306,7 @@ class TaskApplicationFacade:
     def update_task(self, task_id: str, request: UpdateTaskRequest) -> Dict[str, Any]:
         """Update an existing task"""
         try:
-            # Validate request at application boundary
-            self._validate_update_task_request(task_id, request)
+            # Validation will be performed by domain entity during update
             
             # Set task_id in request if not already set
             if not hasattr(request, 'task_id') or request.task_id is None:
@@ -1009,40 +1007,6 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in get_next_task: {e}")
             return {"success": False, "action": "next", "error": f"Unexpected error: {str(e)}"}
     
-    def _validate_create_task_request(self, request: CreateTaskRequest) -> None:
-        """Validate create task request at application boundary"""
-        if not request.title or not request.title.strip():
-            raise ValueError("Task title is required")
-
-        # Description is now optional, only validate if provided
-        if request.description is not None and not request.description.strip():
-            raise ValueError("Task description cannot be empty if provided")
-
-        if len(request.title) > 200:
-            raise ValueError("Task title cannot exceed 200 characters")
-
-        if request.description and len(request.description) > 2000:
-            raise ValueError("Task description cannot exceed 2000 characters")
-
-        # CreateTaskRequest doesn't have progress_percentage attribute
-        # Progress percentage is only for UpdateTaskRequest
-    
-    def _validate_update_task_request(self, task_id: str, request: UpdateTaskRequest) -> None:
-        """Validate update task request at application boundary"""
-        if not task_id or not task_id.strip():
-            raise ValueError("Task ID is required")
-        
-        if request.title is not None and (not request.title or not request.title.strip()):
-            raise ValueError("Task title cannot be empty")
-        
-        if request.description is not None and (not request.description or not request.description.strip()):
-            raise ValueError("Task description cannot be empty")
-        
-        if request.title and len(request.title) > 200:
-            raise ValueError("Task title cannot exceed 200 characters")
-        
-        if request.description and len(request.description) > 2000:
-            raise ValueError("Task description cannot exceed 2000 characters")
     
     def count_tasks(self, filters: Dict[str, Any]) -> Dict[str, Any]:
         """
