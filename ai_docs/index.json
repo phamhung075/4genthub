@@ -1689,7 +1689,7 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 28,
+      "count": 29,
       "files": [
         {
           "hash": "64066fdddd8fdd12697a78886e949905",
@@ -1837,6 +1837,13 @@
           "name": "CAPROVER_ENV_VARIABLES.md",
           "path": "operations/CAPROVER_ENV_VARIABLES.md",
           "size": 3996
+        },
+        {
+          "hash": "09617264446b3547b85711a7f3551a1f",
+          "modified": "2025-10-12T01:23:42.890454",
+          "name": "ai-docs-cleanup-recommendations.md",
+          "path": "operations/ai-docs-cleanup-recommendations.md",
+          "size": 11963
         },
         {
           "hash": "2769edd82554c7344de268c3af8df9d6",
@@ -2229,7 +2236,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 43,
+      "count": 44,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2300,6 +2307,13 @@
           "name": "test-fix-iteration-40-perfect-health-stability.md",
           "path": "testing-qa/test-fix-iteration-40-perfect-health-stability.md",
           "size": 3253
+        },
+        {
+          "hash": "e7b47d1bc44060f0b75e2f389bbacf69",
+          "modified": "2025-10-12T00:57:20.468643",
+          "name": "mcp-tools-comprehensive-test-results.md",
+          "path": "testing-qa/mcp-tools-comprehensive-test-results.md",
+          "size": 12238
         },
         {
           "hash": "378aa13e352250d85c6226e253e6e8a8",
@@ -2834,7 +2848,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-11T23:01:58.705280",
+  "generated_at": "2025-10-12T01:23:42.968792",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3154,6 +3168,7 @@
         "KEYCLOAK_POSTGRESQL_SETUP.md",
         "QUICK_DEPLOY_CAPROVER.md",
         "TDD_REMEDIATION_TASK_PLAN.md",
+        "ai-docs-cleanup-recommendations.md",
         "cache-optimization-strategy-phase2.md",
         "cloud-storage-solutions.md",
         "complete-database-reset-guide.md",
@@ -3248,6 +3263,7 @@
         "hook-testing-techniques.md",
         "live-updates-verification-summary.md",
         "mcp-tools-comprehensive-test-report-2025-10-08.md",
+        "mcp-tools-comprehensive-test-results.md",
         "mcp-tools-fixes-summary.md",
         "mcp-tools-test-results.md",
         "phase-2-dto-integration-testing-report.md",
@@ -3331,5 +3347,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 378
+  "total_files": 380
 }
