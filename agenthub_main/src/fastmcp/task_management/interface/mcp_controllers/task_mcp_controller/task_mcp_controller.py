@@ -29,11 +29,17 @@ from ....application.services.parameter_enforcement_service import (
     EnforcementLevel,
     ParameterEnforcementService,
 )
+from ....application.services.parameter_transformation_service import (
+    ParameterTransformationService,
+)
 from ....application.services.progressive_enforcement_service import (
     ProgressiveEnforcementService,
 )
 from ....application.services.response_enrichment_service import (
     ResponseEnrichmentService,
+)
+from ....application.services.task_authorization_service import (
+    TaskAuthorizationService,
 )
 from ....domain.exceptions.authentication_exceptions import (
     UserAuthenticationRequiredError,
@@ -183,6 +189,11 @@ class TaskMCPController(ContextPropagationMixin):
 
         # Initialize response enrichment service
         self._response_enrichment = ResponseEnrichmentService()
+
+        # Initialize authorization service
+        self._authorization_service = TaskAuthorizationService(
+            response_formatter=self._response_formatter
+        )
 
         logger.info("TaskMCPController initialized with modular architecture")
 
@@ -410,62 +421,41 @@ class TaskMCPController(ContextPropagationMixin):
             This design allows flexible parameter requirements while maintaining a single entry point.
             Each action has its own required parameters validated by the ValidationFactory.
             """
-            # Handle None defaults for boolean parameters
-            if include_context is None:
-                include_context = True  # Default to True for better user experience
-            if force_full_generation is None:
-                force_full_generation = False
+            # Handle boolean defaults using ParameterTransformationService
+            include_context = ParameterTransformationService.transform_boolean_default(
+                include_context, default=True
+            )
+            force_full_generation = ParameterTransformationService.transform_boolean_default(
+                force_full_generation, default=False
+            )
 
-            # Handle flexible input types for parameters that can be string, list, or comma-separated
-            if assignees is not None and isinstance(assignees, str):
-                # Convert string to list - support both single values and comma-separated values
-                if "," in assignees:
-                    assignees = [a.strip() for a in assignees.split(",") if a.strip()]
-                else:
-                    # Single assignee - convert to list
-                    assignees = [assignees.strip()] if assignees.strip() else []
+            # Transform string-to-list parameters using ParameterTransformationService
+            assignees = ParameterTransformationService.transform_string_to_list(
+                assignees, "assignees"
+            )
+            labels = ParameterTransformationService.transform_string_to_list(
+                labels, "labels"
+            )
+            dependencies = ParameterTransformationService.transform_string_to_list(
+                dependencies, "dependencies"
+            )
 
-            if labels is not None and isinstance(labels, str):
-                # Convert string to list - support both single values and comma-separated values
-                if "," in labels:
-                    labels = [l.strip() for l in labels.split(",") if l.strip()]
-                else:
-                    # Single label - convert to list
-                    labels = [labels.strip()] if labels.strip() else []
+            # Transform integer parameters with defaults using ParameterTransformationService
+            limit = ParameterTransformationService.transform_to_integer(
+                limit, default=50, field_name="limit"
+            )
+            offset = ParameterTransformationService.transform_to_integer(
+                offset, default=0, field_name="offset"
+            )
 
-            if dependencies is not None and isinstance(dependencies, str):
-                # Convert string to list - support both single values and comma-separated values
-                if "," in dependencies:
-                    dependencies = [
-                        d.strip() for d in dependencies.split(",") if d.strip()
-                    ]
-                else:
-                    # Single dependency - convert to list
-                    dependencies = (
-                        [dependencies.strip()] if dependencies.strip() else []
+            # Validate progress percentage using ParameterTransformationService
+            if progress_percentage is not None:
+                progress_percentage, error_msg = (
+                    ParameterTransformationService.validate_progress_percentage(
+                        progress_percentage
                     )
-
-            # Convert string representations of integers to actual integers
-            if limit is not None and not isinstance(limit, int):
-                try:
-                    limit = int(limit)
-                except (ValueError, TypeError):
-                    limit = 50  # Default value
-
-            if offset is not None and not isinstance(offset, int):
-                try:
-                    offset = int(offset)
-                except (ValueError, TypeError):
-                    offset = 0  # Default value
-
-            # Normalize progress percentage input if provided
-            if progress_percentage is not None and not isinstance(
-                progress_percentage, int
-            ):
-                try:
-                    progress_percentage = int(progress_percentage)
-                except (ValueError, TypeError):
-                    progress_percentage = None
+                )
+                # Note: error_msg will be None if valid, we'll handle it in manage_task
 
             return await self.manage_task(
                 action=action,
@@ -555,75 +545,35 @@ class TaskMCPController(ContextPropagationMixin):
                 f"manage_task - filtered_kwargs keys: {list(filtered_kwargs.keys())}"
             )
 
-            # Step 2.5: Handle flexible input types for parameters (string-to-list conversion for test compatibility)
-            if (
-                "assignees" in filtered_kwargs
-                and filtered_kwargs["assignees"] is not None
-                and isinstance(filtered_kwargs["assignees"], str)
-            ):
-                assignees = filtered_kwargs["assignees"]
-                if "," in assignees:
-                    filtered_kwargs["assignees"] = [
-                        a.strip() for a in assignees.split(",") if a.strip()
-                    ]
-                else:
-                    filtered_kwargs["assignees"] = (
-                        [assignees.strip()] if assignees.strip() else []
-                    )
+            # Step 2.5: Transform parameters using ParameterTransformationService (application layer)
+            # Transform string-to-list parameters
+            if "assignees" in filtered_kwargs and filtered_kwargs["assignees"] is not None:
+                filtered_kwargs["assignees"] = ParameterTransformationService.transform_string_to_list(
+                    filtered_kwargs["assignees"], "assignees"
+                )
 
-            if (
-                "labels" in filtered_kwargs
-                and filtered_kwargs["labels"] is not None
-                and isinstance(filtered_kwargs["labels"], str)
-            ):
-                labels = filtered_kwargs["labels"]
-                if "," in labels:
-                    filtered_kwargs["labels"] = [
-                        l.strip() for l in labels.split(",") if l.strip()
-                    ]
-                else:
-                    filtered_kwargs["labels"] = (
-                        [labels.strip()] if labels.strip() else []
-                    )
+            if "labels" in filtered_kwargs and filtered_kwargs["labels"] is not None:
+                filtered_kwargs["labels"] = ParameterTransformationService.transform_string_to_list(
+                    filtered_kwargs["labels"], "labels"
+                )
 
-            if (
-                "dependencies" in filtered_kwargs
-                and filtered_kwargs["dependencies"] is not None
-                and isinstance(filtered_kwargs["dependencies"], str)
-            ):
-                dependencies = filtered_kwargs["dependencies"]
-                if "," in dependencies:
-                    filtered_kwargs["dependencies"] = [
-                        d.strip() for d in dependencies.split(",") if d.strip()
-                    ]
-                else:
-                    filtered_kwargs["dependencies"] = (
-                        [dependencies.strip()] if dependencies.strip() else []
-                    )
+            if "dependencies" in filtered_kwargs and filtered_kwargs["dependencies"] is not None:
+                filtered_kwargs["dependencies"] = ParameterTransformationService.transform_string_to_list(
+                    filtered_kwargs["dependencies"], "dependencies"
+                )
 
-            if (
-                "progress_percentage" in filtered_kwargs
-                and filtered_kwargs["progress_percentage"] is not None
-            ):
-                try:
-                    filtered_kwargs["progress_percentage"] = int(
-                        filtered_kwargs["progress_percentage"]
-                    )
-                except (ValueError, TypeError):
+            # Validate progress percentage with range check
+            if "progress_percentage" in filtered_kwargs and filtered_kwargs["progress_percentage"] is not None:
+                validated_percentage, error_msg = ParameterTransformationService.validate_progress_percentage(
+                    filtered_kwargs["progress_percentage"]
+                )
+                if error_msg:
                     return self._response_factory.create_error_response(
                         operation=action,
-                        error="progress_percentage must be an integer between 0 and 100",
+                        error=error_msg,
                         error_code=ErrorCodes.VALIDATION_ERROR,
                     )
-                if (
-                    filtered_kwargs["progress_percentage"] < 0
-                    or filtered_kwargs["progress_percentage"] > 100
-                ):
-                    return self._response_factory.create_error_response(
-                        operation=action,
-                        error="progress_percentage must be between 0 and 100",
-                        error_code=ErrorCodes.VALIDATION_ERROR,
-                    )
+                filtered_kwargs["progress_percentage"] = validated_percentage
 
             # Step 3: Get facade for request
             logger.debug(
@@ -790,59 +740,6 @@ class TaskMCPController(ContextPropagationMixin):
             # For other actions, basic validation
             return True, None
 
-    def _create_missing_field_error(self, field: str, action: str) -> dict[str, Any]:
-        """Create standardized missing field error response."""
-        return {
-            "status": "failure",
-            "error": {
-                "message": f"Validation failed for field: {field}",
-                "code": "VALIDATION_ERROR",
-            },
-            "operation": action,
-            "metadata": {
-                "validation_details": {
-                    "field": field,
-                    "expected": f"A valid {field} value",
-                    "hint": f"Include '{field}' in your request for action '{action}'",
-                }
-            },
-        }
-
-    def _create_invalid_action_error(self, invalid_action: str) -> dict[str, Any]:
-        """Create standardized invalid action error response."""
-        valid_actions = [
-            "create",
-            "update",
-            "get",
-            "delete",
-            "complete",
-            "list",
-            "search",
-            "next",
-            "add_dependency",
-            "remove_dependency",
-            "ai_plan",
-            "ai_create",
-            "ai_enhance",
-            "ai_analyze",
-            "ai_suggest_agents",
-        ]
-        return {
-            "status": "failure",
-            "error": {
-                "message": "Validation failed for field: action",
-                "code": "VALIDATION_ERROR",
-            },
-            "operation": "unknown_action",
-            "metadata": {
-                "validation_details": {
-                    "field": "action",
-                    "expected": f"One of: {', '.join(valid_actions)}",
-                    "hint": f"Invalid action: {invalid_action}. Use one of the supported actions.",
-                }
-            },
-        }
-
     def _get_task_management_descriptions(self) -> dict[str, Any]:
         """Get task management descriptions from description loader."""
         all_descriptions = description_loader.get_all_descriptions()
@@ -855,6 +752,8 @@ class TaskMCPController(ContextPropagationMixin):
         """
         Check if user has required permissions for task operations.
 
+        Delegates to TaskAuthorizationService for authorization logic.
+
         Args:
             action: The action being performed (create, read, update, delete, etc.)
             user_id: The authenticated user ID
@@ -863,94 +762,12 @@ class TaskMCPController(ContextPropagationMixin):
         Returns:
             Tuple of (success: bool, error_response: Optional[Dict])
         """
-        try:
-            # Map action to permission
-            action_to_permission = {
-                "create": PermissionAction.CREATE,
-                "get": PermissionAction.READ,
-                "list": PermissionAction.READ,
-                "search": PermissionAction.READ,
-                "update": PermissionAction.UPDATE,
-                "complete": PermissionAction.UPDATE,  # Completing is an update operation
-                "delete": PermissionAction.DELETE,
-                "next": PermissionAction.READ,  # Getting next task is read access
-                "add_dependency": PermissionAction.UPDATE,  # Adding dependency is update
-                "remove_dependency": PermissionAction.UPDATE,  # Removing dependency is update
-            }
-
-            required_permission = action_to_permission.get(action)
-            if not required_permission:
-                # Unknown action - allow by default (backwards compatibility)
-                logger.warning(f"Unknown task action '{action}' - allowing by default")
-                return True, None
-
-            # Get user context and token for permission checking
-            try:
-                # Import here to avoid circular imports
-                from .....auth.middleware.request_context_middleware import (
-                    get_current_request_context,
-                )
-
-                request_context = get_current_request_context()
-
-                if (
-                    not request_context
-                    or not hasattr(request_context, "user")
-                    or not request_context.user
-                ):
-                    # Fallback for test environments or when authentication context is not available
-                    logger.warning(
-                        f"No user context found for permission check - user_id: {user_id}, falling back to allow for backwards compatibility"
-                    )
-                    return True, None
-
-                # Get token payload from user context
-                user = request_context.user
-                token_payload = getattr(user, "token", {})
-                if not token_payload:
-                    logger.error(f"No token payload found for user {user_id}")
-                    return False, self._response_formatter.create_error_response(
-                        operation=action,
-                        error="No token payload found for permission validation",
-                        error_code="AUTHENTICATION_ERROR",
-                    )
-
-                # Check permissions using PermissionChecker
-                checker = PermissionChecker(token_payload)
-                has_permission = checker.has_permission(
-                    ResourceType.TASKS, required_permission
-                )
-
-                if not has_permission:
-                    logger.warning(
-                        f"User {user_id} lacks permission for tasks:{required_permission.value}"
-                    )
-                    return False, self._response_formatter.create_error_response(
-                        operation=action,
-                        error=f"Permission denied: requires tasks:{required_permission.value}",
-                        error_code="PERMISSION_DENIED",
-                    )
-
-                logger.debug(
-                    f"User {user_id} has permission for tasks:{required_permission.value}"
-                )
-                return True, None
-
-            except ImportError:
-                # Fallback: If request context middleware is not available, allow operation
-                # This ensures backwards compatibility
-                logger.warning(
-                    f"Request context middleware not available - allowing task {action} for user {user_id}"
-                )
-                return True, None
-
-        except Exception as e:
-            logger.error(
-                f"Error checking task permissions for user {user_id}, action {action}: {e}"
-            )
-            # On error, allow the operation to proceed (fail-open for now)
-            # In production, you might want to fail-closed (deny access on errors)
-            return True, None
+        # Delegate to authorization service
+        return self._authorization_service.check_task_permission_from_context(
+            action=action,
+            user_id=user_id,
+            task_id=task_id
+        )
 
     # ===== BACKWARD COMPATIBILITY METHODS =====
     # These methods provide compatibility with legacy test interfaces

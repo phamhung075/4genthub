@@ -1,25 +1,17 @@
 """
-Orchestrator Router - Strangler Fig Pattern Implementation
+Orchestrator Router - Application Layer Orchestrator
 
-This router implements the Strangler Fig pattern for migrating from domain-layer
-orchestrator to application-layer orchestrator with zero downtime.
+This module provides access to the application layer orchestrator for
+coordinating multi-agent work across projects.
 
-How it works:
-1. Checks FEATURE_APPLICATION_ORCHESTRATOR feature flag
-2. Routes to appropriate implementation based on flag
-3. Maintains identical interface for all callers
-4. Enables gradual migration and A/B testing
-
-Migration phases:
-- Phase 3 (current): Both implementations available, flag controls routing
-- Phase 4-7: Gradual migration of callers, testing with flag enabled
-- Phase 8: Remove domain orchestrator, update default flag value to True
+The application orchestrator (ProjectOrchestrator) coordinates multiple domain
+aggregates and implements workflow logic, which belongs in the application layer
+according to DDD principles.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 import logging
 
-from fastmcp.settings import settings
 from ...domain.entities.project import Project
 
 
@@ -28,19 +20,16 @@ logger = logging.getLogger(__name__)
 
 def get_orchestrator(strategy=None):
     """
-    Factory function to get the appropriate orchestrator implementation.
-
-    Uses feature flag FEATURE_APPLICATION_ORCHESTRATOR to determine which
-    orchestrator to instantiate.
+    Factory function to get the application layer orchestrator.
 
     Args:
-        strategy: Optional orchestration strategy (for both implementations)
+        strategy: Optional orchestration strategy
 
     Returns:
-        Orchestrator instance (domain or application layer)
+        ProjectOrchestrator instance (application layer)
 
     Examples:
-        # Get orchestrator (automatically selects based on feature flag)
+        # Get orchestrator
         orchestrator = get_orchestrator()
         result = orchestrator.orchestrate_project(project)
 
@@ -48,82 +37,47 @@ def get_orchestrator(strategy=None):
         from .project_orchestrator import CapabilityBasedStrategy
         orchestrator = get_orchestrator(strategy=CapabilityBasedStrategy())
     """
-    feature_flag = settings.feature_application_orchestrator
-
-    if feature_flag:
-        # NEW: Application layer orchestrator
-        from .project_orchestrator import ProjectOrchestrator
-        logger.info("[Strangler Fig] Using application layer orchestrator (NEW)")
-        return ProjectOrchestrator(strategy=strategy)
-    else:
-        # OLD: Domain layer orchestrator (backward compatibility)
-        from ...domain.services.orchestrator import Orchestrator
-        logger.info("[Strangler Fig] Using domain layer orchestrator (LEGACY)")
-        return Orchestrator(strategy=strategy)
+    from .project_orchestrator import ProjectOrchestrator
+    logger.debug("Using application layer orchestrator")
+    return ProjectOrchestrator(strategy=strategy)
 
 
 class OrchestratorRouter:
     """
-    Router class that delegates to appropriate orchestrator implementation.
+    Router class that delegates to the application layer orchestrator.
 
-    This provides a class-based API that automatically routes to the correct
-    implementation based on feature flag. Use this when you need an instance
-    that can be passed around.
-
-    The router maintains identical interface to both orchestrator implementations,
-    so callers don't need to change their code during migration.
+    This provides a class-based API for the orchestrator. Use this when you
+    need an instance that can be passed around.
     """
 
     def __init__(self, strategy=None):
-        """Initialize router with appropriate orchestrator"""
+        """Initialize router with application layer orchestrator"""
         self._orchestrator = get_orchestrator(strategy)
-        self._layer = "application" if settings.feature_application_orchestrator else "domain"
-        logger.debug(f"OrchestratorRouter initialized with {self._layer} layer implementation")
+        logger.debug("OrchestratorRouter initialized with application layer implementation")
 
-    def orchestrate_project(self, project: Project) -> Dict[str, Any]:
+    def orchestrate_project(self, project: Project):
         """
         Orchestrate work distribution for a project.
-
-        Routes to appropriate implementation based on feature flag.
         """
         return self._orchestrator.orchestrate_project(project)
 
-    def coordinate_cross_tree_dependencies(self, project: Project) -> List[Dict]:
+    def coordinate_cross_tree_dependencies(self, project: Project):
         """
         Coordinate and validate cross-tree dependencies.
-
-        Routes to appropriate implementation based on feature flag.
         """
         return self._orchestrator.coordinate_cross_tree_dependencies(project)
 
-    def balance_workload(self, project: Project) -> Dict[str, Any]:
+    def balance_workload(self, project: Project):
         """
         Balance workload across agents.
-
-        Routes to appropriate implementation based on feature flag.
         """
         return self._orchestrator.balance_workload(project)
-
-    @property
-    def current_layer(self) -> str:
-        """Return which layer is currently handling orchestration"""
-        return self._layer
-
-    @property
-    def is_using_application_layer(self) -> bool:
-        """Check if using new application layer orchestrator"""
-        return self._layer == "application"
-
-    @property
-    def is_using_domain_layer(self) -> bool:
-        """Check if using old domain layer orchestrator"""
-        return self._layer == "domain"
 
 
 # Convenience function for quick orchestration
 def orchestrate_project(project: Project, strategy=None) -> Dict[str, Any]:
     """
-    Convenience function to orchestrate a project with automatic routing.
+    Convenience function to orchestrate a project.
 
     Args:
         project: Project to orchestrate

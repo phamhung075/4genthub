@@ -11,7 +11,12 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
 from ..services.unified_context_service import UnifiedContextService
-from ...domain.exceptions.base_exceptions import ValidationException
+from ...domain.exceptions.base_exceptions import (
+    ValidationException,
+    ResourceNotFoundException,
+    RepositoryError,
+    DatabaseException
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,12 +111,34 @@ class UnifiedContextFacade:
             )
             
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to create context: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error creating context: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Resource not found creating context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error creating context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error creating context: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def get_context(
@@ -139,14 +166,36 @@ class UnifiedContextFacade:
             result = self._service.get_context(
                 level, context_id, include_inherited, force_refresh, user_id
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to get context: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error getting context: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.info(f"Context not found: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error getting context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error getting context: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def get_context_summary(self, context_id: str) -> Dict[str, Any]:
@@ -190,13 +239,38 @@ class UnifiedContextFacade:
                     "context_size": 0,
                     "last_updated": None
                 }
-                
-        except Exception as e:
-            logger.warning(f"Failed to get context summary for {context_id}: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error in context summary: {e}")
             return {
                 "success": False,
                 "has_context": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            # Context not found is expected and not an error for summary
+            return {
+                "success": True,
+                "has_context": False,
+                "context_size": 0,
+                "last_updated": None
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error getting context summary for {context_id}: {e}")
+            return {
+                "success": False,
+                "has_context": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.warning(f"Unexpected error getting context summary for {context_id}: {e}")
+            return {
+                "success": False,
+                "has_context": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def update_context(
@@ -225,14 +299,36 @@ class UnifiedContextFacade:
             result = self._service.update_context(
                 level, context_id, data, propagate_changes
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to update context: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error updating context: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Context not found for update: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error updating context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error updating context: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def delete_context(
@@ -252,14 +348,36 @@ class UnifiedContextFacade:
         """
         try:
             result = self._service.delete_context(level, context_id)
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to delete context: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error deleting context: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.warning(f"Context not found for deletion: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error deleting context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error deleting context: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def resolve_context(
@@ -281,14 +399,36 @@ class UnifiedContextFacade:
         """
         try:
             result = self._service.resolve_context(level, context_id, force_refresh)
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to resolve context: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error resolving context: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Context not found for resolution: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error resolving context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error resolving context: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def delegate_context(
@@ -316,14 +456,36 @@ class UnifiedContextFacade:
             result = self._service.delegate_context(
                 level, context_id, delegate_to, data, delegation_reason
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to delegate context: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error delegating context: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Context not found for delegation: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error delegating context: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error delegating context: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def add_insight(
@@ -353,14 +515,36 @@ class UnifiedContextFacade:
             result = self._service.add_insight(
                 level, context_id, content, category, importance, agent
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to add insight: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error adding insight: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Context not found for insight: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error adding insight: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error adding insight: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def add_progress(
@@ -386,14 +570,36 @@ class UnifiedContextFacade:
             result = self._service.add_progress(
                 level, context_id, content, agent
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to add progress: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error adding progress: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Context not found for progress: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error adding progress: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error adding progress: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def list_contexts(
@@ -427,14 +633,29 @@ class UnifiedContextFacade:
                 filters["git_branch_id"] = self._git_branch_id
             
             result = self._service.list_contexts(level, filters)
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to list contexts: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error listing contexts: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error listing contexts: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error listing contexts: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }
     
     def bootstrap_context_hierarchy(
@@ -465,14 +686,39 @@ class UnifiedContextFacade:
                 project_id=effective_project_id,
                 branch_id=effective_branch_id
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to bootstrap context hierarchy: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error bootstrapping hierarchy: {e}")
             return {
                 "success": False,
                 "error": str(e),
+                "error_type": "validation",
+                "bootstrap_completed": False
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Resource not found during bootstrap: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found",
+                "bootstrap_completed": False
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error bootstrapping hierarchy: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database",
+                "bootstrap_completed": False
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error bootstrapping hierarchy: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected",
                 "bootstrap_completed": False
             }
     
@@ -515,12 +761,34 @@ class UnifiedContextFacade:
                 project_id=self._project_id,
                 auto_create_parents=auto_create_parents
             )
-            
+
             return result
-            
-        except Exception as e:
-            logger.error(f"Failed to create context with flexible options: {e}")
+
+        except ValidationException as e:
+            logger.warning(f"Validation error in flexible context creation: {e}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "error_type": "validation"
+            }
+        except ResourceNotFoundException as e:
+            logger.error(f"Resource not found in flexible creation: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "not_found"
+            }
+        except (DatabaseException, RepositoryError) as e:
+            logger.error(f"Database error in flexible context creation: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "error_type": "database"
+            }
+        except Exception as e:
+            logger.critical(f"Unexpected error in flexible context creation: {e}", exc_info=True)
+            return {
+                "success": False,
+                "error": "An unexpected error occurred",
+                "error_type": "unexpected"
             }

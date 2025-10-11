@@ -8,7 +8,7 @@ from ..value_objects.task_id import TaskId
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
 from ..value_objects.priority import Priority
 from ..value_objects import AgentRole, resolve_legacy_role
-from ..events.task_events import TaskUpdated
+from ..events import TaskUpdated
 from .base.base_timestamp_entity import BaseTimestampEntity
 
 

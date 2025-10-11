@@ -8,7 +8,7 @@ from fastmcp.task_management.application.use_cases.delete_task import DeleteTask
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-from fastmcp.task_management.domain.events.task_events import TaskDeleted
+from fastmcp.task_management.domain.events import TaskDeleted
 from fastmcp.task_management.domain.services.cascade_deletion_service import DeleteScope
 
 

@@ -1,6 +1,5 @@
 """Base Repository Interface for DDD Standardization"""
 
-import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, TypeVar, Generic
 
@@ -19,18 +18,8 @@ class BaseRepository(ABC, Generic[T]):
     All domain repositories should inherit from this to ensure consistency
     in interface design and DDD compliance.
 
-    Feature Flag: FEATURE_CLEAN_REPOSITORIES
-    - False (default): Provides create_pagination_result() helper method
-    - True: Removes helper - use PaginationService instead (clean interface)
+    Note: For pagination, use PaginationService.create_pagination_result()
     """
-
-    @property
-    def FEATURE_CLEAN_REPOSITORIES(self) -> bool:
-        """
-        Feature flag for clean repository pattern (Strangler Fig Pattern).
-        Reads from environment variable dynamically for testability.
-        """
-        return os.getenv("FEATURE_CLEAN_REPOSITORIES", "false").lower() == "true"
     
     @abstractmethod
     def find_by_criteria(
@@ -95,62 +84,11 @@ class BaseRepository(ABC, Generic[T]):
     def bulk_delete(self, entity_ids: List[Any]) -> int:
         """
         Delete multiple entities by their identifiers.
-        
+
         Args:
             entity_ids: List of entity identifiers to delete
-            
+
         Returns:
             Number of entities actually deleted
         """
         pass
-    
-    def create_pagination_result(
-        self,
-        items: List[T],
-        total_count: int,
-        pagination: PaginationRequest
-    ) -> PaginationResult[T]:
-        """
-        DEPRECATED: Use PaginationService.create_pagination_result() instead.
-
-        This method will raise NotImplementedError when FEATURE_CLEAN_REPOSITORIES=True.
-        For clean repository pattern, use the dedicated PaginationService.
-
-        Migration Guide:
-            Old: result = repository.create_pagination_result(items, count, pagination)
-            New: from ..services.pagination_service import PaginationService
-                 result = PaginationService.create_pagination_result(items, count, pagination)
-
-        Args:
-            items: List of entities for current page
-            total_count: Total number of entities across all pages
-            pagination: Pagination request parameters
-
-        Returns:
-            Properly formatted pagination result
-
-        Raises:
-            NotImplementedError: When FEATURE_CLEAN_REPOSITORIES=True
-        """
-        if self.FEATURE_CLEAN_REPOSITORIES:
-            raise NotImplementedError(
-                "Pagination logic has been moved to PaginationService for clean separation of concerns. "
-                "Please use: PaginationService.create_pagination_result(items, total_count, pagination). "
-                "This maintains DDD principle of keeping repositories focused on data access only. "
-                "Set FEATURE_CLEAN_REPOSITORIES=false to temporarily re-enable this method during migration."
-            )
-
-        # Legacy implementation - backward compatibility when flag=False
-        total_pages = (total_count + pagination.page_size - 1) // pagination.page_size
-        has_next = pagination.page < total_pages
-        has_previous = pagination.page > 1
-
-        return PaginationResult(
-            items=items,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=total_pages,
-            has_next=has_next,
-            has_previous=has_previous
-        )

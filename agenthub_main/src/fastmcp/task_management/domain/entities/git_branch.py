@@ -25,7 +25,10 @@ class GitBranch(BaseTimestampEntity):
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
-        return str(self.id.value) if self.id else "unknown"
+        if not self.id:
+            return "unknown"
+        # Handle both value object and string types
+        return str(self.id.value if hasattr(self.id, 'value') else self.id)
     
     # Task hierarchy
     root_tasks: Dict[str, Task] = field(default_factory=dict)  # task_id -> Task
@@ -59,8 +62,9 @@ class GitBranch(BaseTimestampEntity):
     
     def add_root_task(self, task: Task) -> None:
         """Add a root-level task to this branch"""
-        self.root_tasks[task.id.value] = task
-        self.all_tasks[task.id.value] = task
+        task_id_str = str(task.id.value if hasattr(task.id, 'value') else task.id)
+        self.root_tasks[task_id_str] = task
+        self.all_tasks[task_id_str] = task
         self.touch("root_task_added")
     
     def add_child_task(self, parent_task_id: str, child_task: Task) -> None:
@@ -68,8 +72,9 @@ class GitBranch(BaseTimestampEntity):
         if parent_task_id in self.all_tasks:
             parent = self.all_tasks[parent_task_id]
             # Add subtask ID to parent task's subtasks list
-            parent.add_subtask(child_task.id.value)
-            self.all_tasks[child_task.id.value] = child_task
+            child_id_str = str(child_task.id.value if hasattr(child_task.id, 'value') else child_task.id)
+            parent.add_subtask(child_id_str)
+            self.all_tasks[child_id_str] = child_task
             self.touch("child_task_added")
         else:
             raise ValueError(f"Parent task {parent_task_id} not found in branch")
@@ -255,7 +260,7 @@ class GitBranch(BaseTimestampEntity):
     def to_dict(self) -> Dict:
         """Convert to dictionary representation"""
         return {
-            'id': str(self.id.value) if self.id else "",
+            'id': str(self.id.value if hasattr(self.id, 'value') else self.id) if self.id else "",
             'name': self.name,
             'description': self.description,
             'project_id': self.project_id,
@@ -272,4 +277,5 @@ class GitBranch(BaseTimestampEntity):
         }
     
     def __repr__(self) -> str:
-        return f"GitBranch(id='{self.id.value if self.id else None}', name='{self.name}', project_id='{self.project_id}', tasks={self.get_task_count()})"
+        id_str = str(self.id.value if hasattr(self.id, 'value') else self.id) if self.id else None
+        return f"GitBranch(id='{id_str}', name='{self.name}', project_id='{self.project_id}', tasks={self.get_task_count()})"

@@ -1,9 +1,7 @@
 """Pagination domain service for managing paginated results
 
-This service extracts pagination logic from the BaseRepository interface,
+This service provides pagination logic as a domain service,
 following DDD principles where interfaces should only contain abstract methods.
-
-Controlled by FEATURE_CLEAN_REPOSITORIES flag for zero-downtime migration (Strangler Fig Pattern).
 """
 
 from typing import List, TypeVar, Generic
@@ -24,15 +22,7 @@ class PaginationService(Generic[T]):
     - Determine if there are previous pages (has_previous)
     - Include current page number in result
     - Handle edge cases (empty results, single page, etc.)
-
-    Zero-Downtime Migration:
-    - FEATURE_CLEAN_REPOSITORIES=False: Service available but optional
-    - FEATURE_CLEAN_REPOSITORIES=True: Service becomes primary pagination method
-    - Phase 3 will move to value_objects and deprecate BaseRepository method
     """
-
-    # Feature flag for Clean Repositories (Strangler Fig Pattern)
-    FEATURE_CLEAN_REPOSITORIES: bool = False
 
     @classmethod
     def create_pagination_result(

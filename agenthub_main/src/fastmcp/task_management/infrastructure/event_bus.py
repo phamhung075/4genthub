@@ -12,6 +12,9 @@ from datetime import datetime
 from weakref import WeakSet
 import inspect
 
+from fastmcp.settings import settings
+from .events.event_queue import EventQueue
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,9 +43,19 @@ class EventBus:
         """Initialize the event bus."""
         self._subscriptions: Dict[Type, List[EventSubscription]] = {}
         self._active_handlers: WeakSet = WeakSet()
-        self._event_queue: asyncio.Queue = asyncio.Queue()
+        self._async_event_queue: Optional[EventQueue] = None
         self._processing_task: Optional[asyncio.Task] = None
         self._shutdown = False
+
+    def set_event_queue(self, queue: EventQueue) -> None:
+        """
+        Set the async event queue for non-blocking publishing.
+
+        Args:
+            queue: EventQueue instance for async event processing
+        """
+        self._async_event_queue = queue
+        logger.info("EventBus configured with async event queue")
         
     def subscribe(self, 
                   event_type: Type,
@@ -156,22 +169,79 @@ class EventBus:
     
     def publish_sync(self, event: Any) -> None:
         """
-        Synchronously publish an event (creates async task).
-        
+        Publish event with feature flag support.
+
+        When ENABLE_ASYNC_EVENT_QUEUE=True:
+        - Queues event for async processing (non-blocking)
+        - Falls back to sync if queue unavailable or full
+
+        When ENABLE_ASYNC_EVENT_QUEUE=False:
+        - Executes handlers synchronously (backward compatible)
+
         Args:
             event: The event instance to publish
         """
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Schedule the publish as a task
-                asyncio.create_task(self.publish(event))
-            else:
-                # Run the publish synchronously
-                loop.run_until_complete(self.publish(event))
-        except RuntimeError:
-            # No event loop, create one
-            asyncio.run(self.publish(event))
+        # Check feature flag for async mode
+        if settings.enable_async_event_queue and self._async_event_queue:
+            # Async mode: queue event and return immediately (non-blocking)
+            try:
+                # Queue uses thread-safe queue.Queue (non-blocking put)
+                success = self._async_event_queue.put_nowait(event)
+                if success:
+                    logger.debug(f"Event queued for async processing: {type(event).__name__}")
+                    return
+                else:
+                    logger.warning(f"Queue full, falling back to sync: {type(event).__name__}")
+            except Exception as e:
+                logger.warning(f"Failed to queue event, falling back to sync: {e}")
+
+        # Sync mode (fallback or flag disabled): execute immediately
+        self._execute_handlers_sync(event)
+
+    def _execute_handlers_sync(self, event: Any) -> None:
+        """
+        Execute all handlers for event type synchronously.
+
+        This is the backward-compatible fallback mode.
+
+        Args:
+            event: The event to process
+        """
+        event_type = type(event)
+        logger.debug(f"Publishing event (sync): {event_type.__name__}")
+
+        # Get all subscriptions for this event type and its base classes
+        all_subscriptions = []
+        for cls in event_type.__mro__:
+            if cls in self._subscriptions:
+                all_subscriptions.extend(self._subscriptions[cls])
+
+        # Sort all subscriptions by priority
+        all_subscriptions.sort(key=lambda s: s.priority, reverse=True)
+
+        # Execute handlers synchronously
+        for subscription in all_subscriptions:
+            try:
+                if subscription.is_async:
+                    # Run async handler in event loop
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            asyncio.create_task(subscription.handler(event))
+                        else:
+                            loop.run_until_complete(subscription.handler(event))
+                    except RuntimeError:
+                        asyncio.run(subscription.handler(event))
+                else:
+                    # Run sync handler directly
+                    subscription.handler(event)
+
+            except Exception as e:
+                logger.error(
+                    f"Error in event handler {subscription.handler.__name__} "
+                    f"for event {event_type.__name__}: {e}",
+                    exc_info=True
+                )
     
     async def publish_batch(self, events: List[Any]) -> None:
         """
@@ -226,41 +296,44 @@ class EventBus:
         return event_type in self._subscriptions and len(self._subscriptions[event_type]) > 0
     
     async def start_processing(self) -> None:
-        """Start processing events from the queue (for async processing mode)."""
-        if self._processing_task is None or self._processing_task.done():
-            self._shutdown = False
-            self._processing_task = asyncio.create_task(self._process_event_queue())
-            logger.info("Event bus processing started")
-    
+        """
+        Start processing events from the async queue.
+
+        Only used when ENABLE_ASYNC_EVENT_QUEUE=True.
+        Starts background task to process queued events.
+
+        Note: EventQueue processing is handled by EventWorker (separate component).
+        This method is kept for backward compatibility.
+        """
+        if not settings.enable_async_event_queue or not self._async_event_queue:
+            logger.warning("Async event queue not enabled or configured")
+            return
+
+        logger.info("Event bus async processing mode enabled (handled by EventWorker)")
+
     async def stop_processing(self) -> None:
-        """Stop processing events from the queue."""
-        self._shutdown = True
-        if self._processing_task and not self._processing_task.done():
-            await self._event_queue.put(None)  # Sentinel to wake up processor
-            await self._processing_task
-            logger.info("Event bus processing stopped")
-    
-    async def _process_event_queue(self) -> None:
-        """Process events from the queue."""
-        while not self._shutdown:
-            try:
-                event = await self._event_queue.get()
-                if event is None:  # Sentinel value
-                    break
-                    
-                await self.publish(event)
-                
-            except Exception as e:
-                logger.error(f"Error processing event from queue: {e}", exc_info=True)
-    
+        """
+        Stop processing events from the queue.
+
+        Note: EventQueue processing is handled by EventWorker (separate component).
+        This method is kept for backward compatibility.
+        """
+        logger.info("Event bus processing stop requested (handled by EventWorker)")
+
     async def queue_event(self, event: Any) -> None:
         """
         Queue an event for async processing.
-        
+
+        Deprecated: Use publish_sync() with feature flag enabled instead.
+
         Args:
             event: The event to queue
         """
-        await self._event_queue.put(event)
+        if self._async_event_queue:
+            self._async_event_queue.put_nowait(event)
+        else:
+            logger.warning("Async event queue not configured, falling back to sync publish")
+            self._execute_handlers_sync(event)
     
     def __repr__(self) -> str:
         """String representation of the event bus."""

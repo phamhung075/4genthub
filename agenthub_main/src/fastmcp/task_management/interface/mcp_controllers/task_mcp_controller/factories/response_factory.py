@@ -157,3 +157,78 @@ class ResponseFactory:
             error_code=ErrorCodes.BUSINESS_RULE_VIOLATION,
             metadata={"rule": rule_name, "hint": hint},
         )
+
+    def create_missing_field_error(
+        self, field: str, action: str
+    ) -> dict[str, Any]:
+        """Create standardized missing field error response.
+
+        Args:
+            field: The missing field name
+            action: The action being performed
+
+        Returns:
+            Standardized error response for missing field
+        """
+        return {
+            "status": "failure",
+            "error": {
+                "message": f"Validation failed for field: {field}",
+                "code": "VALIDATION_ERROR",
+            },
+            "operation": action,
+            "metadata": {
+                "validation_details": {
+                    "field": field,
+                    "expected": f"A valid {field} value",
+                    "hint": f"Include '{field}' in your request for action '{action}'",
+                }
+            },
+        }
+
+    def create_invalid_action_error(
+        self, invalid_action: str, valid_actions: list[str] | None = None
+    ) -> dict[str, Any]:
+        """Create standardized invalid action error response.
+
+        Args:
+            invalid_action: The invalid action provided
+            valid_actions: Optional list of valid actions (uses default if not provided)
+
+        Returns:
+            Standardized error response for invalid action
+        """
+        if valid_actions is None:
+            valid_actions = [
+                "create",
+                "update",
+                "get",
+                "delete",
+                "complete",
+                "list",
+                "search",
+                "next",
+                "add_dependency",
+                "remove_dependency",
+                "ai_plan",
+                "ai_create",
+                "ai_enhance",
+                "ai_analyze",
+                "ai_suggest_agents",
+            ]
+
+        return {
+            "status": "failure",
+            "error": {
+                "message": "Validation failed for field: action",
+                "code": "VALIDATION_ERROR",
+            },
+            "operation": "unknown_action",
+            "metadata": {
+                "validation_details": {
+                    "field": "action",
+                    "expected": f"One of: {', '.join(valid_actions)}",
+                    "hint": f"Invalid action: {invalid_action}. Use one of the supported actions.",
+                }
+            },
+        }

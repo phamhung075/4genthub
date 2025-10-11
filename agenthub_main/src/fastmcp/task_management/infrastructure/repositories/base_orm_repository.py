@@ -6,7 +6,6 @@ handling common database operations and session management.
 """
 
 import logging
-import os
 from typing import TypeVar, Generic, Type, Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -16,8 +15,7 @@ from ..database.database_config import get_session
 from ...domain.exceptions.base_exceptions import (
     DatabaseException,
     DatabaseIntegrityException,
-    ResourceNotFoundException,
-    ValidationException
+    ResourceNotFoundException
 )
 
 logger = logging.getLogger(__name__)
@@ -33,15 +31,10 @@ class BaseORMRepository(Generic[ModelType]):
     Provides common CRUD operations and session management
     for all repository implementations.
 
-    Feature Flag: FEATURE_CLEAN_REPOSITORIES
-    - False (default): Backward compatible - raises ValidationException on IntegrityError
-    - True: Clean separation - raises DatabaseIntegrityException (technical exception only)
+    Exception Handling:
+    - IntegrityError → DatabaseIntegrityException (technical exception)
+    - Domain layer is responsible for business validation before calling repository
     """
-
-    # Feature flag for clean repository pattern (Strangler Fig Pattern)
-    # When True: Infrastructure layer only handles technical DB errors
-    # When False: Backward compatible - converts IntegrityError to ValidationException
-    FEATURE_CLEAN_REPOSITORIES: bool = os.getenv("FEATURE_CLEAN_REPOSITORIES", "false").lower() == "true"
 
     def __init__(self, model_class: Type[ModelType]):
         """
@@ -121,8 +114,7 @@ class BaseORMRepository(Generic[ModelType]):
             Created model instance
 
         Raises:
-            ValidationException: (FEATURE_CLEAN_REPOSITORIES=False) Business validation errors
-            DatabaseIntegrityException: (FEATURE_CLEAN_REPOSITORIES=True) DB integrity errors
+            DatabaseIntegrityException: Database integrity constraint violations
         """
         with self.get_db_session() as session:
             try:
@@ -132,23 +124,13 @@ class BaseORMRepository(Generic[ModelType]):
                 session.refresh(instance)  # Refresh to get all defaults
                 return instance
             except IntegrityError as e:
-                # Feature flag: Clean separation of concerns
-                if self.FEATURE_CLEAN_REPOSITORIES:
-                    # Clean approach: Infrastructure only handles technical DB errors
-                    # Domain layer is responsible for business validation BEFORE calling repository
-                    constraint_name = self._extract_constraint_name(str(e))
-                    raise DatabaseIntegrityException(
-                        message=f"Database integrity constraint violation: {str(e)}",
-                        constraint=constraint_name
-                    )
-                else:
-                    # Backward compatibility: Keep old behavior
-                    # Infrastructure converts DB error to business validation error
-                    raise ValidationException(
-                        message=f"Integrity constraint violation: {str(e)}",
-                        field="unknown",
-                        value=str(kwargs)
-                    )
+                # Infrastructure only handles technical DB errors
+                # Domain layer is responsible for business validation BEFORE calling repository
+                constraint_name = self._extract_constraint_name(str(e))
+                raise DatabaseIntegrityException(
+                    message=f"Database integrity constraint violation: {str(e)}",
+                    constraint=constraint_name
+                )
 
     def _extract_constraint_name(self, error_message: str) -> Optional[str]:
         """

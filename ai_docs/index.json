@@ -711,11 +711,11 @@
           "size": 8311
         },
         {
-          "hash": "b77182713d0b01c9c2f65e3fd163d93b",
-          "modified": "2025-09-24T13:24:47.170491",
+          "hash": "65532ec1a9067dac76bf91eb962a10a2",
+          "modified": "2025-10-11T08:57:23.383150",
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
-          "size": 13879
+          "size": 18906
         },
         {
           "hash": "ecfe6c884554eba0685b104218229d09",
@@ -837,11 +837,11 @@
           "size": 6273
         },
         {
-          "hash": "f240e887594b5d2fc88894b753c1d2a3",
-          "modified": "2025-10-09T16:26:48.137000",
+          "hash": "291f63b347044fb124a5459b66d7a9ef",
+          "modified": "2025-10-11T08:58:39.600272",
           "name": "repository-pagination-migration-guide.md",
           "path": "core-architecture/repository-pagination-migration-guide.md",
-          "size": 12540
+          "size": 13079
         },
         {
           "hash": "0921d1d76da09658371cf2f062cc21f3",
@@ -958,7 +958,7 @@
       "path": "deployment"
     },
     "development-guides": {
-      "count": 63,
+      "count": 66,
       "files": [
         {
           "hash": "7078ee58a5ae9017f0075cac85c73e3c",
@@ -1003,6 +1003,13 @@
           "size": 7761
         },
         {
+          "hash": "1d767e0469b4fe350d32acfa2391298b",
+          "modified": "2025-10-11T22:15:26.724513",
+          "name": "performance-fix-executive-summary.md",
+          "path": "development-guides/performance-fix-executive-summary.md",
+          "size": 7263
+        },
+        {
           "hash": "9f5c9f5793d0d33b6cb61267ce62749d",
           "modified": "2025-09-17T14:11:39.083883",
           "name": "agent-bridge-examples.md",
@@ -1029,6 +1036,13 @@
           "name": "test-organization-guide.md",
           "path": "development-guides/test-organization-guide.md",
           "size": 12249
+        },
+        {
+          "hash": "77d4c9be4a483e67a8b4c04ac3001b86",
+          "modified": "2025-10-11T22:14:39.386743",
+          "name": "performance-fix-technology-recommendations.md",
+          "path": "development-guides/performance-fix-technology-recommendations.md",
+          "size": 89928
         },
         {
           "hash": "32f2da5bb17d2e6961742a98d5270c88",
@@ -1164,11 +1178,11 @@
           "size": 10875
         },
         {
-          "hash": "653baf96d2ae048e8b48d23b781fa816",
-          "modified": "2025-10-09T23:38:06.038661",
+          "hash": "393f6393922c29cf60ba0560b461ba3e",
+          "modified": "2025-10-11T08:55:39.580236",
           "name": "ddd-refactoring-task-roadmap.md",
           "path": "development-guides/ddd-refactoring-task-roadmap.md",
-          "size": 12277
+          "size": 22787
         },
         {
           "hash": "831a13a39e5c59e9f1a3c2397aef3e19",
@@ -1379,6 +1393,13 @@
           "name": "frontend-ux-enhancements.md",
           "path": "development-guides/frontend-ux-enhancements.md",
           "size": 7919
+        },
+        {
+          "hash": "cb9d262122f2a616d8c2827f53de8071",
+          "modified": "2025-10-11T22:15:43.849236",
+          "name": "performance-fix-implementation-plan.md",
+          "path": "development-guides/performance-fix-implementation-plan.md",
+          "size": 98581
         },
         {
           "hash": "85b1aba54d6e67740233df93f7936c11",
@@ -1890,7 +1911,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 15,
+      "count": 19,
       "files": [
         {
           "hash": "45809279307daf9847fb05aa5ae3251c",
@@ -1898,6 +1919,13 @@
           "name": "test-fixes-root-cause-resolution.md",
           "path": "reports-status/test-fixes-root-cause-resolution.md",
           "size": 2354
+        },
+        {
+          "hash": "5edba40107f0a18d93cebd91a1fab190",
+          "modified": "2025-10-11T21:50:39.135025",
+          "name": "performance-audit-phase-1-8-comparison.md",
+          "path": "reports-status/performance-audit-phase-1-8-comparison.md",
+          "size": 26750
         },
         {
           "hash": "d4abfa3729515a561032ca78a0a27ab2",
@@ -1949,6 +1977,20 @@
           "size": 11136
         },
         {
+          "hash": "196f27c6d886f71c4c851a707b3dddc4",
+          "modified": "2025-10-10T21:07:30.388062",
+          "name": "phase-6-task-application-service-audit.md",
+          "path": "reports-status/phase-6-task-application-service-audit.md",
+          "size": 15865
+        },
+        {
+          "hash": "5e797d3cbd447d17ca9b1e464d7a7679",
+          "modified": "2025-10-11T08:19:15.671674",
+          "name": "phase-8-5-test-suite-results.md",
+          "path": "reports-status/phase-8-5-test-suite-results.md",
+          "size": 19818
+        },
+        {
           "hash": "52eab6632a04a9107b0ab1f4453025f2",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "test-cleanup-report-2025-09-12.md",
@@ -1961,6 +2003,13 @@
           "name": "subtask-health-monitoring-report-2025-09-20.md",
           "path": "reports-status/subtask-health-monitoring-report-2025-09-20.md",
           "size": 6122
+        },
+        {
+          "hash": "d6bebd4c5bfd848610ef43e79ac597a9",
+          "modified": "2025-10-11T20:13:36.040350",
+          "name": "ddd-architecture-audit-phase-8-complete.md",
+          "path": "reports-status/ddd-architecture-audit-phase-8-complete.md",
+          "size": 31741
         },
         {
           "hash": "3420a75e715c9569bf04fd35532968ad",
@@ -2180,7 +2229,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 42,
+      "count": 43,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2300,6 +2349,13 @@
           "name": "test-fix-iteration-26-summary.md",
           "path": "testing-qa/test-fix-iteration-26-summary.md",
           "size": 1980
+        },
+        {
+          "hash": "952b9e46ce264d8c67b6aeb611cad084",
+          "modified": "2025-10-11T23:01:58.628004",
+          "name": "week1-baseline-performance-tests.md",
+          "path": "testing-qa/week1-baseline-performance-tests.md",
+          "size": 12742
         },
         {
           "hash": "1b229b359ab391a8491d90dd086d82e8",
@@ -2778,7 +2834,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-10T00:37:28.594562",
+  "generated_at": "2025-10-11T23:01:58.705280",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3019,6 +3075,9 @@
         "orm-agent-repository-implementation.md",
         "parameter-enforcement-technical-spec.md",
         "pattern-implementation-examples.md",
+        "performance-fix-executive-summary.md",
+        "performance-fix-implementation-plan.md",
+        "performance-fix-technology-recommendations.md",
         "refactored-hook-architecture.md",
         "role-based-tool-assignment-system.md",
         "server-initialization-patterns.md",
@@ -3129,10 +3188,14 @@
       "files": [
         "ai-task-planning-system-complete-2025-09-12.md",
         "cascade-calculator-ddd-fix-completion-report.md",
+        "ddd-architecture-audit-phase-8-complete.md",
         "ddd-compliance-review-2025-10-09.md",
         "design-patterns-analysis.md",
         "factory-check-status.md",
         "git-branch-repository-ddd-fix-completion.md",
+        "performance-audit-phase-1-8-comparison.md",
+        "phase-6-task-application-service-audit.md",
+        "phase-8-5-test-suite-results.md",
         "subtask-health-monitoring-report-2025-09-20.md",
         "test-cleanup-report-2025-09-12.md",
         "test-error-resolution-final.md",
@@ -3214,7 +3277,8 @@
         "test-fix-iteration-405-summary.md",
         "test-fix-iteration-41-perfect-health-maintained.md",
         "test-fix-iteration-42-summary.md",
-        "testing.md"
+        "testing.md",
+        "week1-baseline-performance-tests.md"
       ],
       "test-fix-logs": {}
     },
@@ -3267,5 +3331,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 370
+  "total_files": 378
 }

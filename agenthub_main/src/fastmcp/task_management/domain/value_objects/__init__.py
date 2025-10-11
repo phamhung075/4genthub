@@ -5,6 +5,7 @@ from .task_id import TaskId
 from .task_status import TaskStatus, TaskStatusEnum
 from .priority import Priority
 from .pagination import PaginationRequest, PaginationResult
+from .progress_percentage import ProgressPercentage
 
 # Enum imports (moved from domain/enums/)
 from .agent_roles import AgentRole, get_role_metadata_from_yaml, resolve_legacy_role
@@ -35,6 +36,7 @@ __all__ = [
     'Priority',
     'PaginationRequest',
     'PaginationResult',
+    'ProgressPercentage',
 
     # Agent Roles
     'AgentRole',

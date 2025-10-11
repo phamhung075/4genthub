@@ -50,27 +50,32 @@ class UnifiedUUID(TypeDecorator):
     def process_bind_param(self, value: Any, dialect):
         """
         Process value before storing in database.
-        
-        ENHANCED: Now handles both UUID and string formats by converting
+
+        ENHANCED: Now handles UUID, string, and value object formats by converting
         non-UUID strings to deterministic UUIDs using uuid5.
+        Supports value objects with a 'value' attribute (e.g., GitBranchId, TaskId).
         Properly handles PostgreSQL native UUID vs SQLite string storage.
         """
         if value is None:
             return None
-        
+
+        # Handle value objects with a 'value' attribute (e.g., GitBranchId, TaskId)
+        if hasattr(value, 'value') and isinstance(value.value, str):
+            value = value.value
+
         # Handle UUID objects
         if isinstance(value, uuid.UUID):
             if dialect.name == 'postgresql':
                 return value  # PostgreSQL can accept UUID objects directly
             else:
                 return str(value)  # SQLite needs string representation
-        
+
         # Handle string inputs
         if isinstance(value, str):
             value = value.strip()
             if not value:
                 raise ValueError("Empty string is not a valid UUID or user ID")
-            
+
             try:
                 # Try to parse as existing UUID first
                 uuid_obj = uuid.UUID(value)
@@ -89,8 +94,8 @@ class UnifiedUUID(TypeDecorator):
                         return str(converted_uuid)  # Return string for SQLite
                 except Exception as e:
                     raise ValueError(f"Cannot convert '{value}' to UUID: {str(e)}")
-        
-        raise TypeError(f"Expected UUID or string, got {type(value)}")
+
+        raise TypeError(f"Expected UUID, string, or value object with 'value' attribute, got {type(value)}")
     
     def process_result_value(self, value: Any, dialect):
         """Process value when loading from database."""

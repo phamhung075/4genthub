@@ -22,15 +22,11 @@ class Project(BaseTimestampEntity):
     """Project aggregate root for multi-agent task orchestration
 
     Rich Domain Model: Contains business logic for project management, validation, and analysis.
-    Controlled by FEATURE_RICH_DOMAIN_MODEL flag for zero-downtime migration (Strangler Fig Pattern).
     """
 
     id: ProjectId | None = None
     name: str = ""
     description: str = ""
-
-    # Feature flag for Rich Domain Model (Strangler Fig Pattern)
-    FEATURE_RICH_DOMAIN_MODEL: bool = False
 
     def _get_entity_id(self) -> str:
         """Get the unique identifier for this entity."""
@@ -53,7 +49,10 @@ class Project(BaseTimestampEntity):
 
     def __hash__(self):
         """Make Project hashable based on its id"""
-        return hash(self.id.value) if self.id else hash(None)
+        if not self.id:
+            return hash(None)
+        # Handle both value object and string types
+        return hash(self.id.value if hasattr(self.id, 'value') else self.id)
 
     # Multi-tree structure
     git_branchs: Dict[str, GitBranch] = field(default_factory=dict)
@@ -95,7 +94,8 @@ class Project(BaseTimestampEntity):
         )
 
         # Update local cache
-        self.git_branchs[str(git_branch.id.value) if git_branch.id else ""] = git_branch
+        git_branch_id_str = str(git_branch.id.value if hasattr(git_branch.id, 'value') else git_branch.id) if git_branch.id else ""
+        self.git_branchs[git_branch_id_str] = git_branch
         self.touch("git_branch_added")
         return git_branch
     
@@ -117,13 +117,15 @@ class Project(BaseTimestampEntity):
             git_branch_name=git_branch_name
         )
 
-        self.git_branchs[str(git_branch_id.value)] = git_branch
+        git_branch_id_str = str(git_branch_id.value if hasattr(git_branch_id, 'value') else git_branch_id)
+        self.git_branchs[git_branch_id_str] = git_branch
         self.touch("git_branch_created")
         return git_branch
     
     def add_git_branch(self, git_branch: GitBranch) -> None:
         """Add a git branch to the project"""
-        self.git_branchs[str(git_branch.id.value) if git_branch.id else ""] = git_branch
+        git_branch_id_str = str(git_branch.id.value if hasattr(git_branch.id, 'value') else git_branch.id) if git_branch.id else ""
+        self.git_branchs[git_branch_id_str] = git_branch
         self.touch("git_branch_added")
     
     def get_git_branch(self, branch_name: str) -> Optional[GitBranch]:
@@ -136,20 +138,17 @@ class Project(BaseTimestampEntity):
     def register_agent(self, agent: Agent) -> None:
         """Register an AI agent to work on this project"""
         # Handle both AgentId value object and string ID for backwards compatibility
-        if hasattr(agent.id, 'value'):
-            agent_id_str = str(agent.id.value) if agent.id else ""
+        if agent.id:
+            agent_id_str = str(agent.id.value if hasattr(agent.id, 'value') else agent.id)
         else:
-            agent_id_str = str(agent.id) if agent.id else ""
+            agent_id_str = ""
         self.registered_agents[agent_id_str] = agent
         self.touch("agent_registered")
     
     def assign_agent_to_tree(self, agent_id: str, git_branch_id: str) -> None:
         """Assign an agent to work on a specific task tree"""
         # Convert git_branch_id to string if it's a GitBranchId value object
-        if hasattr(git_branch_id, 'value'):
-            git_branch_id_str = str(git_branch_id.value)
-        else:
-            git_branch_id_str = str(git_branch_id)
+        git_branch_id_str = str(git_branch_id.value if hasattr(git_branch_id, 'value') else git_branch_id)
 
         if agent_id not in self.registered_agents:
             raise ValueError(f"Agent {agent_id} not registered")
@@ -179,8 +178,8 @@ class Project(BaseTimestampEntity):
             raise ValueError("One or both tasks not found in project")
         
         # Compare branch IDs as strings
-        dependent_tree_id = str(dependent_tree.id.value) if dependent_tree.id else ""
-        prerequisite_tree_id = str(prerequisite_tree.id.value) if prerequisite_tree.id else ""
+        dependent_tree_id = str(dependent_tree.id.value if hasattr(dependent_tree.id, 'value') else dependent_tree.id) if dependent_tree.id else ""
+        prerequisite_tree_id = str(prerequisite_tree.id.value if hasattr(prerequisite_tree.id, 'value') else prerequisite_tree.id) if prerequisite_tree.id else ""
         if dependent_tree_id == prerequisite_tree_id:
             raise ValueError("Use regular task dependencies for tasks within the same tree")
         
@@ -208,7 +207,8 @@ class Project(BaseTimestampEntity):
 
             # Filter out tasks blocked by cross-tree dependencies
             for task in branch_tasks:
-                if self._is_task_ready_for_work(task.id.value):
+                task_id_str = str(task.id.value if hasattr(task.id, 'value') else task.id)
+                if self._is_task_ready_for_work(task_id_str):
                     available_tasks.append(task)
 
         return available_tasks
@@ -225,7 +225,7 @@ class Project(BaseTimestampEntity):
         if not git_branch:
             raise ValueError(f"Task {task_id} not found")
         
-        git_branch_id_str = str(git_branch.id.value) if git_branch.id else ""
+        git_branch_id_str = str(git_branch.id.value if hasattr(git_branch.id, 'value') else git_branch.id) if git_branch.id else ""
         if self.agent_assignments.get(git_branch_id_str) != agent_id:
             raise ValueError(f"Agent {agent_id} not assigned to tree {git_branch_id_str}")
 
@@ -377,8 +377,7 @@ class Project(BaseTimestampEntity):
 
         return coordination_result
 
-    # Rich Domain Model Business Methods (Strangler Fig Pattern)
-    # These methods are controlled by FEATURE_RICH_DOMAIN_MODEL flag
+    # Rich Domain Model Business Methods
 
     def validate_agent_assignment(self, agent_id: str, task_tree_id: str) -> bool:
         """
@@ -391,30 +390,17 @@ class Project(BaseTimestampEntity):
         Returns:
             bool: True if assignment is valid, False otherwise
 
-        Business Rules (when FEATURE_RICH_DOMAIN_MODEL=True):
+        Business Rules:
         - Agent must be registered in the project
         - Task tree must exist in the project
         - If tree is already assigned, new agent must be different
         - Agent must not be overloaded (max 3 concurrent tree assignments)
-
-        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
-        - Only checks if agent is registered and tree exists
         """
         # Convert task_tree_id to string if it's a GitBranchId value object
         if hasattr(task_tree_id, 'value'):
             task_tree_id_str = str(task_tree_id.value)
         else:
             task_tree_id_str = str(task_tree_id)
-
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: basic validation only
-            if agent_id not in self.registered_agents:
-                return False
-            if task_tree_id_str not in self.git_branchs:
-                return False
-            return True
-
-        # Rich Domain Model: comprehensive validation
 
         # Rule 1: Agent must be registered
         if agent_id not in self.registered_agents:
@@ -460,31 +446,12 @@ class Project(BaseTimestampEntity):
         - blocked_task_percentage: percentage of tasks blocked by dependencies
         - active_work_ratio: active sessions vs total tasks
 
-        Scoring Algorithm (when FEATURE_RICH_DOMAIN_MODEL=True):
+        Scoring Algorithm:
         - Branch completion: 40% weight
         - Agent utilization: 20% weight
         - Low blocked tasks: 25% weight
         - Active work ratio: 15% weight
-
-        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
-        - Returns basic metrics without health score calculation
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: basic metrics only
-            total_branches = len(self.git_branchs)
-            registered_agents = len(self.registered_agents)
-            active_assignments = len(self.agent_assignments)
-
-            return {
-                "total_branches": total_branches,
-                "registered_agents": registered_agents,
-                "active_assignments": active_assignments,
-                "health_score": None,
-                "health_status": "unknown"
-            }
-
-        # Rich Domain Model: comprehensive health analysis
-
         # Metric 1: Branch completion rate
         total_branches = len(self.git_branchs)
         if total_branches == 0:
@@ -570,7 +537,7 @@ class Project(BaseTimestampEntity):
         Returns:
             Dict with risk level, assessment, and recommendations
 
-        Risk Assessment Criteria (when FEATURE_RICH_DOMAIN_MODEL=True):
+        Risk Assessment Criteria:
         - "no_risk": All branches on track (completion rate > 75%)
         - "low_risk": Minor delays possible (completion rate 50-75%)
         - "medium_risk": Significant delays likely (completion rate 25-50%)
@@ -582,20 +549,7 @@ class Project(BaseTimestampEntity):
         - Active work sessions vs total tasks
         - Blocked tasks ratio
         - Agent utilization
-
-        Legacy behavior (when FEATURE_RICH_DOMAIN_MODEL=False):
-        - Returns "unknown" risk level with basic info
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: no risk assessment
-            return {
-                "risk_level": "unknown",
-                "assessment": "Deadline risk assessment not available",
-                "recommendation": "Enable FEATURE_RICH_DOMAIN_MODEL for risk assessment"
-            }
-
-        # Rich Domain Model: comprehensive risk assessment
-
         # Calculate key metrics
         total_branches = len(self.git_branchs)
         if total_branches == 0:

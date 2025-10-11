@@ -283,7 +283,6 @@ class TaskContextUnified:
     Named TaskContextUnified to avoid conflict with existing TaskContext.
 
     Rich Domain Model: Contains business logic for context validation, merging, and management.
-    Controlled by FEATURE_RICH_DOMAIN_MODEL flag for zero-downtime migration.
     """
     id: str  # Task UUID
     branch_id: str
@@ -298,9 +297,6 @@ class TaskContextUnified:
     next_steps: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    # Feature flag for Rich Domain Model (Strangler Fig Pattern)
-    FEATURE_RICH_DOMAIN_MODEL: bool = False
-
     def validate_context_data(self) -> tuple[bool, List[str]]:
         """
         Validate context data for business rules compliance.
@@ -314,10 +310,6 @@ class TaskContextUnified:
         - Insights must have required fields (timestamp, category, content)
         - Blockers must have description
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: no validation
-            return True, []
-
         errors = []
 
         # Validate progress
@@ -365,13 +357,6 @@ class TaskContextUnified:
         - Blockers can be added or resolved
         - metadata updates are merged, not replaced
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: direct update
-            for key, value in updates.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return
-
         # Business logic for merging
         for key, value in updates.items():
             if key == 'progress':
@@ -438,15 +423,6 @@ class TaskContextUnified:
         Raises:
             ValueError: If category is invalid or content is empty
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: simple append
-            self.insights.append({
-                'category': category,
-                'content': content,
-                'agent': agent
-            })
-            return
-
         # Validation
         valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
         if category not in valid_categories:
@@ -483,13 +459,6 @@ class TaskContextUnified:
         Raises:
             ValueError: If progress is invalid or decreasing without permission
         """
-        if not self.FEATURE_RICH_DOMAIN_MODEL:
-            # Legacy behavior: direct update
-            self.progress = new_progress
-            if notes:
-                self.implementation_notes['progress_notes'] = notes
-            return
-
         # Validation
         if not (0 <= new_progress <= 100):
             raise ValueError(f"Progress must be between 0-100, got {new_progress}")

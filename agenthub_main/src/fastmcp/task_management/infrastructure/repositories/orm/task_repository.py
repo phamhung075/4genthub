@@ -1605,10 +1605,13 @@ class ORMTaskRepository(
     def git_branch_exists(self, git_branch_id: str) -> bool:
         """Check if git_branch_id exists in the database"""
         from ...database.models import ProjectGitBranch
-        
+
+        # Convert git_branch_id to string for database query (handle value objects)
+        git_branch_id_str = str(git_branch_id.value if hasattr(git_branch_id, 'value') else git_branch_id) if git_branch_id else ""
+
         with self.get_db_session() as session:
             branch = session.query(ProjectGitBranch).filter(
-                ProjectGitBranch.id == git_branch_id
+                ProjectGitBranch.id == git_branch_id_str
             ).first()
             return branch is not None
     

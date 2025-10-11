@@ -1,8 +1,6 @@
 """Interface Adapters Package
 
-Adapters for backward compatibility and external integrations.
+Adapters for external integrations.
 """
 
-from .simple_multi_agent_adapter import SimpleMultiAgentAdapter
-
-__all__ = ["SimpleMultiAgentAdapter"]
+__all__ = []
