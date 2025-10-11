@@ -65,47 +65,6 @@
       ],
       "path": "_absolute_docs/scripts"
     },
-    "_workplace/workers/fix_tests_loop": {
-      "count": 5,
-      "files": [
-        {
-          "hash": "dcc7f9150f99b34fbfe43b7a4eb9b46d",
-          "modified": "2025-09-26T01:33:25.378383",
-          "name": "fix-1by1.md",
-          "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 17136
-        },
-        {
-          "hash": "0bc165a7bad199ac77185ac5d4960f7e",
-          "modified": "2025-10-02T01:50:18.279349",
-          "name": "fix-1by1-results.md",
-          "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 159771
-        },
-        {
-          "hash": "bd9976592660c396c4a8e543e8cc3e25",
-          "modified": "2025-09-19T15:21:32.320824",
-          "name": "AI_README.md",
-          "path": "_workplace/workers/fix_tests_loop/AI_README.md",
-          "size": 4197
-        },
-        {
-          "hash": "6155d6ad39e35fcc25b37f9018e4e805",
-          "modified": "2025-10-02T01:50:18.194184",
-          "name": "fix-1by1-context.md",
-          "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 50917
-        },
-        {
-          "hash": "10c99f4a959a54ecda36092c042f082c",
-          "modified": "2025-09-24T13:24:47.166279",
-          "name": "current_context.md",
-          "path": "_workplace/workers/fix_tests_loop/current_context.md",
-          "size": 10793
-        }
-      ],
-      "path": "_workplace/workers/fix_tests_loop"
-    },
     "api-behavior": {
       "count": 3,
       "files": [
@@ -335,7 +294,7 @@
       "path": "api-integration/controllers"
     },
     "architecture-design": {
-      "count": 3,
+      "count": 1,
       "files": [
         {
           "hash": "e7c58889a651944a23dd0f123d0a2dc8",
@@ -343,20 +302,6 @@
           "name": "agent-correspondence-map.md",
           "path": "architecture-design/agent-correspondence-map.md",
           "size": 5364
-        },
-        {
-          "hash": "88d4be6d9d7cdd703bac4ddc5dba4611",
-          "modified": "2025-09-30T08:49:47.977223",
-          "name": "PRD.md",
-          "path": "architecture-design/PRD.md",
-          "size": 9678
-        },
-        {
-          "hash": "3384c6763e32bb4ea7702fcc98e24961",
-          "modified": "2025-09-30T08:50:08.283533",
-          "name": "Architecture_Technique.md",
-          "path": "architecture-design/Architecture_Technique.md",
-          "size": 16633
         }
       ],
       "path": "architecture-design"
@@ -465,32 +410,32 @@
       ],
       "path": "authentication"
     },
-    "claude-hooks-docker-(todo)": {
+    "claude-hooks-docker-todo": {
       "count": 3,
       "files": [
         {
           "hash": "8a4bab22645b9c8fc0c51d524db02844",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "architecture-overview.md",
-          "path": "claude-hooks-docker-(todo)/architecture-overview.md",
+          "path": "claude-hooks-docker-todo/architecture-overview.md",
           "size": 19519
         },
         {
           "hash": "fc25148c6eb7250376e29afb010c28b7",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "docker-configuration.md",
-          "path": "claude-hooks-docker-(todo)/docker-configuration.md",
+          "path": "claude-hooks-docker-todo/docker-configuration.md",
           "size": 26112
         },
         {
           "hash": "46e6c2f41f147872b6a29904dd423a60",
           "modified": "2025-09-17T14:11:39.079903",
           "name": "technical-implementation.md",
-          "path": "claude-hooks-docker-(todo)/technical-implementation.md",
+          "path": "claude-hooks-docker-todo/technical-implementation.md",
           "size": 40004
         }
       ],
-      "path": "claude-hooks-docker-(todo)"
+      "path": "claude-hooks-docker-todo"
     },
     "code-quality": {
       "count": 4,
@@ -2848,7 +2793,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-12T01:23:42.968792",
+  "generated_at": "2025-10-12T01:26:50.857858",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -2864,15 +2809,7 @@
     },
     "_workplace": {
       "workers": {
-        "fix_tests_loop": {
-          "files": [
-            "AI_README.md",
-            "current_context.md",
-            "fix-1by1-context.md",
-            "fix-1by1-results.md",
-            "fix-1by1.md"
-          ]
-        }
+        "fix_tests_loop": {}
       }
     },
     "api-behavior": {
@@ -2919,8 +2856,6 @@
     },
     "architecture-design": {
       "files": [
-        "Architecture_Technique.md",
-        "PRD.md",
         "agent-correspondence-map.md"
       ]
     },
@@ -2946,7 +2881,7 @@
         "token-flow.md"
       ]
     },
-    "claude-hooks-docker-(todo)": {
+    "claude-hooks-docker-todo": {
       "files": [
         "architecture-overview.md",
         "docker-configuration.md",
@@ -3295,8 +3230,7 @@
         "test-fix-iteration-42-summary.md",
         "testing.md",
         "week1-baseline-performance-tests.md"
-      ],
-      "test-fix-logs": {}
+      ]
     },
     "troubleshooting-guides": {
       "files": [
@@ -3346,6 +3280,6 @@
       ]
     }
   },
-  "total_directories": 32,
-  "total_files": 380
+  "total_directories": 31,
+  "total_files": 373
 }
