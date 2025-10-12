@@ -35,20 +35,15 @@ class HintGenerated(DomainEvent):
         aggregate_type: Type of aggregate
     """
     
-    hint_id: UUID
-    task_id: UUID
-    hint_type: HintType
-    priority: HintPriority
-    message: str
-    suggested_action: str
-    source_rule: str
-    confidence: float
+    hint_id: UUID = field(default_factory=uuid4)
+    task_id: UUID = field(default_factory=uuid4)
+    hint_type: HintType = HintType.NEXT_ACTION  # Default
+    priority: HintPriority = HintPriority.MEDIUM  # Default
+    message: str = ""
+    suggested_action: str = ""
+    source_rule: str = ""
+    confidence: float = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
-    # Event metadata
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[UUID] = None
-    aggregate_type: Optional[str] = None
     
     @property
     def event_type(self) -> str:
@@ -86,16 +81,11 @@ class HintAccepted(DomainEvent):
         acceptance_context: Context around why hint was accepted
     """
     
-    hint_id: UUID
-    task_id: UUID
-    user_id: str
+    hint_id: UUID = field(default_factory=uuid4)
+    task_id: UUID = field(default_factory=uuid4)
+    user_id: str = ""
     action_taken: Optional[str] = None
     acceptance_context: Dict[str, Any] = field(default_factory=dict)
-    # Event metadata
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[UUID] = None
-    aggregate_type: Optional[str] = None
     
     @property
     def event_type(self) -> str:
@@ -129,16 +119,11 @@ class HintDismissed(DomainEvent):
         dismissal_context: Additional context about dismissal
     """
     
-    hint_id: UUID
-    task_id: UUID
-    user_id: str
+    hint_id: UUID = field(default_factory=uuid4)
+    task_id: UUID = field(default_factory=uuid4)
+    user_id: str = ""
     reason: Optional[str] = None
     dismissal_context: Dict[str, Any] = field(default_factory=dict)
-    # Event metadata
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[UUID] = None
-    aggregate_type: Optional[str] = None
     
     @property
     def event_type(self) -> str:
@@ -174,18 +159,13 @@ class HintFeedbackProvided(DomainEvent):
         improvement_suggestions: Suggestions for better hints
     """
     
-    hint_id: UUID
-    task_id: UUID
-    user_id: str
-    was_helpful: bool
+    hint_id: UUID = field(default_factory=uuid4)
+    task_id: UUID = field(default_factory=uuid4)
+    user_id: str = ""
+    was_helpful: bool = False
     feedback_text: Optional[str] = None
     effectiveness_score: Optional[float] = None
     improvement_suggestions: Optional[str] = None
-    # Event metadata
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[UUID] = None
-    aggregate_type: Optional[str] = None
     
     @property
     def event_type(self) -> str:
@@ -222,17 +202,12 @@ class HintPatternDetected(DomainEvent):
         suggested_rule: Suggested rule based on pattern
     """
     
-    pattern_id: UUID
-    pattern_name: str
-    pattern_description: str
-    confidence: float
+    pattern_id: UUID = field(default_factory=uuid4)
+    pattern_name: str = ""
+    pattern_description: str = ""
+    confidence: float = 0
     affected_tasks: list[UUID] = field(default_factory=list)
     suggested_rule: Optional[Dict[str, Any]] = None
-    # Event metadata
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[UUID] = None
-    aggregate_type: Optional[str] = None
     
     @property
     def event_type(self) -> str:
@@ -270,19 +245,14 @@ class HintEffectivenessCalculated(DomainEvent):
         period_end: End of evaluation period
     """
     
-    hint_type: HintType
-    source_rule: str
-    total_hints: int
-    accepted_count: int
-    dismissed_count: int
-    effectiveness_score: float
-    period_start: datetime
-    period_end: datetime
-    # Event metadata
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[UUID] = None
-    aggregate_type: Optional[str] = None
+    hint_type: HintType = HintType.NEXT_ACTION  # Default
+    source_rule: str = ""
+    total_hints: int = 0
+    accepted_count: int = 0
+    dismissed_count: int = 0
+    effectiveness_score: float = 0
+    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     @property
     def event_type(self) -> str:

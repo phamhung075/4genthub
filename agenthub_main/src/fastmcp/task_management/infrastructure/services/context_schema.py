@@ -70,7 +70,7 @@ class ContextDependency:
     """Dependency information (uses TaskStatus value object)"""
     task_id: str
     title: str = ""
-    status: TaskStatus = field(default_factory=lambda: TaskStatus.from_string("unknown"))
+    status: TaskStatus = field(default_factory=lambda: TaskStatus.from_string("todo"))
     blocking_reason: str = ""
 
 
@@ -232,7 +232,7 @@ class TaskContext:
                     ContextDependency(
                         task_id=item.get('task_id', ''),
                         title=item.get('title', ''),
-                        status=TaskStatus.from_string(item.get('status', 'unknown')),
+                        status=TaskStatus.from_string(item.get('status', 'todo')),
                         blocking_reason=item.get('blocking_reason', '')
                     ) for item in dep_data.get('task_dependencies', [])
                 ],
@@ -295,7 +295,7 @@ class ContextSchema:
                         "task_id": {"type": "string"},
                         "project_id": {"type": "string"},
                         "git_branch_id": {"type": "string", "default": "main"},
-                        "user_id": {"type": ["string", "null"], "default": null},
+                        "user_id": {"type": ["string", "null"], "default": None},
                         "status": {"type": "string", "enum": [status.value for status in TaskStatusEnum]},
                         "priority": {"type": "string", "enum": [priority.label for priority in PriorityLevel]},
                         "assignees": {"type": "array", "items": {"type": "string"}},
@@ -402,7 +402,7 @@ class ContextSchema:
                     "properties": {
                         "task_id": {"type": "string"},
                         "title": {"type": "string"},
-                        "status": {"type": "string", "enum": [status.value for status in TaskStatusEnum] + ["unknown"]},
+                        "status": {"type": "string", "enum": [status.value for status in TaskStatusEnum]},
                         "blocking_reason": {"type": "string"}
                     }
                 },

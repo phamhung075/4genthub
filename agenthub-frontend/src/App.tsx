@@ -4,7 +4,9 @@ import { Navigate, Route, Routes, useParams, useNavigate } from 'react-router-do
 import { Project } from './api';
 import './App.css';
 import './styles/animations.css';
-import './styles/websocket-animations.css';
+import './styles/task-animations.css';
+import './styles/subtask-animations.css';
+import './styles/branch-animations.css';
 import { AppLayout } from './components/AppLayout';
 import { AuthWrapper, EmailVerification, LoginForm, ProtectedRoute, SignupForm } from './components/auth';
 import BranchDetailsDialog from './components/BranchDetailsDialog';

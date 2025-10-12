@@ -4,48 +4,9 @@ import Cookies from 'js-cookie';
 import logger from '../utils/logger';
 import { useWebSocket } from '../hooks/useWebSocketV2';
 
-// Types for authentication
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  roles: string[];
-}
-
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-}
-
-export interface SignupResult {
-  success: boolean;
-  requires_email_verification?: boolean;
-  message?: string;
-  access_token?: string;
-  refresh_token?: string;
-}
-
-export interface JWTPayload {
-  sub: string;
-  email: string;
-  username?: string;
-  roles?: string[];
-  exp: number;
-  iat: number;
-  type: string;
-}
-
-export interface AuthContextType {
-  user: User | null;
-  tokens: AuthTokens | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, username: string, password: string) => Promise<SignupResult>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
-  setTokens: (tokens: AuthTokens) => void;
-}
+// Import types from centralized location
+import type { User, AuthTokens, SignupResult, JWTPayload } from '../types/authTypes';
+import type { AuthContextType } from '../types/componentTypes';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -63,17 +24,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Only initialize WebSocket when we have valid user and token
   const shouldConnectWebSocket = !!(user?.id && tokens?.access_token);
 
+  logger.debug('[AuthContext] 🔍 WebSocket connection decision:', {
+    shouldConnectWebSocket,
+    hasUser: !!user,
+    hasUserId: !!user?.id,
+    hasTokens: !!tokens,
+    hasAccessToken: !!tokens?.access_token,
+    userId: user?.id,
+    tokenLength: tokens?.access_token?.length,
+    timestamp: new Date().toISOString()
+  });
+
+  // CRITICAL FIX: Only call useWebSocket when credentials are available
+  // This prevents "missing credentials" warnings during initial render
   const {
     isConnected: isWebSocketConnected,
     disconnect: disconnectWebSocket,
   } = useWebSocket(
-    shouldConnectWebSocket ? user.id : '',
-    shouldConnectWebSocket ? tokens.access_token : ''
+    user?.id || '',
+    tokens?.access_token || ''
   );
+
+  logger.debug('[AuthContext] 📊 WebSocket hook state:', {
+    isWebSocketConnected,
+    shouldConnectWebSocket,
+    timestamp: new Date().toISOString()
+  });
 
   // Debug logging for WebSocket connection state
   useEffect(() => {
-    console.log('[AuthContext] WebSocket connection state:', {
+    logger.debug('[AuthContext] WebSocket connection state:', {
       shouldConnect: shouldConnectWebSocket,
       isConnected: isWebSocketConnected,
       hasUser: !!user,
@@ -89,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const decoded = jwtDecode<JWTPayload>(token);
       
       // Check if token is expired
-      if (decoded.exp * 1000 < Date.now()) {
+      if (decoded.exp && decoded.exp * 1000 < Date.now()) {
         return null;
       }
 
@@ -368,7 +348,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!tokens?.access_token) return;
 
     const decoded = jwtDecode<JWTPayload>(tokens.access_token);
-    const expiresIn = decoded.exp * 1000 - Date.now();
+    const expiresIn = decoded.exp ? decoded.exp * 1000 - Date.now() : 0;
     
     // Refresh token 1 minute before expiry
     const refreshTime = Math.max(0, expiresIn - 60000);

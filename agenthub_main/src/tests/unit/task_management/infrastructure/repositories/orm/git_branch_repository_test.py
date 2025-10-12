@@ -30,8 +30,8 @@ class TestORMGitBranchRepository:
             self.repo = ORMGitBranchRepository(user_id="test_user")
         self.mock_session = Mock(spec=Session)
 
-        # Patch _model_to_git_branch to avoid database access in tests
-        self._patch_model_to_git_branch()
+        # Patch _model_to_entity to avoid database access in tests
+        self._patch_model_to_entity()
         
         # Sample test data
         self.project_id = str(uuid.uuid4())
@@ -60,11 +60,11 @@ class TestORMGitBranchRepository:
             updated_at=datetime.now(timezone.utc)
         )
 
-    def _patch_model_to_git_branch(self):
-        """Patch _model_to_git_branch to avoid database queries in tests."""
-        original_method = self.repo._model_to_git_branch
+    def _patch_model_to_entity(self):
+        """Patch _model_to_entity to avoid database queries in tests."""
+        original_method = self.repo._model_to_entity
 
-        def mock_model_to_git_branch(model):
+        def mock_model_to_entity(model):
             """Mock version that doesn't query database."""
             git_branch = GitBranch(
                 id=model.id,
@@ -78,13 +78,12 @@ class TestORMGitBranchRepository:
             git_branch.assigned_agent_id = getattr(model, 'assigned_agent_id', None)
             git_branch.priority = Priority(getattr(model, 'priority', 'medium'))
             git_branch.status = TaskStatus(getattr(model, 'status', 'todo'))
-            # Set task counts to defaults for tests
-            git_branch.task_count = 0
-            git_branch.completed_task_count = 0
+            # Set task counts to defaults for tests (all_tasks is populated in real implementation)
+            # We're mocking it to avoid database queries
             return git_branch
 
-        self.repo._model_to_git_branch = mock_model_to_git_branch
-        self.original_model_to_git_branch = original_method
+        self.repo._model_to_entity = mock_model_to_entity
+        self.original_model_to_entity = original_method
 
     def test_initialization(self):
         """Test repository initialization."""
@@ -93,10 +92,10 @@ class TestORMGitBranchRepository:
             assert repo.user_id == "test_user"
             assert repo.model_class == ProjectGitBranch
 
-    def test_model_to_git_branch_conversion(self):
+    def test_model_to_entity_conversion(self):
         """Test conversion from model to domain entity."""
         # The method is already patched in setup_method
-        git_branch = self.repo._model_to_git_branch(self.mock_model)
+        git_branch = self.repo._model_to_entity(self.mock_model)
 
         assert git_branch.id == self.branch_id
         assert git_branch.name == "feature/test"
@@ -105,13 +104,10 @@ class TestORMGitBranchRepository:
         assert git_branch.assigned_agent_id == self.agent_id
         assert git_branch.priority == Priority("medium")
         assert git_branch.status == TaskStatus("todo")
-        # Check default task counts
-        assert git_branch.task_count == 0
-        assert git_branch.completed_task_count == 0
 
-    def test_git_branch_to_model_data_conversion(self):
+    def test_entity_to_model_dict_conversion(self):
         """Test conversion from domain entity to model data."""
-        model_data = self.repo._git_branch_to_model_data(self.mock_git_branch)
+        model_data = self.repo._entity_to_model_dict(self.mock_git_branch)
         
         assert model_data['id'] == self.branch_id
         assert model_data['name'] == "feature/test"
@@ -591,15 +587,23 @@ class TestORMGitBranchRepository:
     @pytest.mark.asyncio
     async def test_get_branch_statistics_success(self):
         """Test get_branch_statistics interface method success."""
-        # Update mock model with task counts
-        self.mock_model.task_count = 10
-        self.mock_model.completed_task_count = 6
+        # Create mock for task count query result
+        mock_task_count_result = Mock()
+        mock_task_count_result.total = 10
+        mock_task_count_result.completed = 6
         
         with patch.object(self.repo, 'get_db_session') as mock_session_context:
             mock_session_context.return_value.__enter__.return_value = self.mock_session
-            mock_query = Mock()
-            mock_query.filter.return_value.first.return_value = self.mock_model
-            self.mock_session.query.return_value = mock_query
+            
+            # Mock the two queries - first for branch, second for task counts
+            mock_branch_query = Mock()
+            mock_branch_query.filter.return_value.first.return_value = self.mock_model
+            
+            mock_task_query = Mock()
+            mock_task_query.filter.return_value.first.return_value = mock_task_count_result
+            
+            # Return different query objects for each call
+            self.mock_session.query.side_effect = [mock_branch_query, mock_task_query]
             
             result = await self.repo.get_branch_statistics(self.project_id, self.branch_id)
             

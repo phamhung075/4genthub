@@ -261,7 +261,8 @@ class TestDatabaseModels:
             task_id=task_id,
             assignee_id="user-456",
             role="contributor",
-            user_id="user-123"
+            user_id="user-123",
+            assigned_at=datetime.now(timezone.utc)
         )
         
         session.add(assignee)
@@ -277,7 +278,8 @@ class TestDatabaseModels:
             id=str(uuid.uuid4()),
             task_id=task_id,
             assignee_id="user-456",  # Same assignee for same task
-            user_id="user-123"
+            user_id="user-123",
+            assigned_at=datetime.now(timezone.utc)
         )
         session.add(duplicate_assignee)
         
@@ -327,7 +329,8 @@ class TestDatabaseModels:
             task_id=task2_id,
             depends_on_task_id=task1_id,
             dependency_type="blocks",
-            user_id="user-123"
+            user_id="user-123",
+            created_at=datetime.now(timezone.utc)
         )
         
         session.add(dependency)
@@ -343,7 +346,8 @@ class TestDatabaseModels:
         self_dependency = TaskDependency(
             task_id=task1_id,
             depends_on_task_id=task1_id,  # Self dependency
-            user_id="user-123"
+            user_id="user-123",
+            created_at=datetime.now(timezone.utc)
         )
         session.add(self_dependency)
         
@@ -353,6 +357,7 @@ class TestDatabaseModels:
     def test_agent_model_creation(self, session):
         """Test Agent model creation and fields"""
         agent_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
         agent = Agent(
             id=agent_id,
             name="Test Agent",
@@ -361,7 +366,9 @@ class TestDatabaseModels:
             capabilities=["coding", "testing"],
             status="available",
             availability_score=0.8,
-            user_id=str(uuid.uuid4())
+            user_id=str(uuid.uuid4()),
+            created_at=now,
+            updated_at=now
         )
         
         session.add(agent)
@@ -401,12 +408,15 @@ class TestDatabaseModels:
         session.add(task)
         
         # Create label
+        now = datetime.now(timezone.utc)
         label = Label(
             id="label-123",
             name="bug",
             color="#ff0000",
             description="Bug label",
-            user_id="user-123"
+            user_id="user-123",
+            created_at=now,
+            updated_at=now
         )
         session.add(label)
         session.commit()
@@ -415,7 +425,8 @@ class TestDatabaseModels:
         task_label = TaskLabel(
             task_id=task_id,
             label_id="label-123",
-            user_id="user-123"
+            user_id="user-123",
+            applied_at=now
         )
         session.add(task_label)
         session.commit()
@@ -429,6 +440,7 @@ class TestDatabaseModels:
     def test_template_model_creation(self, session):
         """Test Template model creation and all fields"""
         template_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
         template = Template(
             id=template_id,
             name="Test Template",
@@ -441,7 +453,9 @@ class TestDatabaseModels:
             tags=["coding", "testing"],
             usage_count=5,
             user_id="user-123",
-            created_by="user-123"
+            created_by="user-123",
+            created_at=now,
+            updated_at=now
         )
         
         session.add(template)
@@ -457,6 +471,7 @@ class TestDatabaseModels:
     def test_global_context_model_creation(self, session):
         """Test GlobalContext model creation"""
         context_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
         global_context = GlobalContext(
             id=context_id,
             organization_id=str(uuid.uuid4()),
@@ -467,7 +482,9 @@ class TestDatabaseModels:
             reusable_patterns={"template1": "workflow"},
             global_preferences={"pref1": "value1"},
             delegation_rules={"rule1": "delegate"},
-            user_id="user-123"
+            user_id="user-123",
+            created_at=now,
+            updated_at=now
         )
         
         session.add(global_context)
@@ -485,9 +502,12 @@ class TestDatabaseModels:
         """Test ProjectContext model creation and relationship to GlobalContext"""
         # Create global context first
         global_context_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
         global_context = GlobalContext(
             id=global_context_id,
-            user_id="user-123"
+            user_id="user-123",
+            created_at=now,
+            updated_at=now
         )
         session.add(global_context)
         session.commit()
@@ -501,7 +521,9 @@ class TestDatabaseModels:
             data={"key": "value"},
             team_preferences={"pref1": "value1"},
             technology_stack={"tech1": "value1"},
-            user_id="user-123"
+            user_id="user-123",
+            created_at=now,
+            updated_at=now
         )
         
         session.add(project_context)
@@ -621,6 +643,7 @@ class TestDatabaseModels:
     def test_context_delegation_model_creation(self, session):
         """Test ContextDelegation model creation and constraints"""
         delegation_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
         delegation = ContextDelegation(
             id=delegation_id,
             source_level="task",
@@ -634,7 +657,8 @@ class TestDatabaseModels:
             delegation_reason="Reusable authentication pattern",
             trigger_type="manual",
             confidence_score=0.9,
-            user_id="user-123"
+            user_id="user-123",
+            created_at=now
         )
         
         session.add(delegation)
@@ -651,6 +675,7 @@ class TestDatabaseModels:
         """Test ContextInheritanceCache model creation"""
         cache_id = str(uuid.uuid4())
         context_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
         cache = ContextInheritanceCache(
             id=cache_id,
             context_id=context_id,
@@ -661,9 +686,11 @@ class TestDatabaseModels:
             dependencies_hash="hash123",
             resolution_path="global->project->branch->task",
             parent_chain=[str(uuid.uuid4()), str(uuid.uuid4())],
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            created_at=now,
+            expires_at=now + timedelta(hours=1),
             cache_size_bytes=1024,
-            user_id="user-123"
+            user_id="user-123",
+            last_hit=now
         )
         
         session.add(cache)
@@ -788,6 +815,7 @@ class TestDatabaseModels:
             "list": ["item1", "item2", "item3"]
         }
         
+        now = datetime.now(timezone.utc)
         template = Template(
             id=str(uuid.uuid4()),
             name="JSON Test Template",
@@ -795,7 +823,9 @@ class TestDatabaseModels:
             content=complex_data,
             tags=["json", "test"],
             user_id="user-123",
-            created_by="user-123"
+            created_by="user-123",
+            created_at=now,
+            updated_at=now
         )
         
         session.add(template)
@@ -839,12 +869,25 @@ class TestDatabaseModels:
     def test_unique_constraints_enforcement(self, session):
         """Test that unique constraints are properly enforced"""
         # Test Label name uniqueness
-        label1 = Label(id="label-1", name="unique_label", user_id="user-123")
+        now = datetime.now(timezone.utc)
+        label1 = Label(
+            id="label-1", 
+            name="unique_label", 
+            user_id="user-123",
+            created_at=now,
+            updated_at=now
+        )
         session.add(label1)
         session.commit()
         
         # Try to create another label with same name
-        label2 = Label(id="label-2", name="unique_label", user_id="user-123")
+        label2 = Label(
+            id="label-2", 
+            name="unique_label", 
+            user_id="user-123",
+            created_at=now,
+            updated_at=now
+        )
         session.add(label2)
         
         with pytest.raises(IntegrityError):

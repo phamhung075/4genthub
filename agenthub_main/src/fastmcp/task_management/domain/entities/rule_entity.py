@@ -9,7 +9,7 @@ This file contains the core domain entities for rule management following DDD pr
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-from ..enums.rule_enums import RuleFormat, RuleType, InheritanceType
+from ..value_objects import RuleFormat, RuleType, InheritanceType
 
 
 @dataclass

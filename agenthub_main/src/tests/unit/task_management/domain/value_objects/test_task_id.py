@@ -55,25 +55,25 @@ class TestTaskIdValidation:
     
     def test_taskid_with_none_raises_error(self):
         """Test that None value raises ValueError."""
-        with pytest.raises(ValueError, match="Task ID cannot be None"):
+        with pytest.raises(ValueError, match="TaskId cannot be None"):
             TaskId(None)
     
     def test_taskid_with_empty_string_raises_error(self):
         """Test that empty string raises ValueError."""
-        with pytest.raises(ValueError, match="Task ID cannot be empty or whitespace"):
+        with pytest.raises(ValueError, match="TaskId cannot be empty or whitespace"):
             TaskId("")
     
     def test_taskid_with_only_whitespace_raises_error(self):
         """Test that whitespace-only string raises ValueError."""
-        with pytest.raises(ValueError, match="Task ID cannot be empty or whitespace"):
+        with pytest.raises(ValueError, match="TaskId cannot be empty or whitespace"):
             TaskId("   ")
     
     def test_taskid_with_invalid_type_raises_error(self):
         """Test that non-string types raise TypeError."""
-        with pytest.raises(TypeError, match="Task ID value must be a string"):
+        with pytest.raises(TypeError, match="TaskId value must be a string"):
             TaskId(12345)
         
-        with pytest.raises(TypeError, match="Task ID value must be a string"):
+        with pytest.raises(TypeError, match="TaskId value must be a string"):
             TaskId(['a', 'b', 'c'])
     
     def test_taskid_with_invalid_format_raises_error(self):
@@ -89,7 +89,7 @@ class TestTaskIdValidation:
         ]
 
         for invalid in invalid_formats:
-            with pytest.raises(ValueError, match="Invalid Task ID format"):
+            with pytest.raises(ValueError, match="Invalid TaskId format"):
                 TaskId(invalid)
 
 
@@ -278,7 +278,7 @@ class TestTaskIdEdgeCases:
         ]
         
         for invalid in invalid_uuids:
-            with pytest.raises(ValueError, match="Invalid Task ID format"):
+            with pytest.raises(ValueError, match="Invalid TaskId format"):
                 TaskId(invalid)
     
     def test_real_uuid_compatibility(self):

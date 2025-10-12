@@ -17,6 +17,7 @@ Key Points:
 - docker-menu.sh option R for rebuild
 - The ORM model should be the source of truth. Update the database table to match the ORM model definition, not the other way
   around
+- consolidate all type declarations in the frontend to `agenthub-frontend/src/types`
 
 ## 🚨 AGENTHUB-SPECIFIC: Test Fixing Priority
 

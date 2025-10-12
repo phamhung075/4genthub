@@ -9,7 +9,7 @@ from fastmcp.task_management.application.services.agent_inheritance_service impo
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 
@@ -32,7 +32,7 @@ class TestAgentInheritanceService:
         )
         
         self.subtask_no_assignees = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask without assignees",
             description="Should inherit from parent",
             parent_task_id=self.parent_task.id,
@@ -40,7 +40,7 @@ class TestAgentInheritanceService:
         )
         
         self.subtask_with_assignees = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask with assignees",
             description="Should not inherit from parent",
             parent_task_id=self.parent_task.id,
@@ -120,7 +120,7 @@ class TestAgentInheritanceService:
         """Test applying inheritance to all subtasks of a task"""
         # Create multiple subtasks
         subtask1 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask 1",
             description="Should inherit",
             parent_task_id=self.parent_task.id,
@@ -128,7 +128,7 @@ class TestAgentInheritanceService:
         )
         
         subtask2 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask 2",
             description="Has assignees",
             parent_task_id=self.parent_task.id,
@@ -136,7 +136,7 @@ class TestAgentInheritanceService:
         )
         
         subtask3 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask 3",
             description="Should inherit",
             parent_task_id=self.parent_task.id,
@@ -219,7 +219,7 @@ class TestAgentInheritanceService:
         """Test getting inheritance summary for a task"""
         # Create subtasks with different inheritance scenarios
         subtask1 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Inheriting Subtask",
             description="No assignees",
             parent_task_id=self.parent_task.id,
@@ -227,7 +227,7 @@ class TestAgentInheritanceService:
         )
         
         subtask2 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Non-inheriting Subtask",
             description="Has assignees",
             parent_task_id=self.parent_task.id,
@@ -290,7 +290,7 @@ class TestAgentInheritanceService:
         """Test complete inheritance workflow using the service"""
         # Create a subtask that should inherit
         new_subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="New Subtask",
             description="Fresh subtask for inheritance",
             parent_task_id=self.parent_task.id,

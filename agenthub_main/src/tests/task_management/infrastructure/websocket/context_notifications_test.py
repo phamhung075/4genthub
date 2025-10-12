@@ -22,7 +22,7 @@ from fastmcp.task_management.infrastructure.websocket.context_notifications impo
     get_notification_service,
     get_websocket_manager
 )
-from fastmcp.task_management.domain.models.unified_context import ContextLevel
+from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
 
 
 # Mock WebSocket classes when not available

@@ -10,7 +10,7 @@ from fastmcp.task_management.application.dtos.subtask.add_subtask_request import
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.exceptions import TaskNotFoundError
@@ -38,7 +38,7 @@ class TestAddSubtaskWithInheritance:
         self.task_repository.find_by_id.return_value = self.parent_task
         
         # Configure subtask repository to generate IDs
-        self.subtask_repository.get_next_id.return_value = SubtaskId(str(uuid.uuid4()))
+        self.subtask_repository.get_next_id.return_value = TaskId(str(uuid.uuid4()))
         
         # Configure subtask repository save method
         self.subtask_repository.save.return_value = None
@@ -314,7 +314,7 @@ class TestAddSubtaskInheritanceErrorCases:
             assignees=["coding-agent"]
         )
         self.task_repository.find_by_id.return_value = parent_task
-        self.subtask_repository.get_next_id.return_value = SubtaskId(str(uuid.uuid4()))
+        self.subtask_repository.get_next_id.return_value = TaskId(str(uuid.uuid4()))
         
         # Configure save to raise an exception
         self.subtask_repository.save.side_effect = Exception("Database save failed")
@@ -364,7 +364,7 @@ class TestAddSubtaskInheritanceErrorCases:
             assignees=[None, "", "   ", "@valid-agent", "no-prefix-agent"]
         )
         self.task_repository.find_by_id.return_value = parent_task
-        self.subtask_repository.get_next_id.return_value = SubtaskId(str(uuid.uuid4()))
+        self.subtask_repository.get_next_id.return_value = TaskId(str(uuid.uuid4()))
         self.subtask_repository.save.return_value = None
         
         request = AddSubtaskRequest(

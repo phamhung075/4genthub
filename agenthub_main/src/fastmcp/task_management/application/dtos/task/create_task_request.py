@@ -3,9 +3,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from ....domain.enums.common_labels import CommonLabel, LabelValidator
-from ....domain.enums.estimated_effort import EstimatedEffort
-from ....domain.enums.agent_roles import AgentRole
+from ....domain.value_objects import CommonLabel, LabelValidator, EstimatedEffort, AgentRole
 
 def resolve_legacy_role(assignee: str) -> Optional[str]:
     """Resolve legacy role names to current ones"""

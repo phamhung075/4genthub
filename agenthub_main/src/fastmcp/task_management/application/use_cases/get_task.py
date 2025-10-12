@@ -128,9 +128,7 @@ class GetTaskUseCase:
             
             # Publish domain event
             _event = TaskRetrieved(
-                task_id=task.id,
-                task_data=task.to_dict() if hasattr(task, 'to_dict') else {},
-                retrieved_at=datetime.now(timezone.utc)
+                task_id=str(task.id)
             )
             # Note: Event publishing would be handled by an event dispatcher in a full implementation
             

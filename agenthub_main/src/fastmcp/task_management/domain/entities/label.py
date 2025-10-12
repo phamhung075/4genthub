@@ -4,25 +4,34 @@ from typing import Optional
 from datetime import datetime
 from dataclasses import dataclass
 
+from .base.base_timestamp_entity import BaseTimestampEntity
+
 
 @dataclass
-class Label:
+class Label(BaseTimestampEntity):
     """Label entity for categorizing and organizing tasks"""
-    
-    id: int
-    name: str
+
+    id: int = 0
+    name: str = ""
     color: str = "#0066cc"  # Default color
     description: str = ""
-    created_at: Optional[datetime] = None
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id) if self.id else "unknown"
     
     def __post_init__(self):
-        """Post initialization validation"""
-        if not self.name:
+        """Post initialization timestamp handling."""
+        super().__post_init__()
+
+    def _validate_entity(self) -> None:
+        """Ensure label invariants hold."""
+        if not self.name or not self.name.strip():
             raise ValueError("Label name cannot be empty")
-        
-        # Validate color format (simple hex color validation)
         if self.color and not self._is_valid_hex_color(self.color):
-            raise ValueError(f"Invalid color format: {self.color}. Expected hex color (e.g., #ff0000)")
+            raise ValueError(
+                f"Invalid color format: {self.color}. Expected hex color (e.g., #ff0000)"
+            )
     
     def _is_valid_hex_color(self, color: str) -> bool:
         """Validate hex color format"""

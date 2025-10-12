@@ -20,7 +20,9 @@ class TestLabelInitialization:
         assert label.name == name
         assert label.color == "#0066cc"  # Default color
         assert label.description == ""
-        assert label.created_at is None
+        # BaseTimestampEntity ensures created_at is set
+        assert label.created_at is not None
+        assert label.updated_at is not None
 
     def test_label_creation_with_all_parameters(self):
         """Test creating label with all parameters"""
@@ -79,12 +81,11 @@ class TestLabelValidation:
         with pytest.raises(ValueError, match="Label name cannot be empty"):
             Label(id=1, name=None)
 
-    def test_whitespace_only_name_accepted(self):
-        """Test that whitespace-only name is accepted by current implementation"""
-        # Current implementation accepts whitespace-only names
-        label = Label(id=1, name="   ")
-        assert label.name == "   "
-        assert label.id == 1
+    def test_whitespace_only_name_rejected(self):
+        """Test that whitespace-only name is rejected by current implementation"""
+        # Current implementation rejects whitespace-only names
+        with pytest.raises(ValueError, match="Label name cannot be empty"):
+            Label(id=1, name="   ")
 
     def test_invalid_color_format_raises_error(self):
         """Test that invalid color format raises ValueError"""
@@ -218,14 +219,17 @@ class TestLabelEquality:
 
     def test_labels_with_same_data_are_equal(self):
         """Test that labels with same data are considered equal"""
-        created_at = datetime(2024, 1, 1, 12, 0, 0)
+        # Use timezone-aware datetime as required by BaseTimestampEntity
+        created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        updated_at = datetime(2024, 1, 1, 12, 0, 1, tzinfo=timezone.utc)
         
         label1 = Label(
             id=1,
             name="Feature",
             color="#ff0000",
             description="Feature label",
-            created_at=created_at
+            created_at=created_at,
+            updated_at=updated_at
         )
         
         label2 = Label(
@@ -233,7 +237,8 @@ class TestLabelEquality:
             name="Feature",
             color="#ff0000",
             description="Feature label",
-            created_at=created_at
+            created_at=created_at,
+            updated_at=updated_at
         )
         
         assert label1 == label2
@@ -385,18 +390,24 @@ class TestLabelEdgeCases:
         assert label.description == ""
 
     def test_label_created_at_can_be_none(self):
-        """Test that created_at can be None"""
+        """Test that created_at is automatically set when None is provided"""
         label = Label(id=1, name="Test", created_at=None)
         
-        assert label.created_at is None
+        # BaseTimestampEntity ensures created_at is never None
+        assert label.created_at is not None
+        assert isinstance(label.created_at, datetime)
 
     def test_label_created_at_with_future_date(self):
         """Test label with future created_at date"""
-        future_date = datetime(2030, 12, 31, 23, 59, 59)
+        # Use timezone-aware datetime
+        future_date = datetime(2030, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        # updated_at must be >= created_at per BaseTimestampEntity validation
+        future_updated = datetime(2030, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
         
-        label = Label(id=1, name="Future", created_at=future_date)
+        label = Label(id=1, name="Future", created_at=future_date, updated_at=future_updated)
         
         assert label.created_at == future_date
+        assert label.updated_at == future_updated
 
     def test_multiple_labels_with_same_name_different_ids(self):
         """Test creating multiple labels with same name but different IDs"""
@@ -462,7 +473,8 @@ class TestLabelSerializationScenarios:
         assert label_dict['name'] == "Dict Test"
         assert label_dict['color'] == "#123456"
         assert label_dict['description'] == "Dictionary conversion test"
-        assert label_dict['created_at'] is None
+        assert label_dict['created_at'] is not None  # BaseTimestampEntity auto-sets timestamps
+        assert isinstance(label_dict['created_at'], datetime)
 
     def test_label_fields_are_mutable(self):
         """Test that label fields can be modified after creation"""
@@ -481,7 +493,7 @@ class TestLabelSerializationScenarios:
 
     def test_label_modification_preserves_other_fields(self):
         """Test that modifying one field doesn't affect others"""
-        original_created_at = datetime(2024, 1, 1)
+        original_created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)  # BaseTimestampEntity requires timezone-aware
         
         label = Label(
             id=789,

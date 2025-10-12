@@ -12,146 +12,33 @@ import {
     subtaskApiV2,
     taskApiV2
 } from './services/apiV2';
+import type {
+    AgentsResponse,
+    ApiResponse,
+    Branch,
+    BranchesResponse,
+    BranchResponse,
+    ContextResponse,
+    DeleteResponse,
+    HealthResponse,
+    Project,
+    ProjectResponse,
+    ProjectsResponse,
+    Rule,
+    Subtask,
+    SubtaskResponse,
+    SubtasksResponse,
+    Task,
+    TaskResponse,
+    TasksResponse
+} from './types/api.types';
 import logger from './utils/logger';
 
-// --- Response Type Definitions ---
-export interface ApiResponse<T = any> {
-    success?: boolean;
-    message?: string;
-    error?: string;
-    detail?: string;
-    data?: T;
-    [key: string]: any;
-}
-
-export interface TasksResponse extends ApiResponse {
-    tasks: Task[];
-}
-
-export interface TaskResponse extends ApiResponse {
-    task: Task;
-}
-
-export interface SubtasksResponse extends ApiResponse {
-    subtasks: Subtask[];
-}
-
-export interface SubtaskResponse extends ApiResponse {
-    subtask: Subtask;
-}
-
-export interface ProjectsResponse extends ApiResponse {
-    projects: Project[];
-}
-
-export interface ProjectResponse extends ApiResponse {
-    project: Project;
-}
-
-export interface BranchesResponse extends ApiResponse {
-    branches: Branch[];
-}
-
-export interface BranchResponse extends ApiResponse {
-    branch: Branch;
-}
-
-export interface ContextResponse extends ApiResponse {
-    context: any;
-}
-
-export interface AgentsResponse extends ApiResponse {
-    agents: any[];
-}
-
-export interface HealthResponse extends ApiResponse {
-    status: string;
-}
-
-export interface DeleteResponse {
-    success: boolean;
-    message?: string;
-    error?: string;
-}
-
-// --- Interfaces for Type Safety ---
-export interface Task {
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-    priority: string;
-    subtasks: string[];
-    assignees?: string[];
-    dependencies?: string[];
-    dependency_relationships?: {
-        depends_on: string[];
-        blocks: string[];
-        dependency_chains?: string[][];
-    };
-    context_data?: any;
-    context_id?: string;
-    git_branch_id?: string;
-    progress_history?: string | object;  // Can be string (legacy) or object (new format) with progress entries
-    progress_count?: number;    // Count of progress entries
-    progress_state?: 'initial' | 'in_progress' | 'complete';  // New stepper progress state
-    labels?: string[];
-    estimated_effort?: string;
-    due_date?: string;
-    created_at?: string;
-    updated_at?: string;
-    progress_percentage?: number;
-    [key: string]: any;
-}
-
-export interface Subtask {
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-    priority: string;
-    parent_task_id: string;
-    assignees?: string[];
-    dependencies?: string[];
-    progress_percentage?: number;
-    progress_state?: 'initial' | 'in_progress' | 'complete';  // New stepper progress state
-    progress_notes?: string;
-    created_at?: string;
-    updated_at?: string;
-    completed_at?: string;
-    [key: string]: any;
-}
-
-export interface Project {
-    id: string;
-    name: string;
-    description: string;
-    branches?: Branch[];
-    created_at?: string;
-    updated_at?: string;
-    [key: string]: any;
-}
-
-export interface Branch {
-    id: string;
-    git_branch_name: string;
-    description?: string;
-    project_id: string;
-    is_active: boolean;
-    created_at?: string;
-    updated_at?: string;
-}
-
-export interface Rule {
-    id: string;
-    name: string;
-    description: string;
-    condition: string;
-    action: string;
-    priority: number;
-    is_active: boolean;
-    [key: string]: any;
-}
+export type {
+    AgentsResponse, ApiResponse, Branch, BranchesResponse,
+    BranchResponse,
+    ContextResponse, DeleteResponse, HealthResponse, Project, ProjectResponse, ProjectsResponse, Rule, Subtask, SubtaskResponse, SubtasksResponse, Task, TaskResponse, TasksResponse
+};
 
 // --- Task Operations ---
 export const listTasks = async (params?: { git_branch_id?: string }): Promise<Task[]> => {
@@ -182,9 +69,9 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
 };
 
 export const updateTask = async (task_id: string, updates: Partial<Task>): Promise<Task> => {
-    console.log('=== UPDATE TASK DEBUG ===');
-    console.log('Task ID:', task_id);
-    console.log('Updates received:', updates);
+    logger.debug('=== UPDATE TASK DEBUG ===');
+    logger.debug('Task ID:', task_id);
+    logger.debug('Updates received:', updates);
 
     // Filter out undefined values and only send defined fields
     const updatePayload: any = {};
@@ -202,33 +89,33 @@ export const updateTask = async (task_id: string, updates: Partial<Task>): Promi
     // Add progress_notes - maps to 'details' field in backend
     if ((updates as any).progress_notes !== undefined) updatePayload.details = (updates as any).progress_notes;
 
-    console.log('=== Progress 1 ===');
-    console.log('Sending update payload to backend:', updatePayload);
+    logger.debug('=== Progress 1 ===');
+    logger.debug('Sending update payload to backend:', updatePayload);
 
     try {
         const response = await taskApiV2.updateTask(task_id, updatePayload) as TaskResponse;
 
-        console.log('=== Progress 2 ===');
-        console.log('Response from backend:', response);
+        logger.debug('=== Progress 2 ===');
+        logger.debug('Response from backend:', response);
 
         const result = response.task || response;
 
-        console.log('=== Progress 3 ===');
-        console.log('Returning updated task:', result);
+        logger.debug('=== Progress 3 ===');
+        logger.debug('Returning updated task:', result);
 
         return result;
     } catch (error) {
-        console.error('=== UPDATE ERROR ===');
-        console.error('Error updating task:', error);
+        logger.error('=== UPDATE ERROR ===');
+        logger.error('Error updating task:', error);
         throw error;
     }
 };
 
 export const deleteTask = async (task_id: string): Promise<void> => {
-    console.log('🚀 DELETE DEBUG: API deleteTask called for task_id:', task_id);
-    console.log('🚀 DELETE DEBUG: About to call taskApiV2.deleteTask');
+    logger.debug('🚀 DELETE DEBUG: API deleteTask called for task_id:', task_id);
+    logger.debug('🚀 DELETE DEBUG: About to call taskApiV2.deleteTask');
     await taskApiV2.deleteTask(task_id);
-    console.log('🚀 DELETE DEBUG: taskApiV2.deleteTask completed for task_id:', task_id);
+    logger.debug('🚀 DELETE DEBUG: taskApiV2.deleteTask completed for task_id:', task_id);
 };
 
 export const completeTask = async (
@@ -500,45 +387,45 @@ export const getAvailableAgents = async (): Promise<string[]> => {
         'coding-agent',
         'debugger-agent',
         'code-reviewer-agent',
-        '@prototyping-agent',
-        '@test-orchestrator-agent',
-        '@uat-coordinator-agent',
-        '@performance-load-tester-agent',
+        'prototyping-agent',
+        'test-orchestrator-agent',
+        'uat-coordinator-agent',
+        'performance-load-tester-agent',
         'system-architect-agent',
-        '@design-system-agent',
-        '@ui-designer-expert-shadcn-agent',
-        '@core-concept-agent',
+        'design-system-agent',
+        'ui-designer-expert-shadcn-agent',
+        'core-concept-agent',
         'devops-agent',
-        '@adaptive-deployment-strategist-agent',
-        '@swarm-scaler-agent',
+        'adaptive-deployment-strategist-agent',
+        'swarm-scaler-agent',
         'documentation-agent',
-        '@tech-spec-agent',
-        '@prd-architect-agent',
-        '@project-initiator-agent',
-        '@task-planning-agent',
-        '@master-orchestrator-agent',
-        '@elicitation-agent',
-        '@security-auditor-agent',
-        '@compliance-scope-agent',
-        '@ethical-review-agent',
-        '@analytics-setup-agent',
-        '@efficiency-optimization-agent',
-        '@health-monitor-agent',
-        '@marketing-strategy-orchestrator-agent',
-        '@seo-sem-agent',
-        '@growth-hacking-idea-agent',
-        '@content-strategy-agent',
-        '@community-strategy-agent',
+        'tech-spec-agent',
+        'prd-architect-agent',
+        'project-initiator-agent',
+        'task-planning-agent',
+        'master-orchestrator-agent',
+        'elicitation-agent',
+        'security-auditor-agent',
+        'compliance-scope-agent',
+        'ethical-review-agent',
+        'analytics-setup-agent',
+        'efficiency-optimization-agent',
+        'health-monitor-agent',
+        'marketing-strategy-orchestrator-agent',
+        'seo-sem-agent',
+        'growth-hacking-idea-agent',
+        'content-strategy-agent',
+        'community-strategy-agent',
         'branding-agent',
         'deep-research-agent',
-        '@mcp-researcher-agent',
-        '@root-cause-analysis-agent',
-        '@technology-advisor-agent',
-        '@brainjs-ml-agent',
-        '@mcp-configuration-agent',
-        '@idea-generation-agent',
-        '@idea-refinement-agent',
-        '@remediation-agent'
+        'mcp-researcher-agent',
+        'root-cause-analysis-agent',
+        'technology-advisor-agent',
+        'brainjs-ml-agent',
+        'mcp-configuration-agent',
+        'idea-generation-agent',
+        'idea-refinement-agent',
+        'remediation-agent'
     ];
 };
 

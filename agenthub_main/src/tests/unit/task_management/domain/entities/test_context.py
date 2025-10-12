@@ -13,22 +13,6 @@ from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 
 
 class TestContextMetadata:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test ContextMetadata dataclass."""
     
     def test_metadata_creation_minimal(self):
@@ -69,22 +53,6 @@ class TestContextMetadata:
 
 
 class TestContextObjective:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test ContextObjective dataclass."""
     
     def test_objective_creation_minimal(self):
@@ -113,22 +81,6 @@ class TestContextObjective:
 
 
 class TestContextRequirement:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test ContextRequirement and ContextRequirements."""
     
     def test_requirement_creation(self):
@@ -166,22 +118,6 @@ class TestContextRequirement:
 
 
 class TestContextDependency:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test ContextDependency and ContextDependencies."""
     
     def test_dependency_creation(self):
@@ -215,22 +151,6 @@ class TestContextDependency:
 
 
 class TestContextProgress:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test progress tracking classes."""
     
     def test_progress_action_creation(self):
@@ -281,22 +201,6 @@ class TestContextProgress:
 
 
 class TestContextInsight:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test insight and notes classes."""
     
     def test_insight_creation(self):
@@ -358,22 +262,6 @@ class TestContextInsight:
 
 
 class TestContextSubtask:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test subtask classes."""
     
     def test_subtask_creation(self):
@@ -416,22 +304,6 @@ class TestContextSubtask:
 
 
 class TestContextCustomSection:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test custom section functionality."""
     
     def test_custom_section_creation(self):
@@ -454,22 +326,6 @@ class TestContextCustomSection:
 
 
 class TestTaskContext:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test main TaskContext class."""
     
     def test_context_creation_minimal(self):
@@ -563,22 +419,6 @@ class TestTaskContext:
 
 
 class TestTaskContextSerialization:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test TaskContext serialization and deserialization."""
     
     def test_to_dict_minimal(self):
@@ -824,22 +664,6 @@ class TestTaskContextSerialization:
 
 
 class TestContextSchema:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Test ContextSchema validation and utilities."""
     
     def test_get_default_schema(self):
@@ -928,22 +752,6 @@ class TestContextSchema:
 
 
 class TestContextIntegration:
-    
-    def setup_method(self, method):
-        """Clean up before each test"""
-        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
-        from sqlalchemy import text
-        
-        db_config = get_db_config()
-        with db_config.get_session() as session:
-            # Clean test data but preserve defaults
-            try:
-                session.execute(text("DELETE FROM tasks WHERE id LIKE 'test-%'"))
-                session.execute(text("DELETE FROM projects WHERE id LIKE 'test-%' AND id != 'default_project'"))
-                session.commit()
-            except:
-                session.rollback()
-
     """Integration tests for Context functionality."""
     
     def test_full_context_workflow(self):

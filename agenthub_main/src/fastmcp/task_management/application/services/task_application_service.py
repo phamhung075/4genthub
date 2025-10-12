@@ -7,6 +7,7 @@ from fastmcp.task_management.application.dtos.task import (
     CreateTaskResponse,
     TaskResponse,
     UpdateTaskRequest,
+    UpdateTaskResponse,
     ListTasksRequest,
     TaskListResponse,
     SearchTasksRequest
@@ -48,9 +49,19 @@ class TaskApplicationService:
     
     def _get_user_scoped_repository(self) -> TaskRepository:
         """Get a user-scoped version of the repository if it supports user context."""
+        # Debug: Check repository state
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"_get_user_scoped_repository: self._user_id={self._user_id}, "
+                    f"repo has with_user={hasattr(self._task_repository, 'with_user')}, "
+                    f"repo.user_id={getattr(self._task_repository, 'user_id', 'N/A')}")
+        
         if hasattr(self._task_repository, 'with_user') and self._user_id:
             # Repository supports user scoping
-            return self._task_repository.with_user(self._user_id)
+            logger.debug(f"Creating user-scoped repository with user_id={self._user_id}")
+            scoped_repo = self._task_repository.with_user(self._user_id)
+            logger.debug(f"Scoped repo created with user_id={getattr(scoped_repo, 'user_id', 'N/A')}")
+            return scoped_repo
         elif hasattr(self._task_repository, 'user_id'):
             # Repository has user_id property, set it if needed
             if self._user_id and self._task_repository.user_id != self._user_id:
@@ -100,7 +111,7 @@ class TaskApplicationService:
         except TaskNotFoundError:
             return None
 
-    async def update_task(self, request: UpdateTaskRequest) -> Optional[TaskResponse]:
+    async def update_task(self, request: UpdateTaskRequest) -> UpdateTaskResponse:
         response = self._update_task_use_case.execute(request)
         if getattr(response, 'success', False) and hasattr(response, 'task') and response.task:
             task = response.task
@@ -108,7 +119,7 @@ class TaskApplicationService:
             self._hierarchical_context_service.update_context(
                 level="task",
                 context_id=str(task.id.value if hasattr(task.id, 'value') else task.id),
-                changes={
+                data={
                     "task_data": {
                         "title": task.title,
                         "description": task.description,
@@ -136,8 +147,15 @@ class TaskApplicationService:
             self._hierarchical_context_service.delete_context("task", task_id)
         return result
 
-    async def complete_task(self, task_id: str) -> dict:
-        return await self._complete_task_use_case.execute(task_id)
+    async def complete_task(self, task_id: str, completion_summary: str = None, 
+                          testing_notes: str = None, next_recommendations: str = None) -> dict:
+        # CompleteTaskUseCase.execute is not async, so don't await it
+        return self._complete_task_use_case.execute(
+            task_id=task_id,
+            completion_summary=completion_summary,
+            testing_notes=testing_notes,
+            next_recommendations=next_recommendations
+        )
 
     async def get_all_tasks(self) -> TaskListResponse:
         request = ListTasksRequest()

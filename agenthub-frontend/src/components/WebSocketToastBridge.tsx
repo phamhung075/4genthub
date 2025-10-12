@@ -9,16 +9,17 @@
 import { useEffect } from 'react';
 import { toastEventBus, ToastEvent } from '../services/toastEventBus';
 import { useToast } from './ui/toast';
+import logger from '../utils/logger';
 
 export const WebSocketToastBridge: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    console.log('🔌 WebSocketToastBridge: Component mounted, subscribing to toastEventBus');
+    logger.debug('🔌 WebSocketToastBridge: Component mounted, subscribing to toastEventBus');
 
     // Subscribe to toast events from the WebSocket service
     const unsubscribe = toastEventBus.subscribe((event: ToastEvent) => {
-      console.log('🔔 WebSocketToastBridge: Received toast event from toastEventBus:', event);
+      logger.debug('🔔 WebSocketToastBridge: Received toast event from toastEventBus:', event);
 
       // Use the stable showToast function directly instead of individual hook functions
       const toastId = showToast({
@@ -30,7 +31,7 @@ export const WebSocketToastBridge: React.FC = () => {
         duration: event.type === 'error' ? 8000 : 5000
       });
 
-      console.log('✅ WebSocketToastBridge: Called showToast, returned ID:', toastId);
+      logger.debug('✅ WebSocketToastBridge: Called showToast, returned ID:', toastId);
     });
 
     // Request notification permission on mount if not already granted

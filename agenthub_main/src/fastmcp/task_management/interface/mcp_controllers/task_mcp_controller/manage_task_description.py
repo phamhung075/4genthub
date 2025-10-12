@@ -7,7 +7,9 @@ Separated from the controller logic for better maintainability and organization.
 
 TOOL_NAME = "manage_task"
 
-TOOL_DESCRIPTION = "Comprehensive task management with CRUD operations and dependency support"
+TOOL_DESCRIPTION = (
+    "Comprehensive task management with CRUD operations and dependency support"
+)
 
 MANAGE_TASK_DESCRIPTION = """
 📋 TASK MANAGEMENT SYSTEM - Complete task lifecycle operations with Vision System Integration
@@ -196,7 +198,6 @@ MANAGE_TASK_PARAMETERS_DESCRIPTION = {
     "assignee": "Filter tasks by specific assignee. Optional for 'list' action. Example: 'user123'.",
     "tag": "Filter tasks by specific tag/label. Optional for 'list' action. Example: 'frontend'.",
     "user_id": "User ID performing the operation. Optional - automatically populated from authentication context.",
-    
     # AI-specific parameters
     "requirements": "Requirements description or JSON for AI planning. Required for: ai_plan, ai_analyze, ai_suggest_agents. Can be comma-separated text or structured JSON format.",
     "context": "Planning context for AI operations. Optional. Values: 'new_feature', 'bug_fix', 'enhancement', 'refactor'. Default: 'new_feature'.",
@@ -209,7 +210,7 @@ MANAGE_TASK_PARAMETERS_DESCRIPTION = {
     "analyze_complexity": "Analyze task complexity using AI. Optional for 'ai_enhance'. Default: true.",
     "suggest_optimizations": "Generate AI-powered optimization suggestions. Optional for 'ai_enhance'. Default: true.",
     "identify_risks": "Identify potential risks using AI analysis. Optional for 'ai_enhance'. Default: true.",
-    "available_agents": "Comma-separated list of available agents for assignment suggestions. Optional for 'ai_suggest_agents'."
+    "available_agents": "Comma-separated list of available agents for assignment suggestions. Optional for 'ai_suggest_agents'.",
 }
 
 
@@ -234,187 +235,179 @@ MANAGE_TASK_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["action"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Task identification parameters
         "task_id": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["task_id"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["task_id"],
         },
         "git_branch_id": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["git_branch_id"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["git_branch_id"],
         },
-        
         # Task creation/update parameters
         "title": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["title"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["title"],
         },
         "description": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["description"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["description"],
         },
         "status": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["status"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["status"],
         },
         "priority": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["priority"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["priority"],
         },
         "details": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["details"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["details"],
         },
         "estimated_effort": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["estimated_effort"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["estimated_effort"],
         },
         "progress_percentage": {
             "type": "integer",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["progress_percentage"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["progress_percentage"],
         },
-        
         # Multi-value parameters (accept comma-separated strings)
         "assignees": {
             "type": "string",
-            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., 'coding-agent'). For multiple agents use comma-separated: 'coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 37+ more specialized agents (42 total available)."
+            "description": "**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., 'coding-agent'). For multiple agents use comma-separated: 'coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 37+ more specialized agents (42 total available).",
         },
         "labels": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["labels"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["labels"],
         },
-        
         # Date and dependency parameters
         "due_date": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["due_date"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["due_date"],
         },
         "dependencies": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["dependencies"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["dependencies"],
         },
         "dependency_id": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["dependency_id"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["dependency_id"],
         },
-        
         # Context and completion parameters
         "context_id": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["context_id"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["context_id"],
         },
         "completion_summary": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["completion_summary"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["completion_summary"],
         },
         "testing_notes": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["testing_notes"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["testing_notes"],
         },
-        
         # Search and filter parameters
         "query": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["query"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["query"],
         },
         "limit": {
             "type": "integer",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["limit"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["limit"],
         },
         "offset": {
             "type": "integer",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["offset"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["offset"],
         },
         "sort_by": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["sort_by"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["sort_by"],
         },
         "sort_order": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["sort_order"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["sort_order"],
         },
-        
         # Boolean control parameters
         "include_context": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["include_context"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["include_context"],
         },
         "force_full_generation": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["force_full_generation"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["force_full_generation"],
         },
-        
         # Additional filter parameters
         "assignee": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["assignee"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["assignee"],
         },
         "tag": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["tag"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["tag"],
         },
-        
         # Authentication parameter
         "user_id": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["user_id"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["user_id"],
         },
-        
         # AI-specific parameters
         "requirements": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["requirements"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["requirements"],
         },
         "context": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["context"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["context"],
         },
         "auto_create_tasks": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["auto_create_tasks"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["auto_create_tasks"],
         },
         "enable_ai_breakdown": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_ai_breakdown"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_ai_breakdown"],
         },
         "enable_smart_assignment": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_smart_assignment"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION[
+                "enable_smart_assignment"
+            ],
         },
         "enable_auto_subtasks": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_auto_subtasks"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["enable_auto_subtasks"],
         },
         "ai_requirements": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["ai_requirements"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["ai_requirements"],
         },
         "planning_context": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["planning_context"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["planning_context"],
         },
         "analyze_complexity": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["analyze_complexity"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["analyze_complexity"],
         },
         "suggest_optimizations": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["suggest_optimizations"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["suggest_optimizations"],
         },
         "identify_risks": {
             "type": "boolean",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["identify_risks"]
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["identify_risks"],
         },
         "available_agents": {
             "type": "string",
-            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["available_agents"]
-        }
+            "description": MANAGE_TASK_PARAMETERS_DESCRIPTION["available_agents"],
+        },
     },
     "required": ["action"],
-    "additionalProperties": False
+    "additionalProperties": False,
 }
 
 
@@ -426,5 +419,3 @@ def get_manage_task_description():
 def get_manage_task_parameters():
     """Get the task management tool parameters schema."""
     return MANAGE_TASK_PARAMS
-
-

@@ -60,7 +60,7 @@ class TestTaskApplicationService:
             'list': Mock(execute=AsyncMock()),
             'search': Mock(execute=AsyncMock()),
             'delete': Mock(execute=Mock()),
-            'complete': Mock(execute=AsyncMock())
+            'complete': Mock(execute=Mock())
         }
     
     @pytest.fixture
@@ -265,12 +265,18 @@ class TestTaskApplicationService:
     async def test_complete_task(self, service, mock_use_cases):
         """Test task completion"""
         task_id = "task-123"
+        completion_summary = "Task completed successfully"
         expected_result = {"success": True, "task_id": task_id}
         mock_use_cases['complete'].execute.return_value = expected_result
         
-        result = await service.complete_task(task_id)
+        result = await service.complete_task(task_id, completion_summary=completion_summary)
         
-        mock_use_cases['complete'].execute.assert_called_once_with(task_id)
+        mock_use_cases['complete'].execute.assert_called_once_with(
+            task_id=task_id,
+            completion_summary=completion_summary,
+            testing_notes=None,
+            next_recommendations=None
+        )
         assert result == expected_result
     
     @pytest.mark.asyncio
@@ -387,10 +393,15 @@ class TestTaskApplicationService:
         }
         mock_use_cases['complete'].execute.return_value = expected_result
         
-        # The complete_task method currently only accepts task_id
-        result = await service.complete_task(task_id)
+        # The complete_task method now accepts additional parameters
+        result = await service.complete_task(task_id, completion_summary=completion_summary)
         
-        mock_use_cases['complete'].execute.assert_called_once_with(task_id)
+        mock_use_cases['complete'].execute.assert_called_once_with(
+            task_id=task_id,
+            completion_summary=completion_summary,
+            testing_notes=None,
+            next_recommendations=None
+        )
         assert result == expected_result
     
     @pytest.mark.asyncio
@@ -407,10 +418,19 @@ class TestTaskApplicationService:
         }
         mock_use_cases['complete'].execute.return_value = expected_result
         
-        # The complete_task method currently only accepts task_id
-        result = await service.complete_task(task_id)
+        # The complete_task method now accepts additional parameters
+        result = await service.complete_task(
+            task_id, 
+            completion_summary=completion_summary,
+            testing_notes=testing_notes
+        )
         
-        mock_use_cases['complete'].execute.assert_called_once_with(task_id)
+        mock_use_cases['complete'].execute.assert_called_once_with(
+            task_id=task_id,
+            completion_summary=completion_summary,
+            testing_notes=testing_notes,
+            next_recommendations=None
+        )
         assert result == expected_result
     
     def test_get_user_scoped_repository_no_user_id(self):
@@ -537,8 +557,8 @@ class TestTaskApplicationService:
         # Verify context update handles non-.value attributes
         mock_hierarchical_context_service.update_context.assert_called_once()
         context_call = mock_hierarchical_context_service.update_context.call_args
-        assert context_call[1]['changes']['task_data']['status'] == "in_progress"
-        assert context_call[1]['changes']['task_data']['priority'] == "high"
+        assert context_call[1]['data']['task_data']['status'] == "in_progress"
+        assert context_call[1]['data']['task_data']['priority'] == "high"
         assert result == response
 
     # Error Handling Tests

@@ -12,6 +12,7 @@ from datetime import datetime
 
 from ...database.models import Label, TaskLabel, Task
 from ...database.database_adapter import DatabaseAdapter
+from ..base_timestamp_repository import BaseTimestampRepository
 from ....domain.entities.label import Label as LabelEntity
 from ....domain.entities.task import Task as TaskEntity
 from ....domain.exceptions.base_exceptions import (
@@ -21,10 +22,11 @@ from ....domain.exceptions.base_exceptions import (
 )
 
 
-class ORMLabelRepository:
+class ORMLabelRepository(BaseTimestampRepository[Label]):
     """ORM-based Label repository implementation"""
     
     def __init__(self, db_adapter: DatabaseAdapter):
+        super().__init__(Label)
         self._db_adapter = db_adapter
     
     def create_label(self, name: str, color: str = "#0066cc", description: str = "") -> LabelEntity:
@@ -117,20 +119,20 @@ class ORMLabelRepository:
         except Exception as e:
             raise RepositoryError(message=f"Failed to get label by name: {str(e)}")
     
-    def update_label(self, label_id: int, name: Optional[str] = None, 
+    def update_label(self, label_id: int, name: Optional[str] = None,
                     color: Optional[str] = None, description: Optional[str] = None) -> LabelEntity:
         """
-        Update a label.
-        
+        Update a label using DDD-compliant pattern.
+
         Args:
             label_id: Label ID
             name: New name (optional)
             color: New color (optional)
             description: New description (optional)
-            
+
         Returns:
             Updated label entity
-            
+
         Raises:
             NotFoundError: If label not found
             ValidationError: If new name already exists
@@ -141,26 +143,40 @@ class ORMLabelRepository:
                 label = session.query(Label).filter(Label.id == label_id).first()
                 if not label:
                     raise NotFoundError(resource_type="Label", resource_id=str(label_id))
-                
+
                 # Check if new name already exists (if name is being updated)
                 if name and name != label.name:
                     existing = session.query(Label).filter(Label.name == name).first()
                     if existing:
                         raise ValidationError(f"Label with name '{name}' already exists")
-                
-                # Update fields
+
+                # DDD-COMPLIANT: Convert ORM model to domain entity
+                label_entity = self._model_to_entity(label)
+
+                # Update entity fields (domain layer validates business rules)
                 if name is not None:
-                    label.name = name
+                    label_entity.name = name
                 if color is not None:
-                    label.color = color
+                    label_entity.color = color
                 if description is not None:
-                    label.description = description
-                
+                    label_entity.description = description
+
+                # Trigger entity validation
+                label_entity._validate_entity()
+
+                # DDD-COMPLIANT: Convert entity back to model dict
+                model_dict = self._entity_to_model_dict(label_entity)
+
+                # Update ORM model with data from entity
+                label.name = model_dict["name"]
+                label.color = model_dict["color"]
+                label.description = model_dict["description"]
+
                 session.commit()
                 session.refresh(label)
-                
+
                 return self._model_to_entity(label)
-                
+
         except (NotFoundError, ValidationError):
             raise
         except Exception as e:
@@ -384,7 +400,28 @@ class ORMLabelRepository:
             description=model.description,
             created_at=model.created_at
         )
-    
+
+    def _entity_to_model_dict(self, entity: LabelEntity) -> Dict[str, Any]:
+        """
+        Convert LabelEntity to model dictionary for database updates.
+
+        This method follows DDD principles by converting domain entities
+        to infrastructure layer data structures.
+
+        Args:
+            entity: LabelEntity to convert
+
+        Returns:
+            Dictionary with model fields for database operations
+        """
+        return {
+            "id": entity.id,
+            "name": entity.name,
+            "color": entity.color,
+            "description": entity.description,
+            "user_id": getattr(self, 'user_id', None)
+        }
+
     def _task_model_to_entity(self, model: Task) -> TaskEntity:
         """Convert Task model to TaskEntity"""
         return TaskEntity(

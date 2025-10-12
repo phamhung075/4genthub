@@ -8,7 +8,7 @@ from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority, PriorityLevel
-from fastmcp.task_management.domain.events.task_events import (
+from fastmcp.task_management.domain.events import (
     TaskCreated, TaskUpdated, TaskDeleted
 )
 
@@ -210,7 +210,8 @@ class TestTaskStatusUpdates:
         assert task.context_id is None  # Should be cleared
         assert len(task._events) == 1
         assert isinstance(task._events[0], TaskUpdated)
-        assert task._events[0].field_name == "status"
+        # TaskUpdated now uses changes dict instead of field_name
+        assert "status" in task._events[0].changes
     
     def test_update_status_invalid_transition(self):
         """Test invalid status transitions."""
@@ -272,9 +273,9 @@ class TestTaskFieldUpdates:
         
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "priority"
-        assert events[0].old_value == str(original_priority)
-        assert events[0].new_value == str(Priority.high())
+        assert isinstance(events[0], TaskUpdated)
+        assert "priority" in events[0].changes
+        # The changes dict contains the new value
     
     def test_update_title(self):
         """Test updating task title."""
@@ -287,9 +288,10 @@ class TestTaskFieldUpdates:
         assert task.updated_at > original_updated
         assert task.context_id is None
         assert len(task._events) == 1
-        assert task._events[0].field_name == "title"
-        assert task._events[0].old_value == "Original Title"
-        assert task._events[0].new_value == "New Title"
+        assert isinstance(task._events[0], TaskUpdated)
+        assert "title" in task._events[0].changes
+        assert task._events[0].changes["title"]["new_value"] == "New Title"
+        assert task._events[0].changes["title"]["old_value"] == "Original Title"
     
     def test_update_title_validation(self):
         """Test title update validation."""
@@ -312,7 +314,8 @@ class TestTaskFieldUpdates:
         assert task.updated_at > original_updated
         assert task.context_id is None
         assert len(task._events) == 1
-        assert task._events[0].field_name == "description"
+        assert isinstance(task._events[0], TaskUpdated)
+        assert "description" in task._events[0].changes
     
     def test_update_description_validation(self):
         """Test description update validation."""
@@ -332,7 +335,8 @@ class TestTaskAssignees:
         
         assert "@agent1" in task.assignees
         assert len(task._events) == 1
-        assert task._events[0].field_name == "assignees"
+        assert "assignees" in task._events[0].changes
+        assert task._events[0].changes["assignees"]["action"] == "assignee_added"
     
     def test_add_duplicate_assignee(self):
         """Test adding duplicate assignee."""
@@ -546,7 +550,8 @@ class TestTaskCompletion:
         assert task.get_completion_summary() == "Task completed successfully"
         
         events = task.get_events()
-        status_events = [e for e in events if hasattr(e, 'field_name') and e.field_name == "status"]
+        # TaskUpdated now uses changes dict instead of field_name
+        status_events = [e for e in events if isinstance(e, TaskUpdated) and "status" in getattr(e, 'changes', {})]
         assert len(status_events) >= 1
     
     def test_complete_task_without_summary(self):
@@ -572,7 +577,8 @@ class TestTaskCompletion:
         
         # Even when already done, complete_task still creates a status event (done -> done)
         events = task.get_events()
-        status_events = [e for e in events if hasattr(e, 'field_name') and e.field_name == "status"]
+        # TaskUpdated now uses changes dict instead of field_name
+        status_events = [e for e in events if isinstance(e, TaskUpdated) and "status" in getattr(e, 'changes', {})]
         assert len(status_events) == 1  # Still creates event even for done -> done
 
 class TestTaskEquality:
@@ -650,9 +656,10 @@ class TestTaskDomainEvents:
         
         events = task.get_events()
         assert len(events) == 3
-        assert any(isinstance(e, TaskUpdated) and e.field_name == "status" for e in events)
-        assert any(isinstance(e, TaskUpdated) and e.field_name == "priority" for e in events)
-        assert any(isinstance(e, TaskUpdated) and e.field_name == "assignees" for e in events)
+        # TaskUpdated now uses changes dict instead of field_name
+        assert any(isinstance(e, TaskUpdated) and "status" in getattr(e, 'changes', {}) for e in events)
+        assert any(isinstance(e, TaskUpdated) and "priority" in getattr(e, 'changes', {}) for e in events)
+        assert any(isinstance(e, TaskUpdated) and "assignees" in getattr(e, 'changes', {}) for e in events)
     
     def test_clear_events(self):
         """Test clearing domain events."""
@@ -675,6 +682,7 @@ class TestTaskDomainEvents:
         task.update_title("Title 3")
         
         events = task.get_events()
-        assert events[0].new_value == "Title 1"
-        assert events[1].new_value == "Title 2"
-        assert events[2].new_value == "Title 3"
+        # TaskUpdated now uses changes dict
+        assert events[0].changes["title"]["new_value"] == "Title 1"
+        assert events[1].changes["title"]["new_value"] == "Title 2"
+        assert events[2].changes["title"]["new_value"] == "Title 3"

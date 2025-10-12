@@ -632,19 +632,43 @@ class TestWorkSessionEdgeCases:
     """Test suite for WorkSession edge cases and error conditions"""
     
     def test_empty_string_parameters_handled_correctly(self):
-        """Test handling of empty string parameters"""
-        session = WorkSession(
-            id='',
-            agent_id='',
-            task_id='',
-            git_branch_name='',
-            started_at=datetime.now(timezone.utc)
-        )
+        """Test handling of empty string parameters - domain validation rejects empty values"""
+        # WorkSession now requires non-empty values for all string fields
+        with pytest.raises(ValueError, match="WorkSession id cannot be empty"):
+            WorkSession(
+                id='',
+                agent_id='agent1',
+                task_id='task1',
+                git_branch_name='main',
+                started_at=datetime.now(timezone.utc)
+            )
         
-        assert session.id == ''
-        assert session.agent_id == ''
-        assert session.task_id == ''
-        assert session.git_branch_name == ''
+        with pytest.raises(ValueError, match="WorkSession agent_id cannot be empty"):
+            WorkSession(
+                id='test',
+                agent_id='',
+                task_id='task1',
+                git_branch_name='main',
+                started_at=datetime.now(timezone.utc)
+            )
+        
+        with pytest.raises(ValueError, match="WorkSession task_id cannot be empty"):
+            WorkSession(
+                id='test',
+                agent_id='agent1',
+                task_id='',
+                git_branch_name='main',
+                started_at=datetime.now(timezone.utc)
+            )
+        
+        with pytest.raises(ValueError, match="WorkSession git_branch_name cannot be empty"):
+            WorkSession(
+                id='test',
+                agent_id='agent1',
+                task_id='task1',
+                git_branch_name='',
+                started_at=datetime.now(timezone.utc)
+            )
     
     def test_extreme_duration_values(self):
         """Test handling of extreme duration values"""

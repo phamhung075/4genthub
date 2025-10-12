@@ -22,7 +22,7 @@ class CachedSubtaskRepository:
     
     def __init__(self, base_repository: SubtaskRepository):
         """Initialize cached repository wrapper
-        
+
         Args:
             base_repository: The underlying repository to wrap with caching
         """
@@ -30,6 +30,11 @@ class CachedSubtaskRepository:
         self.redis_client = self._init_redis()
         self.ttl = int(os.getenv('CACHE_TTL', '300'))  # 5 minutes default
         self.enabled = self.redis_client is not None
+
+    @property
+    def user_id(self) -> Optional[str]:
+        """Proxy user_id from base repository for authentication checks"""
+        return getattr(self.base_repo, 'user_id', None)
     
     def _init_redis(self) -> Optional[redis.Redis]:
         """Initialize Redis connection with fallback"""

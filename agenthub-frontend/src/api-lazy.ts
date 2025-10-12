@@ -10,58 +10,14 @@ import {
   taskApiV2
 } from './services/apiV2';
 import logger from './utils/logger';
+import { TaskSummary, SubtaskSummary } from './types/taskTypes';
+import { BranchSummary } from './types/api.types';
 
-// --- Lazy Loading Interfaces ---
-export interface TaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  subtask_count: number;
-  assignees_count: number;
-  has_dependencies: boolean;
-  has_context: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+export type { TaskSummary, SubtaskSummary } from './types/taskTypes';
+export type { BranchSummary } from './types/api.types';
 
-export interface TaskSummariesResponse {
-  tasks: TaskSummary[];
-  total: number;
-  page: number;
-  limit: number;
-  has_more: boolean;
-}
-
-export interface SubtaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  assignees_count: number;
-  assignees?: string[]; // Add full assignee information
-  progress_percentage?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface BranchSummary {
-  id: string;
-  git_branch_name: string;
-  project_id: string;
-  task_count: number;
-  active_task_count: number;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-  task_counts?: {
-    total: number;
-    todo: number;
-    in_progress: number;
-    done: number;
-    blocked: number;
-  };
-}
+// --- Import Lazy Loading Interfaces ---
+import type { TaskSummariesResponse } from './types/serviceTypes';
 
 // --- Task Lazy Loading ---
 export const getTaskSummaries = async (params?: {
@@ -158,14 +114,24 @@ export const getBranchSummaries = async (project_id: string): Promise<{
   // Map the optimized response to BranchSummary format
   const summaries: BranchSummary[] = branches.map((branch: any) => ({
     id: branch.id,
-    git_branch_name: branch.name || branch.git_branch_name,
-    project_id: project_id,
+    project_id,
+    name: branch.name || branch.git_branch_name || 'Unnamed branch',
+    git_branch_name: branch.git_branch_name || branch.name,
+    status: branch.status,
+    priority: branch.priority,
     task_count: branch.task_count || 0,
-    active_task_count: branch.in_progress_tasks || 0,
+    completed_tasks: branch.completed_tasks || 0,
+    in_progress_tasks: branch.in_progress_tasks || 0,
+    blocked_tasks: branch.blocked_tasks || 0,
+    todo_tasks: branch.todo_tasks || 0,
+    progress_percentage: branch.progress_percentage ?? 0,
+    last_activity: branch.last_activity,
+    has_urgent_tasks: branch.has_urgent_tasks,
+    is_completed: branch.is_completed,
     is_active: (branch.in_progress_tasks || 0) > 0,
+    active_task_count: branch.in_progress_tasks || 0,
     created_at: branch.created_at,
     updated_at: branch.updated_at,
-    // Include the task_counts object for detailed info (using direct fields)
     task_counts: {
       total: branch.task_count || 0,
       todo: branch.todo_tasks || 0,

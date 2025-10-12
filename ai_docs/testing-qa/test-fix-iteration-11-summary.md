@@ -1,65 +1,73 @@
 # Test Fix Iteration 11 Summary
 
-**Date**: Wed Sep 24 01:50:00 CEST 2025  
-**Status**: ✅ Successfully fixed 1 failing test file
+## Date: Sat Sep 27 11:06:57 CEST 2025
 
 ## Overview
+In this iteration, we discovered that tests that were passing individually were failing when run together, indicating potential test isolation issues.
 
-In Test Fix Iteration 11, I fixed the failing `database_config_test.py` file which had 4 failing tests. The root cause was that the tests were expecting old behavior (raising exceptions) while the implementation had been updated to call `sys.exit(1)` on critical database failures.
+## Status Before Iteration
+- **Failed tests**: 21 (listed in `.test_cache/failed_tests.txt`)
+- **Passed tests**: 19
 
-## Tests Fixed
+## Tests Analyzed
 
-### File: `database_config_test.py`
-- **Location**: `agenthub_main/src/tests/task_management/infrastructure/database/database_config_test.py`
-- **Total tests**: 34 (32 passing, 2 skipped as intended)
-- **Fixed**: 4 tests
+### 1. test_service_layer_timestamp_integration.py
+- **Individual run**: All 10 tests PASSED ✅
+- **Batch run**: 1 test FAILED ❌
+- **Failing test**: `test_task_completion_uses_clean_timestamp_handling`
+- **Error**: Task status remains 'todo' instead of being updated to 'done' after completion
+- **Root cause**: Test isolation issue - when run with other tests, the complete_task operation doesn't properly update the status
 
-#### Specific Tests Fixed:
-1. **`TestDatabaseConfig::test_sqlite_rejected_in_production`**
-   - Issue: Expected ValueError with specific message, but implementation calls sys.exit(1)
-   - Fix: Changed to expect SystemExit with code 1
-   - Added @pytest.mark.unit to skip autouse database fixture
+### 2. test_websocket_integration.py  
+- **Individual run**: All 11 tests PASSED ✅
+- **Batch run**: All tests PASSED ✅
+- **Status**: No issues
 
-2. **`TestModuleFunctions::test_get_db_config_error_handling`**
-   - Issue: Expected generic Exception, but get_db_config calls sys.exit(1) on failure
-   - Fix: Changed to expect SystemExit with code 1
-   - Added @pytest.mark.unit decorator
+### 3. task_application_service_test.py
+- **Individual run**: All 23 tests PASSED ✅
+- **Batch run**: 1 test FAILED ❌
+- **Failing test**: `test_create_task_with_entity_without_value_attributes`
+- **Root cause**: Unknown - requires further investigation
 
-3. **`TestErrorScenarios::test_database_initialization_failure`**
-   - Issue: Expected Exception, but DatabaseConfig.__init__ calls sys.exit(1)
-   - Fix: Changed to expect SystemExit with code 1
-   - Added @pytest.mark.unit decorator
+### 4. git_branch_mcp_controller_test.py
+- **Individual run**: All 22 tests PASSED ✅
+- **Batch run**: All tests PASSED ✅
+- **Status**: No issues
 
-4. **`TestErrorScenarios::test_connection_test_failure`**
-   - Issue: Expected Exception on connection failure, but implementation exits
-   - Fix: Changed to expect SystemExit with code 1
-   - Added @pytest.mark.unit decorator
+## Key Findings
 
-## Root Cause Analysis
+1. **Test Isolation Problem**: Tests that pass individually are failing when run together, suggesting:
+   - Shared state between tests
+   - Database transaction issues
+   - Mock cleanup problems
+   - Test order dependencies
 
-The tests were written when the database configuration module would raise exceptions on failures. However, the implementation was updated to follow a "fail-fast" approach where critical database initialization failures cause the process to exit immediately with `sys.exit(1)`. This is a sensible approach for a server application where database connectivity is essential.
+2. **Status Update Issue**: The `complete_task` operation reports success but doesn't update the task status to 'done' when tests run together
 
-The tests also had issues with the autouse database setup fixture in conftest.py that would try to initialize a database connection before the test could set up its mocks, causing additional failures.
+3. **Inconsistent Results**: 18 out of 20 tests pass in batch mode, but 2 fail due to isolation issues
 
-## Solution Applied
-
-1. **Updated test expectations**: Changed all `pytest.raises(Exception)` to `pytest.raises(SystemExit)`
-2. **Added unit test markers**: Added `@pytest.mark.unit` to tests to skip the autouse database fixture
-3. **Fixed assertions**: Changed from checking exception messages to verifying exit code is 1
-
-## Current Test Suite Status
-
-- **Total tests**: 372
-- **Passed (cached)**: 10
-- **Failed**: 0
-- **Untested**: 362
-
-The test suite is currently stable with no failing tests in the cache. The fix ensures that tests properly validate the current implementation behavior rather than expecting obsolete behavior.
-
-## Files Modified
-
-- `agenthub_main/src/tests/task_management/infrastructure/database/database_config_test.py`
+## Current Status After Iteration
+- **Passed tests**: 18 (when run in batch)
+- **Failed tests**: 2 (due to isolation issues)
+- **Total untested**: 366
 
 ## Next Steps
 
-With 0 failing tests currently cached, the test suite appears to be stable. Additional test files can be run to expand the cached passing tests and verify the overall health of the test suite.
+1. Investigate test isolation issues - check for:
+   - Missing @pytest.mark.asyncio decorators
+   - Improper database transaction handling
+   - Mock state not being reset between tests
+   - Missing test fixtures or setup/teardown
+
+2. Focus on fixing the 2 tests that fail in batch mode:
+   - `test_task_completion_uses_clean_timestamp_handling`
+   - `test_create_task_with_entity_without_value_attributes`
+
+3. Consider running a full test discovery to identify all failing tests across the codebase
+
+## Recommendations
+
+1. Add better test isolation mechanisms
+2. Ensure database transactions are properly rolled back between tests
+3. Clear all mocks and reset state in test teardown
+4. Consider using pytest-xdist for better test isolation

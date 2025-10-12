@@ -106,17 +106,20 @@ def sample_data(test_db, test_user_id):
             id=str(uuid.uuid4()),
             task_id=task_id,
             assignee_id=f"assignee-{task_id[:8]}",
-            user_id=test_user_id
+            user_id=test_user_id,
+            assigned_at=datetime.now(timezone.utc)
         )
         test_db.add(assignee)
     
     # Create task dependencies (task1 depends on task2, task2 depends on task3)
     if len(task_ids) >= 2:
+        now = datetime.now(timezone.utc)
         dependency1 = TaskDependency(
             task_id=task_ids[0],
             depends_on_task_id=task_ids[1],
             user_id=test_user_id,
-            dependency_type="blocks"
+            dependency_type="blocks",
+            created_at=now
         )
         test_db.add(dependency1)
         
@@ -125,16 +128,20 @@ def sample_data(test_db, test_user_id):
                 task_id=task_ids[1],
                 depends_on_task_id=task_ids[2],
                 user_id=test_user_id,
-                dependency_type="blocks"
+                dependency_type="blocks",
+                created_at=now
             )
             test_db.add(dependency2)
     
     # Create label and task labels
+    now = datetime.now(timezone.utc)
     label = Label(
         id="test-label-1",
         name="test-label",
         user_id=test_user_id,
-        description="Test label"
+        description="Test label",
+        created_at=now,
+        updated_at=now
     )
     test_db.add(label)
     
@@ -142,7 +149,8 @@ def sample_data(test_db, test_user_id):
         task_label = TaskLabel(
             task_id=task_id,
             label_id="test-label-1",
-            user_id=test_user_id
+            user_id=test_user_id,
+            applied_at=now
         )
         test_db.add(task_label)
     
@@ -188,11 +196,13 @@ def sample_data(test_db, test_user_id):
         delegated_data={"test": "delegated data"},
         delegation_reason="Test delegation",
         trigger_type="manual",
-        user_id=test_user_id
+        user_id=test_user_id,
+        created_at=datetime.now(timezone.utc)
     )
     test_db.add(delegation)
     
     # Create context inheritance cache
+    now = datetime.now(timezone.utc)
     cache = ContextInheritanceCache(
         id=str(uuid.uuid4()),
         context_id=branch_id,
@@ -201,7 +211,9 @@ def sample_data(test_db, test_user_id):
         dependencies_hash="test-hash",
         resolution_path="branch",
         cache_size_bytes=100,
-        expires_at=datetime.now(timezone.utc),
+        created_at=now,
+        expires_at=now,
+        last_hit=now,
         user_id=test_user_id
     )
     test_db.add(cache)

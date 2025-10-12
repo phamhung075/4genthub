@@ -49,18 +49,14 @@ async def create_project(
         
         # Delegate to API controller
         result = await project_controller.create_project(request, current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to create project")
+                detail=result.message or "Failed to create project"
             )
-        
-        return {
-            "success": True,
-            "project": result.get("project"),
-            "message": f"Project created successfully for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -88,19 +84,14 @@ async def list_projects(
         
         # Delegate to API controller
         result = await project_controller.list_projects(current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to list projects")
+                detail=result.message or "Failed to list projects"
             )
-        
-        return {
-            "success": True,
-            "projects": result.get("projects", []),
-            "total": len(result.get("projects", [])),
-            "message": f"Projects retrieved for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except Exception as e:
         logger.error(f"Error listing projects for user {current_user.id}: {e}")
@@ -127,18 +118,14 @@ async def get_project(
         
         # Delegate to API controller
         result = await project_controller.get_project(project_id, current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Project not found or access denied"
             )
-        
-        return {
-            "success": True,
-            "project": result.get("project"),
-            "message": f"Project retrieved for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -172,9 +159,9 @@ async def update_project(
 
         # Delegate to API controller
         result = await project_controller.update_project(project_id, update_request, current_user.id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Project not found or access denied"
@@ -182,14 +169,10 @@ async def update_project(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to update project")
+                    detail=result.message or "Failed to update project"
                 )
-        
-        return {
-            "success": True,
-            "project": result.get("project"),
-            "message": f"Project updated successfully for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -219,25 +202,22 @@ async def delete_project(
         
         # Delegate to API controller
         result = await project_controller.delete_project(project_id, current_user.id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Project not found or access denied"
                 )
             else:
                 # Return the detailed error message from the error field, not the generic message
-                error_detail = result.get("error", result.get("message", "Failed to delete project"))
+                error_detail = result.error or result.message or "Failed to delete project"
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=error_detail
                 )
-        
-        return {
-            "success": True,
-            "message": f"Project {project_id} deleted successfully for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -266,9 +246,9 @@ async def project_health_check(
         
         # Delegate to API controller
         result = await project_controller.get_project_health(project_id, current_user.id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Project not found or access denied"
@@ -276,14 +256,10 @@ async def project_health_check(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to check project health")
+                    detail=result.message or "Failed to check project health"
                 )
-        
-        return {
-            "success": True,
-            "health": result.get("health"),
-            "message": f"Health check completed for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise

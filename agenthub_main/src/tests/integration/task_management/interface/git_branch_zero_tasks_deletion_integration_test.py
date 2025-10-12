@@ -30,6 +30,17 @@ class TestGitBranchZeroTasksDeletionIntegration:
     
     def setup_method(self):
         """Set up integration test data in actual database"""
+        # Ensure database is properly initialized
+        from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+        from fastmcp.task_management.infrastructure.database.auto_migration import run_auto_migrations
+        
+        # Force database initialization to ensure schema is up to date
+        db_config = get_db_config()
+        db_config.create_tables()
+        
+        # Run migrations to add any missing columns
+        run_auto_migrations()
+        
         self.project_id = str(uuid.uuid4())
         self.user_id = str(uuid.uuid4())  # Use valid UUID for user_id
         

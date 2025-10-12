@@ -11,11 +11,13 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from sqlalchemy import and_, desc
 
-from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ...database.models import Agent
 from ....domain.repositories.agent_repository import AgentRepository
 from ....domain.entities.agent import Agent as AgentEntity, AgentStatus, AgentCapability
+from ....domain.value_objects.agent_id import AgentId
 from ....domain.exceptions.base_exceptions import (
     ResourceNotFoundException,
     ValidationException,
@@ -25,36 +27,41 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, AgentRepository):
+class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], BaseUserScopedRepository, AgentRepository):
     """
     Agent repository implementation using SQLAlchemy ORM.
-    
+
     This repository handles all agent-related database operations
     using SQLAlchemy, supporting both SQLite and PostgreSQL.
+
+    DDD Pattern: EventPublishingMixin ensures domain events are published
+    when agent entities are persisted.
     """
-    
+
     def __init__(self, session=None, project_id: Optional[str] = None, user_id: Optional[str] = None):
         """
         Initialize ORM agent repository with user isolation.
-        
+
         Args:
             session: Database session
             project_id: Project ID for context
             user_id: User ID for data isolation
         """
-        # Initialize BaseORMRepository
-        BaseORMRepository.__init__(self, Agent)
-        
+        # Initialize BaseTimestampRepository
+        BaseTimestampRepository.__init__(self, Agent)
+
         # Ensure user_id is a valid UUID if provided
         if user_id is not None and not self._is_valid_uuid(user_id):
             # Generate a deterministic UUID for non-UUID user_id values
             user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
             logger.info(f"Converted non-UUID user_id to UUID: {user_id}")
-        
+
         # Initialize BaseUserScopedRepository with user isolation
         from ...database.database_config import get_session
         actual_session = session or get_session()
         BaseUserScopedRepository.__init__(self, actual_session, user_id)
+        # Initialize EventPublishingMixin for domain events
+        EventPublishingMixin.__init__(self)
         self.project_id = project_id
     
     def _is_valid_uuid(self, value: str) -> bool:
@@ -145,7 +152,7 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                     except ValueError:
                         # Skip invalid capabilities
                         logger.warning(f"Invalid capability '{cap_str}' for agent {agent.id}")
-            
+
             # Parse status
             status = AgentStatus.AVAILABLE
             if agent.status:
@@ -153,9 +160,22 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                     status = AgentStatus(agent.status)
                 except ValueError:
                     logger.warning(f"Invalid status '{agent.status}' for agent {agent.id}")
-            
+
+            # Extract assigned_trees from model_metadata (DDD-compliant)
+            model_metadata = agent.model_metadata or {}
+            assigned_trees_raw = model_metadata.get("assigned_trees", [])
+            assigned_trees = self._normalize_assigned_trees_to_set(assigned_trees_raw)
+
+            # Extract assigned_projects from model_metadata
+            assigned_projects_raw = model_metadata.get("assigned_projects", [])
+            assigned_projects = set(assigned_projects_raw) if isinstance(assigned_projects_raw, list) else set()
+
+            # Extract active_tasks from model_metadata
+            active_tasks_raw = model_metadata.get("active_tasks", [])
+            active_tasks = set(active_tasks_raw) if isinstance(active_tasks_raw, list) else set()
+
             return AgentEntity(
-                id=agent.id,
+                id=AgentId(agent.id),
                 name=agent.name,
                 description=agent.description or "",
                 created_at=agent.created_at,
@@ -173,9 +193,9 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                 completed_tasks=0,  # Agent model doesn't have this field
                 average_task_duration=None,  # Agent model doesn't have this field
                 success_rate=100.0,  # Agent model doesn't have this field
-                assigned_projects=set(),  # Calculated from relationships
-                assigned_trees=set(),  # Calculated from relationships
-                active_tasks=set()  # Calculated from relationships
+                assigned_projects=assigned_projects,  # Extracted from model_metadata
+                assigned_trees=assigned_trees,  # Extracted from model_metadata (DDD-compliant)
+                active_tasks=active_tasks  # Extracted from model_metadata
             )
         except Exception as e:
             logger.error(f"Error converting agent model to entity: {e}")
@@ -188,7 +208,7 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
     def _entity_to_model_dict(self, agent: AgentEntity) -> Dict[str, Any]:
         """Convert domain entity to model dictionary"""
         return {
-            "id": agent.id,
+            "id": str(agent.id) if agent.id else "",
             "name": agent.name,
             "description": agent.description,
             "capabilities": [cap.value for cap in agent.capabilities],
@@ -287,9 +307,14 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                     # Re-raise other database errors
                     raise create_error
             
-            # Convert back to entity and return
+            # Convert back to entity for event publishing
+            agent_entity = self._model_to_entity(agent_model)
+
+            # Publish domain events after successful registration
+            self.publish_entity_events(agent_entity)
+
             logger.info(f"Successfully registered agent '{agent.name}' (ID: {agent.id}) for project {project_id}")
-            return self._model_to_entity(agent_model)
+            return agent_entity
             
         except ValidationException:
             # Re-raise validation exceptions with their helpful messages
@@ -417,13 +442,11 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                                 # It's a name (shouldn't happen with new logic, but keep for compatibility)
                                 agent_name = actual_agent_id.lstrip('@')
                         
-                        # Create agent entity
+                        # Create agent entity (timestamps will be handled automatically)
                         agent_entity = AgentEntity(
                             id=actual_agent_id,
                             name=agent_name,
-                            description=f"Auto-registered agent {agent_name} for project {project_id}",
-                            created_at=datetime.now(timezone.utc),
-                            updated_at=datetime.now(timezone.utc)
+                            description=f"Auto-registered agent {agent_name} for project {project_id}"
                         )
                         
                         # Convert to model dict
@@ -466,35 +489,39 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                         resource_id=actual_agent_id
                     )
             
-            # Update agent model_metadata to include assignment
-            logger.debug(f"[AGENT_REPO] Checking if agent already assigned...")
-            model_metadata = agent.model_metadata or {}
-            logger.debug(f"[AGENT_REPO] model_metadata type: {type(model_metadata)}, value: {model_metadata}")
-            
-            assigned_trees_raw = model_metadata.get("assigned_trees", [])
-            logger.debug(f"[AGENT_REPO] assigned_trees_raw type: {type(assigned_trees_raw)}, value: {assigned_trees_raw}")
-            
-            # Handle case where assigned_trees might be a single UUID instead of a list
-            logger.debug(f"[AGENT_REPO] Calling _normalize_assigned_trees_to_set...")
-            assigned_trees = self._normalize_assigned_trees_to_set(assigned_trees_raw)
-            logger.debug(f"[AGENT_REPO] assigned_trees after normalization: type={type(assigned_trees)}, value={assigned_trees}")
-            
+            # DDD-COMPLIANT: Convert ORM model to domain entity
+            logger.debug(f"[AGENT_REPO] Converting ORM model to domain entity...")
+            agent_entity = self._model_to_entity(agent)
+
+            # Check if already assigned
             logger.debug(f"[AGENT_REPO] Checking if git_branch_id {git_branch_id} is in assigned_trees...")
-            if git_branch_id in assigned_trees:
+            if git_branch_id in agent_entity.assigned_trees:
                 return {
                     "success": True,
                     "message": f"Agent {actual_agent_id} already assigned to tree {git_branch_id}",
                     "auto_registered": auto_registered
                 }
-            
-            assigned_trees.add(git_branch_id)
-            model_metadata["assigned_trees"] = list(assigned_trees)
-            
-            # Update agent
-            self.update(actual_agent_id, 
-                       model_metadata=model_metadata,
-                       updated_at=datetime.now(timezone.utc))
-            
+
+            # DDD-COMPLIANT: Use domain entity method (calls touch() automatically)
+            logger.debug(f"[AGENT_REPO] Calling domain entity assign_to_tree method...")
+            agent_entity.assign_to_tree(git_branch_id)
+
+            # DDD-COMPLIANT: Convert entity back to model dict
+            logger.debug(f"[AGENT_REPO] Converting entity back to model dict...")
+            model_dict = self._entity_to_model_dict(agent_entity)
+
+            # Update ORM model with new data from entity
+            agent.model_metadata = model_dict["model_metadata"]
+            agent.updated_at = agent_entity.updated_at  # Use entity's touched timestamp
+
+            # Persist changes to database
+            with self.get_db_session() as session:
+                session.merge(agent)
+                session.commit()
+
+            # Publish domain events after successful assignment
+            self.publish_entity_events(agent_entity)
+
             logger.info(f"Assigned agent {actual_agent_id} to tree {git_branch_id} in project {project_id}")
             return {
                 "success": True,
@@ -525,36 +552,38 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                     resource_id=agent_id
                 )
             
-            # Update agent metadata to remove assignment
-            model_metadata = agent.model_metadata or {}
-            assigned_trees_raw = model_metadata.get("assigned_trees", [])
-            
-            # Handle case where assigned_trees might be a single UUID instead of a list
-            assigned_trees = self._normalize_assigned_trees_to_set(assigned_trees_raw)
-            
+            # DDD-COMPLIANT: Convert ORM model to domain entity
+            agent_entity = self._model_to_entity(agent)
+
+            # DDD-COMPLIANT: Use domain entity methods
             if git_branch_id:
-                # Remove specific assignment
-                if git_branch_id in assigned_trees:
-                    assigned_trees.remove(git_branch_id)
+                # Remove specific assignment using domain method
+                if git_branch_id in agent_entity.assigned_trees:
+                    agent_entity.unassign_from_tree(git_branch_id)
                     removed_assignments = [git_branch_id]
                 else:
                     removed_assignments = []
             else:
-                # Remove all assignments
-                removed_assignments = list(assigned_trees)
-                assigned_trees.clear()
-            
-            model_metadata["assigned_trees"] = list(assigned_trees)
-            
-            # Update agent
-            self.update(agent_id, 
-                       model_metadata=model_metadata,
-                       updated_at=datetime.now(timezone.utc))
+                # Remove all assignments using domain method
+                removed_assignments = list(agent_entity.assigned_trees)
+                agent_entity.unassign_from_all_trees()
+
+            # DDD-COMPLIANT: Convert entity back to model dict
+            model_dict = self._entity_to_model_dict(agent_entity)
+
+            # Update ORM model with new data from entity
+            agent.model_metadata = model_dict["model_metadata"]
+            agent.updated_at = agent_entity.updated_at  # Use entity's touched timestamp
+
+            # Persist changes to database
+            with self.get_db_session() as session:
+                session.merge(agent)
+                session.commit()
             
             logger.info(f"Unassigned agent {agent_id} from {len(removed_assignments)} tree(s) in project {project_id}")
             return {
                 "removed_assignments": removed_assignments,
-                "remaining_assignments": list(assigned_trees)
+                "remaining_assignments": list(agent_entity.assigned_trees)
             }
             
         except ResourceNotFoundException:
@@ -663,9 +692,8 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                     resource_id=agent.id
                 )
             
-            # Convert entity to model dict
+            # Convert entity to model dict (timestamps will be handled automatically)
             model_dict = self._entity_to_model_dict(agent)
-            model_dict["updated_at"] = datetime.now(timezone.utc)
             
             # Update agent
             updated_model = self.update(agent.id, **model_dict)
@@ -729,10 +757,18 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
                 table="agents"
             )
     
-    def get_available_agents(self, project_id: str) -> List[Dict[str, Any]]:
-        """Get all available agents"""
+    def get_available_agents(self) -> List[Dict[str, Any]]:
+        """
+        Get all available agents for the current user.
+
+        Note: Agents are user-scoped, not project-scoped. User isolation is
+        enforced via BaseUserScopedRepository.apply_user_filter().
+
+        Returns:
+            List of available agent dictionaries with details and assignments
+        """
         try:
-            # Find agents with available status
+            # Find agents with available status (user filtering applied automatically)
             agents = self.find_by(status=AgentStatus.AVAILABLE.value)
             
             available_agents = []
@@ -800,15 +836,34 @@ class ORMAgentRepository(BaseORMRepository[Agent], BaseUserScopedRepository, Age
             return None
     
     def search_agents(self, project_id: str, query: str) -> List[Dict[str, Any]]:
-        """Search agents by name or capabilities"""
+        """
+        Search agents by name or capabilities within user's scope.
+
+        Security: User isolation is enforced via apply_user_filter().
+        The project_id parameter is accepted for API compatibility but agents
+        are scoped to users, not projects. User filtering prevents cross-user
+        data access.
+
+        Args:
+            project_id: Project context (not used - agents are user-scoped)
+            query: Search query for agent name matching
+
+        Returns:
+            List of agent dictionaries matching search criteria and user scope
+        """
         try:
             # This would need more sophisticated search implementation
-            # For now, do a simple name search
+            # For now, do a simple name search with user isolation
             with self.get_db_session() as session:
                 search_pattern = f"%{query}%"
-                agents = session.query(Agent).filter(
+                # Build query with name filter
+                query_obj = session.query(Agent).filter(
                     Agent.name.ilike(search_pattern)
-                ).all()
+                )
+                # Apply user filtering for security - prevents cross-user data access
+                query_obj = self.apply_user_filter(query_obj)
+                # Execute query
+                agents = query_obj.all()
             
             search_results = []
             for agent in agents:

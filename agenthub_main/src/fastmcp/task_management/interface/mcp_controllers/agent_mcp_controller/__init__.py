@@ -9,4 +9,4 @@ from .agent_mcp_controller import AgentMCPController
 # Maintain backward compatibility aliases
 UnifiedAgentMCPController = AgentMCPController
 
-__all__ = ['UnifiedAgentMCPController', 'AgentMCPController']
+__all__ = ["UnifiedAgentMCPController", "AgentMCPController"]

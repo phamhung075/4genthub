@@ -102,17 +102,13 @@ async def create_context(
             user_id=current_user.id,
             session=db
         )
-        
-        if result.get("success"):
-            return {
-                "success": True,
-                "context": result.get("context"),
-                "message": f"Context created successfully for user {current_user.email}"
-            }
+
+        if result.success:
+            return result.model_dump(by_alias=True)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to create context")
+                detail=result.error or "Failed to create context"
             )
         
     except HTTPException:
@@ -156,13 +152,10 @@ async def get_context(
             user_id=current_user.id,
             session=db
         )
-        
-        if result.get("success"):
+
+        if result.success:
             logger.info(f"User {current_user.email} accessed {level} context {context_id}")
-            return {
-                "success": True,
-                "context": result.get("context")
-            }
+            return result.model_dump(by_alias=True)
         else:
             logger.warning(f"User {current_user.email} attempted to access non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
@@ -209,13 +202,13 @@ async def update_context(
             user_id=current_user.id,
             session=db
         )
-        if not existing_result.get("success"):
+        if not existing_result.success:
             logger.warning(f"User {current_user.email} attempted to update non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Context not found"
             )
-        
+
         # Update the context
         result = context_controller.update_context(
             level=level,
@@ -224,18 +217,14 @@ async def update_context(
             user_id=current_user.id,
             session=db
         )
-        
-        if result.get("success"):
+
+        if result.success:
             logger.info(f"User {current_user.email} updated {level} context {context_id}")
-            return {
-                "success": True,
-                "context": result.get("context"),
-                "message": "Context updated successfully"
-            }
+            return result.model_dump(by_alias=True)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to update context")
+                detail=result.error or "Failed to update context"
             )
         
     except HTTPException:
@@ -276,13 +265,13 @@ async def delete_context(
             user_id=current_user.id,
             session=db
         )
-        if not existing_result.get("success"):
+        if not existing_result.success:
             logger.warning(f"User {current_user.email} attempted to delete non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Context not found"
             )
-        
+
         # Delete the context
         result = context_controller.delete_context(
             level=level,
@@ -290,17 +279,14 @@ async def delete_context(
             user_id=current_user.id,
             session=db
         )
-        
-        if result.get("success"):
+
+        if result.success:
             logger.info(f"User {current_user.email} deleted {level} context {context_id}")
-            return {
-                "success": True,
-                "message": "Context deleted successfully"
-            }
+            return result.model_dump(by_alias=True)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to delete context")
+                detail=result.error or "Failed to delete context"
             )
         
     except HTTPException:
@@ -338,14 +324,10 @@ async def resolve_context(
             user_id=current_user.id,
             session=db
         )
-        
-        if result.get("success"):
+
+        if result.success:
             logger.info(f"User {current_user.email} resolved {level} context {context_id}")
-            return {
-                "success": True,
-                "resolved_context": result.get("resolved_context"),
-                "inheritance_chain": result.get("inheritance_chain")
-            }
+            return result.model_dump(by_alias=True)
         else:
             logger.warning(f"User {current_user.email} attempted to resolve non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
@@ -387,7 +369,7 @@ async def delegate_context(
             user_id=current_user.id,
             session=db
         )
-        if not existing_result.get("success"):
+        if not existing_result.success:
             logger.warning(f"User {current_user.email} attempted to delegate from non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -435,7 +417,7 @@ async def add_insight(
             user_id=current_user.id,
             session=db
         )
-        if not existing_result.get("success"):
+        if not existing_result.success:
             logger.warning(f"User {current_user.email} attempted to add insight to non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -483,7 +465,7 @@ async def add_progress(
             user_id=current_user.id,
             session=db
         )
-        if not existing_result.get("success"):
+        if not existing_result.success:
             logger.warning(f"User {current_user.email} attempted to add progress to non-existent or unauthorized {level} context {context_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

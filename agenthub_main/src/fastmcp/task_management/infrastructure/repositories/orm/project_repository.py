@@ -12,11 +12,14 @@ from sqlalchemy import and_, or_, desc
 from sqlalchemy.orm import joinedload
 
 from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ...database.models import Project, ProjectGitBranch
 from ....domain.repositories.project_repository import ProjectRepository
 from ....domain.entities.project import Project as ProjectEntity
+from ....domain.value_objects.project_id import ProjectId
 from ....domain.exceptions.base_exceptions import (
     ResourceNotFoundException,
     ValidationException,
@@ -27,36 +30,63 @@ from ....application.services.context_field_selector import ContextFieldSelector
 logger = logging.getLogger(__name__)
 
 
-class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
+class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project], BaseUserScopedRepository, CacheInvalidationMixin, ProjectRepository):
     """
     Project repository implementation using SQLAlchemy ORM.
-    
+
     This repository handles all project-related database operations
     using SQLAlchemy, supporting both SQLite and PostgreSQL.
+
+    DDD Pattern: EventPublishingMixin ensures domain events are published
+    when project entities are persisted.
     """
-    
+
     def __init__(self, session=None, user_id: Optional[str] = None):
         """Initialize ORM project repository with user isolation.
-        
+
         Args:
             session: Database session
             user_id: User ID for data isolation
         """
-        # Initialize BaseORMRepository
-        BaseORMRepository.__init__(self, Project)
+        # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
+        # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
+        BaseTimestampRepository.__init__(self, Project)
         # Initialize BaseUserScopedRepository with user isolation
         # If no session provided, use None - the BaseUserScopedRepository will handle it
         BaseUserScopedRepository.__init__(self, session, user_id)
-        # Initialize CacheInvalidationMixin
-        CacheInvalidationMixin.__init__(self)
-        
+
+        # Initialize mixin attributes manually (DON'T call mixin __init__ - causes MRO issues)
+        # EventPublishingMixin attributes
+        self._event_bus = None
+        self._event_publishing_enabled = True
+
+        # CacheInvalidationMixin attributes
+        self._cache = None
+        self._cache_enabled = True
+
         # Initialize field selector for selective queries
         self._field_selector = ContextFieldSelector()
+    
+    def with_user(self, user_id: str) -> 'ORMProjectRepository':
+        """
+        Create a new instance of this repository scoped to a specific user.
+        Overrides base implementation to preserve all constructor parameters.
+        
+        Args:
+            user_id: ID of the user to scope operations to
+            
+        Returns:
+            New repository instance scoped to the user
+        """
+        return ORMProjectRepository(
+            session=self.session,
+            user_id=user_id
+        )
     
     def _model_to_entity(self, project: Project) -> ProjectEntity:
         """Convert SQLAlchemy model to domain entity"""
         entity = ProjectEntity(
-            id=project.id,
+            id=ProjectId(project.id),
             name=project.name,
             description=project.description,
             created_at=project.created_at,
@@ -94,24 +124,65 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                 entity.git_branchs[db_branch.id] = git_branch
         
         return entity
-    
+
+    def _entity_to_model_dict(self, project: ProjectEntity) -> Dict[str, Any]:
+        """Convert domain entity to model dictionary for ORM updates
+
+        This method follows the DDD pattern by properly converting from domain entities
+        to ORM model dictionaries, ensuring clean separation of concerns.
+
+        Args:
+            project: ProjectEntity to convert
+
+        Returns:
+            Dictionary with ORM model fields and metadata
+        """
+        return {
+            "id": str(project.id) if project.id else "",
+            "name": project.name,
+            "description": project.description,
+            "status": getattr(project, 'status', 'active'),
+            "metadata": getattr(project, 'metadata', {}),
+            "model_metadata": {
+                # Complex domain fields stored as metadata for ORM
+                "git_branchs_count": len(project.git_branchs) if hasattr(project, 'git_branchs') else 0,
+                "registered_agents_count": len(project.registered_agents) if hasattr(project, 'registered_agents') else 0,
+                "agent_assignments": dict(project.agent_assignments) if hasattr(project, 'agent_assignments') else {},
+                "cross_tree_dependencies_count": len(project.cross_tree_dependencies) if hasattr(project, 'cross_tree_dependencies') else 0,
+                "active_work_sessions_count": len(project.active_work_sessions) if hasattr(project, 'active_work_sessions') else 0,
+                "resource_locks": dict(project.resource_locks) if hasattr(project, 'resource_locks') else {}
+            }
+        }
+
     async def save(self, project: ProjectEntity) -> None:
         """Save a project to the repository"""
         try:
+            # Convert project ID to string for database query
+            project_id_str = str(project.id.value if hasattr(project.id, 'value') else project.id) if project.id else ""
+
             with self.get_db_session() as session:
-                existing = session.query(Project).filter(Project.id == project.id).first()
-                
+                existing = session.query(Project).filter(Project.id == project_id_str).first()
+
                 if existing:
-                    # Update existing project
-                    existing.name = project.name
-                    existing.description = project.description
-                    existing.updated_at = datetime.now(timezone.utc)
-                    existing.status = getattr(project, 'status', 'active')
-                    existing.metadata = getattr(project, 'metadata', {})
+                    # Update existing project using DDD conversion pattern
+                    model_dict = self._entity_to_model_dict(project)
+
+                    # Update model attributes from converted dict
+                    for key, value in model_dict.items():
+                        if key != 'model_metadata' and hasattr(existing, key):
+                            setattr(existing, key, value)
+
+                    # Store model_metadata in metadata field
+                    if 'model_metadata' in model_dict:
+                        current_metadata = existing.metadata or {}
+                        current_metadata.update(model_dict['model_metadata'])
+                        existing.metadata = current_metadata
+
+                    existing.touch("project_updated")
                 else:
                     # Create new project with user isolation
                     project_data = {
-                        'id': project.id,
+                        'id': project_id_str,
                         'name': project.name,
                         'description': project.description,
                         'created_at': project.created_at,
@@ -133,14 +204,14 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                         # Check if branch already exists
                         existing_branch = session.query(ProjectGitBranch).filter(
                             ProjectGitBranch.id == branch_id,
-                            ProjectGitBranch.project_id == project.id
+                            ProjectGitBranch.project_id == project_id_str
                         ).first()
-                        
+
                         if not existing_branch:
                             # Create new branch with user_id for data isolation
                             branch_data = {
                                 'id': branch_id,
-                                'project_id': project.id,
+                                'project_id': project_id_str,
                                 'name': branch.name,
                                 'description': branch.description,
                                 'created_at': branch.created_at,
@@ -165,7 +236,10 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                             session.add(new_branch)
                 
                 session.commit()
-                
+
+                # Publish domain events after successful save
+                self.publish_entity_events(project)
+
         except Exception as e:
             logger.error(f"Failed to save project: {e}")
             raise DatabaseException(
@@ -227,19 +301,26 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
     async def update(self, project: ProjectEntity) -> None:
         """Update an existing project"""
         try:
-            with self.transaction():
-                updated = super().update(
-                    project.id,
-                    name=project.name,
-                    description=project.description,
-                    updated_at=datetime.now(timezone.utc)
-                )
-                
-                if not updated:
+            # Convert project ID to string for database query
+            project_id_str = str(project.id.value if hasattr(project.id, 'value') else project.id) if project.id else ""
+
+            # Check if project exists first
+            with self.get_db_session() as session:
+                existing = session.query(Project).filter(Project.id == project_id_str).first()
+                if not existing:
                     raise ResourceNotFoundException(
                         resource_type="Project",
-                        resource_id=project.id
+                        resource_id=project_id_str
                     )
+            
+            # Touch the entity to update timestamp
+            project.touch("repository_update_project")
+            
+            # Use async save instead of calling sync parent update
+            await self.save(project)
+            
+        except ResourceNotFoundException:
+            raise
         except Exception as e:
             logger.error(f"Failed to update project {project.id}: {e}")
             raise DatabaseException(
@@ -365,7 +446,7 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
                     
                     # Unassign the agent
                     branch.assigned_agent_id = None
-                    branch.updated_at = datetime.now(timezone.utc)
+                    branch.touch("agent_unassigned")
                     
                     return {
                         "success": True,
@@ -440,27 +521,60 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
             return self._model_to_entity(project) if project else None
     
     def update_project(self, project_id: str, **updates) -> ProjectEntity:
-        """Update a project with ORM"""
+        """Update a project with ORM using proper DDD conversion pattern"""
         try:
             with self.transaction():
-                # Update timestamp
-                updates['updated_at'] = datetime.now(timezone.utc)
-                
-                updated_project = super().update(project_id, **updates)
-                if not updated_project:
-                    raise ResourceNotFoundException(
-                        resource_type="Project",
-                        resource_id=project_id
-                    )
-                
+                # Get the project entity first
+                with self.get_db_session() as session:
+                    project_model = session.query(Project).filter(
+                        Project.id == project_id
+                    ).first()
+
+                    if not project_model:
+                        raise ResourceNotFoundException(
+                            resource_type="Project",
+                            resource_id=project_id
+                        )
+
+                    # If updating with a ProjectEntity, use conversion method
+                    if 'entity' in updates:
+                        project_entity = updates.pop('entity')
+                        # Convert entity to model dict using DDD pattern
+                        model_dict = self._entity_to_model_dict(project_entity)
+
+                        # Update model attributes from converted dict
+                        for key, value in model_dict.items():
+                            if key != 'model_metadata' and hasattr(project_model, key):
+                                setattr(project_model, key, value)
+
+                        # Store model_metadata in metadata field if exists
+                        if 'model_metadata' in model_dict and hasattr(project_model, 'metadata'):
+                            current_metadata = project_model.metadata or {}
+                            current_metadata.update(model_dict['model_metadata'])
+                            project_model.metadata = current_metadata
+
+                    # Apply any additional direct updates (legacy support)
+                    for key, value in updates.items():
+                        if hasattr(project_model, key):
+                            setattr(project_model, key, value)
+
+                    # Touch for timestamp update
+                    project_model.touch("project_updated")
+
+                    # Commit changes
+                    session.commit()
+
+                    # Convert to entity for return
+                    updated_project = self._model_to_entity(project_model)
+
                 # Invalidate cache after update
                 self.invalidate_cache_for_entity(
                     entity_type="project",
                     entity_id=project_id,
                     operation=CacheOperation.UPDATE
                 )
-                
-                return self._model_to_entity(updated_project)
+
+                return updated_project
         except Exception as e:
             logger.error(f"Failed to update project {project_id}: {e}")
             raise DatabaseException(
@@ -471,25 +585,32 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
     
     def delete_project(self, project_id: str) -> bool:
         """Delete a project with ORM"""
-        logger.info(f"delete_project called for {project_id}, calling super().delete()")
+        logger.info(f"delete_project called for {project_id}")
         
         # For delete operations, we need to ensure the project can be found
         # If user scoping is preventing the delete, try without user scoping
         with self.get_db_session() as session:
             # First, check if the project exists at all (without user filtering)
-            project_exists = session.query(Project).filter(
+            project_model = session.query(Project).filter(
                 Project.id == project_id
-            ).first() is not None
+            ).first()
             
-            if not project_exists:
+            if not project_model:
                 logger.warning(f"Project {project_id} does not exist in database")
                 return False
             
             # Try to delete with user scoping first
-            result = super().delete(project_id)
+            # Convert to entity first as BaseTimestampRepository.delete expects an entity
+            entity = self._model_to_entity(project_model)
+            try:
+                super().delete(entity)
+                result = True
+            except Exception as e:
+                logger.warning(f"Delete with user scoping failed: {e}")
+                result = False
             
             # If deletion failed but project exists, it might be a user scoping issue
-            if not result and project_exists:
+            if not result:
                 logger.warning(f"Project {project_id} exists but delete failed, likely due to user scoping. Attempting system-level delete.")
                 # Delete directly without user scoping for demo/MVP mode
                 deleted_count = session.query(Project).filter(
@@ -772,3 +893,34 @@ class ORMProjectRepository(BaseORMRepository[Project], BaseUserScopedRepository,
             Dictionary with estimated savings percentages
         """
         return self._field_selector.estimate_savings("project", field_set)
+
+    async def check_name_exists(self, name: str, exclude_project_id: Optional[str] = None) -> bool:
+        """
+        Check if a project name already exists for the current user.
+
+        Args:
+            name: The project name to check
+            exclude_project_id: Optional project ID to exclude from the check (for updates)
+
+        Returns:
+            True if the name exists, False otherwise
+        """
+        with self.get_db_session() as session:
+            query = session.query(Project)
+
+            # Apply user filter for data isolation (CRITICAL)
+            query = self.apply_user_filter(query)
+
+            # Filter by name
+            query = query.filter(Project.name == name.strip())
+
+            # Exclude specific project if provided (for updates)
+            if exclude_project_id:
+                query = query.filter(Project.id != exclude_project_id)
+
+            existing = query.first()
+
+            # Log access for audit
+            self.log_access('check_name_exists', 'project', f'name={name}')
+
+            return existing is not None

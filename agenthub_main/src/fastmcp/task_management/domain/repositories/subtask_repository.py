@@ -5,7 +5,6 @@ from typing import List, Optional, Dict, Any
 
 from ..entities.subtask import Subtask
 from ..value_objects.task_id import TaskId
-from ..value_objects.subtask_id import SubtaskId
 
 
 class SubtaskRepository(ABC):
@@ -72,7 +71,7 @@ class SubtaskRepository(ABC):
         pass
     
     @abstractmethod
-    def get_next_id(self, parent_task_id: TaskId) -> SubtaskId:
+    def get_next_id(self, parent_task_id: TaskId) -> TaskId:
         """Get next available subtask ID for a parent task"""
         pass
     

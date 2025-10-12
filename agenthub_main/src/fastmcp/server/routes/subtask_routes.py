@@ -48,14 +48,14 @@ async def create_subtask(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=400,
-                detail=result.get("error", "Failed to create subtask")
+                detail=result.error or "Failed to create subtask"
             )
-        
-        return result
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -77,14 +77,14 @@ async def get_subtask(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=404,
-                detail=result.get("error", "Subtask not found")
+                detail=result.error or "Subtask not found"
             )
-        
-        return result
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -122,14 +122,14 @@ async def update_subtask(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=400,
-                detail=result.get("error", "Failed to update subtask")
+                detail=result.error or "Failed to update subtask"
             )
-        
-        return result
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -151,14 +151,14 @@ async def delete_subtask(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=400,
-                detail=result.get("error", "Failed to delete subtask")
+                detail=result.error or "Failed to delete subtask"
             )
-        
-        return result
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -180,14 +180,14 @@ async def list_subtasks_for_task(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=400,
-                detail=result.get("error", "Failed to list subtasks")
+                detail=result.error or "Failed to list subtasks"
             )
-        
-        return result
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -211,14 +211,14 @@ async def complete_subtask(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=400,
-                detail=result.get("error", "Failed to complete subtask")
+                detail=result.error or "Failed to complete subtask"
             )
-        
-        return result
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise

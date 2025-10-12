@@ -50,16 +50,16 @@ async def create_task(
         
         # Delegate to API controller
         result = task_controller.create_task(request, current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to create task")
+                detail=result.message or "Failed to create task"
             )
-        
+
         return {
             "success": True,
-            "task": result.get("task"),
+            "task": result.task,
             "message": f"Task created successfully for user {current_user.email}"
         }
         
@@ -119,11 +119,11 @@ async def list_tasks(
         logger.debug(f"✅ Controller result type: {type(controller_result)}")
         
         # Extract the actual tasks array from the controller response
-        if controller_result.get("success") and "tasks" in controller_result:
-            tasks = controller_result["tasks"]
+        if controller_result.success:
+            tasks = controller_result.tasks or []
             logger.debug(f"✅ Tasks extracted: {len(tasks)} tasks found")
         else:
-            logger.error(f"❌ Controller result error: {controller_result.get('error', 'Unknown error')}")
+            logger.error(f"❌ Controller result error: {controller_result.error or 'Unknown error'}")
             tasks = []
         
         # Log each task for debugging
@@ -191,19 +191,19 @@ async def get_task(
     try:
         # Delegate to API controller
         result = task_controller.get_task(task_id, current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             logger.warning(f"User {current_user.email} attempted to access non-existent or unauthorized task {task_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Task not found"
             )
-        
+
         logger.info(f"User {current_user.email} accessed task {task_id}")
-        
+
         return {
             "success": True,
-            "task": result.get("task")
+            "task": result.task
         }
         
     except HTTPException:
@@ -231,9 +231,9 @@ async def update_task(
     try:
         # Delegate to API controller
         result = task_controller.update_task(task_id, request, current_user.id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if "not found" in (result.error or "").lower():
                 logger.warning(f"User {current_user.email} attempted to update non-existent or unauthorized task {task_id}")
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -242,14 +242,14 @@ async def update_task(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to update task")
+                    detail=result.message or "Failed to update task"
                 )
-        
+
         logger.info(f"User {current_user.email} updated task {task_id}")
-        
+
         return {
             "success": True,
-            "task": result.get("task"),
+            "task": result.task,
             "message": "Task updated successfully"
         }
         
@@ -277,9 +277,9 @@ async def delete_task(
     try:
         # Delegate to API controller
         result = task_controller.delete_task(task_id, current_user.id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if "not found" in (result.error or "").lower():
                 logger.warning(f"User {current_user.email} attempted to delete non-existent or unauthorized task {task_id}")
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -288,7 +288,7 @@ async def delete_task(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to delete task")
+                    detail=result.message or "Failed to delete task"
                 )
         
         logger.info(f"User {current_user.email} deleted task {task_id}")
@@ -324,9 +324,9 @@ async def complete_task(
     try:
         # Delegate to API controller
         result = task_controller.complete_task(task_id, completion_summary, testing_notes, current_user.id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if "not found" in (result.error or "").lower():
                 logger.warning(f"User {current_user.email} attempted to complete non-existent or unauthorized task {task_id}")
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -335,14 +335,14 @@ async def complete_task(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to complete task")
+                    detail=result.message or "Failed to complete task"
                 )
-        
+
         logger.info(f"User {current_user.email} completed task {task_id}")
-        
+
         return {
             "success": True,
-            "task": result.get("task"),
+            "task": result.task,
             "message": "Task completed successfully"
         }
         
@@ -369,15 +369,15 @@ async def get_user_task_stats(
     try:
         # Delegate to API controller
         result = task_controller.get_task_statistics(current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to get task statistics")
+                detail=result.message or "Failed to get task statistics"
             )
-        
+
         # Add user email to stats
-        stats = result.get("stats", {})
+        stats = result.statistics or {}
         stats["user"] = current_user.email
         
         logger.info(f"User {current_user.email} retrieved task statistics")
@@ -421,14 +421,14 @@ async def get_subtask_summaries(
         
         # Delegate to API controller
         result = subtask_controller.list_subtasks(task_id, current_user.id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "Failed to fetch subtasks")
+                detail=result.error or "Failed to fetch subtasks"
             )
-        
-        subtasks_data = result.get("subtasks", [])
+
+        subtasks_data = result.subtasks or []
         
         # Convert to subtask summaries
         subtask_summaries = []

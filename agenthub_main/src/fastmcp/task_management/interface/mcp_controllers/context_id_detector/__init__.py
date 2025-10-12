@@ -2,4 +2,4 @@
 
 from .context_id_detector import ContextIDDetector
 
-__all__ = ['ContextIDDetector']
+__all__ = ["ContextIDDetector"]

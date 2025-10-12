@@ -344,6 +344,64 @@ while :; do
     else
         echo "❌ ERROR: Claude command failed in iteration $ITERATION (exit code: $CLAUDE_EXIT_CODE)" | tee -a "$LOG_FILE"
     fi
+
+    # Verify test results and update cache
+    echo "" | tee -a "$LOG_FILE"
+    echo "🔍 Verifying test results and updating cache..." | tee -a "$LOG_FILE"
+
+    # Extract test file that was worked on from Claude's output
+    TEST_FILE=$(grep -oE "agenthub_main/src/tests/[^[:space:]]+\.py" "$TEMP_OUTPUT" | head -1)
+
+    if [[ -n "$TEST_FILE" ]]; then
+        echo "📝 Test file identified: $TEST_FILE" | tee -a "$LOG_FILE"
+
+        # Check if this file is in failed_tests.txt
+        if grep -q "^${TEST_FILE}$" .test_cache/failed_tests.txt 2>/dev/null; then
+            echo "🧪 Re-running test to verify if fix was successful..." | tee -a "$LOG_FILE"
+
+            # Re-run the specific test to verify if it passes now
+            VERIFY_OUTPUT=$(mktemp)
+            if timeout 30 bash -c "cd agenthub_main && python -m pytest '$TEST_FILE' -xvs" > "$VERIFY_OUTPUT" 2>&1; then
+                echo "✅ Test PASSED! Removing from failed_tests.txt" | tee -a "$LOG_FILE"
+
+                # Remove from failed_tests.txt
+                grep -v "^${TEST_FILE}$" .test_cache/failed_tests.txt > .test_cache/failed_tests.txt.tmp 2>/dev/null || true
+                mv .test_cache/failed_tests.txt.tmp .test_cache/failed_tests.txt
+
+                # Add to passed_tests.txt if not already there
+                if ! grep -q "^${TEST_FILE}$" .test_cache/passed_tests.txt 2>/dev/null; then
+                    echo "$TEST_FILE" >> .test_cache/passed_tests.txt
+                fi
+
+                # Update test hash
+                if command -v md5sum >/dev/null 2>&1; then
+                    TEST_HASH=$(md5sum "$TEST_FILE" 2>/dev/null | cut -d' ' -f1 || echo "UNKNOWN")
+                else
+                    TEST_HASH="UNKNOWN"
+                fi
+
+                # Update hash in test_hashes.txt
+                grep -v "^${TEST_FILE}:" .test_cache/test_hashes.txt > .test_cache/test_hashes.txt.tmp 2>/dev/null || true
+                echo "${TEST_FILE}:${TEST_HASH}" >> .test_cache/test_hashes.txt.tmp
+                mv .test_cache/test_hashes.txt.tmp .test_cache/test_hashes.txt
+
+                # Count remaining failed tests
+                REMAINING_FAILED=$(wc -l < .test_cache/failed_tests.txt 2>/dev/null || echo "0")
+                echo "🎉 SUCCESS: Test fixed and removed from queue!" | tee -a "$LOG_FILE"
+                echo "📊 Remaining failed tests: $REMAINING_FAILED" | tee -a "$LOG_FILE"
+            else
+                echo "⚠️  Test still FAILING - will retry in next iteration" | tee -a "$LOG_FILE"
+                echo "📄 Test output preview:" | tee -a "$LOG_FILE"
+                tail -20 "$VERIFY_OUTPUT" | sed 's/^/  | /' | tee -a "$LOG_FILE"
+            fi
+            rm -f "$VERIFY_OUTPUT"
+        else
+            echo "ℹ️  Test file not in failed_tests.txt (may have been fixed already or different test)" | tee -a "$LOG_FILE"
+        fi
+    else
+        echo "⚠️  Could not identify which test file was worked on from output" | tee -a "$LOG_FILE"
+        echo "💡 Claude may have worked on analysis/planning instead of specific test fix" | tee -a "$LOG_FILE"
+    fi
     
     # Add output to results file
     cat "$TEMP_OUTPUT" >> "$RESULTS_FILE"

@@ -11,7 +11,7 @@ from fastmcp.task_management.application.use_cases.update_rule import UpdateRule
 from fastmcp.task_management.application.use_cases.delete_rule import DeleteRuleUseCase
 from fastmcp.task_management.application.use_cases.validate_rule import ValidateRuleUseCase
 from ...domain.repositories.rule_repository import RuleRepository
-from ...domain.enums.rule_enums import RuleFormat, RuleType
+from ...domain.value_objects import RuleFormat, RuleType
 
 
 class RuleApplicationService:

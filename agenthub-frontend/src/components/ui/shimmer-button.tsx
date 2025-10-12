@@ -62,7 +62,7 @@ export const ShimmerButton: React.FC<ShimmerButtonProps> = ({
       <style>{customCss}</style>
       <button
         className={cn(
-          "relative inline-flex items-center justify-center p-[1.5px] rounded-full overflow-hidden group transition-all outline-none focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 focus-visible:ring-offset-0",
+          "shimmer-button relative inline-flex items-center justify-center p-[1.5px] rounded-full overflow-hidden group transition-all outline-none focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 focus-visible:ring-offset-0",
           variantClasses[variant],
           className
         )}

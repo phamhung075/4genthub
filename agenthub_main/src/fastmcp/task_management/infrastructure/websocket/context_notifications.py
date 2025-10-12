@@ -64,7 +64,7 @@ class ContextEvent:
     level: str
     context_id: str
     user_id: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     data: Optional[Dict[str, Any]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     
@@ -88,8 +88,8 @@ class Subscription:
     websocket: Any  # WebSocket connection
     scope: SubscriptionScope
     filters: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_activity: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def matches(self, event: ContextEvent) -> bool:
         """Check if event matches subscription filters"""

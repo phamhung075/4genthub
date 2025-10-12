@@ -6,4 +6,4 @@ This package contains specialized handlers for unified context operations:
 
 from .context_operation_handler import ContextOperationHandler
 
-__all__ = ['ContextOperationHandler']
+__all__ = ["ContextOperationHandler"]

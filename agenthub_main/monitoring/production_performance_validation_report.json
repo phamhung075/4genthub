@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-09-25T16:23:02.846761+00:00",
+  "overall_status": "PASSED",
+  "performance_tests": {
+    "api_response_time_ms": 3.0516624450683594,
+    "api_response_min_ms": 2.4230480194091797,
+    "api_response_max_ms": 3.7965774536132812,
+    "api_performance_rating": "EXCELLENT"
+  },
+  "system_metrics": {
+    "api_health": true,
+    "uptime_hours": 9.778327085,
+    "server_version": "0.0.4",
+    "backend_service_status": "RUNNING",
+    "database_service_status": "NOT_DETECTED",
+    "frontend_service_status": "RUNNING"
+  },
+  "clean_timestamp_validation": {
+    "checks_passed": 4,
+    "total_checks": 4,
+    "success_rate_percent": 100.0,
+    "status": "PASSED"
+  },
+  "recommendations": [
+    "Ensure all required services are running"
+  ],
+  "final_score": 90,
+  "overall_rating": "EXCELLENT"
+}

@@ -38,7 +38,7 @@ export class EventEmitter {
         try {
           handler(...args);
         } catch (error) {
-          console.error(`Error in event handler for "${event}":`, error);
+          logger.error(`Error in event handler for "${event}":`, error);
         }
       });
     }
@@ -51,7 +51,7 @@ export class EventEmitter {
         try {
           handler(...args);
         } catch (error) {
-          console.error(`Error in wildcard event handler:`, error);
+          logger.error(`Error in wildcard event handler:`, error);
         }
       });
     }

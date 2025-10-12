@@ -12,7 +12,7 @@ from .subtask_api_controller import SubtaskAPIController
 
 __all__ = [
     "TaskAPIController",
-    "ProjectAPIController", 
+    "ProjectAPIController",
     "ContextAPIController",
-    "SubtaskAPIController"
+    "SubtaskAPIController",
 ]

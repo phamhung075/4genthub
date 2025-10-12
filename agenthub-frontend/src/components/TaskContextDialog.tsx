@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
@@ -6,6 +6,7 @@ import { FileText, Save, Edit, X, Copy, Check as CheckIcon, Info, CheckSquare, G
 import { Task } from "../api";
 import { getTaskContext, updateTaskContext, getBranchContext, getProjectContext, getGlobalContext } from "../api";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
+import { useEntityChanges } from "../hooks/useChangeSubscription";
 import logger from "../utils/logger";
 
 interface TaskContextDialogProps {
@@ -143,6 +144,89 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
   const [nextStepsMarkdown, setNextStepsMarkdown] = useState('');
   const [taskMetadataMarkdown, setTaskMetadataMarkdown] = useState('');
 
+  // Fetch task context function (defined early for use in WebSocket handler)
+  const fetchTaskContext = useCallback(async () => {
+    if (!task?.id) return;
+
+    setLoading(true);
+    try {
+      const context = await getTaskContext(task.id);
+      logger.debug('Fetched task context:', context);
+
+      if (context) {
+        setTaskContext(context);
+
+        // Handle the actual API response structure
+        const contextData = context.data || context;
+
+        // Extract task-specific fields
+        const taskInfo = contextData.task_info || contextData.task_data || {};
+        const taskProgress = contextData.task_progress || contextData.progress || {};
+        const completionSummary = contextData.completion_summary || '';
+        const testingNotes = contextData.testing_notes || contextData.test_notes || '';
+        const blockers = contextData.blockers || [];
+        const insights = contextData.insights || [];
+        const nextSteps = contextData.next_steps || [];
+        const taskMetadata = contextData.task_metadata || contextData.metadata || {};
+
+        // Convert each section to markdown format
+        setTaskInfoMarkdown(keyValueToMarkdown(taskInfo));
+        setTaskProgressMarkdown(keyValueToMarkdown(taskProgress));
+        setCompletionSummaryMarkdown(typeof completionSummary === 'string' ? completionSummary : keyValueToMarkdown(completionSummary));
+        setTestingNotesMarkdown(typeof testingNotes === 'string' ? testingNotes : listToMarkdown(testingNotes));
+        setBlockersMarkdown(listToMarkdown(blockers));
+        setInsightsMarkdown(listToMarkdown(insights));
+        setNextStepsMarkdown(listToMarkdown(nextSteps));
+        setTaskMetadataMarkdown(keyValueToMarkdown(taskMetadata));
+      } else if (initialContext) {
+        // Use initial context if provided
+        setTaskContext(initialContext);
+        const contextData = initialContext.data || initialContext;
+
+        setTaskInfoMarkdown(keyValueToMarkdown(contextData.task_info || contextData.task_data || {}));
+        setTaskProgressMarkdown(keyValueToMarkdown(contextData.task_progress || contextData.progress || {}));
+        setCompletionSummaryMarkdown(contextData.completion_summary || '');
+        setTestingNotesMarkdown(contextData.testing_notes || '');
+        setBlockersMarkdown(listToMarkdown(contextData.blockers || []));
+        setInsightsMarkdown(listToMarkdown(contextData.insights || []));
+        setNextStepsMarkdown(listToMarkdown(contextData.next_steps || []));
+        setTaskMetadataMarkdown(keyValueToMarkdown(contextData.task_metadata || contextData.metadata || {}));
+      }
+    } catch (error) {
+      logger.error('Error fetching task context:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [task?.id, initialContext]);
+
+  // WebSocket subscription for real-time task updates
+  // CRITICAL FIX: Listen for task updates and refresh context automatically
+  const handleTaskUpdate = useCallback(async (notification?: any) => {
+    if (!task?.id || !open) return;
+
+    // Check if this notification is for the current task
+    if (notification?.entityId === task.id && notification?.entityType === 'task') {
+      logger.info('[TaskContextDialog] Received WebSocket task update, refreshing context', {
+        taskId: task.id,
+        eventType: notification.eventType
+      });
+
+      // Re-fetch task context to get updated progress_history
+      await fetchTaskContext();
+    }
+  }, [task?.id, open, fetchTaskContext]);
+
+  // Subscribe to task changes via WebSocket
+  useEntityChanges(
+    'TaskContextDialog',
+    'task',
+    handleTaskUpdate,
+    {
+      entityIds: task?.id ? [task.id] : undefined,
+      enabled: open && !!task?.id // Only subscribe when dialog is open and task exists
+    }
+  );
+
   // Fetch context when dialog opens
   useEffect(() => {
     if (open && task?.id) {
@@ -176,60 +260,6 @@ export const TaskContextDialog: React.FC<TaskContextDialogProps> = ({
       if (global) setGlobalContext(global.data || global);
     } catch (error) {
       logger.error('Error fetching inherited contexts:', error);
-    }
-  };
-
-  const fetchTaskContext = async () => {
-    if (!task?.id) return;
-    
-    setLoading(true);
-    try {
-      const context = await getTaskContext(task.id);
-      logger.debug('Fetched task context:', context);
-      
-      if (context) {
-        setTaskContext(context);
-        
-        // Handle the actual API response structure
-        const contextData = context.data || context;
-        
-        // Extract task-specific fields
-        const taskInfo = contextData.task_info || contextData.task_data || {};
-        const taskProgress = contextData.task_progress || contextData.progress || {};
-        const completionSummary = contextData.completion_summary || '';
-        const testingNotes = contextData.testing_notes || contextData.test_notes || '';
-        const blockers = contextData.blockers || [];
-        const insights = contextData.insights || [];
-        const nextSteps = contextData.next_steps || [];
-        const taskMetadata = contextData.task_metadata || contextData.metadata || {};
-        
-        // Convert each section to markdown format
-        setTaskInfoMarkdown(keyValueToMarkdown(taskInfo));
-        setTaskProgressMarkdown(keyValueToMarkdown(taskProgress));
-        setCompletionSummaryMarkdown(typeof completionSummary === 'string' ? completionSummary : keyValueToMarkdown(completionSummary));
-        setTestingNotesMarkdown(typeof testingNotes === 'string' ? testingNotes : listToMarkdown(testingNotes));
-        setBlockersMarkdown(listToMarkdown(blockers));
-        setInsightsMarkdown(listToMarkdown(insights));
-        setNextStepsMarkdown(listToMarkdown(nextSteps));
-        setTaskMetadataMarkdown(keyValueToMarkdown(taskMetadata));
-      } else if (initialContext) {
-        // Use initial context if provided
-        setTaskContext(initialContext);
-        const contextData = initialContext.data || initialContext;
-        
-        setTaskInfoMarkdown(keyValueToMarkdown(contextData.task_info || contextData.task_data || {}));
-        setTaskProgressMarkdown(keyValueToMarkdown(contextData.task_progress || contextData.progress || {}));
-        setCompletionSummaryMarkdown(contextData.completion_summary || '');
-        setTestingNotesMarkdown(contextData.testing_notes || '');
-        setBlockersMarkdown(listToMarkdown(contextData.blockers || []));
-        setInsightsMarkdown(listToMarkdown(contextData.insights || []));
-        setNextStepsMarkdown(listToMarkdown(contextData.next_steps || []));
-        setTaskMetadataMarkdown(keyValueToMarkdown(contextData.task_metadata || contextData.metadata || {}));
-      }
-    } catch (error) {
-      logger.error('Error fetching task context:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

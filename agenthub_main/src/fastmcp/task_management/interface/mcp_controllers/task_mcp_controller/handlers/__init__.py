@@ -9,4 +9,4 @@ from .crud_handler import CRUDHandler
 from .search_handler import SearchHandler
 from .workflow_handler import WorkflowHandler
 
-__all__ = ['CRUDHandler', 'SearchHandler', 'WorkflowHandler']
+__all__ = ["CRUDHandler", "SearchHandler", "WorkflowHandler"]

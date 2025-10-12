@@ -67,7 +67,15 @@ class TaskApplicationFacade:
         # Use the hierarchical context service instead of the passed context service
         # The passed context service might not be configured correctly for the unified context system
         self._get_task_use_case = GetTaskUseCase(task_repository, self._hierarchical_context_service)
-        self._delete_task_use_case = DeleteTaskUseCase(task_repository)
+
+        # Pass all repositories for cascade deletion support
+        self._delete_task_use_case = DeleteTaskUseCase(
+            task_repository,
+            subtask_repository=subtask_repository,
+            branch_repository=git_branch_repository,
+            project_repository=getattr(self, '_project_repository', None),
+            context_repository=None  # Will be set later if available
+        )
         
         # Initialize task context repository for unified context system
         task_context_repository = None
@@ -197,8 +205,7 @@ class TaskApplicationFacade:
             derived_user_id = validate_user_id(derived_user_id, "Task creation")
             logger.info(f"✅ TaskApplicationFacade: Final validated user_id: {derived_user_id}")
             
-            # Validate request at application boundary
-            self._validate_create_task_request(request)
+            # Validation will be performed by domain entity during creation
             
             # Check for recent duplicate creation attempts (following completion deduplication pattern)
             was_already_created = self._check_for_duplicate_creation(request, derived_user_id)
@@ -299,8 +306,7 @@ class TaskApplicationFacade:
     def update_task(self, task_id: str, request: UpdateTaskRequest) -> Dict[str, Any]:
         """Update an existing task"""
         try:
-            # Validate request at application boundary
-            self._validate_update_task_request(task_id, request)
+            # Validation will be performed by domain entity during update
             
             # Set task_id in request if not already set
             if not hasattr(request, 'task_id') or request.task_id is None:
@@ -330,6 +336,34 @@ class TaskApplicationFacade:
                             task_data=task_dict
                         )
                         logger.info(f"Broadcasted task update notification for MEANINGFUL update of task {task_id}")
+
+                        # ✅ CRITICAL FIX: When task progress changes, broadcast branch update
+                        # Sidebar displays branch progress, so it needs branch update events
+                        if hasattr(request, 'progress_percentage') and request.progress_percentage is not None:
+                            try:
+                                git_branch_id = task_dict.get('git_branch_id')
+                                if git_branch_id:
+                                    # Get updated branch statistics with new progress calculation
+                                    from ..services.facade_service import FacadeService
+                                    facade_service = FacadeService.get_instance()
+                                    git_branch_facade = facade_service.get_git_branch_facade(user_id=user_id)
+
+                                    # Get branch info for WebSocket broadcast
+                                    branch_result = git_branch_facade.get_git_branch_by_id(git_branch_id)
+                                    if branch_result.get("success"):
+                                        branch_data = branch_result.get("git_branch", {})
+
+                                        # Broadcast branch update event with updated progress
+                                        WebSocketNotificationService.sync_broadcast_branch_event(
+                                            event_type="updated",
+                                            branch_id=git_branch_id,
+                                            project_id=branch_data.get("project_id", ""),
+                                            user_id=user_id,
+                                            branch_data=branch_data
+                                        )
+                                        logger.info(f"✅ Broadcasted branch update for progress change in task {task_id}")
+                            except Exception as branch_error:
+                                logger.warning(f"Failed to broadcast branch update after task progress change: {branch_error}")
                     except Exception as e:
                         logger.warning(f"Failed to broadcast task update: {e}")
                 elif not was_actually_updated:
@@ -559,26 +593,40 @@ class TaskApplicationFacade:
             if not task_id or not task_id.strip():
                 raise ValueError("Task ID is required")
 
-            # CRITICAL FIX: Get task context BEFORE deletion
-            # This prevents the WebSocket notification from trying to fetch context for a deleted task
+            # CRITICAL FIX: Get task data AND context BEFORE deletion
+            # This provides complete task snapshot for WebSocket animation
+            task_data_snapshot = None
+            task_context = None
             try:
+                # Fetch complete task data before deletion for animation
+                from ...domain.value_objects.task_id import TaskId
+                domain_task_id = TaskId(task_id)
+                task_entity = self._task_repository.find_by_id(domain_task_id)
+
+                if task_entity:
+                    # Get full task dict with all fields for frontend animation
+                    task_data_snapshot = task_entity.to_dict()
+                    logger.info(f"✅ Pre-fetched task data before deletion: {task_data_snapshot.get('title', 'Unknown')}")
+
+                # Also get task context for metadata
                 task_context = WebSocketNotificationService._get_task_context(task_id, user_id)
                 logger.info(f"✅ Pre-fetched task context before deletion: {task_context}")
             except Exception as e:
-                logger.warning(f"Failed to get task context before deletion: {e}")
+                logger.warning(f"Failed to get task data/context before deletion: {e}")
                 # Use fallback context if pre-fetch fails
                 task_context = {
                     "task_title": f"Task {task_id[:8]}",
                     "parent_branch_id": None,
                     "parent_branch_title": "Unknown Branch",
-                    "task_user_id": None  # No user_id available on error
+                    "task_user_id": None
                 }
 
-            # Execute use case
-            success = self._delete_task_use_case.execute(task_id)
+            # Execute use case with cascade deletion
+            result = self._delete_task_use_case.execute(task_id, cascade=True, user_id=user_id)
+            success = result.get("success", False)
 
             if success:
-                # Broadcast task deletion event with pre-fetched context
+                # Broadcast task deletion event with pre-fetched data snapshot
                 try:
                     # Use the task owner's user_id from pre-fetched context for proper authorization
                     # This ensures WebSocket clients receive notifications for tasks they own
@@ -590,9 +638,9 @@ class TaskApplicationFacade:
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="deleted",
                         task_id=task_id,
-                        user_id=notification_user_id,  # Use task owner's user_id for proper authorization
-                        task_data=None,
-                        pre_fetched_context=task_context  # Pass the pre-fetched context
+                        user_id=notification_user_id,
+                        task_data=task_data_snapshot,  # ✅ FIX: Pass pre-deletion snapshot for animation
+                        pre_fetched_context=task_context
                     )
                 except Exception as e:
                     logger.warning(f"Failed to broadcast task deletion: {e}")
@@ -610,16 +658,28 @@ class TaskApplicationFacade:
                 logger.info(f"🔧 FIX: Skipped redundant branch update broadcast to prevent double-counting")
                 logger.info(f"🔧 FIX: Task deletion event will trigger frontend to refresh branch data automatically")
 
+                # Log cascade statistics if available
+                if "subtasks_deleted" in result:
+                    logger.info(
+                        f"📊 Cascade deletion statistics: "
+                        f"subtasks_deleted={result.get('subtasks_deleted', 0)}, "
+                        f"contexts_deleted={result.get('contexts_deleted', 0)}"
+                    )
+
                 return {
                     "success": True,
                     "action": "delete",
-                    "message": f"Task {task_id} deleted successfully"
+                    "message": f"Task {task_id} deleted successfully",
+                    "cascade_stats": {
+                        "subtasks_deleted": result.get("subtasks_deleted", 0),
+                        "contexts_deleted": result.get("contexts_deleted", 0)
+                    }
                 }
             else:
                 return {
                     "success": False,
                     "action": "delete",
-                    "error": f"Failed to delete task {task_id}"
+                    "error": result.get("message", f"Failed to delete task {task_id}")
                 }
                 
         except TaskNotFoundError as e:
@@ -671,11 +731,28 @@ class TaskApplicationFacade:
             # Broadcast task completion event ONLY if this was a new completion (not an update to already completed task)
             if response.get("success") and not response.get("was_already_completed", False):
                 try:
+                    # Get task data to extract git_branch_id and project_id for proper filtering
+                    task_data = response.get("task")
+                    git_branch_id = task_data.get("git_branch_id") if task_data else None
+
+                    # Derive project_id from git_branch_id if possible
+                    project_id = None
+                    if git_branch_id and self._git_branch_repository:
+                        try:
+                            context = self._await_if_coroutine(
+                                self._derive_context_from_git_branch_id(git_branch_id)
+                            )
+                            project_id = context.get("project_id")
+                        except Exception as e:
+                            logger.warning(f"Could not derive project_id from git_branch_id: {e}")
+
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="completed",
                         task_id=task_id,
                         user_id=user_id or "system",  # Use provided user_id or fallback to "system"
-                        task_data=response.get("task")
+                        task_data=task_data,
+                        git_branch_id=git_branch_id,  # Add git_branch_id for filtering and cascade updates
+                        project_id=project_id  # Add project_id for filtering
                     )
                     logger.info(f"Broadcasted task completion notification for NEW completion of task {task_id}")
                 except Exception as e:
@@ -930,40 +1007,6 @@ class TaskApplicationFacade:
             logger.error(f"Unexpected error in get_next_task: {e}")
             return {"success": False, "action": "next", "error": f"Unexpected error: {str(e)}"}
     
-    def _validate_create_task_request(self, request: CreateTaskRequest) -> None:
-        """Validate create task request at application boundary"""
-        if not request.title or not request.title.strip():
-            raise ValueError("Task title is required")
-
-        # Description is now optional, only validate if provided
-        if request.description is not None and not request.description.strip():
-            raise ValueError("Task description cannot be empty if provided")
-
-        if len(request.title) > 200:
-            raise ValueError("Task title cannot exceed 200 characters")
-
-        if request.description and len(request.description) > 2000:
-            raise ValueError("Task description cannot exceed 2000 characters")
-
-        # CreateTaskRequest doesn't have progress_percentage attribute
-        # Progress percentage is only for UpdateTaskRequest
-    
-    def _validate_update_task_request(self, task_id: str, request: UpdateTaskRequest) -> None:
-        """Validate update task request at application boundary"""
-        if not task_id or not task_id.strip():
-            raise ValueError("Task ID is required")
-        
-        if request.title is not None and (not request.title or not request.title.strip()):
-            raise ValueError("Task title cannot be empty")
-        
-        if request.description is not None and (not request.description or not request.description.strip()):
-            raise ValueError("Task description cannot be empty")
-        
-        if request.title and len(request.title) > 200:
-            raise ValueError("Task title cannot exceed 200 characters")
-        
-        if request.description and len(request.description) > 2000:
-            raise ValueError("Task description cannot exceed 2000 characters")
     
     def count_tasks(self, filters: Dict[str, Any]) -> Dict[str, Any]:
         """

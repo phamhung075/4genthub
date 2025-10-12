@@ -62,10 +62,16 @@ class TestUnifiedContextService:
         }
         # Mock the repository to work with user-scoped contexts
         mock_repositories['global_context'].with_user.return_value.get.return_value = None  # Context doesn't exist yet
-        mock_repositories['global_context'].with_user.return_value.create.return_value = Mock(
+        created_context = Mock(
             id=user_id,  # Use user_id as the global context ID
             data=context_data
         )
+        # Make the mock have a dict() method that returns a proper dictionary
+        created_context.dict.return_value = {
+            'id': user_id,
+            'data': context_data
+        }
+        mock_repositories['global_context'].with_user.return_value.create.return_value = created_context
         
         # Act
         result = service.create_context(
@@ -89,10 +95,16 @@ class TestUnifiedContextService:
             'tech_stack': ['Python', 'FastAPI']
         }
         mock_repositories['project_context'].get.return_value = None  # Context doesn't exist yet
-        mock_repositories['project_context'].create.return_value = Mock(
+        created_context = Mock(
             id=project_id,
             data=context_data
         )
+        # Make the mock have a dict() method that returns a proper dictionary
+        created_context.dict.return_value = {
+            'id': project_id,
+            'data': context_data
+        }
+        mock_repositories['project_context'].create.return_value = created_context
         
         # Act
         result = service.create_context(
@@ -128,11 +140,18 @@ class TestUnifiedContextService:
             id=user_id,
             data={'patterns': []}
         )
-        mock_repositories['branch_context'].with_user.return_value.create.return_value = Mock(
+        created_context = Mock(
             id=branch_id,
             data=context_data,
             project_id=project_id
         )
+        # Make the mock have a dict() method that returns a proper dictionary
+        created_context.dict.return_value = {
+            'id': branch_id,
+            'data': context_data,
+            'project_id': project_id
+        }
+        mock_repositories['branch_context'].with_user.return_value.create.return_value = created_context
         
         # Act
         result = service.create_context(
@@ -178,11 +197,18 @@ class TestUnifiedContextService:
             id=user_id,
             data={'patterns': []}
         )
-        mock_repositories['task_context'].with_user.return_value.create.return_value = Mock(
+        created_context = Mock(
             id=task_id,
             data=context_data,
             git_branch_id=branch_id
         )
+        # Make the mock have a dict() method that returns a proper dictionary
+        created_context.dict.return_value = {
+            'id': task_id,
+            'data': context_data,
+            'git_branch_id': branch_id
+        }
+        mock_repositories['task_context'].with_user.return_value.create.return_value = created_context
         
         # Act
         result = service.create_context(
@@ -208,6 +234,8 @@ class TestUnifiedContextService:
             data=context_data,
             to_dict=Mock(return_value={'id': context_id, 'data': context_data})
         )
+        # Add dict() method to the mock
+        mock_context.dict.return_value = {'id': context_id, 'data': context_data}
         mock_repositories['task_context'].get.return_value = mock_context
         
         # Act
@@ -232,6 +260,8 @@ class TestUnifiedContextService:
             data={'context_data': True},
             to_dict=Mock(return_value={'id': context_id, 'data': {'context_data': True}})
         )
+        # Add dict() method to the mock
+        context.dict.return_value = {'id': context_id, 'data': {'context_data': True}}
         mock_repositories['task_context'].get.return_value = context
         
         # Mock the inheritance resolution (simplified)
@@ -426,10 +456,17 @@ class TestUnifiedContextService:
     def test_list_contexts_at_level(self, service, mock_repositories):
         """Test listing contexts at specific level"""
         # Arrange
-        contexts = [
-            Mock(id=str(uuid.uuid4()), to_dict=Mock(return_value={'id': str(uuid.uuid4())}))
-            for _ in range(3)
-        ]
+        contexts = []
+        for _ in range(3):
+            context_id = str(uuid.uuid4())
+            mock_context = Mock(
+                id=context_id, 
+                to_dict=Mock(return_value={'id': context_id})
+            )
+            # Add dict() method to each mock
+            mock_context.dict.return_value = {'id': context_id}
+            contexts.append(mock_context)
+        
         mock_repositories['project_context'].list.return_value = contexts
         
         # Act
@@ -483,11 +520,14 @@ class TestUnifiedContextService:
         dict_data = {"key": "value", "nested": {"field": 123}}
         # Mock user-scoped global context repository
         mock_repositories['global_context'].with_user.return_value.get.return_value = None  # Context doesn't exist
-        mock_repositories['global_context'].with_user.return_value.create.return_value = Mock(
+        created_context = Mock(
             id=user_id,  # Use user_id as the global context ID for user-scoped contexts
             data=dict_data,
             to_dict=Mock(return_value={'id': user_id, 'data': dict_data})
         )
+        # Add dict() method to the mock
+        created_context.dict.return_value = {'id': user_id, 'data': dict_data}
+        mock_repositories['global_context'].with_user.return_value.create.return_value = created_context
         
         # Act
         result = service.create_context(
@@ -531,6 +571,8 @@ class TestUnifiedContextService:
             data={'consistent': True},
             to_dict=Mock(return_value={'id': context_id, 'data': {'consistent': True}})
         )
+        # Add dict() method to the mock
+        mock_context.dict.return_value = {'id': context_id, 'data': {'consistent': True}}
         mock_repositories['task_context'].get.return_value = mock_context
         
         # Multiple calls should hit repository each time (no caching)

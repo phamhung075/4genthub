@@ -268,7 +268,7 @@ run_smart_tests() {
                 if [ -n "$test_name" ]; then
                     echo "PASSED:${PROJECT_ROOT}/${test_name}" >> "$temp_raw_results"
                 fi
-            elif echo "$line" | grep -q "FAILED"; then
+            elif echo "$line" | grep -q "FAILED\|ERROR"; then
                 local test_name=$(echo "$line" | sed -n 's/.*\(agenthub_main\/src\/tests\/.*\.py\).*/\1/p')
                 if [ -n "$test_name" ]; then
                     echo "FAILED:${PROJECT_ROOT}/${test_name}" >> "$temp_raw_results"
@@ -281,8 +281,8 @@ run_smart_tests() {
         if [ -f "$temp_raw_results" ]; then
             # Get unique files and determine their status
             cut -d':' -f2 "$temp_raw_results" | sort -u | while read test_file; do
-                # Check if this file has any failures
-                if grep -q "^FAILED:${test_file}$" "$temp_raw_results"; then
+                # Check if this file has any failures or errors
+                if grep -q "^FAILED:${test_file}$\|^ERROR:${test_file}$" "$temp_raw_results"; then
                     echo "FAILED:${test_file}" >> "$temp_results"
                     echo -e "${RED}  File has failures:${NC} ${test_file#${PROJECT_ROOT}/}"
                 else

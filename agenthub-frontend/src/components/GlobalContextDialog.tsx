@@ -1,13 +1,15 @@
-import { Check as CheckIcon, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Save, Settings, Shield, X, AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Package, Save, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getGlobalContext, updateGlobalContext } from "../api";
+import { GlobalContext } from "../types/context.types";
+import logger from "../utils/logger";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Textarea } from "./ui/textarea";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import RawJSONDisplay from "./ui/RawJSONDisplay";
-import logger from "../utils/logger";
+import { Textarea } from "./ui/textarea";
 
 interface GlobalContextDialogProps {
   open: boolean;
@@ -20,15 +22,15 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   onOpenChange,
   onClose
 }) => {
-  const [globalContext, setGlobalContext] = useState<any>(null);
+  const [globalContext, setGlobalContext] = useState<GlobalContext | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [jsonCopied, setJsonCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'view' | 'edit'>('view');
+  const [isExpanded, setIsExpanded] = useState(true); // Track expansion state
 
   // Store the entire nested data structure for editing
-  const [editingData, setEditingData] = useState<any>(null);
+  const [editingData, setEditingData] = useState<GlobalContext | null>(null);
 
   // Raw JSON editing state
   const [rawJsonText, setRawJsonText] = useState<string>('');
@@ -49,74 +51,149 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     }
   }, [open]);
 
+  // Helper function to check if a value has actual data (non-recursive for objects)
+  const hasData = (value: any): boolean => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (typeof value === 'number' || typeof value === 'boolean') return true;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') {
+      // For objects, just check if they have keys - don't recurse
+      return Object.keys(value).length > 0;
+    }
+    return false;
+  };
+
+  // Helper function to recursively filter out properties with no data
+  const filterEmptyProperties = (obj: any): any => {
+    if (!obj || typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) {
+      // Filter out null/undefined/empty arrays
+      return obj
+        .filter(item => item !== null && item !== undefined)
+        .map(filterEmptyProperties)
+        .filter(item => {
+          if (Array.isArray(item)) return item.length > 0;
+          if (typeof item === 'object') return Object.keys(item).length > 0;
+          return true;
+        });
+    }
+
+    const filtered: any = {};
+    Object.entries(obj).forEach(([key, value]) => {
+      // Skip null and undefined
+      if (value === null || value === undefined) {
+        return;
+      }
+
+      // Handle strings - keep if not empty
+      if (typeof value === 'string') {
+        if (value.trim().length > 0) {
+          filtered[key] = value;
+        }
+        return;
+      }
+
+      // Always keep numbers and booleans
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        filtered[key] = value;
+        return;
+      }
+
+      // Handle arrays - recurse and keep if not empty
+      if (Array.isArray(value)) {
+        const arrayFiltered = filterEmptyProperties(value);
+        if (arrayFiltered.length > 0) {
+          filtered[key] = arrayFiltered;
+        }
+        return;
+      }
+
+      // Handle objects - recurse and keep if not empty
+      if (typeof value === 'object') {
+        const nestedFiltered = filterEmptyProperties(value);
+        if (Object.keys(nestedFiltered).length > 0) {
+          filtered[key] = nestedFiltered;
+        }
+        return;
+      }
+
+      // Default: keep the value
+      filtered[key] = value;
+    });
+
+    return filtered;
+  };
+
   const fetchGlobalContext = async () => {
     setLoading(true);
     try {
       const response = await getGlobalContext();
       logger.debug('Fetched global context response:', response);
-      
+
+      // If response is null, undefined, or error, show empty
+      if (!response || response === null) {
+        logger.warn('No global context data available');
+        setGlobalContext(null);
+        setEditingData(null);
+        setRawJsonText('{}');
+        return;
+      }
+
       // Extract the actual context data from the nested structure
-      let contextData = {};
-      
+      let contextData = response;
+
+      // Try different nested paths for context data
       if (response?.global_settings) {
         contextData = response.global_settings;
       } else if (response?.data?.global_settings) {
         contextData = response.data.global_settings;
       } else if (response?.context?.global_settings) {
         contextData = response.context.global_settings;
-      } else if (response) {
-        contextData = response;
+      } else if (response?.data) {
+        contextData = response.data;
+      } else if (response?.context) {
+        contextData = response.context;
       }
-      
+
       logger.debug('Extracted context data:', contextData);
-      
-      // Set a default structure if context is empty
-      const defaultContext = {
-        user_preferences: {},
-        ai_agent_settings: { preferred_agents: [] },
-        workflow_preferences: {},
-        development_tools: {},
-        security_settings: {},
-        dashboard_settings: {},
-        autonomous_rules: {},
-        security_policies: {},
-        coding_standards: {},
-        workflow_templates: {},
-        delegation_rules: {},
-        version: '1.0.0'
-      };
-      
-      // Merge with defaults to ensure we always have a structure
-      const finalContextData = { ...defaultContext, ...contextData };
-      
-      // Store both the raw context and a copy for editing
-      setGlobalContext(finalContextData);
-      setEditingData(JSON.parse(JSON.stringify(finalContextData))); // Deep copy for editing
+      logger.debug('Context data type:', typeof contextData);
+      logger.debug('Context data keys:', contextData ? Object.keys(contextData) : 'none');
 
-      // Initialize raw JSON text for editing
-      setRawJsonText(JSON.stringify(finalContextData, null, 2));
+      // Filter out empty properties to only show data that exists
+      const filteredContextData = filterEmptyProperties(contextData);
 
-      logger.debug('Final context data:', finalContextData);
+      logger.debug('Filtered context data:', filteredContextData);
+      logger.debug('Filtered data keys:', filteredContextData ? Object.keys(filteredContextData) : 'none');
+
+      // Check if filtered data is truly empty
+      const hasAnyData = filteredContextData &&
+                         typeof filteredContextData === 'object' &&
+                         Object.keys(filteredContextData).length > 0;
+
+      logger.debug('Has any data:', hasAnyData);
+
+      if (!hasAnyData) {
+        logger.info('Global context exists but contains no data after filtering');
+        // Set to null to show "No data" message, but keep empty object for editing
+        setGlobalContext(null);
+        setEditingData({});
+        setRawJsonText('{}');
+      } else {
+        // Store both the raw context and a copy for editing
+        setGlobalContext(filteredContextData);
+        setEditingData(JSON.parse(JSON.stringify(filteredContextData))); // Deep copy for editing
+        setRawJsonText(JSON.stringify(filteredContextData, null, 2));
+      }
+
+      logger.debug('Final context data:', filteredContextData);
     } catch (error) {
       logger.error('Error fetching global context:', error);
-      // Initialize with empty structure on error
-      const emptyContext = {
-        user_preferences: {},
-        ai_agent_settings: { preferred_agents: [] },
-        workflow_preferences: {},
-        development_tools: {},
-        security_settings: {},
-        dashboard_settings: {},
-        autonomous_rules: {},
-        security_policies: {},
-        coding_standards: {},
-        workflow_templates: {},
-        delegation_rules: {},
-        version: '1.0.0'
-      };
-      setGlobalContext(emptyContext);
-      setEditingData(JSON.parse(JSON.stringify(emptyContext)));
-      setRawJsonText(JSON.stringify(emptyContext, null, 2));
+      // Initialize with empty object on error (no defaults)
+      setGlobalContext(null);
+      setEditingData({});
+      setRawJsonText('{}');
     } finally {
       setLoading(false);
     }
@@ -189,33 +266,10 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
     }
   };
 
-  // Update nested field value for edit mode (legacy - not used in raw JSON mode)
-  const updateNestedField = (path: string[], value: any) => {
-    if (!editingData) return;
-
-    const newData = { ...editingData };
-    let current = newData;
-
-    for (let i = 0; i < path.length - 1; i++) {
-      if (!current[path[i]]) {
-        current[path[i]] = {};
-      }
-      current = current[path[i]];
-    }
-
-    const lastKey = path[path.length - 1];
-    if (value === '' || value === null || value === undefined) {
-      delete current[lastKey];
-    } else {
-      current[lastKey] = value;
-    }
-
-    setEditingData(newData);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col">
+      <DialogContent className="w-[90vw] max-w-6xl h-[85vh] mx-auto overflow-hidden bg-background rounded-lg shadow-xl flex flex-col">
         <DialogHeader className="pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl text-left flex items-center gap-2">
@@ -267,9 +321,9 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
           <button
             onClick={() => setActiveTab('view')}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
-              activeTab === 'view' 
-                ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                : 'text-gray-500 border-transparent hover:text-gray-700'
+              activeTab === 'view'
+                ? 'text-primary border-primary bg-primary/10'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
             }`}
           >
             <Info className="w-4 h-4" />
@@ -280,9 +334,9 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             <button
               onClick={() => setActiveTab('edit')}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-[1px] ${
-                activeTab === 'edit' 
-                  ? 'text-blue-700 dark:text-blue-300 border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'text-gray-500 border-transparent hover:text-gray-700'
+                activeTab === 'edit'
+                  ? 'text-primary border-primary bg-primary/10'
+                  : 'text-muted-foreground border-transparent hover:text-foreground'
               }`}
             >
               <Edit className="w-4 h-4" />
@@ -296,255 +350,306 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
           <div className="space-y-4 overflow-y-auto flex-1 p-4">
             {loading ? (
               <div className="text-center py-8">
-                <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="mt-2 text-sm text-gray-500">Loading global context...</p>
+                <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading global context...</p>
               </div>
             ) : globalContext ? (
               <>
                 {/* Context Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                <div className="bg-muted/50 p-4 rounded-lg border border-primary/20">
+                  <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
                     <Database className="w-5 h-5" />
                     Global Context Data
                   </h3>
-                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                  <p className="text-sm text-primary/80 mt-1">
                     User-scoped global configuration and settings across all projects
                   </p>
                 </div>
                 
                 {activeTab === 'edit' && (
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <h3 className="font-semibold text-sm mb-2 dark:text-gray-200 flex items-center gap-2">
-                        <Code className="w-4 h-4" />
-                        Raw JSON Editor
-                      </h3>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
-                        Edit the complete global context data as JSON. Changes will be validated before saving.
-                      </p>
+                  <div className="space-y-6">
+                    {/* Enhanced JSON Editor Card */}
+                    <Card className="border-2 border-primary/20 bg-muted/30">
+                      <CardHeader className="bg-muted/50 p-4 border-l-4 border-primary/60">
+                        <CardTitle className="flex items-center gap-2 text-foreground">
+                          <Code className="w-5 h-5" />
+                          Advanced JSON Editor
+                          <Badge variant="secondary" className="ml-2 text-xs">Live Validation</Badge>
+                        </CardTitle>
+                        <CardDescription className="text-muted-foreground">
+                          Edit the complete global context data as JSON with syntax highlighting and real-time validation feedback.
+                        </CardDescription>
+                      </CardHeader>
 
-                      {jsonValidationError && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-3">
-                          <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
-                            <AlertCircle className="w-4 h-4" />
-                            <span className="font-medium text-sm">JSON Validation Error</span>
+                      <CardContent className="p-4 space-y-4">
+                        {/* Validation Status */}
+                        <div className="flex items-center justify-between bg-background rounded-lg border p-3">
+                          <div className="flex items-center gap-2">
+                            {jsonValidationError ? (
+                              <>
+                                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse"></div>
+                                <span className="text-sm text-destructive font-medium">Invalid JSON</span>
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-sm text-green-600 dark:text-green-400 font-medium">Valid JSON</span>
+                              </>
+                            )}
                           </div>
-                          <p className="text-sm text-red-600 dark:text-red-400 mt-1">{jsonValidationError}</p>
+                          <div className="text-xs text-muted-foreground">
+                            {rawJsonText.length.toLocaleString()} chars • {rawJsonText.split('\n').length} lines
+                          </div>
                         </div>
-                      )}
 
-                      <Textarea
-                        value={rawJsonText}
-                        onChange={(e) => handleRawJsonChange(e.target.value)}
-                        placeholder="Enter valid JSON..."
-                        className="min-h-[400px] font-mono text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"
-                        style={{ fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace' }}
-                      />
+                        {/* Validation Error Display */}
+                        {jsonValidationError && (
+                          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
+                              <div>
+                                <h4 className="font-medium text-sm text-destructive mb-1">
+                                  JSON Syntax Error
+                                </h4>
+                                <p className="text-sm text-destructive/80 mb-2">{jsonValidationError}</p>
+                                <div className="text-xs text-destructive/60">
+                                  Fix the syntax error above to enable saving. Use the "Format JSON" button to auto-format valid JSON.
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {rawJsonText.length} characters • {rawJsonText.split('\n').length} lines
+                        {/* JSON Editor Textarea */}
+                        <div className="relative">
+                          <Textarea
+                            value={rawJsonText}
+                            onChange={(e) => handleRawJsonChange(e.target.value)}
+                            placeholder="Enter valid JSON..."
+                            className={`min-h-[500px] font-mono text-sm resize-none ${
+                              jsonValidationError
+                                ? 'border-destructive/50 bg-destructive/5'
+                                : 'border-green-500/50 bg-background'
+                            }`}
+                            style={{
+                              fontFamily: 'Monaco, Menlo, "Ubuntu Mono", "Cascadia Code", "Fira Code", monospace',
+                              lineHeight: '1.5',
+                              tabSize: 2
+                            }}
+                          />
+
+                          {/* Line numbers overlay - visual enhancement */}
+                          <div className="absolute left-2 top-2 text-xs text-muted-foreground/50 pointer-events-none select-none font-mono leading-6">
+                            {rawJsonText.split('\n').map((_, i) => (
+                              <div key={i} className="h-6">
+                                {(i + 1).toString().padStart(3, ' ')}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex gap-2">
+
+                        {/* Enhanced Toolbar */}
+                        <div className="flex items-center justify-between bg-muted rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                try {
+                                  const formatted = JSON.stringify(JSON.parse(rawJsonText), null, 2);
+                                  setRawJsonText(formatted);
+                                  setJsonValidationError('');
+                                } catch (error) {
+                                  setJsonValidationError('Invalid JSON - cannot format');
+                                }
+                              }}
+                              disabled={!rawJsonText.trim()}
+                              className="flex items-center gap-1"
+                            >
+                              <Code className="w-3 h-3" />
+                              Format JSON
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const minified = JSON.stringify(JSON.parse(rawJsonText));
+                                setRawJsonText(minified);
+                                setJsonValidationError('');
+                              }}
+                              disabled={!rawJsonText.trim() || !!jsonValidationError}
+                              className="flex items-center gap-1"
+                            >
+                              <Package className="w-3 h-3" />
+                              Minify
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(rawJsonText);
+                              }}
+                              disabled={!rawJsonText.trim()}
+                              className="flex items-center gap-1"
+                            >
+                              <Copy className="w-3 h-3" />
+                              Copy
+                            </Button>
+                          </div>
+
+                          {/* JSON Structure Preview */}
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {!jsonValidationError && rawJsonText.trim() && (
+                              <span>
+                                {(() => {
+                                  try {
+                                    const parsed = JSON.parse(rawJsonText);
+                                    const keys = Object.keys(parsed);
+                                    return `${keys.length} top-level field${keys.length !== 1 ? 's' : ''}`;
+                                  } catch {
+                                    return '';
+                                  }
+                                })()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Quick Templates for Common Structures */}
+                        <details className="bg-white dark:bg-gray-800 rounded-lg border">
+                          <summary className="p-3 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Quick Templates
+                            </div>
+                          </summary>
+                          <div className="p-3 pt-0 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const template = {
+                                    claude_md_rules: {
+                                      clean_code: "NO compatibility code allowed - make clean breaks",
+                                      test_hierarchy: "ORM Model > Database > Tests - ORM is source of truth"
+                                    },
+                                    user_preferences: {},
+                                    ai_agent_settings: {
+                                      preferred_agents: []
+                                    }
+                                  };
+                                  setRawJsonText(JSON.stringify(template, null, 2));
+                                  setJsonValidationError('');
+                                }}
+                                className="text-xs justify-start"
+                              >
+                                CLAUDE.md Template
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const template = {
+                                    security_settings: {
+                                      two_factor_enabled: false,
+                                      session_timeout: 120,
+                                      audit_logging: true
+                                    }
+                                  };
+                                  setRawJsonText(JSON.stringify(template, null, 2));
+                                  setJsonValidationError('');
+                                }}
+                                className="text-xs justify-start"
+                              >
+                                Security Template
+                              </Button>
+                            </div>
+                          </div>
+                        </details>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {/* Enhanced JSON Display - Interactive Tree View */}
+                <div className="space-y-6">
+                  {/* Enhanced JSON Viewer with expand/collapse */}
+                  <Card className="border-2 border-primary/20 bg-background">
+                    <CardHeader className="bg-muted/50 p-4 border-l-4 border-primary/60">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center gap-2 text-foreground">
+                            <Database className="w-5 h-5" />
+                            Global Context Data
+                            <Badge variant="secondary" className="ml-2 text-xs">Interactive</Badge>
+                          </CardTitle>
+                          <CardDescription className="text-muted-foreground mt-1">
+                            Expand and collapse sections to explore the nested data structure
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2 ml-4">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              try {
-                                const formatted = JSON.stringify(JSON.parse(rawJsonText), null, 2);
-                                setRawJsonText(formatted);
-                                setJsonValidationError('');
-                              } catch (error) {
-                                setJsonValidationError('Invalid JSON - cannot format');
+                              if (isExpanded) {
+                                // Collapse all
+                                window.dispatchEvent(new CustomEvent('json-collapse-all', {
+                                  detail: { viewerId: 'global-context-main' }
+                                }));
+                                setIsExpanded(false);
+                              } else {
+                                // Expand all
+                                window.dispatchEvent(new CustomEvent('json-expand-all', {
+                                  detail: { viewerId: 'global-context-main' }
+                                }));
+                                setIsExpanded(true);
                               }
                             }}
-                            disabled={!rawJsonText.trim()}
+                            className="flex items-center gap-1"
                           >
-                            Format JSON
+                            {isExpanded ? (
+                              <>
+                                <ChevronRight className="w-4 h-4" />
+                                Collapse All
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-4 h-4" />
+                                Expand All
+                              </>
+                            )}
                           </Button>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Organized Context Sections */}
-                <div className="space-y-4">
-                  {/* User Preferences */}
-                  {globalContext.user_preferences && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 p-3 border-l-4 border-green-400 dark:border-green-600">
-                        <h3 className="text-green-700 dark:text-green-300 font-semibold flex items-center gap-2">
-                          <Settings className="w-4 h-4" />
-                          User Preferences
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <EnhancedJSONViewer data={globalContext.user_preferences} defaultExpanded={false} maxHeight="max-h-64" />
-                      </div>
-                    </div>
-                  )}
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <EnhancedJSONViewer
+                        data={globalContext}
+                        defaultExpanded={true}
+                        maxHeight="max-h-[60vh]"
+                        viewerId="global-context-main"
+                      />
+                    </CardContent>
+                  </Card>
 
-                  {/* AI Agent Settings */}
-                  {globalContext.ai_agent_settings && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 p-3 border-l-4 border-purple-400 dark:border-purple-600">
-                        <h3 className="text-purple-700 dark:text-purple-300 font-semibold flex items-center gap-2">
-                          <Code className="w-4 h-4" />
-                          AI Agent Settings
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <EnhancedJSONViewer data={globalContext.ai_agent_settings} defaultExpanded={false} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Security Settings */}
-                  {globalContext.security_settings && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 p-3 border-l-4 border-red-400 dark:border-red-600">
-                        <h3 className="text-red-700 dark:text-red-300 font-semibold flex items-center gap-2">
-                          <Shield className="w-4 h-4" />
-                          Security Settings
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <EnhancedJSONViewer data={globalContext.security_settings} defaultExpanded={false} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Workflow Preferences */}
-                  {globalContext.workflow_preferences && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 p-3 border-l-4 border-orange-400 dark:border-orange-600">
-                        <h3 className="text-orange-700 dark:text-orange-300 font-semibold flex items-center gap-2">
-                          <Settings className="w-4 h-4" />
-                          Workflow Preferences
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <EnhancedJSONViewer data={globalContext.workflow_preferences} defaultExpanded={false} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Development Tools */}
-                  {globalContext.development_tools && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-3 border-l-4 border-indigo-400 dark:border-indigo-600">
-                        <h3 className="text-indigo-700 dark:text-indigo-300 font-semibold flex items-center gap-2">
-                          <Code className="w-4 h-4" />
-                          Development Tools
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <EnhancedJSONViewer data={globalContext.development_tools} defaultExpanded={false} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dashboard Settings */}
-                  {globalContext.dashboard_settings && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-950/30 dark:to-sky-950/30 p-3 border-l-4 border-cyan-400 dark:border-cyan-600">
-                        <h3 className="text-cyan-700 dark:text-cyan-300 font-semibold flex items-center gap-2">
-                          <Settings className="w-4 h-4" />
-                          Dashboard Settings
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        <EnhancedJSONViewer data={globalContext.dashboard_settings} defaultExpanded={false} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Custom Fields / Additional Data */}
-                  {(() => {
-                    const knownFields = [
-                      'user_preferences', 'ai_agent_settings', 'security_settings',
-                      'workflow_preferences', 'development_tools', 'dashboard_settings',
-                      'version', 'last_updated', 'created_at', 'updated_at', 'id', 'user_id'
-                    ];
-                    const customFields = Object.entries(globalContext).filter(([key]) => 
-                      !knownFields.includes(key) && !key.startsWith('_')
-                    );
-                    
-                    if (customFields.length > 0) {
-                      return (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                          <div className="bg-gray-100 dark:bg-gray-800 p-3 border-l-4 border-gray-400 dark:border-gray-600">
-                            <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
-                              <Code className="w-4 h-4" />
-                              Additional Settings
-                            </h3>
-                          </div>
-                          <div className="p-4 space-y-3">
-                            {customFields.map(([key, value]) => (
-                              <details key={key} className="group">
-                                <summary className="cursor-pointer font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2">
-                                  <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
-                                  {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                </summary>
-                                <div className="mt-2 ml-6">
-                                  {typeof value === 'object' ? (
-                                    <EnhancedJSONViewer data={value} defaultExpanded={false} maxHeight="max-h-48" />
-                                  ) : (
-                                    <span className="text-gray-700 dark:text-gray-300">{String(value)}</span>
-                                  )}
-                                </div>
-                              </details>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
-                  {/* Metadata */}
-                  {(globalContext.version || globalContext.last_updated) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="bg-gradient-to-r from-gray-50 to-zinc-50 dark:from-gray-950/30 dark:to-zinc-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600">
-                        <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
-                          <Info className="w-4 h-4" />
-                          Metadata
-                        </h3>
-                      </div>
-                      <div className="p-4">
-                        {globalContext.version && (
-                          <div className="mb-2 text-sm">
-                            <span className="text-gray-500 dark:text-gray-400">Version:</span>
-                            <span className="ml-2 text-gray-700 dark:text-gray-300">{globalContext.version}</span>
-                          </div>
-                        )}
-                        {globalContext.last_updated && (
-                          <div className="text-sm">
-                            <span className="text-gray-500 dark:text-gray-400">Last Updated:</span>
-                            <span className="ml-2 text-gray-700 dark:text-gray-300">
-                              {new Date(globalContext.last_updated).toLocaleString()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Raw JSON View - Always at the bottom */}
+                  {/* Raw JSON View - Collapsed by default */}
                   <details className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <summary className="cursor-pointer">
-                      <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30 p-3 border-l-4 border-gray-400 dark:border-gray-600">
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 border-l-4 border-gray-400 dark:border-gray-600">
                         <h3 className="text-gray-700 dark:text-gray-300 font-semibold flex items-center gap-2">
                           <FileText className="w-4 h-4" />
-                          Complete Raw Context
+                          Raw JSON (Copy/Export)
                         </h3>
                       </div>
                     </summary>
                     <div className="p-4">
-                      <RawJSONDisplay 
+                      <RawJSONDisplay
                         jsonData={globalContext}
-                        title="Global Context Data"
+                        title=""
                         fileName="global_context.json"
                       />
                     </div>
@@ -556,23 +661,17 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                 <Globe className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Global Context Available</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Global context has not been initialized yet.
+                  Global context has not been initialized yet. Add your own properties as needed.
                 </p>
-                <Button 
-                  variant="default" 
+                <Button
+                  variant="default"
                   className="mt-4"
                   onClick={() => {
-                    const initialData = {
-                      user_preferences: {},
-                      ai_agent_settings: { preferred_agents: [] },
-                      workflow_preferences: {},
-                      development_tools: {},
-                      security_settings: {},
-                      dashboard_settings: {},
-                      version: '1.0.0'
-                    };
+                    // Start with empty object - user can add properties as needed
+                    const initialData = {};
                     setGlobalContext(initialData);
                     setEditingData(initialData);
+                    setRawJsonText('{\n  \n}'); // Empty JSON with space for editing
                     setEditMode(true);
                     setActiveTab('edit');
                   }}
@@ -585,72 +684,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
           </div>
         </div>
         
-        <DialogFooter className="flex justify-between">
-          <div className="flex gap-2">
-            {activeTab === 'view' && globalContext && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const detailsElements = document.querySelectorAll('details');
-                    detailsElements.forEach(details => {
-                      details.open = true;
-                    });
-                    window.dispatchEvent(new CustomEvent('json-expand-all', { 
-                      detail: { viewerId: 'all' } 
-                    }));
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                  Expand All
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const detailsElements = document.querySelectorAll('details');
-                    detailsElements.forEach(details => {
-                      details.open = false;
-                    });
-                    window.dispatchEvent(new CustomEvent('json-collapse-all', { 
-                      detail: { viewerId: 'all' } 
-                    }));
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                  Collapse All
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (globalContext) {
-                      const jsonString = JSON.stringify(globalContext, null, 2);
-                      navigator.clipboard.writeText(jsonString).then(() => {
-                        setJsonCopied(true);
-                        setTimeout(() => setJsonCopied(false), 2000);
-                      }).catch(err => {
-                        logger.error('Failed to copy JSON:', err);
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  {jsonCopied ? (
-                    <>
-                      <CheckIcon className="w-4 h-4" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copy JSON
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-          </div>
+        <DialogFooter className="flex justify-end">
           {!editMode && (
             <Button variant="outline" onClick={onClose}>
               Close

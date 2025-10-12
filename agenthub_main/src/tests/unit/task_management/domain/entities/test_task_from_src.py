@@ -12,7 +12,7 @@ from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.events.task_events import TaskCreated, TaskUpdated, TaskDeleted
+from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated, TaskDeleted
 from fastmcp.task_management.domain.exceptions.vision_exceptions import MissingCompletionSummaryError
 
 
@@ -197,9 +197,10 @@ class TestTaskEntity:
         events = task.get_events()
         assert len(events) == 1
         assert isinstance(events[0], TaskUpdated)
-        assert events[0].field_name == "status"
-        assert events[0].old_value == "todo"
-        assert events[0].new_value == "in_progress"
+        assert events[0].task_id == task.id
+        assert "status" in events[0].changes
+        assert events[0].changes["status"]["old_value"] == "todo"
+        assert events[0].changes["status"]["new_value"] == "in_progress"
     
     # ========== Task Completion Tests ==========
     
@@ -493,9 +494,9 @@ class TestTaskEntity:
         
         # Verify event
         events = task.get_events()
-        update_event = next(e for e in events if isinstance(e, TaskUpdated) and e.field_name == "title")
-        assert update_event.old_value == self.valid_title
-        assert update_event.new_value == new_title
+        update_event = next(e for e in events if isinstance(e, TaskUpdated) and "title" in e.changes)
+        assert update_event.changes["title"]["old_value"] == self.valid_title
+        assert update_event.changes["title"]["new_value"] == new_title
     
     def test_update_title_with_empty_string_raises_error(self):
         """Task title cannot be updated to empty string"""
@@ -647,7 +648,7 @@ class TestTaskEntity:
         events = task.get_events()
         assert len(events) == 1
         assert isinstance(events[0], TaskDeleted)
-        assert events[0].task_id == task.id
+        assert events[0].task_id == str(task.id)
     
     # ========== Helper Method Tests ==========
     

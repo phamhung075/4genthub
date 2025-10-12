@@ -12,6 +12,8 @@ from fastmcp.task_management.domain.entities.work_session import WorkSession
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
+from fastmcp.task_management.domain.value_objects.project_id import ProjectId
+from fastmcp.task_management.domain.value_objects.git_branch_id import GitBranchId
 
 
 class TestProjectCreation:
@@ -39,8 +41,9 @@ class TestProjectCreation:
             name="Test Project",
             description="A test project description"
         )
-        
-        assert len(project.id) == 36  # UUID format
+
+        assert isinstance(project.id, ProjectId)
+        assert len(str(project.id)) == 36  # UUID format
         assert project.name == "Test Project"
         assert project.description == "A test project description"
         assert isinstance(project.created_at, datetime)
@@ -58,11 +61,11 @@ class TestProjectCreation:
     def test_create_project_minimal(self):
         """Test creating project with minimal data."""
         project = Project.create(name="Minimal Project")
-        
+
         assert project.name == "Minimal Project"
         assert project.description == ""
-        assert isinstance(project.id, str)
-        assert len(project.id) == 36
+        assert isinstance(project.id, ProjectId)
+        assert len(str(project.id)) == 36
     
     def test_project_post_init_timezone_handling(self):
         """Test that __post_init__ ensures timestamps are timezone-aware."""
@@ -119,20 +122,21 @@ class TestGitBranchManagement:
     def test_create_git_branch_legacy_method(self):
         """Test creating task tree with legacy method."""
         project = Project.create(name="Test Project")
-        
+
         git_branch = project.create_git_branch(
             git_branch_name="feature-auth",
             name="Authentication Feature",
             description="Implement user authentication"
         )
-        
+
         assert isinstance(git_branch, GitBranch)
-        assert len(git_branch.id) == 36  # UUID format
+        assert isinstance(git_branch.id, GitBranchId)
+        assert len(str(git_branch.id)) == 36  # UUID format
         assert git_branch.name == "Authentication Feature"
         assert git_branch.description == "Implement user authentication"
-        assert git_branch.project_id == project.id
-        assert git_branch.id in project.git_branchs
-        assert project.git_branchs[git_branch.id] == git_branch
+        assert str(git_branch.project_id) == str(project.id)
+        assert str(git_branch.id) in project.git_branchs
+        assert project.git_branchs[str(git_branch.id)] == git_branch
         assert project.updated_at > project.created_at
     
     def test_create_git_branch_duplicate_name_raises_error(self):
@@ -154,37 +158,37 @@ class TestGitBranchManagement:
     async def test_create_git_branch_with_repository(self):
         """Test creating git branch using repository."""
         project = Project.create(name="Test Project")
-        
+
         # Mock repository
         mock_repo = Mock()
         mock_repo.find_by_name = AsyncMock(return_value=None)
-        
+
         # Create mock task tree
         mock_tree = GitBranch(
-            id="tree-123",
+            id=GitBranchId(value="550e8400-e29b-41d4-a716-446655440001"),
             name="Feature Branch",
             description="Test branch",
-            project_id=project.id,
+            project_id=str(project.id),
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
         mock_repo.create_branch = AsyncMock(return_value=mock_tree)
-        
+
         # Create branch
         git_branch = await project.create_git_branch_async(
             mock_repo,
             "feature-branch",
             "Test branch"
         )
-        
+
         assert git_branch == mock_tree
-        assert git_branch.id in project.git_branchs
-        assert project.git_branchs[git_branch.id] == git_branch
-        
+        assert str(git_branch.id) in project.git_branchs
+        assert project.git_branchs[str(git_branch.id)] == git_branch
+
         # Verify repository calls
-        mock_repo.find_by_name.assert_called_once_with(project.id, "feature-branch")
+        mock_repo.find_by_name.assert_called_once_with(str(project.id), "feature-branch")
         mock_repo.create_branch.assert_called_once_with(
-            project_id=project.id,
+            project_id=str(project.id),
             branch_name="feature-branch",
             description="Test branch"
         )
@@ -207,25 +211,25 @@ class TestGitBranchManagement:
     def test_add_git_branch(self):
         """Test adding an existing task tree to project."""
         project = Project.create(name="Test Project")
-        
+
         # Create task tree externally
         git_branch = GitBranch(
-            id="external-tree",
+            id=GitBranchId(value="550e8400-e29b-41d4-a716-446655440002"),
             name="External Tree",
             description="Created externally",
-            project_id=project.id,
+            project_id=str(project.id),
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
-        
+
         original_updated = project.updated_at
         import time
         time.sleep(0.01)
-        
+
         project.add_git_branch(git_branch)
-        
-        assert git_branch.id in project.git_branchs
-        assert project.git_branchs[git_branch.id] == git_branch
+
+        assert str(git_branch.id) in project.git_branchs
+        assert project.git_branchs[str(git_branch.id)] == git_branch
         assert project.updated_at > original_updated
     
     def test_get_git_branch_by_name(self):
@@ -283,9 +287,9 @@ class TestAgentManagement:
         project.register_agent(agent)
         
         # Assign to tree
-        project.assign_agent_to_tree(agent.id, tree.id)
-        
-        assert project.agent_assignments[tree.id] == agent.id
+        project.assign_agent_to_tree(agent.id, str(tree.id))
+
+        assert project.agent_assignments[str(tree.id)] == agent.id
     
     def test_assign_unregistered_agent_raises_error(self):
         """Test that assigning unregistered agent raises error."""
@@ -293,7 +297,7 @@ class TestAgentManagement:
         tree = project.create_git_branch("main", "Main Branch")
         
         with pytest.raises(ValueError, match="not registered"):
-            project.assign_agent_to_tree("unregistered-agent", tree.id)
+            project.assign_agent_to_tree("unregistered-agent", str(tree.id))
     
     def test_assign_agent_to_nonexistent_tree_raises_error(self):
         """Test that assigning to non-existent tree raises error."""
@@ -316,11 +320,11 @@ class TestAgentManagement:
         project.register_agent(agent2)
         
         # Assign first agent
-        project.assign_agent_to_tree(agent1.id, tree.id)
+        project.assign_agent_to_tree(agent1.id, str(tree.id))
         
         # Try to assign second agent
         with pytest.raises(ValueError, match="already assigned"):
-            project.assign_agent_to_tree(agent2.id, tree.id)
+            project.assign_agent_to_tree(agent2.id, str(tree.id))
     
     def test_reassign_same_agent_succeeds(self):
         """Test that reassigning same agent to tree succeeds."""
@@ -329,12 +333,12 @@ class TestAgentManagement:
         tree = project.create_git_branch("main", "Main Branch")
         
         project.register_agent(agent)
-        project.assign_agent_to_tree(agent.id, tree.id)
+        project.assign_agent_to_tree(agent.id, str(tree.id))
         
         # Reassign same agent (should not raise error)
-        project.assign_agent_to_tree(agent.id, tree.id)
+        project.assign_agent_to_tree(agent.id, str(tree.id))
         
-        assert project.agent_assignments[tree.id] == agent.id
+        assert project.agent_assignments[str(tree.id)] == agent.id
 
 
 class TestCrossTreeDependencies:
@@ -467,7 +471,7 @@ class TestWorkCoordination:
         
         # Setup: register agent, assign to tree, add tasks
         project.register_agent(agent)
-        project.assign_agent_to_tree(agent.id, tree.id)
+        project.assign_agent_to_tree(agent.id, str(tree.id))
         
         # Add available tasks
         task1 = Task.create(
@@ -510,7 +514,7 @@ class TestWorkCoordination:
         
         # Register agent and assign to tree2
         project.register_agent(agent)
-        project.assign_agent_to_tree(agent.id, tree2.id)
+        project.assign_agent_to_tree(agent.id, str(tree2.id))
         
         # Add tasks
         prerequisite = Task.create(
@@ -560,7 +564,7 @@ class TestWorkCoordination:
         
         # Setup
         project.register_agent(agent)
-        project.assign_agent_to_tree(agent.id, tree.id)
+        project.assign_agent_to_tree(agent.id, str(tree.id))
         
         task = Task.create(
             id=TaskId.from_string("550e8400e29b41d4a716446655440006"),
@@ -579,7 +583,7 @@ class TestWorkCoordination:
         assert isinstance(session, WorkSession)
         assert session.agent_id == agent.id
         assert session.task_id == "550e8400e29b41d4a716446655440006"
-        assert session.git_branch_name == tree.id
+        assert session.git_branch_name == str(tree.id)
         assert session.max_duration == timedelta(hours=2.0)
         assert session.id in project.active_work_sessions
         assert project.active_work_sessions[session.id] == session
@@ -642,10 +646,10 @@ class TestOrchestrationStatus:
     def test_get_orchestration_status_empty_project(self):
         """Test getting status for empty project."""
         project = Project.create(name="Empty Project")
-        
+
         status = project.get_orchestration_status()
-        
-        assert status["project_id"] == project.id
+
+        assert status["project_id"] == str(project.id)
         assert status["project_name"] == "Empty Project"
         assert status["total_branches"] == 0
         assert status["registered_agents"] == 0
@@ -659,7 +663,7 @@ class TestOrchestrationStatus:
     def test_get_orchestration_status_with_data(self):
         """Test getting comprehensive orchestration status."""
         project = Project.create(name="Test Project")
-        
+
         # Create agents
         agent1 = Agent(
             id="agent-1",
@@ -671,11 +675,11 @@ class TestOrchestrationStatus:
             name="Agent 2",
             capabilities={AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.TESTING}
         )
-        
+
         # Create trees
         tree1 = project.create_git_branch("backend", "Backend Work")
         tree2 = project.create_git_branch("frontend", "Frontend Work")
-        
+
         # Add tasks
         task1 = Task.create(
             id=TaskId.from_string("550e8400e29b41d4a716446655440008"),
@@ -688,29 +692,29 @@ class TestOrchestrationStatus:
             description="Build UI",
             status=TaskStatus.done()
         )
-        
+
         tree1.add_root_task(task1)
         tree2.add_root_task(task2)
-        
+
         # Register agents and assign to trees
         project.register_agent(agent1)
         project.register_agent(agent2)
         project.assign_agent_to_tree(agent1.id, tree1.id)
         project.assign_agent_to_tree(agent2.id, tree2.id)
-        
+
         # Add cross-tree dependency
         project.add_cross_tree_dependency("550e8400e29b41d4a716446655440009", "550e8400e29b41d4a716446655440008")
-        
+
         # Start a work session
         session = project.start_work_session(agent1.id, "550e8400e29b41d4a716446655440008")
-        
+
         # Add resource lock
         project.resource_locks["database"] = agent1.id
-        
+
         # Get status
         status = project.get_orchestration_status()
-        
-        assert status["project_id"] == project.id
+
+        assert status["project_id"] == str(project.id)
         assert status["project_name"] == "Test Project"
         assert status["total_branches"] == 2
         assert status["registered_agents"] == 2
@@ -718,27 +722,27 @@ class TestOrchestrationStatus:
         assert status["active_sessions"] == 1
         assert status["cross_tree_dependencies"] == 1
         assert status["resource_locks"] == 1
-        
+
         # Check trees info
         assert len(status["branches"]) == 2
-        assert tree1.id in status["branches"]
-        assert status["branches"][tree1.id]["name"] == "Backend Work"
-        assert status["branches"][tree1.id]["assigned_agent"] == agent1.id
-        assert status["branches"][tree1.id]["total_tasks"] == 1
-        assert status["branches"][tree1.id]["completed_tasks"] == 0
-        assert status["branches"][tree1.id]["progress"] == 0.0
-        
-        assert status["branches"][tree2.id]["completed_tasks"] == 1
-        assert status["branches"][tree2.id]["progress"] == 100.0
-        
+        assert str(tree1.id) in status["branches"]
+        assert status["branches"][str(tree1.id)]["name"] == "Backend Work"
+        assert status["branches"][str(tree1.id)]["assigned_agent"] == agent1.id
+        assert status["branches"][str(tree1.id)]["total_tasks"] == 1
+        assert status["branches"][str(tree1.id)]["completed_tasks"] == 0
+        assert status["branches"][str(tree1.id)]["progress"] == 0.0
+
+        assert status["branches"][str(tree2.id)]["completed_tasks"] == 1
+        assert status["branches"][str(tree2.id)]["progress"] == 100.0
+
         # Check agents info
         assert len(status["agents"]) == 2
         assert agent1.id in status["agents"]
         assert status["agents"][agent1.id]["name"] == "Agent 1"
         assert "backend_development" in status["agents"][agent1.id]["capabilities"]
-        assert tree1.id in status["agents"][agent1.id]["assigned_trees"]
+        assert str(tree1.id) in status["agents"][agent1.id]["assigned_trees"]
         assert session.id in status["agents"][agent1.id]["active_sessions"]
-        
+
         assert len(status["agents"][agent2.id]["capabilities"]) == 2
 
 
@@ -966,9 +970,9 @@ class TestProjectIntegration:
         test_tree = project.create_git_branch("tests", "Testing")
         
         # Assign agents to trees
-        project.assign_agent_to_tree(backend_agent.id, api_tree.id)
-        project.assign_agent_to_tree(frontend_agent.id, ui_tree.id)
-        project.assign_agent_to_tree(test_agent.id, test_tree.id)
+        project.assign_agent_to_tree(backend_agent.id, str(api_tree.id))
+        project.assign_agent_to_tree(frontend_agent.id, str(ui_tree.id))
+        project.assign_agent_to_tree(test_agent.id, str(test_tree.id))
         
         # Create tasks
         api_task = Task.create(

@@ -7,7 +7,7 @@ import logging
 
 from ..entities.template import Template, TemplateResult, TemplateRenderRequest, TemplateUsage
 from ..value_objects.template_id import TemplateId
-from ..enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from ..value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from ..exceptions.template_exceptions import TemplateNotFoundError, TemplateValidationError, TemplateRenderError
 
 logger = logging.getLogger(__name__)

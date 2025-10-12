@@ -7,4 +7,4 @@ The controller delegates operations to specialized handlers through factory patt
 
 from .task_mcp_controller import TaskMCPController
 
-__all__ = ['TaskMCPController']
+__all__ = ["TaskMCPController"]

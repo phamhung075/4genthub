@@ -1,9 +1,12 @@
 """Agent Domain Entity"""
 
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
+
+from .base.base_timestamp_entity import BaseTimestampEntity
+from ..value_objects.agent_id import AgentId
 
 
 class AgentStatus(Enum):
@@ -29,15 +32,28 @@ class AgentCapability(Enum):
 
 
 @dataclass
-class Agent:
-    """Agent entity representing an AI agent that can work on tasks"""
-    
-    id: str
-    name: str
+class Agent(BaseTimestampEntity):
+    """Agent entity representing an AI agent that can work on tasks
+
+    Rich Domain Model: Contains business logic for agent management, capability matching, and workload analysis.
+    """
+
+    # Required fields must have defaults since parent has defaults
+    id: AgentId | None = None
+    name: str = ""
     description: str = ""
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.id) if self.id else "unknown"
+
+    def _validate_entity(self) -> None:
+        """Validate entity business rules."""
+        if not self.id:
+            raise ValueError("Agent must have an ID")
+        if not self.name:
+            raise ValueError("Agent must have a name")
+
     # Agent capabilities and preferences
     capabilities: Set[AgentCapability] = field(default_factory=set)
     specializations: List[str] = field(default_factory=list)  # More specific specializations
@@ -65,21 +81,25 @@ class Agent:
     active_tasks: Set[str] = field(default_factory=set)
     
     def __post_init__(self):
-        """Set default values after initialization"""
-        if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
-        if self.updated_at is None:
-            self.updated_at = datetime.now(timezone.utc)
+        """Initialize entity - timestamps handled by BaseTimestampEntity"""
+        super().__post_init__()
+
+    def _validate_entity(self) -> None:
+        """Ensure agent core fields are present."""
+        if not self.id:
+            raise ValueError("Agent id cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("Agent name cannot be empty")
     
     def add_capability(self, capability: AgentCapability) -> None:
         """Add a capability to the agent"""
         self.capabilities.add(capability)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("capability_added")
     
     def remove_capability(self, capability: AgentCapability) -> None:
         """Remove a capability from the agent"""
         self.capabilities.discard(capability)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("capability_removed")
     
     def has_capability(self, capability: AgentCapability) -> bool:
         """Check if agent has a specific capability"""
@@ -121,13 +141,25 @@ class Agent:
     def assign_to_project(self, project_id: str) -> None:
         """Assign agent to a project"""
         self.assigned_projects.add(project_id)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("project_assignment_added")
     
     def assign_to_tree(self, git_branch_name: str) -> None:
         """Assign agent to a task tree"""
         self.assigned_trees.add(git_branch_name)
-        self.updated_at = datetime.now(timezone.utc)
-    
+        self.touch("tree_assignment_added")
+
+    def unassign_from_tree(self, git_branch_name: str) -> None:
+        """Unassign agent from a task tree"""
+        if git_branch_name in self.assigned_trees:
+            self.assigned_trees.remove(git_branch_name)
+            self.touch("tree_assignment_removed")
+
+    def unassign_from_all_trees(self) -> None:
+        """Unassign agent from all task trees"""
+        if self.assigned_trees:
+            self.assigned_trees.clear()
+            self.touch("all_tree_assignments_removed")
+
     def start_task(self, task_id: str) -> None:
         """Start working on a task"""
         if not self.is_available():
@@ -138,8 +170,8 @@ class Agent:
         
         if self.current_workload >= self.max_concurrent_tasks:
             self.status = AgentStatus.BUSY
-        
-        self.updated_at = datetime.now(timezone.utc)
+
+        self.touch("task_started")
     
     def complete_task(self, task_id: str, success: bool = True) -> None:
         """Complete a task and update metrics"""
@@ -160,13 +192,13 @@ class Agent:
         # Update status if no longer busy
         if self.current_workload < self.max_concurrent_tasks and self.status == AgentStatus.BUSY:
             self.status = AgentStatus.AVAILABLE
-        
-        self.updated_at = datetime.now(timezone.utc)
+
+        self.touch("task_completed")
     
     def pause_work(self) -> None:
         """Pause agent work"""
         self.status = AgentStatus.PAUSED
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_paused")
     
     def resume_work(self) -> None:
         """Resume agent work"""
@@ -174,17 +206,17 @@ class Agent:
             self.status = AgentStatus.BUSY
         else:
             self.status = AgentStatus.AVAILABLE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_resumed")
     
     def go_offline(self) -> None:
         """Set agent offline"""
         self.status = AgentStatus.OFFLINE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_offline")
     
     def go_online(self) -> None:
         """Set agent online and available"""
         self.status = AgentStatus.AVAILABLE
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("agent_online")
     
     def get_workload_percentage(self) -> float:
         """Get current workload as percentage of capacity"""
@@ -195,7 +227,7 @@ class Agent:
     def get_agent_profile(self) -> Dict:
         """Get comprehensive agent profile"""
         return {
-            "id": self.id,
+            "id": str(self.id) if self.id else "",
             "name": self.name,
             "description": self.description,
             "status": self.status.value,
@@ -253,7 +285,159 @@ class Agent:
             score += 10.0
         
         return min(100.0, score)
-    
+
+    # Rich Domain Model Business Methods
+
+    def validate_capability_match(self, task_requirements: List[str]) -> bool:
+        """
+        Validate that agent's capabilities match task requirements.
+
+        Args:
+            task_requirements: List of required capability strings
+
+        Returns:
+            bool: True if agent has all required capabilities, False otherwise
+
+        Business Rules:
+        - All required capabilities must be present in agent's capabilities
+        - Case-insensitive matching
+        - Handles both string and enum representations
+        - Empty requirements list returns True (no requirements)
+        """
+        # Empty requirements = no restrictions
+        if not task_requirements:
+            return True
+
+        # Convert agent capabilities to lowercase strings for comparison
+        agent_caps_strings = {cap.value.lower() for cap in self.capabilities}
+
+        # Check each requirement
+        for req in task_requirements:
+            req_lower = req.lower().replace(" ", "_")
+
+            # Try to match as capability enum value
+            matched = False
+            for cap in self.capabilities:
+                if cap.value.lower() == req_lower:
+                    matched = True
+                    break
+
+            # Also check against specializations
+            if not matched:
+                for spec in self.specializations:
+                    if spec.lower() == req_lower:
+                        matched = True
+                        break
+
+            # If no match found, requirement not met
+            if not matched:
+                return False
+
+        return True
+
+    def calculate_workload_score(self) -> float:
+        """
+        Calculate current workload as a score (0.0 to 1.0).
+
+        Returns:
+            float: Workload score where:
+                - 0.0 = completely idle (no tasks)
+                - 0.5 = moderate workload (half capacity)
+                - 1.0 = fully loaded (at max capacity)
+                - >1.0 = overloaded (exceeds capacity)
+
+        Business Rules:
+        - Score = current_workload / max_concurrent_tasks
+        - Accounts for agent status (offline = 1.0, paused = current score)
+        - Handles zero max_concurrent_tasks gracefully
+        - Returns exact ratio for precise load balancing
+        """
+        # Special cases based on status
+        if self.status == AgentStatus.OFFLINE:
+            return 1.0  # Offline = fully unavailable
+
+        if self.status == AgentStatus.PAUSED:
+            # Paused agents still have workload, just not accepting new work
+            if self.max_concurrent_tasks == 0:
+                return 1.0
+            return self.current_workload / self.max_concurrent_tasks
+
+        # Normal calculation
+        if self.max_concurrent_tasks == 0:
+            # Zero capacity = always fully loaded
+            return 1.0
+
+        workload_score = self.current_workload / self.max_concurrent_tasks
+
+        return workload_score
+
+    def check_availability(self) -> Dict[str, Any]:
+        """
+        Check if agent is available for new work with detailed status.
+
+        Returns:
+            Dict containing:
+                - available: bool - Can accept new work
+                - status: str - Current agent status
+                - workload_score: float - Current workload (0.0-1.0+)
+                - current_tasks: int - Number of active tasks
+                - capacity: int - Maximum concurrent tasks
+                - blocking_reasons: List[str] - Why agent is unavailable (if applicable)
+                - estimated_capacity: int - How many more tasks can be accepted
+
+        Business Rules:
+        - Available if: status=AVAILABLE AND workload < max capacity
+        - Provides detailed blocking reasons when unavailable
+        - Calculates remaining capacity
+        - Includes workload score for prioritization
+        """
+        blocking_reasons = []
+        is_available = True
+
+        # Check status
+        if self.status == AgentStatus.OFFLINE:
+            is_available = False
+            blocking_reasons.append("Agent is offline")
+        elif self.status == AgentStatus.PAUSED:
+            is_available = False
+            blocking_reasons.append("Agent is paused")
+        elif self.status == AgentStatus.BUSY:
+            # Busy doesn't necessarily mean unavailable if under capacity
+            if self.current_workload >= self.max_concurrent_tasks:
+                is_available = False
+                blocking_reasons.append("Agent is at maximum capacity")
+
+        # Check workload even if status is AVAILABLE
+        if self.status == AgentStatus.AVAILABLE:
+            if self.current_workload >= self.max_concurrent_tasks:
+                is_available = False
+                blocking_reasons.append("Agent workload at maximum capacity")
+
+        # Calculate workload score
+        workload_score = self.calculate_workload_score()
+
+        # Calculate remaining capacity
+        if is_available:
+            estimated_capacity = max(0, self.max_concurrent_tasks - self.current_workload)
+        else:
+            estimated_capacity = 0
+
+        return {
+            "available": is_available,
+            "status": self.status.value,
+            "workload_score": round(workload_score, 3),
+            "current_tasks": self.current_workload,
+            "capacity": self.max_concurrent_tasks,
+            "blocking_reasons": blocking_reasons,
+            "estimated_capacity": estimated_capacity,
+            "active_task_ids": list(self.active_tasks),
+            "performance_metrics": {
+                "completed_tasks": self.completed_tasks,
+                "success_rate": round(self.success_rate, 2),
+                "average_duration_hours": self.average_task_duration
+            }
+        }
+
     @classmethod
     def create_agent(
         cls,
@@ -265,11 +449,13 @@ class Agent:
         preferred_languages: List[str] = None
     ) -> 'Agent':
         """Factory method to create a new agent"""
+        # Convert string id to AgentId value object
+        agent_id_vo = AgentId(agent_id) if isinstance(agent_id, str) else agent_id
+
         agent = cls(
-            id=agent_id,
+            id=agent_id_vo,
             name=name,
             description=description,
-            created_at=datetime.now(timezone.utc),
             capabilities=set(capabilities or []),
             specializations=specializations or [],
             preferred_languages=preferred_languages or []

@@ -83,7 +83,7 @@ MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION = {
     "git_branch_name": "[OPTIONAL] Git branch name. Required for create, optional for update. Can be used instead of git_branch_id for agent assignment",
     "git_branch_description": "[OPTIONAL] Description of the git branch. Optional for create/update operations",
     "agent_id": "[OPTIONAL] Agent identifier for assignment operations. Required for assign_agent/unassign_agent actions",
-    "user_id": "[OPTIONAL] User identifier for authentication and audit trails"
+    "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
 }
 
 MANAGE_GIT_BRANCH_PARAMS = {
@@ -92,50 +92,51 @@ MANAGE_GIT_BRANCH_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["action"]
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Project identification parameters
         "project_id": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["project_id"]
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["project_id"],
         },
-        
         # Branch identification parameters
         "git_branch_id": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["git_branch_id"]
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["git_branch_id"],
         },
         "git_branch_name": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["git_branch_name"]
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["git_branch_name"],
         },
-        
         # Branch configuration parameters
         "git_branch_description": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["git_branch_description"]
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION[
+                "git_branch_description"
+            ],
         },
-        
         # Agent assignment parameters
         "agent_id": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["agent_id"]
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["agent_id"],
         },
-        
         # Authentication parameters
         "user_id": {
             "type": "string",
-            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["user_id"]
-        }
+            "description": MANAGE_GIT_BRANCH_PARAMETERS_DESCRIPTION["user_id"],
+        },
     },
-    "required": ["action"],  # Only action required at schema level - business logic validates per action
-    "additionalProperties": False
+    "required": [
+        "action"
+    ],  # Only action required at schema level - business logic validates per action
+    "additionalProperties": False,
 }
+
 
 def get_manage_git_branch_parameters():
     """Get manage git branch parameters for use in controller."""
     return MANAGE_GIT_BRANCH_PARAMS["properties"]
+
 
 def get_manage_git_branch_description():
     """Get manage git branch description for use in controller."""

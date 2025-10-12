@@ -672,6 +672,34 @@ def main():
             logger.warning(f"⚠️ Could not run database migrations: {e}")
             # Don't fail the entire application if migrations fail
 
+        # Initialize branch statistics tracking system
+        logger.info("📊 Initializing branch statistics tracking...")
+        try:
+            from fastmcp.task_management.application.services.statistics_initializer import StatisticsInitializer
+            StatisticsInitializer.initialize()
+            logger.info("✅ Branch statistics tracking initialized successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not initialize branch statistics tracking: {e}")
+            # Don't fail the entire application if statistics tracking fails
+
+        # Initialize domain event handlers - FAIL FAST MODE
+        logger.info("🔄 Initializing domain event handlers...")
+        try:
+            from fastmcp.task_management.infrastructure.events import initialize_event_handlers
+            if initialize_event_handlers():
+                logger.info("✅ Domain event handlers initialized successfully")
+            else:
+                error_msg = "❌ Domain event handler initialization failed"
+                logger.error(error_msg)
+                logger.error("SERVER CANNOT START - Event handlers are required for domain events pattern")
+                raise RuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"CRITICAL: Failed to initialize domain event handlers: {e}"
+            logger.error(error_msg)
+            logger.error("SERVER CANNOT START - Event handlers are mandatory for DDD event-driven architecture")
+            logger.error("Check event handler configuration and event bus setup")
+            raise RuntimeError(error_msg) from e
+
         # Create the server
         server = create_agenthub_server()
         

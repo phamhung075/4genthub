@@ -78,6 +78,11 @@ def mock_websocket():
     """Fixture providing a mock WebSocket connection"""
     mock = AsyncMock()
     mock.query_params = {}
+    mock.headers = {}  # Add headers as empty dict
+    # Create a mock client object with host property
+    mock_client = MagicMock()
+    mock_client.host = "test-host"
+    mock.client = mock_client
     mock.accept = AsyncMock()
     mock.send_json = AsyncMock()
     mock.receive_json = AsyncMock()
@@ -380,6 +385,12 @@ class TestWebSocketAttackScenarios:
 
         mock_websocket = AsyncMock()
         mock_websocket.query_params = {"token": expired_token}
+        mock_websocket.headers = {}
+        # Create a mock client object with host property
+        mock_client = MagicMock()
+        mock_client.host = "test-host"
+        mock_websocket.client = mock_client
+        mock_websocket.close = AsyncMock()
 
         # Mock authentication to simulate expired token detection
         with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:

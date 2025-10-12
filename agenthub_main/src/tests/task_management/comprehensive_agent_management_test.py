@@ -24,7 +24,7 @@ import uuid
 from fastmcp.task_management.application.facades.agent_application_facade import AgentApplicationFacade
 from fastmcp.task_management.domain.repositories.agent_repository import AgentRepository
 from fastmcp.task_management.domain.entities.agent import Agent
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
 from fastmcp.task_management.application.use_cases.register_agent import RegisterAgentResponse
 from fastmcp.task_management.application.use_cases.assign_agent import AssignAgentResponse
 from fastmcp.task_management.application.use_cases.list_agents import ListAgentsResponse

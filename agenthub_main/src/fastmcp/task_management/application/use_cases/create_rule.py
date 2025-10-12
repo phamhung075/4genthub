@@ -6,7 +6,7 @@ DDD use case for creating rules with proper validation and business logic.
 from typing import Dict, Any, Optional
 from ...domain.entities.rule_entity import RuleContent, RuleMetadata
 from ...domain.repositories.rule_repository import RuleRepository
-from ...domain.enums.rule_enums import RuleFormat, RuleType
+from ...domain.value_objects import RuleFormat, RuleType
 
 
 class CreateRuleUseCase:

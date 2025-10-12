@@ -7,4 +7,4 @@ The controller delegates operations to specialized handlers through factory patt
 
 from .subtask_mcp_controller import SubtaskMCPController
 
-__all__ = ['SubtaskMCPController']
+__all__ = ["SubtaskMCPController"]

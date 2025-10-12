@@ -52,6 +52,11 @@ class CreateTaskUseCase:
             
             # Create domain entity using git_branch_id from request (follows clean relationship chain)
             
+            # Get user_id from request or repository
+            user_id = request.user_id if hasattr(request, 'user_id') and request.user_id else None
+            if not user_id and hasattr(self._task_repository, 'user_id'):
+                user_id = self._task_repository.user_id
+            
             task = Task.create(
                 id=task_id,
                 title=title,
@@ -63,6 +68,7 @@ class CreateTaskUseCase:
                 assignees=request.assignees,
                 labels=request.labels,
                 due_date=request.due_date,
+                user_id=user_id
             )
 
             # Add initial progress if details provided
@@ -89,24 +95,63 @@ class CreateTaskUseCase:
                     "Failed to save task to database. This may be due to an invalid git_branch_id or database constraint violation."
                 )
             
-            # Update branch task count using repository (follows DDD pattern)
+            # Dispatch domain event for task creation
+            # Branch statistics will be updated automatically by event handlers
             try:
-                from ...application.services.repository_provider_service import RepositoryProviderService
+                from ...domain.services.event_dispatcher import dispatch_domain_event
+                from ...domain.events.task_lifecycle_events import TaskCreatedEvent
 
-                # Get instance and use repository provider to get branch repository
-                provider = RepositoryProviderService.get_instance()
-                branch_repo = provider.get_git_branch_repository()
-                branch = branch_repo.get(request.git_branch_id)
-                
-                if branch:
-                    # Update task count
-                    branch.task_count = branch.task_count + 1 if branch.task_count else 1
-                    # Use repository to update
-                    branch_repo.update(branch)
-                    self._logger.info(f"Updated task_count to {branch.task_count} for branch {request.git_branch_id}")
+                event = TaskCreatedEvent.create(
+                    task_id=str(task.id.value),
+                    branch_id=request.git_branch_id,
+                    title=task.title,
+                    status=str(task.status.value),
+                    priority=str(task.priority.value),
+                    assignees=task.assignees,
+                    user_id=getattr(request, 'user_id', None)
+                )
+
+                dispatch_domain_event("task_created", event)
+                self._logger.info(f"Dispatched task_created event for task {task.id.value}")
+
             except Exception as e:
-                self._logger.warning(f"Failed to update branch task count: {e}")
-            
+                self._logger.warning(f"Failed to dispatch task creation event: {e}")
+
+            # Send WebSocket notification for frontend real-time updates
+            try:
+                from ..services.websocket_notification_service import WebSocketNotificationService
+
+                # 🚀 ENHANCED DEBUG LOGGING FOR TASK CREATION WEBSOCKET
+                self._logger.warning(f"🎯 TASK CREATE DEBUG: About to send WebSocket notification for task {task.id.value}")
+                self._logger.warning(f"🎯 Event type: 'created'")
+                self._logger.warning(f"🎯 Task ID: {str(task.id.value)}")
+                self._logger.warning(f"🎯 User ID: {user_id or 'system'}")
+                self._logger.warning(f"🎯 Git Branch ID: {request.git_branch_id}")
+
+                task_data_debug = {
+                    "id": str(task.id.value),
+                    "title": task.title,
+                    "status": str(task.status),
+                    "priority": str(task.priority)
+                }
+                self._logger.warning(f"🎯 Task data: {task_data_debug}")
+
+                # Create task creation notification via WebSocket notification service
+                WebSocketNotificationService.sync_broadcast_task_event(
+                    event_type="created",
+                    task_id=str(task.id.value),
+                    user_id=user_id or "system",
+                    task_data=task_data_debug,
+                    git_branch_id=request.git_branch_id
+                )
+
+                self._logger.warning(f"✅ 🎯 TASK CREATE DEBUG: WebSocket notification method call completed for task {task.id.value}")
+
+            except Exception as e:
+                self._logger.error(f"❌ 🎯 TASK CREATE DEBUG: Failed to send WebSocket notification for task {task.id.value}: {e}")
+                import traceback
+                self._logger.error(f"❌ 🎯 Full traceback: {traceback.format_exc()}")
+
             # Handle domain events
             events = task.get_events()
             for event in events:

@@ -70,7 +70,7 @@ export const EnhancedJSONViewer: React.FC<EnhancedJSONViewerProps> = ({
     });
   };
 
-  const renderValue = (value: any, path: string = '', depth: number = 0): JSX.Element => {
+  const renderValue = (value: any, path: string = '', depth: number = 0): React.ReactElement => {
     // Handle null/undefined
     if (value === null || value === undefined) {
       return <span className="text-gray-400 italic">null</span>;

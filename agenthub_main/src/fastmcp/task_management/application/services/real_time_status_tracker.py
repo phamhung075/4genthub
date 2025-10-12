@@ -55,7 +55,7 @@ class StatusSubscription:
     update_types: Set[StatusUpdateType]
     callback: Optional[Callable] = None
     webhook_url: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
 

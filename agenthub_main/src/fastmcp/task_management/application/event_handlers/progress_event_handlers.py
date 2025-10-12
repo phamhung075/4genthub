@@ -6,7 +6,6 @@ actions such as notifications, aggregations, and state updates.
 
 import logging
 from datetime import datetime, timezone
-from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from ...domain.events.progress_events import (
@@ -16,8 +15,8 @@ from ...domain.events.progress_events import (
 )
 from ...domain.repositories.task_repository import TaskRepository
 from ...domain.repositories.context_repository import ContextRepository
-from ...domain.interfaces.notification_service import NotificationService, get_notification_service
-from ...domain.interfaces.event_store import EventStore, get_event_store
+from ...infrastructure.notification_service import NotificationService, get_notification_service
+from ...infrastructure.event_store import EventStore, get_event_store
 
 logger = logging.getLogger(__name__)
 
@@ -278,9 +277,9 @@ class ProgressTypeCompletedHandler:
             logger.error(f"Error handling ProgressTypeCompleted event: {e}")
 
 
-class ProgressEventHandlerRegistry:
+class ProgressEventHandlers:
     """Registry for progress event handlers."""
-    
+
     def __init__(self,
                  task_repository: TaskRepository,
                  context_repository: ContextRepository,

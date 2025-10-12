@@ -25,7 +25,7 @@ export const store = configureStore({
   devTools: import.meta.env.MODE !== 'production',
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+// Export types are now in src/types/storeTypes.ts
+export type { RootState, AppDispatch } from '../types/storeTypes';
 
 export default store;

@@ -6,7 +6,7 @@ CRUD operations, session management, and error handling.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from fastmcp.task_management.infrastructure.repositories.base_orm_repository import BaseORMRepository
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
     DatabaseException,
-    ValidationException
+    DatabaseIntegrityException
 )
 
 
@@ -125,14 +125,14 @@ class TestBaseORMRepository:
         self.mock_session.refresh.assert_called_once()
 
     def test_create_integrity_error(self):
-        """Test creation with integrity constraint violation."""
+        """Test creation with integrity constraint violation raises DatabaseIntegrityException."""
         self.repo.get_db_session = self._mock_session_context
-        self.mock_session.add.side_effect = IntegrityError("", "", "")
+        self.mock_session.add.side_effect = IntegrityError("", "", "UNIQUE constraint failed: mock_table.id")
         
-        with pytest.raises(ValidationException) as exc_info:
+        with pytest.raises(DatabaseIntegrityException) as exc_info:
             self.repo.create(id=1, name="test")
             
-        assert "Integrity constraint violation" in str(exc_info.value)
+        assert "Database integrity constraint violation" in str(exc_info.value)
 
     def test_get_by_id_found(self):
         """Test getting record by ID when found."""
@@ -249,7 +249,6 @@ class TestBaseORMRepository:
     def test_exists_false(self):
         """Test exists method when record doesn't exist."""
         query_mock = Mock()
-        # Set up filter to return itself for chaining, then first() returns None
         query_mock.filter.return_value = query_mock
         query_mock.first.return_value = None
         self.mock_session.query.return_value = query_mock
@@ -262,7 +261,6 @@ class TestBaseORMRepository:
     def test_count_with_filters(self):
         """Test count method with filters."""
         query_mock = Mock()
-        # Set up filter to return itself for chaining, then count() returns 5
         query_mock.filter.return_value = query_mock
         query_mock.count.return_value = 5
         self.mock_session.query.return_value = query_mock
@@ -276,7 +274,6 @@ class TestBaseORMRepository:
         """Test find_by method with filters."""
         mock_instances = [MockModel(id=1), MockModel(id=2)]
         query_mock = Mock()
-        # Set up filter to return itself for chaining, then all() returns mock_instances
         query_mock.filter.return_value = query_mock
         query_mock.all.return_value = mock_instances
         self.mock_session.query.return_value = query_mock
@@ -290,7 +287,6 @@ class TestBaseORMRepository:
         """Test find_one_by method with filters."""
         mock_instance = MockModel(id=1)
         query_mock = Mock()
-        # Set up filter to return itself for chaining, then first() returns mock_instance
         query_mock.filter.return_value = query_mock
         query_mock.first.return_value = mock_instance
         self.mock_session.query.return_value = query_mock
@@ -322,6 +318,37 @@ class TestBaseORMRepository:
         result = self.repo.execute_query(query_func, param="test")
         
         assert result == "query result with test"
+
+    def test_extract_constraint_name_unique_constraint(self):
+        """Test extracting constraint name from UNIQUE constraint error."""
+        error_msg = "UNIQUE constraint failed: mock_table.id"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name == "mock_table.id"
+
+    def test_extract_constraint_name_not_null_constraint(self):
+        """Test extracting constraint name from NOT NULL constraint error."""
+        error_msg = "NOT NULL constraint failed: mock_table.name"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name == "mock_table.name"
+
+    def test_extract_constraint_name_foreign_key_constraint(self):
+        """Test extracting constraint name from FOREIGN KEY constraint error."""
+        error_msg = "FOREIGN KEY constraint failed"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        # Foreign key errors may not have detailed constraint name
+        assert constraint_name is None or isinstance(constraint_name, str)
+
+    def test_extract_constraint_name_check_constraint(self):
+        """Test extracting constraint name from CHECK constraint error."""
+        error_msg = "CHECK constraint failed: mock_table.status"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name == "mock_table.status"
+
+    def test_extract_constraint_name_unknown_format(self):
+        """Test extracting constraint name from unknown error format."""
+        error_msg = "Some unknown database error"
+        constraint_name = self.repo._extract_constraint_name(error_msg)
+        assert constraint_name is None
 
     @contextmanager
     def _mock_session_context(self):

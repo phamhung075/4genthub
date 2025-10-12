@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 from fastmcp.task_management.application.services.audit_service import AuditService
-from fastmcp.task_management.domain.enums.compliance_enums import ComplianceLevel, ValidationResult
+from fastmcp.task_management.domain.value_objects.compliance_enums import ComplianceLevel, ValidationResult
 from fastmcp.task_management.domain.value_objects.compliance_objects import ValidationReport
 
 

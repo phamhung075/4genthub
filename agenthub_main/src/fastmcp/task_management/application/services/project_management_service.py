@@ -202,12 +202,12 @@ class ProjectManagementService:
             
             # Validate deletion safety if not forced
             if not force:
-                # Get branches for this project directly from repository
-                from ...infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
-                
-                # Create repository with only user_id (it manages its own session)
-                git_branch_repo = ORMGitBranchRepository(user_id=self._user_id)
-                
+                # Get branches for this project using RepositoryFactory
+                from ...infrastructure.repositories.repository_factory import RepositoryFactory
+
+                # Create repository with user_id using factory pattern
+                git_branch_repo = RepositoryFactory.get_git_branch_repository(user_id=self._user_id)
+
                 # Get all branches for this project - method is find_all_by_project
                 branches = await git_branch_repo.find_all_by_project(project_id)
                 logger.info(f"[DEBUG] Found {len(branches) if branches else 0} branches for project {project_id}")
@@ -268,13 +268,13 @@ class ProjectManagementService:
             # Now proceed with deletion
             # Delete all branches (which will cascade delete tasks)
             logger.info(f"[DEBUG] Starting deletion process for project {project_id}")
-            
-            # Get branches directly using the repository
-            from ...infrastructure.repositories.orm.git_branch_repository import ORMGitBranchRepository
-            
-            # Create repository with only user_id (it manages its own session)
-            git_branch_repo = ORMGitBranchRepository(user_id=self._user_id)
-            
+
+            # Get branches using RepositoryFactory
+            from ...infrastructure.repositories.repository_factory import RepositoryFactory
+
+            # Create repository with user_id using factory pattern
+            git_branch_repo = RepositoryFactory.get_git_branch_repository(user_id=self._user_id)
+
             # Get all branches for this project - method is find_all_by_project
             branches = await git_branch_repo.find_all_by_project(project_id)
             logger.info(f"[DEBUG] Found {len(branches) if branches else 0} branches to delete for project {project_id}")
@@ -301,6 +301,20 @@ class ProjectManagementService:
             
             if deleted and verify_project is None:
                 logger.info(f"[DEBUG] Successfully deleted project {project_id} - verified gone from database")
+
+                # Send WebSocket notification with user context
+                try:
+                    from ..services.websocket_notification_service import WebSocketNotificationService
+                    await WebSocketNotificationService.broadcast_project_event(
+                        event_type="deleted",
+                        project_id=project_id,
+                        user_id=self._user_id,
+                        project_data={"name": project.name}
+                    )
+                    logger.info(f"Sent WebSocket notification for project {project_id} deletion")
+                except Exception as ws_error:
+                    logger.warning(f"Failed to send WebSocket notification: {ws_error}")
+
                 return {
                     "success": True,
                     "message": f"Project '{project.name}' deleted successfully",

@@ -40,7 +40,7 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
       document.body.removeChild(textArea);
       return result;
     } catch (fallbackError) {
-      console.error('Failed to copy to clipboard:', fallbackError);
+      logger.error('Failed to copy to clipboard:', fallbackError);
       return false;
     }
   }

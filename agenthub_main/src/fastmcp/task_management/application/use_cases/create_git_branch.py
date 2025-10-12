@@ -1,7 +1,6 @@
 """Create Git Branch Use Case"""
 
 from typing import Dict, Any
-from datetime import datetime, timezone
 from ...domain.repositories.project_repository import ProjectRepository
 
 
@@ -30,8 +29,8 @@ class CreateGitBranchUseCase:
                 description=branch_description
             )
             
-            # Save updated project
-            await self._project_repository.update(project)
+            # Save updated project (using save to persist git branches properly)
+            await self._project_repository.save(project)
             
             # Auto-create branch context for hierarchical context inheritance
             try:
@@ -70,12 +69,12 @@ class CreateGitBranchUseCase:
                 )
                 
                 # Create default branch context
+                # Timestamps handled by context system
                 context_data = {
                     "branch_id": git_branch.id,
                     "branch_name": git_branch.name,
                     "project_id": project.id,
                     "description": git_branch.description,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
                     "workflow_state": {},
                     "branch_settings": {}
                 }

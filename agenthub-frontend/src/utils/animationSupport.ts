@@ -139,16 +139,16 @@ export const createAnimationObserver = (callback: (supported: boolean) => void) 
  */
 export const debugAnimationSupport = () => {
   const info = getBrowserInfo();
-  console.group('🎬 Animation Support Debug');
-  console.log('Browser:', info.userAgent);
-  console.log('CSS @property support:', info.supportsProperty);
-  console.log('CSS animations support:', info.supportsAnimations);
-  console.log('Browser type:', {
+  logger.debug('🎬 Animation Support Debug');
+  logger.debug('Browser:', info.userAgent);
+  logger.debug('CSS @property support:', info.supportsProperty);
+  logger.debug('CSS animations support:', info.supportsAnimations);
+  logger.debug('Browser type:', {
     Chrome: info.isChrome,
     Firefox: info.isFirefox,
     Safari: info.isSafari,
     Edge: info.isEdge
   });
-  console.groupEnd();
+  logger.debug("Group end");
   return info;
 };

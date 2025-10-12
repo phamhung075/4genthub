@@ -11,11 +11,10 @@ from .base import DomainEvent
 @dataclass(frozen=True)
 class ContextCreated(DomainEvent):
     """Event raised when a context is created"""
-    context_id: str
-    level: str  # global, project, branch, task
-    created_by: str
+    context_id: str = ""
+    level: str = ""  # global, project, branch, task
+    created_by: str = ""
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    event_id: UUID = field(default_factory=uuid4)
     
     @property
     def event_type(self) -> str:
@@ -36,12 +35,11 @@ class ContextCreated(DomainEvent):
 @dataclass(frozen=True)
 class ContextUpdated(DomainEvent):
     """Event raised when a context is updated"""
-    context_id: str
-    level: str
-    updated_by: str
-    changes: Dict[str, Any]
+    context_id: str = ""
+    level: str = ""
+    updated_by: str = ""
+    changes: Dict[str, Any] = field(default_factory=dict)
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    event_id: UUID = field(default_factory=uuid4)
     
     @property
     def event_type(self) -> str:
@@ -63,14 +61,13 @@ class ContextUpdated(DomainEvent):
 @dataclass(frozen=True)
 class ContextDelegated(DomainEvent):
     """Event raised when context data is delegated to a higher level"""
-    source_context_id: str
-    source_level: str
-    target_level: str
-    delegated_data: Dict[str, Any]
-    delegation_reason: str
-    delegated_by: str
+    source_context_id: str = ""
+    source_level: str = ""
+    target_level: str = ""
+    delegated_data: Dict[str, Any] = field(default_factory=dict)
+    delegation_reason: str = ""
+    delegated_by: str = ""
     delegated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    event_id: UUID = field(default_factory=uuid4)
     
     @property
     def event_type(self) -> str:
@@ -94,14 +91,13 @@ class ContextDelegated(DomainEvent):
 @dataclass(frozen=True)
 class ContextInsightAdded(DomainEvent):
     """Event raised when an insight is added to a context"""
-    context_id: str
-    level: str
-    insight_content: str
-    insight_category: str
-    importance: str
-    added_by: str
+    context_id: str = ""
+    level: str = ""
+    insight_content: str = ""
+    insight_category: str = ""
+    importance: str = ""
+    added_by: str = ""
     added_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    event_id: UUID = field(default_factory=uuid4)
     
     @property
     def event_type(self) -> str:
@@ -125,12 +121,11 @@ class ContextInsightAdded(DomainEvent):
 @dataclass(frozen=True)
 class ContextProgressAdded(DomainEvent):
     """Event raised when progress update is added to a context"""
-    context_id: str
-    level: str
-    progress_content: str
-    added_by: str
+    context_id: str = ""
+    level: str = ""
+    progress_content: str = ""
+    added_by: str = ""
     added_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    event_id: UUID = field(default_factory=uuid4)
     
     @property
     def event_type(self) -> str:
@@ -152,12 +147,11 @@ class ContextProgressAdded(DomainEvent):
 @dataclass(frozen=True)
 class ContextInheritanceResolved(DomainEvent):
     """Event raised when context inheritance is resolved"""
-    context_id: str
-    level: str
-    inheritance_chain: list[str]
-    resolved_by: str
+    context_id: str = ""
+    level: str = ""
+    inheritance_chain: list[str] = field(default_factory=list)
+    resolved_by: str = ""
     resolved_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    event_id: UUID = field(default_factory=uuid4)
     
     @property
     def event_type(self) -> str:

@@ -2,4 +2,4 @@
 
 from .dependency_operation_handler import DependencyOperationHandler
 
-__all__ = ['DependencyOperationHandler']
+__all__ = ["DependencyOperationHandler"]

@@ -6,8 +6,8 @@ from .dependency_handler import TaskDependencyHandler
 from .workflow_handler import TaskWorkflowHandler
 
 __all__ = [
-    'TaskCrudHandler',
-    'TaskSearchHandler',
-    'TaskDependencyHandler',
-    'TaskWorkflowHandler'
+    "TaskCrudHandler",
+    "TaskSearchHandler",
+    "TaskDependencyHandler",
+    "TaskWorkflowHandler",
 ]

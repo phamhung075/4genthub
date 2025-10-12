@@ -4,12 +4,13 @@ This service handles user authentication by extracting user_id from Keycloak JWT
 Keycloak is the single source of truth for user authentication.
 """
 
-import os
 import logging
-from typing import Optional
+import os
 
 from .....domain.constants import validate_user_id
-from .....domain.exceptions.authentication_exceptions import UserAuthenticationRequiredError
+from .....domain.exceptions.authentication_exceptions import (
+    UserAuthenticationRequiredError,
+)
 from .token_extraction_service import TokenExtractionService
 
 logger = logging.getLogger(__name__)
@@ -17,18 +18,20 @@ logger = logging.getLogger(__name__)
 
 class AuthenticationService:
     """Main authentication service for MCP controllers - Keycloak-only authentication"""
-    
+
     def __init__(self):
         self.token_service = TokenExtractionService()
         # Check for testing mode
-        self.auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() in ["true", "1", "yes"]
+        self.auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
         self.auth_mode = os.getenv("MCP_AUTH_MODE", "production").lower()
         self.test_user_id = os.getenv("TEST_USER_ID", "test-user-001")
-    
+
     def get_authenticated_user_id(
-        self,
-        provided_user_id: Optional[str] = None,
-        operation_name: str = "Operation"
+        self, provided_user_id: str | None = None, operation_name: str = "Operation"
     ) -> str:
         """
         Get authenticated user ID from JWT token or authentication context.
@@ -59,7 +62,9 @@ class AuthenticationService:
             return validate_user_id(provided_user_id, operation_name)
 
         # Secondary: Try to extract from request context middleware (JWT token user_id)
-        logger.info("🔑 Extracting user_id from JWT token via request context middleware...")
+        logger.info(
+            "🔑 Extracting user_id from JWT token via request context middleware..."
+        )
         user_id = self._get_user_id_from_context()
 
         if user_id:
@@ -68,7 +73,9 @@ class AuthenticationService:
 
         # Testing mode bypass - ONLY when no JWT user is available AND testing mode is enabled
         if not self.auth_enabled or self.auth_mode == "testing":
-            logger.warning(f"⚠️ TESTING MODE: No JWT user found, using test user for {operation_name}")
+            logger.warning(
+                f"⚠️ TESTING MODE: No JWT user found, using test user for {operation_name}"
+            )
             logger.warning(f"⚠️ Using test user ID: {self.test_user_id}")
             return validate_user_id(self.test_user_id, operation_name)
 
@@ -78,8 +85,8 @@ class AuthenticationService:
             f"{operation_name} requires valid JWT authentication. "
             f"Please ensure you are authenticated and the JWT token is properly configured."
         )
-    
-    def _get_user_id_from_context(self) -> Optional[str]:
+
+    def _get_user_id_from_context(self) -> str | None:
         """
         Get user ID from request context middleware (JWT token user_id from DualAuthMiddleware).
 
@@ -91,7 +98,9 @@ class AuthenticationService:
         """
         try:
             # Import the context middleware function to get JWT user_id
-            from fastmcp.auth.middleware.request_context_middleware import get_current_user_id
+            from fastmcp.auth.middleware.request_context_middleware import (
+                get_current_user_id,
+            )
 
             user_id = get_current_user_id()
             if user_id:
@@ -101,7 +110,9 @@ class AuthenticationService:
                 logger.debug("No JWT user_id found in request context")
 
         except ImportError:
-            logger.debug("Request context middleware not available - cannot get JWT user_id from context")
+            logger.debug(
+                "Request context middleware not available - cannot get JWT user_id from context"
+            )
         except Exception as e:
             logger.debug(f"Could not get JWT user_id from context: {e}")
 

@@ -35,22 +35,9 @@ export const ParentTaskReference: React.FC<ParentTaskReferenceProps> = ({
   }
 
   if (error || !parentTaskInfo) {
-    return (
-      <div className={`inline-flex items-center gap-1 text-xs text-gray-500 ${className}`}>
-        <Link className="w-3 h-3" />
-        <span>Parent: Unknown</span>
-        {showId && (
-          <CopyableId
-            id={parentTaskId}
-            variant="inline"
-            size="xs"
-            label=""
-            abbreviated={true}
-            showCopyButton={false}
-          />
-        )}
-      </div>
-    );
+    // Don't show anything if parent info is unavailable
+    // The dialog already has this information
+    return null;
   }
 
   if (variant === 'badge') {

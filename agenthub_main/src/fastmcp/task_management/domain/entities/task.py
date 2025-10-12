@@ -5,19 +5,24 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
+from .base.base_timestamp_entity import BaseTimestampEntity
+
 logger = logging.getLogger(__name__)
 
 from ...domain.value_objects.task_status import TaskStatusEnum
-from ..enums.agent_roles import AgentRole, resolve_legacy_role
-from ..enums.common_labels import CommonLabel, LabelValidator
-from ..enums.estimated_effort import EffortLevel, EstimatedEffort
-from ..enums.progress_enums import ProgressState
+from ..value_objects import (
+    AgentRole, resolve_legacy_role,
+    CommonLabel, LabelValidator,
+    EffortLevel, EstimatedEffort,
+    ProgressState,
+    get_role_metadata_from_yaml
+)
 from ..events.progress_events import (
     ProgressMilestoneReached,
     ProgressTypeCompleted,
     ProgressUpdated,
 )
-from ..events.task_events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
+from ..events import TaskCreated, TaskDeleted, TaskRetrieved, TaskUpdated
 from ..exceptions.vision_exceptions import MissingCompletionSummaryError
 from ..value_objects.priority import Priority
 from ..value_objects.progress import (
@@ -31,11 +36,11 @@ from ..value_objects.task_status import TaskStatus
 
 
 @dataclass
-class Task:
+class Task(BaseTimestampEntity):
     """Task domain entity with business logic"""
-    
-    title: str
-    description: str
+
+    title: str = ""
+    description: str = ""
     id: TaskId | None = None
     status: TaskStatus | None = None
     priority: Priority | None = None
@@ -48,9 +53,8 @@ class Task:
     dependencies: list[TaskId] = field(default_factory=list)
     subtasks: list[str] = field(default_factory=list)  # List of subtask IDs
     due_date: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
     context_id: str | None = None  # New field: tracks if context is up-to-date
+    user_id: str | None = None  # User identifier for ownership
     
     # Progress tracking fields
     overall_progress: int = 0  # 0-100 percentage (integer)
@@ -64,11 +68,9 @@ class Task:
     _completion_summary: str | None = field(default=None, init=False)
     
     def __post_init__(self):
-        """Validate task data after initialization"""
-        # Set default values if not provided
+        """Initialise defaults before timestamp enforcement."""
+        # Prepare defaults prior to BaseTimestampEntity validation
         if self.id is None:
-            # This case should be handled by the repository, 
-            # but as a fallback, we can log a warning.
             logging.warning("Task created without an ID. Repository should assign one.")
 
         if self.status is None:
@@ -79,26 +81,16 @@ class Task:
             self.assignees = []
         if self.labels is None:
             self.labels = []
-            
-        self._validate()
-        
-        # Set timestamps if not provided (ensure timezone-aware)
-        # For new tasks, both timestamps should be identical
-        if self.created_at is None and self.updated_at is None:
-            now = datetime.now(timezone.utc)
-            self.created_at = now
-            self.updated_at = now
-        else:
-            # Handle existing timestamps separately
-            if self.created_at is None:
-                self.created_at = datetime.now(timezone.utc)
-            elif self.created_at.tzinfo is None:
-                self.created_at = self.created_at.replace(tzinfo=timezone.utc)
-                
-            if self.updated_at is None:
-                self.updated_at = datetime.now(timezone.utc)
-            elif self.updated_at.tzinfo is None:
-                self.updated_at = self.updated_at.replace(tzinfo=timezone.utc)
+
+        super().__post_init__()
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity.
+
+        Returns:
+            str: Unique identifier for this entity
+        """
+        return str(self.id) if self.id else "unknown"
     
     def __eq__(self, other):
         """Tasks are equal if they have the same ID"""
@@ -142,6 +134,10 @@ class Task:
         
         # Note: Assignee validation is handled at the application layer during task creation
         # Domain entities can be created with empty assignees during intermediate operations
+
+    def _validate_entity(self) -> None:
+        """Hook for BaseTimestampEntity validation."""
+        self._validate()
     
     def update_status(self, new_status: TaskStatus) -> None:
         """Update task status with validation"""
@@ -150,34 +146,40 @@ class Task:
         
         old_status = self.status
         self.status = new_status
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("status_update")
         
         # Keep context_id when task is updated (context should persist)
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="status",
-            old_value=str(old_status),
-            new_value=str(new_status),
-            updated_at=self.updated_at
+            changes={
+                "status": {
+                    "old_value": str(old_status),
+                    "new_value": str(new_status),
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def update_priority(self, new_priority: Priority) -> None:
         """Update task priority"""
         old_priority = self.priority
         self.priority = new_priority
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("priority_update")
         
         # Keep context_id when task is updated (context should persist)
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="priority",
-            old_value=str(old_priority),
-            new_value=str(new_priority),
-            updated_at=self.updated_at
+            changes={
+                "priority": {
+                    "old_value": str(old_priority),
+                    "new_value": str(new_priority),
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def update_title(self, title: str) -> None:
@@ -187,17 +189,20 @@ class Task:
         
         old_title = self.title
         self.title = title
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("title_update")
         
         # Keep context_id when task is updated (context should persist)
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="title",
-            old_value=old_title,
-            new_value=title,
-            updated_at=self.updated_at
+            changes={
+                "title": {
+                    "old_value": old_title,
+                    "new_value": title,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def update_description(self, description: str) -> None:
@@ -207,17 +212,20 @@ class Task:
         
         old_description = self.description
         self.description = description
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("description_update")
         
         # Keep context_id when task is updated (context should persist)
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="description",
-            old_value=old_description,
-            new_value=description,
-            updated_at=self.updated_at
+            changes={
+                "description": {
+                    "old_value": old_description,
+                    "new_value": description,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def append_progress(self, progress_content: str) -> None:
@@ -229,17 +237,18 @@ class Task:
         if not hasattr(self, 'progress_history') or self.progress_history is None:
             self.progress_history = {}
 
+        # Update timestamp first
+        self.touch("progress_update")
+
         # Store the progress entry
         progress_entry = {
             'content': f"{progress_header}\n{progress_content}",
-            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'timestamp': self.updated_at.isoformat(),
             'progress_number': self.progress_count
         }
 
         # Add to history using progress number as key
         self.progress_history[f"progress_{self.progress_count}"] = progress_entry
-
-        self.updated_at = datetime.now(timezone.utc)
 
         # Clear context_id when task is updated (context needs updating)
         self.context_id = None
@@ -247,10 +256,13 @@ class Task:
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="progress_history",
-            old_value=f"progress_added_{self.progress_count - 1}",
-            new_value=f"progress_added_{self.progress_count}",
-            updated_at=self.updated_at
+            changes={
+                "progress_history": {
+                    "old_value": f"progress_added_{self.progress_count - 1}",
+                    "new_value": f"progress_added_{self.progress_count}",
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def update_estimated_effort(self, estimated_effort: str) -> None:
@@ -264,15 +276,18 @@ class Task:
         
         old_effort = self.estimated_effort
         self.estimated_effort = estimated_effort
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("estimated_effort_update")
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="estimated_effort",
-            old_value=old_effort,
-            new_value=estimated_effort,
-            updated_at=self.updated_at
+            changes={
+                "estimated_effort": {
+                    "old_value": old_effort,
+                    "new_value": estimated_effort,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def update_assignees(self, assignees: list[str]) -> None:
@@ -305,14 +320,17 @@ class Task:
         logging.debug(f"[update_assignees] Validated assignees: {validated_assignees}")
         old_assignees = self.assignees.copy()
         self.assignees = validated_assignees
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("assignees_update")
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="assignees",
-            old_value=old_assignees,
-            new_value=validated_assignees,
-            updated_at=self.updated_at
+            changes={
+                "assignees": {
+                    "old_value": old_assignees,
+                    "new_value": validated_assignees,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def add_assignee(self, assignee: str | AgentRole) -> None:
@@ -348,15 +366,18 @@ class Task:
         
         if validated_assignee not in self.assignees:
             self.assignees.append(validated_assignee)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("assignee_added")
             
             # Raise domain event
             self._events.append(TaskUpdated(
                 task_id=self.id,
-                field_name="assignees",
-                old_value="assignee_added",
-                new_value=validated_assignee,
-                updated_at=self.updated_at
+                changes={
+                    "assignees": {
+                        "action": "assignee_added",
+                        "new_value": validated_assignee,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
             ))
     
     def remove_assignee(self, assignee: str | AgentRole) -> None:
@@ -369,15 +390,18 @@ class Task:
         
         if assignee_str in self.assignees:
             self.assignees.remove(assignee_str)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("assignee_removed")
             
             # Raise domain event
             self._events.append(TaskUpdated(
                 task_id=self.id,
-                field_name="assignees",
-                old_value="assignee_removed",
-                new_value=assignee_str,
-                updated_at=self.updated_at
+                changes={
+                    "assignees": {
+                        "action": "assignee_removed",
+                        "removed_value": assignee_str,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
             ))
     
     def has_assignee(self, assignee: str) -> bool:
@@ -408,7 +432,6 @@ class Task:
                 # Try to get role from AgentRole enum
                 role = AgentRole.get_role_by_slug(assignee)
                 if role:
-                    from ..enums.agent_roles import get_role_metadata_from_yaml
                     metadata = get_role_metadata_from_yaml(role)
                     assignees_info.append({
                         "role": role.value,
@@ -505,15 +528,18 @@ class Task:
         
         old_labels = self.labels.copy()
         self.labels = validated_labels
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("labels_update")
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="labels",
-            old_value=old_labels,
-            new_value=validated_labels,
-            updated_at=self.updated_at
+            changes={
+                "labels": {
+                    "old_value": old_labels,
+                    "new_value": validated_labels,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def update_due_date(self, due_date: str | None) -> None:
@@ -527,23 +553,25 @@ class Task:
 
         old_due_date = self.due_date
         self.due_date = due_date
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("due_date_update")
         
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="due_date",
-            old_value=old_due_date,
-            new_value=due_date,
-            updated_at=self.updated_at
+            changes={
+                "due_date": {
+                    "old_value": old_due_date,
+                    "new_value": due_date,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
     
     def mark_as_deleted(self) -> None:
         """Mark task as deleted (triggers domain event)"""
+        self.touch("task_deleted")
         self._events.append(TaskDeleted(
-            task_id=self.id,
-            title=self.title,
-            deleted_at=datetime.now(timezone.utc)
+            task_id=str(self.id)
         ))
 
     def get_progress_history_text(self) -> str:
@@ -572,7 +600,7 @@ class Task:
         existing_deps = [dep.value if hasattr(dep, 'value') else str(dep) for dep in self.dependencies]
         if dependency_id.value not in existing_deps:
             self.dependencies.append(dependency_id)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("dependency_added")
     
     def remove_dependency(self, dependency_id: TaskId) -> None:
         """Remove a task dependency"""
@@ -582,7 +610,7 @@ class Task:
             dep_value = dep.value if hasattr(dep, 'value') else str(dep)
             if dep_value == dependency_id.value:
                 self.dependencies.pop(i)
-                self.updated_at = datetime.now(timezone.utc)
+                self.touch("dependency_removed")
                 break
     
     def has_dependency(self, dependency_id: TaskId) -> bool:
@@ -599,7 +627,7 @@ class Task:
         """Remove all dependencies"""
         if self.dependencies:
             self.dependencies.clear()
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("dependencies_cleared")
     
     def has_circular_dependency(self, new_dependency_id: TaskId) -> bool:
         """Check if adding a dependency would create a circular reference"""
@@ -636,7 +664,7 @@ class Task:
         
         if valid_label not in self.labels:
             self.labels.append(valid_label)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("label_added")
     
     def remove_label(self, label: str | CommonLabel) -> None:
         """Remove a label from the task"""
@@ -648,7 +676,7 @@ class Task:
         
         if label_str in self.labels:
             self.labels.remove(label_str)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("label_removed")
     
     def add_subtask(self, subtask_id: str) -> str:
         """Add a subtask ID to the task"""
@@ -657,15 +685,18 @@ class Task:
         
         if subtask_id not in self.subtasks:
             self.subtasks.append(subtask_id)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("subtask_added")
             
             # Raise domain event
             self._events.append(TaskUpdated(
                 task_id=self.id,
-                field_name="subtasks",
-                old_value="subtask_added",
-                new_value=subtask_id,
-                updated_at=self.updated_at
+                changes={
+                    "subtasks": {
+                        "action": "subtask_added",
+                        "new_value": subtask_id,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
             ))
         
         return subtask_id
@@ -674,15 +705,18 @@ class Task:
         """Remove a subtask by ID"""
         if subtask_id in self.subtasks:
             self.subtasks.remove(subtask_id)
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("subtask_removed")
             
             # Raise domain event
             self._events.append(TaskUpdated(
                 task_id=self.id,
-                field_name="subtasks",
-                old_value="subtask_removed",
-                new_value=subtask_id,
-                updated_at=self.updated_at
+                changes={
+                    "subtasks": {
+                        "action": "subtask_removed",
+                        "removed_value": subtask_id,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
             ))
             return True
         return False
@@ -755,26 +789,32 @@ class Task:
         # Update progress state to complete when task is done
         self.progress_state = ProgressState.COMPLETE
         self.overall_progress = 100
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("task_completed")
         
         # Raise domain event for task completion (include completion summary)
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="status",
-            old_value=str(old_status),
-            new_value=str(self.status),
-            updated_at=self.updated_at,
-            metadata={"completion_summary": completion_summary}
+            changes={
+                "status": {
+                    "old_value": str(old_status),
+                    "new_value": str(self.status),
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+                    "completion_summary": completion_summary
+                }
+            }
         ))
         
         # Raise domain event for subtasks completion if there are any
         if self.subtasks:
             self._events.append(TaskUpdated(
                 task_id=self.id,
-                field_name="subtasks",
-                old_value="all_subtasks_completed",
-                new_value=self.subtasks,
-                updated_at=self.updated_at
+                changes={
+                    "subtasks": {
+                        "action": "all_subtasks_completed",
+                        "subtask_ids": self.subtasks,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
             ))
 
     def update_progress_state(self) -> None:
@@ -807,15 +847,18 @@ class Task:
         old_status = self.status
         self.status = status
         self.update_progress_state()
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("status_set")
 
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="status",
-            old_value=str(old_status),
-            new_value=str(status),
-            updated_at=self.updated_at
+            changes={
+                "status": {
+                    "old_value": str(old_status),
+                    "new_value": str(status),
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
 
     def set_progress_percentage(self, percentage: int) -> None:
@@ -828,15 +871,18 @@ class Task:
         old_progress = self.overall_progress
         self.overall_progress = percentage
         self.update_progress_state()
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("progress_percentage_set")
 
         # Raise domain event
         self._events.append(TaskUpdated(
             task_id=self.id,
-            field_name="overall_progress",
-            old_value=old_progress,
-            new_value=percentage,
-            updated_at=self.updated_at
+            changes={
+                "overall_progress": {
+                    "old_value": old_progress,
+                    "new_value": percentage,
+                    "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                }
+            }
         ))
 
     def get_subtask(self, subtask_id: str) -> str | None:
@@ -943,7 +989,6 @@ class Task:
             # Try to get role from AgentRole enum
             role = AgentRole.get_role_by_slug(primary_assignee)
             if role:
-                from ..enums.agent_roles import get_role_metadata_from_yaml
                 metadata = get_role_metadata_from_yaml(role)
                 if metadata:
                     return {
@@ -983,12 +1028,12 @@ class Task:
     def set_context_id(self, context_id: str) -> None:
         """Set the context ID to indicate context has been updated"""
         self.context_id = context_id
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("context_id_set")
     
     def clear_context_id(self) -> None:
         """Clear the context ID to indicate context needs updating"""
         self.context_id = None
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("context_id_cleared")
     
     def has_updated_context(self) -> bool:
         """Check if task has an updated context (context_id is not None)"""
@@ -1117,8 +1162,8 @@ class Task:
                 progress_type=progress_type,
                 agent_id=agent_id
             ))
-        
-        self.updated_at = datetime.now(timezone.utc)
+
+        self.touch("progress_updated")
     
     def _recalculate_overall_progress(self) -> None:
         """Recalculate overall progress from all progress types and subtasks."""
@@ -1171,7 +1216,7 @@ class Task:
             self.progress_timeline = ProgressTimeline(task_id=str(self.id))
         
         self.progress_timeline.add_milestone(name, percentage)
-        self.updated_at = datetime.now(timezone.utc)
+        self.touch("milestone_added")
     
     def _check_progress_milestones(self) -> None:
         """Check if any milestones have been reached."""
@@ -1230,10 +1275,9 @@ class Task:
     
     def mark_as_retrieved(self) -> None:
         """Mark task as retrieved (triggers auto rule generation)"""
+        self.touch("task_retrieved")
         self._events.append(TaskRetrieved(
-            task_id=self.id,
-            task_data=self.to_dict(),
-            retrieved_at=datetime.now(timezone.utc)
+            task_id=str(self.id)
         ))
     
     def to_dict(self) -> dict[str, Any]:
@@ -1272,7 +1316,7 @@ class Task:
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "context_id": self.context_id,
             "overall_progress": self.overall_progress,
-            "progress_percentage": getattr(self, 'progress_percentage', 0)  # Include progress_percentage from DB
+            "progress_percentage": self.overall_progress  # FIXED: Use overall_progress (entity field) instead of non-existent progress_percentage
         }
         
         # Include progress timeline if exists
@@ -1300,15 +1344,19 @@ class Task:
         if removed_count > 0:
             logger.warning(f"Removed {removed_count} invalid subtasks from task {self.id}")
             self.subtasks = valid_subtasks
-            self.updated_at = datetime.now(timezone.utc)
+            self.touch("invalid_subtasks_cleaned")
             
             # Raise domain event for cleanup
             self._events.append(TaskUpdated(
                 task_id=self.id,
-                field_name="subtasks",
-                old_value=f"removed_{removed_count}_invalid_subtasks",
-                new_value=self.subtasks,
-                updated_at=self.updated_at
+                changes={
+                    "subtasks": {
+                        "action": "cleanup_invalid_subtasks",
+                        "removed_count": removed_count,
+                        "remaining_subtasks": self.subtasks,
+                        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+                    }
+                }
             ))
         
         return removed_count
@@ -1338,8 +1386,7 @@ class Task:
         # Raise domain event
         task._events.append(TaskCreated(
             task_id=task.id,
-            title=task.title,
-            created_at=task.created_at
+            title=task.title
         ))
         
         return task

@@ -228,22 +228,25 @@ CALL_AGENT_PARAMS = {
         # Primary parameter (always required)
         "name_agent": {
             "type": "string",
-            "description": CALL_AGENT_PARAMETERS_DESCRIPTION["name_agent"]
+            "description": CALL_AGENT_PARAMETERS_DESCRIPTION["name_agent"],
         }
     },
     "required": ["name_agent"],  # Only name_agent required
-    "additionalProperties": False
+    "additionalProperties": False,
 }
+
 
 def get_call_agent_parameters():
     """Get call agent parameters for use in controller."""
     return CALL_AGENT_PARAMS["properties"]
 
+
 def get_call_agent_description():
     """Get call agent description for use in controller."""
     return CALL_AGENT_DESCRIPTION
 
+
 # Legacy parameter descriptions for backward compatibility
 CALL_AGENT_PARAMETERS = {
     "name_agent": "Name of the agent to load and invoke. Must be a valid, registered agent name (string). Use @ prefix for agent names (e.g., 'master-orchestrator-agent')"
-} 
+}

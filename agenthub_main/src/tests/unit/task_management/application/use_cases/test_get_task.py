@@ -447,9 +447,7 @@ class TestGetTaskUseCase:
                 # Verify domain event was created
                 mock_event.assert_called_once()
                 event_call_args = mock_event.call_args[1]
-                assert event_call_args['task_id'] == sample_task.id
-                assert 'task_data' in event_call_args
-                assert 'retrieved_at' in event_call_args
+                assert event_call_args['task_id'] == str(sample_task.id)
     
     @pytest.mark.asyncio
     async def test_execute_unexpected_exception_handling(self, use_case_without_context, 

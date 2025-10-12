@@ -7,13 +7,16 @@ __all__ = [
     "ConsolidatedMCPTools",  # Backward compatibility alias
 ]
 
+
 def __getattr__(name):
     """Lazy import for DDDCompliantMCPTools to avoid circular imports."""
     if name == "DDDCompliantMCPTools":
         from .ddd_compliant_mcp_tools import DDDCompliantMCPTools
+
         return DDDCompliantMCPTools
     elif name == "ConsolidatedMCPTools":
         # Backward compatibility: ConsolidatedMCPTools is now DDDCompliantMCPTools
         from .ddd_compliant_mcp_tools import DDDCompliantMCPTools
+
         return DDDCompliantMCPTools
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'") 
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

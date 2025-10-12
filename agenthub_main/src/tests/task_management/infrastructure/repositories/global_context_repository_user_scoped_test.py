@@ -367,6 +367,7 @@ class TestGetOperation:
         db_model = Mock(spec=GlobalContextModel)
         db_model.id = "user-specific-global-id"
         db_model.organization_id = "Test Org"
+        db_model.unified_context_data = {"rule1": "value1"}
         db_model.autonomous_rules = {"rule1": "value1"}
         
         self.mock_session.query.return_value.filter.return_value = self.repository.apply_user_filter.return_value
@@ -406,6 +407,7 @@ class TestGetOperation:
         regular_id = "regular-context-123"
         
         db_model = Mock(spec=GlobalContextModel)
+        db_model.unified_context_data = {}
         self.mock_session.query.return_value.filter.return_value = self.repository.apply_user_filter.return_value
         self.repository.apply_user_filter.return_value.first.return_value = db_model
         
@@ -437,6 +439,7 @@ class TestUpdateOperation:
         # Mock existing database model
         db_model = Mock(spec=GlobalContextModel)
         db_model.id = "user-specific-global-id"
+        db_model.unified_context_data = {}
         
         self.mock_session.query.return_value.filter.return_value = self.repository.apply_user_filter.return_value
         self.repository.apply_user_filter.return_value.first.return_value = db_model
@@ -497,6 +500,7 @@ class TestUpdateOperation:
     def test_update_with_complex_settings(self):
         """Test updating context with complex global settings"""
         db_model = Mock(spec=GlobalContextModel)
+        db_model.unified_context_data = {}
         self.mock_session.query.return_value.filter.return_value = self.repository.apply_user_filter.return_value
         self.repository.apply_user_filter.return_value.first.return_value = db_model
         self.repository._to_entity = Mock()
@@ -556,6 +560,7 @@ class TestDeleteOperation:
     def test_delete_existing_context(self):
         """Test deleting an existing global context"""
         db_model = Mock(spec=GlobalContextModel)
+        db_model.unified_context_data = {}
         self.mock_session.query.return_value.filter.return_value = self.repository.apply_user_filter.return_value
         self.repository.apply_user_filter.return_value.first.return_value = db_model
         
@@ -705,6 +710,13 @@ class TestEntityConversion:
         db_model = Mock(spec=GlobalContextModel)
         db_model.id = "context-123"
         db_model.organization_id = "org-123"
+        db_model.unified_context_data = {
+            "autonomous_rules": {"rule1": "value1"},
+            "security_policies": {"policy1": "value1"},
+            "coding_standards": {"standard1": "value1"},
+            "workflow_templates": {"template1": "value1"},
+            "delegation_rules": {"delegation1": "value1"}
+        }
         db_model.autonomous_rules = {"rule1": "value1"}
         db_model.security_policies = {"policy1": "value1"}
         db_model.coding_standards = {"standard1": "value1"}
@@ -739,6 +751,11 @@ class TestEntityConversion:
         db_model = Mock(spec=GlobalContextModel)
         db_model.id = "context-123"
         db_model.organization_id = "org-123"
+        db_model.unified_context_data = {
+            "workflow_templates": {"template1": "value1"},
+            "custom_field1": "custom_value1",
+            "custom_field2": {"nested": "value"}
+        }
         db_model.autonomous_rules = {}
         db_model.security_policies = {}
         db_model.coding_standards = {}
@@ -770,6 +787,7 @@ class TestEntityConversion:
         db_model = Mock(spec=GlobalContextModel)
         db_model.id = "context-123"
         db_model.organization_id = None
+        db_model.unified_context_data = {}
         db_model.autonomous_rules = None
         db_model.security_policies = None
         db_model.coding_standards = None
@@ -876,6 +894,7 @@ class TestIntegrationScenarios:
         
         # Setup for get
         db_model = Mock(spec=GlobalContextModel)
+        db_model.unified_context_data = {"autonomous_rules": {"rule1": "value1"}}
         self.repository.apply_user_filter.return_value.first.return_value = db_model
         
         # 2. Get
