@@ -351,18 +351,34 @@ class GitBranchWorkflowGuidance(BaseWorkflowGuidance):
     def _get_examples(
         self, action: str, context: dict[str, Any] | None = None
     ) -> list[dict[str, Any]]:
-        """Get action-specific examples."""
+        """Get examples for the NEXT action after current operation."""
         examples = []
 
+        project_id = context.get("project_id", "project_id") if context else "project_id"
+        git_branch_id = context.get("git_branch_id", "branch_id") if context else "branch_id"
+
         if action == "create":
+            # After creating, show how to START WORK on the branch (what comes next)
             examples.append(
                 {
-                    "description": "Create a feature branch",
-                    "code": """manage_git_branch(
+                    "description": "Assign an agent to work on the branch",
+                    "code": f"""manage_git_branch(
+    action="assign_agent",
+    project_id="{project_id}",
+    git_branch_id="{git_branch_id}",
+    agent_id="coding-agent"
+)""",
+                }
+            )
+            examples.append(
+                {
+                    "description": "Create first task on the branch",
+                    "code": f"""manage_task(
     action="create",
-    project_id="my_project_id",
-    git_branch_name="feature/user-authentication",
-    git_branch_description="Implement JWT-based authentication with login, logout, and session management"
+    git_branch_id="{git_branch_id}",
+    title="Implement core functionality",
+    description="Build the main feature components",
+    assignees="coding-agent"
 )""",
                 }
             )
@@ -418,7 +434,7 @@ class GitBranchWorkflowGuidance(BaseWorkflowGuidance):
         return examples
 
     def _get_parameter_guidance(self, action: str) -> dict[str, dict[str, str]]:
-        """Get parameter-specific guidance."""
+        """Get parameter-specific guidance for NEXT actions."""
         base_params = {
             "project_id": {
                 "requirement": "REQUIRED for all actions",
@@ -427,73 +443,81 @@ class GitBranchWorkflowGuidance(BaseWorkflowGuidance):
             }
         }
 
-        action_params = {
-            "create": {
-                "git_branch_name": {
-                    "requirement": "REQUIRED",
-                    "format": "String following naming convention",
-                    "tip": "Use prefixes like feature/, bugfix/, hotfix/, refactor/",
-                },
-                "git_branch_description": {
-                    "requirement": "OPTIONAL but recommended",
-                    "format": "Detailed string",
-                    "tip": "Describe the purpose, scope, and goals of this branch",
-                },
-            },
-            "get": {
+        # Define parameters for NEXT actions (what user needs to do next)
+        next_action_params = {
+            "create": {  # After create -> assign agent or create tasks
                 "git_branch_id": {
-                    "requirement": "REQUIRED",
-                    "format": "UUID string",
-                    "tip": "Get from list action or previous create response",
-                }
-            },
-            "update": {
-                "git_branch_id": {
-                    "requirement": "REQUIRED",
-                    "format": "UUID string",
-                    "tip": "Branch to update",
-                },
-                "git_branch_name": {
-                    "requirement": "OPTIONAL",
-                    "format": "String",
-                    "tip": "New name if renaming branch",
-                },
-                "git_branch_description": {
-                    "requirement": "OPTIONAL",
-                    "format": "String",
-                    "tip": "Updated description",
-                },
-            },
-            "delete": {
-                "git_branch_id": {
-                    "requirement": "REQUIRED",
-                    "format": "UUID string",
-                    "tip": "⚠️ Will cascade delete all tasks!",
-                }
-            },
-            "assign_agent": {
-                "git_branch_id": {
-                    "requirement": "REQUIRED (or git_branch_name)",
-                    "format": "UUID string",
-                    "tip": "Branch to assign agent to",
+                    "requirement": "REQUIRED for next actions",
+                    "format": "UUID string (returned from creation)",
+                    "tip": "Use the git_branch_id from create response",
                 },
                 "agent_id": {
-                    "requirement": "REQUIRED",
-                    "format": "UUID string",
-                    "tip": "Get from manage_agent(action='list')",
+                    "requirement": "REQUIRED for agent assignment",
+                    "format": "Agent identifier string",
+                    "tip": "Assign coding-agent, test-orchestrator-agent, or other specialists",
+                },
+                "title": {
+                    "requirement": "REQUIRED for task creation",
+                    "format": "String",
+                    "tip": "Create initial tasks to define work on this branch",
                 },
             },
-            "get_statistics": {
+            "get": {  # After get -> list tasks or update branch
+                "git_branch_id": {
+                    "requirement": "REQUIRED for task listing",
+                    "format": "UUID string",
+                    "tip": "List tasks on this branch to see work items",
+                },
+                "action": {
+                    "requirement": "REQUIRED",
+                    "format": "String",
+                    "tip": "Use 'list' to see tasks, 'get_statistics' to check progress",
+                },
+            },
+            "list": {  # After list -> get specific branch or create new one
+                "git_branch_id": {
+                    "requirement": "OPTIONAL for filtering",
+                    "format": "UUID string",
+                    "tip": "Get details of a specific branch",
+                },
+            },
+            "update": {  # After update -> continue working
                 "git_branch_id": {
                     "requirement": "REQUIRED",
                     "format": "UUID string",
-                    "tip": "Branch to analyze",
-                }
+                    "tip": "Branch was just updated - list tasks to continue work",
+                },
+            },
+            "delete": {  # After delete -> create new branch or list remaining
+                "project_id": {
+                    "requirement": "REQUIRED",
+                    "format": "UUID string",
+                    "tip": "List remaining branches or create a new one",
+                },
+            },
+            "assign_agent": {  # After assign_agent -> agent starts working
+                "git_branch_id": {
+                    "requirement": "REQUIRED",
+                    "format": "UUID string",
+                    "tip": "Get next task for the assigned agent",
+                },
+                "include_context": {
+                    "requirement": "OPTIONAL",
+                    "format": "Boolean",
+                    "tip": "Use manage_task(action='next') to get work for agent",
+                },
+            },
+            "get_statistics": {  # After statistics -> continue or complete work
+                "git_branch_id": {
+                    "requirement": "REQUIRED",
+                    "format": "UUID string",
+                    "tip": "List tasks to continue work or archive if complete",
+                },
             },
         }
 
         params = base_params.copy()
-        if action in action_params:
-            params.update(action_params[action])
+        if action in next_action_params:
+            params.update(next_action_params[action])
 
         return params

@@ -53,12 +53,12 @@ class SubtaskWorkflowGuidance(WorkflowGuidanceInterface):
             "parameter_guidance": self.get_parameter_guidance(action),
         }
 
-        # Add action-specific elements
+        # Add action-specific elements (focused on NEXT actions)
         if action == "create":
             workflow_guidance["tips"] = [
-                "💡 Break down the parent task into clear, actionable subtasks",
-                "📏 Each subtask should be small enough to complete in 2-4 hours",
-                "🎯 Make subtask titles specific and action-oriented",
+                "🚀 Start working: Update status to 'in_progress' when you begin",
+                "📊 Track progress: Use progress_percentage to show completion (0-100)",
+                "🚧 Report blockers: Document any issues that prevent progress",
             ]
         elif action == "update":
             workflow_guidance["tips"] = [
@@ -299,20 +299,21 @@ class SubtaskWorkflowGuidance(WorkflowGuidanceInterface):
         return warnings
 
     def get_examples(self, action: str, context: dict[str, Any]) -> dict[str, Any]:
-        """Get relevant examples for the current action."""
+        """Get relevant examples for the NEXT action after current operation."""
         examples = {}
 
         task_id = context.get("task_id", "task-id")
         subtask_id = context.get("subtask_id", "subtask-id")
 
         if action == "create":
-            examples["create_basic"] = {
-                "description": "Create a simple subtask",
-                "command": f"manage_subtask(action='create', task_id='{task_id}', title='Implement user authentication', description='Add login/logout functionality')",
+            # After creating, show UPDATE examples (what comes next)
+            examples["start_work"] = {
+                "description": "Start working on the subtask",
+                "command": f"manage_subtask(action='update', task_id='{task_id}', subtask_id='{subtask_id}', status='in_progress', progress_notes='Starting implementation')",
             }
-            examples["create_with_notes"] = {
-                "description": "Create with initial progress notes",
-                "command": f"manage_subtask(action='create', task_id='{task_id}', title='Design API endpoints', progress_notes='Starting with REST API design patterns')",
+            examples["track_progress"] = {
+                "description": "Update progress as you work",
+                "command": f"manage_subtask(action='update', task_id='{task_id}', subtask_id='{subtask_id}', progress_percentage=25, progress_notes='Completed initial setup')",
             }
 
         elif action == "update":
@@ -344,114 +345,109 @@ class SubtaskWorkflowGuidance(WorkflowGuidanceInterface):
         return examples
 
     def get_parameter_guidance(self, action: str) -> dict[str, Any]:
-        """Get detailed parameter guidance for the action."""
+        """Get detailed parameter guidance for the NEXT action after current operation."""
         guidance = {"applicable_parameters": [], "parameter_tips": {}}
 
-        # Define parameters for each action
-        action_params = {
-            "create": [
-                "task_id",
-                "title",
-                "description",
-                "priority",
-                "assignees",
-                "progress_notes",
-            ],
-            "update": [
+        # Define parameters for NEXT actions (what user needs to do next)
+        next_action_params = {
+            "create": [  # After create -> next is UPDATE to start work
                 "task_id",
                 "subtask_id",
-                "title",
-                "description",
                 "status",
-                "priority",
-                "assignees",
-                "progress_notes",
                 "progress_percentage",
+                "progress_notes",
+                "blockers",
+            ],
+            "update": [  # After update -> continue updating or complete
+                "task_id",
+                "subtask_id",
+                "progress_percentage",
+                "progress_notes",
                 "blockers",
                 "insights_found",
+                "completion_summary",  # If ready to complete
             ],
-            "complete": [
+            "complete": [  # After complete -> list or create new
+                "task_id",  # For listing other subtasks
+            ],
+            "delete": ["task_id"],  # For listing remaining
+            "get": [  # After get -> update
                 "task_id",
                 "subtask_id",
-                "completion_summary",
-                "impact_on_parent",
-                "insights_found",
+                "progress_percentage",
+                "progress_notes",
             ],
-            "delete": ["task_id", "subtask_id"],
-            "get": ["task_id", "subtask_id"],
-            "list": ["task_id"],
+            "list": [  # After list -> start working on subtasks
+                "task_id",
+                "subtask_id",
+                "status",
+                "progress_percentage",
+                "progress_notes",
+            ],
         }
 
-        guidance["applicable_parameters"] = action_params.get(action, [])
+        guidance["applicable_parameters"] = next_action_params.get(action, [])
 
-        # Parameter tips
+        # Parameter tips (focused on NEXT actions)
         param_tips = {
-            "title": {
-                "requirement": "REQUIRED for create",
-                "tip": "Make it specific and action-oriented",
-                "examples": [
-                    "Implement user login",
-                    "Design database schema",
-                    "Write unit tests",
-                ],
+            "task_id": {
+                "requirement": "REQUIRED for all operations",
+                "tip": "Parent task identifier from creation",
             },
-            "description": {
-                "requirement": "Optional but recommended",
-                "tip": "Provide context and acceptance criteria",
-                "examples": [
-                    "Implement OAuth2 login with Google provider",
-                    "Design normalized schema for user data",
-                ],
+            "subtask_id": {
+                "requirement": "REQUIRED for update/complete/get/delete",
+                "tip": "Use the subtask_id returned from creation",
+            },
+            "status": {
+                "requirement": "Optional - auto-updated by progress_percentage",
+                "tip": "Set to 'in_progress' when starting work",
+                "examples": ["todo", "in_progress", "done"],
+            },
+            "progress_percentage": {
+                "requirement": "RECOMMENDED for tracking progress",
+                "tip": "Use 0-100 range; automatically updates status (0=todo, 1-99=in_progress, 100=done)",
+                "when_to_use": "Update regularly as you work",
+                "examples": [10, 25, 50, 75, 90, 100],
             },
             "progress_notes": {
-                "when_to_use": "Any time you make progress or encounter issues",
+                "requirement": "HIGHLY RECOMMENDED",
+                "when_to_use": "Every time you update progress or hit blockers",
                 "examples": [
-                    "Completed database schema design",
+                    "Starting implementation",
+                    "Completed database schema",
                     "Fixed authentication bug",
                     "Researching third-party integrations",
                 ],
-                "best_practice": "Be specific about what was done",
-                "tip": "Document progress for create/update actions",
-            },
-            "progress_percentage": {
-                "requirement": "Optional (0-100)",
-                "tip": "Automatically updates status: 0=todo, 1-99=in_progress, 100=done",
-                "when_to_use": "Update action to track completion",
-                "examples": [25, 50, 75, 100],
+                "best_practice": "Be specific about current work and what's done",
             },
             "blockers": {
-                "when_to_use": "When something prevents progress",
+                "requirement": "Use when blocked",
+                "when_to_use": "Immediately when something prevents progress",
                 "examples": [
                     "Missing API documentation",
                     "Waiting for design approval",
                     "Dependencies not available",
                 ],
-                "tip": "Document blockers immediately",
+                "tip": "Document blockers as soon as encountered",
+            },
+            "insights_found": {
+                "requirement": "Optional but valuable",
+                "when_to_use": "When discovering something that could help others",
+                "examples": [
+                    "Performance bottleneck found in current approach",
+                    "Better library available for this use case",
+                    "Security vulnerability identified",
+                ],
+                "best_practice": "Share learnings that impact other subtasks or parent",
             },
             "completion_summary": {
-                "requirement": "HIGHLY RECOMMENDED for complete",
-                "tip": "Summarize what was accomplished",
+                "requirement": "HIGHLY RECOMMENDED for complete action",
+                "tip": "Summarize what was accomplished when completing",
+                "when_to_use": "When progress_percentage reaches 100",
                 "examples": [
                     "Implemented secure user authentication with JWT",
                     "Completed all CRUD operations for user management",
                 ],
-            },
-            "impact_on_parent": {
-                "requirement": "Optional but valuable",
-                "tip": "Explain how this helps complete the parent task",
-                "examples": [
-                    "Authentication system now ready for frontend integration",
-                    "Database layer complete, unblocking API development",
-                ],
-            },
-            "insights_found": {
-                "when_to_use": "When you discover something that could help others",
-                "examples": [
-                    "Performance bottleneck in current approach",
-                    "Better library found for this use case",
-                ],
-                "best_practice": "Share learnings that impact other subtasks or the parent",
-                "tip": "List of insights discovered during work",
             },
         }
 

@@ -2181,7 +2181,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 44,
+      "count": 46,
       "files": [
         {
           "hash": "f16eaf013552f40d59a3e2f938e34186",
@@ -2254,6 +2254,13 @@
           "size": 3253
         },
         {
+          "hash": "c2fcd7c604d4b2b1130d22a59231884d",
+          "modified": "2025-10-12T11:18:17.788092",
+          "name": "mcp-integration-test-results-2025-10-12.md",
+          "path": "testing-qa/mcp-integration-test-results-2025-10-12.md",
+          "size": 14804
+        },
+        {
           "hash": "e7b47d1bc44060f0b75e2f389bbacf69",
           "modified": "2025-10-12T00:57:20.468643",
           "name": "mcp-tools-comprehensive-test-results.md",
@@ -2315,6 +2322,13 @@
           "name": "week1-baseline-performance-tests.md",
           "path": "testing-qa/week1-baseline-performance-tests.md",
           "size": 12742
+        },
+        {
+          "hash": "307903c9b66c96eb62ee8dc68c8e4988",
+          "modified": "2025-10-12T10:19:06.396697",
+          "name": "mcp-tools-test-status-2025-10-12.md",
+          "path": "testing-qa/mcp-tools-test-status-2025-10-12.md",
+          "size": 16081
         },
         {
           "hash": "1b229b359ab391a8491d90dd086d82e8",
@@ -2793,7 +2807,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-12T01:26:50.857858",
+  "generated_at": "2025-10-12T11:18:17.839580",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3197,10 +3211,12 @@
         "hook-test-fixing-progress.md",
         "hook-testing-techniques.md",
         "live-updates-verification-summary.md",
+        "mcp-integration-test-results-2025-10-12.md",
         "mcp-tools-comprehensive-test-report-2025-10-08.md",
         "mcp-tools-comprehensive-test-results.md",
         "mcp-tools-fixes-summary.md",
         "mcp-tools-test-results.md",
+        "mcp-tools-test-status-2025-10-12.md",
         "phase-2-dto-integration-testing-report.md",
         "test-fix-iteration-10-summary.md",
         "test-fix-iteration-11-summary.md",
@@ -3281,5 +3297,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 373
+  "total_files": 375
 }

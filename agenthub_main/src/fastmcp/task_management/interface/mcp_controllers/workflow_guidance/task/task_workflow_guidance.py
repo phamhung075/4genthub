@@ -610,20 +610,25 @@ class TaskWorkflowGuidance(WorkflowGuidanceInterface):
         return warnings
 
     def get_examples(self, action: str, context: dict[str, Any]) -> dict[str, Any]:
-        """Get relevant examples for the current action."""
+        """Get relevant examples for the NEXT action after current operation."""
         examples = {}
 
         task_id = context.get("task_id", "task-id")
         git_branch_id = context.get("git_branch_id", "branch-id")
 
         if action == "create":
-            examples["create_basic"] = {
-                "description": "Create a simple task",
-                "command": f'manage_task(action="create", git_branch_id="{git_branch_id}", title="Implement user authentication", description="Add login and logout functionality")',
+            # After creating, show how to START WORK (what comes next)
+            examples["start_work"] = {
+                "description": "Start working on the task",
+                "command": f'manage_task(action="update", task_id="{task_id}", status="in_progress", details="Starting implementation of authentication system")',
             }
-            examples["create_detailed"] = {
-                "description": "Create task with full details",
-                "command": f'manage_task(action="create", git_branch_id="{git_branch_id}", title="Build API endpoints", description="RESTful API for user management", priority="high", estimated_effort="3 days", labels=["backend", "api"])',
+            examples["create_context"] = {
+                "description": "Create task context (REQUIRED before completion)",
+                "command": f'manage_context(action="create", level="task", context_id="{task_id}", data={{"title": "Task Title", "description": "Task context and requirements"}})',
+            }
+            examples["add_subtasks"] = {
+                "description": "Break down into subtasks",
+                "command": f'manage_subtask(action="create", task_id="{task_id}", title="Implement login endpoint", description="Create POST /auth/login endpoint")',
             }
 
         elif action == "update":
@@ -659,73 +664,65 @@ class TaskWorkflowGuidance(WorkflowGuidanceInterface):
         return examples
 
     def get_parameter_guidance(self, action: str) -> dict[str, Any]:
-        """Get detailed parameter guidance for the action."""
+        """Get detailed parameter guidance for the NEXT action after current operation."""
         guidance = {"applicable_parameters": [], "parameter_tips": {}}
 
-        # Define parameters for each action
-        action_params = {
-            "create": [
-                "git_branch_id",
-                "title",
-                "description",
-                "priority",
-                "estimated_effort",
-                "labels",
-                "assignees",
-                "due_date",
-            ],
-            "update": [
+        # Define parameters for NEXT actions (what user needs to do next)
+        next_action_params = {
+            "create": [  # After create -> next is UPDATE to start work or CREATE CONTEXT
                 "task_id",
-                "title",
-                "description",
                 "status",
-                "priority",
                 "details",
-                "estimated_effort",
-                "labels",
-                "assignees",
-                "due_date",
+                "context_id",  # For context creation
+                "level",  # For context creation
+                "data",  # For context creation
             ],
-            "complete": ["task_id", "completion_summary", "testing_notes"],
-            "get": ["task_id", "include_context"],
-            "list": [
-                "git_branch_id",
+            "update": [  # After update -> continue updating or complete
+                "task_id",
                 "status",
-                "priority",
-                "assignees",
-                "labels",
-                "limit",
+                "details",
+                "completion_summary",  # If ready to complete
+                "testing_notes",  # If ready to complete
             ],
-            "search": ["query", "git_branch_id", "limit"],
-            "next": ["git_branch_id", "include_context"],
-            "add_dependency": ["task_id", "dependency_id"],
-            "remove_dependency": ["task_id", "dependency_id"],
+            "complete": [  # After complete -> list or work on next task
+                "git_branch_id",  # For listing other tasks
+                "status",  # For filtering tasks
+            ],
+            "get": [  # After get -> update or start work
+                "task_id",
+                "status",
+                "details",
+            ],
+            "list": [  # After list -> work on specific tasks
+                "task_id",
+                "status",
+                "details",
+            ],
+            "search": [  # After search -> get specific task
+                "task_id",
+                "include_context",
+            ],
+            "next": [  # After next -> start work on recommended task
+                "task_id",
+                "status",
+                "details",
+            ],
+            "add_dependency": ["task_id"],  # After adding dependency -> continue work
+            "remove_dependency": ["task_id"],  # After removing dependency -> continue work
         }
 
-        guidance["applicable_parameters"] = action_params.get(action, [])
+        guidance["applicable_parameters"] = next_action_params.get(action, [])
 
-        # Add parameter-specific tips
+        # Add parameter-specific tips (focused on NEXT actions)
         param_tips = {
-            "title": {
-                "requirement": "REQUIRED for create",
-                "tip": "Be specific and action-oriented",
-                "examples": [
-                    "Implement user authentication",
-                    "Fix database connection leak",
-                    "Add unit tests for payment module",
-                ],
-            },
-            "description": {
-                "requirement": "Optional but recommended",
-                "tip": "Include acceptance criteria and technical approach",
-                "examples": [
-                    "Add JWT-based authentication with refresh tokens",
-                    "Implement connection pooling to prevent memory leaks",
-                ],
+            "task_id": {
+                "requirement": "REQUIRED for most operations",
+                "tip": "Use the task_id returned from creation",
+                "when_to_use": "For update, complete, get operations",
             },
             "status": {
-                "requirement": "Optional",
-                "tip": "Use to track task progress",
+                "requirement": "RECOMMENDED for update",
+                "tip": "Track task progress through workflow states",
                 "values": [
                     "todo",
                     "in_progress",
@@ -735,48 +732,67 @@ class TaskWorkflowGuidance(WorkflowGuidanceInterface):
                     "done",
                     "cancelled",
                 ],
-                "auto_behavior": "Automatically set to 'todo' on create, 'done' on complete",
-            },
-            "priority": {
-                "requirement": "Optional (default: medium)",
-                "tip": "Helps with task prioritization",
-                "values": ["low", "medium", "high", "urgent", "critical"],
+                "next_action_tips": {
+                    "create": "Set to 'in_progress' when starting work",
+                    "update": "Update as work progresses through stages",
+                },
             },
             "details": {
-                "requirement": "Optional",
-                "tip": "Use for progress updates and additional context",
-                "when_to_use": "When updating task progress or documenting blockers",
+                "requirement": "HIGHLY RECOMMENDED for updates",
+                "tip": "Document progress, blockers, and next steps",
+                "when_to_use": "Every time you update task status or make progress",
                 "examples": [
-                    "Completed login UI, working on password reset",
+                    "Started implementation - completed database schema",
+                    "50% complete - login endpoint working, adding tests",
                     "Blocked by missing API documentation",
                 ],
             },
-            "estimated_effort": {
-                "requirement": "Optional but valuable",
-                "tip": "Helps with sprint planning and workload management",
-                "examples": ["2 hours", "3 days", "1 week", "2 sprints"],
+            "context_id": {
+                "requirement": "REQUIRED for context operations",
+                "tip": "Use task_id as context_id for task-level context",
+                "when_to_use": "After creating task, before completing it",
+            },
+            "level": {
+                "requirement": "REQUIRED for context operations",
+                "tip": "Use 'task' for task-level context",
+                "values": ["global", "project", "branch", "task"],
+            },
+            "data": {
+                "requirement": "REQUIRED for context creation",
+                "tip": "Provide task context including requirements and approach",
+                "examples": [
+                    '{"title": "Implement Auth", "description": "JWT authentication system"}',
+                    '{"requirements": ["Login", "Logout", "Token refresh"]}',
+                ],
             },
             "completion_summary": {
                 "requirement": "HIGHLY RECOMMENDED for complete",
                 "tip": "Document what was accomplished for future reference",
+                "when_to_use": "When task is fully complete and ready to close",
                 "best_practice": "Include key decisions, implementation details, and outcomes",
                 "examples": [
                     "Implemented JWT auth with 2FA support, added password reset flow, integrated with existing user service"
                 ],
             },
             "testing_notes": {
-                "requirement": "Optional but valuable",
+                "requirement": "RECOMMENDED for complete",
                 "tip": "Document testing approach and coverage",
+                "when_to_use": "When completing task to document quality assurance",
                 "examples": [
                     "Added unit tests with 90% coverage",
                     "Manual testing completed on staging",
                     "Load tested with 1000 concurrent users",
                 ],
             },
+            "git_branch_id": {
+                "requirement": "REQUIRED for list operations",
+                "tip": "Filter tasks by git branch",
+                "when_to_use": "After completing task to see other pending work",
+            },
             "include_context": {
                 "requirement": "Optional (default: false)",
                 "tip": "Set to true for detailed task context and AI insights",
-                "when_to_use": "When you need vision system insights or detailed context",
+                "when_to_use": "When you need vision system insights or planning guidance",
             },
         }
 
