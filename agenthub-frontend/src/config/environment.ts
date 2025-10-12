@@ -4,8 +4,11 @@
  * Ensures no hardcoded values in production
  */
 
-// Note: Cannot import logger here due to circular dependency
-// logger.config.ts depends on this file for API_BASE_URL
+// INTENTIONAL: Using console.* in this file (environment configuration)
+// Cannot import logger here due to circular dependency:
+// - logger.config.ts depends on this file for API_BASE_URL
+// - This file is loaded at app initialization before logger is available
+// - Console usage here is for critical startup configuration errors/warnings only
 
 // Helper to get runtime environment variable if available, fallback to build-time
 function getEnvVar(key: string, defaultValue: string = ''): string {
@@ -61,7 +64,16 @@ export const KEYCLOAK_REALM = getEnvVar('VITE_KEYCLOAK_REALM', '');
 export const KEYCLOAK_CLIENT_ID = getEnvVar('VITE_KEYCLOAK_CLIENT_ID', '');
 
 // WebSocket Configuration
-export const WS_URL = getEnvVar('VITE_WS_URL', '');
+// Auto-derive WebSocket URL from API URL in development if not explicitly configured
+const getDefaultWebSocketUrl = (): string => {
+  if (IS_DEVELOPMENT) {
+    // Convert HTTP API URL to WebSocket URL for development
+    return API_BASE_URL.replace(/^https?:/, 'ws:');
+  }
+  return '';
+};
+
+export const WS_URL = getEnvVar('VITE_WS_URL', getDefaultWebSocketUrl());
 export const WS_MAX_RECONNECT_ATTEMPTS = parseInt(getEnvVar('VITE_WS_MAX_RECONNECT_ATTEMPTS', '5'), 10);
 export const WS_RECONNECT_DELAY = parseInt(getEnvVar('VITE_WS_RECONNECT_DELAY', '1000'), 10);
 export const WS_AI_BUFFER_TIMEOUT = parseInt(getEnvVar('VITE_WS_AI_BUFFER_TIMEOUT', '500'), 10);
@@ -84,24 +96,29 @@ if (IS_PRODUCTION) {
 
 // Log configuration (only in development or debug mode)
 if (IS_DEVELOPMENT || DEBUG_MODE) {
-  console.debug('Environment Configuration:', {
-    API_BASE_URL,
-    ENVIRONMENT,
-    DEBUG_MODE,
-    APP_NAME,
-    WS_URL,
-    WS_MAX_RECONNECT_ATTEMPTS,
-    WS_RECONNECT_DELAY,
-    WS_AI_BUFFER_TIMEOUT,
-    WS_MAX_RECONNECT_DELAY,
-    WS_HEARTBEAT_INTERVAL,
-    configuredApiUrl: configuredApiUrl,
-    wasUpgraded: configuredApiUrl !== API_BASE_URL
-  });
+  // Enhanced debugging for WebSocket configuration
+  console.info('🔧 DEBUG: Environment Configuration Analysis:');
+  console.info('  - API_BASE_URL:', API_BASE_URL);
+  console.info('  - VITE_WS_URL from getEnvVar:', getEnvVar('VITE_WS_URL', 'NOT_SET'));
+  console.info('  - getDefaultWebSocketUrl():', getDefaultWebSocketUrl());
+  console.info('  - Final WS_URL:', WS_URL);
+  console.info('  - IS_DEVELOPMENT:', IS_DEVELOPMENT);
+  console.info('  - DEBUG_MODE:', DEBUG_MODE);
 
   // Log if URL was auto-upgraded to HTTPS
   if (configuredApiUrl !== API_BASE_URL) {
     console.info('API URL auto-upgraded from HTTP to HTTPS for mixed content security');
+  }
+
+  // Log WebSocket configuration for debugging
+  console.info(`🔌 WebSocket URL configured: ${WS_URL || 'NOT SET'}`);
+  if (!WS_URL) {
+    console.warn('⚠️ CRITICAL: WebSocket URL is not configured! Real-time features will not work.');
+    console.warn('💡 Fix: Set VITE_WS_URL environment variable or ensure API_BASE_URL is set for auto-derivation');
+    console.warn('🚨 DEBUG: Environment variable access test:');
+    console.warn('  - window._env_:', typeof window !== 'undefined' ? (window as any)._env_ : 'not available');
+    console.warn('  - import.meta.env.VITE_WS_URL:', import.meta.env.VITE_WS_URL);
+    console.warn('  - import.meta.env:', import.meta.env);
   }
 }
 

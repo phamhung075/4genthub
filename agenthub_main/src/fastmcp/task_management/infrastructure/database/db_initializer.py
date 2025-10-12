@@ -7,6 +7,7 @@ on server startup. It checks if tables exist and creates them if needed.
 
 import os
 import logging
+from pathlib import Path
 from typing import Optional, Dict, Any
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, ProgrammingError
@@ -45,13 +46,13 @@ class DatabaseInitializer:
 
     def initialize(self) -> bool:
         """
-        Initialize the database, creating tables if they don't exist.
+        Initialize the database using init SQL files instead of ORM models.
 
         Returns:
             bool: True if initialization successful, False otherwise
         """
         try:
-            logger.info("Starting database initialization...")
+            logger.info("Starting database initialization with init SQL files...")
 
             # Get database engine
             self.engine = self.db_config.get_engine()
@@ -64,47 +65,41 @@ class DatabaseInitializer:
                 logger.error("Cannot connect to database")
                 return False
 
-            # Check existing tables
+            # Check if database is already initialized
             existing_tables = self._get_existing_tables()
-            logger.info(f"Found {len(existing_tables)} existing tables: {existing_tables}")
+            if existing_tables:
+                logger.info(f"Found {len(existing_tables)} existing tables - database appears initialized")
+                # Still run structure verification
+                if self._verify_table_structure():
+                    logger.info("✅ Table structure verified")
+                else:
+                    logger.warning("⚠️ Table structure verification failed - may need migration")
+                self.initialized = True
+                return True
 
-            # Get required tables from models
-            required_tables = self._get_required_tables()
-            logger.info(f"Required tables: {required_tables}")
+            # Database is empty - initialize with SQL files
+            logger.info("Database is empty - initializing with SQL files...")
 
-            # Find missing tables
-            missing_tables = required_tables - existing_tables
-
-            if missing_tables:
-                logger.info(f"Missing tables detected: {missing_tables}")
-                logger.info("Creating missing tables...")
-
-                # Create all tables using SQLAlchemy Base metadata
-                try:
-                    Base.metadata.create_all(self.engine)
-                    logger.info("✅ All tables created successfully")
-
-                    # Verify tables were created
-                    new_tables = self._get_existing_tables()
-                    created_tables = new_tables - existing_tables
-                    logger.info(f"Created {len(created_tables)} new tables: {created_tables}")
-
-                except Exception as e:
-                    logger.error(f"Failed to create tables: {e}")
-                    return False
+            # Determine database type and use appropriate init file
+            db_url = str(self.engine.url).lower()
+            if 'postgresql' in db_url:
+                init_file = 'init_schema_postgresql.sql'
             else:
-                logger.info("✅ All required tables already exist")
+                init_file = 'init_schema_sqlite.sql'
 
-            # Verify table structure (optional - can add column checks here)
-            if self._verify_table_structure():
-                logger.info("✅ Table structure verified")
+            # Execute init SQL file
+            if self._execute_init_sql_file(init_file):
+                logger.info("✅ Database initialized successfully with SQL files")
+
+                # Verify tables were created
+                new_tables = self._get_existing_tables()
+                logger.info(f"Created {len(new_tables)} tables: {sorted(new_tables)}")
+
+                self.initialized = True
+                return True
             else:
-                logger.warning("⚠️ Table structure verification failed - may need migration")
-
-            # Set initialization flag
-            self.initialized = True
-            logger.info("✅ Database initialization completed successfully")
-            return True
+                logger.error("Failed to execute init SQL file")
+                return False
 
         except Exception as e:
             logger.error(f"Database initialization failed: {e}")
@@ -156,44 +151,80 @@ class DatabaseInitializer:
         # Get all table names from Base metadata
         return set(Base.metadata.tables.keys())
 
+    def _execute_init_sql_file(self, filename: str) -> bool:
+        """
+        Execute the init SQL file to create database schema.
+
+        Args:
+            filename: Name of the SQL file to execute
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Get the path to the SQL file
+            current_dir = Path(__file__).parent
+            sql_file_path = current_dir / filename
+
+            if not sql_file_path.exists():
+                logger.error(f"Init SQL file not found: {sql_file_path}")
+                return False
+
+            # Read the SQL file
+            with open(sql_file_path, 'r', encoding='utf-8') as f:
+                sql_content = f.read()
+
+            logger.info(f"Executing init SQL file: {filename}")
+
+            # Execute SQL in a transaction
+            with self.engine.begin() as conn:
+                # Split SQL by statements and execute each one
+                statements = [stmt.strip() for stmt in sql_content.split(';') if stmt.strip()]
+
+                for i, statement in enumerate(statements, 1):
+                    if statement.lower().startswith(('--', '/*')) or not statement:
+                        continue
+
+                    try:
+                        conn.execute(text(statement))
+                        if i % 10 == 0:  # Log progress every 10 statements
+                            logger.debug(f"Executed {i}/{len(statements)} SQL statements")
+                    except Exception as e:
+                        logger.error(f"Failed to execute SQL statement {i}: {statement[:100]}...")
+                        logger.error(f"Error: {e}")
+                        raise
+
+            logger.info("✅ Init SQL file executed successfully")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to execute init SQL file {filename}: {e}")
+            return False
+
     def _verify_table_structure(self) -> bool:
         """
-        Verify that table structures match the models.
-
-        This is a basic check - can be extended to verify columns,
-        types, constraints, etc.
+        Verify that required tables exist.
 
         Returns:
             bool: True if structure is valid, False otherwise
         """
         try:
             inspector = inspect(self.engine)
+            existing_tables = set(inspector.get_table_names())
 
-            for table_name in Base.metadata.tables.keys():
-                # Get model columns
-                model_table = Base.metadata.tables[table_name]
-                model_columns = set(col.name for col in model_table.columns)
+            # Define required core tables
+            required_tables = {
+                'projects', 'project_git_branchs', 'tasks', 'subtasks',
+                'task_assignees', 'labels', 'task_labels',
+                'global_contexts', 'project_contexts', 'branch_contexts', 'task_contexts'
+            }
 
-                # Get database columns
-                try:
-                    db_columns = inspector.get_columns(table_name)
-                    db_column_names = set(col['name'] for col in db_columns)
+            missing_tables = required_tables - existing_tables
+            if missing_tables:
+                logger.error(f"Missing required tables: {missing_tables}")
+                return False
 
-                    # Check if all model columns exist in database
-                    missing_columns = model_columns - db_column_names
-                    if missing_columns:
-                        logger.warning(f"Table '{table_name}' missing columns: {missing_columns}")
-                        # Note: We could add ALTER TABLE logic here to add missing columns
-                        # For now, just log the warning
-
-                    # Check for extra columns in database (not in model)
-                    extra_columns = db_column_names - model_columns
-                    if extra_columns:
-                        logger.info(f"Table '{table_name}' has extra columns: {extra_columns}")
-
-                except Exception as e:
-                    logger.warning(f"Could not inspect table '{table_name}': {e}")
-
+            logger.info("✅ All required tables exist")
             return True
 
         except Exception as e:

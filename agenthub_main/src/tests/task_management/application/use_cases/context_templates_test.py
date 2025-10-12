@@ -9,6 +9,7 @@ import pytest
 import json
 from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime, timezone
+from dataclasses import dataclass, field
 
 from fastmcp.task_management.application.use_cases.context_templates import (
     ContextTemplateService,
@@ -17,7 +18,7 @@ from fastmcp.task_management.application.use_cases.context_templates import (
     TemplateVariable,
     TemplateCategory
 )
-from fastmcp.task_management.domain.models.unified_context import ContextLevel
+from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
 
 
 class TestTemplateRegistry:
@@ -515,3 +516,64 @@ class TestTemplateVariables:
         
         assert var.required is False
         assert var.validation_regex is None
+
+
+class TestTemplateCreationTimestamp:
+    """Test suite for template creation timestamp functionality"""
+    
+    def test_template_creation_timestamp_set_automatically(self):
+        """Test that created_at is set automatically when not provided"""
+        template = ContextTemplate(
+            id="test_timestamp",
+            name="Test Timestamp",
+            description="Test template creation timestamp",
+            category=TemplateCategory.CUSTOM,
+            level=ContextLevel.PROJECT,
+            data_template={"test": "data"},
+            author="test_user"
+        )
+        
+        assert template.created_at is not None
+        assert isinstance(template.created_at, datetime)
+        assert template.created_at.tzinfo is not None  # Should have timezone
+    
+    def test_template_creation_with_explicit_timestamp(self):
+        """Test that explicit created_at is preserved"""
+        explicit_time = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        
+        template = ContextTemplate(
+            id="test_explicit",
+            name="Test Explicit Time",
+            description="Test with explicit timestamp",
+            category=TemplateCategory.CUSTOM,
+            level=ContextLevel.PROJECT,
+            data_template={"test": "data"},
+            author="test_user",
+            created_at=explicit_time
+        )
+        
+        assert template.created_at == explicit_time
+    
+    def test_template_dataclass_fields_order(self):
+        """Test that dataclass fields are properly ordered (required first)"""
+        # This should create without errors - dataclass should handle field ordering
+        template = ContextTemplate(
+            id="test_fields",
+            name="Test Fields",
+            description="Test field ordering",
+            category=TemplateCategory.CUSTOM,
+            level=ContextLevel.PROJECT,
+            data_template={"test": "data"},
+            author="test_user",
+            variables=[],
+            version="2.0.0",
+            tags=["test"],
+            created_at=None,
+            usage_count=10,
+            last_used_at=datetime.now(timezone.utc)
+        )
+        
+        assert template.id == "test_fields"
+        assert template.version == "2.0.0"
+        assert template.usage_count == 10
+        assert template.created_at is not None  # Should be set by __post_init__

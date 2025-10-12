@@ -5,6 +5,7 @@ This module contains the comprehensive documentation for the manage_subtask MCP 
 Separated from the controller logic for better maintainability and organization.
 """
 
+
 def get_subtask_description() -> str:
     """Get the subtask management tool description"""
     return MANAGE_SUBTASK_DESCRIPTION
@@ -118,7 +119,7 @@ MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = {
     "completion_quality": "[OPTIONAL] Quality assessment of work completed. Example: 'Production-ready', 'Requires review', 'Prototype only'",
     "blockers": "[OPTIONAL] Issues preventing progress. Comma-separated string or JSON array. Example: 'Missing API documentation,Waiting for database schema approval'",
     "impact_on_parent": "[OPTIONAL] How completing this subtask affects the parent task. Required for complete action",
-    "user_id": "[OPTIONAL] User identifier for authentication and audit trails"
+    "user_id": "[OPTIONAL] User identifier for authentication and audit trails",
 }
 
 MANAGE_SUBTASK_PARAMS = {
@@ -127,116 +128,115 @@ MANAGE_SUBTASK_PARAMS = {
         # Primary parameter (always required)
         "action": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["action"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["action"],
         },
-        
         # Task hierarchy parameters
         "task_id": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["task_id"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["task_id"],
         },
         "subtask_id": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["subtask_id"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["subtask_id"],
         },
-        
         # Basic subtask parameters
         "title": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["title"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["title"],
         },
         "description": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["description"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["description"],
         },
-        
         # Status and priority parameters
         "status": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["status"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["status"],
         },
         "priority": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["priority"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["priority"],
         },
-        
         # Assignment and progress parameters
         "assignees": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["assignees"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["assignees"],
         },
         "progress_percentage": {
             "type": "integer",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_percentage"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_percentage"],
         },
         "progress_notes": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_notes"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_notes"],
         },
-        
         # Completion parameters
         "completion_summary": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_summary"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_summary"],
         },
         "testing_notes": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["testing_notes"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["testing_notes"],
         },
-        
         # Enhancement parameters (handled as strings with comma-separation)
         "insights_found": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["insights_found"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["insights_found"],
         },
         "challenges_overcome": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["challenges_overcome"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["challenges_overcome"],
         },
         "skills_learned": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["skills_learned"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["skills_learned"],
         },
         "next_recommendations": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["next_recommendations"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION[
+                "next_recommendations"
+            ],
         },
         "deliverables": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["deliverables"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["deliverables"],
         },
-        
         # Quality and blocker parameters
         "completion_quality": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_quality"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_quality"],
         },
         "blockers": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["blockers"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["blockers"],
         },
         "impact_on_parent": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["impact_on_parent"]
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["impact_on_parent"],
         },
-        
         # Authentication parameters
         "user_id": {
             "type": "string",
-            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["user_id"]
-        }
+            "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["user_id"],
+        },
     },
-    "required": ["action"],  # Only action required at schema level - business logic validates per action
-    "additionalProperties": False
+    "required": [
+        "action"
+    ],  # Only action required at schema level - business logic validates per action
+    "additionalProperties": False,
 }
+
 
 def get_manage_subtask_parameters():
     """Get manage subtask parameters for use in controller."""
     return MANAGE_SUBTASK_PARAMS["properties"]
 
+
 def get_manage_subtask_description():
     """Get manage subtask description for use in controller."""
     return MANAGE_SUBTASK_DESCRIPTION
+
 
 # Backward compatibility constants
 SUBTASK_DESCRIPTION = MANAGE_SUBTASK_DESCRIPTION
@@ -246,114 +246,114 @@ PARAMETER_DESCRIPTIONS = {
     "action": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["action"],
         "type": "string",
-        "required": True
+        "required": True,
     },
     "task_id": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["task_id"],
         "type": "string",
-        "required": False  # Required for all actions but marked optional at schema level
+        "required": False,  # Required for all actions but marked optional at schema level
     },
     "subtask_id": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["subtask_id"],
         "type": "string",
-        "required": False  # Required for specific actions only
+        "required": False,  # Required for specific actions only
     },
     "title": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["title"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "description": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["description"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "status": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["status"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "priority": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["priority"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "assignees": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["assignees"],
         "type": "string",  # Handled as comma-separated string
-        "required": False
+        "required": False,
     },
     "progress_percentage": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_percentage"],
         "type": "integer",
-        "required": False
+        "required": False,
     },
     "progress_notes": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["progress_notes"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "completion_summary": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_summary"],
         "type": "string",
-        "required": False  # Required for complete action only
+        "required": False,  # Required for complete action only
     },
     "testing_notes": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["testing_notes"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "insights_found": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["insights_found"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "challenges_overcome": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["challenges_overcome"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "skills_learned": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["skills_learned"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "next_recommendations": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["next_recommendations"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "deliverables": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["deliverables"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "completion_quality": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["completion_quality"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "blockers": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["blockers"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "impact_on_parent": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["impact_on_parent"],
         "type": "string",
-        "required": False
+        "required": False,
     },
     "user_id": {
         "description": MANAGE_SUBTASK_PARAMETERS_DESCRIPTION["user_id"],
         "type": "string",
-        "required": False
-    }
+        "required": False,
+    },
 }
 
 # Legacy parameter descriptions for backward compatibility
 MANAGE_SUBTASK_PARAMETERS = {
     "action": "Action: create, update, delete, get, list, complete. Required. (string)",
-    "task_id": "Parent task ID. Required for all actions. (string)", 
+    "task_id": "Parent task ID. Required for all actions. (string)",
     "subtask_id": "Subtask ID for operations. Required for update, delete, get, complete actions. (string)",
     "title": "Subtask title. Required for create, optional for update. (string)",
     "description": "Detailed subtask description explaining what needs to be done. Include acceptance criteria if relevant. Optional for: create, update",
@@ -371,5 +371,5 @@ MANAGE_SUBTASK_PARAMETERS = {
     "next_recommendations": "Suggestions for future work based on experience. Optional for: create, update, complete. Example: ['Consider implementing caching for API calls', 'Add comprehensive error logging']",
     "deliverables": "Specific artifacts or outputs created. Optional for: create, update, complete. Example: ['User authentication module', 'API endpoint documentation', 'Unit test suite']",
     "completion_quality": "Assessment of work quality. Optional for: complete. Example: 'Production-ready', 'Requires review', 'Prototype only'",
-    "testing_notes": "Notes about testing performed. Optional for: complete. Example: 'Tested login flow with valid/invalid credentials, verified token refresh mechanism'"
+    "testing_notes": "Notes about testing performed. Optional for: complete. Example: 'Tested login flow with valid/invalid credentials, verified token refresh mechanism'",
 }

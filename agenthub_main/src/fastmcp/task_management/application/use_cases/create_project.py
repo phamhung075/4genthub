@@ -1,7 +1,6 @@
 """Create Project Use Case"""
 
 from typing import Dict, Any
-from datetime import datetime, timezone
 from ...domain.entities.project import Project
 from ...domain.repositories.project_repository import ProjectRepository
 
@@ -50,15 +49,15 @@ class CreateProjectUseCase:
         project_id = project_id or str(uuid4())
 
         try:
-            # Create project entity
-            now = datetime.now(timezone.utc)
-            project = Project(
-                id=project_id,
+            # Create project entity using the domain factory method
+            # This automatically handles timestamps via BaseTimestampEntity
+            project = Project.create(
                 name=name,
-                description=description,
-                created_at=now,
-                updated_at=now,
+                description=description
             )
+            # Override the auto-generated ID if one was provided
+            if project_id:
+                project.id = project_id
 
             # Create default main task tree so the project has at least one branch
             project.create_git_branch(
@@ -124,11 +123,11 @@ class CreateProjectUseCase:
                 )
                 
                 # Create default project context
+                # Timestamps handled by context system
                 context_data = {
                     "project_id": project.id,
                     "name": project.name,
                     "description": project.description,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
                     "configuration": {},
                     "standards": {},
                     "team_settings": {}
@@ -162,6 +161,44 @@ class CreateProjectUseCase:
         except Exception as e:
             # Surface unexpected errors but don't hide detail – tests rely on informative messages.
             return {"success": False, "error": str(e)}
+
+        # Broadcast WebSocket notification for real-time frontend updates
+        try:
+            from ..services.websocket_notification_service import WebSocketNotificationService
+
+            # Get user_id for WebSocket broadcast
+            user_id = None
+            if hasattr(self._project_repository, 'user_id'):
+                user_context = getattr(self._project_repository, 'user_id', None)
+                if user_context is not None:
+                    if hasattr(user_context, 'user_id'):
+                        user_id = user_context.user_id
+                    elif hasattr(user_context, 'id'):
+                        user_id = user_context.id
+                    elif isinstance(user_context, str):
+                        user_id = user_context
+
+            if user_id:
+                WebSocketNotificationService.sync_broadcast_project_event(
+                    event_type="created",
+                    project_id=project.id,
+                    user_id=user_id,
+                    project_data={
+                        "id": project.id,
+                        "name": project.name,
+                        "description": project.description,
+                        "created_at": project.created_at.isoformat(),
+                        "updated_at": project.updated_at.isoformat(),
+                    }
+                )
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"✅ Broadcasted WebSocket notification for project creation: {project.id}")
+        except Exception as ws_error:
+            # Log WebSocket errors but don't fail project creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to broadcast WebSocket notification for project {project.id}: {ws_error}")
 
         return {
             "success": True,

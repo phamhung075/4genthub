@@ -17,7 +17,7 @@ from fastmcp.task_management.application.use_cases.batch_context_operations impo
     BatchOperationType,
     BatchOperationResult
 )
-from fastmcp.task_management.domain.models.unified_context import ContextLevel
+from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
 
 
 class TestBatchContextOperations:

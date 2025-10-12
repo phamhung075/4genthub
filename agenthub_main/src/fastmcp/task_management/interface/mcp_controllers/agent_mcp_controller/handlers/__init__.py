@@ -13,8 +13,8 @@ from .rebalance_handler import AgentRebalanceHandler
 from .agent_invocation_handler import AgentInvocationHandler
 
 __all__ = [
-    'AgentCRUDHandler',
-    'AgentAssignmentHandler', 
-    'AgentRebalanceHandler',
-    'AgentInvocationHandler'
+    "AgentCRUDHandler",
+    "AgentAssignmentHandler",
+    "AgentRebalanceHandler",
+    "AgentInvocationHandler",
 ]

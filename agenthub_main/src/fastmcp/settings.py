@@ -287,5 +287,35 @@ class Settings(BaseSettings):
         ),
     ] = None
 
+    # Event system settings
+    enable_async_event_queue: Annotated[
+        bool,
+        Field(
+            default=False,
+            description=inspect.cleandoc(
+                """
+                Enable async event queue for non-blocking event publishing.
+                When enabled, events are queued and processed asynchronously,
+                reducing request latency. When disabled, events are processed
+                synchronously (backward compatible mode).
+                """
+            ),
+        ),
+    ] = False
+
+    event_queue_max_size: Annotated[
+        int,
+        Field(
+            default=10000,
+            description=inspect.cleandoc(
+                """
+                Maximum number of events in queue before backpressure is applied.
+                When queue is full, publishing will block briefly or fall back
+                to synchronous processing.
+                """
+            ),
+        ),
+    ] = 10000
+
 
 settings = Settings()

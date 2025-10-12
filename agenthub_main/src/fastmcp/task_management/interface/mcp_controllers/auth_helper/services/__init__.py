@@ -6,8 +6,8 @@ from .debug_service import DebugService
 from .token_extraction_service import TokenExtractionService
 
 __all__ = [
-    'AuthenticationService',
-    'ContextImportService',
-    'DebugService',
-    'TokenExtractionService'
+    "AuthenticationService",
+    "ContextImportService",
+    "DebugService",
+    "TokenExtractionService",
 ]

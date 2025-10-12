@@ -16,6 +16,7 @@ import { updateFromWebSocket } from '../store/slices/cascadeSlice';
 import { webSocketAnimationService } from '../services/WebSocketAnimationService';
 import { initializeWebSocketIntegration } from '../services/changePoolService';
 import { notificationService } from '../services/notificationService';
+import logger from '../utils/logger';
 
 
 // Global WebSocket instance to ensure singleton
@@ -29,6 +30,7 @@ let globalWebSocketClient: WebSocketClient | null = null;
 export function useWebSocket(userId: string, token: string) {
   const dispatch = useAppDispatch();
   const clientRef = useRef<WebSocketClient | null>(null);
+  const prevCredentialsRef = useRef<{userId: string, token: string} | null>(null);
 
   // Get WebSocket state from Redux store
   const isConnected = useAppSelector(selectIsConnected);
@@ -36,15 +38,53 @@ export function useWebSocket(userId: string, token: string) {
   const wsError = useAppSelector(selectWebSocketError);
 
   useEffect(() => {
-    if (!userId || !token) {
-      console.warn('[useWebSocket] Cannot connect - missing credentials:', {
-        hasUserId: !!userId,
-        hasToken: !!token,
-        userIdLength: userId?.length,
-        tokenLength: token?.length
-      });
+    // Check if this is a credential CHANGE (logout/expiry) vs mount cycle
+    const hadCredentials = prevCredentialsRef.current !== null;
+    const hasCredentials = !!(userId && token);
+
+    // CRITICAL FIX: Only disconnect on actual logout (had credentials → no credentials)
+    // This prevents premature disconnect during React Strict Mode remount
+    if (hadCredentials && !hasCredentials) {
+      logger.warn('[useWebSocket] 🚨 Logout/expiry detected - disconnecting WebSocket for security', {
+        previousUserId: prevCredentialsRef.current?.userId,
+      }, 'useWebSocketV2.ts');
+
+      // SECURITY FIX: Disconnect global WebSocket singleton when credentials are cleared
+      if (globalWebSocketClient) {
+        const connectionState = globalWebSocketClient.isConnected() ? 'connected' :
+                              (globalWebSocketClient as any).isConnecting ? 'connecting' : 'disconnected';
+
+        if (connectionState === 'connected' || connectionState === 'connecting') {
+          globalWebSocketClient.disconnect();
+          globalWebSocketClient = null;
+        }
+      }
+
+      prevCredentialsRef.current = null;
       return;
     }
+
+    // Skip if no credentials (initial mount or React Strict Mode remount)
+    if (!hasCredentials) {
+      logger.debug('[useWebSocket] No credentials yet - waiting (React Strict Mode safe)', {
+        hadPreviousCredentials: hadCredentials,
+      }, 'useWebSocketV2.ts');
+      return;
+    }
+
+    logger.debug('[useWebSocket] 🚀 Hook called with valid credentials:', {
+      hasUserId: !!userId,
+      hasToken: !!token,
+      userIdLength: userId?.length,
+      tokenLength: token?.length,
+      userId: userId,
+      timestamp: new Date().toISOString()
+    }, 'useWebSocketV2.ts');
+
+    logger.debug('[useWebSocket] ✅ Credentials validated, proceeding with connection setup', undefined, 'useWebSocketV2.ts');
+
+    // Update credential tracking ref for next change detection
+    prevCredentialsRef.current = {userId, token};
 
     // Check if we already have a global client with the same credentials
     if (globalWebSocketClient) {
@@ -52,21 +92,35 @@ export function useWebSocket(userId: string, token: string) {
       const existingClientToken = (globalWebSocketClient as any).token;
 
       if (existingClientUserId === userId && existingClientToken === token) {
-        console.log('[useWebSocket] Reusing existing WebSocket client');
+        logger.debug('[useWebSocket] Reusing existing WebSocket client', undefined, 'useWebSocketV2.ts');
         clientRef.current = globalWebSocketClient;
-        return; // Keep existing connection
+
+        // CRITICAL FIX: Initialize services even when reusing existing client
+        // These initializations are idempotent and set up event listeners for this component instance
+        webSocketAnimationService.init(globalWebSocketClient);
+        const cleanupChangePool = initializeWebSocketIntegration(globalWebSocketClient);
+        // NOTE: NotificationService is already initialized globally when the client was created
+        // Re-initializing here would create duplicate event listeners causing double notifications
+
+        // Return cleanup function for this component instance
+        return () => {
+          logger.debug('[useWebSocket] Component cleanup (reused client)', undefined, 'useWebSocketV2.ts');
+          cleanupChangePool();
+          // NotificationService cleanup is handled globally when the singleton client disconnects
+          clientRef.current = null;
+        };
       } else {
-        console.log('[useWebSocket] Credentials changed, disconnecting old client');
+        logger.debug('[useWebSocket] Credentials changed, disconnecting old client', undefined, 'useWebSocketV2.ts');
         globalWebSocketClient.disconnect();
         globalWebSocketClient = null;
       }
     }
 
-    console.log('[useWebSocket] Creating new WebSocket client with credentials:', {
+    logger.debug('[useWebSocket] Creating new WebSocket client with credentials:', {
       userId,
       tokenLength: token.length,
       timestamp: new Date().toISOString()
-    });
+    }, 'useWebSocketV2.ts');
 
     // Create new WebSocket client
     const client = new WebSocketClient(userId, token);
@@ -75,80 +129,81 @@ export function useWebSocket(userId: string, token: string) {
 
     // Handle updates (both immediate and batched)
     client.on('update', (message: WSMessage) => {
-      console.log('[useWebSocket] 🎯 🚨 DELETE DEBUG: UPDATE EVENT RECEIVED:', {
+      logger.debug('[useWebSocket] 🎯 🚨 DELETE DEBUG: UPDATE EVENT RECEIVED:', {
         messageId: message.id,
         entity: message.payload.entity,
         action: message.payload.action,
         source: message.metadata?.source,
         hasCascade: !!message.payload.data.cascade
-      });
+      }, 'useWebSocketV2.ts');
 
       // Special detailed logging for DELETE operations
       if (message.payload?.action?.toLowerCase().includes('delete')) {
-        console.warn('🗑️ DELETE UPDATE EVENT RECEIVED IN useWebSocket HOOK:');
-        console.warn('  Message ID:', message.id);
-        console.warn('  Entity:', message.payload.entity);
-        console.warn('  Action:', message.payload.action);
-        console.warn('  Source:', message.metadata?.source);
-        console.warn('  Has Cascade:', !!message.payload.data.cascade);
-        console.warn('  Primary Data:', message.payload.data.primary);
-        console.warn('  About to dispatch to Redux store...');
+        logger.warn('🗑️ DELETE UPDATE EVENT RECEIVED IN useWebSocket HOOK:', {
+          messageId: message.id,
+          entity: message.payload.entity,
+          action: message.payload.action,
+          source: message.metadata?.source,
+          hasCascade: !!message.payload.data.cascade,
+          primaryData: message.payload.data.primary,
+          info: 'About to dispatch to Redux store...'
+        }, 'useWebSocketV2.ts');
       }
 
       // Dispatch message to Redux store
       dispatch(messageReceived(message));
 
       if (message.payload?.action?.toLowerCase().includes('delete')) {
-        console.warn('✅ DELETE message dispatched to Redux store');
+        logger.warn('✅ DELETE message dispatched to Redux store', undefined, 'useWebSocketV2.ts');
       }
 
       // Process cascade data if present
       if (message.payload.data.cascade) {
-        console.log('[useWebSocket] 🔄 Processing cascade data');
+        logger.debug('[useWebSocket] 🔄 Processing cascade data', undefined, 'useWebSocketV2.ts');
         dispatch(updateFromWebSocket(message.payload.data.cascade));
 
         if (message.payload?.action?.toLowerCase().includes('delete')) {
-          console.warn('✅ DELETE cascade data processed');
+          logger.warn('✅ DELETE cascade data processed', undefined, 'useWebSocketV2.ts');
         }
       }
 
       if (message.payload?.action?.toLowerCase().includes('delete')) {
-        console.warn('✅ DELETE update processed successfully in useWebSocket');
+        logger.warn('✅ DELETE update processed successfully in useWebSocket', undefined, 'useWebSocketV2.ts');
       } else {
-        console.log('[useWebSocket] ✅ Processed update successfully');
+        logger.debug('[useWebSocket] ✅ Processed update successfully', undefined, 'useWebSocketV2.ts');
       }
     });
 
     // Handle user actions (immediate feedback)
     client.on('userAction', (message: WSMessage) => {
-      console.log('[WebSocket] User action:', message.payload.action);
+      logger.debug('[WebSocket] User action:', message.payload.action, 'useWebSocketV2.ts');
       // User actions are already captured in the main update handler
       // Additional user-specific logic can be added here if needed
     });
 
     // Handle connection events
     client.on('connected', () => {
-      console.log('[useWebSocket] ✅ CONNECTED - WebSocket ready');
+      logger.info('[useWebSocket] ✅ CONNECTED - WebSocket ready', undefined, 'useWebSocketV2.ts');
       dispatch(connected({}));
     });
 
     client.on('disconnected', () => {
-      console.log('[useWebSocket] ❌ DISCONNECTED');
+      logger.warn('[useWebSocket] ❌ DISCONNECTED', undefined, 'useWebSocketV2.ts');
       dispatch(disconnected());
     });
 
     client.on('error', (errorEvent: Event) => {
-      console.error('[useWebSocket] ❌ ERROR:', errorEvent);
+      logger.error('[useWebSocket] ❌ ERROR:', errorEvent, 'useWebSocketV2.ts');
       dispatch(error('WebSocket connection error'));
     });
 
     client.on('reconnectFailed', () => {
-      console.error('[useWebSocket] ❌ RECONNECT FAILED');
+      logger.error('[useWebSocket] ❌ RECONNECT FAILED', undefined, 'useWebSocketV2.ts');
       dispatch(reconnectFailed());
     });
 
     client.on('authenticationFailed', (reason: string) => {
-      console.error('[useWebSocket] ❌ AUTHENTICATION FAILED:', reason);
+      logger.error('[useWebSocket] ❌ AUTHENTICATION FAILED:', reason, 'useWebSocketV2.ts');
       dispatch(error(`WebSocket authentication failed: ${reason}`));
       // You may want to trigger a re-authentication flow here
       // For example: dispatch a logout action or redirect to login
@@ -158,7 +213,16 @@ export function useWebSocket(userId: string, token: string) {
     webSocketAnimationService.init(client);
 
     // Initialize the change pool service with the WebSocket client
+    logger.debug('[useWebSocket] 🔧 DEBUG: About to call initializeWebSocketIntegration', undefined, 'useWebSocketV2.ts');
+    logger.debug('[useWebSocket] 🔧 DEBUG: Client object:', client, 'useWebSocketV2.ts');
+    logger.debug('[useWebSocket] 🔧 DEBUG: Client has .on method:', typeof client.on === 'function', 'useWebSocketV2.ts');
+    logger.debug('[useWebSocket] 🔧 DEBUG: Update listener count BEFORE changePool:', client.listenerCount('update'), 'useWebSocketV2.ts');
+
     const cleanupChangePool = initializeWebSocketIntegration(client);
+
+    logger.debug('[useWebSocket] 🔧 DEBUG: initializeWebSocketIntegration returned', undefined, 'useWebSocketV2.ts');
+    logger.debug('[useWebSocket] 🔧 DEBUG: Update listener count AFTER changePool:', client.listenerCount('update'), 'useWebSocketV2.ts');
+    logger.debug('[useWebSocket] 🔧 DEBUG: Cleanup function type:', typeof cleanupChangePool, 'useWebSocketV2.ts');
 
     // Initialize the unified notification service with the WebSocket client
     const cleanupNotifications = notificationService.initializeWebSocketListener(client);
@@ -166,14 +230,17 @@ export function useWebSocket(userId: string, token: string) {
     // Connect to server
     client.connect();
 
-    // Cleanup on unmount - but don't disconnect the global singleton
+    // Cleanup on unmount or credential change
     return () => {
-      console.log('[useWebSocket] Component cleanup (keeping WebSocket connected)');
-      // Don't disconnect the global client - it should persist
-      // Only clean up local references
+      logger.debug('[useWebSocket] Component cleanup', undefined, 'useWebSocketV2.ts');
+
+      // Clean up service integrations
       cleanupChangePool();
       cleanupNotifications();
       clientRef.current = null;
+
+      // NOTE: Global singleton disconnect is now handled in the credential check above
+      // This ensures WebSocket disconnects when userId/token become empty (logout/expiry)
     };
   }, [userId, token, dispatch]);
 
@@ -184,7 +251,7 @@ export function useWebSocket(userId: string, token: string) {
     if (clientRef.current) {
       clientRef.current.send(message);
     } else {
-      console.error('[useWebSocket] Client not initialized');
+      logger.error('[useWebSocket] Client not initialized', undefined, 'useWebSocketV2.ts');
     }
   }, []);
 
@@ -202,7 +269,7 @@ export function useWebSocket(userId: string, token: string) {
    * Disconnect WebSocket (for logout or cleanup)
    */
   const disconnect = useCallback(() => {
-    console.log('[useWebSocket] Disconnecting WebSocket (explicit disconnect)');
+    logger.info('[useWebSocket] Disconnecting WebSocket (explicit disconnect)', undefined, 'useWebSocketV2.ts');
     if (clientRef.current) {
       clientRef.current.disconnect();
       // Also clear the global singleton on explicit disconnect (e.g., logout)

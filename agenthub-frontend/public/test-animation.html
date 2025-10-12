@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Test - Left to Right Draw</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .test-item:hover {
+            background: #e9ecef;
+        }
+
+        /* Animation from websocket-animations.css */
+        .draw-in-left-to-right {
+            animation: drawInLeftToRight 0.5s ease-out forwards;
+        }
+
+        @keyframes drawInLeftToRight {
+            0% {
+                transform: scaleX(0);
+                transform-origin: left center;
+                opacity: 0.8;
+            }
+            60% {
+                transform: scaleX(1);
+                transform-origin: left center;
+                opacity: 1;
+            }
+            100% {
+                transform: scaleX(1);
+                transform-origin: left center;
+                opacity: 1;
+            }
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Animation Test: Left-to-Right Draw Effect</h1>
+
+        <div class="status" id="status">
+            Ready to test animation. Click "Test Animation" to see the left-to-right draw effect.
+        </div>
+
+        <button class="button" onclick="testAnimation()">Test Animation</button>
+        <button class="button" onclick="resetTest()">Reset</button>
+
+        <div class="test-item" id="testItem">
+            🎯 Test Task: Implement left-to-right draw animation
+            <br><small>Status: Ready for testing</small>
+        </div>
+
+        <h3>Animation Details:</h3>
+        <ul>
+            <li><strong>Class:</strong> .draw-in-left-to-right</li>
+            <li><strong>Keyframe:</strong> drawInLeftToRight</li>
+            <li><strong>Duration:</strong> 0.5s</li>
+            <li><strong>Timing:</strong> ease-out</li>
+            <li><strong>Effect:</strong> scaleX(0) to scaleX(1) from left origin</li>
+        </ul>
+
+        <h3>Expected Behavior:</h3>
+        <p>When you click "Test Animation", the test task should appear to "draw in" from left to right, starting as a thin vertical line on the left and expanding horizontally until fully visible.</p>
+    </div>
+
+    <script>
+        function testAnimation() {
+            const testItem = document.getElementById('testItem');
+            const status = document.getElementById('status');
+
+            // Remove any existing animation class
+            testItem.classList.remove('draw-in-left-to-right');
+
+            // Force reflow to ensure class removal is processed
+            testItem.offsetHeight;
+
+            // Add the animation class
+            testItem.classList.add('draw-in-left-to-right');
+
+            status.textContent = 'Animation triggered! Watch the test task draw in from left to right.';
+
+            // Remove animation class after completion to allow re-testing
+            setTimeout(() => {
+                testItem.classList.remove('draw-in-left-to-right');
+                status.textContent = 'Animation completed. You can test again.';
+            }, 600); // 100ms after 0.5s animation duration
+        }
+
+        function resetTest() {
+            const testItem = document.getElementById('testItem');
+            const status = document.getElementById('status');
+
+            testItem.classList.remove('draw-in-left-to-right');
+            status.textContent = 'Reset complete. Ready to test animation again.';
+        }
+
+        // Test on page load
+        window.addEventListener('load', function() {
+            console.log('Animation test page loaded');
+            console.log('CSS animation should be available');
+        });
+    </script>
+</body>
+</html>

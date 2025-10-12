@@ -23,23 +23,23 @@ export const CONSOLE_MIGRATION_GUIDE = {
  */
 export const MIGRATION_EXAMPLES = {
   basic: {
-    before: "console.log('User logged in', userData);",
+    before: "logger.debug('User logged in', userData);",
     after: "logger.info('User logged in', { userData, component: 'ComponentName' });"
   },
   withContext: {
-    before: "console.error('API call failed:', error);",
+    before: "logger.error('API call failed:', error);",
     after: "logger.error('API call failed', { error, component: 'ComponentName', endpoint: '/api/users' });"
   },
   conditional: {
-    before: "if (isDev) console.debug('Debug info:', data);",
+    before: "if (isDev) logger.debug('Debug info:', data);",
     after: "logger.debugIf(isDev, 'Debug info', { data, component: 'ComponentName' });"
   },
   grouped: {
     before: `
-      console.group('User Authentication');
-      console.log('Starting auth flow');
-      console.log('Validating credentials');
-      console.groupEnd();
+      logger.debug('User Authentication');
+      logger.debug('Starting auth flow');
+      logger.debug('Validating credentials');
+      logger.debug("Group end");
     `,
     after: `
       logger.group('User Authentication');

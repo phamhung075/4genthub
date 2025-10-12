@@ -10,6 +10,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
+# Fixed timestamp for test consistency
+FIXED_TEST_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0)
+
 from fastmcp.task_management.domain.repositories.project_repository import ProjectRepository
 from fastmcp.task_management.domain.repositories.git_branch_repository import GitBranchRepository
 from fastmcp.task_management.domain.repositories.task_repository import TaskRepository
@@ -19,7 +22,6 @@ from fastmcp.task_management.domain.entities.git_branch import GitBranch
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects import TaskId, TaskStatus, Priority
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
 from fastmcp.task_management.domain.exceptions.base_exceptions import (
     ResourceNotFoundException,
     ValidationException,
@@ -144,8 +146,8 @@ class MockGitBranchRepository(GitBranchRepository):
             "project_id": project_id,
             "name": git_branch_name,
             "description": git_branch_description,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "created_at": FIXED_TEST_TIMESTAMP.isoformat(),
+            "updated_at": FIXED_TEST_TIMESTAMP.isoformat()
         }
         self._branches[branch_id] = branch
         return {"success": True, "git_branch": branch}
@@ -162,8 +164,8 @@ class MockGitBranchRepository(GitBranchRepository):
             name=branch_name,
             description=description,
             project_id=project_id,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_at=FIXED_TEST_TIMESTAMP,
+            updated_at=FIXED_TEST_TIMESTAMP
         )
         
         # Also store in internal dict for compatibility with other methods
@@ -172,8 +174,8 @@ class MockGitBranchRepository(GitBranchRepository):
             "project_id": project_id,
             "name": branch_name,
             "description": description,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "created_at": FIXED_TEST_TIMESTAMP.isoformat(),
+            "updated_at": FIXED_TEST_TIMESTAMP.isoformat()
         }
         self._branches[branch_id] = branch_dict
         
@@ -189,8 +191,8 @@ class MockGitBranchRepository(GitBranchRepository):
                     name=branch_dict["name"],
                     description=branch_dict["description"],
                     project_id=branch_dict["project_id"],
-                    created_at=datetime.now(),
-                    updated_at=datetime.now()
+                    created_at=FIXED_TEST_TIMESTAMP,
+                    updated_at=FIXED_TEST_TIMESTAMP
                 )
         return None
     
@@ -204,8 +206,8 @@ class MockGitBranchRepository(GitBranchRepository):
                 name=branch_dict["name"],
                 description=branch_dict["description"],
                 project_id=branch_dict["project_id"],
-                created_at=datetime.now(),
-                updated_at=datetime.now()
+                created_at=FIXED_TEST_TIMESTAMP,
+                updated_at=FIXED_TEST_TIMESTAMP
             )
         return None
     
@@ -219,8 +221,8 @@ class MockGitBranchRepository(GitBranchRepository):
                 name=branch_dict["name"],
                 description=branch_dict["description"],
                 project_id=branch_dict["project_id"],
-                created_at=datetime.now(),
-                updated_at=datetime.now()
+                created_at=FIXED_TEST_TIMESTAMP,
+                updated_at=FIXED_TEST_TIMESTAMP
             ))
         return branches
     
@@ -240,7 +242,7 @@ class MockGitBranchRepository(GitBranchRepository):
                 "name": git_branch.name,
                 "description": git_branch.description,
                 "created_at": self._branches[git_branch.id]["created_at"],  # Keep original
-                "updated_at": datetime.now().isoformat()
+                "updated_at": FIXED_TEST_TIMESTAMP.isoformat()
             }
             return True
         return False
@@ -273,7 +275,7 @@ class MockGitBranchRepository(GitBranchRepository):
             branch["name"] = git_branch_name
         if git_branch_description is not None:
             branch["description"] = git_branch_description
-        branch["updated_at"] = datetime.now().isoformat()
+        branch["updated_at"] = FIXED_TEST_TIMESTAMP.isoformat()
         return {"success": True, "git_branch": branch}
     
     async def delete_git_branch(self, project_id: str, git_branch_id: str) -> Dict[str, Any]:
@@ -513,10 +515,9 @@ class MockSubtaskRepository(SubtaskRepository):
         return len([s for s in self._subtasks.values() 
                    if str(s.task_id) == task_id_str and s.status == 'completed'])
     
-    def get_next_id(self, parent_task_id: TaskId) -> SubtaskId:
+    def get_next_id(self, parent_task_id: TaskId) -> TaskId:
         """Get next available subtask ID for a parent task"""
-        from ...domain.value_objects.subtask_id import SubtaskId
-        subtask_id = SubtaskId(f"subtask-{self._next_id}")
+        subtask_id = TaskId(f"subtask-{self._next_id}")
         self._next_id += 1
         return subtask_id
     

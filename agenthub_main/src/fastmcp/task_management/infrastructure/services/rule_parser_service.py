@@ -15,7 +15,7 @@ from typing import Dict, Any, List, Tuple, Optional
 from abc import ABC, abstractmethod
 
 from ...domain.entities.rule_entity import RuleContent, RuleMetadata
-from ...domain.enums.rule_enums import RuleFormat, RuleType
+from ...domain.value_objects import RuleFormat, RuleType
 
 
 class IRuleParserService(ABC):
@@ -201,18 +201,25 @@ class RuleParserService(IRuleParserService):
         # Look for tags in YAML frontmatter
         if content.startswith('---'):
             lines = content.split('\n')
-            in_frontmatter = True
-            for line in lines[1:]:
+            frontmatter_end = -1
+            for i, line in enumerate(lines[1:], 1):
                 if line.strip() == '---':
+                    frontmatter_end = i
                     break
-                if line.strip().startswith('tags:'):
-                    tag_line = line.split(':', 1)[1].strip()
-                    if tag_line.startswith('[') and tag_line.endswith(']'):
-                        # Parse as JSON array
-                        try:
-                            tags = json.loads(tag_line)
-                        except:
-                            pass
+            
+            if frontmatter_end > 0:
+                frontmatter_content = '\n'.join(lines[1:frontmatter_end])
+                try:
+                    frontmatter_data = yaml.safe_load(frontmatter_content)
+                    if isinstance(frontmatter_data, dict) and 'tags' in frontmatter_data:
+                        tags_value = frontmatter_data['tags']
+                        if isinstance(tags_value, list):
+                            tags.extend(tags_value)
+                        elif isinstance(tags_value, str):
+                            # Single tag as string
+                            tags.append(tags_value)
+                except:
+                    pass
         
         # Look for hashtags in content
         hashtag_pattern = r'#(\w+)'
@@ -281,7 +288,10 @@ class RuleParserService(IRuleParserService):
                 if '{{' in line and '}}' in line:
                     vars_found = re.findall(r'\{\{([^}]+)\}\}', line)
                     for var in vars_found:
-                        variables[var.strip()] = None  # Placeholder
+                        # Only set placeholder if variable doesn't already have a value
+                        var_name = var.strip()
+                        if var_name not in variables:
+                            variables[var_name] = None  # Placeholder
         
         # Save last section
         if current_section:

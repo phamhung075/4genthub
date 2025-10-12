@@ -207,9 +207,38 @@ class TestORMTaskRepositoryConversion:
         self.repo = ORMTaskRepository(session=self.mock_session, user_id="test-user")
 
     def test_entity_to_model_minimal_task(self):
-        """Test converting minimal task entity to ORM model."""
-        # Skip this test as _entity_to_model doesn't exist in the repository
-        pytest.skip("_entity_to_model method doesn't exist in repository")
+        """Test converting minimal task entity to ORM model dictionary."""
+        # Create a minimal task entity
+        task_entity = TaskEntity(
+            id=TaskId("task-123"),
+            title="Test Task",
+            description="Test Description",
+            status=TaskStatus.todo(),
+            priority=Priority.medium(),
+            git_branch_id="branch-456",
+            progress_history={},
+            progress_count=0,
+            estimated_effort="2 hours",
+            due_date="2024-12-31",
+            context_id="context-789",
+            user_id="user-123"
+        )
+
+        # Convert entity to model dict
+        model_dict = self.repo._entity_to_model_dict(task_entity)
+
+        # Verify all fields are properly converted
+        assert model_dict["id"] == "task-123"
+        assert model_dict["title"] == "Test Task"
+        assert model_dict["description"] == "Test Description"
+        assert model_dict["status"] == "todo"
+        assert model_dict["priority"] == "medium"
+        assert model_dict["git_branch_id"] == "branch-456"
+        assert model_dict["progress_history"] == {}
+        assert model_dict["progress_count"] == 0
+        assert model_dict["estimated_effort"] == "2 hours"
+        assert model_dict["due_date"] == "2024-12-31"
+        assert model_dict["context_id"] == "context-789"
 
     def test_model_to_entity_complete_task(self):
         """Test converting complete task model to entity."""

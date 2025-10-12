@@ -48,11 +48,47 @@ except ImportError:
                 self.shape = (len(data), len(data[0]))
             else:
                 self.shape = (len(data),) if data else (0,)
+        
+        def __getitem__(self, key):
+            """Support numpy-style indexing including tuples"""
+            if isinstance(key, tuple):
+                # Handle 2D indexing like matrix[i, j]
+                if len(key) == 2:
+                    i, j = key
+                    return list.__getitem__(self, i)[j]
+                else:
+                    raise IndexError("Only 2D indexing supported")
+            else:
+                # Normal list indexing
+                return list.__getitem__(self, key)
 
         def astype(self, dtype):
             """Mock astype method to support type conversion"""
             # Just return self since we're already using the right types for mocking
             return MockNdarray(list(self))
+
+        @property
+        def size(self):
+            """Return total number of elements"""
+            if hasattr(self, 'shape') and self.shape:
+                result = 1
+                for dim in self.shape:
+                    result *= dim
+                return result
+            return len(self)
+        
+        @property
+        def T(self):
+            """Transpose for matrix operations"""
+            if isinstance(self[0] if self else None, list):
+                # 2D array - actually transpose
+                rows = len(self)
+                cols = len(self[0]) if rows > 0 else 0
+                transposed = [[self[i][j] for i in range(rows)] for j in range(cols)]
+                return MockNdarray(transposed)
+            else:
+                # 1D array - return as is
+                return self
 
         def reshape(self, *shape):
             """Mock reshape method to support array reshaping"""
@@ -65,6 +101,32 @@ except ImportError:
             result = MockNdarray(list(self))
             result.shape = shape
             return result
+        
+        def __truediv__(self, other):
+            """Support division for normalization"""
+            if isinstance(other, MockNdarray):
+                # Handle 2D array divided by 1D array (broadcasting)
+                if isinstance(self[0] if self else None, list):
+                    # self is 2D, other might be 1D
+                    result = []
+                    for i, row in enumerate(self):
+                        if i < len(other):
+                            divisor = other[i] if hasattr(other[i], '__float__') or isinstance(other[i], (int, float)) else other[i][0]
+                            result.append([x / divisor if divisor != 0 else 0 for x in row])
+                        else:
+                            result.append(row)
+                    return MockNdarray(result)
+                else:
+                    # Both are 1D
+                    return MockNdarray([a / b if b != 0 else 0 for a, b in zip(self, other)])
+            else:
+                # Scalar division
+                if isinstance(self[0] if self else None, list):
+                    # 2D array divided by scalar
+                    return MockNdarray([[x / other for x in row] for row in self])
+                else:
+                    # 1D array divided by scalar
+                    return MockNdarray([x / other for x in self])
     
     class MockRandom:
         """Mock numpy.random module"""
@@ -112,6 +174,86 @@ except ImportError:
             if isinstance(shape, int):
                 return MockNdarray([1.0] * shape)
             return MockNdarray([[1.0] * shape[1] for _ in range(shape[0])])
+        
+        @staticmethod
+        def array_equal(arr1, arr2):
+            """Check if two arrays are equal"""
+            if hasattr(arr1, '__iter__') and hasattr(arr2, '__iter__'):
+                return list(arr1) == list(arr2)
+            return arr1 == arr2
+        
+        @staticmethod
+        def allclose(a, b, rtol=1e-5, atol=1e-8):
+            """Check if two arrays are close element-wise"""
+            def _flatten(arr):
+                if isinstance(arr[0] if arr else None, list):
+                    flat = []
+                    for row in arr:
+                        flat.extend(row)
+                    return flat
+                return list(arr)
+            
+            a_flat = _flatten(a) if hasattr(a, '__iter__') else [a]
+            b_flat = _flatten(b) if hasattr(b, '__iter__') else [b]
+            
+            if len(a_flat) != len(b_flat):
+                return False
+                
+            for x, y in zip(a_flat, b_flat):
+                if abs(x - y) > atol + rtol * abs(y):
+                    return False
+            return True
+        
+        @staticmethod
+        def dot(a, b):
+            """Dot product for vectors and matrix multiplication"""
+            if isinstance(a[0] if a else None, list) and isinstance(b[0] if b else None, list):
+                # Matrix multiplication
+                rows_a = len(a)
+                cols_a = len(a[0]) if rows_a > 0 else 0
+                rows_b = len(b)
+                cols_b = len(b[0]) if rows_b > 0 else 0
+                
+                if cols_a != rows_b:
+                    raise ValueError(f"shapes ({rows_a},{cols_a}) and ({rows_b},{cols_b}) not aligned")
+                
+                result = []
+                for i in range(rows_a):
+                    row = []
+                    for j in range(cols_b):
+                        val = sum(a[i][k] * b[k][j] for k in range(cols_a))
+                        row.append(val)
+                    result.append(row)
+                return MockNdarray(result)
+            elif isinstance(a[0] if a else None, list):
+                # Matrix times vector
+                return MockNdarray([sum(row[i] * b[i] for i in range(len(b))) for row in a])
+            elif isinstance(b[0] if b else None, list):
+                # Vector times matrix
+                return MockNdarray([sum(a[i] * col for i, col in enumerate(row)) for row in zip(*b)])
+            else:
+                # Vector dot product
+                return sum(x * y for x, y in zip(a, b))
+        
+        class linalg:
+            @staticmethod
+            def norm(x, axis=None, keepdims=False):
+                """Simple norm calculation"""
+                import math
+                if hasattr(x, '__iter__'):
+                    if axis is None:
+                        # Flatten and calculate norm
+                        flat = []
+                        for item in x:
+                            if hasattr(item, '__iter__'):
+                                flat.extend(item)
+                            else:
+                                flat.append(item)
+                        return math.sqrt(sum(v**2 for v in flat))
+                    else:
+                        # Calculate norm along axis
+                        return MockNdarray([math.sqrt(sum(v**2 for v in row)) for row in x])
+                return abs(x)
     
     # Install the mock in sys.modules before any other imports
     sys.modules['numpy'] = MockNumpy()
@@ -157,6 +299,13 @@ except ImportError:
         @staticmethod
         def IndexFlatIP(dimension):
             return MockIndex()
+        
+        @staticmethod
+        def IndexIVFFlat(quantizer, dimension, nlist):
+            # Return a mock index that supports train and add methods
+            index = MockIndex()
+            index.train = lambda x: None  # Mock train method
+            return index
     
     sys.modules['faiss'] = MockFaiss()
 

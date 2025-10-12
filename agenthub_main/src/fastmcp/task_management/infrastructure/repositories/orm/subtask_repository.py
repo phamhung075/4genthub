@@ -16,11 +16,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from ...database.models import Subtask as SubtaskModel
 from ...database.database_config import get_session
 from ..base_orm_repository import BaseORMRepository
+from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
+from ..event_publishing_mixin import EventPublishingMixin
 from ....domain.entities.subtask import Subtask as SubtaskEntity
 from ....domain.repositories.subtask_repository import SubtaskRepository
 from ....domain.value_objects.task_id import TaskId
-from ....domain.value_objects.subtask_id import SubtaskId
 from ....domain.value_objects.task_status import TaskStatus
 from ....domain.value_objects.priority import Priority
 from ....domain.exceptions.base_exceptions import (
@@ -32,21 +33,31 @@ from ....domain.exceptions.base_exceptions import (
 logger = logging.getLogger(__name__)
 
 
-class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
+class ORMSubtaskRepository(EventPublishingMixin, BaseTimestampRepository[SubtaskEntity], BaseUserScopedRepository, SubtaskRepository):
     """
     ORM implementation of SubtaskRepository using SQLAlchemy.
-    
+
     Provides database operations for subtasks with proper data transformation
     between domain objects and ORM models.
+
+    DDD Pattern: EventPublishingMixin ensures domain events are published
+    when subtask entities are persisted.
     """
-    
+
     def __init__(self, session=None, user_id: Optional[str] = None):
         """Initialize the ORM subtask repository with user isolation."""
-        BaseORMRepository.__init__(self, SubtaskModel)
+        # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
+        # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
+        BaseTimestampRepository.__init__(self, SubtaskModel)
         # CRITICAL FIX: Pass None as session to BaseUserScopedRepository
         # This prevents creating an isolated session in __init__
         # The actual session will come from transaction() or get_db_session() context managers
         BaseUserScopedRepository.__init__(self, None, user_id)
+
+        # Initialize mixin attributes manually (DON'T call mixin __init__ - causes MRO issues)
+        # EventPublishingMixin attributes
+        self._event_bus = None
+        self._event_publishing_enabled = True
     
     def save(self, subtask: SubtaskEntity) -> bool:
         """
@@ -63,7 +74,7 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
             # CRITICAL FIX: Use transaction context manager to ensure proper commit
             with self.transaction() as session:
                 # Convert domain entity to ORM model data
-                model_data = self._to_model_data(subtask)
+                model_data = self._entity_to_model_dict(subtask)
                 logger.info(f"🔍 SUBTASK_SAVE: Model data prepared with user_id={model_data.get('user_id')}")
                 
                 if subtask.id:
@@ -77,7 +88,7 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                         for key, value in model_data.items():
                             if key != 'id':  # Don't update primary key
                                 setattr(existing, key, value)
-                        existing.updated_at = datetime.now(timezone.utc)
+                        existing.touch("subtask_updated")
                         session.flush()
                         
                         # Update the domain entity with the persisted data
@@ -111,8 +122,12 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 # Update domain entity with persisted timestamps
                 subtask.created_at = new_subtask.created_at
                 subtask.updated_at = new_subtask.updated_at
-                
+
                 logger.info(f"✅ SUBTASK_SAVE: Successfully completed save for subtask ID={new_subtask.id}")
+
+                # Publish domain events after successful save
+                self.publish_entity_events(subtask)
+
                 return True
                 
         except SQLAlchemyError as e:
@@ -154,7 +169,7 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
 
                 if model:
                     logger.info(f"✅ SUBTASK_FOUND: Found subtask id={id} for user_id={self.user_id}")
-                    return self._to_domain_entity(model)
+                    return self._model_to_entity(model)
                 else:
                     logger.info(f"❌ SUBTASK_NOT_FOUND: No subtask found with id={id} for user_id={self.user_id}")
                     return None
@@ -207,8 +222,8 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 logger.info(f"🐛 SUBTASK_DEBUG: Found {len(models)} subtask models")
                 for model in models:
                     logger.info(f"🐛 SUBTASK_DEBUG: Model - id={model.id}, task_id={model.task_id}, user_id={model.user_id}, title={model.title}")
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks for task {parent_task_id}: {e}")
@@ -221,10 +236,10 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
     def find_by_assignee(self, assignee: str) -> List[SubtaskEntity]:
         """
         Find subtasks by assignee.
-        
+
         Args:
             assignee: Assignee name/ID
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -234,13 +249,13 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.assignees.contains([assignee])
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.created_at.desc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks by assignee {assignee}: {e}")
@@ -253,10 +268,10 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
     def find_by_status(self, status: str) -> List[SubtaskEntity]:
         """
         Find subtasks by status.
-        
+
         Args:
             status: Status string
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -265,13 +280,13 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.status == status
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.created_at.desc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find subtasks by status {status}: {e}")
@@ -284,10 +299,10 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
     def find_completed(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find completed subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             List of completed subtask domain entities
         """
@@ -299,13 +314,13 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                         SubtaskModel.status == 'done'
                     )
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.completed_at.desc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find completed subtasks for task {parent_task_id}: {e}")
@@ -318,10 +333,10 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
     def find_pending(self, parent_task_id: TaskId) -> List[SubtaskEntity]:
         """
         Find pending subtasks for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
             List of pending subtask domain entities
         """
@@ -333,13 +348,13 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                         SubtaskModel.status.in_(['todo', 'in_progress', 'blocked'])
                     )
                 )
-                
+
                 # Apply user filter for data isolation
                 query = self.apply_user_filter(query)
-                
+
                 models = query.order_by(SubtaskModel.created_at.asc()).all()
-                
-                return [self._to_domain_entity(model) for model in models]
+
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to find pending subtasks for task {parent_task_id}: {e}")
@@ -499,17 +514,17 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 table="subtasks"
             )
     
-    def get_next_id(self, parent_task_id: TaskId) -> SubtaskId:
+    def get_next_id(self, parent_task_id: TaskId) -> TaskId:
         """
         Get next available subtask ID for a parent task.
-        
+
         Args:
             parent_task_id: Parent task ID
-            
+
         Returns:
-            New SubtaskId
+            New TaskId
         """
-        return SubtaskId.generate_new()
+        return TaskId.generate_new()
     
     def get_subtask_progress(self, parent_task_id: TaskId) -> Dict[str, Any]:
         """
@@ -590,13 +605,13 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
         try:
             with self.get_db_session() as session:
                 update_data = {
-                    SubtaskModel.status: status,
-                    SubtaskModel.updated_at: datetime.now(timezone.utc)
+                    SubtaskModel.status: status
+                    # BaseTimestampRepository handles updated_at automatically
                 }
                 
                 # Add completion timestamp if marking as done
                 if status == 'done':
-                    update_data[SubtaskModel.completed_at] = datetime.now(timezone.utc)
+                    # BaseTimestampRepository handles completed_at automatically
                     update_data[SubtaskModel.progress_percentage] = 100
                 elif status in ['todo', 'in_progress', 'blocked']:
                     update_data[SubtaskModel.completed_at] = None
@@ -688,8 +703,8 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
 
                 result = query.update({
                     SubtaskModel.progress_percentage: max(0, min(100, progress_percentage)),
-                    SubtaskModel.progress_notes: progress_notes,
-                    SubtaskModel.updated_at: datetime.now(timezone.utc)
+                    SubtaskModel.progress_notes: progress_notes
+                    # BaseTimestampRepository handles updated_at automatically
                 })
 
                 logger.info(f"📊 SUBTASK_PROGRESS: Updated {result} subtask(s) progress to {progress_percentage}% for user_id={self.user_id}")
@@ -734,8 +749,7 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 update_data = {
                     SubtaskModel.status: 'done',
                     SubtaskModel.progress_percentage: 100,
-                    SubtaskModel.completed_at: datetime.now(timezone.utc),
-                    SubtaskModel.updated_at: datetime.now(timezone.utc),
+                    # BaseTimestampRepository handles completed_at and updated_at automatically
                     SubtaskModel.completion_summary: completion_summary,
                     SubtaskModel.impact_on_parent: impact_on_parent
                 }
@@ -759,11 +773,11 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
     def get_subtasks_by_assignee(self, assignee: str, limit: Optional[int] = None) -> List[SubtaskEntity]:
         """
         Get subtasks assigned to a specific assignee.
-        
+
         Args:
             assignee: Assignee name/ID
             limit: Optional limit on number of results
-            
+
         Returns:
             List of subtask domain entities
         """
@@ -772,12 +786,12 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
                 query = session.query(SubtaskModel).filter(
                     SubtaskModel.assignees.contains([assignee])
                 ).order_by(SubtaskModel.updated_at.desc())
-                
+
                 if limit:
                     query = query.limit(limit)
-                
+
                 models = query.all()
-                return [self._to_domain_entity(model) for model in models]
+                return [self._model_to_entity(model) for model in models]
                 
         except SQLAlchemyError as e:
             logger.error(f"Failed to get subtasks by assignee {assignee}: {e}")
@@ -789,16 +803,8 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
     
     # Private helper methods
     
-    def _to_model_data(self, subtask: SubtaskEntity) -> Dict[str, Any]:
-        """
-        Convert domain entity to ORM model data.
-        
-        Args:
-            subtask: SubtaskEntity domain entity
-            
-        Returns:
-            Dictionary with model data
-        """
+    def _entity_to_model_dict(self, subtask: SubtaskEntity) -> Dict[str, Any]:
+        """Convert domain entity to model dictionary"""
         # Ensure assignees is a proper list of strings
         assignees = []
         if subtask.assignees:
@@ -818,8 +824,8 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
             "priority": subtask.priority.value if subtask.priority else "medium",
             "assignees": assignees,
             "progress_percentage": getattr(subtask, 'progress_percentage', 0),  # Use actual progress_percentage
-            "created_at": subtask.created_at or datetime.now(timezone.utc),
-            "updated_at": subtask.updated_at or datetime.now(timezone.utc)
+            "created_at": subtask.created_at,  # BaseTimestampRepository ensures this is set
+            "updated_at": subtask.updated_at   # BaseTimestampRepository ensures this is set
         }
         
         # CRITICAL FIX: Explicit user_id handling - no complex fallbacks
@@ -833,22 +839,14 @@ class ORMSubtaskRepository(BaseORMRepository[SubtaskEntity], BaseUserScopedRepos
         
         return model_data
     
-    def _to_domain_entity(self, model: SubtaskModel) -> SubtaskEntity:
-        """
-        Convert ORM model to domain entity.
-
-        Args:
-            model: SubtaskModel ORM model
-
-        Returns:
-            SubtaskEntity domain entity
-        """
+    def _model_to_entity(self, model: SubtaskModel) -> SubtaskEntity:
+        """Convert SQLAlchemy model to domain entity"""
         # Convert assignees from JSON to list
         assignees = model.assignees if model.assignees else []
-        
+
         # Create subtask using factory method
         subtask = SubtaskEntity(
-            id=SubtaskId(model.id),
+            id=TaskId(model.id),
             title=model.title,
             description=model.description or "",
             parent_task_id=TaskId(model.task_id),

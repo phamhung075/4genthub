@@ -202,6 +202,92 @@ class WebSocketNotificationService:
             }
 
     @staticmethod
+    def _get_branch_cascade_data(branch_id: str, user_id: str = None) -> Dict[str, Any]:
+        """
+        Fetch branch cascade data with current task counts for WebSocket updates.
+        Uses the same trigger-maintained counts as the bulk API for consistency.
+
+        Args:
+            branch_id: ID of the branch
+            user_id: User ID for multi-tenant filtering
+
+        Returns:
+            Dict containing branch cascade data with task_count, completed_tasks, etc.
+        """
+        try:
+            from ...infrastructure.database.database_config import get_session
+            from sqlalchemy import text
+
+            with get_session() as session:
+                # Use the same query approach as bulk API for consistency
+                # Use CAST for database compatibility (works in both SQLite and PostgreSQL)
+                query = text("""
+                    SELECT
+                        b.id as branch_id,
+                        b.project_id,
+                        b.name as branch_name,
+                        b.status as branch_status,
+                        b.priority as branch_priority,
+                        COALESCE(b.task_count, 0) as task_count,
+                        COALESCE(b.completed_task_count, 0) as completed_tasks,
+                        COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as todo_tasks,
+                        CASE
+                            WHEN COALESCE(b.task_count, 0) = 0 THEN 0
+                            ELSE ROUND((CAST(COALESCE(b.completed_task_count, 0) AS REAL) / CAST(b.task_count AS REAL)) * 100, 2)
+                        END as progress_percentage,
+                        b.updated_at as last_activity
+                    FROM project_git_branchs b
+                    WHERE b.id = :branch_id
+                """)
+
+                params = {"branch_id": branch_id}
+
+                # Add user filtering if provided
+                if user_id:
+                    query = text("""
+                        SELECT
+                            b.id as branch_id,
+                            b.project_id,
+                            b.name as branch_name,
+                            b.status as branch_status,
+                            b.priority as branch_priority,
+                            COALESCE(b.task_count, 0) as task_count,
+                            COALESCE(b.completed_task_count, 0) as completed_tasks,
+                            COALESCE(b.task_count, 0) - COALESCE(b.completed_task_count, 0) as todo_tasks,
+                            CASE
+                                WHEN COALESCE(b.task_count, 0) = 0 THEN 0
+                                ELSE ROUND((CAST(COALESCE(b.completed_task_count, 0) AS REAL) / CAST(b.task_count AS REAL)) * 100, 2)
+                            END as progress_percentage,
+                            b.updated_at as last_activity
+                        FROM project_git_branchs b
+                        WHERE b.id = :branch_id AND b.user_id = :user_id
+                    """)
+                    params["user_id"] = user_id
+
+                result = session.execute(query, params).fetchone()
+
+                if result:
+                    return {
+                        "id": result[0],
+                        "project_id": result[1],
+                        "name": result[2],
+                        "status": result[3],
+                        "priority": result[4],
+                        "task_count": result[5] or 0,
+                        "completed_tasks": result[6] or 0,
+                        "todo_tasks": result[7] or 0,
+                        "progress_percentage": float(result[8] or 0),
+                        "last_activity": result[9].isoformat() if result[9] else None
+                    }
+                else:
+                    logger.warning(f"Branch {branch_id} not found for cascade data lookup")
+                    return None
+
+        except Exception as e:
+            logger.error(f"Failed to get branch cascade data for {branch_id}: {e}")
+            return None
+
+    @staticmethod
     async def broadcast_task_event(
         event_type: str,
         task_id: str,
@@ -515,7 +601,24 @@ class WebSocketNotificationService:
     @staticmethod
     def sync_broadcast_task_event(*args, **kwargs):
         """Synchronous wrapper for broadcast_task_event - tries direct WebSocket first, then HTTP fallback"""
-        logger.info(f"🔔 sync_broadcast_task_event called from MCP server")
+        logger.warning(f"🔔 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called from MCP server")
+        print(f"🚀 🎯 WEBSOCKET SERVICE: sync_broadcast_task_event called")
+
+        # Extract arguments for debugging
+        event_type = kwargs.get('event_type', args[0] if args else 'unknown')
+        task_id = kwargs.get('task_id', args[1] if len(args) > 1 else 'unknown')
+        user_id = kwargs.get('user_id', args[2] if len(args) > 2 else 'system')
+
+        logger.warning(f"🎯 WEBSOCKET SERVICE: Event details - Type: {event_type}, Task: {task_id}, User: {user_id}")
+
+        # Enhanced logging for CREATE events
+        if event_type.lower() == 'created':
+            logger.warning(f"✨ CREATE EVENT DETECTED: Processing task creation notification")
+            logger.warning(f"✨ CREATE EVENT: Task ID = {task_id}")
+            logger.warning(f"✨ CREATE EVENT: User ID = {user_id}")
+            logger.warning(f"✨ CREATE EVENT: Args = {args}")
+            logger.warning(f"✨ CREATE EVENT: Kwargs = {kwargs}")
+
         print(f"🚀 BACKEND DELETE DEBUG: sync_broadcast_task_event called")
         print(f"🚀 BACKEND DELETE DEBUG: This is EVENT 1 of 2 - TASK DELETION")
 
@@ -554,6 +657,19 @@ class WebSocketNotificationService:
         metadata["task_title"] = task_context["task_title"]
         metadata["parent_branch_id"] = task_context["parent_branch_id"]
         metadata["parent_branch_title"] = task_context["parent_branch_title"]
+
+        # CRITICAL FIX: Add branch cascade data for task events to trigger frontend animations
+        if event_type in ["created", "deleted"] and git_branch_id:
+            logger.info(f"🎯 Adding branch cascade data for task {event_type} event")
+            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(git_branch_id, user_id)
+            if branch_cascade_data:
+                # Add cascade data to metadata for frontend consumption
+                metadata["cascade"] = {
+                    "branches": [branch_cascade_data]
+                }
+                logger.info(f"✅ Added cascade data for {event_type} with task_count: {branch_cascade_data.get('task_count', 0)}")
+            else:
+                logger.warning(f"⚠️ Could not fetch branch cascade data for branch {git_branch_id}")
 
         # Try direct WebSocket broadcast first (same process)
         try:

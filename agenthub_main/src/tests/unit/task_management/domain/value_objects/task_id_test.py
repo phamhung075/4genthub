@@ -56,23 +56,23 @@ class TestTaskId:
     
     def test_task_id_with_none_value(self):
         """Test that None value raises ValueError"""
-        with pytest.raises(ValueError, match="Task ID cannot be None"):
+        with pytest.raises(ValueError, match="TaskId cannot be None"):
             TaskId(None)
     
     def test_task_id_with_empty_string(self):
         """Test that empty string raises ValueError"""
-        with pytest.raises(ValueError, match="Task ID cannot be empty or whitespace"):
+        with pytest.raises(ValueError, match="TaskId cannot be empty or whitespace"):
             TaskId("")
         
-        with pytest.raises(ValueError, match="Task ID cannot be empty or whitespace"):
+        with pytest.raises(ValueError, match="TaskId cannot be empty or whitespace"):
             TaskId("   ")
     
     def test_task_id_with_non_string_value(self):
         """Test that non-string value raises TypeError"""
-        with pytest.raises(TypeError, match="Task ID value must be a string"):
+        with pytest.raises(TypeError, match="TaskId value must be a string"):
             TaskId(123)
         
-        with pytest.raises(TypeError, match="Task ID value must be a string"):
+        with pytest.raises(TypeError, match="TaskId value must be a string"):
             TaskId(['not', 'a', 'string'])
     
     def test_task_id_with_invalid_format(self):
@@ -80,10 +80,10 @@ class TestTaskId:
         # These formats are actually valid due to flexible patterns in TaskId
         # "not-a-valid-uuid" matches simple test pattern
         # So we test with truly invalid formats that don't match any pattern
-        with pytest.raises(ValueError, match="Invalid Task ID format"):
+        with pytest.raises(ValueError, match="Invalid TaskId format"):
             TaskId("!@#$%^&*()")  # Special characters not allowed
 
-        with pytest.raises(ValueError, match="Invalid Task ID format"):
+        with pytest.raises(ValueError, match="Invalid TaskId format"):
             TaskId("123.456.789")  # Invalid dot pattern
     
     def test_task_id_equality(self):

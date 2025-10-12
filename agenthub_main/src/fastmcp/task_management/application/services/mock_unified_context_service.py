@@ -64,6 +64,9 @@ except ImportError as e:
                 "level": level,
                 "data": data,
                 "parent_id": parent_id,
+                # Timestamps managed by repository layer in real implementation
+                # Mock maintains timestamps for testing compatibility
+                # Mock maintains timestamps for testing compatibility
                 "created_at": datetime.now().isoformat(),
                 "updated_at": datetime.now().isoformat()
             }
@@ -91,7 +94,9 @@ except ImportError as e:
             else:
                 # Replace data
                 context["data"] = data
-            
+
+            # Mock maintains timestamps for testing compatibility
+            # Mock maintains timestamps for testing compatibility
             context["updated_at"] = datetime.now().isoformat()
             return context
         
@@ -125,6 +130,7 @@ except ImportError as e:
                 "level": level,
                 "data": {},
                 "resolved": True,
+                # Mock maintains timestamps for testing compatibility
                 "created_at": datetime.now().isoformat()
             }
         
@@ -174,6 +180,7 @@ except ImportError as e:
                 context["data"]["insights"] = []
             
             context["data"]["insights"].append(insight)
+            # Mock maintains timestamps for testing compatibility
             context["updated_at"] = datetime.now().isoformat()
             return context
         
@@ -193,6 +200,7 @@ except ImportError as e:
                 context["data"]["progress"] = []
             
             context["data"]["progress"].append(progress)
+            # Mock maintains timestamps for testing compatibility
             context["updated_at"] = datetime.now().isoformat()
             return context
         

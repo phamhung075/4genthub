@@ -123,6 +123,7 @@ class TestContextDataPersistenceBug:
         """Check the difference between GlobalContext and ProjectContext schemas."""
 
         # Test GlobalContext model
+        now = datetime.now(timezone.utc)
         global_model = GlobalContextModel(
             id="test-global-123",
             user_id="test-user",
@@ -133,7 +134,9 @@ class TestContextDataPersistenceBug:
             reusable_patterns={},
             global_preferences={},
             delegation_rules={},
-            nested_structure={"test": "data"}
+            nested_structure={"test": "data"},
+            created_at=now,
+            updated_at=now
         )
 
         db_session.add(global_model)

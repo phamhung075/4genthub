@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import uuid
 
+# Fixed timestamp for test consistency
+FIXED_TEST_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0)
+
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.entities.project import Project
@@ -27,12 +30,12 @@ class FixtureGenerator:
     @staticmethod
     def generate_timestamp():
         """Generate a test timestamp"""
-        return datetime.now().isoformat()
-    
+        return FIXED_TEST_TIMESTAMP.isoformat()
+
     @staticmethod
     def generate_future_timestamp(hours=24):
         """Generate a future timestamp"""
-        return (datetime.now() + timedelta(hours=hours)).isoformat()
+        return (FIXED_TEST_TIMESTAMP + timedelta(hours=hours)).isoformat()
 
 
 @pytest.fixture

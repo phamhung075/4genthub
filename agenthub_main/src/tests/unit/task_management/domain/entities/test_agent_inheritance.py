@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.entities.subtask import Subtask
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.subtask_id import SubtaskId
+from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
 from fastmcp.task_management.domain.value_objects.priority import Priority
 
@@ -36,7 +36,7 @@ class TestAgentInheritance:
         
         # Create subtask without assignees
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask without agents",
             description="Should inherit from parent",
             parent_task_id=parent_task_id,
@@ -63,7 +63,7 @@ class TestAgentInheritance:
         
         # Create subtask with its own assignees
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask with agents",
             description="Has its own agents",
             parent_task_id=parent_task_id,
@@ -106,7 +106,7 @@ class TestAgentInheritance:
         parent_task_id = TaskId("task-001")
         
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask",
             description="Test subtask",
             parent_task_id=parent_task_id,
@@ -126,7 +126,7 @@ class TestAgentInheritance:
         
         # Create subtask without assignees
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask for validation test",
             description="Should inherit validated agents",
             parent_task_id=parent_task_id,
@@ -151,7 +151,7 @@ class TestAgentInheritance:
         parent_task_id = TaskId("task-001")
         
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Format test subtask",
             description="Test format preservation",
             parent_task_id=parent_task_id,
@@ -174,7 +174,7 @@ class TestAgentInheritance:
         parent_task_id = TaskId("task-001")
         
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Event test subtask",
             description="Should generate events",
             parent_task_id=parent_task_id,
@@ -195,19 +195,21 @@ class TestAgentInheritance:
         # Find the inheritance event
         inheritance_event = None
         for event in events:
-            if hasattr(event, 'old_value') and 'inherited_from_parent' in str(event.old_value):
-                inheritance_event = event
-                break
+            if hasattr(event, 'changes') and 'subtask_assignees' in event.changes:
+                change = event.changes['subtask_assignees']
+                if 'inherited_from_parent' in str(change.get('old', '')):
+                    inheritance_event = event
+                    break
         
         assert inheritance_event is not None
-        assert str(subtask.id) in str(inheritance_event.new_value)
+        assert str(subtask.id) in str(inheritance_event.changes['subtask_assignees']['new'])
     
     def test_multiple_inheritance_cycles(self):
         """Test that multiple inheritance calls don't stack assignees"""
         parent_task_id = TaskId("task-001")
         
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Multiple inheritance test",
             description="Should not duplicate assignees",
             parent_task_id=parent_task_id,
@@ -232,7 +234,7 @@ class TestAgentInheritance:
         parent_task_id = TaskId("task-001")
         
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Timestamp test subtask",
             description="Should update timestamp",
             parent_task_id=parent_task_id,
@@ -293,7 +295,7 @@ class TestAgentInheritanceIntegration:
         
         # Subtask 1: No assignees (should inherit)
         subtask1 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask 1 - No assignees",
             description="Should inherit all parent assignees",
             parent_task_id=parent_task.id,
@@ -302,7 +304,7 @@ class TestAgentInheritanceIntegration:
         
         # Subtask 2: Has own assignees (should not inherit)
         subtask2 = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Subtask 2 - Has assignees",
             description="Should keep own assignees",
             parent_task_id=parent_task.id,
@@ -335,7 +337,7 @@ class TestAgentInheritanceIntegration:
         
         # Create subtask without assignees
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Dynamic Subtask",
             description="Should inherit updated assignees",
             parent_task_id=parent_task.id,
@@ -354,7 +356,7 @@ class TestAgentInheritanceIntegration:
         
         # For new subtasks, they would inherit the updated assignees
         new_subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="New Subtask",
             description="Should inherit updated assignees",
             parent_task_id=parent_task.id,
@@ -377,7 +379,7 @@ class TestAgentInheritanceIntegration:
         )
         
         subtask = Subtask(
-            id=SubtaskId(str(uuid.uuid4())),
+            id=TaskId(str(uuid.uuid4())),
             title="Agent Info Subtask",
             description="Should inherit agent info",
             parent_task_id=parent_task.id,

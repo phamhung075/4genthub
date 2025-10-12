@@ -10,7 +10,7 @@ from ...domain.entities.subtask import Subtask
 from ...domain.repositories.task_repository import TaskRepository
 from ...domain.repositories.subtask_repository import SubtaskRepository
 from ...domain.value_objects.task_id import TaskId
-from ...domain.enums.agent_roles import AgentRole
+from ...domain.value_objects import AgentRole
 
 logger = logging.getLogger(__name__)
 

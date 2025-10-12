@@ -1,11 +1,6 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
-
-export interface EnhancedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
-  size?: "default" | "sm" | "lg" | "icon";
-  animation?: "none" | "shimmer" | "glow" | "sweep" | "pulse" | "gradient" | "aurora" | "dual-rotating" | "dual-rotating-glow";
-}
+import type { EnhancedButtonProps } from "../../types/componentTypes";
 
 const buttonVariants = {
   default: "theme-btn-primary",

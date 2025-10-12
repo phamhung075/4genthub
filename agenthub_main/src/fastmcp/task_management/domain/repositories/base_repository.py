@@ -2,42 +2,23 @@
 
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, TypeVar, Generic
-from dataclasses import dataclass
+
+# Import pagination types from value_objects (moved in Phase 5.1)
+# Previously defined here, now properly located in value_objects layer
+from ..value_objects.pagination import PaginationRequest, PaginationResult
 
 # Generic type for entities
 T = TypeVar('T')
 
 
-@dataclass(frozen=True)
-class PaginationRequest:
-    """Standard pagination request parameters"""
-    page: int = 1
-    page_size: int = 20
-    offset: Optional[int] = None
-    
-    def __post_init__(self):
-        if self.offset is None:
-            object.__setattr__(self, 'offset', (self.page - 1) * self.page_size)
-
-
-@dataclass(frozen=True)
-class PaginationResult(Generic[T]):
-    """Standard pagination result wrapper"""
-    items: List[T]
-    total_count: int
-    page: int
-    page_size: int
-    total_pages: int
-    has_next: bool
-    has_previous: bool
-
-
 class BaseRepository(ABC, Generic[T]):
     """
     Base repository interface providing standardized operations.
-    
+
     All domain repositories should inherit from this to ensure consistency
     in interface design and DDD compliance.
+
+    Note: For pagination, use PaginationService.create_pagination_result()
     """
     
     @abstractmethod
@@ -103,42 +84,11 @@ class BaseRepository(ABC, Generic[T]):
     def bulk_delete(self, entity_ids: List[Any]) -> int:
         """
         Delete multiple entities by their identifiers.
-        
+
         Args:
             entity_ids: List of entity identifiers to delete
-            
+
         Returns:
             Number of entities actually deleted
         """
         pass
-    
-    def create_pagination_result(
-        self,
-        items: List[T],
-        total_count: int,
-        pagination: PaginationRequest
-    ) -> PaginationResult[T]:
-        """
-        Helper method to create standardized pagination results.
-        
-        Args:
-            items: List of entities for current page
-            total_count: Total number of entities across all pages
-            pagination: Pagination request parameters
-            
-        Returns:
-            Properly formatted pagination result
-        """
-        total_pages = (total_count + pagination.page_size - 1) // pagination.page_size
-        has_next = pagination.page < total_pages
-        has_previous = pagination.page > 1
-        
-        return PaginationResult(
-            items=items,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=total_pages,
-            has_next=has_next,
-            has_previous=has_previous
-        )

@@ -46,19 +46,14 @@ async def get_all_agents_metadata(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to fetch agent metadata")
+                detail=result.message or "Failed to fetch agent metadata"
             )
-        
-        return {
-            "success": True,
-            "agents": result.get("agents", []),
-            "total": result.get("total", 0),
-            "message": f"Agent metadata retrieved for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -94,9 +89,9 @@ async def get_single_agent_metadata(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Agent {agent_name} not found"
@@ -104,14 +99,10 @@ async def get_single_agent_metadata(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to fetch agent metadata")
+                    detail=result.message or "Failed to fetch agent metadata"
                 )
-        
-        return {
-            "success": True,
-            "agent": result.get("agent"),
-            "message": f"Agent metadata retrieved for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -150,18 +141,14 @@ async def assign_agent_to_branch(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to assign agent")
+                detail=result.message or "Failed to assign agent"
             )
-        
-        return {
-            "success": True,
-            "assignment": result.get("assignment"),
-            "message": f"Agent {agent_id} assigned to branch successfully"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -197,9 +184,9 @@ async def unassign_agent_from_branch(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Branch not found or no agent assigned"
@@ -207,13 +194,10 @@ async def unassign_agent_from_branch(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to unassign agent")
+                    detail=result.message or "Failed to unassign agent"
                 )
-        
-        return {
-            "success": True,
-            "message": f"Agent unassigned from branch {branch_id} successfully"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -249,9 +233,9 @@ async def get_branch_agent_assignment(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Branch not found or access denied"
@@ -259,14 +243,10 @@ async def get_branch_agent_assignment(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to get assignment")
+                    detail=result.message or "Failed to get assignment"
                 )
-        
-        return {
-            "success": True,
-            "assignment": result.get("assignment"),
-            "message": f"Agent assignment retrieved for branch {branch_id}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -302,9 +282,9 @@ async def get_project_agent_assignments(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Project not found or access denied"
@@ -312,15 +292,10 @@ async def get_project_agent_assignments(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=result.get("message", "Failed to get assignments")
+                    detail=result.message or "Failed to get assignments"
                 )
-        
-        return {
-            "success": True,
-            "assignments": result.get("assignments", []),
-            "total": len(result.get("assignments", [])),
-            "message": f"Agent assignments retrieved for project {project_id}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise
@@ -406,19 +381,14 @@ async def get_agent_capabilities(
             user_id=current_user.id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("message", "Failed to fetch capabilities")
+                detail=result.message or "Failed to fetch capabilities"
             )
-        
-        return {
-            "success": True,
-            "capabilities": result.get("capabilities", {}),
-            "categories": result.get("categories", []),
-            "message": f"Agent capabilities retrieved for user {current_user.email}"
-        }
+
+        return result.model_dump(by_alias=True)
         
     except HTTPException:
         raise

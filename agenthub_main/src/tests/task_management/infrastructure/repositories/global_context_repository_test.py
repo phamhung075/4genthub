@@ -165,6 +165,7 @@ class TestGlobalContextRepository:
         mock_model = Mock(
             id="global-123",
             user_id="test-user",
+            unified_context_data={"rule1": "value1", "field": "value"},
             autonomous_rules={"rule1": "value1"},
             security_policies={},
             coding_standards={},
@@ -206,36 +207,74 @@ class TestGlobalContextRepository:
     
     def test_to_entity_conversion(self, repository):
         """Test _to_entity converts database model to domain entity"""
+        # The repository now uses unified_context_data as source of truth  
+        # BUT it gets overwritten by the flat structure logic, so we need to test the actual behavior
         mock_model = Mock(
             id="global-123",
-            autonomous_rules={"rule1": "value1"},
-            security_policies={"policy1": "value1"},
-            coding_standards={},
-            workflow_templates={"_custom": {"custom_field": "custom_value"}},
-            delegation_rules={},
+            unified_context_data={
+                "autonomous_rules": {"rule1": "value1"},
+                "security_policies": {"policy1": "value1"},
+                "custom_field": "custom_value"
+            },
+            nested_structure=None,
+            schema_version="1.0",
+            is_migrated=False,
+            migration_warnings=None,
+            organization_id=None,
             created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            updated_at=datetime.now(timezone.utc),
+            version=1,
+            user_id="test-user",
+            # The flat structure attributes that get used in else branch
+            organization_standards={},
+            security_policies={"policy1": "value1"},  # This will overwrite unified_context_data
+            compliance_requirements={},
+            shared_resources={},
+            reusable_patterns={},
+            delegation_rules={},
+            autonomous_rules={"rule1": "value1"},  # This will overwrite unified_context_data
+            coding_standards={},
+            workflow_templates={"_custom": {"custom_field": "custom_value"}},  # Custom fields go in _custom
+            global_preferences={}
         )
         
         result = repository._to_entity(mock_model)
         
         assert isinstance(result, GlobalContext)
         assert result.id == "global-123"
+        # The flat structure overwrites unified_context_data in current implementation
         assert result.global_settings["autonomous_rules"] == {"rule1": "value1"}
         assert result.global_settings["security_policies"] == {"policy1": "value1"}
         assert result.global_settings["custom_field"] == "custom_value"
     
     def test_to_entity_without_custom_fields(self, repository):
         """Test _to_entity handles models without custom fields"""
+        # Using unified_context_data as source of truth but flat structure overwrites it
         mock_model = Mock(
             id="global-123",
-            autonomous_rules={"rule1": "value1"},
-            security_policies={},
-            coding_standards={},
-            workflow_templates={},  # No _custom
-            delegation_rules={},
+            unified_context_data={
+                "autonomous_rules": {"rule1": "value1"}
+            },
+            nested_structure=None,
+            schema_version="1.0",
+            is_migrated=False,
+            migration_warnings=None,
+            organization_id=None,
             created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            updated_at=datetime.now(timezone.utc),
+            version=1,
+            user_id="test-user",
+            # Flat structure attributes that match unified_context_data
+            organization_standards={},
+            security_policies={},
+            compliance_requirements={},
+            shared_resources={},
+            reusable_patterns={},
+            delegation_rules={},
+            autonomous_rules={"rule1": "value1"},  # This overwrites unified_context_data
+            coding_standards={},
+            workflow_templates={},
+            global_preferences={}
         )
         
         result = repository._to_entity(mock_model)
@@ -263,6 +302,7 @@ class TestGlobalContextRepository:
         existing_model = Mock()
         existing_model.id = "global-123"
         existing_model.user_id = "test-user"
+        existing_model.unified_context_data = {"old_rule": "old_value"}
         existing_model.organization_standards = {"old_rule": "old_value"}
         existing_model.security_policies = {}
         existing_model.compliance_requirements = {}

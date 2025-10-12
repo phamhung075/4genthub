@@ -106,9 +106,9 @@ export const LoginForm: React.FC = () => {
   return (
     <Box sx={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <FallingGlitch
-        glitchColors={theme.palette.mode === 'dark' 
-          ? ["#ff7cce", "#7cf0ff", "#fcf07c", "#8E44AD", "#3498DB"]
-          : ["#ff5fa3", "#5cd9ff", "#ffd85c", "#9B59B6", "#5DADE2"]
+        glitchColors={theme.palette.mode === 'dark'
+          ? ["#7cf0ff", "#6dd5ed", "#8E44AD", "#3498DB", "#2ECC71"]
+          : ["#5cd9ff", "#48c9b0", "#9B59B6", "#5DADE2", "#1ABC9C"]
         }
         backgroundColor={theme.palette.mode === 'dark' ? "#080A12" : "#0f1419"}
         fontSize={12}

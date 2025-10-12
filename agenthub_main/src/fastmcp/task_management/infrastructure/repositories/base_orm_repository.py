@@ -14,8 +14,8 @@ from contextlib import contextmanager
 from ..database.database_config import get_session
 from ...domain.exceptions.base_exceptions import (
     DatabaseException,
-    ResourceNotFoundException,
-    ValidationException
+    DatabaseIntegrityException,
+    ResourceNotFoundException
 )
 
 logger = logging.getLogger(__name__)
@@ -27,15 +27,19 @@ ModelType = TypeVar("ModelType")
 class BaseORMRepository(Generic[ModelType]):
     """
     Base repository class using SQLAlchemy ORM.
-    
+
     Provides common CRUD operations and session management
     for all repository implementations.
+
+    Exception Handling:
+    - IntegrityError → DatabaseIntegrityException (technical exception)
+    - Domain layer is responsible for business validation before calling repository
     """
-    
+
     def __init__(self, model_class: Type[ModelType]):
         """
         Initialize base repository.
-        
+
         Args:
             model_class: The SQLAlchemy model class for this repository
         """
@@ -102,12 +106,15 @@ class BaseORMRepository(Generic[ModelType]):
     def create(self, **kwargs) -> ModelType:
         """
         Create a new record.
-        
+
         Args:
             **kwargs: Model attributes
-            
+
         Returns:
             Created model instance
+
+        Raises:
+            DatabaseIntegrityException: Database integrity constraint violations
         """
         with self.get_db_session() as session:
             try:
@@ -117,11 +124,45 @@ class BaseORMRepository(Generic[ModelType]):
                 session.refresh(instance)  # Refresh to get all defaults
                 return instance
             except IntegrityError as e:
-                raise ValidationException(
-                    message=f"Integrity constraint violation: {str(e)}",
-                    field="unknown",
-                    value=str(kwargs)
+                # Infrastructure only handles technical DB errors
+                # Domain layer is responsible for business validation BEFORE calling repository
+                constraint_name = self._extract_constraint_name(str(e))
+                raise DatabaseIntegrityException(
+                    message=f"Database integrity constraint violation: {str(e)}",
+                    constraint=constraint_name
                 )
+
+    def _extract_constraint_name(self, error_message: str) -> Optional[str]:
+        """
+        Extract constraint name from IntegrityError message.
+
+        Args:
+            error_message: Error message from IntegrityError
+
+        Returns:
+            Constraint name if found, None otherwise
+        """
+        # Common patterns in IntegrityError messages
+        patterns = [
+            ('UNIQUE constraint failed: ', True),   # Has constraint name after
+            ('NOT NULL constraint failed: ', True),  # Has constraint name after
+            ('CHECK constraint failed: ', True),     # Has constraint name after
+            ('FOREIGN KEY constraint failed', False) # Usually no specific name
+        ]
+
+        for pattern, has_name in patterns:
+            if pattern in error_message:
+                if not has_name:
+                    # FOREIGN KEY usually doesn't have specific constraint name
+                    return None
+                # Extract the part after the pattern
+                parts = error_message.split(pattern)
+                if len(parts) > 1:
+                    # Get first word/token after pattern (before newline or space)
+                    name = parts[1].split()[0].strip() if parts[1].strip() else None
+                    return name
+
+        return None
     
     def get_by_id(self, id: Any) -> Optional[ModelType]:
         """

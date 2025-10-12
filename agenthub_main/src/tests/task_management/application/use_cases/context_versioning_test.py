@@ -17,7 +17,7 @@ from fastmcp.task_management.application.use_cases.context_versioning import (
     VersionDiff,
     ChangeType
 )
-from fastmcp.task_management.domain.models.unified_context import ContextLevel
+from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
 
 
 class TestContextVersioningService:

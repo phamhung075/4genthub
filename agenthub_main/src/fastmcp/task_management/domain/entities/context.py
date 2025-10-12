@@ -9,6 +9,7 @@ from ..value_objects.priority import Priority, PriorityLevel
 from ..value_objects.task_status import TaskStatus, TaskStatusEnum
 from ..value_objects.task_id import TaskId
 from .global_context_schema import GlobalContextNestedData
+from .base.base_timestamp_entity import BaseTimestampEntity
 import uuid
 
 
@@ -42,10 +43,29 @@ class GlobalContext:
                 self._nested_data = GlobalContextNestedData.from_dict(self.global_settings)
     
     def _ensure_nested_structure(self) -> None:
-        """Ensure nested structure is initialized."""
+        """Ensure nested structure is initialized without overwriting custom data."""
         if self._nested_data is None:
             # Initialize empty nested structure
             self._nested_data = GlobalContextNestedData()
+            # CRITICAL FIX: Do NOT sync to flat structure if custom data exists
+            # This prevents overwriting custom fields with empty nested structure
+
+    def _is_only_nested_structure_data(self) -> bool:
+        """Check if global_settings only contains nested structure data (no custom fields)."""
+        if not isinstance(self.global_settings, dict):
+            return True
+
+        # Known nested structure keys that don't count as custom data
+        nested_keys = {"organization", "development", "security", "operations", "preferences", "_schema_version", "_custom_categories"}
+
+        # Check if all keys in global_settings are nested structure keys
+        for key in self.global_settings.keys():
+            if key not in nested_keys:
+                # Found custom data
+                return False
+
+        # Only nested structure data found
+        return True
     
     def get_nested_data(self) -> GlobalContextNestedData:
         """Get the nested data structure, ensuring it's initialized."""
@@ -139,22 +159,41 @@ class GlobalContext:
     def dict(self) -> Dict[str, Any]:
         """Convert to dictionary with support for both structures."""
         self._ensure_nested_structure()
-        
-        # Sync nested to flat format
-        self._sync_to_flat_structure()
-        
+
+        # CRITICAL FIX: Only sync nested to flat format if NO custom data exists
+        # This prevents overwriting custom data with empty nested structure
+        has_custom_data = (isinstance(self.global_settings, dict) and
+                          len(self.global_settings) > 0 and
+                          not self._is_only_nested_structure_data())
+
+        if not has_custom_data:
+            # Only sync if no custom data - this preserves nested structure behavior
+            self._sync_to_flat_structure()
+
+        # Start with base fields
         result = {
             "id": self.id,
             "organization_name": self.organization_name,
-            "global_settings": self.global_settings,
             "metadata": self.metadata.copy()
         }
-        
+
+        # CRITICAL FIX: Merge global_settings at root level to expose custom fields
+        # This allows custom data like claude_md_rules to appear in responses
+        if isinstance(self.global_settings, dict):
+            # Merge all global_settings fields at root level
+            for key, value in self.global_settings.items():
+                # Don't override base fields
+                if key not in ["id", "organization_name", "metadata"]:
+                    result[key] = value
+
+        # Keep global_settings field for backward compatibility
+        result["global_settings"] = self.global_settings
+
         # Add nested structure information to metadata
         if self._nested_data:
             result["metadata"]["schema_version"] = self._nested_data._schema_version
             result["metadata"]["nested_structure"] = self._nested_data.to_dict()
-        
+
         return result
     
     @classmethod
@@ -242,6 +281,8 @@ class BranchContext:
 class TaskContextUnified:
     """Task context entity for unified context system.
     Named TaskContextUnified to avoid conflict with existing TaskContext.
+
+    Rich Domain Model: Contains business logic for context validation, merging, and management.
     """
     id: str  # Task UUID
     branch_id: str
@@ -255,7 +296,205 @@ class TaskContextUnified:
     insights: List[Dict[str, Any]] = field(default_factory=list)
     next_steps: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
+    def validate_context_data(self) -> tuple[bool, List[str]]:
+        """
+        Validate context data for business rules compliance.
+
+        Returns:
+            tuple[bool, List[str]]: (is_valid, list_of_errors)
+
+        Business Rules:
+        - Progress must be 0-100
+        - Task data must contain at least title
+        - Insights must have required fields (timestamp, category, content)
+        - Blockers must have description
+        """
+        errors = []
+
+        # Validate progress
+        if not (0 <= self.progress <= 100):
+            errors.append(f"Progress must be between 0-100, got {self.progress}")
+
+        # Validate task_data has title
+        if not self.task_data.get('title'):
+            errors.append("task_data must contain a title")
+
+        # Validate insights structure
+        for idx, insight in enumerate(self.insights):
+            if not isinstance(insight, dict):
+                errors.append(f"Insight {idx} must be a dictionary")
+                continue
+
+            required_fields = ['timestamp', 'category', 'content']
+            for field in required_fields:
+                if field not in insight:
+                    errors.append(f"Insight {idx} missing required field: {field}")
+
+            # Validate category
+            valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
+            if insight.get('category') and insight['category'] not in valid_categories:
+                errors.append(f"Insight {idx} has invalid category: {insight['category']}")
+
+        # Validate blockers have description
+        if self.blockers:
+            for key, blocker in self.blockers.items():
+                if isinstance(blocker, dict) and not blocker.get('description'):
+                    errors.append(f"Blocker '{key}' must have a description")
+
+        return len(errors) == 0, errors
+
+    def merge_context_updates(self, updates: Dict[str, Any]) -> None:
+        """
+        Merge context updates with business rules.
+
+        Args:
+            updates: Dictionary of updates to merge
+
+        Business Rules:
+        - Progress can only increase (unless explicitly decreasing)
+        - Insights are append-only (no modifications)
+        - Blockers can be added or resolved
+        - metadata updates are merged, not replaced
+        """
+        # Business logic for merging
+        for key, value in updates.items():
+            if key == 'progress':
+                # Progress validation: can only increase unless explicitly allowed
+                new_progress = value
+                if new_progress < self.progress and not updates.get('_allow_progress_decrease'):
+                    # Ignore decrease unless explicitly allowed
+                    continue
+                self.progress = max(0, min(100, new_progress))
+
+            elif key == 'insights':
+                # Insights are append-only
+                if isinstance(value, list):
+                    self.insights.extend(value)
+                elif isinstance(value, dict):
+                    self.insights.append(value)
+
+            elif key == 'blockers':
+                # Merge blockers (can add or update)
+                if isinstance(value, dict):
+                    self.blockers.update(value)
+
+            elif key == 'metadata':
+                # Deep merge metadata
+                if isinstance(value, dict):
+                    self.metadata.update(value)
+
+            elif key in ['task_data', 'execution_context', 'discovered_patterns',
+                        'implementation_notes', 'test_results']:
+                # Deep merge for nested dictionaries
+                if isinstance(value, dict) and hasattr(self, key):
+                    current = getattr(self, key)
+                    if isinstance(current, dict):
+                        current.update(value)
+                    else:
+                        setattr(self, key, value)
+                else:
+                    setattr(self, key, value)
+
+            elif key == 'next_steps':
+                # Replace next_steps (not append)
+                self.next_steps = value if isinstance(value, list) else [value]
+
+            elif key.startswith('_'):
+                # Skip internal flags
+                continue
+
+            else:
+                # Default: direct assignment for other fields
+                if hasattr(self, key):
+                    setattr(self, key, value)
+
+    def add_insight(self, category: str, content: str, agent: str = "system",
+                   importance: str = "medium") -> None:
+        """
+        Add categorized insight to the context.
+
+        Args:
+            category: Insight category (insight, challenge, solution, decision, technical, business)
+            content: Insight content
+            agent: Agent that generated the insight
+            importance: Importance level (low, medium, high, critical)
+
+        Raises:
+            ValueError: If category is invalid or content is empty
+        """
+        # Validation
+        valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
+        if category not in valid_categories:
+            raise ValueError(f"Invalid category: {category}. Must be one of {valid_categories}")
+
+        if not content or not content.strip():
+            raise ValueError("Insight content cannot be empty")
+
+        valid_importance = ['low', 'medium', 'high', 'critical']
+        if importance not in valid_importance:
+            raise ValueError(f"Invalid importance: {importance}. Must be one of {valid_importance}")
+
+        # Add insight with timestamp
+        insight = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'category': category,
+            'content': content.strip(),
+            'agent': agent,
+            'importance': importance
+        }
+
+        self.insights.append(insight)
+
+    def update_progress(self, new_progress: int, notes: Optional[str] = None,
+                       allow_decrease: bool = False) -> None:
+        """
+        Update progress with validation and tracking.
+
+        Args:
+            new_progress: New progress value (0-100)
+            notes: Optional progress notes
+            allow_decrease: Allow progress to decrease (default: False)
+
+        Raises:
+            ValueError: If progress is invalid or decreasing without permission
+        """
+        # Validation
+        if not (0 <= new_progress <= 100):
+            raise ValueError(f"Progress must be between 0-100, got {new_progress}")
+
+        # Check for decrease
+        if new_progress < self.progress and not allow_decrease:
+            raise ValueError(
+                f"Progress cannot decrease from {self.progress} to {new_progress}. "
+                f"Set allow_decrease=True to override."
+            )
+
+        # Update progress
+        old_progress = self.progress
+        self.progress = new_progress
+
+        # Track progress change in metadata
+        if 'progress_history' not in self.metadata:
+            self.metadata['progress_history'] = []
+
+        self.metadata['progress_history'].append({
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'old_progress': old_progress,
+            'new_progress': new_progress,
+            'notes': notes
+        })
+
+        # Update implementation notes if provided
+        if notes:
+            if 'progress_updates' not in self.implementation_notes:
+                self.implementation_notes['progress_updates'] = []
+            self.implementation_notes['progress_updates'].append({
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'progress': new_progress,
+                'notes': notes
+            })
+
     def dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -278,16 +517,23 @@ class TaskContextUnified:
 
 
 @dataclass
-class ContextMetadata:
+class ContextMetadata(BaseTimestampEntity):
     """Context metadata structure following clean relationship chain (uses Priority and TaskStatus value objects)"""
-    task_id: str  # Primary key - contains all necessary context via task -> git_branch -> project -> user
+    task_id: str = ""  # Primary key - contains all necessary context via task -> git_branch -> project -> user
     status: TaskStatus = field(default_factory=TaskStatus.todo)
     priority: Priority = field(default_factory=Priority.medium)
     assignees: List[str] = field(default_factory=list)
     labels: List[str] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     version: int = 1
+
+    def _get_entity_id(self) -> str:
+        """Get the unique identifier for this entity."""
+        return str(self.task_id) if self.task_id else "unknown"
+
+    def _validate_entity(self) -> None:
+        """Validate entity business rules."""
+        if not self.task_id:
+            raise ValueError("ContextMetadata must have a task_id")
 
 
 @dataclass
@@ -452,7 +698,7 @@ class TaskContext:
             self.progress.next_recommendations = next_recommendations
         
         # Update metadata timestamp
-        self.metadata.updated_at = datetime.now(timezone.utc)
+        self.metadata.touch("completion_summary_updated")
     
     def has_completion_summary(self) -> bool:
         """Check if context has a completion summary"""
@@ -518,8 +764,6 @@ class TaskContext:
                 priority=Priority.from_string(metadata_data.get('priority', 'medium')),
                 assignees=metadata_data.get('assignees', []),
                 labels=metadata_data.get('labels', []),
-                created_at=datetime.fromisoformat(metadata_data.get('created_at', datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00')),
-                updated_at=datetime.fromisoformat(metadata_data.get('updated_at', datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00')),
                 version=metadata_data.get('version', 1)
             )
         else:

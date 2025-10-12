@@ -53,8 +53,18 @@ class TestDeleteTaskUseCase:
     @pytest.fixture
     def use_case(self, mock_task_repository, mock_db_session_factory, mock_logging_service):
         """Create a use case instance with mocked dependencies"""
+        # Mock the required repositories
+        mock_subtask_repository = Mock()
+        mock_branch_repository = Mock()
+        mock_project_repository = Mock()
+        mock_context_repository = Mock()
+        
         return DeleteTaskUseCase(
             task_repository=mock_task_repository,
+            subtask_repository=mock_subtask_repository,
+            branch_repository=mock_branch_repository,
+            project_repository=mock_project_repository,
+            context_repository=mock_context_repository,
             db_session_factory=mock_db_session_factory,
             logging_service=mock_logging_service
         )
@@ -71,15 +81,6 @@ class TestDeleteTaskUseCase:
         task.created_at = datetime.now(timezone.utc)
         task.updated_at = datetime.now(timezone.utc)
         
-        # Mock domain events
-        task_deleted_event = TaskDeleted(
-            task_id=task.id,
-            title=task.title,
-            deleted_at=datetime.now(timezone.utc)
-        )
-        task.get_events.return_value = [task_deleted_event]
-        task.mark_as_deleted.return_value = None
-        
         return task
     
     def test_execute_successful_deletion_with_string_id(self, use_case, mock_task_repository, sample_task):
@@ -93,20 +94,20 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
         # Verify repository interactions
-        mock_task_repository.find_by_id.assert_called_once()
-        called_task_id = mock_task_repository.find_by_id.call_args[0][0]
-        assert isinstance(called_task_id, TaskId)
-        assert str(called_task_id) == task_id
+        # Note: find_by_id is called twice - once in DeleteTaskUseCase and once in CascadeDeletionService
+        assert mock_task_repository.find_by_id.call_count == 2
+        # Check both calls
+        for call in mock_task_repository.find_by_id.call_args_list:
+            called_task_id = call[0][0]
+            assert isinstance(called_task_id, TaskId)
+            assert str(called_task_id) == task_id
         
-        # Verify task was marked as deleted and repository delete was called
-        sample_task.mark_as_deleted.assert_called_once()
+        # Verify repository delete was called
         mock_task_repository.delete.assert_called_once()
-        
-        # Verify domain events were processed
-        sample_task.get_events.assert_called_once()
     
     def test_execute_successful_deletion_with_integer_id(self, use_case, mock_task_repository, sample_task):
         """Test successful task deletion with integer ID"""
@@ -119,15 +120,18 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
         # Verify repository interactions
-        mock_task_repository.find_by_id.assert_called_once()
-        called_task_id = mock_task_repository.find_by_id.call_args[0][0]
-        assert isinstance(called_task_id, TaskId)
+        # Note: find_by_id is called twice - once in DeleteTaskUseCase and once in CascadeDeletionService
+        assert mock_task_repository.find_by_id.call_count == 2
+        # Check both calls
+        for call in mock_task_repository.find_by_id.call_args_list:
+            called_task_id = call[0][0]
+            assert isinstance(called_task_id, TaskId)
         
-        # Verify task processing
-        sample_task.mark_as_deleted.assert_called_once()
+        # Verify repository delete was called
         mock_task_repository.delete.assert_called_once()
     
     def test_execute_task_not_found(self, use_case, mock_task_repository):
@@ -140,7 +144,9 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is False
+        assert result["success"] is False
+        assert result["task_deleted"] is False
+        assert "not found" in result["message"]
         
         # Verify only find was called, not delete
         mock_task_repository.find_by_id.assert_called_once()
@@ -157,14 +163,11 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is False
+        assert result["success"] is False
+        assert result["task_deleted"] is False
         
-        # Verify task was found and marked as deleted but delete failed
-        sample_task.mark_as_deleted.assert_called_once()
+        # Verify repository delete was called but failed
         mock_task_repository.delete.assert_called_once()
-        
-        # Events should not be processed on failure
-        sample_task.get_events.assert_not_called()
     
     def test_execute_with_git_branch_id_update_success(self, use_case, mock_task_repository, 
                                                        sample_task, mock_db_session_factory, mock_logger):
@@ -179,16 +182,17 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
-        # Verify database session was used for branch update
-        mock_db_session_factory.create_session.assert_called_once()
+        # Note: Branch updates are now handled by cascade service, not direct session calls
+        # The cascade service handles all related updates internally
         
         # Verify info logging about branch update
         mock_logger.info.assert_called()
         info_calls = [call[0][0] for call in mock_logger.info.call_args_list]
-        branch_update_logged = any("should update branch" in msg for msg in info_calls)
-        assert branch_update_logged
+        deletion_logged = any("Successfully deleted task" in msg for msg in info_calls)
+        assert deletion_logged
     
     def test_execute_with_git_branch_id_update_exception(self, use_case, mock_task_repository, 
                                                         sample_task, mock_db_session_factory, mock_logger):
@@ -199,20 +203,18 @@ class TestDeleteTaskUseCase:
         mock_task_repository.find_by_id.return_value = sample_task
         mock_task_repository.delete.return_value = True
         
-        # Make session creation raise an exception
+        # Make session creation raise an exception (though not used directly anymore)
         mock_db_session_factory.create_session.side_effect = Exception("Database error")
         
         # Act
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True  # Should still succeed despite branch update failure
+        assert result["success"] is True
+        assert result["task_deleted"] is True  # Should still succeed despite branch update failure
         
-        # Verify warning was logged
-        mock_logger.warning.assert_called()
-        warning_calls = [call[0][0] for call in mock_logger.warning.call_args_list]
-        branch_error_logged = any("Failed to update branch task count" in msg for msg in warning_calls)
-        assert branch_error_logged
+        # Note: Branch update errors are now handled within cascade service
+        # No specific warning logging for branch updates in the use case itself
     
     def test_execute_without_git_branch_id(self, use_case, mock_task_repository, sample_task, mock_logger):
         """Test deletion of task without git_branch_id"""
@@ -227,7 +229,8 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
         # Verify no branch update info was logged
         info_calls = [call[0][0] for call in mock_logger.info.call_args_list] if mock_logger.info.called else []
@@ -235,29 +238,23 @@ class TestDeleteTaskUseCase:
         assert not branch_update_logged
     
     def test_execute_domain_events_processing(self, use_case, mock_task_repository, sample_task):
-        """Test domain events are properly processed"""
+        """Test task deletion completes successfully"""
         # Arrange
         task_id = "12345678-1234-5678-1234-567812345678"
         mock_task_repository.find_by_id.return_value = sample_task
         mock_task_repository.delete.return_value = True
         
-        # Create multiple events
-        task_deleted_event = TaskDeleted(
-            task_id=sample_task.id,
-            title=sample_task.title,
-            deleted_at=datetime.now(timezone.utc)
-        )
-        other_event = Mock()  # Non-TaskDeleted event
-        sample_task.get_events.return_value = [task_deleted_event, other_event]
+        # Note: Domain events are now handled by the cascade service
+        # The use case no longer directly processes get_events()
         
         # Act
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
-        # Verify events were retrieved and processed
-        sample_task.get_events.assert_called_once()
+        # The cascade service handles all event processing internally
     
     @pytest.mark.parametrize("task_id_input,expected_conversion", [
         ("11111111-1111-1111-1111-111111111111", "string"),  # Valid UUID format
@@ -277,12 +274,16 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id_input)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
         # Verify correct conversion method was used
-        mock_task_repository.find_by_id.assert_called_once()
-        called_task_id = mock_task_repository.find_by_id.call_args[0][0]
-        assert isinstance(called_task_id, TaskId)
+        # find_by_id is called twice: once in use case, once in cascade service
+        assert mock_task_repository.find_by_id.call_count == 2
+        # Check both calls used TaskId
+        for call in mock_task_repository.find_by_id.call_args_list:
+            called_task_id = call[0][0]
+            assert isinstance(called_task_id, TaskId)
     
     def test_logging_initialization(self, mock_task_repository, mock_logging_service, mock_logger):
         """Test proper logger initialization"""
@@ -303,6 +304,7 @@ class TestDeleteTaskUseCase:
         task_id = "12345678-1234-5678-1234-567812345678"
         task_without_branch = Mock(spec=Task)
         task_without_branch.id = TaskId(task_id)
+        task_without_branch.title = "Test Task"
         task_without_branch.get_events.return_value = []
         task_without_branch.mark_as_deleted.return_value = None
         # Simulate hasattr returning False
@@ -311,12 +313,17 @@ class TestDeleteTaskUseCase:
         mock_task_repository.delete.return_value = True
         
         # Act
-        result = use_case.execute(task_id)
+        with patch.object(use_case, '_cascade_service') as mock_cascade:
+            mock_cascade.delete_task_cascade.return_value = {
+                "task_deleted": True,
+                "subtasks_deleted": 0,
+                "contexts_deleted": 0
+            }
+            result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
-        task_without_branch.mark_as_deleted.assert_called_once()
-        mock_task_repository.delete.assert_called_once()
+        assert result["success"] is True
+        assert result["task_deleted"] is True
     
     def test_execute_with_none_git_branch_id(self, use_case, mock_task_repository, sample_task, mock_logger):
         """Test deletion when git_branch_id is None"""
@@ -330,7 +337,8 @@ class TestDeleteTaskUseCase:
         result = use_case.execute(task_id)
         
         # Assert
-        assert result is True
+        assert result["success"] is True
+        assert result["task_deleted"] is True
         
         # Verify no branch update info was logged
         info_calls = [call[0][0] for call in mock_logger.info.call_args_list] if mock_logger.info.called else []

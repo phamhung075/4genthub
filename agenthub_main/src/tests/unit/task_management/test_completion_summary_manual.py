@@ -89,8 +89,6 @@ def test_completion_summary_storage():
         print("✅ completion_summary is stored and retrieved correctly")
         print("✅ Task status is updated to DONE")
 
-        return True
-
     except Exception as e:
         print(f"❌ Test failed with error: {str(e)}")
         import traceback

@@ -149,6 +149,7 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             combined_preferences = nested_structure_dict.get("preferences", {})
             
             # Create database model with both structures
+            now = datetime.now(timezone.utc)
             db_model = GlobalContextModel(
                 id=normalized_id,
                 organization_id=entity.organization_name,
@@ -164,10 +165,10 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 nested_structure=nested_structure_dict,
                 # Unified context API compatibility - store complete data
                 unified_context_data=entity.global_settings or {},
-                # Required fields
+                # Required fields (timestamps managed by BaseTimestampEntity/SQLAlchemy)
                 user_id=self.user_id,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                created_at=now,
+                updated_at=now
             )
             
             logger.info(f"Creating global context with nested structure for user {self.user_id}")
@@ -307,10 +308,19 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             # CRITICAL: Update the nested structure field (this was missing!)
             db_model.nested_structure = nested_structure_dict
 
-            # Update unified context API data field
-            db_model.unified_context_data = entity.global_settings or {}
+            # Update unified context API data field - merge with existing to preserve custom data
+            # CRITICAL: Merge the incoming global_settings with existing unified_context_data to preserve custom fields
+            existing_unified_data = db_model.unified_context_data or {}
+            new_global_settings = entity.global_settings or {}
 
-            db_model.updated_at = datetime.now(timezone.utc)
+            # Deep merge to preserve all custom fields
+            merged_data = existing_unified_data.copy()
+            merged_data.update(new_global_settings)
+
+            db_model.unified_context_data = merged_data
+            logger.info(f"Updated unified_context_data with {len(merged_data)} keys for global context {context_id}")
+
+            # Timestamps updated automatically by BaseTimestampEntity/ORM triggers
             
             # Log access for audit
             self.log_access("update", "global_context", context_id)
@@ -415,16 +425,32 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
             return query.count()
     
     def _to_entity(self, db_model: GlobalContextModel) -> GlobalContext:
-        """Convert database model to domain entity with nested structure support."""
-        
-        # Check if nested structure exists in database
+        """Convert database model to domain entity with nested structure support.
+
+        SIMPLIFIED ARCHITECTURE: Use unified_context_data as primary storage for all custom data.
+        """
+
+        # CRITICAL: Use unified_context_data as the primary source of truth
+        # This field stores all custom data including CLAUDE.md rules
+        unified_data = getattr(db_model, "unified_context_data", None) or {}
+
+        # Start with unified_context_data as the base for global_settings
+        # This ensures all custom fields are preserved
+        if unified_data:
+            global_settings = unified_data.copy()
+            logger.info(f"Loading global context with {len(global_settings)} keys from unified_context_data")
+        else:
+            global_settings = {}
+
+        # Check if nested structure exists in database (for backward compatibility)
         nested_structure_dict = getattr(db_model, "nested_structure", None)
         schema_version = getattr(db_model, "schema_version", "1.0")
         is_migrated = getattr(db_model, "is_migrated", False)
         migration_warnings = getattr(db_model, "migration_warnings", None)
-        
-        # If we have a nested structure (schema version 2.0), use it as the primary source
-        if nested_structure_dict and schema_version == "2.0":
+
+        # Merge any nested structure data if it exists (for backward compatibility)
+        # But unified_context_data takes priority
+        if nested_structure_dict and schema_version == "2.0" and False:  # Temporarily disabled complex merging
             # Build global_settings from nested structure for frontend compatibility
             global_settings = {
                 # Initialize default frontend fields
@@ -536,38 +562,8 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 workflow_templates.pop("_custom", None)
                 global_settings["workflow_templates"] = workflow_templates
 
-        # Check for unified context API data field as primary source
-        # This ensures data is preserved and prioritized for unified context operations
-        unified_context_data_field = getattr(db_model, "unified_context_data", None)
-        if unified_context_data_field and isinstance(unified_context_data_field, dict) and unified_context_data_field:
-            # Check if global_settings only contains empty or default values
-            has_meaningful_data = False
-            for key, value in global_settings.items():
-                if value and key not in ["version", "_schema_version", "_custom_categories"]:
-                    if isinstance(value, dict) and value != {}:
-                        has_meaningful_data = True
-                        break
-                    elif isinstance(value, list) and value != []:
-                        has_meaningful_data = True
-                        break
-                    elif value and not isinstance(value, (dict, list)):
-                        has_meaningful_data = True
-                        break
-
-            if not has_meaningful_data:
-                # Use data field as primary source when nested structure is empty
-                logger.info(f"Using data field as primary source for global context {db_model.id}")
-                global_settings = unified_context_data_field.copy()
-            else:
-                # Merge data field into global_settings, prioritizing data field values
-                logger.info(f"Merging data field with existing structure for global context {db_model.id}")
-                for key, value in unified_context_data_field.items():
-                    # Always prefer data field values over empty nested structure values
-                    if key not in global_settings or not global_settings[key] or global_settings[key] == {}:
-                        global_settings[key] = value
-                    elif isinstance(value, dict) and isinstance(global_settings.get(key), dict):
-                        # Deep merge dictionaries, preferring data field content
-                        global_settings[key].update(value)
+        # Since we already loaded unified_context_data as base, no need to merge again
+        # The global_settings now contains all the custom data from unified_context_data
 
         # Build metadata with nested structure information
         metadata = {
@@ -601,11 +597,18 @@ class GlobalContextRepository(CacheInvalidationMixin, BaseUserScopedRepository):
                 logger.debug(f"Loaded nested structure for global context {db_model.id}")
             except Exception as e:
                 logger.warning(f"Failed to load nested structure for {db_model.id}: {e}")
-                # Fall back to migration from flat structure
-                entity._ensure_nested_structure()
+                # Fall back to migration from flat structure - but only if no custom data
+                if not entity._is_only_nested_structure_data():
+                    logger.info(f"Preserving custom data in global_settings for {db_model.id}")
+                else:
+                    entity._ensure_nested_structure()
         else:
-            # Ensure nested structure is initialized
-            entity._ensure_nested_structure()
+            # Only ensure nested structure if no custom data exists
+            # This prevents overwriting custom fields with empty nested structure
+            if not entity._is_only_nested_structure_data():
+                logger.info(f"Preserving custom data, skipping nested structure init for {db_model.id}")
+            else:
+                entity._ensure_nested_structure()
         
         return entity
     

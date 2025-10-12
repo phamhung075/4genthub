@@ -396,20 +396,16 @@ class NextTaskUseCase:
     
     def _task_to_dict(self, task, include_context: bool = False, user_id: Optional[str] = None, project_id: str = None, git_branch_id: str = None) -> Dict[str, Any]:
         """Convert task entity to dictionary with optional context data following clean relationship chain"""
+        # Use entity's to_dict method for clean conversion
         task_dict = task.to_dict()
-        
-        # Calculate subtask progress
-        if task.subtasks:
-            progress = task.get_subtask_progress()
-            task_dict['subtask_progress'] = progress
-        
+
         # Fetch context data if requested
         if include_context:
             try:
                 # Use hierarchical context service to get context data with enhanced error handling
                 factory = self._get_context_factory()
                 context_service = factory.create_unified_service()
-                
+
                 # Get context data with permission error handling
                 context_result = None
                 try:
@@ -424,7 +420,7 @@ class NextTaskUseCase:
                     logger.debug(f"Context file issue for task {task.id.value}: {e}")
                 except Exception as e:
                     logger.warning(f"Context resolution failed for task {task.id.value}: {e}")
-                
+
                 if context_result and context_result.get("success"):
                     context = context_result.get("context")
                     # Convert context to dict if it has to_dict method
@@ -438,7 +434,7 @@ class NextTaskUseCase:
                     task_dict['context_data'] = None
                     task_dict['context_available'] = False
                     logger.debug(f"No context data found for task {task.id.value}")
-                    
+
             except Exception as e:
                 logger.warning(f"Failed to fetch context data for task {task.id.value}: {e}")
                 task_dict['context_data'] = None
@@ -446,7 +442,7 @@ class NextTaskUseCase:
         else:
             task_dict['context_data'] = None
             task_dict['context_available'] = False
-        
+
         return task_dict
     
     def _get_task_context(self, task, all_tasks: List) -> Dict[str, Any]:

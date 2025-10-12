@@ -73,6 +73,21 @@ class TestTaskApplicationService:
         }
 
     @pytest.fixture
+    def service_with_mocks(self, mock_task_repository, mock_context_service, user_id):
+        """Create service with all mocks pre-configured."""
+        service = TaskApplicationService(
+            task_repository=mock_task_repository,
+            context_service=mock_context_service,
+            user_id=user_id
+        )
+        
+        # Mock the hierarchical context service
+        service._hierarchical_context_service = Mock()
+        
+        # Return the service with mocks ready
+        return service
+
+    @pytest.fixture
     def mock_task_entity(self, sample_task_data):
         """Create mock task entity."""
         task = Mock()
@@ -194,11 +209,16 @@ class TestTaskApplicationService:
             user_id=user_id
         )
         
+        # Mock the hierarchical context service
+        mock_hierarchical_service = Mock()
+        service._hierarchical_context_service = mock_hierarchical_service
+        
         # Arrange
         request = CreateTaskRequest(**sample_task_data)
         response = CreateTaskResponse(success=True, task=mock_task_entity)
         
-        service._create_task_use_case.execute.return_value = response
+        # Mock the execute method of the use case
+        service._create_task_use_case.execute = Mock(return_value=response)
         
         # Act
         result = await service.create_task(request)
@@ -216,12 +236,16 @@ class TestTaskApplicationService:
             context_service=mock_context_service,
             user_id=user_id
         )
+        
+        # Mock the hierarchical context service
+        mock_hierarchical_service = Mock()
+        service._hierarchical_context_service = mock_hierarchical_service
 
         # Arrange
         request = CreateTaskRequest(**sample_task_data)
         response = Mock(spec=[])  # Response without success or task attributes
 
-        service._create_task_use_case.execute.return_value = response
+        service._create_task_use_case.execute = Mock(return_value=response)
 
         # Reset the mock before the test
         service._hierarchical_context_service.create_context.reset_mock()
@@ -307,6 +331,10 @@ class TestTaskApplicationService:
             user_id=user_id
         )
         
+        # Mock the hierarchical context service
+        mock_hierarchical_service = Mock()
+        service._hierarchical_context_service = mock_hierarchical_service
+        
         # Arrange
         task_id = str(uuid.uuid4())
         request = UpdateTaskRequest(task_id=task_id, title="Updated Title")
@@ -314,7 +342,7 @@ class TestTaskApplicationService:
         response.success = True
         response.task = mock_task_entity
         
-        service._update_task_use_case.execute.return_value = response
+        service._update_task_use_case.execute = Mock(return_value=response)
         
         # Act
         result = await service.update_task(request)
@@ -337,7 +365,7 @@ class TestTaskApplicationService:
         request = UpdateTaskRequest(task_id="test-id", title="Test")
         response = Mock(spec=[])  # Response without success or task attributes
 
-        service._update_task_use_case.execute.return_value = response
+        service._update_task_use_case.execute = Mock(return_value=response)
 
         # Reset the mock before the test
         service._hierarchical_context_service.update_context.reset_mock()
@@ -400,10 +428,14 @@ class TestTaskApplicationService:
             user_id=user_id
         )
         
+        # Mock the hierarchical context service
+        mock_hierarchical_service = Mock()
+        service._hierarchical_context_service = mock_hierarchical_service
+        
         # Arrange
         task_id = "test-task-123"
         user_id = "test-user"
-        service._delete_task_use_case.execute.return_value = True
+        service._delete_task_use_case.execute = Mock(return_value=True)
         
         # Act
         result = await service.delete_task(task_id, user_id)
@@ -425,7 +457,7 @@ class TestTaskApplicationService:
         # Arrange
         task_id = "test-task-123"
         user_id = "test-user"
-        service._delete_task_use_case.execute.return_value = False
+        service._delete_task_use_case.execute = Mock(return_value=False)
 
         # Reset mocks before test
         service._hierarchical_context_service.delete_context.reset_mock()
@@ -451,14 +483,21 @@ class TestTaskApplicationService:
         # Arrange
         task_id = "test-task-123"
         expected_result = {"status": "completed"}
-        service._complete_task_use_case.execute = AsyncMock(return_value=expected_result)
+        # Use regular Mock instead of AsyncMock since execute is synchronous
+        service._complete_task_use_case.execute = Mock(return_value=expected_result)
         
         # Act
         result = await service.complete_task(task_id)
         
         # Assert
         assert result == expected_result
-        service._complete_task_use_case.execute.assert_called_once_with(task_id)
+        # Update assertion to match the actual method signature with named parameters
+        service._complete_task_use_case.execute.assert_called_once_with(
+            task_id=task_id,
+            completion_summary=None,
+            testing_notes=None,
+            next_recommendations=None
+        )
 
     @pytest.mark.asyncio
     async def test_get_all_tasks(self, mock_task_repository, mock_context_service, user_id):
@@ -556,6 +595,10 @@ class TestTaskApplicationService:
             user_id=user_id
         )
         
+        # Mock the hierarchical context service
+        mock_hierarchical_service = Mock()
+        service._hierarchical_context_service = mock_hierarchical_service
+        
         # Arrange
         request = CreateTaskRequest(**sample_task_data)
         
@@ -572,7 +615,7 @@ class TestTaskApplicationService:
         mock_task.due_date = sample_task_data['due_date']
         
         response = CreateTaskResponse(success=True, task=mock_task)
-        service._create_task_use_case.execute.return_value = response
+        service._create_task_use_case.execute = Mock(return_value=response)
         
         # Act
         result = await service.create_task(request)
@@ -601,7 +644,7 @@ class TestTaskApplicationService:
         
         # Create response with None task
         response = CreateTaskResponse(success=True, task=None)
-        service._create_task_use_case.execute.return_value = response
+        service._create_task_use_case.execute = Mock(return_value=response)
 
         # Reset mock before test
         service._hierarchical_context_service.create_context.reset_mock()

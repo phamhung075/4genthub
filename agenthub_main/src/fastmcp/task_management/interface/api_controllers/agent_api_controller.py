@@ -6,9 +6,8 @@ It serves as the interface layer, delegating business logic to application facad
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any
 
-from ...application.facades.agent_application_facade import AgentApplicationFacade
 from ...application.services.facade_service import FacadeService
 
 logger = logging.getLogger(__name__)
@@ -17,23 +16,23 @@ logger = logging.getLogger(__name__)
 class AgentAPIController:
     """
     API Controller for agent metadata operations.
-    
+
     This controller provides a clean interface between frontend routes and
     application services, ensuring proper separation of concerns.
     """
-    
+
     def __init__(self):
         """Initialize the controller"""
         self.facade_service = FacadeService.get_instance()
-    
-    def get_agent_metadata(self, user_id: str, session) -> Dict[str, Any]:
+
+    def get_agent_metadata(self, user_id: str, session) -> dict[str, Any]:
         """
         Get metadata for all available agents.
-        
+
         Args:
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             Agent metadata list
         """
@@ -41,31 +40,31 @@ class AgentAPIController:
             # Get agent facade from service - agent metadata is project-independent
             facade = self.facade_service.get_agent_facade(
                 project_id=None,  # Agent metadata doesn't require project context
-                user_id=user_id
+                user_id=user_id,
             )
-            
+
             # Get all agent metadata
             result = facade.list_all_agents()
-            
+
             if not result.get("success"):
                 # Fallback to static metadata if needed
                 return {
                     "success": True,
                     "agents": self._get_static_metadata(),
                     "total": len(self._get_static_metadata()),
-                    "source": "static"
+                    "source": "static",
                 }
-            
+
             agents = result.get("agents", [])
             logger.info(f"Retrieved {len(agents)} agent metadata entries")
-            
+
             return {
                 "success": True,
                 "agents": agents,
                 "total": len(agents),
-                "source": "facade"
+                "source": "facade",
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting agent metadata: {e}")
             # Return static metadata as fallback
@@ -75,18 +74,18 @@ class AgentAPIController:
                 "agents": static_agents,
                 "total": len(static_agents),
                 "source": "fallback",
-                "error": str(e)
+                "error": str(e),
             }
-    
-    def get_agent_by_id(self, agent_id: str, user_id: str, session) -> Dict[str, Any]:
+
+    def get_agent_by_id(self, agent_id: str, user_id: str, session) -> dict[str, Any]:
         """
         Get metadata for a specific agent.
-        
+
         Args:
             agent_id: Agent identifier
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             Single agent metadata
         """
@@ -94,63 +93,49 @@ class AgentAPIController:
             # Get agent facade from service - agent metadata is project-independent
             facade = self.facade_service.get_agent_facade(
                 project_id=None,  # Agent metadata doesn't require project context
-                user_id=user_id
+                user_id=user_id,
             )
-            
+
             # Get specific agent
             result = facade.get_agent(agent_id)
-            
+
             if not result.get("success"):
                 # Try static metadata fallback
                 static_agent = self._find_static_agent(agent_id)
                 if static_agent:
-                    return {
-                        "success": True,
-                        "agent": static_agent,
-                        "source": "static"
-                    }
-                
+                    return {"success": True, "agent": static_agent, "source": "static"}
+
                 return {
                     "success": False,
                     "error": f"Agent '{agent_id}' not found",
-                    "agent": None
+                    "agent": None,
                 }
-            
+
             agent = result.get("agent")
             logger.info(f"Retrieved agent metadata for {agent_id}")
-            
-            return {
-                "success": True,
-                "agent": agent,
-                "source": "facade"
-            }
-            
+
+            return {"success": True, "agent": agent, "source": "facade"}
+
         except Exception as e:
             logger.error(f"Error getting agent {agent_id}: {e}")
             # Try static fallback
             static_agent = self._find_static_agent(agent_id)
             if static_agent:
-                return {
-                    "success": True,
-                    "agent": static_agent,
-                    "source": "fallback"
-                }
-            
-            return {
-                "success": False,
-                "error": str(e),
-                "agent": None
-            }
-    
-    def get_agents_by_category(self, category: str, user_id: str, session) -> Dict[str, Any]:
+                return {"success": True, "agent": static_agent, "source": "fallback"}
+
+            return {"success": False, "error": str(e), "agent": None}
+
+    def get_agents_by_category(
+        self, category: str, user_id: str, session
+    ) -> dict[str, Any]:
         """
         Get agents filtered by category.
-        
+
         Args:
             category: Agent category to filter by
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             Agents in the specified category
         """
@@ -158,54 +143,60 @@ class AgentAPIController:
             # Get agent facade from service - agent metadata is project-independent
             facade = self.facade_service.get_agent_facade(
                 project_id=None,  # Agent metadata doesn't require project context
-                user_id=user_id
+                user_id=user_id,
             )
-            
+
             # Get agents by category
             result = facade.list_agents_by_category(category)
-            
+
             if not result.get("success"):
                 # Fallback to static metadata filtering
-                static_agents = [a for a in self._get_static_metadata() if a.get("category") == category]
+                static_agents = [
+                    a
+                    for a in self._get_static_metadata()
+                    if a.get("category") == category
+                ]
                 return {
                     "success": True,
                     "category": category,
                     "agents": static_agents,
                     "total": len(static_agents),
-                    "source": "static"
+                    "source": "static",
                 }
-            
+
             agents = result.get("agents", [])
             logger.info(f"Retrieved {len(agents)} agents in category {category}")
-            
+
             return {
                 "success": True,
                 "category": category,
                 "agents": agents,
                 "total": len(agents),
-                "source": "facade"
+                "source": "facade",
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting agents by category {category}: {e}")
             # Fallback to static metadata
-            static_agents = [a for a in self._get_static_metadata() if a.get("category") == category]
+            static_agents = [
+                a for a in self._get_static_metadata() if a.get("category") == category
+            ]
             return {
                 "success": True,
                 "category": category,
                 "agents": static_agents,
                 "total": len(static_agents),
-                "source": "fallback"
+                "source": "fallback",
             }
-    
-    def list_agent_categories(self, user_id: str, session) -> Dict[str, Any]:
+
+    def list_agent_categories(self, user_id: str, session) -> dict[str, Any]:
         """
         List all available agent categories.
-        
+
         Args:
             user_id: Authenticated user ID
             session: Database session
-            
+
         Returns:
             List of agent categories
         """
@@ -213,12 +204,12 @@ class AgentAPIController:
             # Get agent facade from service - agent metadata is project-independent
             facade = self.facade_service.get_agent_facade(
                 project_id=None,  # Agent metadata doesn't require project context
-                user_id=user_id
+                user_id=user_id,
             )
-            
+
             # Get categories
             result = facade.list_agent_categories()
-            
+
             if not result.get("success"):
                 # Fallback to static categories
                 categories = self._get_static_categories()
@@ -226,19 +217,19 @@ class AgentAPIController:
                     "success": True,
                     "categories": categories,
                     "total": len(categories),
-                    "source": "static"
+                    "source": "static",
                 }
-            
+
             categories = result.get("categories", [])
             logger.info(f"Retrieved {len(categories)} agent categories")
-            
+
             return {
                 "success": True,
                 "categories": categories,
                 "total": len(categories),
-                "source": "facade"
+                "source": "facade",
             }
-            
+
         except Exception as e:
             logger.error(f"Error listing agent categories: {e}")
             # Fallback to static categories
@@ -247,10 +238,10 @@ class AgentAPIController:
                 "success": True,
                 "categories": categories,
                 "total": len(categories),
-                "source": "fallback"
+                "source": "fallback",
             }
-    
-    def _get_static_metadata(self) -> List[Dict[str, Any]]:
+
+    def _get_static_metadata(self) -> list[dict[str, Any]]:
         """Get static agent metadata for fallback"""
         return [
             {
@@ -266,10 +257,10 @@ class AgentAPIController:
                     "Multi-agent coordination",
                     "Strategic planning",
                     "Resource allocation",
-                    "Workflow orchestration"
+                    "Workflow orchestration",
                 ],
                 "tools": ["All MCP tools"],
-                "guidelines": "Use for high-level coordination and when multiple agents need to work together"
+                "guidelines": "Use for high-level coordination and when multiple agents need to work together",
             },
             {
                 "id": "coding-agent",
@@ -284,10 +275,10 @@ class AgentAPIController:
                     "Code implementation",
                     "Refactoring",
                     "API development",
-                    "Database design"
+                    "Database design",
                 ],
                 "tools": ["Code editing tools", "File management"],
-                "guidelines": "Use for all coding and implementation tasks"
+                "guidelines": "Use for all coding and implementation tasks",
             },
             {
                 "id": "debugger-agent",
@@ -301,10 +292,10 @@ class AgentAPIController:
                 "capabilities": [
                     "Error analysis",
                     "Stack trace interpretation",
-                    "Performance debugging"
+                    "Performance debugging",
                 ],
                 "tools": ["Debugging tools", "Log analysis"],
-                "guidelines": "Use when encountering errors, test failures, or unexpected behavior"
+                "guidelines": "Use when encountering errors, test failures, or unexpected behavior",
             },
             {
                 "id": "test-orchestrator-agent",
@@ -318,18 +309,25 @@ class AgentAPIController:
                 "capabilities": [
                     "Test strategy design",
                     "Test suite orchestration",
-                    "Coverage analysis"
+                    "Coverage analysis",
                 ],
                 "tools": ["Test frameworks", "Coverage tools"],
-                "guidelines": "Use for designing and executing comprehensive test strategies"
-            }
+                "guidelines": "Use for designing and executing comprehensive test strategies",
+            },
         ]
-    
-    def _find_static_agent(self, agent_id: str) -> Optional[Dict[str, Any]]:
+
+    def _find_static_agent(self, agent_id: str) -> dict[str, Any] | None:
         """Find a specific agent in static metadata"""
-        return next((a for a in self._get_static_metadata() if a["id"] == agent_id), None)
-    
-    def _get_static_categories(self) -> List[str]:
+        return next(
+            (a for a in self._get_static_metadata() if a["id"] == agent_id), None
+        )
+
+    def _get_static_categories(self) -> list[str]:
         """Get unique categories from static metadata"""
-        categories = list(set(agent.get("category", "uncategorized") for agent in self._get_static_metadata()))
+        categories = list(
+            set(
+                agent.get("category", "uncategorized")
+                for agent in self._get_static_metadata()
+            )
+        )
         return sorted(categories)

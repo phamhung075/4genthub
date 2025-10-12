@@ -191,9 +191,23 @@ class GitBranchService:
             if project and git_branch_id in project.git_branchs:
                 del project.git_branchs[git_branch_id]
                 await project_repo.update(project)
-            
+
+            # Send WebSocket notification with user context
+            try:
+                from ..services.websocket_notification_service import WebSocketNotificationService
+                await WebSocketNotificationService.broadcast_branch_event(
+                    event_type="deleted",
+                    branch_id=git_branch_id,
+                    project_id=project_id,
+                    user_id=self._user_id,
+                    branch_data={"name": git_branch.name if hasattr(git_branch, 'name') else "Unknown"}
+                )
+                logger.info(f"Sent WebSocket notification for branch {git_branch_id} deletion")
+            except Exception as ws_error:
+                logger.warning(f"Failed to send WebSocket notification: {ws_error}")
+
             logger.info(f"Successfully deleted git branch {git_branch_id}")
-            
+
             return {
                 "success": True,
                 "message": f"Git branch {git_branch_id} deleted successfully"

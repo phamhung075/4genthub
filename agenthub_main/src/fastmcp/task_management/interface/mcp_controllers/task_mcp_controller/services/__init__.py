@@ -8,4 +8,4 @@ from .enrichment_service import EnrichmentService
 from .hint_service import HintService
 from .progress_service import ProgressService
 
-__all__ = ['EnrichmentService', 'HintService', 'ProgressService']
+__all__ = ["EnrichmentService", "HintService", "ProgressService"]

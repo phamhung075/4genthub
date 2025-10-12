@@ -1,11 +1,11 @@
 """Agent Converter Service"""
 
 from typing import Dict, List, Optional, Set
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from ...domain.entities.agent import Agent, AgentCapability, AgentStatus
-from ...domain.enums.agent_roles import AgentRole
+from ...domain.value_objects import AgentRole
 
 
 class AgentConverter:
@@ -28,8 +28,8 @@ class AgentConverter:
             id=agent_id,
             name=name,
             description=f"Agent {name} - {call_agent}",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             capabilities=capabilities,
             specializations=specializations,
             preferred_languages=preferred_languages,
@@ -53,32 +53,32 @@ class AgentConverter:
         
         # Map common agent types to capabilities and specializations
         agent_mappings = {
-            'system-architect-agent': {
+            'system_architect_agent': {
                 'capabilities': [AgentCapability.ARCHITECTURE, AgentCapability.BACKEND_DEVELOPMENT],
                 'specializations': ['system_design', 'architecture_patterns', 'scalability'],
                 'languages': ['python', 'java', 'typescript']
             },
-            'coding-agent': {
+            'coding_agent': {
                 'capabilities': [AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.BACKEND_DEVELOPMENT],
                 'specializations': ['full_stack_development', 'api_development', 'web_development'],
                 'languages': ['python', 'javascript', 'typescript', 'html', 'css']
             },
-            'documentation-agent': {
+            'documentation_agent': {
                 'capabilities': [AgentCapability.DOCUMENTATION],
                 'specializations': ['technical_writing', 'api_documentation', 'user_guides'],
                 'languages': ['markdown', 'html']
             },
-            'test-orchestrator-agent': {
+            'test_orchestrator_agent': {
                 'capabilities': [AgentCapability.TESTING],
                 'specializations': ['test_automation', 'quality_assurance', 'integration_testing'],
                 'languages': ['python', 'javascript', 'typescript']
             },
-            'devops-agent': {
+            'devops_agent': {
                 'capabilities': [AgentCapability.DEVOPS],
                 'specializations': ['ci_cd', 'deployment', 'infrastructure', 'containerization'],
                 'languages': ['bash', 'yaml', 'python']
             },
-            'security-auditor-agent': {
+            'security_auditor_agent': {
                 'capabilities': [AgentCapability.SECURITY],
                 'specializations': ['security_audit', 'vulnerability_assessment', 'secure_coding'],
                 'languages': ['python', 'bash']
@@ -121,8 +121,8 @@ class AgentConverter:
             id=agent_id,
             name=agent_data.get("name", agent_id),
             description=f"Fallback agent for {agent_id}",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             capabilities={AgentCapability.BACKEND_DEVELOPMENT},
             specializations=["general_development"],
             preferred_languages=["python"],

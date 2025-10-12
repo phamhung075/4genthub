@@ -51,12 +51,14 @@ class TestGitBranchCreation:
     
     def test_create_git_branch_with_custom_attributes(self):
         """Test creating task tree with custom attributes."""
+        now = datetime.now()
         tree = GitBranch(
             id="tree-2",
             name="Refactoring",
             description="Code refactoring",
             project_id="project-3",
-            created_at=datetime.now(),
+            created_at=now,
+            updated_at=now,
             assigned_agent_id="agent-1",
             priority=Priority.high(),
             status=TaskStatus.in_progress()

@@ -15,6 +15,27 @@ class GitBranchApplicationFacade:
 
     async def create_tree(self, project_id: str, tree_name: str, description: str = "") -> Dict[str, Any]:
         """Facade method to create a new task tree (branch)."""
+        # Validate branch name using domain service
+        if not self._user_id:
+            return {"success": False, "error": "User authentication required"}
+
+        try:
+            from ...domain.services.git_branch_name_validator import GitBranchNameValidator
+            from ..services.repository_provider_service import RepositoryProviderService
+
+            # Get user-scoped repository for validation
+            repo_provider = RepositoryProviderService.get_instance()
+            git_branch_repo = repo_provider.get_git_branch_repository(user_id=self._user_id)
+            validator = GitBranchNameValidator(git_branch_repo)
+
+            # Validate branch name (includes format and uniqueness checks)
+            await validator.validate_branch_name(tree_name, project_id)
+
+        except Exception as e:
+            # Return validation errors to frontend
+            return {"success": False, "error": str(e)}
+
+        # If validation passes, proceed with creation
         return await self._git_branch_service.create_git_branch(project_id, tree_name, description)
 
     def create_git_branch(self, project_id: str, git_branch_name: str, git_branch_description: str = "") -> Dict[str, Any]:
@@ -298,6 +319,18 @@ class GitBranchApplicationFacade:
                 "error_code": "GET_FAILED"
             }
 
+    async def _get_branch_entity(self, git_branch_id: str, git_branch_repo):
+        """Helper method to get the branch entity for denormalized fields."""
+        try:
+            # Call find_by_id with just the branch_id
+            branch = await git_branch_repo.find_by_id(git_branch_id)
+            return branch
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to get branch entity: {e}")
+            return None
+
     def delete_git_branch(self, git_branch_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
         """Delete a git branch - synchronous version for MCP controller."""
         try:
@@ -368,41 +401,23 @@ class GitBranchApplicationFacade:
 
                 logger.info(f"Git branch deletion result: {result}")
 
-                # Send WebSocket notification after successful deletion
-                if result.get("success"):
-                    try:
-                        WebSocketNotificationService.sync_broadcast_branch_event(
-                            event_type="deleted",
-                            branch_id=str(git_branch_id),
-                            project_id=str(target_project_id),
-                            user_id=self._user_id or "system",
-                            branch_data=branch_data_for_notification
-                        )
-                        logger.info(f"✅ WebSocket notification sent for branch deletion: {git_branch_id}")
-                    except Exception as ws_error:
-                        logger.warning(f"Failed to send WebSocket notification for branch deletion: {ws_error}")
+                # CRITICAL FIX: Remove duplicate broadcast - use case layer handles notification
+                # The delete_branch use case already sends WebSocket notification (lines 66-73 in delete_branch.py)
+                # Broadcasting here creates duplicate messages with different IDs
 
+                # Return result without sending duplicate notification
                 return result
-                
+
             except RuntimeError:
                 # No event loop is running, use asyncio.run()
                 result = asyncio.run(self._git_branch_service.delete_git_branch(target_project_id, git_branch_id))
                 logger.info(f"Git branch deletion result: {result}")
 
-                # Send WebSocket notification after successful deletion
-                if result.get("success"):
-                    try:
-                        WebSocketNotificationService.sync_broadcast_branch_event(
-                            event_type="deleted",
-                            branch_id=str(git_branch_id),
-                            project_id=str(target_project_id),
-                            user_id=self._user_id or "system",
-                            branch_data=branch_data_for_notification
-                        )
-                        logger.info(f"✅ WebSocket notification sent for branch deletion: {git_branch_id}")
-                    except Exception as ws_error:
-                        logger.warning(f"Failed to send WebSocket notification for branch deletion: {ws_error}")
+                # CRITICAL FIX: Remove duplicate broadcast - use case layer handles notification
+                # The delete_branch use case already sends WebSocket notification (lines 66-73 in delete_branch.py)
+                # Broadcasting here creates duplicate messages with different IDs
 
+                # Return result without sending duplicate notification
                 return result
                 
         except Exception as e:
@@ -643,24 +658,37 @@ class GitBranchApplicationFacade:
             
             # ✅ CRITICAL FIX: Use denormalized count fields from database triggers
             # Get branch data to access task_count and completed_task_count fields
+            # Get the actual branch entity for denormalized fields
             git_branch_repo = repo_service.get_git_branch_repository(
-                project_id=project_id,
                 user_id=self._user_id
             )
 
-            # Get the branch to access denormalized count fields
+            # Use async helper to get the branch entity with threading pattern
             import asyncio
-            try:
-                branch = asyncio.run(git_branch_repo.find_by_id(git_branch_id))
-            except RuntimeError:
+            import threading
+
+            result = None
+            exception = None
+
+            def run_in_thread():
+                nonlocal result, exception
                 try:
-                    loop = asyncio.get_event_loop()
-                    branch = loop.run_until_complete(git_branch_repo.find_by_id(git_branch_id))
-                except Exception:
-                    branch = None
+                    result = asyncio.run(self._get_branch_entity(git_branch_id, git_branch_repo))
+                except Exception as e:
+                    exception = e
+
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            thread.join()
+
+            if exception:
+                logger.error(f"Failed to get branch entity: {exception}")
+                branch = None
+            else:
+                branch = result
 
             if not branch:
-                logger.warning(f"Branch {git_branch_id} not found")
+                logger.warning(f"Branch entity {git_branch_id} not found")
                 return {
                     "success": False,
                     "error": f"Branch {git_branch_id} not found",
@@ -673,16 +701,18 @@ class GitBranchApplicationFacade:
             # Extract status from dictionary format (get_tasks_by_git_branch_id returns dicts)
             def get_task_status(task):
                 return task.get("status") if isinstance(task, dict) else None
-            
+
             completed_tasks = getattr(branch, 'completed_task_count', 0) or 0
 
             logger.info(f"🎯 Using trigger-maintained counts: {total_tasks} total, {completed_tasks} completed")
             in_progress_tasks = len([t for t in tasks if get_task_status(t) == "in_progress"])
             todo_tasks = len([t for t in tasks if get_task_status(t) == "todo"])
             blocked_tasks = len([t for t in tasks if get_task_status(t) == "blocked"])
-            
-            # Calculate progress percentage
-            progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
+
+            # ✅ FIXED: Calculate progress from all tasks (including partial progress)
+            # Sum all task progress percentages and divide by total task count
+            total_progress = sum(task.get("progress_percentage", 0) for task in tasks)
+            progress_percentage = (total_progress / total_tasks) if total_tasks > 0 else 0.0
             
             # Find last activity (most recent task update)
             last_activity = None
@@ -794,9 +824,11 @@ class GitBranchApplicationFacade:
                         todo_tasks += 1
                     elif status == "blocked":
                         blocked_tasks += 1
-                
-                # Calculate progress
-                progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
+
+                # ✅ FIXED: Calculate progress from all tasks (including partial progress)
+                # Sum all task progress percentages and divide by total task count
+                total_progress = sum(task.get("progress_percentage", 0) for task in tasks)
+                progress_percentage = (total_progress / total_tasks) if total_tasks > 0 else 0.0
                 
                 
                 enhanced_branch = {
@@ -980,9 +1012,11 @@ class GitBranchApplicationFacade:
                     todo_tasks += 1
                 elif status == "blocked":
                     blocked_tasks += 1
-            
-            # Calculate progress
-            progress_percentage = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0.0
+
+            # ✅ FIXED: Calculate progress from all tasks (including partial progress)
+            # Sum all task progress percentages and divide by total task count
+            total_progress = sum(task.get("progress_percentage", 0) for task in tasks)
+            progress_percentage = (total_progress / total_tasks) if total_tasks > 0 else 0.0
             
             
             branch_summary = {

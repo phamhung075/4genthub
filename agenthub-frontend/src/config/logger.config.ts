@@ -166,35 +166,37 @@ export const environmentPresets = {
  * Useful for debugging environment variable issues
  */
 export const debugLoggerConfig = (): void => {
-  if (getEnvVar('NODE_ENV') === 'development') {
-    console.group('🔧 Logger Configuration Debug');
-    console.log('Current config:', loggerConfig);
-    console.log('Environment variables:');
-    // In browser environment, we can't iterate over process.env
-    // Log known environment variable keys instead
-    const knownKeys = [
-      'VITE_LOG_ENABLED',
-      'VITE_LOG_LEVEL',
-      'VITE_LOG_SHOW_TIMESTAMP',
-      'VITE_LOG_SHOW_LEVEL',
-      'VITE_LOG_SHOW_FILE_PATH',
-      'VITE_LOG_COLORIZE',
-      'VITE_LOG_TO_CONSOLE',
-      'VITE_LOG_TO_LOCALSTORAGE',
-      'VITE_LOG_TO_REMOTE',
-      'VITE_LOG_MAX_STORAGE_SIZE',
-      'VITE_LOG_BATCH_SIZE',
-      'VITE_LOG_BATCH_INTERVAL',
-      'VITE_LOG_REMOTE_ENDPOINT'
-    ];
-    knownKeys.forEach(key => {
-      const value = getEnvVar(key);
-      if (value !== undefined) {
-        console.log(`  ${key}=${value}`);
-      }
-    });
-    console.groupEnd();
-  }
+  // Always log in development mode for debugging
+  // Check Vite's development mode flag
+  const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development';
+
+  console.group('🔧 Logger Configuration Debug');
+  console.log('Environment Mode:', import.meta.env.MODE);
+  console.log('Is Development:', isDev);
+  console.log('Current config:', loggerConfig);
+  console.log('Environment variables:');
+  // In browser environment, we can't iterate over process.env
+  // Log known environment variable keys instead
+  const knownKeys = [
+    'VITE_LOG_ENABLED',
+    'VITE_LOG_LEVEL',
+    'VITE_LOG_SHOW_TIMESTAMP',
+    'VITE_LOG_SHOW_LEVEL',
+    'VITE_LOG_SHOW_FILE_PATH',
+    'VITE_LOG_COLORIZE',
+    'VITE_LOG_TO_CONSOLE',
+    'VITE_LOG_TO_LOCALSTORAGE',
+    'VITE_LOG_TO_REMOTE',
+    'VITE_LOG_MAX_STORAGE_SIZE',
+    'VITE_LOG_BATCH_SIZE',
+    'VITE_LOG_BATCH_INTERVAL',
+    'VITE_LOG_REMOTE_ENDPOINT'
+  ];
+  knownKeys.forEach(key => {
+    const value = getEnvVar(key);
+    console.log(`  ${key}=${value !== undefined ? value : 'undefined'}`);
+  });
+  console.groupEnd();
 };
 
 // Legacy exports for backward compatibility

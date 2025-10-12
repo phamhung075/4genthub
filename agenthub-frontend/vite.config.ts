@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => {
   const hasEnvDev = fs.existsSync(envDevPath)
   const hasEnv = fs.existsSync(envPath)
 
+  // INTENTIONAL: Using console.log in vite.config.ts (build-time configuration)
+  // This file runs in Node.js during build, not in browser where logger is available
+  // Logger cannot be imported here as it depends on browser APIs and Vite environment
+
   // Log which file will be used - Priority: .env.dev > .env
   if (hasEnvDev) {
     if (hasEnv) {
@@ -21,8 +25,18 @@ export default defineConfig(({ mode }) => {
     } else {
       console.log('📁 Using .env.dev (no .env file found)')
     }
-    // Always copy .env.dev to .env so Vite can load it properly
-    fs.copyFileSync(envDevPath, envPath)
+    // Only copy if contents are different to avoid infinite restart loop
+    if (hasEnv) {
+      const envContent = fs.readFileSync(envPath, 'utf8')
+      const envDevContent = fs.readFileSync(envDevPath, 'utf8')
+      if (envContent !== envDevContent) {
+        console.log('📁 Copying .env.dev to .env (contents differ)')
+        fs.copyFileSync(envDevPath, envPath)
+      }
+    } else {
+      console.log('📁 Copying .env.dev to .env (no .env exists)')
+      fs.copyFileSync(envDevPath, envPath)
+    }
   } else if (hasEnv) {
     console.log('📁 Using existing .env file (no .env.dev found)')
   } else {

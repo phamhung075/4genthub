@@ -14,7 +14,7 @@ from fastmcp.task_management.domain.entities.template import (
     TemplateUsage
 )
 from fastmcp.task_management.domain.value_objects.template_id import TemplateId
-from fastmcp.task_management.domain.enums.template_enums import (
+from fastmcp.task_management.domain.value_objects.template_enums import (
     TemplateType,
     TemplateCategory,
     TemplateStatus,
@@ -102,7 +102,7 @@ class TestTemplateEntity:
         with pytest.raises(ValueError, match="Template description cannot be empty"):
             Template(**valid_template_data)
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_update_content_with_valid_content_success(self, mock_datetime, template):
         """Test updating template content successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -127,7 +127,7 @@ class TestTemplateEntity:
         with pytest.raises(ValueError, match="Template content cannot be empty"):
             template.update_content('   ')
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_update_metadata_success(self, mock_datetime, template):
         """Test updating template metadata successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -151,7 +151,7 @@ class TestTemplateEntity:
         assert template.metadata.get('author') == original_author
         assert template.metadata.get('new_key') == 'new_value'
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_add_compatible_agent_new_agent_success(self, mock_datetime, template):
         """Test adding new compatible agent successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -176,7 +176,7 @@ class TestTemplateEntity:
         assert len(template.compatible_agents) == original_count
         assert template.compatible_agents.count(existing_agent) == 1
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_remove_compatible_agent_existing_agent_success(self, mock_datetime, template):
         """Test removing existing compatible agent successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -202,7 +202,7 @@ class TestTemplateEntity:
         assert template.compatible_agents == original_agents
         assert template.updated_at == original_updated_at
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_add_file_pattern_new_pattern_success(self, mock_datetime, template):
         """Test adding new file pattern successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -226,7 +226,7 @@ class TestTemplateEntity:
         
         assert len(template.file_patterns) == original_count
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_remove_file_pattern_existing_pattern_success(self, mock_datetime, template):
         """Test removing existing file pattern successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -250,7 +250,7 @@ class TestTemplateEntity:
         
         assert template.file_patterns == original_patterns
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_add_variable_new_variable_success(self, mock_datetime, template):
         """Test adding new variable successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -274,7 +274,7 @@ class TestTemplateEntity:
         
         assert len(template.variables) == original_count
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_remove_variable_existing_variable_success(self, mock_datetime, template):
         """Test removing existing variable successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -298,7 +298,7 @@ class TestTemplateEntity:
         
         assert template.variables == original_variables
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_activate_template_success(self, mock_datetime, template):
         """Test activating template successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -313,7 +313,7 @@ class TestTemplateEntity:
         assert template.status == TemplateStatus.ACTIVE
         assert template.updated_at == mock_now
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_deactivate_template_success(self, mock_datetime, template):
         """Test deactivating template successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -325,7 +325,7 @@ class TestTemplateEntity:
         assert template.status == TemplateStatus.INACTIVE
         assert template.updated_at == mock_now
     
-    @patch('fastmcp.task_management.domain.entities.template.datetime')
+    @patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime')
     def test_archive_template_success(self, mock_datetime, template):
         """Test archiving template successfully"""
         mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)

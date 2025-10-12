@@ -4,7 +4,7 @@ Tests for Unified Context Module
 
 import pytest
 
-from fastmcp.task_management.domain.models.unified_context import ContextLevel
+from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
 
 
 class TestUnifiedContextModule:
@@ -12,7 +12,7 @@ class TestUnifiedContextModule:
     
     def test_context_level_import(self):
         """Test that ContextLevel can be imported from unified_context"""
-        from fastmcp.task_management.domain.models.unified_context import ContextLevel
+        from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel
         
         assert ContextLevel is not None
         assert hasattr(ContextLevel, 'GLOBAL')
@@ -72,7 +72,7 @@ class TestUnifiedContextModule:
     def test_compatibility_import_patterns(self):
         """Test various import patterns work correctly"""
         # Direct import
-        from fastmcp.task_management.domain.models.unified_context import ContextLevel as DirectContextLevel
+        from fastmcp.task_management.domain.value_objects.context_enums import ContextLevel as DirectContextLevel
         
         # Module import
         from fastmcp.task_management.domain.models import unified_context

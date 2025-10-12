@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { AuthProvider, AuthContext } from '../../contexts/AuthContext';
+import { API_BASE_URL } from '../../config/environment';
 import { useContext } from 'react';
 import Cookies from 'js-cookie';
 import * as jwtDecode from 'jwt-decode';
@@ -8,15 +9,30 @@ import * as jwtDecode from 'jwt-decode';
 // Mock dependencies
 jest.mock('js-cookie');
 jest.mock('jwt-decode');
+jest.mock('../../hooks/useWebSocketV2');
 
 // Mock fetch
 global.fetch = jest.fn();
 
-// Mock import.meta.env
+// Mock useWebSocket hook
+const mockDisconnect = jest.fn();
+const mockUseWebSocket = jest.fn(() => ({
+  isConnected: false,
+  disconnect: mockDisconnect
+}));
+
+// Mock import.meta.env and API_BASE_URL
 (import.meta as any).env = { 
-  VITE_API_URL: 'http://test-api.com',
   MODE: 'test'
 };
+
+jest.mock('../../config/environment', () => ({
+  API_BASE_URL: 'http://test-api.com'
+}));
+
+// Import useWebSocket mock after mocking
+import { useWebSocket } from '../../hooks/useWebSocketV2';
+(useWebSocket as jest.Mock).mockImplementation(mockUseWebSocket);
 
 describe('AuthContext', () => {
   const mockUser = {
@@ -62,6 +78,8 @@ describe('AuthContext', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDisconnect.mockClear();
+    mockUseWebSocket.mockClear();
     (Cookies.get as jest.Mock).mockReset();
     (Cookies.set as jest.Mock).mockReset();
     (Cookies.remove as jest.Mock).mockReset();
@@ -142,6 +160,11 @@ describe('AuthContext', () => {
           'http://test-api.com/api/auth/refresh',
           expect.objectContaining({
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
             body: JSON.stringify({ refresh_token: mockTokens.refresh_token })
           })
         );
@@ -175,12 +198,14 @@ describe('AuthContext', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/auth/supabase/signin',
+          'http://test-api.com/api/auth/login',
           {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
               email: 'test@example.com',
               password: 'password'
@@ -197,7 +222,7 @@ describe('AuthContext', () => {
         'access_token',
         mockTokens.access_token,
         expect.objectContaining({
-          expires: 1,
+          expires: 7,
           sameSite: 'strict',
           secure: false
         })
@@ -249,7 +274,7 @@ describe('AuthContext', () => {
         await act(async () => {
           getByText('Login').click();
         });
-      }).rejects.toThrow('Please verify your email before signing in');
+      }).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
     });
 
     it('should handle email verification response', async () => {
@@ -273,7 +298,7 @@ describe('AuthContext', () => {
         await act(async () => {
           getByText('Login').click();
         });
-      }).rejects.toThrow('Please verify your email before signing in');
+      }).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
     });
   });
 
@@ -303,12 +328,14 @@ describe('AuthContext', () => {
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://test-api.com/auth/supabase/signup',
+        'http://test-api.com/api/auth/register',
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             email: 'new@example.com',
             password: 'password',
@@ -407,6 +434,41 @@ describe('AuthContext', () => {
       expect(Cookies.remove).toHaveBeenCalledWith('access_token');
       expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
     });
+    
+    it('should disconnect WebSocket on logout', async () => {
+      // Mock WebSocket as connected
+      mockUseWebSocket.mockReturnValue({
+        isConnected: true,
+        disconnect: mockDisconnect
+      });
+      
+      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+      
+      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+
+      const { getByText } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      act(() => {
+        getByText('Logout').click();
+      });
+
+      expect(mockDisconnect).toHaveBeenCalled();
+      expect(screen.getByTestId('user')).toHaveTextContent('none');
+      expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+      expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
+    });
   });
 
   describe('Token Refresh', () => {
@@ -450,8 +512,10 @@ describe('AuthContext', () => {
           {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
               refresh_token: mockTokens.refresh_token
             })
@@ -506,6 +570,41 @@ describe('AuthContext', () => {
         expect(Cookies.remove).toHaveBeenCalledWith('access_token');
         expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
       });
+    });
+
+    it('should disconnect WebSocket on token refresh failure', async () => {
+      // Mock WebSocket as connected
+      mockUseWebSocket.mockReturnValue({
+        isConnected: true,
+        disconnect: mockDisconnect
+      });
+      
+      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+      
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: 'Invalid refresh token' })
+      });
+
+      const { getByText } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        try {
+          await getByText('Refresh').click();
+        } catch (error) {
+          // Expected to throw
+        }
+      });
+
+      expect(mockDisconnect).toHaveBeenCalled();
     });
 
     it('should automatically refresh token before expiry', async () => {
@@ -574,7 +673,7 @@ describe('AuthContext', () => {
         'access_token',
         mockTokens.access_token,
         expect.objectContaining({
-          expires: 1,
+          expires: 7,
           sameSite: 'strict',
           secure: false // test mode
         })
@@ -725,6 +824,39 @@ describe('AuthContext', () => {
       // The user should have default roles
       const authContext = (AuthProvider as any).Consumer._currentValue;
       expect(authContext.user.roles).toEqual(['user']);
+    });
+  });
+
+  describe('Event Listeners', () => {
+    it('should handle logout event from API layer', async () => {
+      (Cookies.get as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+      
+      (jwtDecode.jwtDecode as jest.Mock).mockReturnValue(mockDecodedToken);
+
+      const { container } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      // Dispatch auth-logout event
+      const logoutEvent = new Event('auth-logout');
+      window.dispatchEvent(logoutEvent);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('none');
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
+        expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+        expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
+      });
     });
   });
 

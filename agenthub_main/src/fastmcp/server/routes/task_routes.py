@@ -148,8 +148,8 @@ async def get_task_summaries(
         
         # Get total count first (for pagination calculation) - use API controller
         count_result = task_controller.count_tasks(filters, user_id, db)
-        total_count = count_result.get("count", 0) if count_result.get("success") else 0
-        
+        total_count = count_result.count if count_result.success else 0
+
         # Get paginated task list with minimal data - use API controller
         task_result = task_controller.list_tasks_summary(
             filters=filters,
@@ -159,14 +159,14 @@ async def get_task_summaries(
             user_id=user_id,
             session=db
         )
-        
-        if not task_result.get("success"):
+
+        if not task_result.success:
             return JSONResponse(
-                {"error": task_result.get("error", "Failed to fetch tasks")},
+                {"error": task_result.error or "Failed to fetch tasks"},
                 status_code=500
             )
-        
-        tasks_data = task_result.get("tasks", [])
+
+        tasks_data = task_result.tasks or []
         
         # Convert to task summaries
         task_summaries = []
@@ -175,8 +175,8 @@ async def get_task_summaries(
             has_context = False
             if include_counts:
                 context_result = context_controller.get_context("task", task_data.get("id"), False, user_id, db)
-                has_context = context_result.get("success", False)
-            
+                has_context = context_result.success if context_result else False
+
             summary = {
                 "id": task_data["id"],
                 "title": task_data["title"],
@@ -243,25 +243,25 @@ async def get_full_task(
         
         # Use API controller for full task data
         result = task_controller.get_full_task(task_id, user_id, db)
-        
-        if not result.get("success"):
-            if "not found" in result.get("error", "").lower():
+
+        if not result.success:
+            if result.error and "not found" in result.error.lower():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Task {task_id} not found"
                 )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "Failed to fetch task")
+                detail=result.error or "Failed to fetch task"
             )
-        
-        task_data = result.get("task")
+
+        task_data = result.task
         if not task_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Task {task_id} not found"
             )
-        
+
         return task_data
         
     except HTTPException:
@@ -326,14 +326,14 @@ async def get_subtask_summaries(
             user_id=user_id,
             session=db
         )
-        
-        if not result.get("success"):
+
+        if not result.success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "Failed to fetch subtasks")
+                detail=result.error or "Failed to fetch subtasks"
             )
-        
-        subtasks_data = result.get("subtasks", [])
+
+        subtasks_data = result.subtasks or []
         
         # Convert to subtask summaries
         subtask_summaries = []
@@ -408,14 +408,14 @@ async def get_task_context_summary(
         
         # Use API controller for context check
         result = context_controller.get_context("task", task_id, False, user_id, db)
-        
-        if not result.get("success"):
+
+        if not result.success:
             return {
                 "has_context": False,
-                "error": result.get("error")
+                "error": result.error
             }
-        
-        context_data = result.get("context", {})
+
+        context_data = result.context
         return {
             "has_context": bool(context_data),
             "context_size": len(str(context_data)) if context_data else 0,
@@ -444,7 +444,7 @@ async def get_performance_metrics(
     if REDIS_CACHE_ENABLED:
         actual_metrics = cache_metrics.stats
         cache_status = "enabled"
-        hit_rate = actual_metrics.get("hit_rate", "0.00%")
+        hit_rate = actual_metrics.get("hit_rate", "0.00%")  # stats is a dict, keep .get()
     else:
         actual_metrics = {}
         cache_status = "disabled"

@@ -1,11 +1,6 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
-
-export interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  children: React.ReactNode;
-}
+import type { DialogProps } from "../../types/componentTypes";
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
   React.useEffect(() => {

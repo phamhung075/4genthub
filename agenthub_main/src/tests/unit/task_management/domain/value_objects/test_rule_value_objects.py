@@ -19,7 +19,7 @@ from fastmcp.task_management.domain.value_objects.rule_value_objects import (
     CacheEntry,
     RuleHierarchyInfo
 )
-from fastmcp.task_management.domain.enums.rule_enums import (
+from fastmcp.task_management.domain.value_objects.rule_enums import (
     ClientAuthMethod,
     SyncOperation,
     SyncStatus,

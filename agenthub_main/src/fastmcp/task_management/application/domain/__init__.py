@@ -24,9 +24,6 @@ except ImportError as e:
     pass
 
 try:
-    from ...domain.enums.agent_roles import AgentRole
-    from ...domain.enums.estimated_effort import EstimatedEffort, EffortLevel
-    from ...domain.enums.common_labels import CommonLabel, LabelValidator
-    # compliance_enums removed
+    from ...domain.value_objects import AgentRole, EstimatedEffort, EffortLevel, CommonLabel, LabelValidator
 except ImportError as e:
     pass

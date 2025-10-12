@@ -111,8 +111,10 @@ def test_mcp_tools_inclusion():
             
     else:
         print(f"❌ Error: {result.get('error')}")
-        
-    return result
+    
+    # Assert that test succeeded
+    assert result['success'], f"Failed to call agent: {result.get('error')}"
+    assert 'tools' in result['agent'], "Agent response missing tools field"
 
 if __name__ == "__main__":
     test_mcp_tools_inclusion()

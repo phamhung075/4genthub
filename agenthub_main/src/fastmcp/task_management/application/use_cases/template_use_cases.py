@@ -1,13 +1,11 @@
 """Template Use Cases - Application Layer Business Logic"""
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
-from datetime import datetime
 import logging
 
 from ...domain.entities.template import Template, TemplateResult, TemplateRenderRequest, TemplateUsage
 from ...domain.value_objects.template_id import TemplateId
-from ...domain.enums.template_enums import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
+from ...domain.value_objects import TemplateType, TemplateCategory, TemplateStatus, TemplatePriority
 from ...domain.services.template_domain_service import TemplateDomainService
 from ...domain.exceptions.template_exceptions import TemplateNotFoundError, TemplateValidationError, TemplateRenderError
 from ..dtos.template_dtos import (
@@ -40,7 +38,7 @@ class TemplateUseCases:
         try:
             # Create template entity
             template = Template(
-                id=TemplateId.generate(),
+                id=TemplateId.generate_new(),
                 name=create_dto.name,
                 description=create_dto.description,
                 content=create_dto.content,
@@ -51,9 +49,8 @@ class TemplateUseCases:
                 compatible_agents=create_dto.compatible_agents,
                 file_patterns=create_dto.file_patterns,
                 variables=create_dto.variables,
-                metadata=create_dto.metadata,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                metadata=create_dto.metadata
+                # Timestamps handled automatically by BaseTimestampEntity
             )
             
             # Validate template

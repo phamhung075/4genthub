@@ -6,4 +6,4 @@ decomposed from the original monolithic 362-line controller into specialized com
 
 from .unified_context_controller import UnifiedContextMCPController
 
-__all__ = ['UnifiedContextMCPController']
+__all__ = ["UnifiedContextMCPController"]

@@ -6,14 +6,17 @@ Documentation is loaded from external files for maintainability.
 """
 
 import logging
-from typing import Dict, Any, Annotated
+from typing import TYPE_CHECKING, Annotated, Any
+
 from pydantic import Field  # type: ignore
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastmcp.server.server import FastMCP
 
-from .call_agent_description import get_call_agent_description, get_call_agent_parameters
+from .call_agent_description import (
+    get_call_agent_description,
+    get_call_agent_parameters,
+)
 from .handlers import AgentInvocationHandler
 from .services import AgentDiscoveryService
 
@@ -26,6 +29,7 @@ class CallAgentMCPController:
     Handles only MCP protocol concerns and delegates business operations
     to the CallAgentUseCase following proper DDD layer separation.
     """
+
     def __init__(self, call_agent_use_case):
         """
         Initialize controller with call agent use case.
@@ -38,18 +42,22 @@ class CallAgentMCPController:
 
     def register_tools(self, mcp: "FastMCP"):
         """Register call agent MCP tools with the FastMCP server"""
-        
+
         # Get centralized parameter definitions
         params = get_call_agent_parameters()
-        
+
         # Define the tool function with proper signature
-        def call_agent(name_agent: Annotated[str, Field(description=params["name_agent"]["description"])]) -> Dict[str, Any]:
+        def call_agent(
+            name_agent: Annotated[
+                str, Field(description=params["name_agent"]["description"])
+            ],
+        ) -> dict[str, Any]:
             return self.call_agent(name_agent=name_agent)
 
         # Register tool with description using the same pattern as working controllers
         mcp.tool(description=get_call_agent_description())(call_agent)
 
-    def call_agent(self, name_agent: str) -> Dict[str, Any]:
+    def call_agent(self, name_agent: str) -> dict[str, Any]:
         """
         Unified agent invocation method that handles all agent operations.
         Args:
@@ -59,6 +67,6 @@ class CallAgentMCPController:
         """
         # Discover available agents for error reporting
         available_agents = self._discovery_service.get_available_agents()
-        
+
         # Delegate to handler
         return self._handler.invoke_agent(name_agent, available_agents)

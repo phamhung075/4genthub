@@ -109,8 +109,8 @@ class ProjectFacadeFactory:
         # Create service with repository
         project_service = ProjectManagementService(project_repo=project_repository)
         
-        # Create facade with service
-        facade = ProjectApplicationFacade(project_service=project_service)
+        # Create facade with service and user_id
+        facade = ProjectApplicationFacade(project_service=project_service, user_id=user_id)
         
         # Cache the facade
         self._facades_cache[cache_key] = facade

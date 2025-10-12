@@ -16,6 +16,7 @@ from sqlalchemy import and_, or_, func, case, text
 
 from ....domain.repositories.git_branch_repository import GitBranchRepository
 from ....domain.entities.git_branch import GitBranch
+from ....domain.value_objects.git_branch_id import GitBranchId
 from ....domain.value_objects.task_status import TaskStatus
 from ....domain.value_objects.priority import Priority
 from ....domain.exceptions.base_exceptions import (
@@ -24,13 +25,14 @@ from ....domain.exceptions.base_exceptions import (
     ValidationException
 )
 from ..base_orm_repository import BaseORMRepository
-from ...database.models import ProjectGitBranch, Project
+from ..base_timestamp_repository import BaseTimestampRepository
+from ...database.models import ProjectGitBranch, Project, Task
 from ...performance.task_performance_optimizer import get_performance_optimizer
 
 logger = logging.getLogger(__name__)
 
 
-class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepository):
+class ORMGitBranchRepository(BaseTimestampRepository[ProjectGitBranch], GitBranchRepository):
     """
     ORM-based implementation of GitBranchRepository using SQLAlchemy.
     
@@ -57,19 +59,36 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
             self.optimizer = None
 
         logger.info(f"ORMGitBranchRepository initialized for user: {user_id}, performance_mode: {performance_mode}")
-    
-    def _model_to_git_branch(self, model: ProjectGitBranch) -> GitBranch:
+
+    def with_user(self, user_id: str) -> 'ORMGitBranchRepository':
+        """
+        Create a new repository instance scoped to a specific user.
+
+        This method enables user-scoped repository operations by creating
+        a new instance with the specified user_id.
+
+        Args:
+            user_id: User identifier for repository isolation
+
+        Returns:
+            New ORMGitBranchRepository instance with user_id set
+        """
+        return ORMGitBranchRepository(user_id=user_id, performance_mode=self.performance_mode)
+
+    def _model_to_entity(self, model: ProjectGitBranch) -> GitBranch:
         """
         Convert ProjectGitBranch model to GitBranch domain entity.
-        
+
+        DDD-compliant conversion method following repository pattern.
+
         Args:
             model: ProjectGitBranch model instance
-            
+
         Returns:
             GitBranch domain entity
         """
         git_branch = GitBranch(
-            id=model.id,
+            id=GitBranchId(model.id),
             name=model.name,
             description=model.description,
             project_id=model.project_id,
@@ -103,13 +122,15 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
         
         return git_branch
     
-    def _git_branch_to_model_data(self, git_branch: GitBranch) -> Dict[str, Any]:
+    def _entity_to_model_dict(self, git_branch: GitBranch) -> Dict[str, Any]:
         """
         Convert GitBranch domain entity to model data dictionary.
-        
+
+        DDD-compliant conversion method following repository pattern.
+
         Args:
             git_branch: GitBranch domain entity
-            
+
         Returns:
             Dictionary with model data
         """
@@ -117,9 +138,9 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
         user_id = self.user_id
         if not user_id:
             raise ValueError("user_id is required for git branch operations")
-        
+
         return {
-            'id': git_branch.id,
+            'id': str(git_branch.id) if git_branch.id else "",
             'project_id': git_branch.project_id,
             'name': git_branch.name,
             'description': git_branch.description,
@@ -148,14 +169,14 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                     )
                 ).first()
                 
-                model_data = self._git_branch_to_model_data(git_branch)
+                model_data = self._entity_to_model_dict(git_branch)
                 
                 if existing:
                     # Update existing branch
                     for key, value in model_data.items():
                         if key not in ['id', 'project_id', 'created_at']:  # Don't update immutable fields
                             setattr(existing, key, value)
-                    existing.updated_at = datetime.now(timezone.utc)
+                    existing.touch("git_branch_updated")
                 else:
                     # Create new branch
                     new_branch = ProjectGitBranch(**model_data)
@@ -203,7 +224,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 if not model:
                     return None
                 
-                return self._model_to_git_branch(model)
+                return self._model_to_entity(model)
         except SQLAlchemyError as e:
             logger.error(f"Error finding git branch by ID {branch_id}: {e}")
             raise DatabaseException(
@@ -226,7 +247,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 if not model:
                     return None
                 
-                return self._model_to_git_branch(model)
+                return self._model_to_entity(model)
         except SQLAlchemyError as e:
             logger.error(f"Error finding git branch by name {branch_name}: {e}")
             raise DatabaseException(
@@ -253,7 +274,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -279,7 +300,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -504,9 +525,163 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
     
     async def update(self, git_branch: GitBranch) -> None:
         """Update an existing git branch"""
-        git_branch.updated_at = datetime.now(timezone.utc)
+        git_branch.touch("git_branch_manual_update")
         await self.save(git_branch)
-    
+
+    def update(self, branch_id: str, updates: dict) -> bool:
+        """
+        Update branch fields directly in the database.
+        This is used by BranchStatisticsService to update task counts.
+
+        Args:
+            branch_id: ID of the branch to update
+            updates: Dictionary of fields to update (e.g., {'task_count': 5, 'completed_task_count': 2})
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with self.get_db_session() as session:
+                # Find the branch
+                model = session.query(ProjectGitBranch).filter(
+                    ProjectGitBranch.id == branch_id
+                ).first()
+
+                if not model:
+                    logger.warning(f"Branch {branch_id} not found for update")
+                    return False
+
+                # Update the specified fields
+                for field, value in updates.items():
+                    if hasattr(model, field):
+                        setattr(model, field, value)
+                    else:
+                        logger.warning(f"Field {field} does not exist on ProjectGitBranch model")
+
+                # Update the updated_at timestamp
+                model.updated_at = datetime.now(timezone.utc)
+
+                # Commit the changes
+                session.commit()
+
+                logger.info(f"Updated branch {branch_id} with: {updates}")
+                return True
+
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to update branch {branch_id}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error updating branch {branch_id}: {e}")
+            return False
+
+    def get(self, branch_id: str) -> Optional[Any]:
+        """
+        Get a branch by ID. This is needed by BranchStatisticsService.
+
+        Args:
+            branch_id: ID of the branch to retrieve
+
+        Returns:
+            Branch model or None if not found
+        """
+        try:
+            with self.get_db_session() as session:
+                model = session.query(ProjectGitBranch).filter(
+                    ProjectGitBranch.id == branch_id
+                ).first()
+
+                if model:
+                    # Count actual tasks from tasks table (domain layer approach)
+                    task_count_result = session.query(
+                        func.count(Task.id).label('total'),
+                        func.count(case((Task.status == 'done', Task.id))).label('completed')
+                    ).filter(Task.git_branch_id == branch_id).first()
+
+                    # Return a simple object with the fields BranchStatisticsService expects
+                    return type('Branch', (), {
+                        'id': model.id,
+                        'project_id': model.project_id,
+                        'task_count': task_count_result.total or 0,
+                        'completed_task_count': task_count_result.completed or 0
+                    })()
+
+                return None
+
+        except Exception as e:
+            logger.error(f"Error getting branch {branch_id}: {e}")
+            return None
+
+    def find_by_project_id(self, project_id: str) -> list:
+        """
+        Find all branches for a project. Synchronous version for BranchStatisticsService.
+
+        Args:
+            project_id: ID of the project
+
+        Returns:
+            List of branch objects
+        """
+        try:
+            with self.get_db_session() as session:
+                models = session.query(ProjectGitBranch).filter(
+                    ProjectGitBranch.project_id == project_id
+                ).all()
+
+                branches = []
+                for model in models:
+                    # Count actual tasks for each branch (domain layer approach)
+                    task_count_result = session.query(
+                        func.count(Task.id).label('total'),
+                        func.count(case((Task.status == 'done', Task.id))).label('completed')
+                    ).filter(Task.git_branch_id == model.id).first()
+
+                    branch = type('Branch', (), {
+                        'id': model.id,
+                        'project_id': model.project_id,
+                        'task_count': task_count_result.total or 0,
+                        'completed_task_count': task_count_result.completed or 0
+                    })()
+                    branches.append(branch)
+
+                return branches
+
+        except Exception as e:
+            logger.error(f"Error finding branches for project {project_id}: {e}")
+            return []
+
+    def get_all(self) -> list:
+        """
+        Get all branches. Synchronous version for BranchStatisticsService.
+
+        Returns:
+            List of all branch objects
+        """
+        try:
+            with self.get_db_session() as session:
+                models = session.query(ProjectGitBranch).all()
+
+                branches = []
+                for model in models:
+                    # Count actual tasks for each branch (domain layer approach)
+                    task_count_result = session.query(
+                        func.count(Task.id).label('total'),
+                        func.count(case((Task.status == 'done', Task.id))).label('completed')
+                    ).filter(Task.git_branch_id == model.id).first()
+
+                    branch = type('Branch', (), {
+                        'id': model.id,
+                        'project_id': model.project_id,
+                        'task_count': task_count_result.total or 0,
+                        'completed_task_count': task_count_result.completed or 0
+                    })()
+                    branches.append(branch)
+
+                return branches
+
+        except Exception as e:
+            logger.error(f"Error getting all branches: {e}")
+            return []
+
     async def count_by_project(self, project_id: str) -> int:
         """Count total number of git branches for a project"""
         try:
@@ -546,7 +721,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -575,7 +750,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -608,7 +783,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 branches = []
                 for model in models:
                     try:
-                        branch = self._model_to_git_branch(model)
+                        branch = self._model_to_entity(model)
                         branches.append(branch)
                     except Exception as e:
                         logger.error(f"Error converting model {model.id}: {e}")
@@ -633,8 +808,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'assigned_agent_id': agent_id,
-                    'updated_at': datetime.now(timezone.utc)
+                    'assigned_agent_id': agent_id
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 return updated_count > 0
@@ -656,8 +831,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'assigned_agent_id': None,
-                    'updated_at': datetime.now(timezone.utc)
+                    'assigned_agent_id': None
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 return updated_count > 0
@@ -713,7 +888,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                     },
                     "status_breakdown": status_breakdown,
                     "user_id": self.user_id,
-                    "generated_at": datetime.now(timezone.utc).isoformat()
+                    "generated_at": "auto-generated"  # BaseTimestampRepository handles timestamps
                 }
         except SQLAlchemyError as e:
             logger.error(f"Error getting project branch summary for {project_id}: {e}")
@@ -729,9 +904,10 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
             # Generate unique branch ID
             branch_id = str(uuid.uuid4())
             
-            now = datetime.now(timezone.utc)
+            # BaseTimestampRepository handles timestamps automatically
             
             # Create GitBranch entity
+            now = datetime.now(timezone.utc)
             git_branch = GitBranch(
                 id=branch_id,
                 name=branch_name,
@@ -801,7 +977,7 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         "error_code": "NOT_FOUND"
                     }
                 
-                git_branch = self._model_to_git_branch(model)
+                git_branch = self._model_to_entity(model)
                 
                 return {
                     "success": True,
@@ -915,10 +1091,10 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                 if git_branch_description is not None:
                     model.description = git_branch_description
                 
-                model.updated_at = datetime.now(timezone.utc)
+                model.touch("git_branch_description_updated")
                 session.flush()
                 
-                git_branch = self._model_to_git_branch(model)
+                git_branch = self._model_to_entity(model)
                 
                 return {
                     "success": True,
@@ -1035,20 +1211,30 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
         """Get statistics for a git branch - implements abstract method"""
         try:
             with self.get_db_session() as session:
+                # Get branch details
                 model = session.query(ProjectGitBranch).filter(
                     and_(
                         ProjectGitBranch.id == git_branch_id,
                         ProjectGitBranch.project_id == project_id
                     )
                 ).first()
-                
+
                 if not model:
                     return {"error": "Branch not found"}
-                
+
+                # Count actual tasks from tasks table (domain layer approach)
+                task_count_result = session.query(
+                    func.count(Task.id).label('total'),
+                    func.count(case((Task.status == 'done', Task.id))).label('completed')
+                ).filter(Task.git_branch_id == git_branch_id).first()
+
+                task_count = task_count_result.total or 0
+                completed_count = task_count_result.completed or 0
+
                 progress = 0.0
-                if model.task_count and model.task_count > 0:
-                    progress = (model.completed_task_count or 0) / model.task_count * 100.0
-                
+                if task_count > 0:
+                    progress = (completed_count / task_count) * 100.0
+
                 return {
                     "branch_id": model.id,
                     "branch_name": model.name,
@@ -1056,8 +1242,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                     "status": model.status,
                     "priority": model.priority,
                     "assigned_agent_id": model.assigned_agent_id,
-                    "task_count": model.task_count or 0,
-                    "completed_task_count": model.completed_task_count or 0,
+                    "task_count": task_count,
+                    "completed_task_count": completed_count,
                     "progress_percentage": progress,
                     "created_at": model.created_at.isoformat() if model.created_at else None,
                     "updated_at": model.updated_at.isoformat() if model.updated_at else None
@@ -1076,8 +1262,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'status': 'cancelled',
-                    'updated_at': datetime.now(timezone.utc)
+                    'status': 'cancelled'
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 if updated_count > 0:
@@ -1109,8 +1295,8 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
                         ProjectGitBranch.project_id == project_id
                     )
                 ).update({
-                    'status': 'todo',
-                    'updated_at': datetime.now(timezone.utc)
+                    'status': 'todo'
+                    # BaseTimestampRepository handles updated_at automatically
                 })
                 
                 if updated_count > 0:
@@ -1376,3 +1562,44 @@ class ORMGitBranchRepository(BaseORMRepository[ProjectGitBranch], GitBranchRepos
             except Exception as e:
                 logger.error(f"Error fetching single branch with counts: {e}")
                 return None
+
+    async def check_name_exists_in_project(self, project_id: str, name: str, exclude_branch_id: Optional[str] = None) -> bool:
+        """
+        Check if a git branch name already exists within a project.
+
+        Args:
+            project_id: The project ID to scope the check to
+            name: The branch name to check
+            exclude_branch_id: Optional branch ID to exclude from the check (for updates)
+
+        Returns:
+            True if the name exists, False otherwise
+        """
+        try:
+            with self.get_db_session() as session:
+                # SECURITY: Always apply user filtering for data isolation
+                if not self.user_id:
+                    raise ValueError("User authentication required for branch operations")
+
+                query = session.query(ProjectGitBranch).filter(
+                    and_(
+                        ProjectGitBranch.project_id == project_id,
+                        ProjectGitBranch.name == name.strip(),
+                        ProjectGitBranch.user_id == self.user_id  # USER ISOLATION
+                    )
+                )
+
+                # Exclude specific branch if provided (for updates)
+                if exclude_branch_id:
+                    query = query.filter(ProjectGitBranch.id != exclude_branch_id)
+
+                existing = query.first()
+                return existing is not None
+
+        except SQLAlchemyError as e:
+            logger.error(f"Error checking branch name exists: {e}")
+            raise DatabaseException(
+                message=f"Failed to check branch name: {str(e)}",
+                operation="check_name_exists_in_project",
+                table="project_git_branchs"
+            )

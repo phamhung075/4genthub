@@ -1,0 +1,175 @@
+# Timestamp Health Monitoring Configuration
+# Production monitoring setup for clean timestamp implementation
+
+monitoring:
+  # Basic configuration
+  api_base_url: "http://localhost:8000"
+  check_interval_seconds: 60
+  data_retention_days: 30
+  log_level: "INFO"
+
+  # Alert settings
+  cooldown_minutes: 15
+  max_alerts_per_hour: 10
+
+  # Performance thresholds
+  thresholds:
+    api_response_time:
+      warning_ms: 500
+      critical_ms: 1000
+
+    task_creation:
+      warning_ms: 500
+      critical_ms: 1000
+
+    task_update:
+      warning_ms: 400
+      critical_ms: 800
+
+    task_throughput:
+      warning_per_sec: 3
+      critical_per_sec: 1
+
+    system_cpu:
+      warning_percent: 75
+      critical_percent: 90
+
+    system_memory:
+      warning_percent: 80
+      critical_percent: 90
+
+    system_disk:
+      warning_percent: 85
+      critical_percent: 90
+
+# Health check endpoints
+health_checks:
+  - name: "api_health"
+    url: "/health"
+    method: "GET"
+    timeout_seconds: 10
+    critical: true
+
+  - name: "timestamp_validation"
+    url: "/api/v1/tasks"
+    method: "POST"
+    timeout_seconds: 30
+    critical: true
+    test_data:
+      title: "Health Check Task"
+      description: "Automated health check"
+      priority: "low"
+
+# Performance tests
+performance_tests:
+  - name: "timestamp_creation_batch"
+    description: "Batch task creation with timestamp validation"
+    batch_size: 10
+    timeout_seconds: 30
+    cleanup: true
+
+  - name: "timestamp_update_batch"
+    description: "Batch task updates with timestamp validation"
+    batch_size: 5
+    timeout_seconds: 20
+    cleanup: true
+
+# Alerting configuration
+alerts:
+  channels:
+    - type: "console"
+      enabled: true
+
+    - type: "log"
+      enabled: true
+      log_file: "monitoring_alerts.log"
+
+    - type: "file"
+      enabled: true
+      alert_file: "active_alerts.json"
+
+    # Production alerting (enable in production)
+    - type: "slack"
+      enabled: false
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#alerts"
+
+    - type: "email"
+      enabled: false
+      smtp_host: "${SMTP_HOST}"
+      smtp_port: 587
+      smtp_user: "${SMTP_USER}"
+      smtp_pass: "${SMTP_PASS}"
+      recipients:
+        - "devops@company.com"
+        - "on-call@company.com"
+
+    - type: "pagerduty"
+      enabled: false
+      integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+
+# Data persistence
+database:
+  type: "sqlite"
+  path: "monitoring_data.db"
+  backup_interval_hours: 24
+  backup_retention_days: 7
+
+# Dashboard configuration
+dashboard:
+  enabled: true
+  port: 8080
+  refresh_interval_seconds: 30
+
+  # Metrics to display
+  key_metrics:
+    - "api_response_time"
+    - "timestamp_task_creation_avg"
+    - "timestamp_task_update_avg"
+    - "timestamp_task_throughput"
+    - "system_cpu_utilization"
+    - "system_memory_utilization"
+
+  # Time ranges for charts
+  time_ranges:
+    - "1h"
+    - "4h"
+    - "24h"
+    - "7d"
+
+# Maintenance settings
+maintenance:
+  auto_cleanup_enabled: true
+  cleanup_interval_hours: 24
+  log_rotation_days: 7
+  max_log_file_mb: 100
+
+  # Performance optimization
+  db_vacuum_interval_days: 7
+  metrics_aggregation_enabled: true
+  aggregation_interval_minutes: 60
+
+# Clean timestamp specific settings
+clean_timestamp:
+  # Validation rules for clean implementation
+  validation:
+    require_created_at: true
+    require_updated_at: true
+    allow_manual_timestamps: false
+    timezone_required: true
+    format: "iso8601"
+
+  # Performance expectations
+  performance_goals:
+    creation_improvement_percent: 33  # 33% faster than legacy
+    update_improvement_percent: 50    # 50% faster than legacy
+    memory_reduction_percent: 20      # 20% less memory usage
+    query_reduction_percent: 40       # 40% fewer database queries
+
+  # Quality gates
+  quality_gates:
+    max_creation_time_ms: 200
+    max_update_time_ms: 150
+    min_throughput_per_sec: 10
+    max_memory_usage_mb: 512
+    max_error_rate_percent: 0.1

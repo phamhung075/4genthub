@@ -70,7 +70,7 @@ class ProjectApplicationService:
     async def register_agent(self, project_id: str, agent_id: str, name: str, capabilities: Optional[list] = None) -> Dict[str, Any]:
         """Register an agent to a project"""
         from ...domain.entities.agent import Agent
-        from ...domain.enums.agent_roles import AgentRole
+        from ...domain.value_objects import AgentRole
         from datetime import datetime, timezone
         
         project = await self._get_user_scoped_repository().find_by_id(project_id)
@@ -94,8 +94,8 @@ class ProjectApplicationService:
         agent = Agent(
             id=agent_id,
             name=name,
-            capabilities=agent_capabilities,
-            created_at=datetime.now(timezone.utc)
+            capabilities=agent_capabilities
+            # created_at will be set automatically by the entity
         )
         
         # Register agent to project
@@ -120,25 +120,25 @@ class ProjectApplicationService:
                 "error": str(e)
             }
     
-    async def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_name: str) -> Dict[str, Any]:
+    async def assign_agent_to_tree(self, project_id: str, agent_id: str, git_branch_id: str) -> Dict[str, Any]:
         """Assign an agent to a task tree"""
         project = await self._get_user_scoped_repository().find_by_id(project_id)
-        
+
         if not project:
             return {
                 "success": False,
                 "error": f"Project with ID '{project_id}' not found"
             }
-        
+
         try:
-            project.assign_agent_to_tree(agent_id, git_branch_name)
+            project.assign_agent_to_tree(agent_id, git_branch_id)
             await self._get_user_scoped_repository().update(project)
-            
+
             return {
                 "success": True,
-                "message": f"Agent '{agent_id}' assigned to tree '{git_branch_name}' successfully"
+                "message": f"Agent '{agent_id}' assigned to tree '{git_branch_id}' successfully"
             }
-        
+
         except ValueError as e:
             return {
                 "success": False,
@@ -167,14 +167,14 @@ class ProjectApplicationService:
         # Remove agent from registered agents
         del project.registered_agents[agent_id]
         
-        # Remove agent assignments  
+        # Remove agent assignments
         assignments_to_remove = []
-        for branch_name, assigned_agent_id in project.agent_assignments.items():
+        for branch_id, assigned_agent_id in project.agent_assignments.items():
             if assigned_agent_id == agent_id:
-                assignments_to_remove.append(branch_name)
-        
-        for branch_name in assignments_to_remove:
-            del project.agent_assignments[branch_name]
+                assignments_to_remove.append(branch_id)
+
+        for branch_id in assignments_to_remove:
+            del project.agent_assignments[branch_id]
         
         # Remove any active work sessions
         sessions_to_remove = []

@@ -60,9 +60,38 @@ class AddSubtaskUseCase:
             
             self._subtask_repository.save(subtask)
             added_subtask = subtask.to_dict()
-            
+
+            # Increment parent task's subtask_count
+            # Note: The domain entity has a subtasks list, but the ORM/DB uses subtask_count column
+            # We need to update the count directly through the repository
+            self._increment_parent_subtask_count(str(task_id))
+            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, incremented subtask_count")
+
             # Update parent task progress
             self._update_parent_task_progress(str(task_id))
+
+            # Dispatch domain event for subtask creation
+            # This will trigger branch statistics update
+            try:
+                from ...domain.services.event_dispatcher import dispatch_domain_event
+                from ...domain.events.task_lifecycle_events import TaskCreatedEvent
+
+                # Subtasks affect the same branch as their parent task
+                event = TaskCreatedEvent.create(
+                    task_id=str(subtask.id),
+                    branch_id=task.git_branch_id if hasattr(task, 'git_branch_id') else None,
+                    title=subtask.title,
+                    status='todo',
+                    priority=str(subtask.priority),
+                    assignees=subtask.assignees,
+                    user_id=getattr(request, 'user_id', None)
+                )
+
+                if event.branch_id:
+                    dispatch_domain_event("task_created", event)
+                    logging.info(f"Dispatched task_created event for subtask {subtask.id}")
+            except Exception as e:
+                logging.warning(f"Failed to dispatch subtask creation event: {e}")
         else:
             # Fallback to existing task entity method for backward compatibility
             logging.debug("[AddSubtask] Using legacy task entity path")
@@ -109,6 +138,26 @@ class AddSubtaskUseCase:
         else:
             return TaskId.from_string(str(task_id))
     
+    def _increment_parent_subtask_count(self, task_id: str) -> None:
+        """Increment the parent task's subtask_count by 1."""
+        try:
+            task_id_obj = self._convert_to_task_id(task_id)
+            task = self._task_repository.find_by_id(task_id_obj)
+            if task:
+                # The ORM model has subtask_count column - update it directly
+                # We need to refresh from DB to get current count, increment, and save
+                from ..database.models import Task as TaskModel
+                from ...infrastructure.database.session_manager import SessionManager
+
+                session = SessionManager.get_session()
+                task_orm = session.query(TaskModel).filter(TaskModel.id == str(task_id)).first()
+                if task_orm:
+                    task_orm.subtask_count = (task_orm.subtask_count or 0) + 1
+                    session.commit()
+                    logging.info(f"Incremented subtask_count for task {task_id} to {task_orm.subtask_count}")
+        except Exception as e:
+            logging.warning(f"Failed to increment parent subtask_count: {e}")
+
     def _update_parent_task_progress(self, task_id: str) -> None:
         """Update parent task progress based on subtask completion."""
         try:

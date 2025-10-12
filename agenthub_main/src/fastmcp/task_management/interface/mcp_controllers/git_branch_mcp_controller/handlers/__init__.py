@@ -7,8 +7,4 @@ from .crud_handler import GitBranchCRUDHandler
 from .agent_handler import GitBranchAgentHandler
 from .advanced_handler import GitBranchAdvancedHandler
 
-__all__ = [
-    'GitBranchCRUDHandler',
-    'GitBranchAgentHandler', 
-    'GitBranchAdvancedHandler'
-]
+__all__ = ["GitBranchCRUDHandler", "GitBranchAgentHandler", "GitBranchAdvancedHandler"]

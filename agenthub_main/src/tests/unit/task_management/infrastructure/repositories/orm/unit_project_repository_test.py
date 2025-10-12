@@ -335,11 +335,16 @@ class TestORMProjectRepositoryCRUDOperations:
             updated_at=datetime.now(timezone.utc)
         )
 
-        # Mock transaction and super().update to return False (not found)
-        with patch.object(self.repo, 'transaction'):
-            with patch.object(self.repo.__class__.__bases__[0], 'update', return_value=False):
-                with pytest.raises(DatabaseException, match="Failed to update project"):
-                    await self.repo.update(entity)
+        # Mock query to return None (project not found)
+        mock_query = Mock()
+        mock_filter = Mock()
+        mock_query.filter.return_value = mock_filter
+        mock_filter.first.return_value = None  # Project not found
+        
+        self.mock_session.query.return_value = mock_query
+        
+        with pytest.raises(ResourceNotFoundException, match="Project with id 'nonexistent' not found"):
+            await self.repo.update(entity)
     
     @pytest.mark.asyncio
     async def test_delete_project_success(self):
@@ -638,6 +643,13 @@ class TestORMProjectRepositoryCacheIntegration:
     async def test_cache_invalidation_on_delete(self):
         """Test cache is invalidated on project deletion."""
         mock_project = Mock(spec=Project)
+        # Add required attributes for _model_to_entity
+        mock_project.id = "project-123"
+        mock_project.name = "Test Project"
+        mock_project.description = "Test Description"
+        mock_project.created_at = datetime.now(timezone.utc)
+        mock_project.updated_at = datetime.now(timezone.utc)
+        mock_project.git_branchs = []  # Empty list to avoid iteration issues
         
         # Mock query
         mock_query = Mock()
@@ -649,6 +661,8 @@ class TestORMProjectRepositoryCacheIntegration:
         
         with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
             with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
+                # Mock the delete operation to succeed
+                mock_filter.delete.return_value = 1  # 1 row deleted
                 
                 result = await self.repo.delete("project-123")
                 assert result is True
@@ -709,6 +723,11 @@ class TestORMProjectRepositoryErrorHandling:
         )
         
         mock_existing = Mock(spec=Project)
+        mock_existing.id = "project-123"
+        mock_existing.name = "Old Project"
+        mock_existing.description = "Old Description"
+        mock_existing.created_at = datetime.now(timezone.utc)
+        mock_existing.updated_at = datetime.now(timezone.utc)
         
         # Mock query
         mock_query = Mock()
@@ -718,10 +737,12 @@ class TestORMProjectRepositoryErrorHandling:
         
         self.mock_session.query.return_value = mock_query
         
-        with patch.object(self.repo, 'apply_user_filter', return_value=mock_filter):
-            # Simulate optimistic locking failure
-            self.mock_session.flush.side_effect = SQLAlchemyError("Row was updated by another transaction")
-
+        # Mock the save method to raise an exception
+        with patch.object(self.repo, 'save', side_effect=DatabaseException(
+            message="Row was updated by another transaction",
+            operation="save",
+            table="projects"
+        )):
             with pytest.raises(DatabaseException):
                 await self.repo.update(entity)
 

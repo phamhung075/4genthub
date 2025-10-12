@@ -3,7 +3,6 @@ Use Case: Validate Project Integrity
 """
 from typing import Dict, Any
 from ...domain.repositories.project_repository import ProjectRepository
-from datetime import datetime
 
 class ValidateIntegrityUseCase:
     def __init__(self, project_repo: ProjectRepository):
@@ -80,6 +79,5 @@ class ValidateIntegrityUseCase:
         return {
             "is_valid": len(errors) == 0,
             "errors": errors,
-            "warnings": warnings,
-            "validated_at": datetime.now().isoformat()
+            "warnings": warnings
         } 

@@ -5,6 +5,7 @@ import {
   EntityType,
   ChangeNotification
 } from '../services/changePoolService';
+import logger from '../utils/logger';
 
 interface UseChangeSubscriptionOptions {
   componentId: string;
@@ -12,7 +13,7 @@ interface UseChangeSubscriptionOptions {
   entityIds?: string[];
   projectId?: string;
   branchId?: string;
-  refreshCallback: () => void;
+  refreshCallback: (notification?: ChangeNotification) => void; // FIXED: Accept notification data
   shouldRefresh?: (notification: ChangeNotification) => boolean;
   enabled?: boolean; // Allow disabling subscription conditionally
 }
@@ -53,10 +54,16 @@ export function useChangeSubscription(options: UseChangeSubscriptionOptions) {
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Stable reference to refresh callback
-  const stableRefreshCallback = useCallback(() => {
-    refreshCallback();
-  }, [refreshCallback]);
+  // Stable reference to refresh callback - FIXED: Pass notification data through
+  const stableRefreshCallback = useCallback((notification?: ChangeNotification) => {
+    logger.debug(`🔧 [useChangeSubscription] ${componentId}: Passing notification to refreshCallback`, {
+      hasNotification: !!notification,
+      entityType: notification?.entityType,
+      eventType: notification?.eventType,
+      entityId: notification?.entityId
+    });
+    refreshCallback(notification);
+  }, [refreshCallback, componentId]);
 
   // Stable array references to prevent unnecessary re-subscriptions
   const stableEntityTypes = useMemo(() => entityTypes, [JSON.stringify(entityTypes)]);
@@ -113,7 +120,7 @@ export function useChangeSubscription(options: UseChangeSubscriptionOptions) {
 export function useEntityChanges(
   componentId: string,
   entityTypes: EntityType | EntityType[],
-  refreshCallback: () => void,
+  refreshCallback: (notification?: ChangeNotification) => void, // FIXED: Accept notification data
   options?: {
     projectId?: string;
     branchId?: string;

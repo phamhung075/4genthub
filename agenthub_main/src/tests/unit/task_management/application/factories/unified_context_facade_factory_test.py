@@ -32,6 +32,7 @@ EXPECTED_GLOBAL_DATA = {
 }
 
 
+@pytest.mark.unit
 class TestUnifiedContextFacadeFactory:
     """Test suite for UnifiedContextFacadeFactory"""
 
@@ -282,19 +283,22 @@ class TestUnifiedContextFacadeFactory:
         assert UnifiedContextFacadeFactory._initialized is True
 
     def test_repository_attributes_not_created_with_mock_service(self):
-        """Test that repository attributes are created even when passing None (gets db from config)"""
-        # Arrange & Act
-        factory = UnifiedContextFacadeFactory(None)  # This still gets db from config if available
+        """Test that repository attributes are NOT created when database initialization fails"""
+        # Arrange - Mock get_db_config to fail, forcing mock service
+        with patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config') as mock_get_db_config:
+            mock_get_db_config.side_effect = Exception("Database not available")
+            
+            # Act
+            factory = UnifiedContextFacadeFactory(None)
 
-        # Assert - Repository attributes WILL exist if database config is available
-        # The implementation tries to get db_config even when None is passed
-        assert hasattr(factory, 'global_repo')
-        assert hasattr(factory, 'project_repo')
-        assert hasattr(factory, 'branch_repo')
-        assert hasattr(factory, 'task_repo')
-        # Service attributes should also exist
-        assert factory.unified_service is not None
-        assert UnifiedContextFacadeFactory._initialized is True
+            # Assert - Repository attributes should NOT exist when using mock service
+            assert not hasattr(factory, 'global_repo')
+            assert not hasattr(factory, 'project_repo')
+            assert not hasattr(factory, 'branch_repo')
+            assert not hasattr(factory, 'task_repo')
+            # But unified_service should exist (as mock)
+            assert factory.unified_service is not None
+            assert UnifiedContextFacadeFactory._initialized is True
 
     def test_logging_behavior(self):
         """Test that appropriate logging occurs during initialization"""

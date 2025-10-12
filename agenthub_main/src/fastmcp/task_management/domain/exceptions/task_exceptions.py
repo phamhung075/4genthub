@@ -1,15 +1,7 @@
 """Task Domain Exceptions"""
 
 from typing import Optional, Dict, Any, List
-from enum import Enum
-
-
-class ErrorSeverity(Enum):
-    """Error severity levels."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+from ..value_objects import ErrorSeverity
 
 
 class TaskDomainError(Exception):
@@ -113,9 +105,21 @@ class TaskValidationError(TaskDomainError):
 
 class TaskCompletionError(TaskDomainError):
     """Raised when a task cannot be completed due to business rule violations"""
-    
-    def __init__(self, message: str):
-        super().__init__(message)
+
+    def __init__(self, message: str, incomplete_subtasks: Optional[List[Dict[str, Any]]] = None):
+        self.incomplete_subtasks = incomplete_subtasks or []
+        context = {}
+        if incomplete_subtasks:
+            context["incomplete_subtasks"] = incomplete_subtasks
+            context["incomplete_count"] = len(incomplete_subtasks)
+
+        super().__init__(
+            message=message,
+            error_code="SUBTASKS_NOT_COMPLETE",
+            severity=ErrorSeverity.MEDIUM,
+            context=context,
+            recoverable=True
+        )
 
 
 class TaskCreationError(TaskDomainError):

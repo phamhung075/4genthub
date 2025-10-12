@@ -1,18 +1,32 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { TaskContextDialog } from "../../components/TaskContextDialog";
 import { Task } from "../../api";
+import { getTaskContext, updateTaskContext, getBranchContext, getProjectContext, getGlobalContext } from "../../api";
+import { useEntityChanges } from "../../hooks/useChangeSubscription";
 
-// Mock the context helpers
-jest.mock("../../utils/contextHelpers", () => ({
-  formatContextDisplay: jest.fn((data) => ({
-    completionSummary: data?.completion_summary || data?.completionSummary,
-    isLegacy: !!data?.completion_summary,
-    completionPercentage: data?.completion_percentage || data?.completionPercentage,
-    taskStatus: data?.status || data?.taskStatus,
-    testingNotes: data?.testing_notes || data?.testingNotes || []
-  }))
+// Mock the API functions
+jest.mock("../../api", () => ({
+  getTaskContext: jest.fn(),
+  updateTaskContext: jest.fn(),
+  getBranchContext: jest.fn(),
+  getProjectContext: jest.fn(),
+  getGlobalContext: jest.fn()
+}));
+
+// Mock the WebSocket hook
+jest.mock("../../hooks/useChangeSubscription", () => ({
+  useEntityChanges: jest.fn()
+}));
+
+// Mock the logger
+jest.mock("../../utils/logger", () => ({
+  default: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn()
+  }
 }));
 
 describe("TaskContextDialog", () => {
@@ -30,6 +44,7 @@ describe("TaskContextDialog", () => {
     labels: [],
     estimated_effort: "2 hours",
     git_branch_id: "branch-123",
+    project_id: "project-123",
     subtasks: []
   };
 
@@ -47,15 +62,20 @@ describe("TaskContextDialog", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Setup default mock implementations
+    (getTaskContext as jest.Mock).mockResolvedValue(null);
+    (getBranchContext as jest.Mock).mockResolvedValue(null);
+    (getProjectContext as jest.Mock).mockResolvedValue(null);
+    (getGlobalContext as jest.Mock).mockResolvedValue(null);
+    (updateTaskContext as jest.Mock).mockResolvedValue({});
+    (useEntityChanges as jest.Mock).mockImplementation(() => {});
   });
 
   describe("Basic Rendering", () => {
     it("renders dialog when open", () => {
       render(<TaskContextDialog {...defaultProps} />);
       
-      expect(screen.getByText("Task Context")).toBeInTheDocument();
-      expect(screen.getByText("Task: Test Task")).toBeInTheDocument();
-      expect(screen.getByText("ID: task-123")).toBeInTheDocument();
+      expect(screen.getByText("Task Context Management")).toBeInTheDocument();
     });
 
     it("renders close button", () => {
@@ -73,13 +93,27 @@ describe("TaskContextDialog", () => {
       
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
+
+    it("renders all tab buttons", () => {
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      expect(screen.getByRole("button", { name: /Task Info/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Progress/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Completion/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Testing/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Blockers/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Insights/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Next Steps/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Metadata/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Inheritance/i })).toBeInTheDocument();
+    });
   });
 
   describe("Loading State", () => {
     it("shows loading state when loading is true", () => {
       render(<TaskContextDialog {...defaultProps} loading={true} />);
       
-      expect(screen.getByText("Loading context...")).toBeInTheDocument();
+      expect(screen.getByText("Loading task context...")).toBeInTheDocument();
     });
 
     it("does not show context content when loading", () => {
@@ -96,8 +130,8 @@ describe("TaskContextDialog", () => {
         />
       );
       
-      expect(screen.getByText("Loading context...")).toBeInTheDocument();
-      expect(screen.queryByText("Context Data")).not.toBeInTheDocument();
+      expect(screen.getByText("Loading task context...")).toBeInTheDocument();
+      expect(screen.queryByText("No task_info defined yet.")).not.toBeInTheDocument();
     });
   });
 
@@ -105,374 +139,450 @@ describe("TaskContextDialog", () => {
     it("shows no context message when context is null", () => {
       render(<TaskContextDialog {...defaultProps} context={null} />);
       
-      expect(screen.getByText("No context data available")).toBeInTheDocument();
-      expect(screen.getByText("Complete the task or update it to create context")).toBeInTheDocument();
+      expect(screen.getByText("No Task Context Available")).toBeInTheDocument();
+      expect(screen.getByText("Task context has not been initialized yet.")).toBeInTheDocument();
+      expect(screen.getByText(`Task: ${mockTask.title} (ID: ${mockTask.id})`)).toBeInTheDocument();
+    });
+
+    it("shows initialize button when no context", () => {
+      render(<TaskContextDialog {...defaultProps} context={null} />);
+      
+      const initButton = screen.getByRole("button", { name: /Initialize Task Context/i });
+      expect(initButton).toBeInTheDocument();
+    });
+
+    it("enters edit mode when initialize button clicked", () => {
+      render(<TaskContextDialog {...defaultProps} context={null} />);
+      
+      const initButton = screen.getByRole("button", { name: /Initialize Task Context/i });
+      fireEvent.click(initButton);
+      
+      expect(screen.getByRole("button", { name: /Save All/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
     });
   });
 
-  describe("Special Message State", () => {
-    it("renders special message without error", () => {
-      const contextWithMessage = {
-        message: "No context available for this task",
-        info: "This task was created without context",
-        suggestions: ["Create context manually", "Update task status"]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithMessage} />);
-      
-      expect(screen.getByText("No context available for this task")).toBeInTheDocument();
-      expect(screen.getByText("This task was created without context")).toBeInTheDocument();
-      expect(screen.getByText("Suggestions:")).toBeInTheDocument();
-      expect(screen.getByText("Create context manually")).toBeInTheDocument();
-      expect(screen.getByText("Update task status")).toBeInTheDocument();
-    });
-
-    it("handles message with suggestions array", () => {
-      const contextWithSuggestions = {
-        message: "Context needs attention",
-        suggestions: ["Suggestion 1", "Suggestion 2", "Suggestion 3"]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithSuggestions} />);
-      
-      expect(screen.getByText("Context needs attention")).toBeInTheDocument();
-      expect(screen.getByText("Suggestion 1")).toBeInTheDocument();
-      expect(screen.getByText("Suggestion 2")).toBeInTheDocument();
-      expect(screen.getByText("Suggestion 3")).toBeInTheDocument();
-    });
-  });
-
-  describe("Error State", () => {
-    it("shows error state when context has error", () => {
-      const errorContext = {
-        error: true,
-        message: "Failed to load context",
-        details: "Network error occurred"
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={errorContext} />);
-      
-      expect(screen.getByText("Failed to load context")).toBeInTheDocument();
-      expect(screen.getByText("Network error occurred")).toBeInTheDocument();
-    });
-
-    it("shows error without details", () => {
-      const errorContext = {
-        error: true,
-        message: "Context error"
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={errorContext} />);
-      
-      expect(screen.getByText("Context error")).toBeInTheDocument();
-    });
-  });
-
-  describe("Context Content Rendering", () => {
-    it("renders context metadata", () => {
-      const contextWithMetadata = {
-        metadata: {
-          version: "2.0",
-          created_at: "2024-01-01T00:00:00Z",
-          user_id: "user-123"
-        }
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithMetadata} />);
-      
-      expect(screen.getByText("Context Metadata")).toBeInTheDocument();
-      expect(screen.getByText(/"version": "2.0"/)).toBeInTheDocument();
-      expect(screen.getByText(/"user_id": "user-123"/)).toBeInTheDocument();
-    });
-
-    it("renders context data", () => {
-      const contextWithData = {
+  describe("Context API Integration", () => {
+    it("fetches task context when dialog opens", async () => {
+      const mockContext = {
         data: {
-          progress_notes: "Task is 50% complete",
-          blocked_on: null,
-          estimated_hours: 4
+          task_info: { title: "Test Task", status: "in_progress" },
+          task_progress: { percentage: 50 },
+          completion_summary: "Test summary",
+          testing_notes: "Test notes",
+          blockers: ["Blocker 1", "Blocker 2"],
+          insights: ["Insight 1"],
+          next_steps: ["Step 1"],
+          task_metadata: { created_by: "user123" }
         }
       };
       
-      render(<TaskContextDialog {...defaultProps} context={contextWithData} />);
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
       
-      expect(screen.getByText("Context Data")).toBeInTheDocument();
-      expect(screen.getByText(/"progress_notes": "Task is 50% complete"/)).toBeInTheDocument();
-      expect(screen.getByText(/"estimated_hours": 4/)).toBeInTheDocument();
-    });
-
-    it("renders insights array", () => {
-      const contextWithInsights = {
-        insights: [
-          {
-            title: "Performance Insight",
-            content: "Task completion is ahead of schedule",
-            timestamp: "2024-01-01T12:00:00Z"
-          },
-          {
-            content: "No blockers identified"
-          }
-        ]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithInsights} />);
-      
-      expect(screen.getByText("Insights")).toBeInTheDocument();
-      expect(screen.getByText("Performance Insight")).toBeInTheDocument();
-      expect(screen.getByText("Task completion is ahead of schedule")).toBeInTheDocument();
-      expect(screen.getByText("Insight 2")).toBeInTheDocument();
-      expect(screen.getByText("No blockers identified")).toBeInTheDocument();
-    });
-
-    it("formats insight timestamps", () => {
-      const contextWithTimestamp = {
-        insights: [
-          {
-            title: "Timed Insight",
-            content: "Important update",
-            timestamp: "2024-01-01T12:00:00Z"
-          }
-        ]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithTimestamp} />);
-      
-      expect(screen.getByText("Timed Insight")).toBeInTheDocument();
-      expect(screen.getByText("Important update")).toBeInTheDocument();
-      // Check that timestamp is formatted (exact format may vary by locale)
-      expect(screen.getByText(/2024/)).toBeInTheDocument();
-    });
-  });
-
-  describe("Completion Summary Display", () => {
-    it("renders completion summary from context display", () => {
-      const contextWithCompletion = {
-        data: {
-          completion_summary: "Task completed successfully with all requirements met"
-        }
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithCompletion} />);
-      
-      expect(screen.getByText("Completion Summary")).toBeInTheDocument();
-      expect(screen.getByText("Task completed successfully with all requirements met")).toBeInTheDocument();
-    });
-
-    it("shows legacy format indicator", () => {
-      const legacyContext = {
-        data: {
-          completion_summary: "Legacy completion"
-        }
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={legacyContext} />);
-      
-      expect(screen.getByText("Completion Summary (Legacy Format)")).toBeInTheDocument();
-      expect(screen.getByText("Note: This is using the legacy completion_summary format")).toBeInTheDocument();
-    });
-
-    it("displays completion percentage", () => {
-      const contextWithPercentage = {
-        data: {
-          completionSummary: "Task completed",
-          completion_percentage: 85
-        }
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithPercentage} />);
-      
-      expect(screen.getByText("Completion:")).toBeInTheDocument();
-      expect(screen.getByText("85%")).toBeInTheDocument();
-    });
-  });
-
-  describe("Task Status Display", () => {
-    it("renders task status from context display", () => {
-      const contextWithStatus = {
-        data: {
-          status: "completed"
-        }
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithStatus} />);
-      
-      expect(screen.getByText("Task Status")).toBeInTheDocument();
-      expect(screen.getByText("completed")).toBeInTheDocument();
-    });
-  });
-
-  describe("Testing Notes Display", () => {
-    it("renders testing notes as next steps", () => {
-      const contextWithNotes = {
-        data: {
-          testing_notes: ["Run unit tests", "Verify integration", "Check performance"]
-        }
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithNotes} />);
-      
-      expect(screen.getByText("Testing Notes & Next Steps")).toBeInTheDocument();
-      expect(screen.getByText("Run unit tests")).toBeInTheDocument();
-      expect(screen.getByText("Verify integration")).toBeInTheDocument();
-      expect(screen.getByText("Check performance")).toBeInTheDocument();
-    });
-  });
-
-  describe("Progress History Display", () => {
-    it("renders progress history", () => {
-      const contextWithProgress = {
-        progress: [
-          {
-            content: "Started implementation",
-            timestamp: "2024-01-01T10:00:00Z"
-          },
-          {
-            content: "Completed first milestone",
-            timestamp: "2024-01-02T15:30:00Z"
-          }
-        ]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithProgress} />);
-      
-      expect(screen.getByText("Progress History")).toBeInTheDocument();
-      expect(screen.getByText("Started implementation")).toBeInTheDocument();
-      expect(screen.getByText("Completed first milestone")).toBeInTheDocument();
-    });
-
-    it("formats progress timestamps", () => {
-      const contextWithProgress = {
-        progress: [
-          {
-            content: "Progress update",
-            timestamp: "2024-01-01T12:00:00Z"
-          }
-        ]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={contextWithProgress} />);
-      
-      expect(screen.getByText("Progress update")).toBeInTheDocument();
-      // Check that timestamp is present (format may vary by locale)
-      expect(screen.getByText(/2024/)).toBeInTheDocument();
-    });
-  });
-
-  describe("Raw Context Display", () => {
-    it("renders complete raw context JSON", () => {
-      const complexContext = {
-        metadata: { version: "1.0" },
-        data: { test: "value" },
-        insights: [{ title: "test", content: "insight" }]
-      };
-      
-      render(<TaskContextDialog {...defaultProps} context={complexContext} />);
-      
-      expect(screen.getByText("Complete Context (Raw JSON)")).toBeInTheDocument();
-      expect(screen.getByText(/"metadata"/)).toBeInTheDocument();
-      expect(screen.getByText(/"data"/)).toBeInTheDocument();
-      expect(screen.getByText(/"insights"/)).toBeInTheDocument();
-    });
-  });
-
-  describe("Dialog Interactions", () => {
-    it("calls onOpenChange when dialog state should change", async () => {
       render(<TaskContextDialog {...defaultProps} />);
       
-      // Simulate ESC key press to close dialog
-      fireEvent.keyDown(document.body, { key: "Escape", code: "Escape" });
-      
       await waitFor(() => {
-        // onOpenChange might be called by the dialog component internally
-        // The exact behavior depends on the UI library implementation
+        expect(getTaskContext).toHaveBeenCalledWith(mockTask.id);
       });
     });
 
-    it("renders with different open states", () => {
-      const { rerender } = render(<TaskContextDialog {...defaultProps} open={false} />);
+    it("fetches inherited contexts", async () => {
+      render(<TaskContextDialog {...defaultProps} />);
       
-      // When closed, dialog content should not be visible
-      expect(screen.queryByText("Task Context")).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(getBranchContext).toHaveBeenCalledWith(mockTask.git_branch_id);
+        expect(getProjectContext).toHaveBeenCalledWith(mockTask.project_id);
+        expect(getGlobalContext).toHaveBeenCalled();
+      });
+    });
+
+    it("handles API errors gracefully", async () => {
+      (getTaskContext as jest.Mock).mockRejectedValue(new Error("API Error"));
       
-      rerender(<TaskContextDialog {...defaultProps} open={true} />);
+      render(<TaskContextDialog {...defaultProps} />);
       
-      // When open, dialog content should be visible
-      expect(screen.getByText("Task Context")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("No Task Context Available")).toBeInTheDocument();
+      });
     });
   });
 
-  describe("Props Handling", () => {
-    it("handles null task gracefully", () => {
-      render(<TaskContextDialog {...defaultProps} task={null} />);
+  describe("Edit Mode", () => {
+    it("enters edit mode when Edit button is clicked", async () => {
+      const mockContext = {
+        data: {
+          task_info: { title: "Test" },
+          task_progress: {},
+          completion_summary: "",
+          testing_notes: "",
+          blockers: [],
+          insights: [],
+          next_steps: [],
+          task_metadata: {}
+        }
+      };
       
-      expect(screen.getByText("Task Context")).toBeInTheDocument();
-      expect(screen.queryByText("Task:")).not.toBeInTheDocument();
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Edit/i })).toBeInTheDocument();
+      });
+      
+      fireEvent.click(screen.getByRole("button", { name: /Edit/i }));
+      
+      expect(screen.getByRole("button", { name: /Save All/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Add task information/i)).toBeInTheDocument();
     });
 
-    it("handles task without title", () => {
-      const taskWithoutTitle = { ...mockTask, title: "" };
-      render(<TaskContextDialog {...defaultProps} task={taskWithoutTitle} />);
+    it("saves context changes", async () => {
+      const mockContext = {
+        data: {
+          task_info: { title: "Test" },
+          task_progress: {},
+          completion_summary: "",
+          testing_notes: "",
+          blockers: [],
+          insights: [],
+          next_steps: [],
+          task_metadata: {}
+        }
+      };
       
-      expect(screen.getByText("Task Context")).toBeInTheDocument();
-      expect(screen.getByText(/ID: task-123/)).toBeInTheDocument();
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      (updateTaskContext as jest.Mock).mockResolvedValue({});
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        fireEvent.click(screen.getByRole("button", { name: /Edit/i }));
+      });
+      
+      // Modify task info
+      const textarea = screen.getByPlaceholderText(/Add task information/i);
+      fireEvent.change(textarea, { target: { value: "title: Updated Test\nstatus: completed" } });
+      
+      // Save changes
+      fireEvent.click(screen.getByRole("button", { name: /Save All/i }));
+      
+      await waitFor(() => {
+        expect(updateTaskContext).toHaveBeenCalledWith(mockTask.id, expect.objectContaining({
+          task_info: { title: "Updated Test", status: "completed" }
+        }));
+      });
     });
 
-    it("handles different loading states", () => {
-      const { rerender } = render(
-        <TaskContextDialog {...defaultProps} loading={true} />
+    it("cancels edit mode", async () => {
+      const mockContext = {
+        data: { task_info: { title: "Original" } }
+      };
+      
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        fireEvent.click(screen.getByRole("button", { name: /Edit/i }));
+      });
+      
+      const textarea = screen.getByPlaceholderText(/Add task information/i);
+      fireEvent.change(textarea, { target: { value: "title: Changed" } });
+      
+      fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
+      
+      // Should exit edit mode
+      expect(screen.queryByRole("button", { name: /Save All/i })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Edit/i })).toBeInTheDocument();
+    });
+  });
+
+  describe("Tab Navigation", () => {
+    it("switches between tabs", async () => {
+      const mockContext = {
+        data: {
+          task_info: { title: "Test Task" },
+          task_progress: { percentage: 50 },
+          completion_summary: "Summary text",
+          testing_notes: "Testing notes",
+          blockers: ["Blocker 1"],
+          insights: ["Insight 1"],
+          next_steps: ["Step 1"],
+          task_metadata: { version: "1.0" }
+        }
+      };
+      
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        expect(screen.getByText("Test Task")).toBeInTheDocument();
+      });
+      
+      // Click Progress tab
+      fireEvent.click(screen.getByRole("button", { name: /Progress/i }));
+      expect(screen.getByText("50")).toBeInTheDocument();
+      
+      // Click Completion tab
+      fireEvent.click(screen.getByRole("button", { name: /Completion/i }));
+      expect(screen.getByText("Summary text")).toBeInTheDocument();
+      
+      // Click Testing tab
+      fireEvent.click(screen.getByRole("button", { name: /Testing/i }));
+      expect(screen.getByText("Testing notes")).toBeInTheDocument();
+      
+      // Click Blockers tab
+      fireEvent.click(screen.getByRole("button", { name: /Blockers/i }));
+      expect(screen.getByText("Blocker 1")).toBeInTheDocument();
+      
+      // Click Insights tab
+      fireEvent.click(screen.getByRole("button", { name: /Insights/i }));
+      expect(screen.getByText("Insight 1")).toBeInTheDocument();
+      
+      // Click Next Steps tab
+      fireEvent.click(screen.getByRole("button", { name: /Next Steps/i }));
+      expect(screen.getByText("Step 1")).toBeInTheDocument();
+      
+      // Click Metadata tab
+      fireEvent.click(screen.getByRole("button", { name: /Metadata/i }));
+      expect(screen.getByText("1.0")).toBeInTheDocument();
+    });
+
+    it("shows inheritance view", async () => {
+      const mockBranchContext = { data: { branch_setting: "value" } };
+      const mockProjectContext = { data: { project_setting: "value" } };
+      const mockGlobalContext = { data: { global_setting: "value" } };
+      
+      (getBranchContext as jest.Mock).mockResolvedValue(mockBranchContext);
+      (getProjectContext as jest.Mock).mockResolvedValue(mockProjectContext);
+      (getGlobalContext as jest.Mock).mockResolvedValue(mockGlobalContext);
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        fireEvent.click(screen.getByRole("button", { name: /Inheritance/i }));
+      });
+      
+      expect(screen.getByText("How Inheritance Works")).toBeInTheDocument();
+      expect(screen.getByText("Global Context")).toBeInTheDocument();
+      expect(screen.getByText("Project Context")).toBeInTheDocument();
+      expect(screen.getByText("Branch Context")).toBeInTheDocument();
+      expect(screen.getByText("Task Context (Current Level)")).toBeInTheDocument();
+    });
+  });
+
+  describe("WebSocket Integration", () => {
+    it("subscribes to task changes when dialog opens", () => {
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      expect(useEntityChanges).toHaveBeenCalledWith(
+        'TaskContextDialog',
+        'task',
+        expect.any(Function),
+        {
+          entityIds: [mockTask.id],
+          enabled: true
+        }
+      );
+    });
+
+    it("unsubscribes when dialog closes", () => {
+      const { rerender } = render(<TaskContextDialog {...defaultProps} />);
+      
+      rerender(<TaskContextDialog {...defaultProps} open={false} />);
+      
+      expect(useEntityChanges).toHaveBeenLastCalledWith(
+        'TaskContextDialog',
+        'task',
+        expect.any(Function),
+        {
+          entityIds: [mockTask.id],
+          enabled: false
+        }
+      );
+    });
+
+    it("refreshes context on WebSocket task update", async () => {
+      const mockContext = {
+        data: { task_info: { title: "Initial" } }
+      };
+      
+      (getTaskContext as jest.Mock)
+        .mockResolvedValueOnce(mockContext)
+        .mockResolvedValueOnce({
+          data: { 
+            task_info: { title: "Updated via WebSocket" },
+            progress_history: [{ timestamp: "2024-01-01", content: "Progress update" }]
+          }
+        });
+      
+      let websocketHandler: ((notification: any) => void) | null = null;
+      (useEntityChanges as jest.Mock).mockImplementation((_, __, handler) => {
+        websocketHandler = handler;
+      });
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        expect(getTaskContext).toHaveBeenCalledTimes(1);
+      });
+      
+      // Simulate WebSocket notification
+      await act(async () => {
+        if (websocketHandler) {
+          await websocketHandler({
+            entityId: mockTask.id,
+            entityType: 'task',
+            eventType: 'update'
+          });
+        }
+      });
+      
+      await waitFor(() => {
+        expect(getTaskContext).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("ignores WebSocket updates for different tasks", async () => {
+      let websocketHandler: ((notification: any) => void) | null = null;
+      (useEntityChanges as jest.Mock).mockImplementation((_, __, handler) => {
+        websocketHandler = handler;
+      });
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        expect(getTaskContext).toHaveBeenCalledTimes(1);
+      });
+      
+      // Simulate WebSocket notification for different task
+      await act(async () => {
+        if (websocketHandler) {
+          await websocketHandler({
+            entityId: 'different-task-id',
+            entityType: 'task',
+            eventType: 'update'
+          });
+        }
+      });
+      
+      // Should not refetch
+      expect(getTaskContext).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Copy JSON Feature", () => {
+    it("copies context JSON to clipboard", async () => {
+      const mockContext = {
+        data: { task_info: { title: "Test" } }
+      };
+      
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
+      
+      // Mock clipboard API
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: jest.fn().mockResolvedValue(undefined)
+        }
+      });
+      
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Copy JSON/i })).toBeInTheDocument();
+      });
+      
+      fireEvent.click(screen.getByRole("button", { name: /Copy JSON/i }));
+      
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        JSON.stringify(mockContext, null, 2)
       );
       
-      expect(screen.getByText("Loading context...")).toBeInTheDocument();
+      // Should show "Copied!" temporarily
+      expect(screen.getByText("Copied!")).toBeInTheDocument();
+    });
+  });
+
+  describe("Raw JSON Expansion", () => {
+    it("toggles raw JSON view", async () => {
+      const mockContext = {
+        data: { task_info: { title: "Test" } }
+      };
       
-      rerender(<TaskContextDialog {...defaultProps} loading={false} />);
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
       
-      expect(screen.queryByText("Loading context...")).not.toBeInTheDocument();
+      render(<TaskContextDialog {...defaultProps} />);
+      
+      await waitFor(() => {
+        expect(screen.getByText("View Complete JSON Context")).toBeInTheDocument();
+      });
+      
+      // Initially collapsed
+      expect(screen.queryByText(JSON.stringify(mockContext, null, 2))).not.toBeInTheDocument();
+      
+      // Click to expand
+      fireEvent.click(screen.getByText("View Complete JSON Context"));
+      
+      // Should show JSON
+      expect(screen.getByText(JSON.stringify(mockContext, null, 2))).toBeInTheDocument();
+      
+      // Click to collapse
+      fireEvent.click(screen.getByText("View Complete JSON Context"));
+      
+      // Should hide JSON
+      expect(screen.queryByText(JSON.stringify(mockContext, null, 2))).not.toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
-    it("handles empty context object", () => {
-      render(<TaskContextDialog {...defaultProps} context={{}} />);
+    it("handles null task gracefully", () => {
+      render(<TaskContextDialog {...defaultProps} task={null} />);
       
-      expect(screen.getByText("Complete Context (Raw JSON)")).toBeInTheDocument();
-      expect(screen.getByText("{}")).toBeInTheDocument();
+      expect(screen.getByText("Task Context Management")).toBeInTheDocument();
+      expect(useEntityChanges).toHaveBeenCalledWith(
+        'TaskContextDialog',
+        'task',
+        expect.any(Function),
+        {
+          entityIds: undefined,
+          enabled: false
+        }
+      );
     });
 
-    it("handles context with null values", () => {
-      const contextWithNulls = {
-        data: null,
-        metadata: null,
-        insights: null
+    it("handles markdown parsing for different formats", async () => {
+      const mockContext = {
+        data: { task_info: { title: "Test" } }
       };
       
-      render(<TaskContextDialog {...defaultProps} context={contextWithNulls} />);
+      (getTaskContext as jest.Mock).mockResolvedValue(mockContext);
       
-      expect(screen.getByText("Complete Context (Raw JSON)")).toBeInTheDocument();
-    });
-
-    it("handles insights without title", () => {
-      const contextWithUntitledInsights = {
-        insights: [
-          { content: "Insight without title" }
-        ]
-      };
+      render(<TaskContextDialog {...defaultProps} />);
       
-      render(<TaskContextDialog {...defaultProps} context={contextWithUntitledInsights} />);
+      await waitFor(() => {
+        fireEvent.click(screen.getByRole("button", { name: /Edit/i }));
+      });
       
-      expect(screen.getByText("Insight 1")).toBeInTheDocument();
-      expect(screen.getByText("Insight without title")).toBeInTheDocument();
-    });
-
-    it("handles progress without timestamp", () => {
-      const contextWithProgress = {
-        progress: [
-          { content: "Progress without timestamp" }
-        ]
-      };
+      const textarea = screen.getByPlaceholderText(/Add task information/i);
       
-      render(<TaskContextDialog {...defaultProps} context={contextWithProgress} />);
+      // Test key:value format
+      fireEvent.change(textarea, { target: { value: "key1: value1\nkey2: value2" } });
       
-      expect(screen.getByText("Progress without timestamp")).toBeInTheDocument();
+      // Test list format for blockers
+      fireEvent.click(screen.getByRole("button", { name: /Blockers/i }));
+      const blockersTextarea = screen.getByPlaceholderText(/Add blockers/i);
+      fireEvent.change(blockersTextarea, { target: { value: "- Blocker 1\n- Blocker 2\n* Blocker 3" } });
+      
+      fireEvent.click(screen.getByRole("button", { name: /Save All/i }));
+      
+      await waitFor(() => {
+        expect(updateTaskContext).toHaveBeenCalledWith(mockTask.id, expect.objectContaining({
+          task_info: { key1: "value1", key2: "value2" },
+          blockers: ["Blocker 1", "Blocker 2", "Blocker 3"]
+        }));
+      });
     });
   });
 });

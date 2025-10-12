@@ -4,33 +4,42 @@ import re
 import uuid
 from dataclasses import dataclass
 
+from .base_entity_id import EntityId
+
 
 @dataclass(frozen=True)
-class TaskId:
+class TaskId(EntityId):
     """Value object for a Task ID, represented as a UUID.
 
     The value is stored in canonical UUID format (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).
     This class ensures that only valid UUIDs are used as task identifiers and normalizes
     them to the standard canonical format for consistency across the system.
+
+    TaskId extends EntityId to support hierarchical subtask IDs (uuid.NNN) and
+    legacy test ID formats for backward compatibility.
     """
 
-    value: str
-
     def __post_init__(self):
-        """Validate the TaskId format after initialization."""
+        """Validate the TaskId format after initialization.
+
+        Overrides parent to handle special TaskId formats like hierarchical IDs.
+        """
         if self.value is None:
-            raise ValueError("Task ID cannot be None")
+            raise ValueError(f"{self.__class__.__name__} cannot be None")
 
         if not isinstance(self.value, str):
-            raise TypeError(f"Task ID value must be a string, got {type(self.value)}")
+            raise TypeError(
+                f"{self.__class__.__name__} value must be a string, got {type(self.value)}"
+            )
 
         value_str = self.value.strip()
         if not value_str:
-            raise ValueError("Task ID cannot be empty or whitespace")
+            raise ValueError(f"{self.__class__.__name__} cannot be empty or whitespace")
 
-        if not self._is_valid_format(value_str):
+        if not self._is_valid_uuid(value_str):
             raise ValueError(
-                f"Invalid Task ID format: '{value_str}'. Expected canonical UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                f"Invalid {self.__class__.__name__} format: '{value_str}'. "
+                f"Expected canonical UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             )
 
         # Store in canonical format
@@ -46,23 +55,31 @@ class TaskId:
             # Already in canonical format or hierarchical format
             object.__setattr__(self, 'value', value_str.lower())
 
-    def _is_valid_format(self, value: str) -> bool:
-        """Return True if *value* is a valid UUID string or hierarchical subtask ID."""
+    @staticmethod
+    def _is_valid_uuid(value: str) -> bool:
+        """Return True if value is a valid UUID string or hierarchical subtask ID.
+
+        Overrides parent method to support TaskId-specific formats:
+        - Standard UUIDs (32-char hex or 36-char canonical)
+        - Hierarchical subtask IDs (uuid.NNN)
+        - Integer IDs (for backward compatibility)
+        - Test ID patterns (for backward compatibility)
+        """
         # UUID (32-char hex or canonical 36-char with hyphens)
         uuid_pattern = r'^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$'
-        
+
         # Hierarchical subtask ID pattern: uuid.NNN where NNN is 3-digit number
         hierarchical_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.\d{3}$'
-        
+
         # Integer ID pattern (for backward compatibility with old tests)
         integer_pattern = r'^\d+$'
-        
+
         # Test ID pattern (for backward compatibility): task-123, test-task-123, parent-task-456, etc.
         test_id_pattern = r'^[a-zA-Z]+(?:-[a-zA-Z]+)*-\d+$'
-        
+
         # Simple test ID pattern: invalid-parent, test-task, etc.
         simple_test_pattern = r'^[a-zA-Z]+(?:-[a-zA-Z]+)*$'
-        
+
         return bool(
             re.match(uuid_pattern, value.lower()) or
             re.match(hierarchical_pattern, value.lower()) or
@@ -71,46 +88,11 @@ class TaskId:
             re.match(simple_test_pattern, value)
         )
 
-    def __str__(self) -> str:
-        """Return the string representation of the ID."""
-        return self.value
-
-    def __eq__(self, other):
-        """Two TaskIds are equal if their values are equal."""
-        if not isinstance(other, TaskId):
-            return NotImplemented
-        return self.value == other.value
-
-    def __hash__(self):
-        """Return the hash of the ID's value."""
-        return hash(self.value)
-
-    def to_hex_format(self) -> str:
-        """Return the TaskId in hex format (32 chars without dashes)."""
-        # Remove dashes from canonical format
-        if '-' in self.value and len(self.value) == 36:
-            return self.value.replace('-', '')
-        return self.value
-
-    def to_canonical_format(self) -> str:
-        """Return the TaskId in canonical UUID format (with dashes)."""
-        return self.value
-
-    @classmethod
-    def from_string(cls, value: str) -> 'TaskId':
-        """Create a TaskId instance from a string."""
-        return cls(value)
-
     @classmethod
     def from_int(cls, value: int) -> 'TaskId':
         """Create TaskId from integer value (converts to string)."""
         return cls(str(value))
 
-    @classmethod
-    def generate_new(cls) -> 'TaskId':
-        """Generate a new, unique TaskId using UUIDv4."""
-        return cls(str(uuid.uuid4()))
-    
     @classmethod
     def generate(cls) -> 'TaskId':
         """Generate a new, unique TaskId using UUIDv4 (legacy alias for generate_new)."""

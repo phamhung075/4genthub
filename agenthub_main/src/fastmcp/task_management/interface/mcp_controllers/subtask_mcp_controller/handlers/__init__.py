@@ -8,4 +8,4 @@ Each handler is responsible for specific functionality to maintain separation of
 from .crud_handler import SubtaskCRUDHandler
 from .progress_handler import ProgressHandler
 
-__all__ = ['SubtaskCRUDHandler', 'ProgressHandler']
+__all__ = ["SubtaskCRUDHandler", "ProgressHandler"]

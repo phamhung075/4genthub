@@ -6,4 +6,4 @@ This module contains factory classes for creating and coordinating subtask opera
 
 from .operation_factory import SubtaskOperationFactory
 
-__all__ = ['SubtaskOperationFactory']
+__all__ = ["SubtaskOperationFactory"]

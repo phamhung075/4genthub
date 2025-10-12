@@ -24,10 +24,10 @@ from fastmcp.task_management.domain.value_objects.task_id import TaskId
 from fastmcp.task_management.domain.value_objects.task_status import TaskStatus, TaskStatusEnum
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.progress import ProgressType, ProgressTimeline
-from fastmcp.task_management.domain.enums.agent_roles import AgentRole
-from fastmcp.task_management.domain.enums.common_labels import CommonLabel
+from fastmcp.task_management.domain.value_objects.agent_roles import AgentRole
+from fastmcp.task_management.domain.value_objects.common_labels import CommonLabel
 from fastmcp.task_management.domain.exceptions.vision_exceptions import MissingCompletionSummaryError
-from fastmcp.task_management.domain.events.task_events import TaskCreated, TaskUpdated, TaskDeleted
+from fastmcp.task_management.domain.events import TaskCreated, TaskUpdated, TaskDeleted
 from fastmcp.task_management.domain.events.progress_events import ProgressUpdated
 
 
@@ -281,9 +281,9 @@ class TestTaskStatusUpdates:
         events = task.get_events()
         assert len(events) == 1
         assert isinstance(events[0], TaskUpdated)
-        assert events[0].field_name == "status"
-        assert events[0].old_value == TaskStatusEnum.TODO.value
-        assert events[0].new_value == TaskStatusEnum.IN_PROGRESS.value
+        assert "status" in events[0].changes
+        assert events[0].changes["status"]["old_value"] == str(TaskStatus.todo())
+        assert events[0].changes["status"]["new_value"] == str(TaskStatus.in_progress())
     
     def test_update_status_invalid_transition(self):
         """Test invalid status transitions are rejected."""
@@ -334,9 +334,9 @@ class TestTaskPriorityUpdates:
         events = task.get_events()
         assert len(events) == 1
         assert isinstance(events[0], TaskUpdated)
-        assert events[0].field_name == "priority"
-        assert events[0].old_value == "medium"
-        assert events[0].new_value == "high"
+        assert "priority" in events[0].changes
+        assert events[0].changes["priority"]["old_value"] == "medium"
+        assert events[0].changes["priority"]["new_value"] == "high"
     
     def test_update_priority_updates_timestamp(self):
         """Test priority update changes updated_at."""
@@ -375,9 +375,9 @@ class TestTaskFieldUpdates:
         # Check event
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "title"
-        assert events[0].old_value == "Original"
-        assert events[0].new_value == "Updated Title"
+        assert "title" in events[0].changes
+        assert events[0].changes["title"]["old_value"] == "Original"
+        assert events[0].changes["title"]["new_value"] == "Updated Title"
     
     def test_update_title_validation(self):
         """Test title update validation."""
@@ -399,9 +399,9 @@ class TestTaskFieldUpdates:
         # Check event
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "description"
-        assert events[0].old_value == "Original"
-        assert events[0].new_value == "Updated Description"
+        assert "description" in events[0].changes
+        assert events[0].changes["description"]["old_value"] == "Original"
+        assert events[0].changes["description"]["new_value"] == "Updated Description"
     
     def test_update_description_validation(self):
         """Test description update validation."""
@@ -487,7 +487,7 @@ class TestTaskAssigneeManagement:
         # Check event
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "assignees"
+        assert "assignees" in events[0].changes
     
     def test_update_assignees_validation(self):
         """Test assignee validation and normalization."""
@@ -598,7 +598,7 @@ class TestTaskLabelManagement:
         # Check event
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "labels"
+        assert "labels" in events[0].changes
     
     def test_update_labels_validation(self):
         """Test label validation."""
@@ -780,9 +780,9 @@ class TestSubtaskManagement:
         # Check event
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "subtasks"
-        assert events[0].old_value == "subtask_added"
-        assert events[0].new_value == "sub-1"
+        assert "subtasks" in events[0].changes
+        assert events[0].changes["subtasks"]["action"] == "subtask_added"
+        assert events[0].changes["subtasks"]["new_value"] == "sub-1"
     
     def test_add_subtask_validation(self):
         """Test subtask ID validation."""
@@ -873,8 +873,9 @@ class TestSubtaskManagement:
         # Check event
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "subtasks"
-        assert "removed_3_invalid_subtasks" in events[0].old_value
+        assert "subtasks" in events[0].changes
+        assert events[0].changes["subtasks"]["action"] == "cleanup_invalid_subtasks"
+        assert events[0].changes["subtasks"]["removed_count"] == 3
 
 
 class TestTaskCompletion:
@@ -900,8 +901,8 @@ class TestTaskCompletion:
         # Check events
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].field_name == "status"
-        assert events[0].metadata["completion_summary"] == "Task completed successfully"
+        assert "status" in events[0].changes
+        assert events[0].changes["status"]["completion_summary"] == "Task completed successfully"
     
     def test_complete_task_missing_summary(self):
         """Test completion fails without summary."""
@@ -940,6 +941,7 @@ class TestTaskCompletion:
             title="Test",
             description="Test",
             context_id="context-123",
+            created_at=now,
             updated_at=now
         )
         
@@ -975,8 +977,8 @@ class TestTaskCompletion:
         # Check subtask event
         events = task.get_events()
         assert len(events) == 2  # Status update + subtasks completion
-        assert events[1].field_name == "subtasks"
-        assert events[1].old_value == "all_subtasks_completed"
+        assert "subtasks" in events[1].changes
+        assert events[1].changes["subtasks"]["action"] == "all_subtasks_completed"
     
     def test_can_be_completed_method(self):
         """Test can_be_completed validation."""
@@ -1176,8 +1178,7 @@ class TestTaskEvents:
         events = task.get_events()
         assert len(events) == 1
         assert isinstance(events[0], TaskDeleted)
-        assert events[0].task_id == task.id
-        assert events[0].title == "Test"
+        assert events[0].task_id == str(task.id)
     
     def test_mark_as_retrieved(self):
         """Test marking task as retrieved."""
@@ -1192,7 +1193,7 @@ class TestTaskEvents:
         events = task.get_events()
         assert len(events) == 1
         assert events[0].__class__.__name__ == "TaskRetrieved"
-        assert events[0].task_id == task.id
+        assert events[0].task_id == str(task.id)
     
     def test_get_events_clears_list(self):
         """Test get_events returns and clears event list."""

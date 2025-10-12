@@ -680,13 +680,21 @@ class TestNextTaskUseCaseHelperMethods:
     
     def test_task_to_dict_with_subtasks(self, use_case, mock_task_entity):
         """Test _task_to_dict with subtasks"""
-        mock_task_entity.subtasks = [{"id": "sub-1", "completed": False}]
+        subtasks = [{"id": "sub-1", "completed": False}]
+        mock_task_entity.subtasks = subtasks
         mock_task_entity.get_subtask_progress.return_value = {"completed": 0, "total": 1, "percentage": 0}
+        
+        # Update the mock's to_dict return value to include subtasks
+        task_dict = mock_task_entity.to_dict.return_value.copy()
+        task_dict["subtasks"] = subtasks
+        mock_task_entity.to_dict.return_value = task_dict
         
         result = use_case._task_to_dict(mock_task_entity)
         
-        assert "subtask_progress" in result
-        assert result["subtask_progress"]["total"] == 1
+        # Verify subtasks are included in the result (from task.to_dict())
+        assert "subtasks" in result
+        assert result["subtasks"] == [{"id": "sub-1", "completed": False}]
+        # Note: subtask_progress is NOT included in _task_to_dict, it's added by _get_task_context
     
     def test_get_task_context(self, use_case, mock_task_entity):
         """Test _get_task_context basic functionality"""
@@ -699,6 +707,21 @@ class TestNextTaskUseCaseHelperMethods:
         assert result["dependency_count"] == 0
         assert result["blocking_count"] == 0
         assert "overall_progress" in result
+        
+    def test_get_task_context_with_subtasks(self, use_case, mock_task_entity):
+        """Test _get_task_context with subtasks includes subtask_progress"""
+        # Setup task with subtasks
+        mock_task_entity.subtasks = [{"id": "sub-1", "completed": False}]
+        mock_task_entity.get_subtask_progress.return_value = {"completed": 0, "total": 1, "percentage": 0}
+        all_tasks = [mock_task_entity]
+        
+        result = use_case._get_task_context(mock_task_entity, all_tasks)
+        
+        # Verify subtask_progress is included when task has subtasks
+        assert "subtask_progress" in result
+        assert result["subtask_progress"]["total"] == 1
+        assert result["subtask_progress"]["completed"] == 0
+        assert result["subtask_progress"]["percentage"] == 0
     
     def test_get_completion_context(self, use_case):
         """Test _get_completion_context"""

@@ -81,7 +81,7 @@ class ExpansionResult:
     expanded_contexts: List[Dict[str, Any]]
     total_tokens_used: int
     remaining_token_budget: int
-    expansion_path: List[str]  # Path of expansion decisions
+    expansion_path: List[str] = field(default_factory=list)
     prefetched_contexts: List[str] = field(default_factory=list)
 
 

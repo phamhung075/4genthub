@@ -30,7 +30,7 @@ class TestCreateGitBranchUseCase:
         """Create a mock project repository"""
         repo = Mock(spec=ProjectRepository)
         repo.find_by_id = AsyncMock()
-        repo.update = AsyncMock()
+        repo.save = AsyncMock()
         return repo
     
     @pytest.fixture
@@ -78,7 +78,7 @@ class TestCreateGitBranchUseCaseExecute:
         """Create a mock project repository"""
         repo = Mock(spec=ProjectRepository)
         repo.find_by_id = AsyncMock()
-        repo.update = AsyncMock()
+        repo.save = AsyncMock()
         return repo
     
     @pytest.fixture
@@ -155,8 +155,8 @@ class TestCreateGitBranchUseCaseExecute:
                         description="Test branch description"
                     )
                     
-                    # Verify repository update was called
-                    mock_project_repository.update.assert_called_once_with(mock_project_entity)
+                    # Verify repository save was called
+                    mock_project_repository.save.assert_called_once_with(mock_project_entity)
     
     @pytest.mark.asyncio
     async def test_execute_project_not_found(self, use_case, mock_project_repository):
@@ -275,7 +275,7 @@ class TestCreateGitBranchUseCaseContextCreation:
         """Create a mock project repository"""
         repo = Mock(spec=ProjectRepository)
         repo.find_by_id = AsyncMock()
-        repo.update = AsyncMock()
+        repo.save = AsyncMock()
         return repo
     
     @pytest.fixture
@@ -357,7 +357,7 @@ class TestCreateGitBranchUseCaseContextCreation:
                     assert context_data["branch_name"] == "feature/context-test"
                     assert context_data["project_id"] == "project-123"
                     assert context_data["description"] == "Context test branch"
-                    assert "created_at" in context_data
+                    # Timestamps handled by context system, not in data
                     assert "workflow_state" in context_data
                     assert "branch_settings" in context_data
     
@@ -492,7 +492,7 @@ class TestCreateGitBranchUseCaseErrorHandling:
         """Create a mock project repository"""
         repo = Mock(spec=ProjectRepository)
         repo.find_by_id = AsyncMock()
-        repo.update = AsyncMock()
+        repo.save = AsyncMock()
         return repo
     
     @pytest.fixture
@@ -523,18 +523,25 @@ class TestCreateGitBranchUseCaseErrorHandling:
     
     @pytest.mark.asyncio
     async def test_execute_repository_update_error(self, use_case, mock_project_repository, mock_project_entity):
-        """Test git branch creation when repository update raises exception"""
+        """Test git branch creation when repository save raises exception"""
         # Setup project repository
         mock_project_repository.find_by_id.return_value = mock_project_entity
-        mock_project_repository.update.side_effect = Exception("Update failed")
+        mock_project_repository.save.side_effect = Exception("Save failed")
         
         # Setup project domain logic
         mock_git_branch = Mock()
         mock_git_branch.id = "branch-123"
+        mock_git_branch.name = "feature/update-error"
+        mock_git_branch.description = ""
+        mock_git_branch.project_id = "project-123"
+        mock_git_branch.created_at = datetime.now(timezone.utc)
+        mock_git_branch.get_task_count = Mock(return_value=0)
+        mock_git_branch.get_completed_task_count = Mock(return_value=0)
+        mock_git_branch.get_progress_percentage = Mock(return_value=0.0)
         mock_project_entity.create_git_branch.return_value = mock_git_branch
         
         # Exception should propagate since it's not specifically handled
-        with pytest.raises(Exception, match="Update failed"):
+        with pytest.raises(Exception, match="Save failed"):
             await use_case.execute(
                 project_id="project-123",
                 git_branch_name="feature/update-error",
@@ -586,7 +593,7 @@ class TestCreateGitBranchUseCaseIntegration:
         """Create a mock project repository"""
         repo = Mock(spec=ProjectRepository)
         repo.find_by_id = AsyncMock()
-        repo.update = AsyncMock()
+        repo.save = AsyncMock()
         return repo
     
     @pytest.fixture
@@ -651,8 +658,8 @@ class TestCreateGitBranchUseCaseIntegration:
                     description="Integration test branch"
                 )
                 
-                # Verify repository update
-                mock_project_repository.update.assert_called_once_with(mock_project)
+                # Verify repository save
+                mock_project_repository.save.assert_called_once_with(mock_project)
                 
                 # Verify context creation
                 mock_context_facade.create_context.assert_called_once()

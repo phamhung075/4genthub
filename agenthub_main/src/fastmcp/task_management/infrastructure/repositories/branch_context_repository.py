@@ -255,7 +255,7 @@ class BranchContextRepository(CacheInvalidationMixin, BaseORMRepository):
             db_model.local_overrides = entity.metadata.get('local_overrides', {})
             db_model.delegation_rules = entity.metadata.get('delegation_rules', {})
             db_model.user_id = self.user_id or entity.metadata.get('user_id') or db_model.user_id  # CRITICAL FIX: Never fallback to 'system'
-            db_model.updated_at = datetime.now(timezone.utc)
+            # Timestamps updated automatically by BaseTimestampEntity/ORM
             
             session.flush()
             # Don't refresh to avoid UUID conversion issues with SQLite

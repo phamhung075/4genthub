@@ -19,6 +19,16 @@ API_BASE_URL = "http://localhost:8000"
 API_V2_URL = f"{API_BASE_URL}/api/v2"
 
 
+def check_server_available():
+    """Check if the API server is available"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/health", timeout=1)
+        return response.status_code == 200
+    except:
+        return False
+
+
+@pytest.mark.skipif(not check_server_available(), reason="API server not running on localhost:8000")
 class TestSubtaskAPIIntegration:
     """Integration tests for subtask API endpoints with correct parent_task_id"""
 

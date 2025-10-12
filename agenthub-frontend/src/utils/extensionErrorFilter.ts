@@ -4,6 +4,10 @@
  * This utility filters out browser extension-related errors that are not
  * part of our application but appear in the console due to browser extension
  * conflicts or communication failures.
+ *
+ * INTENTIONAL: This file overrides console.error and console.warn to filter extension errors
+ * Must use native console methods to intercept and redirect console output
+ * The override is necessary to prevent extension errors from polluting application logs
  */
 
 import logger from './logger';
