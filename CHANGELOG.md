@@ -6,6 +6,56 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+#### Workflow Guidance System: Comprehensive "Next Action" UX Optimization (2025-10-12)
+**MAJOR UX IMPROVEMENT**: Refactored ALL workflow guidance modules to show NEXT actions instead of redundant creation examples
+
+**Problem Identified**: Systemic design flaw across task, subtask, and git_branch workflow guidance modules
+- After completing any CREATE action, responses showed "how to create" examples
+- Parameter guidance showed creation parameters instead of what to do NEXT
+- Tips focused on creation best practices instead of next action guidance
+- Created cognitive dissonance: users just created something, now being shown how to create it again
+
+**Solution - Universal "What Comes Next" Pattern**: Shifted ALL guidance to be forward-looking across the entire system
+
+**Modules Fixed**:
+
+1. **Subtask Workflow Guidance** (`subtask/subtask_workflow_guidance.py`):
+   - `get_examples()`: Changed from "create_basic/create_with_notes" to "start_work/track_progress" (UPDATE actions)
+   - `get_parameter_guidance()`: Switched from creation params to update params (task_id, subtask_id, status, progress_percentage, progress_notes, blockers)
+   - Tips: "Break down tasks" → "Start working: Update status to 'in_progress'"
+   - Lines modified: 56-62, 301-317, 347-452
+
+2. **Task Workflow Guidance** (`task/task_workflow_guidance.py`):
+   - `get_examples()`: Changed from "create_basic/create_detailed" to "start_work/create_context/add_subtasks" (NEXT actions)
+   - `get_parameter_guidance()`: Switched from creation params to next action params (task_id, status, details, context_id, level, data)
+   - Parameter tips: Refocused on update operations and context creation requirements
+   - Lines modified: 612-664, 666-803
+
+3. **Git Branch Workflow Guidance** (`git_branch/git_branch_workflow_guidance.py`):
+   - `_get_examples()`: Changed from "Create a feature branch" to "Assign an agent/Create first task" (NEXT actions)
+   - `_get_parameter_guidance()`: Switched from creation params to next action params (git_branch_id, agent_id, title for task creation)
+   - Lines modified: 351-434, 436-523
+
+**Universal Benefits**:
+- ✅ **Eliminates cognitive dissonance** - No redundant "how to create" after creation
+- ✅ **Actionable guidance** - Clear next steps immediately visible in ALL responses
+- ✅ **Better AI workflows** - AI agents know exactly what comes next without confusion
+- ✅ **Consistent UX pattern** - All responses follow "what comes next" principle
+- ✅ **Reduced token usage** - No wasteful repetition of creation examples
+- ✅ **Improved learning curve** - Users learn workflows by following guidance
+
+**Design Pattern Established**:
+Response guidance should ALWAYS be forward-looking - after any operation completes, show the logical next steps in the workflow, not examples of repeating the same operation.
+
+**Impact**: System-wide improvement affecting ALL task management operations (task, subtask, git_branch). Every create/update/list/get operation now provides intelligent "what to do next" guidance instead of redundant "how to repeat this" examples.
+
+**Files Modified**:
+- `interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_guidance.py` (lines 56-62, 301-317, 347-452)
+- `interface/mcp_controllers/workflow_guidance/task/task_workflow_guidance.py` (lines 612-664, 666-803)
+- `interface/mcp_controllers/workflow_guidance/git_branch/git_branch_workflow_guidance.py` (lines 351-434, 436-523)
+
 ### Added
 
 #### Week 1 Performance Baseline Tests (2025-10-11)
