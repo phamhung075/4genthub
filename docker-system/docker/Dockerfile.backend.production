@@ -1,13 +1,13 @@
 # Production Backend Dockerfile for agenthub with MCP Support
 # Multi-stage build optimized for production deployment with full MCP protocol support
 # Features: Security hardening, minimal image size, optimized layers, SSE/MCP support, multi-platform support
-# Version: 2.0.3 - Changed to linux/arm64 for CapRover ARM64 host compatibility (2025-10-12)
+# Version: 2.0.4 - Removed platform flags to use native host architecture (2025-10-12)
 
 # syntax=docker/dockerfile:1
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
-FROM --platform=linux/arm64 python:3.11-slim as builder
+FROM python:3.11-slim as builder
 
 WORKDIR /build
 
@@ -32,7 +32,7 @@ RUN uv venv /opt/venv && \
     uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
 
 # Stage 2: Production Runtime
-FROM --platform=linux/arm64 python:3.11-slim
+FROM python:3.11-slim
 
 # Build arguments grouped by frequency of change (optimization for Docker layer caching)
 # Group 1: Static/Rarely Changed - Environment type, ports, defaults, and basic configurations
