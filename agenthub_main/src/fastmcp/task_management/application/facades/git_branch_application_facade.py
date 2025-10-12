@@ -401,41 +401,23 @@ class GitBranchApplicationFacade:
 
                 logger.info(f"Git branch deletion result: {result}")
 
-                # Send WebSocket notification after successful deletion
-                if result.get("success"):
-                    try:
-                        WebSocketNotificationService.sync_broadcast_branch_event(
-                            event_type="deleted",
-                            branch_id=str(git_branch_id),
-                            project_id=str(target_project_id),
-                            user_id=self._user_id or "system",
-                            branch_data=branch_data_for_notification
-                        )
-                        logger.info(f"✅ WebSocket notification sent for branch deletion: {git_branch_id}")
-                    except Exception as ws_error:
-                        logger.warning(f"Failed to send WebSocket notification for branch deletion: {ws_error}")
+                # CRITICAL FIX: Remove duplicate broadcast - use case layer handles notification
+                # The delete_branch use case already sends WebSocket notification (lines 66-73 in delete_branch.py)
+                # Broadcasting here creates duplicate messages with different IDs
 
+                # Return result without sending duplicate notification
                 return result
-                
+
             except RuntimeError:
                 # No event loop is running, use asyncio.run()
                 result = asyncio.run(self._git_branch_service.delete_git_branch(target_project_id, git_branch_id))
                 logger.info(f"Git branch deletion result: {result}")
 
-                # Send WebSocket notification after successful deletion
-                if result.get("success"):
-                    try:
-                        WebSocketNotificationService.sync_broadcast_branch_event(
-                            event_type="deleted",
-                            branch_id=str(git_branch_id),
-                            project_id=str(target_project_id),
-                            user_id=self._user_id or "system",
-                            branch_data=branch_data_for_notification
-                        )
-                        logger.info(f"✅ WebSocket notification sent for branch deletion: {git_branch_id}")
-                    except Exception as ws_error:
-                        logger.warning(f"Failed to send WebSocket notification for branch deletion: {ws_error}")
+                # CRITICAL FIX: Remove duplicate broadcast - use case layer handles notification
+                # The delete_branch use case already sends WebSocket notification (lines 66-73 in delete_branch.py)
+                # Broadcasting here creates duplicate messages with different IDs
 
+                # Return result without sending duplicate notification
                 return result
                 
         except Exception as e:
