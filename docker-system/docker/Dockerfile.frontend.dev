@@ -38,7 +38,13 @@ COPY agenthub-frontend/pnpm-lock.yaml ./
 RUN pnpm install
 
 # Install serve globally for serving built files
-# Already installed pnpm above
+# Configure pnpm global bin directory
+ENV PNPM_HOME="/usr/local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# Create pnpm home directory
+RUN mkdir -p $PNPM_HOME
+
 # Install serve globally
 RUN pnpm add -g serve
 

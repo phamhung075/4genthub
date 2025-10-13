@@ -1,12 +1,28 @@
 -- PostgreSQL Initialization Script for agenthub
 -- This script sets up the database schema for production use
 
--- Create database if not exists (run as superuser)
--- Note: The database should already be created by Docker, but this is here for manual setup
--- CREATE DATABASE agenthub_prod;
+-- Note: This script runs AFTER the database and superuser are created by Docker
+-- POSTGRES_DB, POSTGRES_USER, and POSTGRES_PASSWORD environment variables
+-- handle the initial database and superuser creation
 
--- Connect to the database
-\c agenthub_prod;
+-- Create agenthub_user role if it doesn't exist
+-- This user will be used by the application for database operations
+DO
+$$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'agenthub_user') THEN
+      -- Create the user with a default password that should be changed
+      -- The password should match DATABASE_PASSWORD in .env.dev
+      CREATE ROLE agenthub_user LOGIN PASSWORD 'agenthub_password_2024';
+      RAISE NOTICE 'Created agenthub_user role';
+   ELSE
+      RAISE NOTICE 'agenthub_user role already exists';
+   END IF;
+END
+$$;
+
+-- Grant necessary permissions to agenthub_user on the current database
+GRANT ALL PRIVILEGES ON DATABASE agenthub TO agenthub_user;
 
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -269,7 +285,7 @@ ANALYZE;
 -- Print completion message
 DO $$
 BEGIN
-    RAISE NOTICE 'Database initialization complete for agenthub_prod';
+    RAISE NOTICE 'Database initialization complete for agenthub';
+    RAISE NOTICE 'User agenthub_user created and granted all necessary permissions';
     RAISE NOTICE 'Tables created: users, mcp_tokens, sessions, audit_log, projects, git_branches, tasks, subtasks, contexts';
-    RAISE NOTICE 'User agenthub_user has been granted all necessary permissions';
 END $$;

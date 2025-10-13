@@ -27,7 +27,7 @@ class ListProjectsUseCase:
         project_list = []
         for project in projects:
             project_info = {
-                "id": project.id,
+                "id": str(project.id),
                 "name": project.name,
                 "description": project.description,
                 "created_at": project.created_at.isoformat(),
@@ -44,12 +44,14 @@ class ListProjectsUseCase:
                 # Iterate over the values (GitBranch objects), not the keys
                 for branch_id, branch in project.git_branchs.items():
                     git_branchs_dict[branch_id] = {
-                        "id": branch.id,
-                        "name": branch.name,  # GitBranch entity uses 'name' not 'git_branch_name'
+                        "id": str(branch.id),
+                        "project_id": branch.project_id,  # Required by BranchDTO
+                        "name": branch.name,
+                        "git_branch_name": branch.git_branch_name if hasattr(branch, 'git_branch_name') and branch.git_branch_name else branch.name,  # Required by BranchDTO
                         "description": branch.description if hasattr(branch, 'description') else "",
                         "created_at": branch.created_at.isoformat() if hasattr(branch, 'created_at') else "",
                         "updated_at": branch.updated_at.isoformat() if hasattr(branch, 'updated_at') else "",
-                        "status": branch.status if hasattr(branch, 'status') else "active",
+                        "status": str(branch.status) if hasattr(branch, 'status') else "active",
                         "agent_assignments": len(branch.agent_assignments) if hasattr(branch, 'agent_assignments') else 0,
                         "task_count": branch.get_task_count() if hasattr(branch, 'get_task_count') else (len(branch.all_tasks) if hasattr(branch, 'all_tasks') else 0)
                     }

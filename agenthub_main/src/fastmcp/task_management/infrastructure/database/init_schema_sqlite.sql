@@ -38,7 +38,7 @@ CREATE TABLE api_tokens (
     name TEXT NOT NULL,
     token_hash TEXT NOT NULL,
     scopes TEXT DEFAULT '[]',  -- JSON as TEXT
-    created_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
     last_used_at TIMESTAMP,
     usage_count INTEGER DEFAULT 0,
@@ -65,8 +65,8 @@ CREATE TABLE project_git_branchs (
     project_id TEXT NOT NULL REFERENCES projects(id),
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     assigned_agent_id TEXT,
     agent_id TEXT,  -- UUID as TEXT
     priority TEXT DEFAULT 'medium',
@@ -128,8 +128,8 @@ CREATE TABLE subtasks (
     impact_on_parent TEXT DEFAULT '',
     insights_found TEXT DEFAULT '[]',  -- JSON as TEXT
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
 
     -- AI Agent System Fields
@@ -150,7 +150,7 @@ CREATE TABLE task_assignees (
     agent_id TEXT,  -- UUID as TEXT
     role TEXT DEFAULT 'contributor',
     user_id TEXT NOT NULL,
-    assigned_at TIMESTAMP );
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
 -- Task Dependencies table
 CREATE TABLE task_dependencies (
@@ -159,7 +159,7 @@ CREATE TABLE task_dependencies (
     depends_on_task_id TEXT NOT NULL REFERENCES tasks(id),
     dependency_type TEXT DEFAULT 'blocks',
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP );
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
 -- Agents table
 CREATE TABLE agents (
@@ -171,8 +171,8 @@ CREATE TABLE agents (
     status TEXT DEFAULT 'available',
     availability_score REAL DEFAULT 1.0,
     last_active_at TIMESTAMP,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     metadata TEXT DEFAULT '{}',  -- JSON as TEXT
     user_id TEXT NOT NULL
 );
@@ -184,15 +184,15 @@ CREATE TABLE labels (
     color TEXT DEFAULT '#0066cc',
     description TEXT DEFAULT '',
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP );
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
 -- Task Labels junction table
 CREATE TABLE task_labels (
     task_id TEXT REFERENCES tasks(id),
     label_id TEXT REFERENCES labels(id),
     user_id TEXT NOT NULL,
-    applied_at TIMESTAMP,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (task_id, label_id)
 );
 
@@ -209,8 +209,8 @@ CREATE TABLE templates (
     tags TEXT DEFAULT '[]',  -- JSON as TEXT
     usage_count INTEGER DEFAULT 0,
     user_id TEXT,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT NOT NULL,
     metadata TEXT DEFAULT '{}'  -- JSON as TEXT
 );
@@ -233,8 +233,8 @@ CREATE TABLE global_contexts (
     nested_structure TEXT NOT NULL DEFAULT '{}',  -- JSON as TEXT
     unified_context_data TEXT DEFAULT '{}',  -- JSON as TEXT
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     version INTEGER DEFAULT 1
 );
 
@@ -254,8 +254,8 @@ CREATE TABLE project_contexts (
     global_overrides TEXT DEFAULT '{}',  -- JSON as TEXT
     delegation_rules TEXT DEFAULT '{}',  -- JSON as TEXT
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     version INTEGER DEFAULT 1,
     inheritance_disabled BOOLEAN DEFAULT 0
 );
@@ -276,8 +276,8 @@ CREATE TABLE branch_contexts (
     delegation_rules TEXT DEFAULT '{}',  -- JSON as TEXT
     inheritance_disabled BOOLEAN DEFAULT 0,
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     version INTEGER DEFAULT 1
 );
 
@@ -301,8 +301,8 @@ CREATE TABLE task_contexts (
     inheritance_disabled BOOLEAN DEFAULT 0,
     force_local_only BOOLEAN DEFAULT 0,
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     version INTEGER DEFAULT 1
 );
 
@@ -328,7 +328,7 @@ CREATE TABLE context_delegations (
     rejected_reason TEXT,
     error_message TEXT,
     user_id TEXT NOT NULL,
-    created_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_at TIMESTAMP
 );
 
@@ -343,7 +343,7 @@ CREATE TABLE context_inheritance_cache (
     dependencies_hash TEXT NOT NULL,
     resolution_path TEXT NOT NULL,
     parent_chain TEXT DEFAULT '[]',  -- JSON as TEXT
-    created_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
     hit_count INTEGER DEFAULT 0,
     last_hit TIMESTAMP,

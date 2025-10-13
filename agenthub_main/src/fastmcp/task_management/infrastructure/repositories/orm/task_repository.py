@@ -1260,7 +1260,8 @@ class ORMTaskRepository(
                             task_id=str(task.id),
                             depends_on_task_id=str(dependency.value if hasattr(dependency, 'value') else dependency),
                             dependency_type="blocks",
-                            user_id=effective_user_id
+                            user_id=effective_user_id,
+                            created_at=datetime.now(timezone.utc)
                         )
                         session.add(new_dependency)
 
@@ -1384,7 +1385,8 @@ class ORMTaskRepository(
                             task_id=str(task.id),
                             depends_on_task_id=str(dependency.value if hasattr(dependency, 'value') else dependency),
                             dependency_type="blocks",
-                            user_id=task_user_id
+                            user_id=task_user_id,
+                            created_at=datetime.now(timezone.utc)
                         )
                         session.add(new_dependency)
 

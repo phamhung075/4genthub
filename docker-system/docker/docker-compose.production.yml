@@ -36,8 +36,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - postgres_backup:/backup
-      # Mount initialization scripts
-      - ./agenthub_main/src/fastmcp/task_management/infrastructure/migrations:/docker-entrypoint-initdb.d:ro
+      # NOTE: No manual init scripts - ORM creates all tables automatically via Base.metadata.create_all()
     networks:
       - agenthub_network
     healthcheck:

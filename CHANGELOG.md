@@ -6,6 +6,38 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+#### Projects List API - BranchDTO Validation Fix (2025-10-13)
+**ISSUE RESOLVED**: Fixed "Failed to list projects" error caused by Pydantic validation errors in frontend
+
+**Root Cause:**
+- BranchDTO required fields (`project_id`, `git_branch_name`) were missing from API response
+- `/api/v2/projects` endpoint returning 500 errors with Pydantic validation failures
+- Frontend displaying generic "Failed to list projects" error
+
+**Solution:**
+- Updated `list_projects.py` (lines 47-50) to include required BranchDTO fields
+- Added `"project_id": branch.project_id` to branch dictionary
+- Added `"git_branch_name": branch.git_branch_name or branch.name` with fallback
+
+**Technical Details:**
+- File: `/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/task_management/application/use_cases/list_projects.py`
+- Clean code approach: No backward compatibility layers added
+- Direct fix to match DTO contract requirements per CLAUDE.md principles
+
+**Impact:**
+- Frontend now successfully loads projects list without validation errors
+- All BranchDTO required fields properly populated
+- API endpoint `/api/v2/projects` (GET) working correctly
+
+**Testing:**
+- Development mode restarted successfully
+- Backend health check passing
+- No validation errors in logs after fix
+
+**Task ID**: 4fd0d7ca-bd75-42c6-bd3e-5e453fe696f0
+
 ### Changed
 
 #### Workflow Guidance System: Comprehensive "Next Action" UX Optimization (2025-10-12)

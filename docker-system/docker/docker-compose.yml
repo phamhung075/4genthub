@@ -15,7 +15,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./agenthub_main/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # NOTE: No manual init scripts - ORM creates all tables automatically via Base.metadata.create_all()
     ports:
       - "5432:5432"
     networks:
@@ -39,7 +39,6 @@ services:
       - ../../.env.dev  # Load environment variables from .env.dev
     environment:
       # Environment
-      ENV: ${ENV:-production}
       ENV: ${ENV:-production}
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
