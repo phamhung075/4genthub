@@ -315,7 +315,7 @@ class TaskDependency(Base):
     depends_on_task_id: Mapped[str] = mapped_column(UnifiedUUID, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     dependency_type: Mapped[str] = mapped_column(String, default="blocks")
     user_id: Mapped[str] = mapped_column(String, nullable=False)  # Keycloak user ID - String type for UUID strings
-    created_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     
     # Relationships
     task: Mapped[Task] = relationship("Task", foreign_keys=[task_id], back_populates="dependencies")
