@@ -1730,15 +1730,8 @@
       "path": "migration-guides"
     },
     "operations": {
-      "count": 31,
+      "count": 30,
       "files": [
-        {
-          "hash": "c6fa61ea5bf4b80ff5133f4ffbe5f4dd",
-          "modified": "2025-10-13T10:16:30.050744",
-          "name": "docker-database-initialization.md",
-          "path": "operations/docker-database-initialization.md",
-          "size": 7793
-        },
         {
           "hash": "64066fdddd8fdd12697a78886e949905",
           "modified": "2025-10-12T12:49:57.649161",
@@ -2305,7 +2298,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 127,
+      "count": 128,
       "files": [
         {
           "hash": "6c4c1a4347c00705202e6bcd178af721",
@@ -2418,6 +2411,13 @@
           "name": "test-suite-final-report-2025-09-23.md",
           "path": "testing-qa/test-suite-final-report-2025-09-23.md",
           "size": 2872
+        },
+        {
+          "hash": "86c22c86d9cbffd0e3b76ea14a06153c",
+          "modified": "2025-10-15T20:17:25.282172",
+          "name": "mcp-tools-test-results-2025-10-15.md",
+          "path": "testing-qa/mcp-tools-test-results-2025-10-15.md",
+          "size": 15364
         },
         {
           "hash": "969e981cbe3100b57766bab6d5f9dba5",
@@ -3498,7 +3498,7 @@
       "path": "video-production"
     }
   },
-  "generated_at": "2025-10-13T10:21:19.299306",
+  "generated_at": "2025-10-15T20:17:25.432803",
   "structure": {
     "_absolute_docs": {
       "files": [
@@ -3835,7 +3835,6 @@
         "deploy-mixed-content-fix.md",
         "deployment-summary.md",
         "disaster-recovery-procedures.md",
-        "docker-database-initialization.md",
         "docker-deployment-guide.md",
         "env-sample-production.md",
         "environment-setup.md",
@@ -3946,6 +3945,7 @@
         "mcp-tools-comprehensive-test-results.md",
         "mcp-tools-fixes-summary.md",
         "mcp-tools-test-report-2025-09-17.md",
+        "mcp-tools-test-results-2025-10-15.md",
         "mcp-tools-test-results.md",
         "mcp-tools-test-status-2025-10-12.md",
         "phase-2-dto-integration-testing-report.md",
