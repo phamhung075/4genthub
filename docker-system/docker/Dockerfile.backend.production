@@ -102,44 +102,51 @@ ENV PYTHONPATH="/app/agenthub_main/src:/app:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Convert build args to environment variables with defaults
-ENV APP_DEBUG=${APP_DEBUG}
-ENV APP_LOG_LEVEL=${APP_LOG_LEVEL}
-ENV AUTH_ENABLED=${AUTH_ENABLED}
-ENV AUTH_PROVIDER=${AUTH_PROVIDER}
-ENV AUTO_MIGRATE=${AUTO_MIGRATE}
-ENV CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS}
-ENV CORS_ORIGINS=${CORS_ORIGINS}
-ENV DATABASE_HOST=${DATABASE_HOST}
-ENV DATABASE_NAME=${DATABASE_NAME}
-ENV DATABASE_PASSWORD=${DATABASE_PASSWORD}
-ENV DATABASE_PORT=${DATABASE_PORT}
-ENV DATABASE_SSL_MODE=${DATABASE_SSL_MODE}
-ENV DATABASE_TYPE=${DATABASE_TYPE}
-ENV DATABASE_USER=${DATABASE_USER}
-ENV ENV=${ENV}
-ENV FASTMCP_HOST=${FASTMCP_HOST}
-ENV FASTMCP_PORT=${FASTMCP_PORT}
-ENV FASTMCP_TRANSPORT=${FASTMCP_TRANSPORT}
-ENV FEATURE_HIERARCHICAL_CONTEXT=${FEATURE_HIERARCHICAL_CONTEXT}
-ENV FEATURE_MULTI_AGENT=${FEATURE_MULTI_AGENT}
-ENV FEATURE_RATE_LIMITING=${FEATURE_RATE_LIMITING}
-ENV FEATURE_REQUEST_LOGGING=${FEATURE_REQUEST_LOGGING}
-ENV FEATURE_VISION_SYSTEM=${FEATURE_VISION_SYSTEM}
-ENV JWT_SECRET_KEY=${JWT_SECRET_KEY}
-ENV KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
-ENV KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-ENV KEYCLOAK_REALM=${KEYCLOAK_REALM}
-ENV KEYCLOAK_URL=${KEYCLOAK_URL}
-ENV NODE_ENV=${NODE_ENV}
+# Convert build args to environment variables with defaults (consolidated for faster builds)
+# Group 1: Static environment and server configuration
+ENV NODE_ENV=${NODE_ENV} \
+    ENV=${ENV} \
+    FASTMCP_HOST=${FASTMCP_HOST} \
+    FASTMCP_PORT=${FASTMCP_PORT} \
+    FASTMCP_TRANSPORT=${FASTMCP_TRANSPORT}
 
-# CapRover-specific environment variables
-ENV CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}
+# Group 2: Database configuration
+ENV DATABASE_TYPE=${DATABASE_TYPE} \
+    DATABASE_HOST=${DATABASE_HOST} \
+    DATABASE_PORT=${DATABASE_PORT} \
+    DATABASE_NAME=${DATABASE_NAME} \
+    DATABASE_USER=${DATABASE_USER} \
+    DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+    DATABASE_SSL_MODE=${DATABASE_SSL_MODE}
 
-# Security settings
-ENV PYTHONHASHSEED=random
-ENV PIP_NO_CACHE_DIR=1
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+# Group 3: Authentication and security
+ENV AUTH_ENABLED=${AUTH_ENABLED} \
+    AUTH_PROVIDER=${AUTH_PROVIDER} \
+    JWT_SECRET_KEY=${JWT_SECRET_KEY} \
+    KEYCLOAK_URL=${KEYCLOAK_URL} \
+    KEYCLOAK_REALM=${KEYCLOAK_REALM} \
+    KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID} \
+    KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+
+# Group 4: CORS and application settings
+ENV CORS_ORIGINS=${CORS_ORIGINS} \
+    CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS} \
+    APP_DEBUG=${APP_DEBUG} \
+    APP_LOG_LEVEL=${APP_LOG_LEVEL} \
+    AUTO_MIGRATE=${AUTO_MIGRATE}
+
+# Group 5: Feature flags
+ENV FEATURE_HIERARCHICAL_CONTEXT=${FEATURE_HIERARCHICAL_CONTEXT} \
+    FEATURE_MULTI_AGENT=${FEATURE_MULTI_AGENT} \
+    FEATURE_RATE_LIMITING=${FEATURE_RATE_LIMITING} \
+    FEATURE_REQUEST_LOGGING=${FEATURE_REQUEST_LOGGING} \
+    FEATURE_VISION_SYSTEM=${FEATURE_VISION_SYSTEM}
+
+# Group 6: Build metadata and security settings
+ENV CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA} \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Create production entrypoint script for MCP server
 RUN printf '#!/bin/sh\nset -e\n\necho "Starting agenthub Production Server with MCP Support..."\necho "================================================"\n\n# Validate required environment variables\nREQUIRED_VARS="DATABASE_TYPE DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD FASTMCP_PORT JWT_SECRET_KEY"\nMISSING_VARS=""\n\nfor VAR in $REQUIRED_VARS; do\n    eval VALUE=\\$$VAR\n    if [ -z "$VALUE" ]; then\n        MISSING_VARS="$MISSING_VARS $VAR"\n        echo "❌ Missing required variable: $VAR"\n    fi\ndone\n\nif [ -n "$MISSING_VARS" ]; then\n    echo ""\n    echo "❌ ERROR: Missing required environment variables:$MISSING_VARS"\n    echo "Please ensure all production environment variables are set"\n    exit 1\nfi\n\n# Security check for JWT secret\nif [ ${#JWT_SECRET_KEY} -lt 32 ]; then\n    echo "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"\n    exit 1\nfi\n\n# Validate database connection\necho "Validating database connection..."\nRETRIES=10\nwhile [ $RETRIES -gt 0 ]; do\n    if pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} 2>/dev/null; then\n        echo "✅ Database connection verified"\n        break\n    fi\n    echo "  Waiting for database... ($RETRIES retries left)"\n    RETRIES=$((RETRIES - 1))\n    sleep 3\ndone\n\nif [ $RETRIES -eq 0 ]; then\n    echo "❌ ERROR: Database connection failed"\n    exit 1\nfi\n\n# Run database migrations if enabled\nif [ "${AUTO_MIGRATE:-false}" = "true" ]; then\n    echo "Running database migrations..."\n    cd /app/agenthub_main\n    python scripts/init_database.py || {\n        echo "❌ ERROR: Database migration failed"\n        exit 1\n    }\nfi\n\necho ""\necho "Configuration:"\necho "  Environment: ${ENV}"\necho "  Database: ${DATABASE_TYPE} at ${DATABASE_HOST}:${DATABASE_PORT}"\necho "  Server Port: ${FASTMCP_PORT}"\necho "  MCP Transport: ${FASTMCP_TRANSPORT}"\necho "  Auth Enabled: ${AUTH_ENABLED:-true}"\necho "  Rate Limiting: ${FEATURE_RATE_LIMITING:-true}"\necho "  CORS Origins: ${CORS_ORIGINS:-*}"\necho "================================================"\n\n# Start the MCP server with full SSE support\necho ""\necho "🚀 Starting agenthub server with full MCP protocol support..."\ncd /app/agenthub_main/src\n\n# Use the MCP entry point for full protocol support\nexec python -m fastmcp.server.mcp_entry_point --transport=${FASTMCP_TRANSPORT:-streamable-http}\n' > /app/docker-entrypoint.sh
