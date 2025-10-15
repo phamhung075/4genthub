@@ -475,6 +475,7 @@ start_database_only() {
 
     echo ""
     echo -e "${GREEN}✅ Database started successfully!${RESET}"
+    echo -e "${CYAN}📝 Note: Tables will be created automatically by the ORM when backend starts${RESET}"
     echo "PostgreSQL: localhost:${DATABASE_PORT}"
     echo "Database: ${DATABASE_NAME}"
     echo "User: ${DATABASE_USER}"

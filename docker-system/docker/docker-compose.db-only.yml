@@ -18,37 +18,16 @@ services:
       - "${DATABASE_PORT}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      # NOTE: No manual init scripts - ORM creates all tables automatically via Base.metadata.create_all()
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      # Mount init scripts for automatic database and user creation on first startup
     networks:
       - agenthub-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-
-  # pgAdmin for database management (optional)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: agenthub-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
-    networks:
-      - agenthub-network
-    depends_on:
-      - postgres
-    restart: unless-stopped
-    profiles: ["with-pgadmin"]  # Only start when explicitly requested
 
 volumes:
   postgres-data:
