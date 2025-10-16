@@ -1,7 +1,7 @@
 // useSubtaskWebSocket hook - Real-time updates for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useChangeSubscription } from "../../../hooks/useChangeSubscription";
 import type { UseSubtaskWebSocketReturn, SubtaskChangePayload } from "../../../types/subtaskTypes";
 import { LOADING_CONFIG } from "../constants/subtaskConstants";
@@ -22,8 +22,12 @@ export function useSubtaskWebSocket(
   const [isConnected, setIsConnected] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
-  // Debounced change handler to prevent rapid updates
-  const debouncedHandleChanges = useCallback(
+  // Track pending created subtasks to batch refresh calls
+  const pendingCreatedSubtasks = useRef<Set<string>>(new Set());
+  const createdRefreshTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced change handler ONLY for update events
+  const debouncedHandleUpdates = useCallback(
     debounce(onSubtaskChanges, LOADING_CONFIG.UPDATE_DEBOUNCE_DELAY),
     [onSubtaskChanges]
   );
@@ -63,15 +67,52 @@ export function useSubtaskWebSocket(
         return;
       }
 
-      // Process the change with debouncing
-      await debouncedHandleChanges();
+      // Handle created events by batching them
+      // This prevents race conditions when multiple subtasks are created rapidly
+      if (eventType === 'created' && subtaskId) {
+        logger.debug('✨ [useSubtaskWebSocket] Subtask created, adding to batch', {
+          subtaskId,
+          batchSize: pendingCreatedSubtasks.current.size + 1
+        });
 
-      setReconnectAttempts(0); // Reset on successful message
+        // Add to pending batch
+        pendingCreatedSubtasks.current.add(subtaskId);
+
+        // Clear existing timer
+        if (createdRefreshTimer.current) {
+          clearTimeout(createdRefreshTimer.current);
+        }
+
+        // Set new timer to batch all creates within 800ms window
+        // This window is longer to handle MCP-created subtasks which can have 0.5-1s gaps
+        createdRefreshTimer.current = setTimeout(async () => {
+          const batchSize = pendingCreatedSubtasks.current.size;
+          logger.debug('🔄 [useSubtaskWebSocket] Processing batched created events', {
+            batchSize,
+            subtaskIds: Array.from(pendingCreatedSubtasks.current)
+          });
+
+          // Clear the batch before refresh to avoid duplicates
+          pendingCreatedSubtasks.current.clear();
+
+          // Single refresh for all created subtasks
+          await onSubtaskChanges();
+          setReconnectAttempts(0);
+
+          logger.debug('✅ [useSubtaskWebSocket] Batch refresh completed', { batchSize });
+        }, 800); // 800ms window to catch MCP-created subtasks with network latency
+
+        return;
+      }
+
+      // For update events, use debouncing to prevent rapid updates
+      await debouncedHandleUpdates();
+      setReconnectAttempts(0);
 
     } catch (error) {
       logger.error('Error processing WebSocket change:', error);
     }
-  }, [parentTaskId, debouncedHandleChanges, onSubtaskDeleted]);
+  }, [parentTaskId, onSubtaskChanges, debouncedHandleUpdates, onSubtaskDeleted]);
 
   /**
    * Handle connection state changes
@@ -132,6 +173,16 @@ export function useSubtaskWebSocket(
       return () => clearTimeout(timeoutId);
     }
   }, [isConnected, subscriptionEnabled, reconnectAttempts, reconnect]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (createdRefreshTimer.current) {
+        clearTimeout(createdRefreshTimer.current);
+        createdRefreshTimer.current = null;
+      }
+    };
+  }, []);
 
   return {
     isConnected,
