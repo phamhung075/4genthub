@@ -349,10 +349,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const decoded = jwtDecode<JWTPayload>(tokens.access_token);
     const expiresIn = decoded.exp ? decoded.exp * 1000 - Date.now() : 0;
-    
+
     // Refresh token 1 minute before expiry
     const refreshTime = Math.max(0, expiresIn - 60000);
-    
+
     const timer = setTimeout(() => {
       refreshToken().catch(() => {
         logout();
@@ -361,6 +361,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return () => clearTimeout(timer);
   }, [tokens, refreshToken]);
+
+  // Keep-alive mechanism to prevent Keycloak session timeout
+  useEffect(() => {
+    if (!tokens?.access_token) return;
+
+    // Ping backend every 2 minutes to keep session alive
+    // This prevents clientSessionIdleTimeout from expiring
+    const keepAliveInterval = setInterval(async () => {
+      try {
+        logger.debug('Sending keep-alive ping to maintain session');
+        await fetch(`${API_BASE_URL}/api/v2/connections/health`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${tokens.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        logger.debug('Keep-alive ping successful');
+      } catch (error) {
+        logger.debug('Keep-alive ping failed (non-critical):', error);
+        // Don't throw - keep-alive failures shouldn't disrupt user experience
+      }
+    }, 120000); // 2 minutes (120 seconds)
+
+    logger.info('Session keep-alive mechanism started');
+    return () => {
+      clearInterval(keepAliveInterval);
+      logger.info('Session keep-alive mechanism stopped');
+    };
+  }, [tokens?.access_token]);
 
   // Listen for logout events from API layer
   useEffect(() => {

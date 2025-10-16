@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';
 import {
+  ClaudeHooks,
   DockerSetup,
   GettingStartedGuide,
   HelpSection,
@@ -30,6 +31,7 @@ export const HelpSetup: React.FC = () => {
     MCPConfiguration({ expandedSections, toggleSection }),
     UsingMCPTools({ expandedSections, toggleSection }),
     DockerSetup({ expandedSections, toggleSection }),
+    ClaudeHooks({ expandedSections, toggleSection }),
     Troubleshooting({ expandedSections, toggleSection })
   ];
 
