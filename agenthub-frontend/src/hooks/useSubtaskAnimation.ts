@@ -20,6 +20,7 @@ export function useSubtaskAnimation({
 }: UseSubtaskAnimationProps) {
   const [animationState, setAnimationState] = useState<SubtaskAnimationState>('none');
   const [isVisible, setIsVisible] = useState(true);
+  const [hasPlayedCreateAnimation, setHasPlayedCreateAnimation] = useState(false);
   const elementRef = useRef<HTMLTableRowElement>(null);
 
   // Animation handlers that delegate to AnimationFactory
@@ -28,6 +29,8 @@ export function useSubtaskAnimation({
       subtaskId,
       source
     }, 'useSubtaskAnimation.ts');
+
+    setHasPlayedCreateAnimation(true);
 
     const success = animationFactory.animate(subtaskId, 'create', source);
 
@@ -100,6 +103,15 @@ export function useSubtaskAnimation({
         component: 'useSubtaskAnimation',
         subtaskId
       });
+
+      // Auto-trigger create animation for newly mounted subtasks
+      // Small delay to ensure element is fully rendered and ready for animation
+      if (!hasPlayedCreateAnimation) {
+        setTimeout(() => {
+          logger.debug('🎬 [useSubtaskAnimation] Auto-triggering create animation on mount', { subtaskId });
+          playCreateAnimation('mount');
+        }, 50);
+      }
     }
 
     // Cleanup on unmount
@@ -111,7 +123,7 @@ export function useSubtaskAnimation({
         subtaskId
       });
     };
-  }, [subtaskId]);
+  }, [subtaskId, hasPlayedCreateAnimation, playCreateAnimation]);
 
   // Register animation callbacks with parent
   useEffect(() => {
@@ -166,6 +178,7 @@ export function useSubtaskAnimation({
     animationState,
     isVisible,
     animationClass: getAnimationClass(),
-    elementRef
+    elementRef,
+    isNew: !hasPlayedCreateAnimation // New subtasks that haven't animated yet
   };
 }
