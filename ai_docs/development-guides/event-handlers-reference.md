@@ -854,7 +854,7 @@ async def test_task_created_handler():
 async def test_handler_integration_with_event_bus():
     """Test handler integration with event bus."""
     # Arrange
-    event_bus = EventBus()
+    event_bus = EventBus (with EventQueue and EventWorker)()
     dependencies = create_test_dependencies()
     handlers = register_all_handlers(dependencies)
 

@@ -48,7 +48,7 @@ DB_CONNECT_TIMEOUT=30
 # docker-compose.yml
 services:
   postgres:
-    image: postgres:15
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

@@ -64,7 +64,7 @@ Multiple dependencies can be requested by repeating with `--with` option.
 Python recently added a standard format for inline script metadata. It allows for selecting Python versions and defining dependencies. Use `uv init --script` to initialize scripts with the inline metadata:
 
 ```bash
-$ uv init --script example.py --python 3.12
+$ uv init --script example.py --Python 3.14.0
 ```
 
 ## Declaring script dependencies

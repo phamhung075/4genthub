@@ -439,13 +439,13 @@ event_bus.unsubscribe(TaskCreatedEvent, handler.handle_task_created)
 
 ```python
 # In your application startup
-from fastmcp.task_management.infrastructure.event_bus import EventBus
+from fastmcp.task_management.infrastructure.event_bus import EventBus (with EventQueue and EventWorker)
 
 # Create event bus instance
-event_bus = EventBus()
+event_bus = EventBus (with EventQueue and EventWorker)()
 
 # Register all handlers
-def register_event_handlers(event_bus: EventBus, dependencies):
+def register_event_handlers(event_bus: EventBus (with EventQueue and EventWorker), dependencies):
     """Register all domain event handlers."""
     # Task handlers
     task_handlers = TaskEventHandlers(dependencies)

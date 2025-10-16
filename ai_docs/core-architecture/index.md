@@ -42,7 +42,7 @@ This directory contains the **core architectural design documentation** for the 
    - Technology stack overview (React 19, Vite 7, Python 3.14)
    - Integration patterns and workflows
    - Service architecture and communication
-   - Event System (EventQueue, EventBus, EventWorker)
+   - Event System (EventQueue, EventBus (with EventQueue and EventWorker), EventWorker)
    - **Updated:** Current architecture standards
 
 **4. [Architecture Thinking](./architecture-thinking.md)**
@@ -122,7 +122,7 @@ This directory contains the **core architectural design documentation** for the 
    - Event definitions and payloads
    - Event handlers and subscribers
    - Event sourcing patterns
-   - Integration with Event System (EventQueue, EventBus)
+   - Integration with Event System (EventQueue, EventBus (with EventQueue and EventWorker))
 
 **11. [Cascade Calculator DDD Refactoring](./cascade-calculator-ddd-refactoring.md)**
    - Real-world DDD refactoring example
@@ -393,7 +393,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 - **ORM:** SQLAlchemy with DDD entities
 - **Database:** PostgreSQL (production), SQLite (dev)
 - **Architecture:** DDD Phase 8 Complete
-- **Event System:** EventQueue, EventBus, EventWorker
+- **Event System:** EventQueue, EventBus (with EventQueue and EventWorker), EventWorker
 
 ### Frontend
 - **Framework:** React 19.x

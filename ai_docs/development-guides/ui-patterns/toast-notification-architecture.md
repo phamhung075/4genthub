@@ -47,7 +47,7 @@ The toast notification system is a decoupled, event-driven architecture that pro
 ┌─────────────────────────────────────────────────────────────┐
 │                 Event Bus Layer                              │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │                 ToastEventBus                           │ │
+│  │                 ToastEventBus (with EventQueue and EventWorker)                           │ │
 │  │              (1-second deduplication)                   │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
@@ -76,7 +76,7 @@ The toast notification system is a decoupled, event-driven architecture that pro
 
 ### Core Components
 
-1. **ToastEventBus** - Central event dispatcher with deduplication
+1. **ToastEventBus (with EventQueue and EventWorker)** - Central event dispatcher with deduplication
 2. **NotificationService** - Higher-level service with WebSocket integration
 3. **WebSocketToastBridge** - Connects event bus to React context
 4. **ToastProvider** - React context provider for UI state
@@ -89,7 +89,7 @@ App.tsx
 ├── ToastProvider (wraps entire app)
 │   ├── ToastContainer (renders toasts)
 │   └── WebSocketToastBridge (subscribes to events)
-│       └── toastEventBus (event dispatcher)
+│       └── toastEventBus (with EventQueue and EventWorker) (event dispatcher)
 │           ├── NotificationService (higher-level API)
 │           └── Direct service calls
 └── Other Components (can use toast hooks)
@@ -103,7 +103,7 @@ App.tsx
 sequenceDiagram
     participant WS as WebSocket
     participant NS as NotificationService
-    participant TEB as ToastEventBus
+    participant TEB as ToastEventBus (with EventQueue and EventWorker)
     participant WSTB as WebSocketToastBridge
     participant TP as ToastProvider
     participant TC as ToastContainer
@@ -124,12 +124,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Service as Any Service
-    participant TEB as ToastEventBus
+    participant TEB as ToastEventBus (with EventQueue and EventWorker)
     participant WSTB as WebSocketToastBridge
     participant TP as ToastProvider
     participant TC as ToastContainer
 
-    Service->>TEB: toastEventBus.success("Message")
+    Service->>TEB: toastEventBus (with EventQueue and EventWorker).success("Message")
     TEB->>TEB: Check 1-second deduplication
     TEB->>WSTB: Emit ToastEvent
     WSTB->>TP: Call showToast()
@@ -138,7 +138,7 @@ sequenceDiagram
 
 ## Files and Components
 
-### 1. `/src/services/toastEventBus.ts`
+### 1. `/src/services/toastEventBus (with EventQueue and EventWorker).ts`
 
 **Purpose**: Central event bus for toast notifications with deduplication
 
@@ -160,7 +160,7 @@ export interface ToastEvent {
   };
 }
 
-class ToastEventBus {
+class ToastEventBus (with EventQueue and EventWorker) {
   subscribe(callback: (event: ToastEvent) => void): () => void
   emit(typeOrEvent: string | ToastEvent, message?: string, options?: any): void
   success(title: string, description?: string, action?: ToastEvent['action']): void
@@ -198,7 +198,7 @@ class NotificationService {
 **Purpose**: Bridge between event bus and React toast context
 
 **Key Features**:
-- Subscribes to toastEventBus on mount
+- Subscribes to toastEventBus (with EventQueue and EventWorker) on mount
 - Converts ToastEvent objects to toast context calls
 - Handles browser notification permissions
 - No visual rendering (pure logic component)
@@ -209,7 +209,7 @@ export const WebSocketToastBridge: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = toastEventBus.subscribe((event: ToastEvent) => {
+    const unsubscribe = toastEventBus (with EventQueue and EventWorker).subscribe((event: ToastEvent) => {
       showToast({
         type: event.type,
         title: event.title,
@@ -279,7 +279,7 @@ function App() {
 
 The system implements a two-tier deduplication strategy:
 
-#### Level 1: ToastEventBus (1-second window)
+#### Level 1: ToastEventBus (with EventQueue and EventWorker) (1-second window)
 ```typescript
 private shouldDeduplicate(key: string): boolean {
   const now = Date.now();
@@ -314,7 +314,7 @@ private isDuplicate(entityType: EntityType, eventType: EventType, entityId?: str
 
 1. **Data Sources** generate events (WebSocket, user actions, API responses)
 2. **NotificationService** processes WebSocket messages and applies entity-level deduplication
-3. **ToastEventBus** receives notifications and applies general deduplication
+3. **ToastEventBus (with EventQueue and EventWorker)** receives notifications and applies general deduplication
 4. **WebSocketToastBridge** subscribes to the event bus and forwards to React context
 5. **ToastProvider** manages UI state and renders notifications
 6. **ToastContainer** displays visual notifications with auto-dismiss logic
@@ -331,18 +331,18 @@ private isDuplicate(entityType: EntityType, eventType: EventType, entityId?: str
 
 #### For Simple Notifications
 ```typescript
-import { toastEventBus } from '../services/toastEventBus';
+import { toastEventBus (with EventQueue and EventWorker) } from '../services/toastEventBus (with EventQueue and EventWorker)';
 
 // Convenience methods (recommended)
-toastEventBus.success('Operation completed successfully');
-toastEventBus.error('Failed to save changes');
-toastEventBus.warning('Network connection unstable');
-toastEventBus.info('New version available');
+toastEventBus (with EventQueue and EventWorker).success('Operation completed successfully');
+toastEventBus (with EventQueue and EventWorker).error('Failed to save changes');
+toastEventBus (with EventQueue and EventWorker).warning('Network connection unstable');
+toastEventBus (with EventQueue and EventWorker).info('New version available');
 ```
 
 #### For Complex Notifications
 ```typescript
-toastEventBus.success('File uploaded', 'Document.pdf uploaded successfully', {
+toastEventBus (with EventQueue and EventWorker).success('File uploaded', 'Document.pdf uploaded successfully', {
   label: 'View File',
   onClick: () => openFile('document.pdf')
 });
@@ -392,7 +392,7 @@ return cleanup;
 
 ### Do's ✅
 
-1. **Use Convenience Methods**: Prefer `toastEventBus.success()` over manual event objects
+1. **Use Convenience Methods**: Prefer `toastEventBus (with EventQueue and EventWorker).success()` over manual event objects
 2. **Provide Context**: Include descriptions for complex operations
 3. **Use Actions Sparingly**: Only for toasts that need user interaction
 4. **Keep Messages Concise**: Toast titles should be brief and clear
@@ -408,7 +408,7 @@ return cleanup;
 2. **Don't Use for Long Messages**: Keep descriptions under 2 lines
 3. **Don't Override Durations Unnecessarily**: Default durations are optimized
 4. **Don't Create Manual Toast Objects**: Use the provided APIs instead
-5. **Don't Bypass the Event Bus**: Always go through toastEventBus or notificationService
+5. **Don't Bypass the Event Bus**: Always go through toastEventBus (with EventQueue and EventWorker) or notificationService
 
 ### Performance Considerations
 
@@ -430,19 +430,19 @@ return cleanup;
 
 ```typescript
 // Simple success message
-toastEventBus.success('Settings saved successfully');
+toastEventBus (with EventQueue and EventWorker).success('Settings saved successfully');
 
 // Error with description
-toastEventBus.error('Upload failed', 'File size exceeds 10MB limit');
+toastEventBus (with EventQueue and EventWorker).error('Upload failed', 'File size exceeds 10MB limit');
 
 // Warning with action
-toastEventBus.warning('Unsaved changes', 'You have unsaved changes that will be lost', {
+toastEventBus (with EventQueue and EventWorker).warning('Unsaved changes', 'You have unsaved changes that will be lost', {
   label: 'Save Now',
   onClick: () => saveChanges()
 });
 
 // Info notification
-toastEventBus.info('System maintenance scheduled for tonight at 2 AM');
+toastEventBus (with EventQueue and EventWorker).info('System maintenance scheduled for tonight at 2 AM');
 ```
 
 ### WebSocket Integration Example
@@ -477,16 +477,16 @@ toastEventBus.info('System maintenance scheduled for tonight at 2 AM');
 
 ```typescript
 // In your service file
-import { toastEventBus } from '../services/toastEventBus';
+import { toastEventBus (with EventQueue and EventWorker) } from '../services/toastEventBus (with EventQueue and EventWorker)';
 
 class ApiService {
   async saveData(data: any) {
     try {
       const result = await api.post('/data', data);
-      toastEventBus.success('Data saved successfully');
+      toastEventBus (with EventQueue and EventWorker).success('Data saved successfully');
       return result;
     } catch (error) {
-      toastEventBus.error('Failed to save data', error.message);
+      toastEventBus (with EventQueue and EventWorker).error('Failed to save data', error.message);
       throw error;
     }
   }
@@ -494,13 +494,13 @@ class ApiService {
   async uploadFile(file: File) {
     try {
       const result = await api.upload('/files', file);
-      toastEventBus.success('File uploaded', `${file.name} uploaded successfully`, {
+      toastEventBus (with EventQueue and EventWorker).success('File uploaded', `${file.name} uploaded successfully`, {
         label: 'View File',
         onClick: () => this.openFile(result.id)
       });
       return result;
     } catch (error) {
-      toastEventBus.error('Upload failed', `Could not upload ${file.name}`);
+      toastEventBus (with EventQueue and EventWorker).error('Upload failed', `Could not upload ${file.name}`);
       throw error;
     }
   }
@@ -543,7 +543,7 @@ function TaskForm() {
 ```typescript
 // This will only show one notification even if called multiple times rapidly
 for (let i = 0; i < 10; i++) {
-  toastEventBus.success('Batch operation completed', `Processed item ${i}`);
+  toastEventBus (with EventQueue and EventWorker).success('Batch operation completed', `Processed item ${i}`);
 }
 // Result: Only one notification is shown due to 1-second deduplication window
 
@@ -580,7 +580,7 @@ notificationService.notifyEntityChange('task', 'updated', 'My Task', 'task-123')
 
 **Debugging Steps**:
 1. Check deduplication logs in browser console
-2. Verify that you're not calling both toastEventBus AND showToast for the same event
+2. Verify that you're not calling both toastEventBus (with EventQueue and EventWorker) AND showToast for the same event
 3. Check if multiple services are triggering the same notification
 
 **Solution**:
@@ -617,7 +617,7 @@ useEffect(() => {
 **Solution**:
 ```typescript
 // Ensure proper duration is set
-toastEventBus.success('Message', 'Description'); // Uses default 5s
+toastEventBus (with EventQueue and EventWorker).success('Message', 'Description'); // Uses default 5s
 // Or explicitly set duration
 showToast({ type: 'info', title: 'Message', duration: 3000 });
 ```
@@ -627,9 +627,9 @@ showToast({ type: 'info', title: 'Message', duration: 3000 });
 The system provides extensive console logging for debugging:
 
 ```
-📝 ToastEventBus.subscribe() called - adding legacy listener
-📡 ToastEventBus.emit() called with: success Operation completed
-🔔 WebSocketToastBridge: Received toast event from toastEventBus
+📝 ToastEventBus (with EventQueue and EventWorker).subscribe() called - adding legacy listener
+📡 ToastEventBus (with EventQueue and EventWorker).emit() called with: success Operation completed
+🔔 WebSocketToastBridge: Received toast event from toastEventBus (with EventQueue and EventWorker)
 🍞 ToastProvider.showToast() called with: {type: 'success', title: 'Operation completed'}
 ✅ WebSocketToastBridge: Called showToast, returned ID: abc123
 ```
@@ -647,11 +647,11 @@ Monitor these metrics for system health:
 
 ```typescript
 // Test basic functionality
-toastEventBus.success('Test notification');
+toastEventBus (with EventQueue and EventWorker).success('Test notification');
 
 // Test deduplication
-toastEventBus.success('Duplicate test');
-toastEventBus.success('Duplicate test'); // Should be deduplicated
+toastEventBus (with EventQueue and EventWorker).success('Duplicate test');
+toastEventBus (with EventQueue and EventWorker).success('Duplicate test'); // Should be deduplicated
 
 // Test WebSocket integration
 // Trigger a WebSocket message and verify notification appears

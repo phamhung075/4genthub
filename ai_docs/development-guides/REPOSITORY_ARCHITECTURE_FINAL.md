@@ -174,7 +174,7 @@ All repositories follow consistent naming conventions:
 ### Database Connection Test ✅
 ```
 ✅ PostgreSQL Connection: agenthub_prod
-✅ Database Version: PostgreSQL 15.14
+✅ Database Version: PostgreSQL 18.14
 ✅ Pool Configuration: 50 base + 100 overflow
 ✅ Connection Status: Active and healthy
 ```
