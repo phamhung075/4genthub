@@ -4,8 +4,8 @@
     "tracked_files": {
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
-        "hash": "8084d90907ff76d6457d539616f99f28",
-        "last_updated": "2025-09-13T23:31:32.131968"
+        "hash": "8f61bfda7539ffd0bb103edc7349473d",
+        "last_updated": "2025-10-16T06:44:25.718762"
       }
     }
   },
@@ -14,11 +14,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "8084d90907ff76d6457d539616f99f28",
-          "modified": "2025-09-13T23:31:32.131968",
+          "hash": "8f61bfda7539ffd0bb103edc7349473d",
+          "modified": "2025-10-16T06:44:25.718762",
           "name": "docker-menu.sh.md",
           "path": "_absolute_docs/scripts/docker-menu.sh.md",
-          "size": 835
+          "size": 2888
         }
       ],
       "path": "_absolute_docs/scripts"
@@ -242,6 +242,26 @@
         }
       ],
       "path": "api-integration/controllers"
+    },
+    "architecture-design": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "5b85752581563ead922dc78717acf630",
+          "modified": "2025-10-16T06:36:27.833810",
+          "name": "PRD.md",
+          "path": "architecture-design/PRD.md",
+          "size": 19950
+        },
+        {
+          "hash": "4c59eb780c7684041c77a7e0238a623d",
+          "modified": "2025-10-16T06:40:00.782789",
+          "name": "Architecture_Technique.md",
+          "path": "architecture-design/Architecture_Technique.md",
+          "size": 41950
+        }
+      ],
+      "path": "architecture-design"
     },
     "authentication": {
       "count": 12,
@@ -511,18 +531,18 @@
           "size": 22924
         },
         {
-          "hash": "38b409817b022d4515b64465bf5a3171",
-          "modified": "2025-10-16T06:01:27.265243",
+          "hash": "a5a17258e332da5423485824d6d31320",
+          "modified": "2025-10-16T06:27:57.180847",
           "name": "index.md",
           "path": "core-architecture/index.md",
-          "size": 23786
+          "size": 23888
         },
         {
-          "hash": "05217591deab84a796a53dd36f9a6de1",
-          "modified": "2025-10-16T06:25:42.983608",
+          "hash": "a188d623099da579ced4d67774acd2ef",
+          "modified": "2025-10-16T06:27:57.180847",
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
-          "size": 18960
+          "size": 19028
         },
         {
           "hash": "ecfe6c884554eba0685b104218229d09",
@@ -581,11 +601,11 @@
           "size": 15178
         },
         {
-          "hash": "fc263a505df1dddc05287ea23453a504",
-          "modified": "2025-10-16T06:25:55.844378",
+          "hash": "568cf89812357afaa2be2d64eddc18c3",
+          "modified": "2025-10-16T06:27:57.176847",
           "name": "domain-driven-design-layers.md",
           "path": "core-architecture/domain-driven-design-layers.md",
-          "size": 19011
+          "size": 19045
         },
         {
           "hash": "c4a5176f7a5e4e97b30e49a5249c98cf",
@@ -664,11 +684,11 @@
       "count": 21,
       "files": [
         {
-          "hash": "5296772a451c24bea15722411e04faf8",
-          "modified": "2025-10-12T12:49:57.645161",
+          "hash": "ee5c18b44b88d81e273ad714c2977b7f",
+          "modified": "2025-10-16T06:27:57.188847",
           "name": "domain-events-usage-guide.md",
           "path": "development-guides/domain-events-usage-guide.md",
-          "size": 26474
+          "size": 26576
         },
         {
           "hash": "fdd834643a750eac6c08335217e766a8",
@@ -699,18 +719,18 @@
           "size": 12249
         },
         {
-          "hash": "a3bc48b64f87c8d8ebc0b66c21de48ac",
-          "modified": "2025-10-12T12:49:57.645161",
+          "hash": "b38ef36ec171d499da8cb968d34bdd4f",
+          "modified": "2025-10-16T06:27:57.188847",
           "name": "event-handlers-reference.md",
           "path": "development-guides/event-handlers-reference.md",
-          "size": 32163
+          "size": 32197
         },
         {
-          "hash": "3b26b7c63bac31789b3d9e842f4a59f3",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "156a10e107b14da2efe9b04ebb78fa6b",
+          "modified": "2025-10-16T06:27:57.184847",
           "name": "REPOSITORY_SWITCHING_GUIDE.md",
           "path": "development-guides/REPOSITORY_SWITCHING_GUIDE.md",
-          "size": 12977
+          "size": 12984
         },
         {
           "hash": "e5bcba1e077c1974ec9197cbcfda9b14",
@@ -748,8 +768,8 @@
           "size": 47069
         },
         {
-          "hash": "f02afa1460ab3bd3ad815560e208c6ac",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "2860120e4220986939249006f304a299",
+          "modified": "2025-10-16T06:27:57.184847",
           "name": "REPOSITORY_ARCHITECTURE_FINAL.md",
           "path": "development-guides/REPOSITORY_ARCHITECTURE_FINAL.md",
           "size": 12583
@@ -797,11 +817,11 @@
           "size": 4630
         },
         {
-          "hash": "d6fc01f2ed54cc81805c0304684e7c62",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "40da2ce3ee4c2f2e46b322a5c7b4a99b",
+          "modified": "2025-10-16T06:44:25.086733",
           "name": "docker-system-guide.md",
           "path": "development-guides/docker-system-guide.md",
-          "size": 13322
+          "size": 14201
         },
         {
           "hash": "3f1506b3725e657858947411b2661391",
@@ -817,11 +837,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "f69b6e649d5eec20a8dcbaac2fb6f432",
-          "modified": "2025-09-24T13:24:47.170491",
+          "hash": "c66a5320768777d6a68cf505f126babc",
+          "modified": "2025-10-16T06:27:57.192847",
           "name": "toast-notification-architecture.md",
           "path": "development-guides/ui-patterns/toast-notification-architecture.md",
-          "size": 23907
+          "size": 25267
         }
       ],
       "path": "development-guides/ui-patterns"
@@ -891,11 +911,11 @@
           "size": 13610
         },
         {
-          "hash": "83609305e10a2f3ac2195b1cb85acd71",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "8560e9f7a2d908ef7a620d7587526dd0",
+          "modified": "2025-10-16T06:27:57.192847",
           "name": "database-configuration-guide.md",
           "path": "operations/database-configuration-guide.md",
-          "size": 5444
+          "size": 5451
         },
         {
           "hash": "56e03aea252a4b8029cbf1b831b296dd",
@@ -926,11 +946,11 @@
           "size": 14866
         },
         {
-          "hash": "db6dcefdb2150aa4cdac85f0ff02e456",
-          "modified": "2025-10-15T20:46:47.480633",
+          "hash": "b8e8c63194b853098f4cba270674aa4e",
+          "modified": "2025-10-16T06:27:57.196848",
           "name": "python-3.14-installation-guide.md",
           "path": "operations/python-3.14-installation-guide.md",
-          "size": 10182
+          "size": 10184
         },
         {
           "hash": "d2278c0d4dc87b55d1d05b33a903b9ad",
@@ -954,11 +974,11 @@
           "size": 7131
         },
         {
-          "hash": "4bf7db3e91592708aa7b4d2c0b94a897",
-          "modified": "2025-09-17T14:11:39.087862",
+          "hash": "81ee7ece467e8cf239bc8a24e384050d",
+          "modified": "2025-10-16T06:27:57.192847",
           "name": "KEYCLOAK_POSTGRESQL_SETUP.md",
           "path": "operations/KEYCLOAK_POSTGRESQL_SETUP.md",
-          "size": 9886
+          "size": 9893
         },
         {
           "hash": "7d84de67309e51ac202c3e7ec12d7e07",
@@ -1043,11 +1063,11 @@
           "size": 6661
         },
         {
-          "hash": "ee56cb3f6dfc6327b850a4548bfbcb92",
-          "modified": "2025-09-13T23:31:32.166703",
+          "hash": "2f1ea8f81370322905c6a2abe2eb9313",
+          "modified": "2025-10-16T06:27:57.200848",
           "name": "uv-single-file-scripts.md",
           "path": "uv-single-file-scripts.md",
-          "size": 4132
+          "size": 4134
         },
         {
           "hash": "01f903a8aac3031b21d12f25b4d43787",
@@ -1183,7 +1203,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T06:26:40.732470",
+  "generated_at": "2025-10-16T06:44:25.855152",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1238,6 +1258,12 @@
         "mcp-client-troubleshooting.md",
         "mcp-client-usage-examples.md",
         "mcp-http-client-architecture.md"
+      ]
+    },
+    "architecture-design": {
+      "files": [
+        "Architecture_Technique.md",
+        "PRD.md"
       ]
     },
     "assets": {
@@ -1420,6 +1446,6 @@
       ]
     }
   },
-  "total_directories": 24,
-  "total_files": 152
+  "total_directories": 25,
+  "total_files": 154
 }
