@@ -14,6 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Maintenance
 
+- **Core Architecture Review** (2025-10-16): Completed comprehensive 6-phase review of core-architecture/ folder. Generated detailed 27-page report identifying critical issues: index.md claims 6 files but 36 exist (500% discrepancy), 6 database-timestamp files with 85% overlap, 4 MCP injection files with 80% overlap. Report provides consolidation plan (36→14 files, 61% reduction) and update strategy for Python 3.14, DDD Phase 8, and Dynamic Tool Enforcement v2.0. Report: `ai_docs/reports-status/core-architecture-review-20251016.md`
 - **Documentation Quality Cleanup** (2025-10-16): Implemented aggressive documentation curation to keep only valuable AI knowledge. Created mark-obsolete-docs.py script following principle "AI docs should be curated, not cluttered". Marked 124 low-value files with .obsolete extension: 102 historical test iteration summaries (testing-qa/), 19 old status reports (reports-status/), 1 temp workspace results file, 2 obsolete absolute docs. Reduced active documentation from 473 to 347 files (27% reduction) while maintaining 100% of valuable knowledge. Updated index.json: 347 files across 32 directories
 - **Documentation Architecture Audit** (2025-10-16): Phase 2 complete - Created audit-architecture-accuracy.py script to scan 470 documentation files for outdated architecture references. Generated comprehensive report with 2,872 issues found: 96 outdated patterns (25 old Python versions, 59 old context patterns), 2,776 files with missing modern coverage (381 missing Python 3.14, 380 missing React 19/Vite 7, 361 missing Event System), and 63 architecture gaps. Report saved to `ai_docs/reports-status/architecture-accuracy-audit-20251016.md` with prioritized update strategy
 - **Documentation Obsolete Detection** (2025-10-16): Created cleanup-obsolete-docs.py script to automatically detect and archive obsolete documentation. Moved 3 obsolete docs to `_obsolete_docs/20251016/` (claude-hooks-pre-tool-use.py.md, scripts/f_index.md, scripts/test-doc-system.sh.md). Initial cleanup pass before quality curation
@@ -27,6 +28,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+- **PostgreSQL 18 Docker Volume** (2025-10-16): Fixed WSL2 overlay filesystem mounting error after upgrade from PostgreSQL 15 to 18. Root cause: stale overlayfs directory reference. Solution: removed corrupted `docker_postgres-data` volume and recreated using docker-menu.sh option B with proper environment loading. Container now running successfully on postgres:18-alpine
 - **Projects List API** (2025-10-13): Fixed BranchDTO validation errors in list_projects endpoint (added required project_id and git_branch_name fields)
 
 ### Completed
