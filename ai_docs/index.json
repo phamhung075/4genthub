@@ -313,7 +313,7 @@
       "path": "architecture-design"
     },
     "authentication": {
-      "count": 14,
+      "count": 15,
       "files": [
         {
           "hash": "164570188509123f5999f7aee57e9478",
@@ -363,6 +363,13 @@
           "name": "KEYCLOAK_SETUP.md",
           "path": "authentication/KEYCLOAK_SETUP.md",
           "size": 6563
+        },
+        {
+          "hash": "7e47630f344b91b13c82c0af641e674a",
+          "modified": "2025-10-16T05:44:34.218131",
+          "name": "complete-authentication-system.md",
+          "path": "authentication/complete-authentication-system.md",
+          "size": 57125
         },
         {
           "hash": "ff4005bcb18d6c77a1f08679b311a3d6",
@@ -658,7 +665,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 36,
+      "count": 37,
       "files": [
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
@@ -841,6 +848,13 @@
           "name": "implementation-methodology-pattern.md",
           "path": "core-architecture/implementation-methodology-pattern.md",
           "size": 4266
+        },
+        {
+          "hash": "82f1cb835bab6c37ea12e7042e53bd2e",
+          "modified": "2025-10-16T05:44:36.286221",
+          "name": "unified-timestamp-architecture.md",
+          "path": "core-architecture/unified-timestamp-architecture.md",
+          "size": 41053
         },
         {
           "hash": "a61fa754cf31d1e3694e3ee20a4fc4ce",
@@ -2436,7 +2450,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T05:31:59.358976",
+  "generated_at": "2025-10-16T05:44:36.358325",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -2522,6 +2536,7 @@
         "TOKEN_SECURITY_GUIDE.md",
         "authentication-system-current.md",
         "authentication-system.md",
+        "complete-authentication-system.md",
         "keycloak-mcp-api-client-config.md",
         "keycloak-service-account-setup.md",
         "keycloak-setup-guide.md",
@@ -2612,7 +2627,8 @@
         "task-versioning-analysis.md",
         "timestamp-management-architectural-analysis.md",
         "timestamp-query-optimization-analysis.md",
-        "toast-notification-architecture.md"
+        "toast-notification-architecture.md",
+        "unified-timestamp-architecture.md"
       ]
     },
     "deployment": {
@@ -2875,5 +2891,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 325
+  "total_files": 327
 }
