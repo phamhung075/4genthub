@@ -8,4 +8,5 @@ export { default as MCPConfiguration } from './sections/MCPConfiguration';
 export { default as GettingStartedGuide } from './sections/GettingStartedGuide';
 export { default as UsingMCPTools } from './sections/UsingMCPTools';
 export { default as DockerSetup } from './sections/DockerSetup';
+export { default as ClaudeHooks } from './sections/ClaudeHooks';
 export { default as Troubleshooting } from './sections/Troubleshooting';

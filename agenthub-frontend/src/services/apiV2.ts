@@ -70,11 +70,23 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
           }
         }
       } catch (refreshError) {
-        logger.info('V2 API: Token refresh failed, clearing tokens...');
-        Cookies.remove('access_token');
-        Cookies.remove('refresh_token');
-        // Dispatch event to notify AuthContext to logout
-        window.dispatchEvent(new CustomEvent('auth-logout'));
+        logger.info('V2 API: Token refresh failed');
+
+        // Only logout if refresh token is explicitly invalid/expired
+        // Don't logout on network errors or temporary backend issues
+        const errorMessage = refreshError instanceof Error ? refreshError.message : String(refreshError);
+        if (errorMessage.includes('refresh token') ||
+            errorMessage.includes('expired') ||
+            errorMessage.includes('invalid') ||
+            errorMessage.includes('401')) {
+          logger.error('V2 API: Refresh token invalid, logging out user');
+          Cookies.remove('access_token');
+          Cookies.remove('refresh_token');
+          window.dispatchEvent(new CustomEvent('auth-logout'));
+        } else {
+          logger.warn('V2 API: Token refresh failed due to network/backend issue, keeping user logged in');
+        }
+
         throw new Error('Authentication required. Please log in again.');
       }
 
