@@ -313,7 +313,7 @@
       "path": "architecture-design"
     },
     "authentication": {
-      "count": 15,
+      "count": 12,
       "files": [
         {
           "hash": "164570188509123f5999f7aee57e9478",
@@ -321,13 +321,6 @@
           "name": "keycloak-service-account-setup.md",
           "path": "authentication/keycloak-service-account-setup.md",
           "size": 11748
-        },
-        {
-          "hash": "506f9e907bdb631625b4ccd6b8947b63",
-          "modified": "2025-09-17T14:11:39.079903",
-          "name": "authentication-system.md",
-          "path": "authentication/authentication-system.md",
-          "size": 8728
         },
         {
           "hash": "6f12b6e61ea5dd58963c432731ae6c7b",
@@ -349,13 +342,6 @@
           "name": "token-flow.md",
           "path": "authentication/token-flow.md",
           "size": 10706
-        },
-        {
-          "hash": "88ae2a8f33930ca5df89efcf184b2b5a",
-          "modified": "2025-09-17T14:11:39.079903",
-          "name": "MCP_TOKEN_AUTHENTICATION.md",
-          "path": "authentication/MCP_TOKEN_AUTHENTICATION.md",
-          "size": 7681
         },
         {
           "hash": "83407de9f530d29bc24cac6bbbbd5d39",
@@ -391,13 +377,6 @@
           "name": "KEYCLOAK_CONFIGURATION.md",
           "path": "authentication/KEYCLOAK_CONFIGURATION.md",
           "size": 3038
-        },
-        {
-          "hash": "080230bf82c294aea41ceddcccc10243",
-          "modified": "2025-09-17T14:11:39.079903",
-          "name": "authentication-system-current.md",
-          "path": "authentication/authentication-system-current.md",
-          "size": 7656
         },
         {
           "hash": "28ab8b490463fa1b20ead52d469360fc",
@@ -665,8 +644,15 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 37,
+      "count": 23,
       "files": [
+        {
+          "hash": "28e09c0b0d11ef3cf07372a214b9fede",
+          "modified": "2025-10-16T05:52:44.575170",
+          "name": "mcp-injection-architecture.md",
+          "path": "core-architecture/mcp-injection-architecture.md",
+          "size": 43410
+        },
         {
           "hash": "5ae84e6e149566182a3bb71eecf66956",
           "modified": "2025-09-24T13:24:47.170491",
@@ -675,25 +661,11 @@
           "size": 22924
         },
         {
-          "hash": "98913a14d2a297a49e49caac996604a4",
-          "modified": "2025-09-17T14:11:39.083883",
+          "hash": "38b409817b022d4515b64465bf5a3171",
+          "modified": "2025-10-16T06:01:27.265243",
           "name": "index.md",
           "path": "core-architecture/index.md",
-          "size": 9603
-        },
-        {
-          "hash": "aa8ff3b4ff161471d3cd7bc34cbf1be2",
-          "modified": "2025-09-17T14:11:39.083883",
-          "name": "sub-agent-instructions.md",
-          "path": "core-architecture/sub-agent-instructions.md",
-          "size": 3480
-        },
-        {
-          "hash": "abdb3a9a7a1ec7c1a5908e157d360333",
-          "modified": "2025-09-17T14:11:39.083883",
-          "name": "real-time-context-injection-system.md",
-          "path": "core-architecture/real-time-context-injection-system.md",
-          "size": 8311
+          "size": 23786
         },
         {
           "hash": "08ff0a8f40b785a9e1157d7dd3722874",
@@ -745,13 +717,6 @@
           "size": 2315
         },
         {
-          "hash": "a55a9ddeb2c4784dc92e98aa56ea7d58",
-          "modified": "2025-09-24T13:24:47.170491",
-          "name": "deprecated-agent-mappings.md",
-          "path": "core-architecture/deprecated-agent-mappings.md",
-          "size": 12547
-        },
-        {
           "hash": "d7331d162d9cdc48de9fbf4a31bff66d",
           "modified": "2025-09-17T14:11:39.083883",
           "name": "session-type-detection.md",
@@ -759,25 +724,11 @@
           "size": 4364
         },
         {
-          "hash": "4de70f634e8ca38a5db73376961aa4a7",
-          "modified": "2025-10-12T12:49:57.641161",
-          "name": "database-initialization-enhancement.md",
-          "path": "core-architecture/database-initialization-enhancement.md",
-          "size": 9423
-        },
-        {
           "hash": "7ecde5b1b4747f1bdf67c6117005ca8c",
           "modified": "2025-09-24T13:24:47.170491",
           "name": "architecture-thinking.md",
           "path": "core-architecture/architecture-thinking.md",
           "size": 15178
-        },
-        {
-          "hash": "f32f3f13ea374f4c12c40c1485ffa2f1",
-          "modified": "2025-09-13T23:31:32.151266",
-          "name": "initial-problem.md",
-          "path": "core-architecture/initial-problem.md",
-          "size": 4409
         },
         {
           "hash": "f654dd6fa298d23fa0fcfe00c62908b4",
@@ -794,20 +745,6 @@
           "size": 13572
         },
         {
-          "hash": "16153ef7c18204a09eced8bd465a0b7a",
-          "modified": "2025-10-12T12:49:57.641161",
-          "name": "timestamp-query-optimization-analysis.md",
-          "path": "core-architecture/timestamp-query-optimization-analysis.md",
-          "size": 10442
-        },
-        {
-          "hash": "06ecc70235b07f405b5e6ff3c9077941",
-          "modified": "2025-09-13T23:31:32.151266",
-          "name": "mcp-injection-task-dependencies.md",
-          "path": "core-architecture/mcp-injection-task-dependencies.md",
-          "size": 7604
-        },
-        {
           "hash": "83e27d310ea4d30243f3749c7346bc92",
           "modified": "2025-10-12T12:49:57.641161",
           "name": "domain-events-catalog.md",
@@ -815,11 +752,11 @@
           "size": 31916
         },
         {
-          "hash": "f4a833cbce5808865e4222ae40591c1a",
-          "modified": "2025-09-24T13:24:47.170491",
-          "name": "agent-delegation-fix.md",
-          "path": "core-architecture/agent-delegation-fix.md",
-          "size": 6273
+          "hash": "e57dfab4afd5f3c7bbab68b9a09682df",
+          "modified": "2025-10-16T05:58:52.746467",
+          "name": "agent-system-architecture.md",
+          "path": "core-architecture/agent-system-architecture.md",
+          "size": 58877
         },
         {
           "hash": "291f63b347044fb124a5459b66d7a9ef",
@@ -829,18 +766,11 @@
           "size": 13079
         },
         {
-          "hash": "0921d1d76da09658371cf2f062cc21f3",
-          "modified": "2025-10-12T12:49:57.641161",
-          "name": "database-session-handling-optimization.md",
-          "path": "core-architecture/database-session-handling-optimization.md",
-          "size": 8719
-        },
-        {
-          "hash": "1164b62c5119ebd9364fb0e0c8d5e36a",
-          "modified": "2025-09-13T23:31:32.151266",
+          "hash": "f0cc19dad2860b415072cd94f243c4b5",
+          "modified": "2025-10-16T06:04:01.306021",
           "name": "dependency-management-engine-architecture.md",
           "path": "core-architecture/dependency-management-engine-architecture.md",
-          "size": 18952
+          "size": 18954
         },
         {
           "hash": "e0483c7ac4e33e1819c982c82c0411ae",
@@ -857,34 +787,6 @@
           "size": 41053
         },
         {
-          "hash": "a61fa754cf31d1e3694e3ee20a4fc4ce",
-          "modified": "2025-10-12T12:49:57.641161",
-          "name": "database-timestamp-standardization-summary.md",
-          "path": "core-architecture/database-timestamp-standardization-summary.md",
-          "size": 5158
-        },
-        {
-          "hash": "c60e3cc79506e0cb448c0e51be31a9c2",
-          "modified": "2025-09-24T13:24:47.170491",
-          "name": "agent-orchestration-architecture.md",
-          "path": "core-architecture/agent-orchestration-architecture.md",
-          "size": 30628
-        },
-        {
-          "hash": "c285280f638aa966bf09248216b478f4",
-          "modified": "2025-10-12T12:49:57.641161",
-          "name": "database-schema-timestamp-alignment-verification.md",
-          "path": "core-architecture/database-schema-timestamp-alignment-verification.md",
-          "size": 6933
-        },
-        {
-          "hash": "e3674b579210b8a041f426d2dd0d6a85",
-          "modified": "2025-10-12T12:49:57.641161",
-          "name": "timestamp-management-architectural-analysis.md",
-          "path": "core-architecture/timestamp-management-architectural-analysis.md",
-          "size": 14347
-        },
-        {
           "hash": "3e8655875e5419e4816635dccf2f33d4",
           "modified": "2025-09-13T23:31:32.151266",
           "name": "prompt-analyze.md",
@@ -899,32 +801,11 @@
           "size": 34824
         },
         {
-          "hash": "f69b6e649d5eec20a8dcbaac2fb6f432",
-          "modified": "2025-09-24T13:24:47.170491",
-          "name": "toast-notification-architecture.md",
-          "path": "core-architecture/toast-notification-architecture.md",
-          "size": 23907
-        },
-        {
-          "hash": "2e885b833bedba234a95055c9c294902",
-          "modified": "2025-09-17T14:11:39.083883",
-          "name": "mcp-auto-injection-architecture.md",
-          "path": "core-architecture/mcp-auto-injection-architecture.md",
-          "size": 64831
-        },
-        {
           "hash": "08f1fdd98eef938ebf846aacddf57564",
           "modified": "2025-10-12T12:50:14.748512",
           "name": "Architecture_Technique.md",
           "path": "core-architecture/Architecture_Technique.md",
           "size": 29248
-        },
-        {
-          "hash": "24290156b3b8a5cf8accd1b58424eabf",
-          "modified": "2025-09-13T23:31:32.151266",
-          "name": "real-time-injection-system.md",
-          "path": "core-architecture/real-time-injection-system.md",
-          "size": 11875
         }
       ],
       "path": "core-architecture"
@@ -1417,6 +1298,19 @@
       ],
       "path": "development-guides"
     },
+    "development-guides/ui-patterns": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "f69b6e649d5eec20a8dcbaac2fb6f432",
+          "modified": "2025-09-24T13:24:47.170491",
+          "name": "toast-notification-architecture.md",
+          "path": "development-guides/ui-patterns/toast-notification-architecture.md",
+          "size": 23907
+        }
+      ],
+      "path": "development-guides/ui-patterns"
+    },
     "integration-guides": {
       "count": 2,
       "files": [
@@ -1438,7 +1332,7 @@
       "path": "integration-guides"
     },
     "issues": {
-      "count": 23,
+      "count": 24,
       "files": [
         {
           "hash": "07ce0439318b5d50890f6addc62015c5",
@@ -1502,6 +1396,13 @@
           "name": "subtask-creation-nonetype-fix.md",
           "path": "issues/subtask-creation-nonetype-fix.md",
           "size": 6347
+        },
+        {
+          "hash": "f32f3f13ea374f4c12c40c1485ffa2f1",
+          "modified": "2025-09-13T23:31:32.151266",
+          "name": "initial-problem.md",
+          "path": "issues/initial-problem.md",
+          "size": 4409
         },
         {
           "hash": "c5a298b27a64d7416898e5e718236348",
@@ -1605,7 +1506,7 @@
       "path": "issues"
     },
     "migration-guides": {
-      "count": 12,
+      "count": 13,
       "files": [
         {
           "hash": "39924e4a4aca564f7aa897b9d948579b",
@@ -1641,6 +1542,13 @@
           "name": "README.md",
           "path": "migration-guides/README.md",
           "size": 2630
+        },
+        {
+          "hash": "a55a9ddeb2c4784dc92e98aa56ea7d58",
+          "modified": "2025-09-24T13:24:47.170491",
+          "name": "deprecated-agent-mappings.md",
+          "path": "migration-guides/deprecated-agent-mappings.md",
+          "size": 12547
         },
         {
           "hash": "50abe65df3877b0950031181846eba28",
@@ -2450,7 +2358,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T05:44:36.358325",
+  "generated_at": "2025-10-16T06:04:22.789624",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -2531,11 +2439,8 @@
         "KEYCLOAK_CONFIGURATION.md",
         "KEYCLOAK_SCRIPTS_README.md",
         "KEYCLOAK_SETUP.md",
-        "MCP_TOKEN_AUTHENTICATION.md",
         "POSTGRESQL_KEYCLOAK_SETUP.md",
         "TOKEN_SECURITY_GUIDE.md",
-        "authentication-system-current.md",
-        "authentication-system.md",
         "complete-authentication-system.md",
         "keycloak-mcp-api-client-config.md",
         "keycloak-service-account-setup.md",
@@ -2594,8 +2499,7 @@
       "files": [
         "Architecture_Technique.md",
         "README.md",
-        "agent-delegation-fix.md",
-        "agent-orchestration-architecture.md",
+        "agent-system-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
         "cascade-calculator-ddd-refactoring.md",
@@ -2603,31 +2507,18 @@
         "clean-code-enforcement.md",
         "context-hierarchy-system.md",
         "database-architecture.md",
-        "database-initialization-enhancement.md",
-        "database-schema-timestamp-alignment-verification.md",
-        "database-session-handling-optimization.md",
-        "database-timestamp-standardization-summary.md",
         "dependency-management-engine-architecture.md",
-        "deprecated-agent-mappings.md",
         "design-patterns-in-architecture.md",
         "domain-driven-design-layers.md",
         "domain-events-catalog.md",
         "implementation-methodology-pattern.md",
         "index.md",
-        "initial-problem.md",
-        "mcp-auto-injection-architecture.md",
-        "mcp-injection-task-dependencies.md",
+        "mcp-injection-architecture.md",
         "prompt-analyze.md",
-        "real-time-context-injection-system.md",
-        "real-time-injection-system.md",
         "repository-pagination-migration-guide.md",
         "session-type-detection.md",
-        "sub-agent-instructions.md",
         "system-architecture-overview.md",
         "task-versioning-analysis.md",
-        "timestamp-management-architectural-analysis.md",
-        "timestamp-query-optimization-analysis.md",
-        "toast-notification-architecture.md",
         "unified-timestamp-architecture.md"
       ]
     },
@@ -2705,7 +2596,12 @@
         "test_creation_guide.md",
         "timestamp-management-implementation.md",
         "token-management-analysis.md"
-      ]
+      ],
+      "ui-patterns": {
+        "files": [
+          "toast-notification-architecture.md"
+        ]
+      }
     },
     "files": [
       "anthropic_custom_slash_commands.md",
@@ -2729,6 +2625,7 @@
         "file-protection-bypass-via-bash-commands.md",
         "git-branch-statistics-parameter-fix.md",
         "index.md",
+        "initial-problem.md",
         "issue-001-git-branch-agent-assignment-fix.md",
         "issue-002-project-repository-mro-fix.md",
         "mcp-authentication-fix-prompts-2025-09-05.md",
@@ -2762,6 +2659,7 @@
         "automatic-migration-integration.md",
         "cascade-calculator-migration-guide.md",
         "database-clean-migration-v3.md",
+        "deprecated-agent-mappings.md",
         "mcp-complete-implementation-plan.md",
         "mcp-implementation-change-plan.md",
         "unified_context_migration_guide.md"
@@ -2890,6 +2788,6 @@
       ]
     }
   },
-  "total_directories": 31,
-  "total_files": 327
+  "total_directories": 32,
+  "total_files": 313
 }

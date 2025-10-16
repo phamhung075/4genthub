@@ -221,7 +221,7 @@ Continuous Monitoring & Dynamic Adjustment
 ## Technical Specifications
 
 ### Technology Stack
-- **Core Language**: Python 3.12+ (consistent with existing system)
+- **Core Language**: Python 3.14.0+ (consistent with existing system)
 - **Graph Processing**: NetworkX 3.0+ for advanced graph algorithms
 - **Machine Learning**: scikit-learn 1.3+ for pattern recognition
 - **Natural Language Processing**: spaCy 3.6+ for semantic analysis
