@@ -29,3 +29,15 @@ export interface ElementRegistration {
     onAnimationEnd?: (type: AnimationType) => void;
   };
 }
+
+// =============================================================================
+// Subtask Animation Types
+// =============================================================================
+
+export type SubtaskAnimationState = 'none' | 'creating' | 'deleting' | 'updating';
+
+export interface AnimationCallbacks {
+  playCreateAnimation: () => void;
+  playDeleteAnimation: () => void;
+  playUpdateAnimation: () => void;
+}

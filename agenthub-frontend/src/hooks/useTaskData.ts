@@ -70,7 +70,7 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
       title: task.title,
       status: task.status,
       priority: task.priority,
-      subtask_count: task.subtasks?.length || 0,
+      subtask_count: task.subtask_count ?? task.subtasks?.length ?? 0, // Use denormalized count from API, fallback to array length
       assignees_count: task.assignees?.length || 0,
       assignees: task.assignees || [],
       has_dependencies: dependencyCount > 0,

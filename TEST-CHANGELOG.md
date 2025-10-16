@@ -8,6 +8,47 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 - **Untested**: 28 tests (infrastructure utilities)
 - **Status**: Production-ready with sustained 100% pass rate 🎉
 
+## [Unreleased] - 2025-10-16
+
+### Added
+
+#### Frontend Tests
+- **API Tests**: 
+  - `api-lazy.test.ts` - Comprehensive test suite for lazy loading API functions including `createLazyTaskLoader` and `createLazySubtaskLoader` with error handling
+- **Component Tests**:
+  - `components/TaskRow/components/TaskRowDesktop.test.tsx` - Full test coverage for TaskRowDesktop component with all UI interactions and state management
+- **Type Tests**:
+  - `types/index.test.ts` - Test suite for type module barrel exports
+  - `utils/typeValidation.test.ts` - Comprehensive validation tests for `isTask`, `isSubtask`, `ensureTask`, and array validation functions
+
+#### Backend Tests
+- **Authentication Tests**:
+  - `auth/interface/supabase_fastapi_auth_test.py` - Test suite for Supabase FastAPI integration including JWTBearer and token validation
+- **Route Tests**:
+  - `server/routes/subtask_routes_test.py` - API route tests for subtask endpoints with pagination and error handling
+  - `server/routes/task_routes_test.py` - API route tests for task endpoints including search functionality
+- **DTO Tests**:
+  - `task_management/application/dtos/task/task_response_test.py` - TaskResponse DTO serialization and validation tests
+- **Use Case Tests**:
+  - `task_management/application/use_cases/add_subtask_test.py` - AddSubtask use case with inheritance and validation
+  - `task_management/application/use_cases/remove_subtask_test.py` - RemoveSubtask use case with cascade behavior
+- **Domain Tests**:
+  - `task_management/domain/entities/task_test.py` - Task entity validation and business rule tests
+- **Controller Tests**:
+  - `task_management/interface/api_controllers/subtask_api_controller_test.py` - SubtaskApiController with facade integration
+  - `task_management/interface/api_controllers/task_api_controller/handlers/search_handler_test.py` - Search handler with filtering
+- **Type System Tests**:
+  - `types/__init___test.py` - Type module initialization and import tests
+  - `types/converters_test.py` - Entity to type conversion tests for all domain objects
+  - `types/entities_test.py` - Entity type validation and Pydantic model tests
+  - `types/responses_test.py` - Response type tests including pagination
+  - `types/summaries_test.py` - Summary type tests for analytics and reporting
+
+### Updated
+
+- **Frontend Tests**:
+  - `components/LazySubtaskList.test.tsx` - Fixed mock dependencies, added comprehensive test coverage for new features
+
 ## [Unreleased] - 2025-10-11
 
 ### Added
