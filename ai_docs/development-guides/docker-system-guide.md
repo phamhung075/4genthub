@@ -4,7 +4,25 @@
 
 The agenthub project includes a sophisticated Docker-based development system designed to streamline the development workflow with multiple deployment configurations and advanced features. The system is managed through `docker-system/docker-menu.sh`, a comprehensive interactive menu system.
 
-## Docker Menu System (`docker-system/docker-menu.sh`)
+## Docker Menu System
+
+### Access Methods
+
+The Docker menu system can be accessed in two ways:
+
+1. **Convenience Wrapper** (from project root):
+   ```bash
+   ./build-menu.sh
+   ```
+   This wrapper automatically redirects to the actual menu script.
+
+2. **Direct Access** (from project root):
+   ```bash
+   ./docker-system/docker-menu.sh
+   ```
+   The actual implementation with all functionality.
+
+**Note:** Both methods provide identical functionality. Use `build-menu.sh` from the project root for convenience, or access `docker-system/docker-menu.sh` directly if already in that directory.
 
 ### Core Features
 
@@ -267,10 +285,18 @@ The system includes sophisticated connection management:
 
 ### 1. Docker Development
 ```bash
-# Interactive menu
+# Interactive menu (from project root - recommended)
+./build-menu.sh
+
+# Or access directly (from project root)
 ./docker-system/docker-menu.sh
 
-# Direct commands
+# Direct commands with wrapper (from project root - recommended)
+./build-menu.sh start-dev    # Start development mode
+./build-menu.sh restart-dev  # Restart with changes
+./build-menu.sh stop-dev     # Stop development mode
+
+# Or using direct path (from project root)
 ./docker-system/docker-menu.sh start-dev    # Start development mode
 ./docker-system/docker-menu.sh restart-dev  # Restart with changes
 ./docker-system/docker-menu.sh stop-dev     # Stop development mode

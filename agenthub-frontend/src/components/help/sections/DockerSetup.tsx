@@ -1,47 +1,59 @@
+import { HardDrive } from 'lucide-react';
 import React from 'react';
 import { Card } from '../../ui/card';
 import CommandBox from '../shared/CommandBox';
-import { HardDrive } from 'lucide-react';
 
 interface DockerSetupProps {
   expandedSections: Record<string, boolean>;
   toggleSection: (sectionId: string) => void;
 }
 
-const DockerSetup: React.FC<DockerSetupProps> = ({ expandedSections, toggleSection }) => {
+const DockerSetup = ({ expandedSections, toggleSection }: DockerSetupProps) => {
   const dockerMenuOptions = [
-    { key: "1", name: "🚀 Backend + Frontend Only", desc: "Requires DB running" },
-    { key: "2", name: "☁️ Supabase Cloud", desc: "No Redis" },
-    { key: "3", name: "☁️🔴 Supabase Cloud + Redis", desc: "Full Stack" },
-    { key: "B", name: "🗄️ Database Only", desc: "PostgreSQL standalone" },
-    { key: "C", name: "🎛️ pgAdmin UI Only", desc: "Requires DB running" },
-    { key: "D", name: "🚀 Start Dev Mode", desc: "Backend + Frontend locally" },
-    { key: "R", name: "🔄 Restart Dev Mode", desc: "Apply new changes" },
-    { key: "P", name: "🚀 Start Optimized Mode", desc: "Uses less RAM/CPU" },
-    { key: "M", name: "📊 Monitor Performance", desc: "Live stats" },
-    { key: "4", name: "📊 Show Status", desc: "" },
-    { key: "5", name: "🛑 Stop All Services", desc: "" },
-    { key: "6", name: "📜 View Logs", desc: "" },
-    { key: "7", name: "🗄️ Database Shell", desc: "" },
-    { key: "8", name: "🧹 Clean Docker System", desc: "" },
-    { key: "9", name: "🔄 Force Complete Rebuild", desc: "Removes all images" },
-    { key: "0", name: "🚪 Exit", desc: "" }
+    { key: "1", name: "🚀 Backend + Frontend Only", desc: "Start backend (port 8000) and frontend (port 3800). Requires database already running (option B)." },
+    { key: "2", name: "☁️ Supabase Cloud", desc: "Use remote Supabase database without Redis. Good for cloud testing." },
+    { key: "3", name: "☁️🔴 Supabase Cloud + Redis", desc: "Full production-like stack with Supabase database and Redis caching." },
+    { key: "B", name: "🗄️ Database Only", desc: "Start PostgreSQL 18 database only (port 5432). Run this first before option 1." },
+    { key: "C", name: "🎛️ pgAdmin UI Only", desc: "Start pgAdmin web interface for database management. Requires database running." },
+    { key: "D", name: "🚀 Start Dev Mode", desc: "Run backend and frontend locally (non-Docker) with hot reload for fastest development." },
+    { key: "R", name: "🔄 Restart Dev Mode", desc: "Rebuild and restart services to apply code changes. Use after modifying backend/frontend." },
+    { key: "P", name: "🚀 Start Optimized Mode", desc: "Performance mode with memory/CPU limits (256-512MB). Best for low-resource PCs." },
+    { key: "M", name: "📊 Monitor Performance", desc: "Real-time container resource usage, memory, disk, and system statistics." },
+    { key: "4", name: "📊 Show Status", desc: "Display running containers, ports, and health status for all services." },
+    { key: "5", name: "🛑 Stop All Services", desc: "Stop all running Docker containers (backend, frontend, database, Redis)." },
+    { key: "6", name: "📜 View Logs", desc: "View and tail logs from backend, frontend, database, or Redis containers." },
+    { key: "7", name: "🗄️ Database Shell", desc: "Open PostgreSQL psql shell for direct database access and SQL queries." },
+    { key: "8", name: "🧹 Clean Docker System", desc: "Remove dangling images, volumes, and build cache to free disk space." },
+    { key: "9", name: "🔄 Force Complete Rebuild", desc: "Remove all images and rebuild from scratch. Use when major changes aren't applying." },
+    { key: "0", name: "🚪 Exit", desc: "Exit the Docker management menu." }
   ];
 
   const sectionData = {
     id: 'docker-setup',
-    title: 'Docker Setup with docker-menu.sh',
+    title: 'Docker Setup with docker-menu.sh (local usage)',
     description: 'Complete guide to using the interactive Docker management system',
     icon: <HardDrive className="h-6 w-6 text-cyan-500" />,
     content: (
       <div className="space-y-6">
         <div>
-          <h4 className="text-lg font-semibold mb-3">Starting the Docker Menu</h4>
-          <CommandBox
-            command="cd docker-system && ./docker-menu.sh"
-            title="Launch Docker Management Menu"
-            description="Interactive menu system for all Docker operations"
-          />
+          <h4 className="text-lg font-semibold mb-3">Access Methods</h4>
+          <div className="space-y-3">
+            <CommandBox
+              command="./build-menu.sh"
+              title="🎯 Recommended: Convenience Wrapper (from project root)"
+              description="Easy access from anywhere in the project"
+            />
+            <CommandBox
+              command="./docker-system/docker-menu.sh"
+              title="Direct Access"
+              description="Access the actual implementation directly"
+            />
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+            💡 <strong>Tip:</strong> Both commands provide identical functionality. Use{' '}
+            <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">./build-menu.sh</code>{' '}
+            from the project root for convenience!
+          </p>
         </div>
 
         <div>
@@ -124,7 +136,7 @@ const DockerSetup: React.FC<DockerSetupProps> = ({ expandedSections, toggleSecti
           <div className="space-y-3">
             <Card className="p-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
               <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">
-                🥇 First-Time Setup:
+                🥇 First-Time Setup (Local Usage):
               </h5>
               <ol className="text-sm text-green-800 dark:text-green-200 space-y-1 list-decimal list-inside">
                 <li>Run option <strong>B</strong> to start PostgreSQL database</li>
@@ -135,7 +147,7 @@ const DockerSetup: React.FC<DockerSetupProps> = ({ expandedSections, toggleSecti
 
             <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
               <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                🔄 Development Cycle:
+                🔄 Development Cycle (Development Mode):
               </h5>
               <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
                 <li>Make code changes</li>
