@@ -2,15 +2,16 @@ import { ChevronDown, ChevronRight, Eye, Pencil, Trash2, Users } from "lucide-re
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Task } from "../api";
+import logger from "../utils/logger";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicPriorityBadge, HolographicStatusBadge } from "./ui/holographic-badges";
-import { TableCell, TableRow } from "./ui/table";
-import logger from "../utils/logger";
 import { ProgressDisplayEnhanced } from "./ui/ProgressDisplay";
+import { TableCell, TableRow } from "./ui/table";
 
 import LazySubtaskList from "./LazySubtaskList";
+import "./TaskRow.animations.css";
 
 // Lightweight task summary interface
 interface TaskSummary {
@@ -261,87 +262,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   if (isMobile) {
     // Mobile Card View
     return (
-      <>
-        {/* Animation CSS */}
-        <style>{`
-          @keyframes slideInFromRight {
-            0% {
-              transform: translateX(100%);
-              opacity: 0;
-            }
-            30% {
-              transform: translateX(20%);
-              opacity: 0.7;
-            }
-            70% {
-              transform: translateX(-5%);
-              opacity: 1;
-            }
-            100% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          @keyframes slideOutToRight {
-            0% {
-              transform: translateX(0);
-              opacity: 1;
-              height: auto;
-              max-height: 1000px;
-            }
-            40% {
-              transform: translateX(30%);
-              opacity: 0.6;
-              height: auto;
-              max-height: 1000px;
-            }
-            70% {
-              transform: translateX(80%);
-              opacity: 0.2;
-              height: auto;
-              max-height: 1000px;
-            }
-            85% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: auto;
-              max-height: 1000px;
-            }
-            100% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: 0;
-              max-height: 0;
-              margin: 0;
-              padding: 0;
-              border: 0;
-              overflow: hidden;
-            }
-          }
-          @keyframes shimmerBackground {
-            0% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: -100% 50%;
-            }
-          }
-
-          .task-updating-animation {
-            background: linear-gradient(90deg,
-              transparent 0%,
-              transparent 30%,
-              rgba(59, 130, 246, 0.3) 40%,
-              rgba(96, 165, 250, 0.3) 50%,
-              rgba(147, 197, 253, 0.3) 60%,
-              transparent 70%,
-              transparent 100%);
-            background-size: 200% 100%;
-            animation: shimmerBackground 2s linear infinite;
-          }
-        `}</style>
-
-        <div
+      <div
           className={`rounded-lg mb-3 cursor-pointer ${getAnimationClasses()}`}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
@@ -496,96 +417,16 @@ const TaskRow: React.FC<TaskRowProps> = ({
           {/* Show message when expanded but no subtasks */}
           {isExpanded && fullTask && summary.subtask_count === 0 && (
             <div className="border-t border-surface-border dark:border-gray-700 p-4 text-center text-sm text-muted-foreground">
-              No subtasks for this task.
+              No subtasks for this task - WORKING!
             </div>
           )}
           </div>
         </div>
-      </>
     );
   } else {
     // Desktop Table View
     return (
       <>
-        {/* Animation CSS */}
-        <style>{`
-          @keyframes slideInFromRight {
-            0% {
-              transform: translateX(100%);
-              opacity: 0;
-            }
-            30% {
-              transform: translateX(20%);
-              opacity: 0.7;
-            }
-            70% {
-              transform: translateX(-5%);
-              opacity: 1;
-            }
-            100% {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          @keyframes slideOutToRight {
-            0% {
-              transform: translateX(0);
-              opacity: 1;
-              height: auto;
-              max-height: 1000px;
-            }
-            40% {
-              transform: translateX(30%);
-              opacity: 0.6;
-              height: auto;
-              max-height: 1000px;
-            }
-            70% {
-              transform: translateX(80%);
-              opacity: 0.2;
-              height: auto;
-              max-height: 1000px;
-            }
-            85% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: auto;
-              max-height: 1000px;
-            }
-            100% {
-              transform: translateX(100%);
-              opacity: 0;
-              height: 0;
-              max-height: 0;
-              margin: 0;
-              padding: 0;
-              border: 0;
-              overflow: hidden;
-            }
-          }
-          @keyframes shimmerBackground {
-            0% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: -100% 50%;
-            }
-          }
-
-          .task-updating-animation {
-            background: linear-gradient(90deg,
-              transparent 0%,
-              transparent 30%,
-              rgba(59, 130, 246, 0.3) 40%,
-              rgba(96, 165, 250, 0.3) 50%,
-              rgba(147, 197, 253, 0.3) 60%,
-              transparent 70%,
-              transparent 100%);
-            background-size: 200% 100%;
-            animation: shimmerBackground 2s linear infinite;
-          }
-        `}</style>
-
         <TableRow
           className={`cursor-pointer ${getAnimationClasses()}`}
           style={getAnimationStyle()}
@@ -753,7 +594,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
         {isExpanded && fullTask && summary.subtask_count === 0 && (
           <TableRow className="theme-context-section">
             <TableCell colSpan={7} className="p-4 text-center text-sm text-muted-foreground">
-              No subtasks for this task.
+              No subtasks for this task
             </TableCell>
           </TableRow>
         )}

@@ -43,3 +43,47 @@ root.render(
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
+
+// HMR Client-Side Debugging (Development Only)
+if (import.meta.hot) {
+  console.log('🔥 HMR Client Initialized');
+
+  // Log when updates are applied
+  import.meta.hot.on('vite:beforeUpdate', (payload) => {
+    console.log('⚡ HMR Update Received:', {
+      type: payload.type,
+      updates: payload.updates?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Log after updates are applied
+  import.meta.hot.on('vite:afterUpdate', (payload) => {
+    console.log('✅ HMR Update Applied:', {
+      type: payload.type,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Log errors
+  import.meta.hot.on('vite:error', (payload) => {
+    console.error('❌ HMR Error:', {
+      error: payload.err,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Log when full reload is needed
+  import.meta.hot.on('vite:beforeFullReload', () => {
+    console.warn('🔄 Full Page Reload Required');
+  });
+
+  // Log WebSocket connection status
+  import.meta.hot.on('vite:ws:connect', () => {
+    console.log('🔌 HMR WebSocket Connected');
+  });
+
+  import.meta.hot.on('vite:ws:disconnect', () => {
+    console.warn('🔌 HMR WebSocket Disconnected');
+  });
+}

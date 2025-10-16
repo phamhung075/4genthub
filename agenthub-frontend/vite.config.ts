@@ -44,16 +44,69 @@ export default defineConfig(({ mode }) => {
   }
 
   // Load env file from parent directory (Vite will look for .env)
-  const env = loadEnv(mode, parentDir, '')
+  loadEnv(mode, parentDir, '')
+
+  // HMR Debug Plugin
+  const hmrDebugPlugin = {
+    name: 'hmr-debug',
+    handleHotUpdate({ file, server, modules }: any) {
+      const timestamp = new Date().toISOString()
+      console.log(`\n🔥 [${timestamp}] HMR Update Triggered`)
+      console.log(`   📄 File: ${file}`)
+      console.log(`   🔗 Modules affected: ${modules?.length || 0}`)
+
+      // Log file-based modules
+      const fileModules = server.moduleGraph.getModulesByFile(file)
+      console.log(`   📊 File modules in graph: ${fileModules?.size || 0}`)
+
+      if (modules && modules.length > 0) {
+        modules.forEach((mod: any, index: number) => {
+          console.log(`   ↳ Module ${index + 1}: ${mod.id || mod.url}`)
+          console.log(`      Type: ${mod.type || 'unknown'}`)
+          console.log(`      Importers: ${mod.importers?.size || 0}`)
+          console.log(`      Imported: ${mod.importedModules?.size || 0}`)
+
+          if (mod.importers && mod.importers.size > 0) {
+            const importersList = Array.from(mod.importers)
+              .slice(0, 3)
+              .map((imp: any) => imp.id || imp.url)
+            console.log(`      ⤷ Imported by: ${importersList.join(', ')}`)
+          }
+        })
+      } else {
+        console.log(`   ⚠️  No modules returned - HMR may not work!`)
+        console.log(`   💡 This usually means:`)
+        console.log(`      1. File isn't imported anywhere`)
+        console.log(`      2. Module graph hasn't loaded this file yet`)
+        console.log(`      3. File pattern doesn't match plugin includes`)
+      }
+
+      return undefined // Let Vite handle the update normally
+    },
+    configureServer(server: any) {
+      console.log('\n🚀 HMR Debug Plugin Enabled')
+      console.log('   Watching for file changes...\n')
+
+      // Log when HMR connection is established
+      server.ws.on('connection', () => {
+        console.log('🔌 HMR WebSocket connection established')
+      })
+
+      // Log HMR errors
+      server.ws.on('error', (error: any) => {
+        console.error('❌ HMR WebSocket error:', error)
+      })
+    }
+  }
 
   return {
-  plugins: [react()],
+  plugins: [react(), hmrDebugPlugin],
   server: {
     host: '0.0.0.0',
     port: 3800,
     hmr: {
       protocol: 'ws',
-      host: '0.0.0.0',
+      host: 'localhost',
       port: 3800,
       clientPort: 3800
     },
@@ -74,7 +127,7 @@ export default defineConfig(({ mode }) => {
     alias: {
       '@': path.resolve(__dirname, './src')
     },
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.css']
   },
   build: {
     outDir: 'build'
