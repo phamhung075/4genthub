@@ -19,6 +19,8 @@ class TaskSummaryDTO(BaseModel):
     has_dependencies: bool
     dependency_count: Optional[int] = None
     has_context: bool
+    git_branch_id: Optional[str] = None  # Required by frontend Pydantic validation
+    project_id: Optional[str] = None  # Required by frontend Pydantic validation
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 

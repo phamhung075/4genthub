@@ -74,25 +74,43 @@ async def get_current_user_from_middleware(
             # If user doesn't exist in local DB, create from auth info
             auth_info = getattr(request.state, 'auth_info', {})
             email = auth_info.get('email') if isinstance(auth_info, dict) else None
-            
+
             if email:
                 logger.info(f"Creating new user record for authenticated user: {user_id}")
-                
+
                 from ..domain.entities.user import UserStatus, UserRole
-                
-                # Create domain user  
-                domain_user = User(
-                    id=user_id,
-                    email=email,
-                    username=email.split('@')[0],  # Use email prefix as username
-                    password_hash="",  # Empty for JWT-authenticated users
-                    status=UserStatus.ACTIVE,
-                    roles=[UserRole.USER]  # Fixed: roles is a list, not singular role
-                )
-                
-                # Save to database
-                user = await user_repository.save(domain_user)
-                logger.info(f"Created new user: {user.id}")
+                from sqlalchemy.exc import IntegrityError
+
+                try:
+                    # Create domain user
+                    domain_user = User(
+                        id=user_id,
+                        email=email,
+                        username=email.split('@')[0],  # Use email prefix as username
+                        password_hash="",  # Empty for JWT-authenticated users
+                        status=UserStatus.ACTIVE,
+                        roles=[UserRole.USER]  # Fixed: roles is a list, not singular role
+                    )
+
+                    # Save to database with transaction handling
+                    user = await user_repository.save(domain_user)
+                    db.commit()  # CRITICAL: Commit the transaction
+                    logger.info(f"Created new user: {user.id}")
+
+                except IntegrityError:
+                    # Race condition: another request created the user first
+                    logger.warning(f"User {user_id} was created by another request, fetching...")
+                    db.rollback()  # Rollback the failed transaction
+
+                    # Retry fetching the user
+                    user = user_repository.find_by_id(user_id)
+                    if not user:
+                        # Still not found - this shouldn't happen but handle it
+                        logger.error(f"User {user_id} still not found after race condition")
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to create or retrieve user"
+                        )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -101,7 +119,10 @@ async def get_current_user_from_middleware(
                 )
         
         return user
-        
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401, 500) without modification
+        raise
     except Exception as e:
         logger.error(f"Error retrieving user {user_id} from database: {e}")
         raise HTTPException(
@@ -169,31 +190,48 @@ async def get_current_user_supabase(
             # Create user from Supabase data if not exists
             email = supabase_user.email if hasattr(supabase_user, 'email') else supabase_user.get('email')
             user_metadata = supabase_user.user_metadata if hasattr(supabase_user, 'user_metadata') else supabase_user.get('user_metadata', {})
-            
+
             from ..domain.entities.user import UserStatus, UserRole
             from ..infrastructure.database.models import User as UserModel
-            
-            # Create domain user
-            domain_user = User(
-                id=user_id,
-                email=email,
-                username=user_metadata.get('username', email.split('@')[0] if email else 'user'),
-                full_name=user_metadata.get('full_name', ''),
-                password_hash="",  # No password stored for Supabase users
-                status=UserStatus.ACTIVE,
-                roles=[UserRole.USER],
-                email_verified=True  # Supabase users are verified through Supabase
-            )
-            
-            # Convert to database model and save
-            db_user = UserModel.from_domain(domain_user)
-            db.add(db_user)
-            db.commit()
-            
-            # Convert back to domain entity
-            user = db_user.to_domain()
-            
-            logger.info(f"Created local user from Supabase auth: {user.email}")
+            from sqlalchemy.exc import IntegrityError
+
+            try:
+                # Create domain user
+                domain_user = User(
+                    id=user_id,
+                    email=email,
+                    username=user_metadata.get('username', email.split('@')[0] if email else 'user'),
+                    full_name=user_metadata.get('full_name', ''),
+                    password_hash="",  # No password stored for Supabase users
+                    status=UserStatus.ACTIVE,
+                    roles=[UserRole.USER],
+                    email_verified=True  # Supabase users are verified through Supabase
+                )
+
+                # Convert to database model and save
+                db_user = UserModel.from_domain(domain_user)
+                db.add(db_user)
+                db.commit()
+
+                # Convert back to domain entity
+                user = db_user.to_domain()
+
+                logger.info(f"Created local user from Supabase auth: {user.email}")
+
+            except IntegrityError:
+                # Race condition: another request created the user first
+                logger.warning(f"User {user_id} was created by another request during Supabase auth, fetching...")
+                db.rollback()  # Rollback the failed transaction
+
+                # Retry fetching the user
+                user = user_repository.find_by_id(user_id)
+                if not user:
+                    # Still not found - this shouldn't happen but handle it
+                    logger.error(f"User {user_id} still not found after race condition in Supabase auth")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to create or retrieve user from Supabase"
+                    )
         
         return user
         

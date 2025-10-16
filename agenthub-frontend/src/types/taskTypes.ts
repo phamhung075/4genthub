@@ -9,6 +9,37 @@
 export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'review' | 'testing' | 'done' | 'cancelled';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 
+/**
+ * TaskSummary - Lightweight task data for list views
+ *
+ * This is the optimized version of Task used in LazyTaskList for performance.
+ * Loads only essential fields without full task details.
+ *
+ * @property id - Unique task identifier (UUID)
+ * @property title - Task title (max 200 chars)
+ * @property status - Current task status ('todo' | 'in_progress' | 'done' | etc.)
+ * @property priority - Task priority level ('low' | 'medium' | 'high' | 'urgent' | 'critical')
+ * @property subtask_count - Denormalized count of subtasks (for performance)
+ * @property assignees_count - Number of assigned agents
+ * @property assignees - Optional array of assigned agent IDs
+ * @property has_dependencies - Whether task has blocking dependencies
+ * @property dependency_count - Optional count of dependencies
+ * @property has_context - Whether task has additional context data
+ * @property created_at - ISO 8601 timestamp
+ * @property updated_at - ISO 8601 timestamp
+ *
+ * @example
+ * const taskSummary: TaskSummary = {
+ *   id: '123e4567-e89b-12d3-a456-426614174000',
+ *   title: 'Implement user authentication',
+ *   status: 'in_progress',
+ *   priority: 'high',
+ *   subtask_count: 3,
+ *   assignees_count: 2,
+ *   has_dependencies: false,
+ *   has_context: true
+ * };
+ */
 export interface TaskSummary {
   id: string;
   title: string;
@@ -24,6 +55,24 @@ export interface TaskSummary {
   updated_at?: string;
 }
 
+/**
+ * SubtaskSummary - Lightweight subtask data for list views
+ *
+ * Optimized version of Subtask used in LazySubtaskList component.
+ * Reduces API payload by loading only essential fields.
+ *
+ * @property id - Unique subtask identifier (UUID)
+ * @property title - Subtask title
+ * @property status - Current subtask status
+ * @property priority - Subtask priority level
+ * @property assignees_count - Number of assigned agents (inherited from parent if not set)
+ * @property assignees - Optional array of assigned agent IDs
+ * @property progress_percentage - Completion percentage (0-100)
+ * @property created_at - ISO 8601 timestamp
+ * @property updated_at - ISO 8601 timestamp
+ *
+ * @see {@link SubtaskSummary} matches backend SubtaskSummaryDTO
+ */
 export interface SubtaskSummary {
   id: string;
   title: string;

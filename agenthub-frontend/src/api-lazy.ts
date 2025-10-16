@@ -25,30 +25,39 @@ export const getTaskSummaries = async (params?: {
   limit?: number;
   git_branch_id?: string;
 }): Promise<TaskSummariesResponse> => {
-  // For now, get full tasks and convert to summaries
-  // Backend could optimize this with a dedicated endpoint
-  const response = await taskApiV2.getTasks({ git_branch_id: params?.git_branch_id });
-  const tasks = (response as any).tasks || [];
-  
-  const summaries: TaskSummary[] = tasks.map((task: Task) => ({
-    id: task.id,
-    title: task.title,
-    status: task.status,
-    priority: task.priority,
-    subtask_count: task.subtasks?.length || 0,
-    assignees_count: task.assignees?.length || 0,
-    has_dependencies: !!(task.dependencies?.length),
-    has_context: !!task.context_id,
-    created_at: task.created_at,
-    updated_at: task.updated_at
-  }));
-  
+  // Use the optimized /api/tasks/summaries endpoint with denormalized subtask_count
+  const token = Cookies.get('access_token');
+  if (!token) {
+    return { tasks: [], total: 0, page: 1, limit: 50, has_more: false };
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/tasks/summaries`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      git_branch_id: params?.git_branch_id,
+      page: params?.page || 1,
+      limit: params?.limit || 50
+    }),
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    logger.error(`Failed to fetch task summaries: ${response.status}`);
+    return { tasks: [], total: 0, page: 1, limit: 50, has_more: false };
+  }
+
+  const data = await response.json();
+
   return {
-    tasks: summaries,
-    total: summaries.length,
-    page: params?.page || 1,
-    limit: params?.limit || 50,
-    has_more: false
+    tasks: data.tasks || [],
+    total: data.total || 0,
+    page: data.page || 1,
+    limit: data.limit || 50,
+    has_more: data.has_more || false
   };
 };
 

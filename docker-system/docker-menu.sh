@@ -354,6 +354,7 @@ show_main_menu() {
     echo "  B) 🗄️  Database Only (PostgreSQL standalone)"
     echo "  C) 🔍 Check PostgreSQL Connection (automatic test)"
     echo "  G) 🎛️  pgAdmin UI Only (requires DB running)"
+    echo "  X) 🗑️  Clean Database Volume (Fresh Schema)"
     echo ""
     echo -e "${CYAN}${BOLD}💻 Development Mode (Non-Docker)${RESET}"
     echo "────────────────────────────────────────────────"
@@ -635,6 +636,84 @@ start_postgresql_with_ui() {
     echo "     Database: ${DATABASE_NAME:-agenthub}"
     echo "     Username: ${DATABASE_USER:-agenthub_user}"
     echo "     Password: ${DATABASE_PASSWORD:-P02tqbj016p9}"
+}
+
+# Clean Database Volume (Option X - Remove PostgreSQL data for fresh schema)
+clean_database_volume() {
+    echo -e "${RED}${BOLD}🗑️  Clean Database Volume${RESET}"
+    echo ""
+
+    # First, detect which volume is actually being used
+    local actual_volume=""
+    if docker ps -a | grep -q agenthub-postgres; then
+        echo -e "${CYAN}🔍 Detecting PostgreSQL volume...${RESET}"
+        actual_volume=$(docker inspect agenthub-postgres 2>/dev/null | grep -A 5 '"Mounts"' | grep '"Name"' | sed 's/.*"Name": "\(.*\)".*/\1/' | head -1)
+        if [[ -n "$actual_volume" ]]; then
+            echo -e "${GREEN}Found volume: ${BLUE}${actual_volume}${RESET}"
+        fi
+    fi
+
+    echo ""
+    echo -e "${YELLOW}This will:${RESET}"
+    echo "  - Stop and remove PostgreSQL container"
+    if [[ -n "$actual_volume" ]]; then
+        echo "  - Remove PostgreSQL volume: ${actual_volume}"
+    else
+        echo "  - Remove PostgreSQL volumes (will search for postgres-related volumes)"
+    fi
+    echo "  - ⚠️  ALL DATABASE DATA WILL BE LOST"
+    echo "  - Next start will create fresh database with current schema"
+    echo ""
+    echo -e "${RED}${BOLD}USE CASE:${RESET} ${CYAN}When you've added new columns/tables in code and need fresh schema${RESET}"
+    echo ""
+    read -p "Are you sure you want to delete all database data? Type 'yes' to confirm: " confirm
+
+    if [[ "$confirm" == "yes" ]]; then
+        echo -e "${YELLOW}🛑 Stopping PostgreSQL container...${RESET}"
+        docker stop agenthub-postgres 2>/dev/null || true
+
+        echo -e "${YELLOW}🗑️  Removing PostgreSQL container...${RESET}"
+        docker rm agenthub-postgres 2>/dev/null || true
+
+        # Remove the detected volume or search for postgres volumes
+        if [[ -n "$actual_volume" ]]; then
+            echo -e "${YELLOW}🗑️  Removing PostgreSQL volume (${actual_volume})...${RESET}"
+            if docker volume rm "$actual_volume" 2>/dev/null; then
+                echo -e "${GREEN}✅ Volume removed successfully!${RESET}"
+            else
+                echo -e "${RED}⚠️  Failed to remove volume (may be in use)${RESET}"
+            fi
+        else
+            echo -e "${YELLOW}🔍 Searching for postgres-related volumes...${RESET}"
+            local postgres_volumes=$(docker volume ls -q | grep -E "(postgres|agenthub)" 2>/dev/null)
+            if [[ -n "$postgres_volumes" ]]; then
+                echo -e "${YELLOW}Found volumes:${RESET}"
+                echo "$postgres_volumes"
+                read -p "Remove these volumes? (y/N): " remove_all
+                if [[ "$remove_all" =~ ^[Yy]$ ]]; then
+                    for vol in $postgres_volumes; do
+                        echo "  Removing $vol..."
+                        docker volume rm "$vol" 2>/dev/null || echo "    (skipped - may be in use)"
+                    done
+                    echo -e "${GREEN}✅ Volumes removed${RESET}"
+                fi
+            else
+                echo -e "${YELLOW}No postgres volumes found${RESET}"
+            fi
+        fi
+
+        echo ""
+        echo -e "${GREEN}✅ Database cleanup complete!${RESET}"
+        echo ""
+        echo -e "${CYAN}${BOLD}Next Steps:${RESET}"
+        echo "  1. Use option B to start PostgreSQL"
+        echo "  2. ORM will create tables with current schema automatically"
+        echo "  3. Start backend (dev mode or Docker)"
+        echo ""
+        echo -e "${YELLOW}💡 TIP: This is useful after adding new columns like 'subtask_count'${RESET}"
+    else
+        echo -e "${YELLOW}Cancelled - database volume preserved${RESET}"
+    fi
 }
 
 # Build and start Supabase Cloud configuration
@@ -1630,6 +1709,7 @@ main() {
             [Bb]) start_database_only ;;
             [Cc]) check_postgresql_connection ;;
             [Gg]) start_postgresql_with_ui ;;
+            [Xx]) clean_database_volume ;;
             [Dd]) start_dev_mode ;;
             [Rr]) restart_dev_mode ;;
             [Pp]) start_optimized_mode ;;

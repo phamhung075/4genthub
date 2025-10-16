@@ -159,11 +159,19 @@ def task_summary_to_dto(task: Any) -> TaskSummaryDTO:
     - Entity objects from ORM (task.id, task.title, etc.)
     - Dict objects from performance mode (task['id'], task['title'], etc.)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     # Handle dict input (performance mode)
     if isinstance(task, dict):
+        logger.info(f"🔍 CONVERTER (dict mode) - Task {task.get('id', 'unknown')[:8]}")
+        logger.info(f"  - subtask_count in dict: {task.get('subtask_count', 'MISSING')}")
+        logger.info(f"  - project_id in dict: {task.get('project_id', 'MISSING')}")
+        logger.info(f"  - git_branch_id in dict: {task.get('git_branch_id', 'MISSING')}")
+
         assignees = task.get('assignees') or []
         dependencies = task.get('dependencies') or []
-        return TaskSummaryDTO(
+        dto = TaskSummaryDTO(
             id=str(task['id']),
             title=task['title'],
             status=str(task['status']),
@@ -174,14 +182,25 @@ def task_summary_to_dto(task: Any) -> TaskSummaryDTO:
             has_dependencies=bool(dependencies),
             dependency_count=len(dependencies),
             has_context=bool(task.get('context_id')),
+            git_branch_id=task.get('git_branch_id'),  # Required by frontend validation
+            project_id=task.get('project_id'),  # Required by frontend validation
             created_at=_format_datetime(task.get('created_at')),
             updated_at=_format_datetime(task.get('updated_at'))
         )
+        logger.info(f"  ✅ DTO created with subtask_count={dto.subtask_count}")
+        return dto
 
     # Handle entity object input (standard ORM mode)
+    logger.info(f"🔍 CONVERTER (entity mode) - Task {str(task.id)[:8]}")
+    logger.info(f"  - hasattr subtask_count: {hasattr(task, 'subtask_count')}")
+    if hasattr(task, 'subtask_count'):
+        logger.info(f"  - subtask_count value: {task.subtask_count}")
+    logger.info(f"  - hasattr project_id: {hasattr(task, 'project_id')}")
+    logger.info(f"  - hasattr git_branch_id: {hasattr(task, 'git_branch_id')}")
+
     assignees = task.assignees if task.assignees else []
     dependencies = task.dependencies if hasattr(task, 'dependencies') and task.dependencies else []
-    return TaskSummaryDTO(
+    dto = TaskSummaryDTO(
         id=str(task.id),
         title=task.title,
         status=str(task.status),
@@ -192,9 +211,13 @@ def task_summary_to_dto(task: Any) -> TaskSummaryDTO:
         has_dependencies=bool(dependencies),
         dependency_count=len(dependencies),
         has_context=bool(getattr(task, 'context_id', None)),
+        git_branch_id=str(getattr(task, 'git_branch_id', None)) if getattr(task, 'git_branch_id', None) else None,  # Required by frontend validation
+        project_id=str(getattr(task, 'project_id', None)) if getattr(task, 'project_id', None) else None,  # Required by frontend validation
         created_at=_format_datetime(getattr(task, 'created_at', None)),
         updated_at=_format_datetime(getattr(task, 'updated_at', None))
     )
+    logger.info(f"  ✅ DTO created with subtask_count={dto.subtask_count}, project_id={dto.project_id}")
+    return dto
 
 
 def subtask_summary_to_dto(subtask: Any) -> SubtaskSummaryDTO:

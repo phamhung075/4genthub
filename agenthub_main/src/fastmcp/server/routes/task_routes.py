@@ -120,7 +120,6 @@ async def get_task_summaries(
         git_branch_id = data.get("git_branch_id")
         page = data.get("page", 1)
         limit = data.get("limit", 20)
-        include_counts = data.get("include_counts", True)
         status_filter = data.get("status_filter")
         priority_filter = data.get("priority_filter")
         
@@ -155,7 +154,6 @@ async def get_task_summaries(
             filters=filters,
             offset=offset,
             limit=limit,
-            include_counts=include_counts,
             user_id=user_id,
             session=db
         )
@@ -167,28 +165,39 @@ async def get_task_summaries(
             )
 
         tasks_data = task_result.tasks or []
-        
+
         # Convert to task summaries
         task_summaries = []
-        for task_data in tasks_data:
+        for task_dto in tasks_data:
+            # task_dto is now a TaskSummaryDTO Pydantic model, not a dict
+            # Convert to dict for JSON response
+            task_dict = task_dto.model_dump() if hasattr(task_dto, 'model_dump') else task_dto.dict()
+
+            # 🔍 DEBUG: Log task_data from DTO
+            logger.info(f"🔍 REST API DEBUG - Task {task_dict.get('id', 'unknown')[:8] if task_dict.get('id') else 'no-id'}...")
+            logger.info(f"  - title: {task_dict.get('title')}")
+            logger.info(f"  - subtask_count value: {task_dict.get('subtask_count', 'KEY NOT FOUND')}")
+
             # Check if task has context - use API controller
-            has_context = False
-            if include_counts:
-                context_result = context_controller.get_context("task", task_data.get("id"), False, user_id, db)
-                has_context = context_result.success if context_result else False
+            context_result = context_controller.get_context("task", task_dict.get("id"), False, user_id, db)
+            has_context = context_result.success if context_result else False
 
             summary = {
-                "id": task_data["id"],
-                "title": task_data["title"],
-                "status": task_data["status"],
-                "priority": task_data["priority"],
-                "subtask_count": len(task_data.get("subtasks", [])),
-                "assignees_count": len(task_data.get("assignees", [])),
-                "has_dependencies": bool(task_data.get("dependencies")),
+                "id": task_dict["id"],
+                "title": task_dict["title"],
+                "status": task_dict["status"],
+                "priority": task_dict["priority"],
+                "subtask_count": task_dict.get("subtask_count", 0),  # Use denormalized count from database
+                "assignees_count": task_dict.get("assignees_count", 0),
+                "has_dependencies": task_dict.get("has_dependencies", False),
                 "has_context": has_context,
-                "created_at": task_data.get("created_at"),
-                "updated_at": task_data.get("updated_at")
+                "git_branch_id": task_dict.get("git_branch_id"),  # Required by frontend
+                "project_id": task_dict.get("project_id"),  # Required by frontend
+                "created_at": task_dict.get("created_at"),
+                "updated_at": task_dict.get("updated_at")
             }
+
+            logger.info(f"  - REST summary subtask_count: {summary['subtask_count']}")
             task_summaries.append(summary)
         
         # Calculate pagination info
