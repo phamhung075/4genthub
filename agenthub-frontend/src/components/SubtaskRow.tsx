@@ -285,7 +285,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
       {/* Subtask Details Row */}
       {showDetails && fullSubtask && (
         <TableRow className="bg-blue-50/30 dark:bg-blue-950/10">
-          <TableCell colSpan={5} className="pl-12">
+          <TableCell colSpan={7} className="pl-12">
             <div className="py-2 space-y-2">
               <div className="text-xs text-gray-600 dark:text-gray-400">
                 <strong>Description:</strong> {fullSubtask.description || 'No description'}
