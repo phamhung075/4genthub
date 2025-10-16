@@ -1924,7 +1924,7 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 4,
+      "count": 6,
       "files": [
         {
           "hash": "78c3a28ee9cebf141b9cce54e940a710",
@@ -1946,6 +1946,20 @@
           "name": "context-system-review-20251016.md",
           "path": "reports-status/context-system-review-20251016.md",
           "size": 19311
+        },
+        {
+          "hash": "f74e4c30fbdc5405af2b364bc8c76521",
+          "modified": "2025-10-16T05:31:34.204217",
+          "name": "development-guides-review-20251016.md",
+          "path": "reports-status/development-guides-review-20251016.md",
+          "size": 20795
+        },
+        {
+          "hash": "ea600229ef76395339e7121c485308f5",
+          "modified": "2025-10-16T05:31:59.281415",
+          "name": "core-architecture-review-20251016.md",
+          "path": "reports-status/core-architecture-review-20251016.md",
+          "size": 40644
         },
         {
           "hash": "aefffc76577229c828fe92ed026e86b6",
@@ -2422,7 +2436,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T05:27:58.218503",
+  "generated_at": "2025-10-16T05:31:59.358976",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -2783,7 +2797,9 @@
         "api-integration-review-20251016.md",
         "architecture-accuracy-audit-20251016.md",
         "authentication-review-20251016.md",
-        "context-system-review-20251016.md"
+        "context-system-review-20251016.md",
+        "core-architecture-review-20251016.md",
+        "development-guides-review-20251016.md"
       ]
     },
     "security": {
@@ -2859,5 +2875,5 @@
     }
   },
   "total_directories": 31,
-  "total_files": 323
+  "total_files": 325
 }
