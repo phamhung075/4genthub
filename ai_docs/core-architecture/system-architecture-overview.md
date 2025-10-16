@@ -128,7 +128,7 @@ graph TB
 
 ### Backend Technologies
 ```
-Language:         Python 3.11+
+Language:         Python 3.14+
 Framework:        FastMCP (custom MCP server framework)
 ORM:              SQLAlchemy 2.0+
 Database:         SQLite (dev) / PostgreSQL (prod)

@@ -113,6 +113,20 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 
 ## Documentation Architecture
 
+  This is a critical quality control principle: AI
+  documentation should be curated, not cluttered. Every
+  document should provide clear value - either teaching
+  current architecture, solving problems, or guiding
+  decisions. Anything else is noise that degrades AI
+  performance
+
+1. **Cleaner documentation structure** - No duplicates, clear organization
+2. **Accurate architecture representation** - Matches current DDD system
+3. **Better maintainability** - Single source of truth for each topic
+4. **Improved discoverability** - Consolidated content easier to find
+5. **Up-to-date references** - All examples and patterns current
+6. **Professional documentation** - Consistent, comprehensive, accurate
+
 ### AI Documentation System Overview
 The documentation system provides intelligent tracking, automatic indexing, and selective enforcement to help AI agents maintain high-quality documentation while not disrupting workflow.
 
