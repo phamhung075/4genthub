@@ -1,14 +1,14 @@
 # Production Backend Dockerfile for agenthub with MCP Support
 # Multi-stage build optimized for production deployment with full MCP protocol support
 # Features: Security hardening, minimal image size, optimized layers, SSE/MCP support, multi-platform support
-# Version: 2.0.5 - Use specific image digest to force ARM64 pull (2025-10-12)
+# Version: 2.0.6 - Updated to Python 3.14-slim-bookworm (2025-10-15)
 
 # syntax=docker/dockerfile:1
 # Enable BuildKit for multi-platform builds
 
 # Stage 1: Builder
 # Using full image specification to bypass cache and ensure ARM64
-FROM python:3.11.11-slim-bookworm as builder
+FROM python:3.14-slim-bookworm as builder
 
 WORKDIR /build
 
@@ -23,18 +23,17 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir uv
 
-# Copy dependency files
-COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md agenthub_main/requirements.txt ./agenthub_main/
+# Copy dependency files (pyproject.toml is the single source of truth)
+COPY agenthub_main/pyproject.toml agenthub_main/uv.lock* agenthub_main/README.md ./agenthub_main/
 
 # Install dependencies in a virtual environment (single layer)
 WORKDIR /build/agenthub_main
 RUN uv venv /opt/venv && \
-    uv pip install --python /opt/venv/bin/python --no-cache . && \
-    uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
+    uv pip install --python /opt/venv/bin/python --no-cache .
 
 # Stage 2: Production Runtime
 # Using full image specification to bypass cache and ensure ARM64
-FROM python:3.11.11-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 # Build arguments grouped by frequency of change (optimization for Docker layer caching)
 # Group 1: Static/Rarely Changed - Environment type, ports, defaults, and basic configurations
