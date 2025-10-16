@@ -29,6 +29,7 @@ class TaskResponse:
     progress_percentage: int = 0  # Task completion progress (0-100)
     progress_history: Optional[Dict[str, Any]] = None  # Full progress history structure
     progress_count: int = 0  # Number of progress entries
+    subtask_count: int = 0  # Denormalized subtask count from database for performance
     
     def __init__(
             self,
@@ -52,7 +53,8 @@ class TaskResponse:
             dependency_relationships: Optional[DependencyRelationships] = None,
             progress_percentage: int = 0,
             progress_history: Optional[Dict[str, Any]] = None,
-            progress_count: int = 0
+            progress_count: int = 0,
+            subtask_count: int = 0
         ):
         """Initialize TaskResponse following clean relationship chain with git_branch_id, context_id, and context_data"""
         self.id = id
@@ -75,7 +77,8 @@ class TaskResponse:
         self.dependency_relationships = dependency_relationships
         self.progress_percentage = progress_percentage
         self.progress_history = progress_history or {}
-        self.progress_count = progress_count    
+        self.progress_count = progress_count
+        self.subtask_count = subtask_count    
     @classmethod
     def from_domain(cls, task, context_data: Optional[Dict[str, Any]] = None, 
                    dependency_relationships: Optional[DependencyRelationships] = None) -> 'TaskResponse':
@@ -120,7 +123,8 @@ class TaskResponse:
             dependency_relationships=dependency_relationships,
             progress_percentage=task_dict.get("progress_percentage", 0),
             progress_history=progress_history,
-            progress_count=progress_count
+            progress_count=progress_count,
+            subtask_count=task_dict.get("subtask_count", 0)
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -146,5 +150,6 @@ class TaskResponse:
             "dependency_relationships": self.dependency_relationships.to_dict() if self.dependency_relationships else None,
             "progress_percentage": self.progress_percentage,
             "progress_history": self.progress_history,  # Full progress history structure
-            "progress_count": self.progress_count  # Number of progress entries
+            "progress_count": self.progress_count,  # Number of progress entries
+            "subtask_count": self.subtask_count  # Denormalized subtask count from database
         } 

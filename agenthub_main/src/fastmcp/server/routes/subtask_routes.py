@@ -174,25 +174,37 @@ async def list_subtasks_for_task(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """List all subtasks for a specific task"""
+    logger.info(f"🔵 [ROUTE] GET /api/v2/subtasks/task/{task_id} - Request received")
+    logger.info(f"🔵 [ROUTE] User ID: {current_user.id}, User Email: {current_user.email}")
+
     try:
+        logger.info(f"🔵 [ROUTE] Calling controller.list_subtasks for task_id={task_id}")
         result = subtask_controller.list_subtasks(
             task_id=task_id,
             user_id=current_user.id,
             session=db
         )
 
+        logger.info(f"🔵 [ROUTE] Controller returned: success={result.success}, total={result.total}")
+        logger.info(f"🔵 [ROUTE] Subtasks count: {len(result.subtasks) if result.subtasks else 0}")
+        if result.subtasks:
+            logger.info(f"🔵 [ROUTE] Subtask IDs: {[st.id for st in result.subtasks]}")
+
         if not result.success:
+            logger.warning(f"🔵 [ROUTE] Controller returned failure: {result.error}")
             raise HTTPException(
                 status_code=400,
                 detail=result.error or "Failed to list subtasks"
             )
 
-        return result.model_dump(by_alias=True)
-        
+        response = result.model_dump(by_alias=True)
+        logger.info(f"🔵 [ROUTE] Returning response with {len(response.get('subtasks', []))} subtasks")
+        return response
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error listing subtasks for task {task_id}: {e}")
+        logger.error(f"🔴 [ROUTE ERROR] Error listing subtasks for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

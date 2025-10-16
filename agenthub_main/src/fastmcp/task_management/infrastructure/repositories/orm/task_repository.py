@@ -174,6 +174,11 @@ class ORMTaskRepository(
     
     def _model_to_entity(self, task: Task) -> TaskEntity:
         """Convert SQLAlchemy model to domain entity with graceful error handling"""
+        # 🔍 DEBUG: Log subtask_count from database model
+        logger.info(f"🔍 REPOSITORY _model_to_entity - Task {task.id[:8] if task.id else 'unknown'}...")
+        logger.info(f"  - title: {task.title}")
+        logger.info(f"  - subtask_count from DB model: {getattr(task, 'subtask_count', 'ATTRIBUTE NOT FOUND')}")
+
         # Get assignee IDs with error handling
         assignee_ids = []
         try:
@@ -238,17 +243,21 @@ class ORMTaskRepository(
             user_id=getattr(task, 'user_id', None),
             context_id=task.context_id,
             subtasks=subtask_ids,
+            subtask_count=getattr(task, 'subtask_count', 0),  # Load subtask_count from database
             dependencies=dependency_ids
         )
-        
+
+        # 🔍 DEBUG: Verify entity has the subtask_count value
+        logger.info(f"  - Entity created with subtask_count: {entity.subtask_count}")
+
         # Map progress_percentage from database to overall_progress in entity
         if hasattr(task, 'progress_percentage'):
             entity.overall_progress = task.progress_percentage
-        
+
         # Map completion_summary from database to entity (Vision System field)
         if hasattr(task, 'completion_summary') and task.completion_summary:
             entity._completion_summary = task.completion_summary
-        
+
         return entity
 
     def _entity_to_model_dict(self, task: TaskEntity) -> dict[str, Any]:
@@ -275,6 +284,7 @@ class ORMTaskRepository(
             "estimated_effort": _ensure_estimated_effort_default(task.estimated_effort),
             "due_date": task.due_date,
             "context_id": task.context_id,
+            "subtask_count": task.subtask_count,  # Include denormalized subtask count for DDD persistence
         }
 
         # Handle optional progress percentage field

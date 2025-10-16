@@ -75,6 +75,22 @@ const TaskRow: React.FC<TaskRowProps> = ({
   onRegisterCallbacks,
   onUnregisterCallbacks
 }) => {
+  // 🔴 CRITICAL: Detect which mode is being used - only log when expanded or when state changes
+  React.useEffect(() => {
+    if (isExpanded) {
+      console.log('[TaskRow] 📱 TASK EXPANDED:', {
+        taskId: summary.id,
+        taskTitle: summary.title,
+        mode: isMobile ? 'MOBILE' : 'DESKTOP',
+        isExpanded,
+        hasFullTask: !!fullTask,
+        fullTask: fullTask ? { id: fullTask.id, status: fullTask.status } : null,
+        subtask_count: summary.subtask_count,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [isExpanded, summary.id, summary.title, summary.subtask_count, isMobile, fullTask]);
+
   // Navigation hook for task detail URLs
   const navigate = useNavigate();
 
@@ -331,8 +347,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
                 size="icon"
                 className="h-8 w-8"
                 onClick={(e) => {
+                  console.log('[TaskRow] 🖱️ MOBILE expand button clicked:', {
+                    taskId: summary.id,
+                    taskTitle: summary.title,
+                    currentIsExpanded: isExpanded,
+                    timestamp: new Date().toISOString()
+                  });
                   e.stopPropagation();
                   onToggleExpansion();
+                  console.log('[TaskRow] 🔄 MOBILE onToggleExpansion called');
                 }}
                 disabled={isLoading}
               >
@@ -402,7 +425,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
           </div>
 
           {/* Expanded Content - Only render LazySubtaskList if task has subtasks */}
-          {isExpanded && fullTask && summary.subtask_count > 0 && (
+          {(() => {
+            const shouldRenderSubtasks = isExpanded && fullTask && summary.subtask_count > 0;
+            console.log('[TaskRow] 🔍 MOBILE Subtask render decision:', {
+              taskId: summary.id,
+              taskTitle: summary.title,
+              isExpanded,
+              hasFullTask: !!fullTask,
+              subtask_count: summary.subtask_count,
+              shouldRenderSubtasks,
+              timestamp: new Date().toISOString()
+            });
+            return shouldRenderSubtasks;
+          })() && (
             <div className="border-t border-surface-border dark:border-gray-700">
               <div className="border-blue-400 dark:border-blue-600">
                 <LazySubtaskList
@@ -438,8 +473,15 @@ const TaskRow: React.FC<TaskRowProps> = ({
               variant="ghost"
               size="icon"
               onClick={(e) => {
+                console.log('[TaskRow] 🖱️ DESKTOP expand button clicked:', {
+                  taskId: summary.id,
+                  taskTitle: summary.title,
+                  currentIsExpanded: isExpanded,
+                  timestamp: new Date().toISOString()
+                });
                 e.stopPropagation();
                 onToggleExpansion();
+                console.log('[TaskRow] 🔄 DESKTOP onToggleExpansion called');
               }}
               disabled={isLoading}
             >
@@ -576,7 +618,19 @@ const TaskRow: React.FC<TaskRowProps> = ({
         </TableRow>
 
         {/* Only render LazySubtaskList if task has subtasks */}
-        {isExpanded && fullTask && summary.subtask_count > 0 && (
+        {(() => {
+          const shouldRenderSubtasks = isExpanded && fullTask && summary.subtask_count > 0;
+          console.log('[TaskRow] 🔍 DESKTOP Subtask render decision:', {
+            taskId: summary.id,
+            taskTitle: summary.title,
+            isExpanded,
+            hasFullTask: !!fullTask,
+            subtask_count: summary.subtask_count,
+            shouldRenderSubtasks,
+            timestamp: new Date().toISOString()
+          });
+          return shouldRenderSubtasks;
+        })() && (
           <TableRow className="theme-context-section">
             <TableCell colSpan={7} className="p-0">
               <div className="border-blue-400 dark:border-blue-600 ml-8">

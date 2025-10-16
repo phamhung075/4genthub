@@ -61,11 +61,11 @@ class AddSubtaskUseCase:
             self._subtask_repository.save(subtask)
             added_subtask = subtask.to_dict()
 
-            # Increment parent task's subtask_count
-            # Note: The domain entity has a subtasks list, but the ORM/DB uses subtask_count column
-            # We need to update the count directly through the repository
-            self._increment_parent_subtask_count(str(task_id))
-            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, incremented subtask_count")
+            # Add subtask ID to parent task's subtasks list and increment count
+            # This calls the domain method which does both operations atomically
+            task.add_subtask(str(subtask_id))
+            self._task_repository.save(task)
+            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {task.subtask_count}")
 
             # Update parent task progress
             self._update_parent_task_progress(str(task_id))
@@ -138,25 +138,6 @@ class AddSubtaskUseCase:
         else:
             return TaskId.from_string(str(task_id))
     
-    def _increment_parent_subtask_count(self, task_id: str) -> None:
-        """Increment the parent task's subtask_count by 1."""
-        try:
-            task_id_obj = self._convert_to_task_id(task_id)
-            task = self._task_repository.find_by_id(task_id_obj)
-            if task:
-                # The ORM model has subtask_count column - update it directly
-                # We need to refresh from DB to get current count, increment, and save
-                from ..database.models import Task as TaskModel
-                from ...infrastructure.database.session_manager import SessionManager
-
-                session = SessionManager.get_session()
-                task_orm = session.query(TaskModel).filter(TaskModel.id == str(task_id)).first()
-                if task_orm:
-                    task_orm.subtask_count = (task_orm.subtask_count or 0) + 1
-                    session.commit()
-                    logging.info(f"Incremented subtask_count for task {task_id} to {task_orm.subtask_count}")
-        except Exception as e:
-            logging.warning(f"Failed to increment parent subtask_count: {e}")
 
     def _update_parent_task_progress(self, task_id: str) -> None:
         """Update parent task progress based on subtask completion."""

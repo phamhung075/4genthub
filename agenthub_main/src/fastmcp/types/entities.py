@@ -8,7 +8,35 @@ from pydantic import BaseModel
 
 
 class TaskDTO(BaseModel):
-    """Task model matching frontend Task interface"""
+    """
+    TaskDTO - Complete task entity for API responses
+
+    Matches frontend Task interface in api.types.ts for type-safe API contracts.
+    Contains full task data including relationships and metadata.
+
+    Fields:
+        id: Unique task identifier (UUID string)
+        title: Task title (max 200 characters per ORM)
+        description: Optional detailed description (max 2000 characters per ORM)
+        status: Current task status ('todo', 'in_progress', 'done', etc.)
+        priority: Priority level ('low', 'medium', 'high', 'urgent', 'critical')
+        assignees: List of assigned agent identifiers
+        assignees_count: Denormalized count of assignees for performance
+        subtask_count: Denormalized count of subtasks (updated atomically via domain methods)
+
+    Note: subtask_count is maintained through Task.add_subtask() and Task.remove_subtask()
+          domain methods to ensure atomicity and consistency.
+
+    Example:
+        {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "title": "Implement authentication",
+            "status": "in_progress",
+            "priority": "high",
+            "subtask_count": 3,
+            "assignees_count": 2
+        }
+    """
     id: str
     title: str
     description: Optional[str] = None
@@ -23,8 +51,8 @@ class TaskDTO(BaseModel):
     has_context: bool
     context_id: Optional[str] = None
     context_data: Optional[Any] = None
-    git_branch_id: str
-    project_id: str
+    git_branch_id: Optional[str] = None
+    project_id: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     due_date: Optional[str] = None
@@ -41,7 +69,37 @@ class TaskDTO(BaseModel):
 
 
 class SubtaskDTO(BaseModel):
-    """Subtask model matching frontend Subtask interface"""
+    """
+    SubtaskDTO - Complete subtask entity for API responses
+
+    Matches frontend Subtask interface in api.types.ts.
+    Represents a decomposed piece of work within a parent task.
+
+    Fields:
+        id: Unique subtask identifier (UUID string)
+        task_id: Parent task identifier (called parent_task_id in frontend)
+        title: Subtask title
+        description: Optional detailed description
+        status: Current status ('todo', 'in_progress', 'done', etc.)
+        priority: Priority level (inherits from parent if not set)
+        assignees: List of assigned agent IDs (inherits from parent if empty)
+        assignees_count: Count of assigned agents
+        progress_percentage: Completion percentage (0-100)
+
+    Note: Subtasks inherit assignees from parent task if none specified,
+          implementing the Agent Inheritance pattern for workflow efficiency.
+
+    Example:
+        {
+            "id": "456e7890-e89b-12d3-a456-426614174001",
+            "task_id": "123e4567-e89b-12d3-a456-426614174000",
+            "title": "Design login UI",
+            "status": "done",
+            "priority": "high",
+            "assignees_count": 1,
+            "progress_percentage": 100
+        }
+    """
     id: str
     task_id: str  # In frontend this is parent_task_id
     title: str

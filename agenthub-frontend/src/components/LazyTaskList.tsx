@@ -1,10 +1,10 @@
 import { Plus, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents, listTasks, Task } from "../api";
+import { createTask, updateTask, deleteTask, getAvailableAgents, listAgents, Task } from "../api";
 import { useTaskWebSocket } from "../hooks/useWebSocketV2";
 import { useAuth } from "../contexts/AuthContext";
-import { getFullTask } from "../api-lazy";
+import { getFullTask, getTaskSummaries } from "../api-lazy";
 import TaskSearch from "./TaskSearch";
 import TaskRow from "./TaskRow";
 import { useEntityChanges } from "../hooks/useChangeSubscription";
@@ -155,31 +155,21 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     const currentTaskIds = new Set(taskSummaries.map(t => t.id));
     const currentTaskMap = new Map(taskSummaries.map(t => [t.id, t]));
 
-    // Re-fetch task summaries to get latest data
+    // Re-fetch task summaries to get latest data using optimized endpoint
     try {
-      const taskList = await listTasks({ git_branch_id: taskTreeId });
-      const validTaskList = Array.isArray(taskList) ? taskList : [];
-
-      // Convert to task summaries
-      const summaries: TaskSummary[] = validTaskList.map(task => {
-        const depFromArray = task.dependencies?.length || 0;
-        const depFromRelationships = task.dependency_relationships?.depends_on?.length || 0;
-        const depFromSummary = task.dependency_summary?.total_dependencies || 0;
-        const dependencyCount = Math.max(depFromArray, depFromRelationships, depFromSummary);
-
-        return {
-          id: task.id,
-          title: task.title,
-          status: task.status,
-          priority: task.priority,
-          subtask_count: task.subtasks?.length || 0,
-          assignees_count: task.assignees?.length || 0,
-          assignees: task.assignees || [],
-          has_dependencies: dependencyCount > 0,
-          dependency_count: dependencyCount,
-          has_context: Boolean(task.context_id || task.context_data)
-        };
-      });
+      const response = await getTaskSummaries({ git_branch_id: taskTreeId });
+      const summaries: TaskSummary[] = (response.tasks || []).map(taskSummary => ({
+        id: taskSummary.id,
+        title: taskSummary.title,
+        status: taskSummary.status,
+        priority: taskSummary.priority,
+        subtask_count: taskSummary.subtask_count, // Use denormalized count from backend
+        assignees_count: taskSummary.assignees_count,
+        assignees: taskSummary.assignees || [],
+        has_dependencies: taskSummary.has_dependencies,
+        dependency_count: 0, // Not provided by summary endpoint yet
+        has_context: taskSummary.has_context
+      }));
 
       const newTaskIds = new Set(summaries.map(t => t.id));
 
@@ -332,10 +322,8 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
       setTotalTasks(summaries.length);
       setPreviousTaskIds(newTaskIds);
 
-      // Store full tasks for immediate access
-      const taskMap = new Map();
-      validTaskList.forEach(task => taskMap.set(task.id, task));
-      setFullTasks(taskMap);
+      // Note: Full tasks will be loaded on-demand when needed
+      // This improves performance by not loading full task data until required
 
       setError(null);
 
@@ -371,53 +359,36 @@ const LazyTaskList: React.FC<LazyTaskListProps> = ({ projectId, taskTreeId, onTa
     return [];
   }, [taskSummaries]);
 
-  // Fallback to current implementation if lightweight endpoint isn't available
+  // Load task summaries using optimized endpoint
   const loadFullTasksFallback = useCallback(async () => {
     try {
-      const taskList = await listTasks({ git_branch_id: taskTreeId });
-      
-      // Ensure taskList is a valid array
-      const validTaskList = Array.isArray(taskList) ? taskList : [];
-      
-      // Convert to task summaries
-      const summaries: TaskSummary[] = validTaskList.map(task => {
-        // Check multiple possible locations for dependency data
-        const depFromArray = task.dependencies?.length || 0;
-        const depFromRelationships = task.dependency_relationships?.depends_on?.length || 0;
-        const depFromSummary = task.dependency_summary?.total_dependencies || 0;
-        
-        // Use the maximum of all possible sources
-        const dependencyCount = Math.max(depFromArray, depFromRelationships, depFromSummary);
-        
-        // Dependencies computed above
-        
-        return {
-          id: task.id,
-          title: task.title,
-          status: task.status,
-          priority: task.priority,
-          subtask_count: task.subtasks?.length || 0,
-          assignees_count: task.assignees?.length || 0,
-          assignees: task.assignees || [],  // Include actual assignees array
-          has_dependencies: dependencyCount > 0,
-          dependency_count: dependencyCount,
-          has_context: Boolean(task.context_id || task.context_data)
-        };
-      });
-      
+      const response = await getTaskSummaries({ git_branch_id: taskTreeId });
+
+      // Convert response to task summaries
+      const summaries: TaskSummary[] = (response.tasks || []).map(taskSummary => ({
+        id: taskSummary.id,
+        title: taskSummary.title,
+        status: taskSummary.status,
+        priority: taskSummary.priority,
+        subtask_count: taskSummary.subtask_count, // Use denormalized count from backend
+        assignees_count: taskSummary.assignees_count,
+        assignees: taskSummary.assignees || [],
+        has_dependencies: taskSummary.has_dependencies,
+        dependency_count: 0, // Not provided by summary endpoint yet
+        has_context: taskSummary.has_context
+      }));
+
       setTaskSummaries(summaries);
-      setTotalTasks(summaries.length);
-      
-      // Store full tasks for immediate access
-      const taskMap = new Map();
-      validTaskList.forEach(task => taskMap.set(task.id, task));
-      setFullTasks(taskMap);
-      
+      setTotalTasks(response.total || summaries.length);
+
+      // Note: Full tasks will be loaded on-demand when needed
+      // This improves initial load performance
+
       // Clear any existing errors on successful load
       setError(null);
 
     } catch (e: any) {
-      logger.error('Error loading tasks in loadFullTasksFallback', { component: 'LazyTaskList', error: e });
+      logger.error('Error loading task summaries', { component: 'LazyTaskList', error: e });
       setError(e.message);
       // Ensure we clear the loading state even on error
       throw e;

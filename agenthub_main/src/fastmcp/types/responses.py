@@ -7,6 +7,7 @@ from typing import Optional, List, Any
 from pydantic import BaseModel
 
 from .entities import TaskDTO, SubtaskDTO, ProjectDTO, BranchDTO
+from .summaries import TaskSummaryDTO
 
 
 class ApiResponse(BaseModel):
@@ -31,6 +32,18 @@ class TasksResponse(BaseModel):
     """Tasks list response matching frontend TasksResponse interface"""
     success: bool = True
     tasks: List[TaskDTO]
+    total: Optional[int] = None
+    page: Optional[int] = None
+    limit: Optional[int] = None
+    error: Optional[str] = None
+    message: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+class TaskSummariesResponse(BaseModel):
+    """Task summaries list response for lightweight task lists"""
+    success: bool = True
+    tasks: List[TaskSummaryDTO]
     total: Optional[int] = None
     page: Optional[int] = None
     limit: Optional[int] = None

@@ -514,7 +514,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 23,
+      "count": 25,
       "files": [
         {
           "hash": "28e09c0b0d11ef3cf07372a214b9fede",
@@ -587,6 +587,13 @@
           "size": 2315
         },
         {
+          "hash": "4c1c445bf782030277895d234556908e",
+          "modified": "2025-10-16T15:37:20.234386",
+          "name": "type-system-quality-checklist.md",
+          "path": "core-architecture/type-system-quality-checklist.md",
+          "size": 8507
+        },
+        {
           "hash": "d7331d162d9cdc48de9fbf4a31bff66d",
           "modified": "2025-09-17T14:11:39.083883",
           "name": "session-type-detection.md",
@@ -634,6 +641,13 @@
           "name": "repository-pagination-migration-guide.md",
           "path": "core-architecture/repository-pagination-migration-guide.md",
           "size": 13079
+        },
+        {
+          "hash": "1db8205bcbf46835cbc39d2a155b2d89",
+          "modified": "2025-10-16T15:35:42.644346",
+          "name": "type-system-mapping.md",
+          "path": "core-architecture/type-system-mapping.md",
+          "size": 10760
         },
         {
           "hash": "f0cc19dad2860b415072cd94f243c4b5",
@@ -1162,14 +1176,35 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 6,
+      "count": 13,
       "files": [
+        {
+          "hash": "3f387d62d26d34738a68e92b6fe4587a",
+          "modified": "2025-10-16T09:48:27.234770",
+          "name": "subtask-count-ddd-refactoring.md",
+          "path": "troubleshooting-guides/subtask-count-ddd-refactoring.md",
+          "size": 14434
+        },
+        {
+          "hash": "4f0d850b2ed416d74171230e748afba5",
+          "modified": "2025-10-16T19:43:45.070944",
+          "name": "database-lock-infinite-loop-fix.md",
+          "path": "troubleshooting-guides/database-lock-infinite-loop-fix.md",
+          "size": 11254
+        },
         {
           "hash": "637cd2ca5f29aa9ab89631444dfc2cf0",
           "modified": "2025-09-17T14:11:39.095822",
           "name": "index.md",
           "path": "troubleshooting-guides/index.md",
           "size": 2236
+        },
+        {
+          "hash": "a8564e3532aa64ba3ca84d6868c75461",
+          "modified": "2025-10-16T19:10:41.948213",
+          "name": "docker-menu-clean-volume-fix.md",
+          "path": "troubleshooting-guides/docker-menu-clean-volume-fix.md",
+          "size": 8084
         },
         {
           "hash": "e53cc93a7a391a5826e915c5766bcbe9",
@@ -1179,6 +1214,13 @@
           "size": 2423
         },
         {
+          "hash": "6687ff75ef86b61c5f2b6637163c27fc",
+          "modified": "2025-10-16T18:57:34.624534",
+          "name": "docker-volume-persistence-issue.md",
+          "path": "troubleshooting-guides/docker-volume-persistence-issue.md",
+          "size": 7532
+        },
+        {
           "hash": "64d5c896a442604631918e5d24afea65",
           "modified": "2025-09-17T14:11:39.095822",
           "name": "production-deployment-issues.md",
@@ -1186,11 +1228,32 @@
           "size": 20412
         },
         {
+          "hash": "32c090f69b53bc71796c06c9b727a25d",
+          "modified": "2025-10-16T08:55:22.157821",
+          "name": "subtask-loading-diagnostic.md",
+          "path": "troubleshooting-guides/subtask-loading-diagnostic.md",
+          "size": 8663
+        },
+        {
+          "hash": "f8f8f1efe11ba0b3aaf32eaf2b812a7c",
+          "modified": "2025-10-16T18:44:15.047936",
+          "name": "subtask-count-sync-issue.md",
+          "path": "troubleshooting-guides/subtask-count-sync-issue.md",
+          "size": 7496
+        },
+        {
           "hash": "f8bad23dee0bddecb2655fcdc56d40e7",
           "modified": "2025-09-17T14:11:39.091842",
           "name": "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
           "path": "troubleshooting-guides/COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
           "size": 20173
+        },
+        {
+          "hash": "b80e8a408a17cff3b44b1d1df66890e1",
+          "modified": "2025-10-16T09:09:27.112635",
+          "name": "subtask-component-rendering-diagnostic.md",
+          "path": "troubleshooting-guides/subtask-component-rendering-diagnostic.md",
+          "size": 9381
         },
         {
           "hash": "37b02ad1ddd4297d896d6c3789c7d5f4",
@@ -1210,7 +1273,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T08:27:23.782278",
+  "generated_at": "2025-10-16T19:43:45.252110",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1343,6 +1406,8 @@
         "session-type-detection.md",
         "system-architecture-overview.md",
         "task-versioning-analysis.md",
+        "type-system-mapping.md",
+        "type-system-quality-checklist.md",
         "unified-timestamp-architecture.md"
       ]
     },
@@ -1448,12 +1513,19 @@
         "COMPREHENSIVE_TROUBLESHOOTING_GUIDE.md",
         "README.md",
         "TROUBLESHOOTING.md",
+        "database-lock-infinite-loop-fix.md",
+        "docker-menu-clean-volume-fix.md",
+        "docker-volume-persistence-issue.md",
         "index.md",
         "mcp-connection-issues.md",
-        "production-deployment-issues.md"
+        "production-deployment-issues.md",
+        "subtask-component-rendering-diagnostic.md",
+        "subtask-count-ddd-refactoring.md",
+        "subtask-count-sync-issue.md",
+        "subtask-loading-diagnostic.md"
       ]
     }
   },
   "total_directories": 25,
-  "total_files": 155
+  "total_files": 164
 }

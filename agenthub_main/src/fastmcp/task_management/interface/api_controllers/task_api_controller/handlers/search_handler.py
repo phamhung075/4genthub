@@ -9,6 +9,7 @@ from fastmcp.types import (
     StatisticsResponse,
     TaskResponse,
     TasksResponse,
+    TaskSummariesResponse,
     task_summary_to_dto,
     task_to_dto,
 )
@@ -158,7 +159,7 @@ class TaskSearchHandler:
 
     def list_tasks_summary(
         self, filters: dict, offset: int, limit: int, user_id: str, session
-    ) -> TasksResponse:
+    ) -> TaskSummariesResponse:
         """
         List task summaries with pagination.
 
@@ -182,17 +183,28 @@ class TaskSearchHandler:
             filters["user_id"] = user_id
 
             # Get tasks through facade
-            result = task_facade.list_tasks_with_pagination(filters, offset, limit)
+            result = task_facade.list_tasks_summary(filters, offset, limit)
 
             # Check if listing was successful
             if result.get("success"):
                 tasks = result.get("tasks", [])
                 total = result.get("total", 0)
-                logger.info(f"Listed {len(tasks)} task summaries for user {user_id}")
+                logger.info(f"📊 CONTROLLER: Listed {len(tasks)} task summaries for user {user_id}")
 
-                return TasksResponse(
+                # Log first task for debugging
+                if tasks:
+                    first_task = tasks[0]
+                    logger.info(f"🔍 CONTROLLER: First task subtask_count = {first_task.get('subtask_count', 'MISSING')}")
+
+                # Convert to DTOs
+                dtos = [task_summary_to_dto(t) for t in tasks]
+                logger.info(f"✅ CONTROLLER: Converted {len(dtos)} tasks to DTOs")
+                if dtos:
+                    logger.info(f"  - First DTO subtask_count: {dtos[0].subtask_count}")
+
+                return TaskSummariesResponse(
                     success=True,
-                    tasks=[task_summary_to_dto(t) for t in tasks],
+                    tasks=dtos,
                     total=total,
                     page=offset // limit if limit > 0 else 0,
                     limit=limit,
@@ -204,7 +216,7 @@ class TaskSearchHandler:
                 logger.warning(
                     f"Task summary listing failed for user {user_id}: {error_msg}"
                 )
-                return TasksResponse(
+                return TaskSummariesResponse(
                     success=False,
                     tasks=[],
                     error=error_msg,
@@ -214,7 +226,7 @@ class TaskSearchHandler:
 
         except Exception as e:
             logger.error(f"Error listing task summaries for user {user_id}: {e}")
-            return TasksResponse(
+            return TaskSummariesResponse(
                 success=False,
                 tasks=[],
                 error=str(e),

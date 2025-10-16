@@ -46,6 +46,14 @@ const priorityColor: Record<string, "default" | "secondary" | "destructive" | "o
 };
 
 export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }: LazySubtaskListProps) {
+  // 🔴 CRITICAL: Component rendering check - this should ALWAYS log if component mounts
+  console.log('[LazySubtaskList] 🔴 COMPONENT RENDERING:', {
+    projectId,
+    taskTreeId,
+    parentTaskId,
+    timestamp: new Date().toISOString()
+  });
+
   // URL parameter monitoring - no longer need taskId since subtaskId is unique
   const { subtaskId } = useParams<{ subtaskId?: string }>();
   const navigate = useNavigate();

@@ -29,6 +29,15 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
   elementRef,
   animationClass = ''
 }) => {
+  // 🔴 CRITICAL: Component render check - this should log on EVERY render
+  console.log('[TaskRowDesktop] 🎨 Component rendering:', {
+    taskId: summary.id,
+    taskTitle: summary.title,
+    isExpanded,
+    hasFullTask: !!fullTask,
+    timestamp: new Date().toISOString()
+  });
+
   const { getBaseClasses } = useTaskRowState();
 
   // Combine animation classes with loading state
@@ -49,8 +58,15 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
             variant="ghost"
             size="icon"
             onClick={(e) => {
+              console.log('[TaskRowDesktop] 🖱️ Expand button clicked:', {
+                taskId: summary.id,
+                taskTitle: summary.title,
+                currentIsExpanded: isExpanded,
+                timestamp: new Date().toISOString()
+              });
               e.stopPropagation();
               onToggleExpansion();
+              console.log('[TaskRowDesktop] 🔄 onToggleExpansion called');
             }}
             disabled={isLoading}
           >
@@ -151,6 +167,25 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
       </TableRow>
 
       {/* Always show LazySubtaskList when expanded */}
+      {(() => {
+        console.log('[TaskRowDesktop] 🔍 Expansion check:', {
+          taskId: summary.id,
+          taskTitle: summary.title,
+          isExpanded,
+          hasFullTask: !!fullTask,
+          fullTask: fullTask ? { id: fullTask.id, title: fullTask.title } : null,
+          timestamp: new Date().toISOString()
+        });
+
+        if (isExpanded && !fullTask) {
+          console.warn('[TaskRowDesktop] ⚠️ Task is expanded but fullTask is missing!', {
+            taskId: summary.id,
+            taskTitle: summary.title
+          });
+        }
+
+        return null;
+      })()}
       {isExpanded && fullTask && (
         <TableRow className="theme-context-section">
           <TableCell colSpan={7} className="p-0">
