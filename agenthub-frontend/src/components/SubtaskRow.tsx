@@ -19,7 +19,6 @@ interface SubtaskRowProps {
   isLoading: boolean;
   showDetails: boolean;
   parentTaskId: string; // Add parent task ID for context display
-  isNew?: boolean; // Flag indicating this is a newly created subtask (should start hidden)
 
   // Animation event callbacks from parent (placeholders)
   onPlayCreateAnimation: () => void;
@@ -46,7 +45,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   isLoading,
   showDetails,
   parentTaskId,
-  isNew = false,
   onPlayCreateAnimation,
   onPlayDeleteAnimation,
   onPlayUpdateAnimation,
@@ -93,7 +91,8 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
     animationState,
     isVisible,
     animationClass,
-    elementRef
+    elementRef,
+    isNew: isNewFromHook
   } = useSubtaskAnimation({
     subtaskId: summary.id,
     onRegisterCallbacks,
@@ -110,7 +109,8 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
     const baseClasses = 'transition-all duration-200';
 
     // Add .subtaskRowNew class for initial hidden state
-    const newClass = (isNew && animationState === 'none') ? 'subtaskRowNew' : '';
+    // Use hook's isNew value which tracks if create animation has played
+    const newClass = (isNewFromHook && animationState === 'none') ? 'subtaskRowNew' : '';
 
     switch (animationState) {
       case 'creating':
