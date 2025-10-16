@@ -681,7 +681,7 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 21,
+      "count": 22,
       "files": [
         {
           "hash": "ee5c18b44b88d81e273ad714c2977b7f",
@@ -822,6 +822,13 @@
           "name": "docker-system-guide.md",
           "path": "development-guides/docker-system-guide.md",
           "size": 14201
+        },
+        {
+          "hash": "e431b36b4af74b93c5efaa3c623e4da7",
+          "modified": "2025-10-16T08:27:23.622159",
+          "name": "hmr-debugging-guide.md",
+          "path": "development-guides/hmr-debugging-guide.md",
+          "size": 6107
         },
         {
           "hash": "3f1506b3725e657858947411b2661391",
@@ -1203,7 +1210,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T06:44:25.855152",
+  "generated_at": "2025-10-16T08:27:23.782278",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1354,6 +1361,7 @@
         "error-handling-and-logging.md",
         "event-handlers-reference.md",
         "frontend-ux-enhancements.md",
+        "hmr-debugging-guide.md",
         "index.md",
         "jwt-authentication-guide.md",
         "logger-environment-variables.md",
@@ -1447,5 +1455,5 @@
     }
   },
   "total_directories": 25,
-  "total_files": 154
+  "total_files": 155
 }

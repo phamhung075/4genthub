@@ -209,17 +209,41 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
 
   // Load subtask summaries (lightweight) with request deduplication
   const loadSubtaskSummaries = useCallback(async () => {
-    if (hasLoaded) return; // Only load once
+    if (hasLoaded) {
+      console.log('[LazySubtaskList] ⏭️ Skipping load - already loaded:', {
+        parentTaskId,
+        hasLoaded,
+        timestamp: new Date().toISOString()
+      });
+      return; // Only load once
+    }
+
+    console.log('[LazySubtaskList] 🚀 Starting API call:', {
+      parentTaskId,
+      hasLoaded,
+      timestamp: new Date().toISOString()
+    });
 
     setLoading(true);
     setError(null);
 
     try {
       // Use the proper API function that handles authentication and proper URLs
+      console.log('[LazySubtaskList] 📡 Calling getSubtaskSummaries API...');
       const data = await getSubtaskSummaries(parentTaskId);
+      console.log('[LazySubtaskList] ✅ API response received:', {
+        subtaskCount: data.subtasks.length,
+        subtasks: data.subtasks.map(s => ({ id: s.id, title: s.title })),
+        timestamp: new Date().toISOString()
+      });
       setSubtaskSummaries(data.subtasks);
 
     } catch (e: any) {
+      console.log('[LazySubtaskList] ❌ API call failed:', {
+        error: e.message,
+        status: e.status,
+        timestamp: new Date().toISOString()
+      });
       // Only log warning for non-400 errors
       if (e.status !== 400 && e.response?.status !== 400) {
         logger.warn('Lightweight subtask endpoint not available, falling back');
@@ -228,11 +252,13 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     } finally {
       setLoading(false);
       setHasLoaded(true);
+      console.log('[LazySubtaskList] ✅ Load complete, hasLoaded set to true');
 
       // Enable subscription AFTER initial load is complete
       // Use setTimeout to ensure state has settled before enabling subscription
       setTimeout(() => {
         setSubscriptionEnabled(true);
+        console.log('[LazySubtaskList] 📡 Subscription enabled after initial load');
         logger.debug(`📡 LazySubtaskList-${parentTaskId}: Subscription enabled after initial load`);
       }, 250); // Small delay to prevent race conditions
     }
@@ -404,7 +430,7 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
       // Note: parentTaskId is kept for backward compatibility but not used by the API
       const subtask = await getSubtask(parentTaskId, subtaskId);
       // Check if the loaded subtask actually belongs to this parent task
-      if (subtask && subtask.parent_task_id === parentTaskId) {
+      if (subtask && subtask.task_id === parentTaskId) {
         return subtask;
       }
       logger.debug(`Subtask ${subtaskId} does not belong to parent task ${parentTaskId}`);
@@ -482,8 +508,24 @@ export default function LazySubtaskList({ projectId, taskTreeId, parentTaskId }:
     }
   }, [fullSubtasks, loadingSubtasks, loadFullSubtasksFallback, loadSubtaskById]);
 
+  // Reset hasLoaded when parentTaskId changes to allow re-fetching for different tasks
+  useEffect(() => {
+    console.log('[LazySubtaskList] 🔄 parentTaskId changed, resetting state:', {
+      parentTaskId,
+      previousHasLoaded: hasLoaded,
+      timestamp: new Date().toISOString()
+    });
+    setHasLoaded(false);
+    setSubscriptionEnabled(false);
+  }, [parentTaskId]);
+
   // Load subtasks when component mounts
   useEffect(() => {
+    console.log('[LazySubtaskList] 🏁 Component mount effect triggered:', {
+      parentTaskId,
+      hasLoaded,
+      timestamp: new Date().toISOString()
+    });
     loadSubtaskSummaries();
   }, [loadSubtaskSummaries]);
 

@@ -1,4 +1,4 @@
-import { Home, HelpCircle, Key, Moon, Settings, Sun, Menu, X } from 'lucide-react';
+import { HelpCircle, Home, Key, Menu, Moon, Settings, Sun, X } from 'lucide-react';
 import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
