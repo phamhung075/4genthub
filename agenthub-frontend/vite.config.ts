@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => {
     port: 3800,
     hmr: {
       protocol: 'ws',
-      host: 'localhost',
+      host: '0.0.0.0',
       port: 3800,
       clientPort: 3800
     },
@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => {
       interval: 100,
       binaryInterval: 300,
       awaitWriteFinish: {
-        stabilityThreshold: 100,
+        stabilityThreshold: 500,
         pollInterval: 100
       }
     },
