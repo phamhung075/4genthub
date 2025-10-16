@@ -491,7 +491,7 @@
       "path": "code-quality"
     },
     "context-system": {
-      "count": 21,
+      "count": 22,
       "files": [
         {
           "hash": "18805f2182b58a0df3ccee79091f9c68",
@@ -604,6 +604,13 @@
           "name": "CONTEXT_UPDATE_IMPLEMENTATION.md",
           "path": "context-system/CONTEXT_UPDATE_IMPLEMENTATION.md",
           "size": 86036
+        },
+        {
+          "hash": "f483314ca2264f97f44de2da29c96061",
+          "modified": "2025-10-16T06:14:29.599993",
+          "name": "context-system-complete-guide.md",
+          "path": "context-system/context-system-complete-guide.md",
+          "size": 18560
         },
         {
           "hash": "77495fa6a0c03a1580797d1c477e229e",
@@ -2358,7 +2365,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T06:04:22.789624",
+  "generated_at": "2025-10-16T06:14:29.685611",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -2487,6 +2494,7 @@
         "REORGANIZATION_SUMMARY.md",
         "context-database-schema-complete.md",
         "context-management-architectural-review.md",
+        "context-system-complete-guide.md",
         "index.md",
         "manual-context-implementation-guide.md",
         "manual-context-system-gap-analysis.md",
@@ -2789,5 +2797,5 @@
     }
   },
   "total_directories": 32,
-  "total_files": 313
+  "total_files": 314
 }
