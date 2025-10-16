@@ -5,6 +5,15 @@
  */
 
 /* ========================================
+   INITIAL HIDDEN STATE (for new tasks)
+   ======================================== */
+.taskRowNew {
+  transform: translateX(100%);
+  opacity: 0;
+  /* This will be overridden by the animation when it starts */
+}
+
+/* ========================================
    CREATE ANIMATION (Slide In from Right)
    ======================================== */
 @keyframes taskRowSlideIn {
@@ -35,7 +44,7 @@
 }
 
 .taskRowCreateAnimation {
-  animation: taskRowSlideIn 0.8s ease-out;
+  animation: taskRowSlideIn 0.8s ease-out forwards;
 }
 
 /* ========================================

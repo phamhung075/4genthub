@@ -335,6 +335,36 @@ class SubtaskApplicationFacade:
                 user_id=user_id,
                 subtask_data=subtask_dict
             )
+
+            # CRITICAL: Broadcast parent task update to refresh subtask_count in frontend
+            try:
+                # Reload parent task to get updated subtask_count
+                parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
+                if parent_task:
+                    # Convert to dict for WebSocket broadcast
+                    parent_task_dict = {
+                        "id": str(parent_task.id),
+                        "title": parent_task.title,
+                        "status": parent_task.status,
+                        "priority": parent_task.priority,
+                        "subtask_count": parent_task.subtask_count,  # Updated count
+                        "assignees_count": len(parent_task.assignees) if parent_task.assignees else 0,
+                        "assignees": parent_task.assignees or [],
+                        "has_dependencies": len(parent_task.dependencies) > 0 if parent_task.dependencies else False,
+                        "dependency_count": len(parent_task.dependencies) if parent_task.dependencies else 0,
+                        "has_context": bool(parent_task.context_id)
+                    }
+
+                    WebSocketNotificationService.sync_broadcast_task_event(
+                        event_type="updated",
+                        task_id=task_id,
+                        user_id=user_id,
+                        task_data=parent_task_dict
+                    )
+                    logger.info(f"✅ Broadcasted parent task update after subtask creation: subtask_count={parent_task.subtask_count}")
+            except Exception as parent_error:
+                logger.warning(f"Failed to broadcast parent task update: {parent_error}")
+
         except Exception as e:
             logger.warning(f"Failed to broadcast subtask creation: {e}")
 
@@ -421,6 +451,36 @@ class SubtaskApplicationFacade:
                     user_id=user_id,
                     subtask_data={"id": actual_subtask_id, "deleted": True}
                 )
+
+                # CRITICAL: Broadcast parent task update to refresh subtask_count in frontend
+                try:
+                    # Reload parent task to get updated subtask_count
+                    parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
+                    if parent_task:
+                        # Convert to dict for WebSocket broadcast
+                        parent_task_dict = {
+                            "id": str(parent_task.id),
+                            "title": parent_task.title,
+                            "status": parent_task.status,
+                            "priority": parent_task.priority,
+                            "subtask_count": parent_task.subtask_count,  # Updated count
+                            "assignees_count": len(parent_task.assignees) if parent_task.assignees else 0,
+                            "assignees": parent_task.assignees or [],
+                            "has_dependencies": len(parent_task.dependencies) > 0 if parent_task.dependencies else False,
+                            "dependency_count": len(parent_task.dependencies) if parent_task.dependencies else 0,
+                            "has_context": bool(parent_task.context_id)
+                        }
+
+                        WebSocketNotificationService.sync_broadcast_task_event(
+                            event_type="updated",
+                            task_id=task_id,
+                            user_id=user_id,
+                            task_data=parent_task_dict
+                        )
+                        logger.info(f"✅ Broadcasted parent task update after subtask deletion: subtask_count={parent_task.subtask_count}")
+                except Exception as parent_error:
+                    logger.warning(f"Failed to broadcast parent task update: {parent_error}")
+
             except Exception as e:
                 logger.warning(f"Failed to broadcast subtask deletion: {e}")
 

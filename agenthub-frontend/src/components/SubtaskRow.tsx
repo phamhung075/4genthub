@@ -1,15 +1,15 @@
-import { Check, Eye, Pencil, Trash2 } from "lucide-react";
-import React, { useState, useCallback, useEffect } from "react";
+import { Check, Copy, Eye, Pencil, Trash2, FileText } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Subtask } from "../api";
 import { SubtaskSummary } from "../api-lazy";
+import { useSubtaskAnimation } from "../hooks/useSubtaskAnimation";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { HolographicStatusBadge, HolographicPriorityBadge } from "./ui/holographic-badges";
 import { TableCell, TableRow } from "./ui/table";
-import { CopyableId } from "./ui/CopyableId";
-import { ParentTaskReference } from "./ui/ParentTaskReference";
 import logger from "../utils/logger";
 import styles from "./SubtaskRow.module.css";
+import "../styles/subtask-animations.css";
 
 // Using SubtaskSummary interface from api-lazy.ts
 
@@ -19,6 +19,7 @@ interface SubtaskRowProps {
   isLoading: boolean;
   showDetails: boolean;
   parentTaskId: string; // Add parent task ID for context display
+  isNew?: boolean; // Flag indicating this is a newly created subtask (should start hidden)
 
   // Animation event callbacks from parent (placeholders)
   onPlayCreateAnimation: () => void;
@@ -45,6 +46,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   isLoading,
   showDetails,
   parentTaskId,
+  isNew = false,
   onPlayCreateAnimation,
   onPlayDeleteAnimation,
   onPlayUpdateAnimation,
@@ -54,148 +56,143 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   onRegisterCallbacks,
   onUnregisterCallbacks
 }) => {
+  // Copy state management
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedName, setCopiedName] = useState(false);
+
   // Handler for view details - use dialog instead of navigation
   const handleViewDetails = useCallback(() => {
     onSubtaskAction('details', summary.id);
   }, [onSubtaskAction, summary.id]);
 
-  // Internal animation state
-  const [animationState, setAnimationState] = useState<'none' | 'creating' | 'deleting' | 'updating'>('none');
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Animation handlers
-  const playCreateAnimation = useCallback(() => {
-    setAnimationState('creating');
-    setTimeout(() => setAnimationState('none'), 800); // Clear after animation (longer)
-  }, []);
-
-  const playDeleteAnimation = useCallback(() => {
-    logger.debug('🎬 SubtaskRow starting delete animation for:', summary.id);
-    setAnimationState('deleting');
-    // After animation completes, hide the row
-    setTimeout(() => {
-      logger.debug('🎬 SubtaskRow delete animation complete, hiding:', summary.id);
-      setIsVisible(false);
-    }, 800); // Animation duration (longer)
+  // Copy to clipboard handlers
+  const copyIdToClipboard = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(summary.id);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    } catch (err) {
+      logger.error('Failed to copy subtask ID', { component: 'SubtaskRow', error: err });
+    }
   }, [summary.id]);
 
-  const playUpdateAnimation = useCallback(() => {
-    setAnimationState('updating');
-    setTimeout(() => setAnimationState('none'), 5000); // Clear after 5 seconds as requested
-  }, []);
-
-  // Register animation callbacks with parent
-  useEffect(() => {
-    if (onRegisterCallbacks) {
-      logger.debug('📝 SubtaskRow registering callbacks for subtask:', summary.id);
-      onRegisterCallbacks(summary.id, {
-        playCreateAnimation,
-        playDeleteAnimation,
-        playUpdateAnimation
-      });
-    } else {
-      logger.warn('⚠️ SubtaskRow: No onRegisterCallbacks provided for subtask:', summary.id);
+  const copyNameToClipboard = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(summary.title);
+      setCopiedName(true);
+      setTimeout(() => setCopiedName(false), 2000);
+    } catch (err) {
+      logger.error('Failed to copy subtask name', { component: 'SubtaskRow', error: err });
     }
+  }, [summary.title]);
 
-    // Cleanup on unmount
-    return () => {
-      if (onUnregisterCallbacks) {
-        logger.debug('🧹 SubtaskRow unregistering callbacks for subtask:', summary.id);
-        onUnregisterCallbacks(summary.id);
-      }
-    };
-  }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, onRegisterCallbacks, onUnregisterCallbacks]);
+  // Use the animation hook
+  const {
+    animationState,
+    isVisible,
+    animationClass,
+    elementRef
+  } = useSubtaskAnimation({
+    subtaskId: summary.id,
+    onRegisterCallbacks,
+    onUnregisterCallbacks
+  });
 
   // Don't render if not visible (after delete animation)
   if (!isVisible) {
     return null;
   }
 
-  // Animation classes
+  // Animation classes - use CSS classes instead of inline styles
   const getAnimationClasses = () => {
     const baseClasses = 'transition-all duration-200';
 
+    // Add .subtaskRowNew class for initial hidden state
+    const newClass = (isNew && animationState === 'none') ? 'subtaskRowNew' : '';
+
     switch (animationState) {
       case 'creating':
-        return `${baseClasses} border-green-500 bg-green-100 dark:bg-green-950`;
+        return `${baseClasses} subtaskRowCreateAnimation border-green-500 bg-green-100 dark:bg-green-950 ${newClass}`;
       case 'deleting':
-        return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
+        return `${baseClasses} subtaskRowDeleteAnimation border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
         return `${baseClasses} ${styles.subtaskUpdatingAnimation}`;
       default:
-        return `${baseClasses} hover:bg-gray-50 dark:hover:bg-gray-800/20`;
+        return `${baseClasses} hover:bg-gray-50 dark:hover:bg-gray-800/20 ${newClass}`;
     }
   };
 
-  // Animation styles
-  const getAnimationStyle = () => {
-    switch (animationState) {
-      case 'creating':
-        return {
-          animation: 'slideInFromRight 0.8s ease-out forwards'
-        };
-      case 'deleting':
-        return {
-          animation: 'slideOutToRight 0.8s ease-in forwards'
-        };
-      case 'updating':
-        return {
-          animation: 'shimmerBackground 2s linear infinite'
-        };
-      default:
-        return {};
-    }
-  };
+  // Debug log to verify component renders
+  useEffect(() => {
+    console.log('🔧 [SubtaskRow] Rendering with copy buttons:', {
+      subtaskId: summary.id,
+      subtaskTitle: summary.title,
+      hasCopyButtons: true
+    });
+  }, [summary.id, summary.title]);
 
   return (
     <React.Fragment>
       <TableRow
+        ref={elementRef}
         className={`text-sm ${getAnimationClasses()}`}
-        style={getAnimationStyle()}
       >
-        <TableCell className="pl-8">
-          <div className="space-y-1">
-            {/* Main title row with indicator */}
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-600"></div>
-              <span className="text-gray-700 dark:text-gray-300 font-medium">{summary.title}</span>
-              {summary.progress_percentage !== undefined && (
-                <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
-                  {summary.status === 'done' ? 100 : summary.progress_percentage}%
-                </Badge>
-              )}
-            </div>
+        {/* Empty cell to align with parent's expand button column */}
+        <TableCell className="w-[50px]"></TableCell>
 
-            {/* Subtask ID and Parent Task Reference */}
-            <div className="flex items-center gap-3 ml-4">
-              <CopyableId
-                id={summary.id}
-                label="ID:"
-                variant="inline"
-                size="xs"
-                abbreviated={true}
-                showCopyButton={false}
-                className="text-gray-500 dark:text-gray-400"
-              />
-              <ParentTaskReference
-                parentTaskId={parentTaskId}
-                variant="inline"
-                showId={false}
-                className="text-gray-500 dark:text-gray-400"
-              />
-            </div>
+        {/* Title column - wider to match parent task title column */}
+        <TableCell className="">
+          <div className="flex items-center gap-2 pl-4">
+            {/* Copy buttons before title */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={copyIdToClipboard}
+              title={copiedId ? "ID Copied!" : "Copy ID"}
+              className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950 flex-shrink-0"
+            >
+              <Copy className={`w-3 h-3 ${copiedId ? 'text-green-500' : ''}`} />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={copyNameToClipboard}
+              title={copiedName ? "Name Copied!" : "Copy Name"}
+              className="h-6 w-6 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950 flex-shrink-0"
+            >
+              <FileText className={`w-3 h-3 ${copiedName ? 'text-green-500' : ''}`} />
+            </Button>
+
+            <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-600 flex-shrink-0"></div>
+            <span className="text-gray-700 dark:text-gray-300 font-medium">{summary.title}</span>
+            {summary.progress_percentage !== undefined && (
+              <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700">
+                {summary.status === 'done' ? 100 : summary.progress_percentage}%
+              </Badge>
+            )}
           </div>
         </TableCell>
 
-        <TableCell>
+        {/* Status column - align with parent */}
+        <TableCell className="hidden sm:table-cell">
           <HolographicStatusBadge status={summary.status as any} size="xs" />
         </TableCell>
 
-        <TableCell>
+        {/* Priority column - align with parent */}
+        <TableCell className="hidden md:table-cell">
           <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
         </TableCell>
 
-        <TableCell>
+        {/* Dependencies column - empty for subtasks to maintain alignment */}
+        <TableCell className="hidden lg:table-cell">
+          <span className="text-xs text-muted-foreground">-</span>
+        </TableCell>
+
+        {/* Assignees column - align with parent */}
+        <TableCell className="hidden md:table-cell max-w-[200px] p-2 align-top">
           {summary.assignees && summary.assignees.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {summary.assignees.map((assignee, index) => (
@@ -218,63 +215,68 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
           )}
         </TableCell>
 
-        <TableCell>
+        {/* Actions column - align with parent */}
+        <TableCell className="">
           <div className="flex gap-1">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 handleViewDetails();
               }}
               disabled={isLoading}
               title="View details"
+              className="h-8 w-8"
             >
               {isLoading ? (
                 <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
               ) : (
-                <Eye className="w-3 h-3" />
+                <Eye className="w-4 h-4" />
               )}
             </Button>
 
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 onSubtaskAction('edit', summary.id);
               }}
               disabled={isLoading || summary.status === 'done'}
               title="Edit"
+              className="h-8 w-8"
             >
-              <Pencil className="w-3 h-3" />
+              <Pencil className="w-4 h-4" />
             </Button>
 
             {summary.status !== 'done' && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={(e) => {
                   e.stopPropagation();
                   onSubtaskAction('complete', summary.id);
                 }}
                 disabled={isLoading}
                 title="Complete"
+                className="h-8 w-8"
               >
-                <Check className="w-3 h-3" />
+                <Check className="w-4 h-4" />
               </Button>
             )}
 
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteSubtask(summary.id);
               }}
               title="Delete subtask"
+              className="h-8 w-8"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </TableCell>

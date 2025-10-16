@@ -1,7 +1,8 @@
 import { ChevronDown, ChevronRight, Eye, Pencil, Trash2, Users } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Task } from "../api";
+import { useTaskAnimation } from "../hooks/useTaskAnimation";
 import logger from "../utils/logger";
 import ClickableAssignees from "./ClickableAssignees";
 import { Badge } from "./ui/badge";
@@ -36,6 +37,7 @@ interface TaskRowProps {
   projectId: string;
   taskTreeId: string;
   isMobile: boolean;
+  isNew?: boolean; // Flag indicating this is a newly created task (should start hidden)
 
   // Animation event callbacks from parent (placeholders)
   onPlayCreateAnimation: () => void;
@@ -66,6 +68,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
   projectId,
   taskTreeId,
   isMobile,
+  isNew = false,
   onPlayCreateAnimation,
   onPlayDeleteAnimation,
   onPlayUpdateAnimation,
@@ -94,39 +97,26 @@ const TaskRow: React.FC<TaskRowProps> = ({
   // Navigation hook for task detail URLs
   const navigate = useNavigate();
 
-  // Internal animation state
-  const [animationState, setAnimationState] = useState<'none' | 'creating' | 'deleting' | 'updating'>('none');
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Animation handlers
-  const playCreateAnimation = useCallback(() => {
-    setAnimationState('creating');
-    setTimeout(() => setAnimationState('none'), 800); // Clear after animation (longer)
-  }, []);
-
-  const playDeleteAnimation = useCallback(() => {
-    logger.debug('TaskRow starting delete animation', { component: 'TaskRow', taskId: summary.id });
-    setAnimationState('deleting');
-    // After animation completes, hide the row
-    setTimeout(() => {
-      logger.debug('TaskRow delete animation complete, hiding', { component: 'TaskRow', taskId: summary.id });
-      setIsVisible(false);
-    }, 800); // Animation duration (longer)
-  }, [summary.id]);
-
-  const playUpdateAnimation = useCallback(() => {
-    setAnimationState('updating');
-    setTimeout(() => setAnimationState('none'), 5000); // Clear after 5 seconds as requested
-  }, []);
+  // Use the animation hook
+  const {
+    animationState,
+    isVisible,
+    animationClass,
+    mobileElementRef,
+    desktopElementRef,
+    playCreateAnimation,
+    playDeleteAnimation,
+    playUpdateAnimation
+  } = useTaskAnimation(summary, isMobile);
 
   // Register animation callbacks with parent
   useEffect(() => {
     if (onRegisterCallbacks) {
       logger.debug('TaskRow registering callbacks for task', { component: 'TaskRow', taskId: summary.id });
       onRegisterCallbacks(summary.id, {
-        playCreateAnimation,
-        playDeleteAnimation,
-        playUpdateAnimation
+        playCreateAnimation: () => playCreateAnimation('websocket'),
+        playDeleteAnimation: () => playDeleteAnimation('websocket'),
+        playUpdateAnimation: () => playUpdateAnimation('websocket')
       });
     } else {
       logger.warn('TaskRow: No onRegisterCallbacks provided for task', { component: 'TaskRow', taskId: summary.id });
@@ -141,127 +131,26 @@ const TaskRow: React.FC<TaskRowProps> = ({
     };
   }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, onRegisterCallbacks, onUnregisterCallbacks]);
 
-  // Listen for WebSocket animation events (for cross-user animations)
-  useEffect(() => {
-    const handleWebSocketFade = (event: CustomEvent) => {
-      const { taskId: eventTaskId } = event.detail || {};
-
-      // Only respond to events for this specific task
-      if (eventTaskId !== summary.id) {
-        return;
-      }
-
-      logger.debug('TaskRow received WebSocket fade event for this task', {
-        component: 'TaskRow',
-        taskId: summary.id,
-        eventTaskId
-      });
-
-      // Only trigger if the row is still visible (not already deleted optimistically)
-      if (isVisible) {
-        logger.debug('TaskRow playing WebSocket delete animation', { component: 'TaskRow', taskId: summary.id });
-        playDeleteAnimation();
-      } else {
-        logger.debug('TaskRow ignoring WebSocket fade - already invisible', { component: 'TaskRow', taskId: summary.id });
-      }
-    };
-
-    const handleWebSocketCelebration = (event: CustomEvent) => {
-      const { taskId: eventTaskId } = event.detail || {};
-
-      // Only respond to events for this specific task
-      if (eventTaskId && eventTaskId !== summary.id) {
-        return;
-      }
-
-      logger.debug('TaskRow received WebSocket celebration event for this task', {
-        component: 'TaskRow',
-        taskId: summary.id,
-        eventTaskId
-      });
-
-      // Trigger completion animation
-      playUpdateAnimation();
-    };
-
-    const handleWebSocketAnimation = (event: CustomEvent) => {
-      const { type, taskId: eventTaskId } = event.detail || {};
-
-      // Only respond to events for this specific task (if taskId is provided)
-      if (eventTaskId && eventTaskId !== summary.id) {
-        return;
-      }
-
-      logger.debug('TaskRow received WebSocket animation event for this task', {
-        component: 'TaskRow',
-        taskId: summary.id,
-        eventTaskId,
-        type
-      });
-
-      switch (type) {
-        case 'task-created':
-          playCreateAnimation();
-          break;
-        case 'task-updated':
-          playUpdateAnimation();
-          break;
-        case 'task-completed':
-          // Use update animation for completion
-          playUpdateAnimation();
-          break;
-        default:
-          logger.debug('TaskRow unknown WebSocket animation type', { component: 'TaskRow', type });
-      }
-    };
-
-    // Add event listeners for WebSocket-triggered animations
-    window.addEventListener('task-fade', handleWebSocketFade as EventListener);
-    window.addEventListener('task-celebration', handleWebSocketCelebration as EventListener);
-    window.addEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
-
-    // Cleanup event listeners
-    return () => {
-      window.removeEventListener('task-fade', handleWebSocketFade as EventListener);
-      window.removeEventListener('task-celebration', handleWebSocketCelebration as EventListener);
-      window.removeEventListener('websocket-animation', handleWebSocketAnimation as EventListener);
-    };
-  }, [summary.id, playCreateAnimation, playDeleteAnimation, playUpdateAnimation, isVisible]);
+  // Note: WebSocket animations are now handled by the useTaskAnimation hook
+  // through the AnimationFactory system which provides better coordination
 
   // Don't render if not visible (after delete animation)
   if (!isVisible) {
     return null;
   }
 
-  // Animation styles
-  const getAnimationStyle = () => {
-    switch (animationState) {
-      case 'creating':
-        return {
-          animation: 'slideInFromRight 0.8s ease-out forwards'
-        };
-      case 'deleting':
-        return {
-          animation: 'slideOutToRight 0.8s ease-in forwards'
-        };
-      case 'updating':
-        return {
-          animation: 'shimmerBackground 2s linear infinite'
-        };
-      default:
-        return {};
-    }
-  };
-
-  // Animation classes
+  // Animation classes - use CSS classes instead of inline styles
   const getAnimationClasses = () => {
     const baseClasses = 'transition-all duration-200';
 
+    // Add .taskRowNew class for initial hidden state
+    const newClass = (isNew && animationState === 'none') ? 'taskRowNew' : '';
+
     switch (animationState) {
       case 'creating':
-        return `${baseClasses} border-teal-500 bg-teal-100 dark:bg-teal-950`;
+        return `${baseClasses} taskRowCreateAnimation border-teal-500 bg-teal-100 dark:bg-teal-950 ${newClass}`;
       case 'deleting':
-        return `${baseClasses} border-red-500 bg-red-100 dark:bg-red-950`;
+        return `${baseClasses} taskRowDeleteAnimation border-red-500 bg-red-100 dark:bg-red-950`;
       case 'updating':
         return `${baseClasses} task-updating-animation`;
       default:
@@ -271,7 +160,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
             : isHovered
             ? ' border-violet-400 shadow-lg bg-violet-200 dark:bg-violet-950'
             : ' border-surface-border dark:border-gray-700'
-        );
+        ) + ` ${newClass}`;
     }
   };
 
@@ -279,6 +168,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
     // Mobile Card View
     return (
       <div
+          ref={mobileElementRef}
           className={`rounded-lg mb-3 cursor-pointer ${getAnimationClasses()}`}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
@@ -463,8 +353,8 @@ const TaskRow: React.FC<TaskRowProps> = ({
     return (
       <>
         <TableRow
+          ref={desktopElementRef}
           className={`cursor-pointer ${getAnimationClasses()}`}
-          style={getAnimationStyle()}
           onMouseEnter={() => onHover(summary.id)}
           onMouseLeave={() => onHover(null)}
         >

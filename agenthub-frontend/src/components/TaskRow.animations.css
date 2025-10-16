@@ -1,5 +1,79 @@
 /* TaskRow animations - extracted for HMR compatibility */
 
+/* Initial hidden state for new tasks */
+.taskRowNew {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* Create animation */
+.taskRowCreateAnimation {
+  animation: taskRowSlideIn 0.8s ease-out forwards;
+}
+
+@keyframes taskRowSlideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  20% {
+    transform: translateX(60%);
+    opacity: 0.2;
+  }
+  40% {
+    transform: translateX(30%);
+    opacity: 0.4;
+  }
+  60% {
+    transform: translateX(10%);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateX(-2%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Delete animation */
+.taskRowDeleteAnimation {
+  animation: taskRowSlideOut 0.8s ease-in forwards;
+}
+
+@keyframes taskRowSlideOut {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+    height: auto;
+  }
+  30% {
+    transform: translateX(20%);
+    opacity: 0.8;
+  }
+  60% {
+    transform: translateX(50%);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateX(80%);
+    opacity: 0.3;
+    height: auto;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+  }
+}
+
+/* Legacy animation (keep for backwards compatibility) */
 @keyframes slideInFromRight {
   0% {
     transform: translateX(100%);

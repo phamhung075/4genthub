@@ -60,12 +60,6 @@ class AnimationFactory {
       onAnimationEnd?: (type: AnimationType) => void;
     }
   ): void {
-    //logger.debug('🎬 [AnimationFactory] Registering element:', {
-    //  elementId,
-    //  elementType: element.tagName,
-    //  hasCallbacks: !!callbacks
-    //});
-
     this.elementRegistry.set(elementId, { element, callbacks });
   }
 
@@ -73,8 +67,6 @@ class AnimationFactory {
    * Unregister an element from animations
    */
   unregisterElement(elementId: string): void {
-    //logger.debug('🎬 [AnimationFactory] Unregistering element:', elementId);
-
     // Clean up any active animation state
     this.animationStates.delete(elementId);
     this.elementRegistry.delete(elementId);
@@ -84,13 +76,6 @@ class AnimationFactory {
    * Trigger animation for a specific element
    */
   animate(elementId: string, type: AnimationType, source: AnimationSource = 'callback'): boolean {
-    //logger.debug('🎬 [AnimationFactory] Animation request:', {
-    //  elementId,
-    //  type,
-    //  source,
-    //  timestamp: new Date().toISOString()
-    //});
-
     // Check if element is registered
     const registration = this.elementRegistry.get(elementId);
     if (!registration) {
@@ -100,18 +85,12 @@ class AnimationFactory {
 
     // Check if animation should be allowed (coordination logic)
     if (!this.shouldAllowAnimation(elementId, type, source)) {
-      //logger.debug('🎬 [AnimationFactory] Animation blocked by coordination logic:', {
-      //  elementId,
-      //  type,
-      //  source
-      //});
       return false;
     }
 
     // Get animation definition
     const animationDef = this.animationRegistry[type];
     if (!animationDef) {
-      //logger.error('🎬 [AnimationFactory] Unknown animation type:', type);
       return false;
     }
 
@@ -121,14 +100,6 @@ class AnimationFactory {
       startTime: Date.now(),
       source
     });
-
-    //logger.debug('🎬 [AnimationFactory] Applying animation:', {
-    //  elementId,
-    //  type,
-    //  cssClass: animationDef.cssClass,
-    //  duration: animationDef.duration,
-    //  description: animationDef.description
-    //});
 
     // Apply animation
     this.applyAnimation(registration, animationDef, type);
@@ -191,12 +162,6 @@ class AnimationFactory {
     // Add animation class
     element.classList.add(animationDef.cssClass);
 
-    //logger.debug('🎬 [AnimationFactory] CSS class applied:', {
-    //  className: animationDef.cssClass,
-    //  element: element.tagName,
-    //  currentClasses: Array.from(element.classList)
-    //});
-
     // Schedule cleanup
     setTimeout(() => {
       element.classList.remove(animationDef.cssClass);
@@ -206,11 +171,6 @@ class AnimationFactory {
 
       // Trigger end callback
       callbacks?.onAnimationEnd?.(type);
-
-      //logger.debug('🎬 [AnimationFactory] Animation cleanup completed:', {
-      //  className: animationDef.cssClass,
-      //  type
-      //});
     }, animationDef.duration);
   }
 
@@ -240,36 +200,15 @@ class AnimationFactory {
 
     // Allow mount-time animations to override others
     if (source === 'mount') {
-      //logger.debug('🎬 [AnimationFactory] Mount-time animation overriding current:', {
-      //  elementId,
-      //  newType: type,
-      //  currentType: currentState.type,
-      //  source
-      //});
       return true;
     }
 
     // Allow WebSocket animations to override callbacks
     if (source === 'websocket' && currentState.source === 'callback') {
-      //logger.debug('🎬 [AnimationFactory] WebSocket animation overriding callback:', {
-      //  elementId,
-      //  newType: type,
-      //  currentType: currentState.type
-      //});
       return true;
     }
 
     // Block everything else
-    //logger.debug('🎬 [AnimationFactory] Animation blocked by coordination:', {
-    //  elementId,
-    //  requestedType: type,
-    //  requestedSource: source,
-    //  currentType: currentState.type,
-    //  currentSource: currentState.source,
-    //  timeSinceLastAnimation,
-    //  reason: timeSinceLastAnimation <= this.ANIMATION_COOLDOWN ? 'cooldown' : 'priority'
-    //});
-
     return false;
   }
 

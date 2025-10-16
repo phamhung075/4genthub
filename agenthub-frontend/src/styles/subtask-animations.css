@@ -5,6 +5,16 @@
  */
 
 /* ========================================
+   INITIAL HIDDEN STATE (for new subtasks)
+   ======================================== */
+.subtaskRowNew {
+  transform: translateX(100%);
+  opacity: 0;
+  /* Use !important to ensure this isn't overridden by other styles */
+  /* This will be overridden by the animation when it starts */
+}
+
+/* ========================================
    CREATE ANIMATION (Slide In from Right)
    ======================================== */
 @keyframes subtaskRowSlideIn {
@@ -27,7 +37,7 @@
 }
 
 .subtaskRowCreateAnimation {
-  animation: subtaskRowSlideIn 0.8s ease-out;
+  animation: subtaskRowSlideIn 0.8s ease-out forwards;
 }
 
 /* ========================================
