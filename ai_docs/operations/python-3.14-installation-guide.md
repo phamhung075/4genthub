@@ -331,7 +331,7 @@ rm /tmp/Python-3.14.0.tgz
 
 ## Rollback Procedure
 
-To revert to system Python 3.12:
+To revert to system Python 3.14.0:
 ```bash
 # Switch python3 alternative back to 3.12
 sudo update-alternatives --set python3 /usr/bin/python3.12

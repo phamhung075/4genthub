@@ -281,7 +281,7 @@ services:
       - DATABASE_TYPE=postgresql
       - DATABASE_URL=postgresql://dev_user:dev_password@postgres:5432/agenthub_dev
   postgres:
-    image: postgres:15
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: dev_user
       POSTGRES_PASSWORD: dev_password

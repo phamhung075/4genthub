@@ -99,7 +99,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:18-alpine-alpine
     container_name: agenthub-postgres
     environment:
       POSTGRES_DB: ${DATABASE_NAME}

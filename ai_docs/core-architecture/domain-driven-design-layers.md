@@ -1,8 +1,10 @@
 # Domain-Driven Design Layers in agenthub
 
-**Document Version:** 1.0  
-**Last Updated:** 2025-09-12  
-**Status:** Active  
+**Document Version:** 2.0
+**Last Updated:** 2025-10-16
+**Status:** Active
+**Python Version:** 3.14.0
+**Architecture Phase:** DDD Phase 8 Complete  
 
 ## Executive Summary
 
@@ -388,7 +390,7 @@ Integration with external systems:
 
 1. **KeycloakAuthAdapter** - Authentication service integration
 2. **DatabaseAdapter** - Database connection management
-3. **EventBusAdapter** - Message broker integration
+3. **EventBus (with EventQueue and EventWorker)Adapter** - Message broker integration
 
 ## Interface Layer
 
@@ -644,7 +646,7 @@ def test_task_mcp_controller():
 - [Design Patterns in Architecture](./design-patterns-in-architecture.md)
 - [Context Hierarchy System](./context-hierarchy-system.md)
 
-**Last Updated:** 2025-09-12  
-**Document Owner:** agenthub Architecture Team  
-**Review Schedule:** Monthly  
-**Status:** Living Document
+**Last Updated:** 2025-10-16
+**Document Owner:** agenthub Architecture Team
+**Review Schedule:** Monthly
+**Status:** Living Document - DDD Phase 8 Complete

@@ -1,5 +1,12 @@
 # agenthub System Architecture
 
+**Document Version:** 2.0
+**Last Updated:** 2025-10-16
+**Status:** Active
+**Python Version:** 3.14.0
+**Database:** PostgreSQL 18
+**Architecture Phase:** DDD Phase 8 Complete
+
 ## Overview
 
 agenthub is a multi-project AI orchestration platform built using Domain-Driven Design (DDD) principles with a 4-tier hierarchical context system. The platform enables autonomous AI agents to manage complex software development workflows across multiple projects and team contexts.
@@ -79,11 +86,11 @@ TASK (Specific work unit context)
 
 ### Infrastructure Layer
 
-#### Persistence - Dual PostgreSQL Architecture
+#### Persistence - Dual PostgreSQL 18 Architecture
 - **SQLAlchemy ORM**: Object-relational mapping with dual database support
-- **Production Database**: Supabase cloud PostgreSQL (managed, globally distributed)
-- **Development Database**: PostgreSQL Docker container (full feature parity)
-- **Database Adapters**: PostgreSQL optimized for both local and cloud deployment
+- **Production Database**: Supabase cloud PostgreSQL 18 (managed, globally distributed)
+- **Development Database**: PostgreSQL 18 Docker container (full feature parity)
+- **Database Adapters**: PostgreSQL 18 optimized for both local and cloud deployment
 - **Migration Management**: Alembic for schema versioning across both environments
 
 #### Caching
@@ -240,9 +247,9 @@ else:
 - **Health Checks**: Container health monitoring
 
 ### Database Configuration
-- **Primary**: PostgreSQL with JSONB for all environments (development, production)
-- **PostgreSQL**: Full support for local and cloud deployments
-- **Testing**: Isolated PostgreSQL test databases
+- **Primary**: PostgreSQL 18 with JSONB for all environments (development, production)
+- **PostgreSQL 18**: Full support for local and cloud deployments
+- **Testing**: Isolated PostgreSQL 18 test databases
 
 ### Monitoring & Observability
 - **Health Endpoints**: System health monitoring

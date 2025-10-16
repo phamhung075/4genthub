@@ -1,8 +1,13 @@
 # Database Architecture Guide
 
+**Document Version:** 2.0
+**Last Updated:** 2025-10-16
+**Status:** Active
+**Database Version:** PostgreSQL 18
+
 ## Overview
 
-agenthub implements a **dual PostgreSQL architecture** designed for optimal development-production parity while leveraging cloud-managed services for production scale.
+agenthub implements a **dual PostgreSQL 18 architecture** designed for optimal development-production parity while leveraging cloud-managed services for production scale.
 
 ## Architecture Design
 
@@ -10,17 +15,17 @@ agenthub implements a **dual PostgreSQL architecture** designed for optimal deve
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                agenthub Database Architecture             │
+│           agenthub Database Architecture - PostgreSQL 18    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Production Environment          Development Environment    │
 │  ┌─────────────────────────┐      ┌────────────────────────┐│
-│  │  Supabase Cloud         │      │ PostgreSQL Docker      ││
-│  │  PostgreSQL             │      │ Container              ││
+│  │  Supabase Cloud         │      │ PostgreSQL 18 Docker   ││
+│  │  PostgreSQL 18          │      │ Container              ││
 │  │                         │      │                        ││
 │  │  • Fully managed        │ <──> │ • Local development    ││
 │  │  • Global distribution  │      │ • Full feature parity  ││
-│  │  • Auto backups         │      │ • Same PostgreSQL ver. ││
+│  │  • Auto backups         │      │ • PostgreSQL 18        ││
 │  │  • Real-time features   │      │ • Isolated environment ││
 │  │  • Built-in auth        │      │ • Fast iteration       ││
 │  └─────────────────────────┘      └────────────────────────┘│

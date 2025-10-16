@@ -128,24 +128,24 @@ graph TB
 
 ### Backend Technologies
 ```
-Language:         Python 3.14+
+Language:         Python 3.14.0
 Framework:        FastMCP (custom MCP server framework)
 ORM:              SQLAlchemy 2.0+
-Database:         SQLite (dev) / PostgreSQL (prod)
+Database:         PostgreSQL 18 (Docker dev / Supabase prod)
 Cache:            Redis (optional)
 Authentication:   Keycloak + JWT
-Event System:     Custom Event Bus
+Event System:     Custom Event Bus (EventQueue, EventBus (with EventQueue and EventWorker), EventWorker)
 Testing:          pytest, unittest
 Documentation:    Markdown + Mermaid
 ```
 
-### Frontend Technologies  
+### Frontend Technologies
 ```
-Language:         TypeScript
-Framework:        React 18+
+Language:         TypeScript 4.x
+Framework:        React 19.x
 Styling:          Tailwind CSS
 State Management: React Context + Custom Hooks
-Build Tool:       Vite
+Build Tool:       Vite 7.x
 HTTP Client:      Fetch API
 Port:             3800
 ```
@@ -426,7 +426,7 @@ Ports:
 
 **Examples:**
 - `ORMTaskRepository._entity_to_model_dict()` - ORM mapping
-- `EventBus.publish()` - Event delivery
+- `EventBus (with EventQueue and EventWorker).publish()` - Event delivery
 - `SQLAlchemySessionAdapter` - Database session management
 
 #### Interface Layer (External Communication)
