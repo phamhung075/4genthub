@@ -5,7 +5,7 @@
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
         "hash": "8f61bfda7539ffd0bb103edc7349473d",
-        "last_updated": "2025-10-16T06:44:25.718762"
+        "last_updated": "2025-10-16T22:41:23.038341"
       }
     }
   },
@@ -15,7 +15,7 @@
       "files": [
         {
           "hash": "8f61bfda7539ffd0bb103edc7349473d",
-          "modified": "2025-10-16T06:44:25.718762",
+          "modified": "2025-10-16T22:41:23.038341",
           "name": "docker-menu.sh.md",
           "path": "_absolute_docs/scripts/docker-menu.sh.md",
           "size": 2888
@@ -248,14 +248,14 @@
       "files": [
         {
           "hash": "5b85752581563ead922dc78717acf630",
-          "modified": "2025-10-16T06:36:27.833810",
+          "modified": "2025-10-16T22:41:23.042341",
           "name": "PRD.md",
           "path": "architecture-design/PRD.md",
           "size": 19950
         },
         {
           "hash": "4c59eb780c7684041c77a7e0238a623d",
-          "modified": "2025-10-16T06:40:00.782789",
+          "modified": "2025-10-16T22:41:23.038341",
           "name": "Architecture_Technique.md",
           "path": "architecture-design/Architecture_Technique.md",
           "size": 41950
@@ -303,7 +303,7 @@
         },
         {
           "hash": "7e47630f344b91b13c82c0af641e674a",
-          "modified": "2025-10-16T05:44:34.218131",
+          "modified": "2025-10-16T22:41:23.042341",
           "name": "complete-authentication-system.md",
           "path": "authentication/complete-authentication-system.md",
           "size": 57125
@@ -470,7 +470,7 @@
         },
         {
           "hash": "f483314ca2264f97f44de2da29c96061",
-          "modified": "2025-10-16T06:14:29.599993",
+          "modified": "2025-10-16T22:41:23.042341",
           "name": "context-system-complete-guide.md",
           "path": "context-system/context-system-complete-guide.md",
           "size": 18560
@@ -518,7 +518,7 @@
       "files": [
         {
           "hash": "28e09c0b0d11ef3cf07372a214b9fede",
-          "modified": "2025-10-16T05:52:44.575170",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "mcp-injection-architecture.md",
           "path": "core-architecture/mcp-injection-architecture.md",
           "size": 43410
@@ -532,14 +532,14 @@
         },
         {
           "hash": "a5a17258e332da5423485824d6d31320",
-          "modified": "2025-10-16T06:27:57.180847",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "index.md",
           "path": "core-architecture/index.md",
           "size": 23888
         },
         {
           "hash": "a188d623099da579ced4d67774acd2ef",
-          "modified": "2025-10-16T06:27:57.180847",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
           "size": 19028
@@ -553,7 +553,7 @@
         },
         {
           "hash": "76e727b1ce7ec64452c334ac384220c7",
-          "modified": "2025-10-16T06:26:40.653357",
+          "modified": "2025-10-16T22:41:23.042341",
           "name": "database-architecture.md",
           "path": "core-architecture/database-architecture.md",
           "size": 9231
@@ -567,7 +567,7 @@
         },
         {
           "hash": "0e9db02a476abe42edf8d6b11b4b1b6c",
-          "modified": "2025-10-16T06:26:19.120156",
+          "modified": "2025-10-16T22:41:23.042341",
           "name": "architecture.md",
           "path": "core-architecture/architecture.md",
           "size": 11461
@@ -588,7 +588,7 @@
         },
         {
           "hash": "4c1c445bf782030277895d234556908e",
-          "modified": "2025-10-16T15:37:20.234386",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "type-system-quality-checklist.md",
           "path": "core-architecture/type-system-quality-checklist.md",
           "size": 8507
@@ -609,7 +609,7 @@
         },
         {
           "hash": "568cf89812357afaa2be2d64eddc18c3",
-          "modified": "2025-10-16T06:27:57.176847",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "domain-driven-design-layers.md",
           "path": "core-architecture/domain-driven-design-layers.md",
           "size": 19045
@@ -630,7 +630,7 @@
         },
         {
           "hash": "e57dfab4afd5f3c7bbab68b9a09682df",
-          "modified": "2025-10-16T05:58:52.746467",
+          "modified": "2025-10-16T22:41:23.042341",
           "name": "agent-system-architecture.md",
           "path": "core-architecture/agent-system-architecture.md",
           "size": 58877
@@ -644,14 +644,14 @@
         },
         {
           "hash": "1db8205bcbf46835cbc39d2a155b2d89",
-          "modified": "2025-10-16T15:35:42.644346",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "type-system-mapping.md",
           "path": "core-architecture/type-system-mapping.md",
           "size": 10760
         },
         {
           "hash": "f0cc19dad2860b415072cd94f243c4b5",
-          "modified": "2025-10-16T06:04:01.306021",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "dependency-management-engine-architecture.md",
           "path": "core-architecture/dependency-management-engine-architecture.md",
           "size": 18954
@@ -665,7 +665,7 @@
         },
         {
           "hash": "82f1cb835bab6c37ea12e7042e53bd2e",
-          "modified": "2025-10-16T05:44:36.286221",
+          "modified": "2025-10-16T22:41:23.046341",
           "name": "unified-timestamp-architecture.md",
           "path": "core-architecture/unified-timestamp-architecture.md",
           "size": 41053
@@ -695,11 +695,11 @@
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 22,
+      "count": 27,
       "files": [
         {
           "hash": "ee5c18b44b88d81e273ad714c2977b7f",
-          "modified": "2025-10-16T06:27:57.188847",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "domain-events-usage-guide.md",
           "path": "development-guides/domain-events-usage-guide.md",
           "size": 26576
@@ -734,14 +734,14 @@
         },
         {
           "hash": "b38ef36ec171d499da8cb968d34bdd4f",
-          "modified": "2025-10-16T06:27:57.188847",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "event-handlers-reference.md",
           "path": "development-guides/event-handlers-reference.md",
           "size": 32197
         },
         {
           "hash": "156a10e107b14da2efe9b04ebb78fa6b",
-          "modified": "2025-10-16T06:27:57.184847",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "REPOSITORY_SWITCHING_GUIDE.md",
           "path": "development-guides/REPOSITORY_SWITCHING_GUIDE.md",
           "size": 12984
@@ -782,11 +782,32 @@
           "size": 47069
         },
         {
+          "hash": "e784e58bdbbac361893b4c9b357ec219",
+          "modified": "2025-10-17T08:04:07.492878",
+          "name": "mcp-response-correction-phases.md",
+          "path": "development-guides/mcp-response-correction-phases.md",
+          "size": 101374
+        },
+        {
           "hash": "2860120e4220986939249006f304a299",
-          "modified": "2025-10-16T06:27:57.184847",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "REPOSITORY_ARCHITECTURE_FINAL.md",
           "path": "development-guides/REPOSITORY_ARCHITECTURE_FINAL.md",
           "size": 12583
+        },
+        {
+          "hash": "9c85afc7a6f4abe14b50d607465fc860",
+          "modified": "2025-10-17T08:16:09.259606",
+          "name": "MCP-RESPONSE-FIX-MASTER-PLAN.md",
+          "path": "development-guides/MCP-RESPONSE-FIX-MASTER-PLAN.md",
+          "size": 11400
+        },
+        {
+          "hash": "5c4a0dfd84e9efd82568039f814964f3",
+          "modified": "2025-10-17T08:14:59.830081",
+          "name": "phase-3-4-implementation-guide.md",
+          "path": "development-guides/phase-3-4-implementation-guide.md",
+          "size": 10780
         },
         {
           "hash": "831a13a39e5c59e9f1a3c2397aef3e19",
@@ -832,17 +853,31 @@
         },
         {
           "hash": "40da2ce3ee4c2f2e46b322a5c7b4a99b",
-          "modified": "2025-10-16T06:44:25.086733",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "docker-system-guide.md",
           "path": "development-guides/docker-system-guide.md",
           "size": 14201
         },
         {
+          "hash": "0a5843396b3761948f3e694e28af97e2",
+          "modified": "2025-10-17T08:12:07.864902",
+          "name": "phase-1-implementation-guide.md",
+          "path": "development-guides/phase-1-implementation-guide.md",
+          "size": 14781
+        },
+        {
           "hash": "e431b36b4af74b93c5efaa3c623e4da7",
-          "modified": "2025-10-16T08:27:23.622159",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "hmr-debugging-guide.md",
           "path": "development-guides/hmr-debugging-guide.md",
           "size": 6107
+        },
+        {
+          "hash": "743cdf33a47fa48cf4dc3322e9358663",
+          "modified": "2025-10-17T08:13:51.407825",
+          "name": "phase-2-implementation-guide.md",
+          "path": "development-guides/phase-2-implementation-guide.md",
+          "size": 21268
         },
         {
           "hash": "3f1506b3725e657858947411b2661391",
@@ -859,7 +894,7 @@
       "files": [
         {
           "hash": "c66a5320768777d6a68cf505f126babc",
-          "modified": "2025-10-16T06:27:57.192847",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "toast-notification-architecture.md",
           "path": "development-guides/ui-patterns/toast-notification-architecture.md",
           "size": 25267
@@ -933,7 +968,7 @@
         },
         {
           "hash": "8560e9f7a2d908ef7a620d7587526dd0",
-          "modified": "2025-10-16T06:27:57.192847",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "database-configuration-guide.md",
           "path": "operations/database-configuration-guide.md",
           "size": 5451
@@ -968,14 +1003,14 @@
         },
         {
           "hash": "b8e8c63194b853098f4cba270674aa4e",
-          "modified": "2025-10-16T06:27:57.196848",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "python-3.14-installation-guide.md",
           "path": "operations/python-3.14-installation-guide.md",
           "size": 10184
         },
         {
           "hash": "d2278c0d4dc87b55d1d05b33a903b9ad",
-          "modified": "2025-10-13T10:21:19.206432",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "orm-database-initialization.md",
           "path": "operations/orm-database-initialization.md",
           "size": 9341
@@ -996,7 +1031,7 @@
         },
         {
           "hash": "81ee7ece467e8cf239bc8a24e384050d",
-          "modified": "2025-10-16T06:27:57.192847",
+          "modified": "2025-10-16T22:41:23.050342",
           "name": "KEYCLOAK_POSTGRESQL_SETUP.md",
           "path": "operations/KEYCLOAK_POSTGRESQL_SETUP.md",
           "size": 9893
@@ -1045,6 +1080,19 @@
       ],
       "path": "product-requirements"
     },
+    "reports-status": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
+          "modified": "2025-10-17T07:43:43.992735",
+          "name": "mcp-tool-response-analysis.md",
+          "path": "reports-status/mcp-tool-response-analysis.md",
+          "size": 18214
+        }
+      ],
+      "path": "reports-status"
+    },
     "root": {
       "count": 9,
       "files": [
@@ -1085,7 +1133,7 @@
         },
         {
           "hash": "2f1ea8f81370322905c6a2abe2eb9313",
-          "modified": "2025-10-16T06:27:57.200848",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "uv-single-file-scripts.md",
           "path": "uv-single-file-scripts.md",
           "size": 4134
@@ -1180,14 +1228,14 @@
       "files": [
         {
           "hash": "3f387d62d26d34738a68e92b6fe4587a",
-          "modified": "2025-10-16T09:48:27.234770",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "subtask-count-ddd-refactoring.md",
           "path": "troubleshooting-guides/subtask-count-ddd-refactoring.md",
           "size": 14434
         },
         {
           "hash": "4f0d850b2ed416d74171230e748afba5",
-          "modified": "2025-10-16T19:43:45.070944",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "database-lock-infinite-loop-fix.md",
           "path": "troubleshooting-guides/database-lock-infinite-loop-fix.md",
           "size": 11254
@@ -1201,7 +1249,7 @@
         },
         {
           "hash": "a8564e3532aa64ba3ca84d6868c75461",
-          "modified": "2025-10-16T19:10:41.948213",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "docker-menu-clean-volume-fix.md",
           "path": "troubleshooting-guides/docker-menu-clean-volume-fix.md",
           "size": 8084
@@ -1215,7 +1263,7 @@
         },
         {
           "hash": "6687ff75ef86b61c5f2b6637163c27fc",
-          "modified": "2025-10-16T18:57:34.624534",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "docker-volume-persistence-issue.md",
           "path": "troubleshooting-guides/docker-volume-persistence-issue.md",
           "size": 7532
@@ -1229,14 +1277,14 @@
         },
         {
           "hash": "32c090f69b53bc71796c06c9b727a25d",
-          "modified": "2025-10-16T08:55:22.157821",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "subtask-loading-diagnostic.md",
           "path": "troubleshooting-guides/subtask-loading-diagnostic.md",
           "size": 8663
         },
         {
           "hash": "f8f8f1efe11ba0b3aaf32eaf2b812a7c",
-          "modified": "2025-10-16T18:44:15.047936",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "subtask-count-sync-issue.md",
           "path": "troubleshooting-guides/subtask-count-sync-issue.md",
           "size": 7496
@@ -1250,7 +1298,7 @@
         },
         {
           "hash": "b80e8a408a17cff3b44b1d1df66890e1",
-          "modified": "2025-10-16T09:09:27.112635",
+          "modified": "2025-10-16T22:41:23.054342",
           "name": "subtask-component-rendering-diagnostic.md",
           "path": "troubleshooting-guides/subtask-component-rendering-diagnostic.md",
           "size": 9381
@@ -1273,7 +1321,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-16T19:43:45.252110",
+  "generated_at": "2025-10-17T08:16:09.351793",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1414,6 +1462,7 @@
     "development-guides": {
       "files": [
         "DDD-schema.md",
+        "MCP-RESPONSE-FIX-MASTER-PLAN.md",
         "README.md",
         "REPOSITORY_ARCHITECTURE_FINAL.md",
         "REPOSITORY_SWITCHING_GUIDE.md",
@@ -1431,7 +1480,11 @@
         "jwt-authentication-guide.md",
         "logger-environment-variables.md",
         "mcp-integration-guide.md",
+        "mcp-response-correction-phases.md",
         "mcp-task-creation-guide.md",
+        "phase-1-implementation-guide.md",
+        "phase-2-implementation-guide.md",
+        "phase-3-4-implementation-guide.md",
         "test-organization-guide.md",
         "test_creation_guide.md",
         "token-management-analysis.md"
@@ -1491,6 +1544,11 @@
         "README.md"
       ]
     },
+    "reports-status": {
+      "files": [
+        "mcp-tool-response-analysis.md"
+      ]
+    },
     "setup-guides": {
       "files": [
         "BRANCH_SETUP.md",
@@ -1526,6 +1584,6 @@
       ]
     }
   },
-  "total_directories": 25,
-  "total_files": 164
+  "total_directories": 26,
+  "total_files": 170
 }
