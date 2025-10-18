@@ -24,17 +24,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Only initialize WebSocket when we have valid user and token
   const shouldConnectWebSocket = !!(user?.id && tokens?.access_token);
 
-  logger.debug('[AuthContext] 🔍 WebSocket connection decision:', {
-    shouldConnectWebSocket,
-    hasUser: !!user,
-    hasUserId: !!user?.id,
-    hasTokens: !!tokens,
-    hasAccessToken: !!tokens?.access_token,
-    userId: user?.id,
-    tokenLength: tokens?.access_token?.length,
-    timestamp: new Date().toISOString()
-  });
-
   // CRITICAL FIX: Only call useWebSocket when credentials are available
   // This prevents "missing credentials" warnings during initial render
   const {
@@ -44,24 +33,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user?.id || '',
     tokens?.access_token || ''
   );
-
-  logger.debug('[AuthContext] 📊 WebSocket hook state:', {
-    isWebSocketConnected,
-    shouldConnectWebSocket,
-    timestamp: new Date().toISOString()
-  });
-
-  // Debug logging for WebSocket connection state
-  useEffect(() => {
-    logger.debug('[AuthContext] WebSocket connection state:', {
-      shouldConnect: shouldConnectWebSocket,
-      isConnected: isWebSocketConnected,
-      hasUser: !!user,
-      hasToken: !!tokens?.access_token,
-      userId: user?.id,
-      tokenLength: tokens?.access_token?.length
-    });
-  }, [shouldConnectWebSocket, isWebSocketConnected, user, tokens]);
 
   // Decode JWT token to extract user information
   const decodeToken = (token: string): User | null => {
@@ -370,7 +341,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // This prevents clientSessionIdleTimeout from expiring
     const keepAliveInterval = setInterval(async () => {
       try {
-        logger.debug('Sending keep-alive ping to maintain session');
         await fetch(`${API_BASE_URL}/api/v2/connections/health`, {
           method: 'GET',
           headers: {
@@ -379,9 +349,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
           credentials: 'include',
         });
-        logger.debug('Keep-alive ping successful');
       } catch (error) {
-        logger.debug('Keep-alive ping failed (non-critical):', error);
         // Don't throw - keep-alive failures shouldn't disrupt user experience
       }
     }, 120000); // 2 minutes (120 seconds)

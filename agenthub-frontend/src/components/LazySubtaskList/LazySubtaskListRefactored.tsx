@@ -49,6 +49,13 @@ export function LazySubtaskListRefactored({
   parentTaskId
 }: LazySubtaskListProps) {
 
+  logger.debug('🚀 [LazySubtaskList] Component MOUNTED/RENDERING', {
+    parentTaskId,
+    projectId,
+    taskTreeId,
+    timestamp: Date.now()
+  });
+
   // URL parameter monitoring - safely handle when not in a route context
   let subtaskId: string | undefined;
   try {
@@ -77,6 +84,14 @@ export function LazySubtaskListRefactored({
   // Filtering and sorting hook
   const { filteredSubtasks } = useSubtaskFilters(subtaskSummaries);
 
+  // 🔴 DEBUG: Track subtask data
+  logger.debug('🔍 [LazySubtaskList] Subtask data state', {
+    subtaskSummariesCount: subtaskSummaries.length,
+    filteredSubtasksCount: filteredSubtasks.length,
+    subtaskIds: subtaskSummaries.map(s => s.id),
+    subtaskTitles: subtaskSummaries.map(s => s.title)
+  });
+
   // Handle subtask deletion with animation
   const handleSubtaskDeleted = useCallback((subtaskId: string) => {
     logger.debug('🗑️ [LazySubtaskList] Subtask deleted, marking for animation', { subtaskId }, 'LazySubtaskListRefactored.tsx');
@@ -97,7 +112,8 @@ export function LazySubtaskListRefactored({
     parentTaskId,
     subscriptionEnabled,
     refreshData,
-    handleSubtaskDeleted
+    handleSubtaskDeleted,
+    handleSubtaskCreated  // Pass the optimistic update handler
   );
 
   // Animation and expansion state hook

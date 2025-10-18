@@ -227,6 +227,8 @@ class SubtaskAPIController:
                 subtask_summary_to_dto(SubtaskObj(st)) for st in subtasks_list
             ]
 
+            logger.info(f"🐛 [CONTROLLER DEBUG] Created {len(subtask_dtos)} DTOs")
+            logger.info(f"🐛 [CONTROLLER DEBUG] DTO IDs: {[dto.id for dto in subtask_dtos]}")
             logger.info(f"🟢 [CONTROLLER] Returning SubtasksResponse with {len(subtask_dtos)} DTOs")
             return SubtasksResponse(
                 success=True,

@@ -72,9 +72,22 @@ export const getSubtaskSummaries = async (task_id: string, _params?: {
   limit?: number;
 }): Promise<{ subtasks: SubtaskSummary[]; total: number }> => {
   // params reserved for future pagination implementation
+  logger.debug('🔍 [getSubtaskSummaries] ENTRY - task_id:', task_id);
+
   const response = await subtaskApiV2.listSubtasksForTask(task_id);
+  logger.debug('🔍 [getSubtaskSummaries] RAW API RESPONSE:', {
+    responseType: typeof response,
+    responseKeys: Object.keys(response || {}),
+    response: response
+  });
+
   const subtasks = (response as any).subtasks || [];
-  
+  logger.debug('🔍 [getSubtaskSummaries] EXTRACTED SUBTASKS ARRAY:', {
+    count: subtasks.length,
+    subtaskIds: subtasks.map((s: any) => s.id),
+    subtasks: subtasks
+  });
+
   const summaries: SubtaskSummary[] = subtasks.map((subtask: Subtask) => ({
     id: subtask.id,
     title: subtask.title,
@@ -86,7 +99,18 @@ export const getSubtaskSummaries = async (task_id: string, _params?: {
     created_at: subtask.created_at,
     updated_at: subtask.updated_at
   }));
-  
+
+  logger.debug('🔍 [getSubtaskSummaries] MAPPED SUMMARIES:', {
+    count: summaries.length,
+    summaryIds: summaries.map(s => s.id),
+    summaries: summaries
+  });
+
+  logger.debug('🔍 [getSubtaskSummaries] EXIT - returning:', {
+    subtaskCount: summaries.length,
+    total: summaries.length
+  });
+
   return {
     subtasks: summaries,
     total: summaries.length

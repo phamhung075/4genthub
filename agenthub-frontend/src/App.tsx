@@ -17,6 +17,7 @@ import ProjectList from './components/ProjectList';
 import { ShimmerButton } from './components/ui/shimmer-button';
 import { ToastProvider } from './components/ui/toast';
 import { WebSocketToastBridge } from './components/WebSocketToastBridge';
+import { WebSocketStatusBadge } from './components/WebSocketStatusBadge';
 import { ThemeProvider } from './contexts/ThemeContext';
 // Import Redux Provider and store
 import { Provider as ReduxProvider } from 'react-redux';
@@ -191,6 +192,7 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <WebSocketToastBridge />
+          <WebSocketStatusBadge />
           <AuthWrapper>
         <Routes>
           {/* Public routes */}

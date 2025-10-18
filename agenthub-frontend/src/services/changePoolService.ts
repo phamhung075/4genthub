@@ -386,6 +386,34 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
   webSocketClient.on('update', updateHandler);
   logger.debug('🔌 ChangePool: Subscription complete, checking listener count...', undefined, 'changePoolService.ts');
 
+  // ENHANCED: Smart re-fetch on reconnect
+  // When WebSocket reconnects after disconnection, trigger a refresh of all subscriptions
+  // to ensure data is up-to-date with any changes that occurred during disconnection
+  const connectedHandler = () => {
+    // Small delay to ensure WebSocket is fully ready
+    setTimeout(() => {
+      logger.info('🔄 ChangePool: WebSocket reconnected - triggering data refresh for all subscriptions', undefined, 'changePoolService.ts');
+
+      // Force refresh all active subscriptions
+      const stats = changePoolService.getSubscriptionStats();
+      logger.debug(`📡 ChangePool: Refreshing ${stats.total} subscriptions after reconnect`, undefined, 'changePoolService.ts');
+
+      // Refresh all entity types currently subscribed
+      const entityTypesSet = new Set<EntityType>();
+      changePoolService.getSubscriptions().forEach(sub => {
+        sub.entityTypes.forEach(type => entityTypesSet.add(type));
+      });
+
+      if (entityTypesSet.size > 0) {
+        const entityTypes = Array.from(entityTypesSet);
+        logger.info(`🔄 ChangePool: Force refreshing components for: ${entityTypes.join(', ')}`, undefined, 'changePoolService.ts');
+        changePoolService.forceRefresh(entityTypes);
+      }
+    }, 100); // 100ms delay to ensure WebSocket is fully connected
+  };
+
+  webSocketClient.on('connected', connectedHandler);
+
   // Verify subscription was successful
   const listenerCount = typeof webSocketClient.listenerCount === 'function'
     ? webSocketClient.listenerCount('update')
@@ -400,10 +428,12 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
       if (webSocketClient && typeof webSocketClient.off === 'function') {
         logger.debug('🔌 ChangePool: Unsubscribing from WebSocket events', undefined, 'changePoolService.ts');
         webSocketClient.off('update', updateHandler);
+        webSocketClient.off('connected', connectedHandler);
       } else if (webSocketClient && typeof webSocketClient.removeAllListeners === 'function') {
         // Fallback for EventEmitter-like objects
         logger.debug('🔌 ChangePool: Using removeAllListeners for cleanup', undefined, 'changePoolService.ts');
         webSocketClient.removeAllListeners('update');
+        webSocketClient.removeAllListeners('connected');
       } else {
         // Log warning but don't throw - this is not critical
         logger.debug('🔌 ChangePool: WebSocket client cleanup skipped (no suitable method found)', undefined, 'changePoolService.ts');

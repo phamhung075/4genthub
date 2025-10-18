@@ -197,7 +197,14 @@ async def list_subtasks_for_task(
                 detail=result.error or "Failed to list subtasks"
             )
 
+        # CRITICAL DEBUG: Check data BEFORE and AFTER model_dump
+        logger.info(f"🐛 [DEBUG] BEFORE model_dump: result.subtasks has {len(result.subtasks)} items")
+        logger.info(f"🐛 [DEBUG] result.subtasks IDs: {[st.id for st in result.subtasks]}")
+
         response = result.model_dump(by_alias=True)
+
+        logger.info(f"🐛 [DEBUG] AFTER model_dump: response['subtasks'] has {len(response.get('subtasks', []))} items")
+        logger.info(f"🐛 [DEBUG] response['subtasks'] IDs: {[st.get('id') for st in response.get('subtasks', [])]}")
         logger.info(f"🔵 [ROUTE] Returning response with {len(response.get('subtasks', []))} subtasks")
         return response
 
