@@ -139,10 +139,11 @@ class ComprehensiveLogger {
 
   // INTENTIONAL: Returns native console methods for outputToConsole()
   // This is the core logging mechanism - console methods are used intentionally here
+  // Note: Using console.log for debug instead of console.debug to prevent browser filtering
   private getConsoleMethod(level: LogLevel): Console['log'] {
     switch (level) {
       case 'debug':
-        return console.debug;
+        return console.log;  // Changed from console.debug - browsers filter console.debug by default
       case 'info':
         return console.info;
       case 'warn':

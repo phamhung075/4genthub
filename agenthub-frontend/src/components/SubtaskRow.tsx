@@ -124,14 +124,14 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
     }
   };
 
-  // Debug log to verify component renders
+  // Debug log to verify component mounts
   useEffect(() => {
-    console.log('🔧 [SubtaskRow] Rendering with copy buttons:', {
+    logger.debug('🏗️ [SubtaskRow] Mounted', {
       subtaskId: summary.id,
-      subtaskTitle: summary.title,
-      hasCopyButtons: true
+      title: summary.title,
+      timestamp: Date.now()
     });
-  }, [summary.id, summary.title]);
+  }, [summary.id]);
 
   return (
     <React.Fragment>

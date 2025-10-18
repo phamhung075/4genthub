@@ -504,12 +504,27 @@ export const subtaskApiV2 = {
 
   // List subtasks for a task
   listSubtasksForTask: async (taskId: string) => {
+    console.log('🔍 [apiV2.listSubtasksForTask] CALLING API - taskId:', taskId);
+    console.log('🔍 [apiV2.listSubtasksForTask] URL:', `${API_BASE_URL}/api/v2/subtasks/task/${taskId}`);
+
     const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/task/${taskId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
     });
-    return handleResponse(response);
+
+    console.log('🔍 [apiV2.listSubtasksForTask] RESPONSE STATUS:', response.status);
+    console.log('🔍 [apiV2.listSubtasksForTask] RESPONSE HEADERS:', Object.fromEntries(response.headers.entries()));
+
+    const result = await handleResponse(response);
+    console.log('🔍 [apiV2.listSubtasksForTask] HANDLED RESPONSE:', {
+      resultType: typeof result,
+      resultKeys: Object.keys(result || {}),
+      subtasksCount: (result as any)?.subtasks?.length || 0,
+      result: result
+    });
+
+    return result;
   },
 
   // Complete a subtask

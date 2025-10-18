@@ -16,15 +16,12 @@ export function useSubtaskWebSocket(
   parentTaskId: string,
   subscriptionEnabled: boolean,
   onSubtaskChanges: () => Promise<void>,
-  onSubtaskDeleted?: (subtaskId: string) => void
+  onSubtaskDeleted?: (subtaskId: string) => void,
+  onSubtaskCreated?: (subtask: any) => void
 ): UseSubtaskWebSocketReturn {
 
   const [isConnected, setIsConnected] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
-
-  // Track pending created subtasks to batch refresh calls
-  const pendingCreatedSubtasks = useRef<Set<string>>(new Set());
-  const createdRefreshTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced change handler ONLY for update events
   const debouncedHandleUpdates = useCallback(
@@ -34,6 +31,8 @@ export function useSubtaskWebSocket(
 
   /**
    * Handle incoming WebSocket changes
+   * CLEAN ARCHITECTURE: Each subtask animates independently via optimistic updates
+   * NO batching, NO timers, NO HTTP API calls during creation
    */
   const handleWebSocketChange = useCallback(async (data: any) => {
     try {
@@ -46,9 +45,10 @@ export function useSubtaskWebSocket(
       const eventType = data.eventType || data.type;
       const subtaskId = data.entityId || data.subtask?.id;
 
-      logger.debug('Subtask WebSocket change received:', {
-        eventType,
+      logger.debug('🔵 [SubtaskWebSocket] Event received', {
         subtaskId,
+        eventType,
+        timestamp: Date.now(),
         parentTaskId: data.subtask?.parent_task_id || data.parent_task_id
       });
 
@@ -67,42 +67,23 @@ export function useSubtaskWebSocket(
         return;
       }
 
-      // Handle created events by batching them
-      // This prevents race conditions when multiple subtasks are created rapidly
+      // Handle created events with IMMEDIATE optimistic update
+      // NO batching, NO timers - each subtask appears and animates independently
       if (eventType === 'created' && subtaskId) {
-        logger.debug('✨ [useSubtaskWebSocket] Subtask created, adding to batch', {
-          subtaskId,
-          batchSize: pendingCreatedSubtasks.current.size + 1
-        });
+        logger.debug('✨ [useSubtaskWebSocket] Subtask created, optimistic update ONLY', { subtaskId });
 
-        // Add to pending batch
-        pendingCreatedSubtasks.current.add(subtaskId);
-
-        // Clear existing timer
-        if (createdRefreshTimer.current) {
-          clearTimeout(createdRefreshTimer.current);
-        }
-
-        // Set new timer to batch all creates within 800ms window
-        // This window is longer to handle MCP-created subtasks which can have 0.5-1s gaps
-        createdRefreshTimer.current = setTimeout(async () => {
-          const batchSize = pendingCreatedSubtasks.current.size;
-          logger.debug('🔄 [useSubtaskWebSocket] Processing batched created events', {
-            batchSize,
-            subtaskIds: Array.from(pendingCreatedSubtasks.current)
-          });
-
-          // Clear the batch before refresh to avoid duplicates
-          pendingCreatedSubtasks.current.clear();
-
-          // Single refresh for all created subtasks
-          await onSubtaskChanges();
+        // OPTIMISTIC UPDATE: Immediately add subtask to UI
+        // Animation will be triggered automatically when SubtaskRow mounts
+        if (onSubtaskCreated && data.subtask) {
+          logger.debug('🚀 [useSubtaskWebSocket] Adding subtask to UI (no HTTP API call)', { subtaskId });
+          onSubtaskCreated(data.subtask);
           setReconnectAttempts(0);
-
-          logger.debug('✅ [useSubtaskWebSocket] Batch refresh completed', { batchSize });
-        }, 800); // 800ms window to catch MCP-created subtasks with network latency
-
-        return;
+          return;
+        } else {
+          logger.warn('⚠️ [useSubtaskWebSocket] No subtask data in created event - falling back to API fetch', { subtaskId });
+          // FALLBACK: If backend didn't send subtask data, fetch from API
+          // Don't return early - let debouncedHandleUpdates() fetch the data
+        }
       }
 
       // For update events, use debouncing to prevent rapid updates
@@ -112,7 +93,7 @@ export function useSubtaskWebSocket(
     } catch (error) {
       logger.error('Error processing WebSocket change:', error);
     }
-  }, [parentTaskId, onSubtaskChanges, debouncedHandleUpdates, onSubtaskDeleted]);
+  }, [parentTaskId, onSubtaskChanges, debouncedHandleUpdates, onSubtaskDeleted, onSubtaskCreated]);
 
   /**
    * Handle connection state changes
@@ -173,16 +154,6 @@ export function useSubtaskWebSocket(
       return () => clearTimeout(timeoutId);
     }
   }, [isConnected, subscriptionEnabled, reconnectAttempts, reconnect]);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (createdRefreshTimer.current) {
-        clearTimeout(createdRefreshTimer.current);
-        createdRefreshTimer.current = null;
-      }
-    };
-  }, []);
 
   return {
     isConnected,

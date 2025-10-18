@@ -53,13 +53,7 @@ export class WebSocketClient extends EventEmitter {
     // Use configuration instead of direct environment access
     const wsBaseUrl = config.websocket.url;
 
-    // Enhanced debugging for WebSocket URL configuration
-    logger.debug('[WebSocket v2.0] 🔍 DEBUG: WebSocket Configuration Check:');
-    logger.debug('  - config.websocket.url:', wsBaseUrl);
-    logger.debug('  - config object:', config);
-    logger.debug('  - typeof wsBaseUrl:', typeof wsBaseUrl);
-    logger.debug('  - wsBaseUrl length:', wsBaseUrl?.length);
-    logger.debug('  - Environment check completed');
+    // WebSocket URL configuration check (minimal logging)
 
     if (!wsBaseUrl) {
       logger.error('[WebSocket v2.0] ❌ WebSocket URL is not configured');
@@ -71,19 +65,9 @@ export class WebSocketClient extends EventEmitter {
     }
 
     const wsUrl = `${wsBaseUrl}/ws/realtime?token=${this.token}`;
-
-    logger.debug('[WebSocket v2.0] 🔌 DEBUG: Attempting WebSocket connection');
-    logger.debug('  - Full WebSocket URL:', wsUrl.replace(/token=[^&]+/, 'token=***'));
-    logger.debug('  - Base URL:', wsBaseUrl);
-    logger.debug('  - Token length:', this.token ? this.token.length : 0);
-    logger.debug('  - User ID:', this.userId);
-    logger.debug('  - About to create WebSocket object...');
+    logger.info('[WebSocket] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***'));
 
     this.ws = new WebSocket(wsUrl);
-
-    logger.debug('[WebSocket v2.0] ✅ WebSocket object created successfully');
-    logger.debug('  - WebSocket readyState:', this.ws.readyState);
-    logger.debug('  - WebSocket URL:', this.ws.url.replace(/token=[^&]+/, 'token=***'));
 
     this.ws.onopen = this.handleOpen.bind(this);
     this.ws.onmessage = this.handleMessage.bind(this);
@@ -92,50 +76,17 @@ export class WebSocketClient extends EventEmitter {
   }
 
   private handleOpen(): void {
-    logger.debug('[WebSocket v2.0] ✅ Connected successfully');
-    logger.debug('[WebSocket v2.0] 📡 Connection state:', this.ws?.readyState);
-    logger.debug('[WebSocket v2.0] 🎯 Event listeners count:', this.listenerCount('connected'));
-
+    logger.info('[WebSocket] ✅ Connected');
     this.isConnecting = false;
     this.reconnectAttempts = 0;
 
-    logger.debug('[WebSocket v2.0] 🔊 Emitting "connected" event');
     this.emit('connected');
-
-    // Start heartbeat
     this.startHeartbeat();
-    logger.debug('[WebSocket v2.0] 💓 Heartbeat started');
   }
 
   private handleMessage(event: MessageEvent): void {
-    logger.debug('[WebSocket v2.0] 📨 🚨 DELETE DEBUG: Raw message received:', {
-      type: typeof event.data,
-      length: event.data?.length,
-      preview: event.data?.substring(0, 200)
-    });
-
     try {
       const message: WSMessage = JSON.parse(event.data);
-
-      logger.debug('[WebSocket v2.0] 📋 🚨 DELETE DEBUG: Parsed message:', {
-        id: message.id,
-        version: message.version,
-        type: message.type,
-        entity: message.payload?.entity,
-        action: message.payload?.action,
-        source: message.metadata?.source
-      });
-
-      // Special detailed logging for DELETE operations
-      if (message.payload?.action?.toLowerCase().includes('delete')) {
-        logger.warn('🗑️ DELETE MESSAGE RECEIVED IN WEBSOCKET CLIENT:');
-        logger.warn('  Message ID:', message.id);
-        logger.warn('  Entity:', message.payload?.entity);
-        logger.warn('  Action:', message.payload?.action);
-        logger.warn('  Data:', message.payload?.data);
-        logger.warn('  Metadata:', message.metadata);
-        logger.warn('  Full message:', message);
-      }
 
       // ONLY accept v2.0 messages - reject all others
       if (message.version !== '2.0') {
@@ -145,26 +96,13 @@ export class WebSocketClient extends EventEmitter {
 
       // Handle heartbeat
       if (message.type === 'heartbeat') {
-        logger.debug('[WebSocket v2.0] 💓 Heartbeat received');
         return;
       }
 
-      logger.debug('[WebSocket v2.0] 🎯 🚨 DELETE DEBUG: Routing message based on source:', message.metadata?.source);
-
       // Route based on source for dual-track processing
       if (message.metadata?.source === 'mcp-ai') {
-        if (message.payload?.action?.toLowerCase().includes('delete')) {
-          logger.warn('[WebSocket v2.0] 🤖 🗑️ DELETE: Buffering AI update');
-        } else {
-          logger.debug('[WebSocket v2.0] 🤖 Buffering AI update');
-        }
         this.bufferAIUpdate(message);
       } else {
-        if (message.payload?.action?.toLowerCase().includes('delete')) {
-          logger.warn('[WebSocket v2.0] ⚡ 🗑️ DELETE: Processing immediate update');
-        } else {
-          logger.debug('[WebSocket v2.0] ⚡ Processing immediate update');
-        }
         this.processImmediateUpdate(message);
       }
     } catch (error) {
@@ -213,21 +151,8 @@ export class WebSocketClient extends EventEmitter {
    * Process user updates immediately (no batching)
    */
   private processImmediateUpdate(message: WSMessage): void {
-    logger.debug('[WebSocket v2.0] ⚡ 🚨 DELETE DEBUG: Processing immediate update:', {
-      entity: message.payload?.entity,
-      action: message.payload?.action,
-      messageId: message.id,
-      updateListeners: this.listenerCount('update'),
-      userActionListeners: this.listenerCount('userAction')
-    });
-
     // CRITICAL FIX: Deduplicate messages by ID to prevent duplicate notifications
     if (this.processedMessages.has(message.id)) {
-      logger.debug('[WebSocket v2.0] ⏭️ Skipping duplicate message:', {
-        messageId: message.id,
-        entity: message.payload?.entity,
-        action: message.payload?.action
-      });
       return;
     }
 
@@ -240,33 +165,11 @@ export class WebSocketClient extends EventEmitter {
       this.processedMessages.delete(firstMessage);
     }
 
-    // Special detailed logging for DELETE operations
-    if (message.payload?.action?.toLowerCase().includes('delete')) {
-      logger.warn('🗑️ DELETE IMMEDIATE UPDATE PROCESSING:');
-      logger.warn('  Message ID:', message.id);
-      logger.warn('  Entity:', message.payload?.entity);
-      logger.warn('  Action:', message.payload?.action);
-      logger.warn('  Update Listeners:', this.listenerCount('update'));
-      logger.warn('  User Action Listeners:', this.listenerCount('userAction'));
-      logger.warn('  Processed Messages Count:', this.processedMessages.size);
-      logger.warn('  About to emit "update" event...');
-    }
-
-    logger.debug('[WebSocket v2.0] 🔊 🚨 DELETE DEBUG: Emitting "update" event');
     this.emit('update', message);
-
-    if (message.payload?.action?.toLowerCase().includes('delete')) {
-      logger.warn('✅ DELETE "update" event emitted successfully');
-    }
 
     // Special handling for user actions
     if (message.metadata?.source === 'user') {
-      logger.debug('[WebSocket v2.0] 🔊 Emitting "userAction" event');
       this.emit('userAction', message);
-
-      if (message.payload?.action?.toLowerCase().includes('delete')) {
-        logger.warn('✅ DELETE "userAction" event emitted successfully');
-      }
     }
   }
 
@@ -402,7 +305,15 @@ export class WebSocketClient extends EventEmitter {
         this.wsConfig.maxReconnectDelay
       );
 
-      logger.debug(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.wsConfig.maxReconnectAttempts})`);
+      logger.info(`[WebSocket v2.0] 🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.wsConfig.maxReconnectAttempts})`);
+
+      // ENHANCED: Emit reconnecting event with attempt details
+      this.emit('reconnecting', {
+        attempt: this.reconnectAttempts,
+        maxAttempts: this.wsConfig.maxReconnectAttempts,
+        delay
+      });
+
       setTimeout(() => this.connect(), delay);
     } else {
       logger.error('[WebSocket] Max reconnection attempts reached');

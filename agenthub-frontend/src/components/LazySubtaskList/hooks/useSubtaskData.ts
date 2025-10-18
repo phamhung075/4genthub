@@ -32,11 +32,17 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
    * Load subtask summaries (lightweight data for list display)
    */
   const loadSubtaskSummaries = useCallback(async () => {
+    logger.debug('🔄 [loadSubtaskSummaries] STARTING for task:', parentTaskId);
     setLoading(true);
     setError(null);
 
     try {
       const response = await getSubtaskSummaries(parentTaskId);
+      logger.debug('📊 [SubtaskData] API returned subtasks', {
+        count: response.subtasks.length,
+        subtaskIds: response.subtasks.map(s => s.id)
+      });
+
       setSubtaskSummaries(response.subtasks);
 
       // Populate fullSubtasks Map with the same data
@@ -51,7 +57,7 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
       // Enable subscription after first successful load
       setTimeout(() => setSubscriptionEnabled(true), 100);
 
-      logger.debug(`Loaded ${response.subtasks.length} subtask summaries for task ${parentTaskId}`);
+      logger.debug(`🔄 [loadSubtaskSummaries] COMPLETED - Set ${response.subtasks.length} subtasks in state`);
 
     } catch (e: any) {
       // Handle 400 errors gracefully (task might not exist)
@@ -145,9 +151,21 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
    * Handle subtask creation (add to local state)
    */
   const handleSubtaskCreated = useCallback((newSubtask: Subtask) => {
+    logger.debug('✨ [SubtaskData] handleSubtaskCreated called', {
+      subtaskId: newSubtask.id,
+      title: newSubtask.title,
+      currentCount: subtaskSummaries.length
+    });
+
     // Add to summaries
     const newSummary = subtaskToSummary(newSubtask);
-    setSubtaskSummaries(prev => [...prev, newSummary]);
+    setSubtaskSummaries(prev => {
+      const newCount = prev.length + 1;
+      logger.debug('✅ [SubtaskData] State updated', {
+        newCount: newCount
+      });
+      return [...prev, newSummary];
+    });
 
     // Add to full subtasks
     setFullSubtasks(prev => {
@@ -155,16 +173,16 @@ export function useSubtaskData(parentTaskId: string): UseSubtaskDataReturn {
       newMap.set(newSubtask.id, newSubtask);
       return newMap;
     });
-
-    logger.debug('Subtask created and added to local state:', newSubtask.id);
-  }, []);
+  }, [subtaskSummaries.length]);
 
   /**
    * Refresh all data (force reload)
+   * Non-destructive refresh - let loadSubtaskSummaries handle state updates
    */
   const refreshData = useCallback(async () => {
-    setHasLoaded(false);
-    setFullSubtasks(new Map());
+    logger.debug('🔄 [SubtaskData] refreshData called', {
+      timestamp: Date.now()
+    });
     await loadSubtaskSummaries();
   }, [loadSubtaskSummaries]);
 

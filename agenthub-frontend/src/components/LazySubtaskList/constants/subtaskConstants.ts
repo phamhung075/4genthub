@@ -47,8 +47,10 @@ export const ANIMATION_CONFIG = {
 export const LOADING_CONFIG = {
   // Initial load delay to prevent flashing
   INITIAL_LOAD_DELAY: 100,
-  // Debounce delay for rapid updates
-  UPDATE_DEBOUNCE_DELAY: 150,
+  // Debounce delay for rapid updates - INCREASED to 2500ms to handle sequential MCP subtask creation
+  // Backend creates subtasks at ~400-500ms each, so 5 subtasks = ~2 seconds total
+  // This ensures API fallback waits for ALL subtasks to be created before fetching
+  UPDATE_DEBOUNCE_DELAY: 2500,
   // Timeout for stale data refresh
   REFRESH_TIMEOUT: 30000
 } as const;

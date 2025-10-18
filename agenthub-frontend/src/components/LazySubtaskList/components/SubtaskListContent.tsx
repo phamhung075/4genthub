@@ -1,12 +1,13 @@
 // SubtaskListContent component - Main table content for LazySubtaskList
 // Extracted from original LazySubtaskList.tsx during SOLID refactoring
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "../../ui/table";
 import { SubtaskSummary } from "../../../types/taskTypes";
 import { Subtask } from "../../../api";
 import SubtaskRow from "../../SubtaskRow";
 import type { RowAnimationCallbacks } from "../../../types/subtaskTypes";
+import logger from "../../../utils/logger";
 
 interface SubtaskListContentProps {
   subtaskSummaries: SubtaskSummary[];
@@ -37,6 +38,15 @@ export function SubtaskListContent({
   onRegisterCallbacks,
   onUnregisterCallbacks
 }: SubtaskListContentProps) {
+
+  // Debug logging to track rendering
+  useEffect(() => {
+    logger.debug('🎨 [SubtaskListContent] Rendering subtasks', {
+      count: subtaskSummaries.length,
+      subtaskIds: subtaskSummaries.map(s => s.id),
+      subtaskTitles: subtaskSummaries.map(s => s.title)
+    });
+  }, [subtaskSummaries]);
 
   /**
    * Render individual subtask row
