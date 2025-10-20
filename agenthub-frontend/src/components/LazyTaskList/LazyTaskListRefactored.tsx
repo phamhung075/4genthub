@@ -63,41 +63,44 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     // No need for additional filtering here - it was causing task updates to be rejected
 
     if (eventType === 'api_fallback_needed') {
-      logger.debug('🔄 [LazyTaskList] API fallback needed, reloading task summaries', {}, 'LazyTaskListRefactored.tsx');
+      logger.warn('🔄 [LazyTaskList] API fallback needed, reloading task summaries', {}, 'LazyTaskListRefactored.tsx');
       loadTaskSummaries(1);
       return true;
     }
 
     // FIX: Add stricter validation - check for required task fields, not just truthiness
     if (eventType === 'created' && data && data.id && data.title) {
-      logger.debug('✅ [LazyTaskList] Creating new task from WebSocket', {
+      logger.warn('✅ [LazyTaskList] Creating new task from WebSocket - COMPLETE DATA', {
         taskId: data.id,
         title: data.title,
-        hasAllFields: !!(data.id && data.title && data.status)
+        hasAllFields: !!(data.id && data.title && data.status),
+        willCallAddNewTask: true
       }, 'LazyTaskListRefactored.tsx');
       addNewTask(data);
       return true;
     } else if (eventType === 'created' && !data) {
-      logger.warn('⚠️ [LazyTaskList] CREATE event received but data is missing!', {
+      logger.warn('⚠️ [LazyTaskList] CREATE event received but data is COMPLETELY MISSING!', {
         entityId,
-        metadata
+        metadata,
+        willReloadTasks: true
       }, 'LazyTaskListRefactored.tsx');
       // Fallback: reload all tasks
-      logger.debug('🔄 [LazyTaskList] Falling back to full task list reload', {}, 'LazyTaskListRefactored.tsx');
+      logger.warn('🔄 [LazyTaskList] Falling back to full task list reload - NO DATA', {}, 'LazyTaskListRefactored.tsx');
       loadTaskSummaries(1);
       return true;
     } else if (eventType === 'created' && data && (!data.id || !data.title)) {
       // NEW: Handle case where data exists but is incomplete (empty object {})
-      logger.warn('⚠️ [LazyTaskList] CREATE event has incomplete task data (missing id or title)', {
+      logger.warn('⚠️ [LazyTaskList] CREATE event has INCOMPLETE task data (missing id or title)', {
         entityId,
         hasData: !!data,
         hasId: !!data.id,
         hasTitle: !!data.title,
         dataKeys: Object.keys(data),
-        metadata
+        metadata,
+        willReloadTasks: true
       }, 'LazyTaskListRefactored.tsx');
       // Fallback: reload all tasks
-      logger.debug('🔄 [LazyTaskList] Falling back to full task list reload due to incomplete data', {}, 'LazyTaskListRefactored.tsx');
+      logger.warn('🔄 [LazyTaskList] Falling back to full task list reload - INCOMPLETE DATA', {}, 'LazyTaskListRefactored.tsx');
       loadTaskSummaries(1);
       return true;
     } else if (eventType === 'updated' && data && data.id) {
@@ -330,7 +333,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     // Keep all tasks including those being deleted
     // The delete animation will play, then the task will be removed after timeout
     return taskSummaries.slice(0, TASKS_PER_PAGE);
-  }, [taskSummaries]);
+  }, [taskSummaries, totalTasks]); // Include totalTasks to force re-computation when new tasks are added
 
   return (
     <>

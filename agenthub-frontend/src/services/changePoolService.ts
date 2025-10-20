@@ -317,6 +317,18 @@ function initializeWebSocketIntegration(webSocketClient: any): () => void {
       // Validate that we have actual task data (not just empty object)
       const hasValidData = extractedData && typeof extractedData === 'object' && Object.keys(extractedData).length > 0;
 
+      // DEBUG: Enhanced logging for subtask_count tracking
+      if (entityType === 'task' && extractedData) {
+        logger.warn('🔍 [ChangePool] SUBTASK COUNT DEBUG - Task data extracted:', {
+          taskId: entityId,
+          action: action,
+          hasSubtaskCount: 'subtask_count' in extractedData,
+          subtaskCount: extractedData.subtask_count,
+          extractedDataKeys: Object.keys(extractedData),
+          fullExtractedData: extractedData
+        }, 'changePoolService.ts');
+      }
+
       logger.debug('🔍 [ChangePool] Extracted data for notification:', {
         hasExtractedData: hasValidData,
         extractedDataKeys: extractedData ? Object.keys(extractedData) : [],
