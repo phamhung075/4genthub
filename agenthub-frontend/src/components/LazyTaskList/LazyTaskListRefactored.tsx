@@ -133,7 +133,15 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       // Remove from state after animation completes (800ms animation + 200ms buffer)
       setTimeout(() => {
         logger.debug('🗑️ [LazyTaskList] Removing task after animation', { entityId }, 'LazyTaskListRefactored.tsx');
-        removeTask(entityId);
+
+        // BUGFIX: Only remove if task still exists in state (hasn't been removed by API callback)
+        // This prevents double-decrement of totalTasks count
+        if (taskSummaries.some(t => t.id === entityId)) {
+          removeTask(entityId);
+        } else {
+          logger.debug('⚠️ [LazyTaskList] Task already removed by API, skipping WebSocket removal', { entityId }, 'LazyTaskListRefactored.tsx');
+        }
+
         wsDeletedTasksRef.current.delete(entityId);
         taskDeletionTracker.clearDeletion(entityId);
       }, 1000);
@@ -143,7 +151,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
     logger.warn('⚠️ [LazyTaskList] Unhandled notification:', { eventType, hasData: !!data });
     return false;
-  }, [taskTreeId, addNewTask, updateTaskFromData, removeTask, loadTaskSummaries]);
+  }, [taskTreeId, addNewTask, updateTaskFromData, removeTask, loadTaskSummaries, taskSummaries]);
 
   // WebSocket integration
   const { isConnected, branchTaskTotal } = useTaskWebSocket({
