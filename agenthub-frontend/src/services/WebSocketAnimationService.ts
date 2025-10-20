@@ -118,8 +118,13 @@ class WebSocketAnimationService {
     let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
-        animationType = 'create';
-        break;
+        // SKIP animation for created events - mount animation handles this
+        // Prevents race condition where WebSocket animation fires before element registration
+        logger.debug('🎬 WebSocketAnimationService: Skipping WebSocket animation for created event (mount handles it)', {
+          taskId,
+          action
+        });
+        return; // Exit early - no animation needed
       case 'updated':
         animationType = 'update';
         break;
@@ -185,8 +190,13 @@ class WebSocketAnimationService {
     let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
-        animationType = 'create';
-        break;
+        // SKIP animation for created events - mount animation handles this
+        // Prevents race condition where WebSocket animation fires before element registration
+        logger.debug('🎬 WebSocketAnimationService: Skipping WebSocket animation for created subtask (mount handles it)', {
+          subtaskId,
+          action
+        });
+        return; // Exit early - no animation needed
       case 'updated':
         animationType = 'update';
         break;

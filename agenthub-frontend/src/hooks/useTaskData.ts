@@ -203,6 +203,16 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
 
   // Update task from external data (e.g., WebSocket)
   const updateTaskFromData = useCallback((taskData: Task) => {
+    // DEBUG: Log incoming task data for subtask_count tracking
+    logger.warn('🔍 [useTaskData] updateTaskFromData called:', {
+      taskId: taskData?.id,
+      taskTitle: taskData?.title,
+      hasSubtaskCount: 'subtask_count' in taskData,
+      subtaskCount: taskData?.subtask_count,
+      isSubtask: !!taskData?.parent_task_id,
+      taskDataKeys: taskData ? Object.keys(taskData) : []
+    });
+
     // CRITICAL FIX: Don't update summaries for subtasks
     // Subtasks should only be stored in fullTasks map
     if (taskData.parent_task_id) {
@@ -221,6 +231,13 @@ export function useTaskData({ taskTreeId, onTasksChanged }: UseTaskDataOptions):
 
     // This is a top-level task - update summaries
     const updatedSummary = convertToTaskSummary(taskData);
+
+    // DEBUG: Log the converted summary to verify subtask_count is preserved
+    logger.warn('🔍 [useTaskData] Converted summary:', {
+      taskId: updatedSummary.id,
+      subtaskCount: updatedSummary.subtask_count,
+      summaryKeys: Object.keys(updatedSummary)
+    });
 
     setTaskSummaries(prev => prev.map(task =>
       task.id === taskData.id ? updatedSummary : task
