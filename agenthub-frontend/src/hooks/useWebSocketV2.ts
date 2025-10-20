@@ -21,6 +21,8 @@ import logger from '../utils/logger';
 
 // Global WebSocket instance to ensure singleton
 let globalWebSocketClient: WebSocketClient | null = null;
+// Track if integrations have been initialized for the global client to prevent duplicates
+let globalIntegrationsInitialized = false;
 
 /**
  * React Hook for WebSocket v2.0
@@ -57,6 +59,7 @@ export function useWebSocket(userId: string, token: string) {
         if (connectionState === 'connected' || connectionState === 'connecting') {
           globalWebSocketClient.disconnect();
           globalWebSocketClient = null;
+          globalIntegrationsInitialized = false;
         }
       }
 
@@ -84,21 +87,22 @@ export function useWebSocket(userId: string, token: string) {
       if (existingClientUserId === userId && existingClientToken === token) {
         clientRef.current = globalWebSocketClient;
 
-        // CRITICAL FIX: Initialize services even when reusing existing client
-        // These initializations are idempotent and set up event listeners for this component instance
-        webSocketAnimationService.init(globalWebSocketClient);
-        const cleanupChangePool = initializeWebSocketIntegration(globalWebSocketClient);
-        // NOTE: NotificationService is already initialized globally when the client was created
-        // Re-initializing here would create duplicate event listeners causing double notifications
+        // FIX: Only initialize integrations if not already done for this global client
+        // Prevents duplicate event listeners that cause 3x message processing
+        logger.debug('[useWebSocket] Reusing existing WebSocket client', {
+          integrationsInitialized: globalIntegrationsInitialized,
+        }, 'useWebSocketV2.ts');
 
-        // Return cleanup function for this component instance
+        // Services should only be initialized once per global client instance
+        // Return cleanup function that doesn't affect the global integrations
         return () => {
-          cleanupChangePool();
           clientRef.current = null;
+          logger.debug('[useWebSocket] Component unmounted, keeping global client and integrations alive', undefined, 'useWebSocketV2.ts');
         };
       } else {
         globalWebSocketClient.disconnect();
         globalWebSocketClient = null;
+        globalIntegrationsInitialized = false;
       }
     }
 
@@ -158,14 +162,15 @@ export function useWebSocket(userId: string, token: string) {
       dispatch(error(`WebSocket authentication failed: ${reason}`));
     });
 
-    // Initialize the animation service with the WebSocket client
+    // Initialize services only once per global client
+    logger.info('[useWebSocket] Initializing WebSocket integrations for new client', undefined, 'useWebSocketV2.ts');
+
     webSocketAnimationService.init(client);
-
-    // Initialize the change pool service with the WebSocket client
     const cleanupChangePool = initializeWebSocketIntegration(client);
-
-    // Initialize the unified notification service with the WebSocket client
     const cleanupNotifications = notificationService.initializeWebSocketListener(client);
+
+    // Mark integrations as initialized
+    globalIntegrationsInitialized = true;
 
     // Connect to server
     client.connect();
@@ -175,6 +180,7 @@ export function useWebSocket(userId: string, token: string) {
       cleanupChangePool();
       cleanupNotifications();
       clientRef.current = null;
+      logger.debug('[useWebSocket] Component cleanup executed', undefined, 'useWebSocketV2.ts');
     };
   }, [userId, token, dispatch]);
 
@@ -207,6 +213,7 @@ export function useWebSocket(userId: string, token: string) {
       clientRef.current.disconnect();
       if (globalWebSocketClient === clientRef.current) {
         globalWebSocketClient = null;
+        globalIntegrationsInitialized = false;
       }
     }
   }, []);
