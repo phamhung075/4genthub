@@ -13,6 +13,57 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 ### Added
 
 #### Backend Tests
+- **Label Validator Unit Tests** (2025-10-22):
+  - `unit/task_management/domain/validators/test_label_validator.py` - Comprehensive test suite for LabelValidator with 39 tests covering all validation scenarios
+    - TestTimestampValidation class (7 tests):
+      - test_validate_timestamp_utc_aware_success - UTC-aware timestamps pass validation
+      - test_validate_timestamp_none_fails - None timestamps fail with clear error
+      - test_validate_timestamp_naive_fails - Timezone-naive timestamps fail with hint to use timezone.utc
+      - test_validate_timestamp_non_utc_fails - Non-UTC timezones fail with conversion hint
+      - test_validate_timestamps_consistency_success - Consistent timestamps pass validation
+      - test_validate_timestamps_consistency_same_time - Equal created_at and updated_at allowed
+      - test_validate_timestamps_consistency_fails - updated_at earlier than created_at fails
+    - TestNameValidation class (8 tests):
+      - test_validate_name_valid_alphanumeric - Alphanumeric names pass
+      - test_validate_name_valid_with_hyphens - Names with hyphens (api-integration) pass
+      - test_validate_name_valid_with_underscores - Names with underscores (api_integration) pass
+      - test_validate_name_valid_with_spaces - Names with spaces pass
+      - test_validate_name_empty_fails - Empty names fail with clear error
+      - test_validate_name_whitespace_only_fails - Whitespace-only names fail
+      - test_validate_name_too_long_fails - Names exceeding 50 characters fail
+      - test_validate_name_invalid_characters_fails - Special characters (@#$%!) fail with allowed pattern hint
+    - TestColorValidation class (7 tests):
+      - test_validate_color_valid_six_digit - 6-digit hex colors (#ff0000) pass
+      - test_validate_color_valid_three_digit - 3-digit hex colors (#f00) pass
+      - test_validate_color_none_allowed - None color is valid (optional field)
+      - test_validate_color_missing_hash_fails - Colors without # fail with hint
+      - test_validate_color_invalid_format_fails - Invalid hex formats fail
+      - test_validate_color_not_string_fails - Non-string colors fail
+    - TestDescriptionValidation class (5 tests):
+      - test_validate_description_valid - Valid descriptions pass
+      - test_validate_description_none_allowed - None description is valid
+      - test_validate_description_empty_allowed - Empty description is valid
+      - test_validate_description_too_long_fails - Descriptions exceeding 2000 characters fail
+      - test_validate_description_not_string_fails - Non-string descriptions fail
+    - TestLabelCreationValidation class (6 tests):
+      - test_validate_label_creation_all_valid - Complete label data passes
+      - test_validate_label_creation_minimal_valid - Minimal label (name only) passes
+      - test_validate_label_creation_invalid_name_fails - Invalid name fails creation
+      - test_validate_label_creation_invalid_color_fails - Invalid color fails creation
+      - test_validate_label_creation_inconsistent_timestamps_fails - Inconsistent timestamps fail
+    - TestLabelUpdateValidation class (6 tests):
+      - test_validate_label_update_name_only - Updating only name passes
+      - test_validate_label_update_color_only - Updating only color passes
+      - test_validate_label_update_description_only - Updating only description passes
+      - test_validate_label_update_all_fields - Updating all fields passes
+      - test_validate_label_update_invalid_name_fails - Invalid name fails update
+      - test_validate_label_update_invalid_color_fails - Invalid color fails update
+    - TestLabelValidationError class (3 tests):
+      - test_validation_error_with_field_and_message - Error stores field and message
+      - test_validation_error_with_hint - Error includes hint when provided
+  - Coverage: 100% of LabelValidator functionality with all edge cases and error conditions
+  - All 39 tests passing with 100% success rate
+
 - **Task Datetime Handling Tests** (2025-10-22):
   - `unit/test_task_datetime_handling.py` - Comprehensive test suite for datetime timezone normalization with 13 tests
     - TestNormalizeDatetime class (5 tests):

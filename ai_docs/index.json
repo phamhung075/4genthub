@@ -85,7 +85,7 @@
       "path": "api-behavior"
     },
     "api-integration": {
-      "count": 11,
+      "count": 12,
       "files": [
         {
           "hash": "677ae44155bbd2b3ca5ab9b6e533aa76",
@@ -93,6 +93,13 @@
           "name": "mcp-client-configuration-guide.md",
           "path": "api-integration/mcp-client-configuration-guide.md",
           "size": 17081
+        },
+        {
+          "hash": "46a2c6fb421e0d9c5bed8bb5071ab9cf",
+          "modified": "2025-10-22T21:25:12.543541",
+          "name": "label-operations.md",
+          "path": "api-integration/label-operations.md",
+          "size": 15808
         },
         {
           "hash": "8c7fe2973b3068e5cef037a2abc80a9f",
@@ -1211,8 +1218,15 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 3,
+      "count": 4,
       "files": [
+        {
+          "hash": "d019b3a72eaeae3c820a38b2aab260b1",
+          "modified": "2025-10-22T21:22:50.104821",
+          "name": "label-integration-test-coverage.md",
+          "path": "testing-qa/label-integration-test-coverage.md",
+          "size": 21279
+        },
         {
           "hash": "47ac0db31bc17e94f91538884870681f",
           "modified": "2025-10-22T14:20:17.026215",
@@ -1251,7 +1265,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 13,
+      "count": 14,
       "files": [
         {
           "hash": "3f387d62d26d34738a68e92b6fe4587a",
@@ -1273,6 +1287,13 @@
           "name": "index.md",
           "path": "troubleshooting-guides/index.md",
           "size": 2236
+        },
+        {
+          "hash": "322f5db2a4894218e019fc8b12abb713",
+          "modified": "2025-10-22T21:23:58.522116",
+          "name": "label-timestamp-errors.md",
+          "path": "troubleshooting-guides/label-timestamp-errors.md",
+          "size": 14381
         },
         {
           "hash": "a8564e3532aa64ba3ca84d6868c75461",
@@ -1348,7 +1369,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-22T14:20:17.143835",
+  "generated_at": "2025-10-22T21:25:12.617450",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1398,6 +1419,7 @@
         "api-reference.md",
         "configuration.md",
         "dto-response-types.md",
+        "label-operations.md",
         "mcp-client-api-reference.md",
         "mcp-client-configuration-guide.md",
         "mcp-client-troubleshooting.md",
@@ -1595,6 +1617,7 @@
       "files": [
         "agenthub-mcp-tools-test-report-2025-10-22.md",
         "fix-prompts-2025-10-22.md",
+        "label-integration-test-coverage.md",
         "test-flow-issues-2025-10-22.md"
       ]
     },
@@ -1607,6 +1630,7 @@
         "docker-menu-clean-volume-fix.md",
         "docker-volume-persistence-issue.md",
         "index.md",
+        "label-timestamp-errors.md",
         "mcp-connection-issues.md",
         "production-deployment-issues.md",
         "subtask-component-rendering-diagnostic.md",
@@ -1617,5 +1641,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 173
+  "total_files": 176
 }
