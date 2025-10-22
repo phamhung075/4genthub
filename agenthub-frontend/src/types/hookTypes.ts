@@ -78,6 +78,8 @@ export interface UseBranchSummariesResult {
   refresh: () => Promise<void>;
   forceRefresh: () => Promise<void>;
   refreshing: boolean;
+  removeBranchOptimistically: (branchId: string) => void;
+  addBranchOptimistically: (branch: BranchSummary) => void;
 }
 
 // =============================================================================

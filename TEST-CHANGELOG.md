@@ -8,9 +8,30 @@ This document tracks significant changes, fixes, and improvements to the agenthu
 - **Untested**: 28 tests (infrastructure utilities)
 - **Status**: Production-ready with sustained 100% pass rate 🎉
 
-## [Unreleased] - 2025-10-16
+## [Unreleased] - 2025-10-22
 
 ### Added
+
+#### Backend Tests
+- **Task Datetime Handling Tests** (2025-10-22):
+  - `unit/test_task_datetime_handling.py` - Comprehensive test suite for datetime timezone normalization with 13 tests
+    - TestNormalizeDatetime class (5 tests):
+      - test_normalize_naive_datetime_string - Validates naive format "2025-10-29" converts to UTC
+      - test_normalize_aware_datetime_string - Validates aware format "2025-10-29T23:59:59+00:00"
+      - test_normalize_aware_datetime_string_with_offset - Tests timezone offset conversion (+05:00 → UTC)
+      - test_normalize_naive_datetime_object - Tests naive datetime object normalization
+      - test_normalize_aware_datetime_object - Tests aware datetime object handling
+    - TestTaskDueDateHandling class (8 tests):
+      - test_update_due_date_with_naive_string - Task accepts naive date format
+      - test_update_due_date_with_aware_string - Task accepts aware date format
+      - test_update_due_date_with_none - Task clears due_date correctly
+      - test_update_due_date_with_invalid_format - Validates error handling for invalid formats
+      - test_due_date_comparison_no_error - Verifies no comparison errors between different formats
+      - test_is_overdue_with_past_naive_date - Tests overdue detection for past dates
+      - test_is_overdue_with_future_aware_date - Tests overdue detection for future dates
+      - test_is_overdue_with_completed_task - Verifies completed tasks never show as overdue
+  - **Coverage**: Tests normalize_datetime utility function and Task entity due_date handling
+  - **Results**: All 13 tests pass, validates Issue #1 fix from test-flow-issues-2025-10-22.md
 
 #### Frontend Tests
 - **API Tests**: 
