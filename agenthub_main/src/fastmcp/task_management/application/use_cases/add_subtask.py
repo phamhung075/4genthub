@@ -36,14 +36,36 @@ class AddSubtaskUseCase:
             if request.priority:
                 priority = Priority.from_string(request.priority)
                 logging.debug(f"[AddSubtask] Creating subtask with priority: {request.priority} -> {priority}")
-            
+
+            # Convert string status to TaskStatus value object if provided
+            status = None
+            if request.status:
+                from ...domain.value_objects.task_status import TaskStatus
+                status = TaskStatus.from_string(request.status)
+                logging.debug(f"[AddSubtask] Creating subtask with status: {request.status} -> {status}")
+
+            # Get progress_percentage if provided
+            progress_percentage = request.progress_percentage if hasattr(request, 'progress_percentage') and request.progress_percentage is not None else 0
+
+            # Auto-adjust status based on progress_percentage if not explicitly set
+            if progress_percentage >= 100 and not status:
+                from ...domain.value_objects.task_status import TaskStatus
+                status = TaskStatus.done()
+                logging.debug("[AddSubtask] Auto-setting status to 'done' due to progress_percentage=100")
+            elif progress_percentage > 0 and not status:
+                from ...domain.value_objects.task_status import TaskStatus
+                status = TaskStatus.in_progress()
+                logging.debug(f"[AddSubtask] Auto-setting status to 'in_progress' due to progress_percentage={progress_percentage}")
+
             subtask = Subtask.create(
                 id=subtask_id,
                 title=request.title,
                 description=request.description,
                 parent_task_id=task_id,
                 assignees=request.assignees,
-                priority=priority
+                priority=priority,
+                status=status,
+                progress_percentage=progress_percentage
             )
             
             # Apply agent inheritance if subtask has no assignees

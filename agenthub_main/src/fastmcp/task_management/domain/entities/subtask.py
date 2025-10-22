@@ -85,8 +85,8 @@ class Subtask(BaseTimestampEntity):
     # Properties for backward compatibility and convenience
     @property
     def is_completed(self) -> bool:
-        """Check if subtask is completed"""
-        return self.status.is_completed()
+        """Check if subtask is completed (either status='done' OR progress_percentage=100)"""
+        return self.status.is_completed() or (self.progress_percentage is not None and self.progress_percentage >= 100)
     
     @property
     def can_be_assigned(self) -> bool:

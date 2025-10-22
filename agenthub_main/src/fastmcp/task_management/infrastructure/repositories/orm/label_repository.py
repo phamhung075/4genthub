@@ -8,7 +8,7 @@ providing CRUD operations for labels and their relationships with tasks.
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ...database.models import Label, TaskLabel, Task
 from ...database.database_adapter import DatabaseAdapter
@@ -63,7 +63,9 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                     name=name,
                     color=color,
                     description=description,
-                    user_id=effective_user_id
+                    user_id=effective_user_id,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
                 )
                 
                 session.add(label)
@@ -398,7 +400,8 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
             name=model.name,
             color=model.color,
             description=model.description,
-            created_at=model.created_at
+            created_at=model.created_at,
+            updated_at=model.updated_at
         )
 
     def _entity_to_model_dict(self, entity: LabelEntity) -> Dict[str, Any]:

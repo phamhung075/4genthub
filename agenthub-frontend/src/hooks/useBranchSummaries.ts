@@ -111,6 +111,18 @@ export function useBranchSummaries(options: UseBranchSummariesOptions = {}): Use
     return () => clearInterval(interval);
   }, [autoRefresh, refreshInterval, loading, refreshing, refresh]);
 
+  // Optimistic update: remove a branch from summaries immediately
+  const removeBranchOptimistically = useCallback((branchId: string) => {
+    setSummaries(prev => prev.filter(branch => branch.id !== branchId));
+    logger.debug(`🗑️ Optimistically removed branch ${branchId} from summaries`);
+  }, []);
+
+  // Optimistic update: add a branch to summaries immediately
+  const addBranchOptimistically = useCallback((branch: BranchSummary) => {
+    setSummaries(prev => [...prev, branch]);
+    logger.debug(`➕ Optimistically added branch ${branch.id} to summaries`);
+  }, []);
+
   return {
     summaries,
     projects,
@@ -118,7 +130,9 @@ export function useBranchSummaries(options: UseBranchSummariesOptions = {}): Use
     error,
     refresh,
     forceRefresh,
-    refreshing
+    refreshing,
+    removeBranchOptimistically,
+    addBranchOptimistically
   };
 }
 

@@ -9,6 +9,31 @@ from .base.base_timestamp_entity import BaseTimestampEntity
 
 logger = logging.getLogger(__name__)
 
+
+def normalize_datetime(dt_input: str | datetime) -> datetime:
+    """Convert naive or aware datetime to UTC-aware datetime.
+
+    Args:
+        dt_input: Either a datetime object or ISO format datetime string
+
+    Returns:
+        UTC-aware datetime object
+    """
+    if isinstance(dt_input, str):
+        dt = datetime.fromisoformat(dt_input)
+    else:
+        dt = dt_input
+
+    # If naive, assume UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    # If aware but not UTC, convert to UTC
+    elif dt.tzinfo != timezone.utc:
+        dt = dt.astimezone(timezone.utc)
+
+    return dt
+
+
 from ...domain.value_objects.task_status import TaskStatusEnum
 from ..value_objects import (
     AgentRole, resolve_legacy_role,
@@ -544,13 +569,14 @@ class Task(BaseTimestampEntity):
         ))
     
     def update_due_date(self, due_date: str | None) -> None:
-        """Update task due date with validation"""
+        """Update task due date with validation and timezone normalization"""
         if due_date is not None:
             try:
-                # Validate date format (YYYY-MM-DD)
-                datetime.fromisoformat(due_date)
-            except ValueError:
-                raise ValueError(f"Invalid due date format: {due_date}. Expected YYYY-MM-DD.")
+                # Normalize to UTC-aware datetime and convert back to ISO string
+                normalized_dt = normalize_datetime(due_date)
+                due_date = normalized_dt.isoformat()
+            except ValueError as e:
+                raise ValueError(f"Invalid due date format: {due_date}. Expected ISO 8601 format (e.g., '2025-10-29' or '2025-10-29T23:59:59+00:00'). Error: {e}")
 
         old_due_date = self.due_date
         self.due_date = due_date
@@ -968,16 +994,16 @@ class Task(BaseTimestampEntity):
         """Check if task is overdue"""
         if not self.due_date:
             return False
-        
+
         try:
+            # due_date is always stored as UTC-aware ISO string after normalization
             due_date = datetime.fromisoformat(self.due_date)
             now = datetime.now(timezone.utc)
-            
-            # Make both timezone-aware or both timezone-naive for comparison
+
+            # Ensure due_date is timezone-aware (defensive check)
             if due_date.tzinfo is None:
-                # Make due_date timezone-aware
                 due_date = due_date.replace(tzinfo=timezone.utc)
-            
+
             return now > due_date and not self.status.is_completed()
         except ValueError:
             return False

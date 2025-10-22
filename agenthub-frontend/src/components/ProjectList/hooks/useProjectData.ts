@@ -22,7 +22,9 @@ export const useProjectData = ({
     projects: projectSummaries,
     loading: loadingBulkSummaries,
     error: bulkSummariesError,
-    refresh: refreshBulkSummaries
+    refresh: refreshBulkSummaries,
+    removeBranchOptimistically,
+    addBranchOptimistically
   } = useBranchSummaries();
 
   // Toast notifications
@@ -337,8 +339,14 @@ export const useProjectData = ({
 
     // Store backup data for rollback
     const backupProjects = [...projects];
+    const backupBranch = allBranchSummaries.find(b => b.id === branchId);
 
     try {
+      // 🔥 CRITICAL FIX: Remove from branch summaries IMMEDIATELY (optimistic update)
+      // This ensures the branch disappears from UI before WebSocket animation attempts
+      removeBranchOptimistically(branchId);
+      logger.debug('✅ Optimistically removed branch from summaries:', branchId);
+
       // Remove from projects state
       setProjects(prev => prev.map(project => {
         if (project.id === projectId && project.git_branchs) {
@@ -349,10 +357,7 @@ export const useProjectData = ({
         return project;
       }));
 
-      // Note: Branch summaries and task counts are managed by the useBranchSummaries hook
-      // and will be refreshed automatically after successful deletion
-
-      logger.debug('Optimistically removed branch from UI, attempting deletion:', branchId);
+      logger.debug('Optimistically removed branch from projects state, attempting deletion:', branchId);
 
       // Attempt actual deletion
       const result = await deleteBranch(branchId);
@@ -369,8 +374,15 @@ export const useProjectData = ({
         // Backend deletion failed - rollback UI changes
         logger.error('Backend deletion failed, rolling back:', result);
         setProjects(backupProjects);
-        // Refresh branch summaries to restore UI state
-        refreshBranchSummaries();
+
+        // 🔥 CRITICAL FIX: Restore branch to summaries on failure
+        if (backupBranch) {
+          addBranchOptimistically(backupBranch);
+          logger.debug('✅ Restored branch to summaries after failed deletion:', branchId);
+        } else {
+          // Fallback: refresh to restore correct state
+          refreshBranchSummaries();
+        }
 
         const errorMsg = result.error || result.message || "Failed to delete branch";
         showErrorToast(
@@ -387,8 +399,15 @@ export const useProjectData = ({
       // Network/API error - rollback UI changes
       logger.error('Delete branch error, rolling back:', e);
       setProjects(backupProjects);
-      // Refresh branch summaries to restore UI state
-      refreshBranchSummaries();
+
+      // 🔥 CRITICAL FIX: Restore branch to summaries on error
+      if (backupBranch) {
+        addBranchOptimistically(backupBranch);
+        logger.debug('✅ Restored branch to summaries after error:', branchId);
+      } else {
+        // Fallback: refresh to restore correct state
+        refreshBranchSummaries();
+      }
 
       const errorMessage = e.message || "Failed to delete branch";
       showErrorToast(
