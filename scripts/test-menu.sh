@@ -27,7 +27,7 @@ else
     PROJECT_ROOT="$(pwd)"
 fi
 TEST_DIR="${PROJECT_ROOT}/agenthub_main/src/tests"
-VENV_PATH="${PROJECT_ROOT}/venv"
+VENV_PATH="${PROJECT_ROOT}/agenthub_main/.venv"
 
 # Smart cache paths for test results
 CACHE_DIR="${PROJECT_ROOT}/.test_cache"
@@ -258,6 +258,10 @@ run_smart_tests() {
         > "$temp_raw_results"
 
         # Run pytest first and save to log
+        # Activate virtual environment if it exists
+        if [ -f "${VENV_PATH}/bin/activate" ]; then
+            source "${VENV_PATH}/bin/activate"
+        fi
         python -m pytest $tests_to_run -v --tb=short 2>&1 | tee "${RUN_LOG}"
 
         # Parse the log file after pytest completes to avoid subshell issues
@@ -416,6 +420,10 @@ run_category() {
     if [ -d "$path" ]; then
         echo -e "${CYAN}Running ${category} tests...${NC}"
         cd "${PROJECT_ROOT}"
+        # Activate virtual environment if it exists
+        if [ -f "${VENV_PATH}/bin/activate" ]; then
+            source "${VENV_PATH}/bin/activate"
+        fi
         python -m pytest "$path" -v --tb=short 2>&1 | tee "${RUN_LOG}"
     else
         echo -e "${RED}Category ${category} not found!${NC}"
@@ -472,6 +480,10 @@ main() {
             20)
                 echo -e "${CYAN}Generating coverage report...${NC}"
                 cd "${PROJECT_ROOT}"
+                # Activate virtual environment if it exists
+                if [ -f "${VENV_PATH}/bin/activate" ]; then
+                    source "${VENV_PATH}/bin/activate"
+                fi
                 # Create coverage directory in .test_cache
                 COVERAGE_DIR="${CACHE_DIR}/coverage"
                 mkdir -p "${COVERAGE_DIR}"
