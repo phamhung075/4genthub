@@ -137,7 +137,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error creating context: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -194,7 +194,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error getting context: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -327,7 +327,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error updating context: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -376,7 +376,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error deleting context: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -427,7 +427,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error resolving context: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -484,7 +484,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error delegating context: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -543,7 +543,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error adding insight: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -598,7 +598,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error adding progress: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -654,7 +654,7 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error listing contexts: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
     
@@ -789,6 +789,6 @@ class UnifiedContextFacade:
             logger.critical(f"Unexpected error in flexible context creation: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": "An unexpected error occurred",
+                "error": str(e),
                 "error_type": "unexpected"
             }
