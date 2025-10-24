@@ -1209,11 +1209,16 @@ def pytest_runtest_teardown(item, nextitem):
     This is the LAST thing to run after each test, ensuring no fixture
     can pollute state after this cleanup.
 
-    Performs TWO cleanup operations:
+    Performs FOUR cleanup operations:
     1. Test data file cleanup (from original line 988)
-    2. Singleton reset (catches pseudo-unit tests that pollute DatabaseConfig)
+    2. DatabaseConfig singleton reset (catches pseudo-unit tests)
+    3. DatabaseSourceManager singleton reset (CRITICAL for test isolation)
+    4. SQLite adapter flag reset (prevents re-registration errors)
 
-    Overhead: <0.5ms per test (minimal file check + singleton reset if needed)
+    Overhead: <1ms per test (minimal file check + singleton resets if needed)
+
+    This comprehensive cleanup prevents test pollution by resetting ALL
+    database-related singletons and flags after each test execution.
     """
     # 1. Cleanup test data files (from original pytest_runtest_teardown at line 988)
     test_root = Path(__file__).parent
@@ -1221,15 +1226,36 @@ def pytest_runtest_teardown(item, nextitem):
     if cleanup_count > 0:
         print(f"🧹 Cleaned up {cleanup_count} test data files after test")
 
-    # 2. Reset singletons if they exist (catches pseudo-unit tests)
+    # 2. Reset DatabaseConfig singleton if it exists (catches pseudo-unit tests)
     try:
         from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
         # Only reset if instance exists (minimal overhead)
         if DatabaseConfig._instance is not None:
             DatabaseConfig.reset_instance()
-    except Exception:
-        # Silently ignore - don't break tests over cleanup
-        pass
+    except Exception as e:
+        # Log but don't fail - cleanup issues shouldn't break tests
+        import logging
+        logging.getLogger(__name__).debug(f"Could not reset DatabaseConfig: {e}")
+
+    # 3. Reset DatabaseSourceManager singleton (CRITICAL - this was missing!)
+    try:
+        from fastmcp.task_management.infrastructure.database.database_source_manager import DatabaseSourceManager
+        # Always clear DatabaseSourceManager to prevent mode detection pollution
+        if DatabaseSourceManager._instance is not None:
+            DatabaseSourceManager.clear_instance()
+    except Exception as e:
+        # Log but don't fail - cleanup issues shouldn't break tests
+        import logging
+        logging.getLogger(__name__).debug(f"Could not reset DatabaseSourceManager: {e}")
+
+    # 4. Reset SQLite adapter registration flag (prevents re-registration errors)
+    try:
+        import fastmcp.task_management.infrastructure.database.database_config as db_config_module
+        db_config_module._sqlite_adapters_registered = False
+    except Exception as e:
+        # Log but don't fail - cleanup issues shouldn't break tests
+        import logging
+        logging.getLogger(__name__).debug(f"Could not reset SQLite adapter flag: {e}")
 
 
 # =============================================

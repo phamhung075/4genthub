@@ -13,6 +13,7 @@ from .unified_context_controller.unified_context_controller import (
 from .project_mcp_controller.project_mcp_controller import ProjectMCPController
 from .git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
 from .agent_mcp_controller import AgentMCPController, UnifiedAgentMCPController
+from .call_agent_mcp_controller import CallAgentMCPController
 
 __all__ = [
     "TaskMCPController",
@@ -23,4 +24,5 @@ __all__ = [
     "GitBranchMCPController",
     "UnifiedAgentMCPController",
     "AgentMCPController",  # Backward compatibility alias
+    "CallAgentMCPController",
 ]

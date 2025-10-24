@@ -37,7 +37,7 @@
       "path": "_workplace/workers"
     },
     "_workplace/workers/fix_tests_loop": {
-      "count": 2,
+      "count": 4,
       "files": [
         {
           "hash": "e4695bfc3cb4f978c080c5941db2a03a",
@@ -47,11 +47,25 @@
           "size": 13688
         },
         {
+          "hash": "9efd5cdd2f94f3ada19ed4c6a2d0a992",
+          "modified": "2025-10-24T15:16:25.202878",
+          "name": "fix-1by1-results.md",
+          "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
+          "size": 327536
+        },
+        {
           "hash": "8c9fe61ff4d91eb22593f61a7213710b",
           "modified": "2025-10-24T11:35:05.239001",
           "name": "AI_README.md",
           "path": "_workplace/workers/fix_tests_loop/AI_README.md",
           "size": 6209
+        },
+        {
+          "hash": "d8634722084aca489f75730ab72b21d8",
+          "modified": "2025-10-24T15:15:50.192142",
+          "name": "fix-1by1-context.md",
+          "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
+          "size": 62599
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -1087,8 +1101,15 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 1,
+      "count": 2,
       "files": [
+        {
+          "hash": "2a61245ec9696bd2cdeeb5c488568a76",
+          "modified": "2025-10-24T15:03:02.042496",
+          "name": "test-fix-session-2025-10-24.md",
+          "path": "reports-status/test-fix-session-2025-10-24.md",
+          "size": 4039
+        },
         {
           "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
           "modified": "2025-10-17T08:31:06.273725",
@@ -1217,8 +1238,29 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 4,
+      "count": 11,
       "files": [
+        {
+          "hash": "5863668ac26d443e940fdc5337cd69f4",
+          "modified": "2025-10-24T19:06:42.516133",
+          "name": "server-startup-test-implementation.md",
+          "path": "testing-qa/server-startup-test-implementation.md",
+          "size": 8507
+        },
+        {
+          "hash": "420fbf7bdb81eb34ab5edf01cf7408e6",
+          "modified": "2025-10-24T18:53:27.360004",
+          "name": "week2-tasks-quick-reference.md",
+          "path": "testing-qa/week2-tasks-quick-reference.md",
+          "size": 11509
+        },
+        {
+          "hash": "a071817db866ccda9621f80fce9a3b7f",
+          "modified": "2025-10-24T15:27:46.148206",
+          "name": "test-coverage-report-2025-10-24.md",
+          "path": "testing-qa/test-coverage-report-2025-10-24.md",
+          "size": 14454
+        },
         {
           "hash": "d019b3a72eaeae3c820a38b2aab260b1",
           "modified": "2025-10-22T21:22:50.104821",
@@ -1246,6 +1288,34 @@
           "name": "fix-prompts-2025-10-22.md",
           "path": "testing-qa/fix-prompts-2025-10-22.md",
           "size": 22663
+        },
+        {
+          "hash": "7591edb1511f4eac3a3d5f7fe3c6c68e",
+          "modified": "2025-10-24T15:36:56.315516",
+          "name": "strategic-test-plan-2025-10-24.md",
+          "path": "testing-qa/strategic-test-plan-2025-10-24.md",
+          "size": 71312
+        },
+        {
+          "hash": "a1b7415035bd6590379b82897b76b4c4",
+          "modified": "2025-10-24T16:12:56.548652",
+          "name": "remaining-test-tasks-implementation-guide.md",
+          "path": "testing-qa/remaining-test-tasks-implementation-guide.md",
+          "size": 22729
+        },
+        {
+          "hash": "bd8959799e96fef53288b3ac21e801d9",
+          "modified": "2025-10-24T18:52:18.117614",
+          "name": "week2-mcp-test-tasks-specifications.md",
+          "path": "testing-qa/week2-mcp-test-tasks-specifications.md",
+          "size": 36758
+        },
+        {
+          "hash": "38a0f45176295f7b9b829f01e4a12f0c",
+          "modified": "2025-10-24T22:50:38.658026",
+          "name": "test-pollution-fix-2025-10-24.md",
+          "path": "testing-qa/test-pollution-fix-2025-10-24.md",
+          "size": 5608
         }
       ],
       "path": "testing-qa"
@@ -1368,7 +1438,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-24T12:03:08.092689",
+  "generated_at": "2025-10-24T22:50:38.721355",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1385,6 +1455,8 @@
         "fix_tests_loop": {
           "files": [
             "AI_README.md",
+            "fix-1by1-context.md",
+            "fix-1by1-results.md",
             "fix-1by1.md"
           ]
         }
@@ -1595,7 +1667,8 @@
     },
     "reports-status": {
       "files": [
-        "mcp-tool-response-analysis.md"
+        "mcp-tool-response-analysis.md",
+        "test-fix-session-2025-10-24.md"
       ]
     },
     "setup-guides": {
@@ -1618,7 +1691,14 @@
         "agenthub-mcp-tools-test-report-2025-10-22.md",
         "fix-prompts-2025-10-22.md",
         "label-integration-test-coverage.md",
-        "test-flow-issues-2025-10-22.md"
+        "remaining-test-tasks-implementation-guide.md",
+        "server-startup-test-implementation.md",
+        "strategic-test-plan-2025-10-24.md",
+        "test-coverage-report-2025-10-24.md",
+        "test-flow-issues-2025-10-22.md",
+        "test-pollution-fix-2025-10-24.md",
+        "week2-mcp-test-tasks-specifications.md",
+        "week2-tasks-quick-reference.md"
       ]
     },
     "troubleshooting-guides": {
@@ -1641,5 +1721,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 175
+  "total_files": 185
 }

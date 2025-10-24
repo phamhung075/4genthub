@@ -493,9 +493,9 @@ class DatabaseConfig:
             logger.error(f"  DATABASE_NAME: {os.getenv('DATABASE_NAME')}")
             logger.error("Server MUST stop - no fallback allowed!")
 
-            # Exit immediately - NO FALLBACK
-            import sys
-            sys.exit(1)
+            # Re-raise the exception - library code should NOT call sys.exit()
+            # Let the application layer decide how to handle database initialization failures
+            raise
     
     @with_connection_retry(DEFAULT_RETRY_CONFIG)
     def get_session(self) -> Session:

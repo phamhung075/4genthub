@@ -101,8 +101,13 @@ class TestEnvironmentLoading:
     def test_application_should_connect_to_database(self):
         """Application should successfully connect to database using env config."""
         # Mock SQLite environment for unit testing
+        # Current implementation requires DATABASE_PATH for SQLite
+        import tempfile
+        test_db_path = os.path.join(tempfile.gettempdir(), "test_env_loading.db")
+
         with patch.dict(os.environ, {
             'DATABASE_TYPE': 'sqlite',
+            'DATABASE_PATH': test_db_path,
             'PYTEST_CURRENT_TEST': 'test'
         }):
             from sqlalchemy import create_engine, text
@@ -349,15 +354,20 @@ class TestErrorHandling:
 
     def test_missing_required_database_vars(self):
         """Test handling of missing required database variables."""
-        # Test SQLite mode (which doesn't need host vars)
+        # Test SQLite mode requires DATABASE_PATH
+        # SQLite cannot work without a database file path - should raise ValueError
+
+        # First, reset the DatabaseConfig singleton to ensure clean state
+        from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
+        DatabaseConfig.reset_instance()
+
         with patch.dict(os.environ, {
             'DATABASE_TYPE': 'sqlite',
             'PYTEST_CURRENT_TEST': 'test'
-        }):
-            from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig
-            db_config = DatabaseConfig()
-            config = db_config.get_database_info()
-            assert config is not None
+        }, clear=True):
+            # DATABASE_PATH is required for SQLite - should raise ValueError
+            with pytest.raises(ValueError, match="DATABASE_PATH environment variable is NOT configured"):
+                db_config = DatabaseConfig()
 
     def test_invalid_port_number(self):
         """Test handling of invalid port numbers."""
