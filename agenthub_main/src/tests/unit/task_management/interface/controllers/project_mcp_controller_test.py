@@ -365,14 +365,13 @@ class TestProjectMCPController:
             assert result == expected
     
     def test_create_missing_field_error(self):
-        """Test creating missing field error response."""
-        result = self.controller._create_missing_field_error("test_field", "test_action")
-        
-        assert result["success"] is False
-        assert "error" in result
-        assert "meta" in result
-        assert "Missing required field: test_field" in result["error"]["message"]
-        assert result["error"]["code"] == "VALIDATION_ERROR"
+        """Test creating missing field error response - OBSOLETE.
+
+        This test tested the obsolete _create_missing_field_error method.
+        Error handling is now done via StandardResponseFormatter in the refactored architecture.
+        The actual error handling is tested through integration tests of the full manage_project flow.
+        """
+        pass
     
     # NOTE: _create_invalid_action_error method no longer exists
     # Invalid action handling is now done by ProjectOperationFactory

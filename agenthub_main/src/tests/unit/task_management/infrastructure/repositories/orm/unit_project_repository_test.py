@@ -43,9 +43,9 @@ class TestORMProjectRepositoryInitialization:
         """Test repository initialization with session and user ID."""
         mock_session = Mock()
         
-        repo = ORMProjectRepository(session=mock_session, user_id="test-user")
+        repo = ORMProjectRepository(session=mock_session, user_id="047197d0-9faa-401a-911d-776ad39f813b")
         
-        assert repo.user_id == "test-user"
+        assert repo.user_id == "047197d0-9faa-401a-911d-776ad39f813b"
         # BaseUserScopedRepository should handle the session
     
     def test_init_inheritance_chain(self):
@@ -63,13 +63,13 @@ class TestORMProjectRepositoryEntityConversion:
     
     def setup_method(self):
         """Set up test fixtures."""
-        self.repo = ORMProjectRepository(user_id="test-user")
+        self.repo = ORMProjectRepository(user_id="047197d0-9faa-401a-911d-776ad39f813b")
     
     def test_model_to_entity_minimal_project(self):
         """Test converting minimal project model to entity."""
         # Mock minimal project model
         mock_project = Mock(spec=Project)
-        mock_project.id = "project-123"
+        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
         mock_project.created_at = datetime.now(timezone.utc)
@@ -77,9 +77,9 @@ class TestORMProjectRepositoryEntityConversion:
         mock_project.git_branchs = []  # No branches
         
         entity = self.repo._model_to_entity(mock_project)
-        
+
         assert isinstance(entity, ProjectEntity)
-        assert entity.id == "project-123"
+        assert entity.id.value == "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         assert entity.name == "Test Project"
         assert entity.description == "Test Description"
         assert entity.created_at == mock_project.created_at
@@ -94,7 +94,7 @@ class TestORMProjectRepositoryEntityConversion:
 
         # Mock project model with git branches
         mock_project = Mock(spec=Project)
-        mock_project.id = "project-123"
+        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
         mock_project.created_at = datetime.now(timezone.utc)
@@ -102,19 +102,19 @@ class TestORMProjectRepositoryEntityConversion:
 
         # Mock git branches
         mock_branch1 = Mock(spec=ProjectGitBranch)
-        mock_branch1.id = "branch-1"
+        mock_branch1.id = "94c81d34-a214-46bd-9259-8992b2b23ba6"
         mock_branch1.name = "main"
         mock_branch1.description = "Main branch"
-        mock_branch1.project_id = "project-123"
+        mock_branch1.project_id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_branch1.task_count = 5
         mock_branch1.created_at = datetime.now(timezone.utc)
         mock_branch1.updated_at = datetime.now(timezone.utc)
 
         mock_branch2 = Mock(spec=ProjectGitBranch)
-        mock_branch2.id = "branch-2"
+        mock_branch2.id = "a0f9d214-599f-44d1-aaed-57e2ca2308a8"
         mock_branch2.name = "feature/auth"
         mock_branch2.description = "Authentication feature"
-        mock_branch2.project_id = "project-123"
+        mock_branch2.project_id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_branch2.task_count = 3
         mock_branch2.created_at = datetime.now(timezone.utc)
         mock_branch2.updated_at = datetime.now(timezone.utc)
@@ -124,7 +124,7 @@ class TestORMProjectRepositoryEntityConversion:
         entity = self.repo._model_to_entity(mock_project)
 
         assert isinstance(entity, ProjectEntity)
-        assert entity.id == "project-123"
+        assert entity.id.value == "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
 
         # Verify git branches were converted
         # Note: The actual implementation creates placeholder tasks based on task_count
@@ -161,13 +161,13 @@ class TestORMProjectRepositoryCRUDOperations:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
-        self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
+        self.repo = ORMProjectRepository(session=self.mock_session, user_id="047197d0-9faa-401a-911d-776ad39f813b")
     
     def test_create_project_success(self):
         """Test successful project creation."""
         # Create project entity
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
             created_at=datetime.now(timezone.utc),
@@ -176,19 +176,19 @@ class TestORMProjectRepositoryCRUDOperations:
 
         # Mock model conversion
         mock_project_model = Mock(spec=Project)
-        mock_project_model.id = "project-123"
+        mock_project_model.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
 
         with patch.object(self.repo, '_model_to_entity', return_value=entity) as mock_to_entity:
             with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
                 with patch.object(self.repo, 'transaction'):
-                    with patch('uuid.uuid4', return_value='project-123'):
+                    with patch('uuid.uuid4', return_value='50ebbfda-bdc9-4349-8c64-315c4e9fb9fa'):
                         # Mock the database session instead of non-existent create method
                         mock_session_ctx = MagicMock()
                         mock_session_ctx.__enter__ = MagicMock(return_value=self.mock_session)
                         mock_session_ctx.__exit__ = MagicMock(return_value=None)
 
                         with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
-                            result = self.repo.create_project(entity.name, entity.description, "test-user")
+                            result = self.repo.create_project(entity.name, entity.description, "047197d0-9faa-401a-911d-776ad39f813b")
 
                             # Verify the returned entity
                             assert result.name == entity.name
@@ -200,7 +200,7 @@ class TestORMProjectRepositoryCRUDOperations:
     def test_create_project_database_error(self):
         """Test project creation with database error."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
             created_at=datetime.now(timezone.utc),
@@ -210,19 +210,19 @@ class TestORMProjectRepositoryCRUDOperations:
         # Mock database error directly - the create method doesn't exist, so mock transaction instead
         with patch.object(self.repo, 'transaction', side_effect=IntegrityError("Constraint violation", None, None)):
             with pytest.raises(DatabaseException):
-                self.repo.create_project(entity.name, entity.description, "test-user")
+                self.repo.create_project(entity.name, entity.description, "047197d0-9faa-401a-911d-776ad39f813b")
     
     @pytest.mark.asyncio
     async def test_get_project_by_id_found(self):
         """Test getting project by ID when it exists."""
         # Mock project model
         mock_project_model = Mock(spec=Project)
-        mock_project_model.id = "project-123"
+        mock_project_model.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project_model.git_branchs = []
         
         # Mock entity
         mock_project_entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Found Project",
             description="Found Description",
             created_at=datetime.now(timezone.utc),
@@ -243,7 +243,7 @@ class TestORMProjectRepositoryCRUDOperations:
         with patch.object(self.repo, '_model_to_entity', return_value=mock_project_entity):
             with patch.object(self.repo, 'apply_user_filter', return_value=mock_options):
 
-                result = await self.repo.find_by_id("project-123")
+                result = await self.repo.find_by_id("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
                 
                 # Verify query was built correctly
                 self.mock_session.query.assert_called_once_with(Project)
@@ -280,7 +280,7 @@ class TestORMProjectRepositoryCRUDOperations:
     async def test_get_project_by_id_user_filter_denied(self):
         """Test getting project denied by user filter."""
         mock_project_model = Mock(spec=Project)
-        mock_project_model.id = "project-123"
+        mock_project_model.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
 
         # Mock query
         mock_query = Mock()
@@ -301,23 +301,38 @@ class TestORMProjectRepositoryCRUDOperations:
 
         with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
             with patch.object(self.repo, 'apply_user_filter', return_value=mock_options):
-                result = await self.repo.find_by_id("project-123")
+                result = await self.repo.find_by_id("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
                 assert result is None
     
     @pytest.mark.asyncio
     async def test_update_project_success(self):
         """Test successful project update."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Updated Project",
             description="Updated Description",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
 
-        # Mock transaction and super().update to return success
+        # Mock the database session and query
+        mock_session_ctx = MagicMock()
+        mock_session = MagicMock()
+        mock_session_ctx.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_ctx.__exit__ = MagicMock(return_value=None)
+
+        mock_project = Mock(spec=Project)
+        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
+        mock_project.name = "Old Name"
+        mock_project.description = "Old Description"
+
+        mock_query = Mock()
+        mock_query.filter.return_value.first.return_value = mock_project
+        mock_session.query.return_value = mock_query
+
+        # Mock transaction and database session
         with patch.object(self.repo, 'transaction'):
-            with patch.object(self.repo.__class__.__bases__[0], 'update', return_value=True):
+            with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
                 # The update method should complete without raising an exception
                 result = await self.repo.update(entity)
 
@@ -351,7 +366,7 @@ class TestORMProjectRepositoryCRUDOperations:
         """Test successful project deletion."""
         # Mock the delete_project method to return True (success)
         with patch.object(self.repo, 'delete_project', return_value=True):
-            result = await self.repo.delete("project-123")
+            result = await self.repo.delete("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
             assert result is True
     
     @pytest.mark.asyncio
@@ -369,7 +384,7 @@ class TestORMProjectRepositoryQueryOperations:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
-        self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
+        self.repo = ORMProjectRepository(session=self.mock_session, user_id="047197d0-9faa-401a-911d-776ad39f813b")
     
     @pytest.mark.asyncio
     async def test_list_all_projects(self):
@@ -424,7 +439,7 @@ class TestORMProjectRepositoryQueryOperations:
     async def test_find_by_name(self):
         """Test finding project by name."""
         mock_project = Mock(spec=Project)
-        mock_project.id = "project-123"
+        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.git_branchs = []
 
@@ -526,7 +541,7 @@ class TestORMProjectRepositoryUserScoping:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
-        self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
+        self.repo = ORMProjectRepository(session=self.mock_session, user_id="047197d0-9faa-401a-911d-776ad39f813b")
     
     @pytest.mark.asyncio
     async def test_user_filter_applied_on_queries(self):
@@ -555,7 +570,7 @@ class TestORMProjectRepositoryUserScoping:
                 with patch.object(self.repo, 'apply_user_filter') as mock_user_filter:
                     mock_user_filter.return_value = mock_options
 
-                    await self.repo.find_by_id("project-123")
+                    await self.repo.find_by_id("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
 
                     # Verify user filter was called with query, not with project
                     mock_user_filter.assert_called_once()
@@ -563,7 +578,7 @@ class TestORMProjectRepositoryUserScoping:
     def test_user_scoped_creation(self):
         """Test project creation includes user scope."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="User Project",
             description="User Description",
             created_at=datetime.now(timezone.utc),
@@ -579,7 +594,7 @@ class TestORMProjectRepositoryUserScoping:
             with patch.object(self.repo, '_model_to_entity', return_value=entity):
                 with patch.object(self.repo, 'invalidate_cache_for_entity'):
                     # The user ID should be applied during model creation
-                    result = self.repo.create_project(entity.name, entity.description, "test-user")
+                    result = self.repo.create_project(entity.name, entity.description, "047197d0-9faa-401a-911d-776ad39f813b")
 
                     # Verify model was created with user context
                     self.mock_session.add.assert_called_once()
@@ -593,12 +608,12 @@ class TestORMProjectRepositoryCacheIntegration:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
-        self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
+        self.repo = ORMProjectRepository(session=self.mock_session, user_id="047197d0-9faa-401a-911d-776ad39f813b")
     
     def test_cache_invalidation_on_create(self):
         """Test cache is invalidated on project creation."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
             created_at=datetime.now(timezone.utc),
@@ -613,7 +628,7 @@ class TestORMProjectRepositoryCacheIntegration:
         with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
             with patch.object(self.repo, '_model_to_entity', return_value=entity):
                 with patch.object(self.repo, 'invalidate_cache_for_entity') as mock_invalidate:
-                    self.repo.create_project(entity.name, entity.description, "test-user")
+                    self.repo.create_project(entity.name, entity.description, "047197d0-9faa-401a-911d-776ad39f813b")
                     
                     # Should invalidate cache after creation
                     mock_invalidate.assert_called_once()
@@ -622,16 +637,31 @@ class TestORMProjectRepositoryCacheIntegration:
     async def test_cache_invalidation_on_update(self):
         """Test project update behavior (cache invalidation not implemented in update method)."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Updated Project",
             description="Updated Description",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
 
-        # Mock transaction and super().update to return success
+        # Mock the database session and query
+        mock_session_ctx = MagicMock()
+        mock_session = MagicMock()
+        mock_session_ctx.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_ctx.__exit__ = MagicMock(return_value=None)
+
+        mock_project = Mock(spec=Project)
+        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
+        mock_project.name = "Old Name"
+        mock_project.description = "Old Description"
+
+        mock_query = Mock()
+        mock_query.filter.return_value.first.return_value = mock_project
+        mock_session.query.return_value = mock_query
+
+        # Mock transaction and database session
         with patch.object(self.repo, 'transaction'):
-            with patch.object(self.repo.__class__.__bases__[0], 'update', return_value=True):
+            with patch.object(self.repo, 'get_db_session', return_value=mock_session_ctx):
                 # The update method should complete without raising an exception
                 result = await self.repo.update(entity)
 
@@ -644,7 +674,7 @@ class TestORMProjectRepositoryCacheIntegration:
         """Test cache is invalidated on project deletion."""
         mock_project = Mock(spec=Project)
         # Add required attributes for _model_to_entity
-        mock_project.id = "project-123"
+        mock_project.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_project.name = "Test Project"
         mock_project.description = "Test Description"
         mock_project.created_at = datetime.now(timezone.utc)
@@ -664,7 +694,7 @@ class TestORMProjectRepositoryCacheIntegration:
                 # Mock the delete operation to succeed
                 mock_filter.delete.return_value = 1  # 1 row deleted
                 
-                result = await self.repo.delete("project-123")
+                result = await self.repo.delete("50ebbfda-bdc9-4349-8c64-315c4e9fb9fa")
                 assert result is True
                 
                 # Should invalidate cache after deletion
@@ -677,12 +707,12 @@ class TestORMProjectRepositoryErrorHandling:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_session = Mock()
-        self.repo = ORMProjectRepository(session=self.mock_session, user_id="test-user")
+        self.repo = ORMProjectRepository(session=self.mock_session, user_id="047197d0-9faa-401a-911d-776ad39f813b")
     
     def test_session_rollback_on_error(self):
         """Test session rollback occurs on database errors."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="New Project",
             description="New Description",
             created_at=datetime.now(timezone.utc),
@@ -692,7 +722,7 @@ class TestORMProjectRepositoryErrorHandling:
         # Mock the transaction method to raise an error that will trigger rollback
         with patch.object(self.repo, 'transaction', side_effect=SQLAlchemyError("Database connection lost")):
             with pytest.raises(DatabaseException, match="Failed to create project"):
-                self.repo.create_project(entity.name, entity.description, "test-user")
+                self.repo.create_project(entity.name, entity.description, "047197d0-9faa-401a-911d-776ad39f813b")
 
             # The transaction context manager should handle rollback internally
     
@@ -709,13 +739,13 @@ class TestORMProjectRepositoryErrorHandling:
         # ValidationException gets wrapped in DatabaseException by the repository
         with patch.object(self.repo, 'transaction', side_effect=ValidationException("Invalid project data")):
             with pytest.raises(DatabaseException, match="Failed to create project: Invalid project data"):
-                self.repo.create_project(entity.name, entity.description, "test-user")
+                self.repo.create_project(entity.name, entity.description, "047197d0-9faa-401a-911d-776ad39f813b")
     
     @pytest.mark.asyncio
     async def test_concurrent_modification_handling(self):
         """Test handling of concurrent modification scenarios."""
         entity = ProjectEntity(
-            id="project-123",
+            id="50ebbfda-bdc9-4349-8c64-315c4e9fb9fa",
             name="Updated Project",
             description="Updated Description",
             created_at=datetime.now(timezone.utc),
@@ -723,7 +753,7 @@ class TestORMProjectRepositoryErrorHandling:
         )
         
         mock_existing = Mock(spec=Project)
-        mock_existing.id = "project-123"
+        mock_existing.id = "50ebbfda-bdc9-4349-8c64-315c4e9fb9fa"
         mock_existing.name = "Old Project"
         mock_existing.description = "Old Description"
         mock_existing.created_at = datetime.now(timezone.utc)

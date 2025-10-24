@@ -5,26 +5,29 @@ from unittest.mock import Mock, AsyncMock, MagicMock, patch
 from typing import Optional, Any
 import uuid
 
-# Mock imports before importing the service
-import sys
-from unittest.mock import MagicMock
 
-# Mock all the use case modules
-mock_modules = [
-    'fastmcp.task_management.application.use_cases.create_task',
-    'fastmcp.task_management.application.use_cases.get_task',
-    'fastmcp.task_management.application.use_cases.update_task',
-    'fastmcp.task_management.application.use_cases.list_tasks',
-    'fastmcp.task_management.application.use_cases.search_tasks',
-    'fastmcp.task_management.application.use_cases.delete_task',
-    'fastmcp.task_management.application.use_cases.complete_task',
-    'fastmcp.task_management.application.services.unified_context_service',
-    'fastmcp.task_management.application.services.facade_service'
-]
+@pytest.fixture(autouse=True)
+def mock_use_case_modules(monkeypatch):
+    """Mock all use case and service modules using monkeypatch for clean isolation."""
+    # Create mock modules
+    mock_modules = {
+        'fastmcp.task_management.application.use_cases.create_task': MagicMock(),
+        'fastmcp.task_management.application.use_cases.get_task': MagicMock(),
+        'fastmcp.task_management.application.use_cases.update_task': MagicMock(),
+        'fastmcp.task_management.application.use_cases.list_tasks': MagicMock(),
+        'fastmcp.task_management.application.use_cases.search_tasks': MagicMock(),
+        'fastmcp.task_management.application.use_cases.delete_task': MagicMock(),
+        'fastmcp.task_management.application.use_cases.complete_task': MagicMock(),
+        'fastmcp.task_management.application.services.unified_context_service': MagicMock(),
+        'fastmcp.task_management.application.services.facade_service': MagicMock(),
+    }
 
-for module in mock_modules:
-    sys.modules[module] = MagicMock()
+    # Use monkeypatch to set modules - pytest will automatically clean up
+    for module_name, mock_module in mock_modules.items():
+        monkeypatch.setitem(__import__('sys').modules, module_name, mock_module)
 
+
+# Import after fixture is defined so tests can use the mocked modules
 from fastmcp.task_management.application.services.task_application_service import TaskApplicationService
 from fastmcp.task_management.application.dtos.task import (
     CreateTaskRequest,
@@ -151,19 +154,19 @@ class TestTaskApplicationService:
         """Test _get_user_scoped_repository when repository has user_id property."""
         mock_task_repository = Mock()
         mock_task_repository.user_id = "different-user"
-        mock_task_repository.session = Mock()
+        mock_task_repository.session = MagicMock()
 
         # Need to ensure 'with_user' doesn't exist for this test path
         if hasattr(mock_task_repository, 'with_user'):
             delattr(mock_task_repository, 'with_user')
 
-        # Mock the repository class constructor as it will be called during initialization
+        # Mock the repository class constructor
         mock_repo_class = Mock()
         mock_new_repo = Mock()
-        mock_new_repo.with_user = Mock(return_value=mock_new_repo)  # For chaining
         mock_repo_class.return_value = mock_new_repo
 
-        with patch('builtins.type', return_value=mock_repo_class):
+        # Patch type() during the TaskApplicationService instantiation
+        with patch('fastmcp.task_management.application.services.task_application_service.type', return_value=mock_repo_class):
             service = TaskApplicationService(mock_task_repository, user_id=user_id)
 
             # The constructor should have called type() to create new repositories 7 times

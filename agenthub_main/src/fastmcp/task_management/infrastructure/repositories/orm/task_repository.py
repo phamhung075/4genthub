@@ -358,6 +358,7 @@ class ORMTaskRepository(
                         try:
                             for assignee_id in assignee_ids:
                                 assignee = TaskAssignee(
+                                    id=str(uuid.uuid4()),  # Generate UUID for assignee record
                                     task_id=task.id,
                                     assignee_id=assignee_id,
                                     role=kwargs.get('assignee_role', 'contributor'),
@@ -555,6 +556,7 @@ class ORMTaskRepository(
                         # Add new assignees
                         for assignee_id in updates['assignee_ids']:
                             assignee = TaskAssignee(
+                                id=str(uuid.uuid4()),  # Generate UUID for assignee record
                                 task_id=task_id,
                                 assignee_id=assignee_id,
                                 role='contributor',

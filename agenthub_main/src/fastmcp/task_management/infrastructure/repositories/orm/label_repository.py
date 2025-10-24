@@ -109,6 +109,10 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                         f"Technical details: {error_msg}"
                     )
                 )
+        except ValueError as e:
+            # Let ValueError from domain validation propagate without wrapping
+            # This allows tests to catch validation errors directly
+            raise
         except Exception as e:
             raise RepositoryError(
                 message=(
@@ -319,11 +323,12 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                 effective_user_id = getattr(self, 'user_id', None)
                 if not effective_user_id:
                     raise ValueError("user_id is required for task label assignment")
-                    
+
                 task_label = TaskLabel(
                     task_id=task_id,
                     label_id=label_id,
-                    user_id=effective_user_id
+                    user_id=effective_user_id,
+                    applied_at=datetime.now(timezone.utc)
                 )
                 
                 session.add(task_label)
@@ -505,7 +510,6 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
             git_branch_id=model.git_branch_id,
             status=model.status,
             priority=model.priority,
-            details=model.details,
             estimated_effort=model.estimated_effort,
             due_date=model.due_date,
             created_at=model.created_at,

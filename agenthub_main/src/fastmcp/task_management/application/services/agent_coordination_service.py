@@ -150,7 +150,6 @@ class AgentCoordinationService:
             task_id=task_id,
             role=role,
             assigned_by=assigned_by,
-            assignment_id=assignment.assignment_id,
             responsibilities=responsibilities or [],
             estimated_hours=estimated_hours,
             due_date=due_date

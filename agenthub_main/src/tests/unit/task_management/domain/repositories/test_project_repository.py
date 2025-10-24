@@ -103,12 +103,15 @@ class MockProjectRepository(ProjectRepository):
         project = await self.find_by_id(project_id)
         if not project:
             raise ValueError(f"Project {project_id} not found")
-        
-        if git_branch_id in project.agent_assignments:
-            if project.agent_assignments[git_branch_id] == agent_id:
-                del project.agent_assignments[git_branch_id]
+
+        # Convert git_branch_id to string (handles both string and value object)
+        git_branch_id_str = str(git_branch_id.value if hasattr(git_branch_id, 'value') else git_branch_id)
+
+        if git_branch_id_str in project.agent_assignments:
+            if project.agent_assignments[git_branch_id_str] == agent_id:
+                del project.agent_assignments[git_branch_id_str]
                 return {"status": "success", "message": "Agent unassigned"}
-        
+
         return {"status": "not_found", "message": "Assignment not found"}
 
 

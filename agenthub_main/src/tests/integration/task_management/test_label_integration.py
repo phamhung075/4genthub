@@ -43,16 +43,40 @@ def db_session():
     """Provides a database session for tests"""
     session = get_session()
     yield session
-    session.close()
+    try:
+        session.close()
+    except Exception:
+        # Ignore errors if database is already closed
+        pass
 
 
 @pytest.fixture
 def db_adapter():
     """Provides a database adapter for tests"""
-    from fastmcp.task_management.infrastructure.database.database_config import get_engine
-    engine = get_engine()
+    from fastmcp.task_management.infrastructure.database.database_config import DatabaseConfig, Base
+    from fastmcp.task_management.infrastructure.database.database_initializer import reset_initialization_cache, initialize_database
+    from fastmcp.task_management.infrastructure.database.models import Label  # Import to register model
+
+    # Reset database singleton to force test database creation
+    DatabaseConfig.reset_instance()
+    reset_initialization_cache()
+
+    # Initialize database with test configuration (SQLite in-memory)
+    initialize_database()
+
+    # Get the test database engine
+    db_config = DatabaseConfig.get_instance()
+    engine = db_config.get_engine()
+
+    # Drop all tables first to ensure fresh schema, then recreate
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
     adapter = DatabaseAdapter(engine)
-    return adapter
+    yield adapter
+
+    # Cleanup: Reset after test
+    DatabaseConfig.reset_instance()
 
 
 @pytest.fixture
@@ -64,16 +88,51 @@ def label_repository(db_adapter):
 
 
 @pytest.fixture
-def task_repository(db_session):
+def task_repository(db_session, test_git_branch_id):
     """Provides a task repository for tests"""
-    repo = ORMTaskRepository(session=db_session, user_id="test_user")
+    repo = ORMTaskRepository(session=db_session, user_id="test_user", git_branch_id=test_git_branch_id)
     return repo
 
 
 @pytest.fixture
-def test_git_branch_id():
-    """Provides a test git branch ID"""
-    return str(uuid.uuid4())
+def test_git_branch_id(db_adapter):
+    """Provides a test git branch ID with actual database records"""
+    from fastmcp.task_management.infrastructure.database.models import Project, ProjectGitBranch
+    from datetime import datetime, timezone
+
+    # Create test project first
+    project_id = str(uuid.uuid4())
+    git_branch_id = str(uuid.uuid4())
+
+    with db_adapter.get_session() as session:
+        # Insert test project
+        test_project = Project(
+            id=project_id,
+            name="Test Project",
+            description="Test project for integration tests",
+            user_id="test_user",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        session.add(test_project)
+        session.flush()
+
+        # Insert test git branch
+        test_git_branch = ProjectGitBranch(
+            id=git_branch_id,
+            project_id=project_id,
+            name="test-branch",
+            description="Test branch for integration tests",
+            user_id="test_user",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            priority="medium",
+            status="todo"
+        )
+        session.add(test_git_branch)
+        session.flush()
+
+    return git_branch_id
 
 
 @pytest.fixture
@@ -217,12 +276,11 @@ class TestLabelAssociation:
         # Arrange - Create task
         task_id = str(uuid.uuid4())
         task = task_repository.create_task(
-            task_id=task_id,
             title="Test Task",
             description="Task for label assignment",
-            git_branch_id=test_git_branch_id,
-            assignees="test-orchestrator-agent",
+            assignee_ids=["test-orchestrator-agent"],
             priority="medium",
+            id=task_id,
             status="todo"
         )
 
@@ -248,12 +306,11 @@ class TestLabelAssociation:
         # Arrange - Create task
         task_id = str(uuid.uuid4())
         task = task_repository.create_task(
-            task_id=task_id,
             title="Multi-label Task",
             description="Task with multiple labels",
-            git_branch_id=test_git_branch_id,
-            assignees="test-orchestrator-agent",
+            assignee_ids=["test-orchestrator-agent"],
             priority="high",
+            id=task_id,
             status="todo"
         )
 
@@ -288,12 +345,11 @@ class TestLabelAssociation:
         for i in range(3):
             task_id = str(uuid.uuid4())
             task_repository.create_task(
-                task_id=task_id,
                 title=f"Task {i+1}",
                 description=f"Task {i+1} description",
-                git_branch_id=test_git_branch_id,
-                assignees="test-orchestrator-agent",
+                assignee_ids=["test-orchestrator-agent"],
                 priority="medium",
+                id=task_id,
                 status="todo"
             )
             task_ids.append(task_id)
@@ -314,12 +370,11 @@ class TestLabelAssociation:
         # Arrange - Create task and label
         task_id = str(uuid.uuid4())
         task_repository.create_task(
-            task_id=task_id,
             title="Test Task",
             description="Task for label removal",
-            git_branch_id=test_git_branch_id,
-            assignees="test-orchestrator-agent",
+            assignee_ids=["test-orchestrator-agent"],
             priority="medium",
+            id=task_id,
             status="todo"
         )
 
@@ -342,12 +397,11 @@ class TestLabelAssociation:
         # Arrange
         task_id = str(uuid.uuid4())
         task_repository.create_task(
-            task_id=task_id,
             title="Test Task",
             description="Task for duplicate label test",
-            git_branch_id=test_git_branch_id,
-            assignees="test-orchestrator-agent",
+            assignee_ids=["test-orchestrator-agent"],
             priority="medium",
+            id=task_id,
             status="todo"
         )
 
@@ -478,12 +532,11 @@ class TestLabelErrorHandling:
         # Arrange - Create task
         task_id = str(uuid.uuid4())
         task_repository.create_task(
-            task_id=task_id,
             title="Test Task",
             description="Task for error test",
-            git_branch_id=test_git_branch_id,
-            assignees="test-orchestrator-agent",
+            assignee_ids=["test-orchestrator-agent"],
             priority="medium",
+            id=task_id,
             status="todo"
         )
 

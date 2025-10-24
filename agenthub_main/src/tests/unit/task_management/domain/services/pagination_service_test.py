@@ -21,8 +21,8 @@ from fastmcp.task_management.domain.repositories.base_repository import (
 
 # Test entity for generic type testing
 @dataclass
-class TestEntity:
-    """Simple test entity for pagination testing."""
+class _MockPaginationEntity:
+    """Simple mock entity for pagination testing (underscore prefix prevents pytest collection)."""
     id: int
     name: str
 
@@ -33,12 +33,12 @@ class TestPaginationServiceBasicOperations:
     def test_create_pagination_result_first_page(self):
         """Test creating pagination result for first page."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(10)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10)]
         total_count = 25
         pagination = PaginationRequest(page=1, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -57,12 +57,12 @@ class TestPaginationServiceBasicOperations:
     def test_create_pagination_result_middle_page(self):
         """Test creating pagination result for middle page."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(10, 20)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10, 20)]
         total_count = 25
         pagination = PaginationRequest(page=2, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -79,12 +79,12 @@ class TestPaginationServiceBasicOperations:
     def test_create_pagination_result_last_page(self):
         """Test creating pagination result for last page."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(20, 25)]  # 5 items
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(20, 25)]  # 5 items
         total_count = 25
         pagination = PaginationRequest(page=3, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -101,12 +101,12 @@ class TestPaginationServiceBasicOperations:
     def test_create_pagination_result_single_page(self):
         """Test creating pagination result when all items fit on one page."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(5)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(5)]
         total_count = 5
         pagination = PaginationRequest(page=1, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -132,7 +132,7 @@ class TestPaginationServiceEdgeCases:
         pagination = PaginationRequest(page=1, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -150,12 +150,12 @@ class TestPaginationServiceEdgeCases:
     def test_create_pagination_result_exact_page_boundary(self):
         """Test when total_count is exactly divisible by page_size."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(10)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10)]
         total_count = 30  # Exactly 3 pages
         pagination = PaginationRequest(page=2, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -170,12 +170,12 @@ class TestPaginationServiceEdgeCases:
     def test_create_pagination_result_last_page_exact_boundary(self):
         """Test last page when total_count is exactly divisible."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(10)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10)]
         total_count = 30
         pagination = PaginationRequest(page=3, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -189,12 +189,12 @@ class TestPaginationServiceEdgeCases:
     def test_create_pagination_result_one_item_per_page(self):
         """Test pagination with page_size=1."""
         # Arrange
-        items = [TestEntity(5, "item5")]
+        items = [_MockPaginationEntity(5, "item5")]
         total_count = 10
         pagination = PaginationRequest(page=5, page_size=1)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -211,12 +211,12 @@ class TestPaginationServiceEdgeCases:
     def test_create_pagination_result_large_page_size(self):
         """Test pagination with page_size larger than total count."""
         # Arrange
-        items = [TestEntity(i, f"item{i}") for i in range(10)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10)]
         total_count = 10
         pagination = PaginationRequest(page=1, page_size=100)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=total_count,
             pagination=pagination
@@ -368,11 +368,11 @@ class TestPaginationServiceFeatureFlag:
         """Test service functions correctly when feature flag is False."""
         # Arrange
         PaginationService.FEATURE_CLEAN_REPOSITORIES = False
-        items = [TestEntity(i, f"item{i}") for i in range(10)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10)]
         pagination = PaginationRequest(page=1, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=25,
             pagination=pagination
@@ -386,11 +386,11 @@ class TestPaginationServiceFeatureFlag:
         """Test service functions correctly when feature flag is True."""
         # Arrange
         PaginationService.FEATURE_CLEAN_REPOSITORIES = True
-        items = [TestEntity(i, f"item{i}") for i in range(10)]
+        items = [_MockPaginationEntity(i, f"item{i}") for i in range(10)]
         pagination = PaginationRequest(page=1, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=25,
             pagination=pagination
@@ -444,18 +444,18 @@ class TestPaginationServiceTypeCompatibility:
     def test_works_with_custom_entity(self):
         """Test pagination service works with custom entity type."""
         # Arrange
-        items = [TestEntity(i, f"test{i}") for i in range(5)]
+        items = [_MockPaginationEntity(i, f"test{i}") for i in range(5)]
         pagination = PaginationRequest(page=1, page_size=10)
 
         # Act
-        result = PaginationService[TestEntity].create_pagination_result(
+        result = PaginationService[_MockPaginationEntity].create_pagination_result(
             items=items,
             total_count=5,
             pagination=pagination
         )
 
         # Assert
-        assert all(isinstance(item, TestEntity) for item in result.items)
+        assert all(isinstance(item, _MockPaginationEntity) for item in result.items)
         assert len(result.items) == 5
 
 
@@ -478,7 +478,7 @@ class TestPaginationServiceBusinessRules:
             pagination = PaginationRequest(page=1, page_size=page_size)
 
             # Act
-            result = PaginationService[TestEntity].create_pagination_result(
+            result = PaginationService[_MockPaginationEntity].create_pagination_result(
                 items=[],
                 total_count=total_count,
                 pagination=pagination
@@ -507,7 +507,7 @@ class TestPaginationServiceBusinessRules:
             pagination = PaginationRequest(page=page, page_size=page_size)
 
             # Act
-            result = PaginationService[TestEntity].create_pagination_result(
+            result = PaginationService[_MockPaginationEntity].create_pagination_result(
                 items=[],
                 total_count=total_count,
                 pagination=pagination
@@ -532,7 +532,7 @@ class TestPaginationServiceBusinessRules:
             pagination = PaginationRequest(page=page, page_size=10)
 
             # Act
-            result = PaginationService[TestEntity].create_pagination_result(
+            result = PaginationService[_MockPaginationEntity].create_pagination_result(
                 items=[],
                 total_count=100,  # Arbitrary large count
                 pagination=pagination

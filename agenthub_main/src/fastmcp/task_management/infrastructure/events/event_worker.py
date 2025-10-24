@@ -230,7 +230,8 @@ class EventWorker:
                 handler(event)
 
                 # Success!
-                logger.debug(f"Handler {handler.__name__} processed event {event.event_type}")
+                handler_name = getattr(handler, '__name__', str(handler))
+                logger.debug(f"Handler {handler_name} processed event {event.event_type}")
                 with self._stats_lock:
                     self._stats['events_processed'] += 1
 
@@ -238,6 +239,31 @@ class EventWorker:
                 # Handler failed - apply retry logic
                 queue_item.last_error = str(e)
                 self._handle_event_failure(queue_item, handler, e)
+
+    def _interruptible_sleep(self, seconds: float) -> bool:
+        """
+        Sleep in small increments, checking _running flag for graceful shutdown.
+
+        This prevents the worker thread from being blocked during long retry delays,
+        allowing it to respond immediately to stop() calls.
+
+        Args:
+            seconds: Total time to sleep in seconds
+
+        Returns:
+            True if sleep completed normally, False if interrupted by shutdown
+        """
+        if seconds <= 0:
+            return self._running
+
+        end_time = time.time() + seconds
+        while time.time() < end_time and self._running:
+            # Sleep in 100ms increments to check _running flag frequently
+            remaining = end_time - time.time()
+            if remaining > 0:
+                time.sleep(min(0.1, remaining))
+
+        return self._running
 
     def _handle_event_failure(
         self,
@@ -265,10 +291,15 @@ class EventWorker:
         attempt = queue_item.attempt_number
         max_attempts = len(RETRY_BACKOFF_SCHEDULE)
 
-        logger.warning(
-            f"Handler {handler.__name__} failed for event {queue_item.event.event_type} "
-            f"(attempt {attempt + 1}/{max_attempts}): {error}"
-        )
+        handler_name = getattr(handler, '__name__', str(handler))
+        try:
+            logger.warning(
+                f"Handler {handler_name} failed for event {queue_item.event.event_type} "
+                f"(attempt {attempt + 1}/{max_attempts}): {error}"
+            )
+        except (ValueError, OSError):
+            # File handle closed during test teardown - ignore gracefully
+            pass
 
         # Check if we should retry
         if attempt < max_attempts - 1:
@@ -278,14 +309,26 @@ class EventWorker:
             with self._stats_lock:
                 self._stats['events_retried'] += 1
 
-            logger.info(
-                f"Retrying event {queue_item.event.event_type} in {backoff_delay}s "
-                f"(attempt {attempt + 2}/{max_attempts})"
-            )
+            try:
+                logger.info(
+                    f"Retrying event {queue_item.event.event_type} in {backoff_delay}s "
+                    f"(attempt {attempt + 2}/{max_attempts})"
+                )
+            except (ValueError, OSError):
+                # File handle closed during test teardown - ignore gracefully
+                pass
 
-            # Wait for backoff period
+            # Wait for backoff period (interruptible for graceful shutdown)
             if backoff_delay > 0:
-                time.sleep(backoff_delay)
+                still_running = self._interruptible_sleep(backoff_delay)
+                if not still_running:
+                    # Worker is shutting down, don't re-enqueue
+                    try:
+                        logger.info(f"Worker shutdown during retry backoff, discarding event {queue_item.event.event_type}")
+                    except (ValueError, OSError):
+                        # File handle closed during test teardown - ignore gracefully
+                        pass
+                    return
 
             # Re-enqueue for retry
             queue_item.attempt_number += 1
@@ -320,11 +363,15 @@ class EventWorker:
 
         self._dead_letter_queue.append(dead_letter_event)
 
-        logger.error(
-            f"Event {queue_item.event.event_type} moved to Dead Letter Queue "
-            f"after {queue_item.attempt_number + 1} failed attempts. "
-            f"Error: {queue_item.last_error}"
-        )
+        try:
+            logger.error(
+                f"Event {queue_item.event.event_type} moved to Dead Letter Queue "
+                f"after {queue_item.attempt_number + 1} failed attempts. "
+                f"Error: {queue_item.last_error}"
+            )
+        except (ValueError, OSError):
+            # File handle closed during test teardown - ignore gracefully
+            pass
 
         # TODO: Persist to database table 'event_processing_failures'
         # This will be implemented in the next subtask

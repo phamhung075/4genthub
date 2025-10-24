@@ -23,36 +23,35 @@
       ],
       "path": "_absolute_docs/scripts"
     },
-    "_workplace/workers/fix_tests_loop": {
-      "count": 4,
+    "_workplace/workers": {
+      "count": 1,
       "files": [
         {
-          "hash": "2fc0b6e70f1a1977cbbf53c2dc094f53",
-          "modified": "2025-10-12T12:43:51.198289",
+          "hash": "bfcdfc93e61e5695d929602abb9ff12b",
+          "modified": "2025-10-24T12:03:08.022683",
+          "name": "scripts-cleanup-analysis.md",
+          "path": "_workplace/workers/scripts-cleanup-analysis.md",
+          "size": 22294
+        }
+      ],
+      "path": "_workplace/workers"
+    },
+    "_workplace/workers/fix_tests_loop": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "e4695bfc3cb4f978c080c5941db2a03a",
+          "modified": "2025-10-24T11:36:00.167115",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 13415
+          "size": 13688
         },
         {
-          "hash": "bd9976592660c396c4a8e543e8cc3e25",
-          "modified": "2025-10-12T12:43:51.190289",
+          "hash": "8c9fe61ff4d91eb22593f61a7213710b",
+          "modified": "2025-10-24T11:35:05.239001",
           "name": "AI_README.md",
           "path": "_workplace/workers/fix_tests_loop/AI_README.md",
-          "size": 4197
-        },
-        {
-          "hash": "893dd7effd5cc0fb442f5ddefc3381d1",
-          "modified": "2025-10-12T12:43:51.190289",
-          "name": "fix-1by1-context.md",
-          "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 49640
-        },
-        {
-          "hash": "10c99f4a959a54ecda36092c042f082c",
-          "modified": "2025-10-12T12:43:51.190289",
-          "name": "current_context.md",
-          "path": "_workplace/workers/fix_tests_loop/current_context.md",
-          "size": 10793
+          "size": 6209
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -1369,7 +1368,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-22T21:25:12.617450",
+  "generated_at": "2025-10-24T12:03:08.092689",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1380,11 +1379,12 @@
     },
     "_workplace": {
       "workers": {
+        "files": [
+          "scripts-cleanup-analysis.md"
+        ],
         "fix_tests_loop": {
           "files": [
             "AI_README.md",
-            "current_context.md",
-            "fix-1by1-context.md",
             "fix-1by1.md"
           ]
         }
@@ -1641,5 +1641,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 176
+  "total_files": 175
 }

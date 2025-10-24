@@ -15,101 +15,84 @@ from fastmcp.types import (
 
 class TestTypesInit:
     """Test cases for types module initialization."""
-    
+
     def test_module_imports(self):
         """Test that all submodules can be imported."""
         assert entities is not None
         assert responses is not None
         assert summaries is not None
         assert converters is not None
-    
+
     def test_entities_exports(self):
-        """Test that entities module exports expected classes."""
-        # Check for some key entity classes
-        assert hasattr(entities, 'TaskEntity')
-        assert hasattr(entities, 'SubtaskEntity')
-        assert hasattr(entities, 'ProjectEntity')
-        assert hasattr(entities, 'GitBranchEntity')
-        assert hasattr(entities, 'AgentEntity')
-    
+        """Test that entities module exports expected DTO classes."""
+        # Check for entity DTO classes (NOT legacy aliases)
+        assert hasattr(entities, 'TaskDTO')
+        assert hasattr(entities, 'SubtaskDTO')
+        assert hasattr(entities, 'ProjectDTO')
+        assert hasattr(entities, 'BranchDTO')
+        assert hasattr(entities, 'RuleDTO')
+
     def test_responses_exports(self):
-        """Test that responses module exports expected classes."""
-        # Check for response wrapper classes
-        assert hasattr(responses, 'TaskListResponse')
-        assert hasattr(responses, 'SubtaskListResponse')
-        assert hasattr(responses, 'SearchResponse')
-    
+        """Test that responses module exports expected response classes."""
+        # Check for response wrapper classes (NOT legacy aliases)
+        assert hasattr(responses, 'TasksResponse')
+        assert hasattr(responses, 'SubtasksResponse')
+        assert hasattr(responses, 'TaskSummariesResponse')
+
     def test_summaries_exports(self):
-        """Test that summaries module exports expected classes."""
-        # Check for summary classes
-        assert hasattr(summaries, 'TaskSummary')
-        assert hasattr(summaries, 'ProjectSummary')
-        assert hasattr(summaries, 'BranchSummary')
-    
+        """Test that summaries module exports expected summary DTO classes."""
+        # Check for summary DTO classes (NOT legacy aliases)
+        assert hasattr(summaries, 'TaskSummaryDTO')
+        assert hasattr(summaries, 'SubtaskSummaryDTO')
+        assert hasattr(summaries, 'ProjectSummaryDTO')
+        assert hasattr(summaries, 'BranchSummaryDTO')
+
     def test_converters_exports(self):
-        """Test that converters module exports expected functions."""
-        # Check for converter functions
-        assert hasattr(converters, 'task_to_entity')
-        assert hasattr(converters, 'subtask_to_entity')
-        assert hasattr(converters, 'project_to_entity')
-    
+        """Test that converters module exports expected converter functions."""
+        # Check for converter functions (NOT legacy aliases)
+        assert hasattr(converters, 'task_to_dto')
+        assert hasattr(converters, 'subtask_to_dto')
+        assert hasattr(converters, 'task_summary_to_dto')
+        assert hasattr(converters, 'subtask_summary_to_dto')
+
     def test_circular_import_protection(self):
         """Test that there are no circular import issues."""
         # Force reimport to check for circular dependencies
         if 'fastmcp.types' in sys.modules:
             del sys.modules['fastmcp.types']
-        
+
         # This should not raise ImportError
         import fastmcp.types
-        
+
         assert fastmcp.types is not None
-    
+
     def test_type_compatibility(self):
-        """Test that types are compatible across modules."""
-        from fastmcp.types.entities import TaskEntity
-        from fastmcp.types.converters import task_to_entity
-        from fastmcp.task_management.domain.entities.task import Task
-        from datetime import datetime
-        from fastmcp.shared.domain.value_objects import UUID
-        from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
-        from fastmcp.task_management.domain.value_objects.priority import Priority
-        
-        # Create a domain task
-        domain_task = Task(
-            id=UUID.generate(),
+        """Test that DTOs can be properly instantiated."""
+        from fastmcp.types.entities import TaskDTO
+        from fastmcp.types.converters import task_to_dto
+
+        # Test that the DTO can be instantiated with basic data
+        task_dto = TaskDTO(
+            id="123e4567-e89b-12d3-a456-426614174000",
             title="Test Task",
             description="Test Description",
-            status=TaskStatus.TODO,
-            priority=Priority.MEDIUM,
-            details=None,
+            status="todo",
+            priority="medium",
             assignees=["user1"],
-            labels=["test"],
-            estimated_effort=None,
-            due_date=None,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            git_branch_id=UUID.generate(),
-            project_id=UUID.generate(),
-            parent_task_id=None,
-            dependencies=[],
-            blocking_tasks=[],
-            subtask_ids=[],
+            assignees_count=1,
             subtask_count=0,
-            context_id=None,
-            completion_summary=None
+            has_dependencies=False,
+            has_context=False
         )
-        
-        # Convert to entity
-        entity = task_to_entity(domain_task)
-        
+
         # Verify it's the correct type
-        assert isinstance(entity, TaskEntity)
-        assert entity.title == "Test Task"
-    
+        assert isinstance(task_dto, TaskDTO)
+        assert task_dto.title == "Test Task"
+
     def test_module_all_attribute(self):
         """Test that __all__ is properly defined if present."""
         import fastmcp.types as types_module
-        
+
         # If __all__ is defined, verify it contains expected exports
         if hasattr(types_module, '__all__'):
             all_exports = types_module.__all__

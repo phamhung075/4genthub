@@ -10,6 +10,9 @@ Organized by category:
 - converters: Domain entity to DTO conversion helpers
 """
 
+# Import submodules for module-level access
+from . import entities, responses, summaries, converters
+
 # Entity DTOs
 from .entities import (
     TaskDTO,
@@ -63,6 +66,11 @@ from .converters import (
 )
 
 __all__ = [
+    # Submodules
+    "entities",
+    "responses",
+    "summaries",
+    "converters",
     # Entity DTOs
     "TaskDTO",
     "SubtaskDTO",

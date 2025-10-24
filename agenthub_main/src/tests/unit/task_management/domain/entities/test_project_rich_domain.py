@@ -5,7 +5,7 @@ Tests the business logic methods added to Project entity:
 - calculate_project_health()
 - check_deadline_risk()
 
-Feature flag: FEATURE_RICH_DOMAIN_MODEL controls behavior (Strangler Fig Pattern).
+Rich Domain Model implementation with business logic methods.
 """
 
 import pytest
@@ -17,25 +17,17 @@ from fastmcp.task_management.domain.entities.agent import Agent
 class TestProjectFeatureFlag:
     """Test feature flag behavior for Rich Domain Model."""
 
-    def test_feature_flag_default_value(self):
-        """Test that feature flag defaults to False for backward compatibility."""
+    def test_rich_domain_model_is_active(self):
+        """Test that rich domain model is always active (feature flag removed)."""
         project = Project.create(
             name="Test Project",
             description="Test description"
         )
 
-        assert project.FEATURE_RICH_DOMAIN_MODEL is False
-
-    def test_feature_flag_can_be_enabled(self):
-        """Test that feature flag can be enabled."""
-        project = Project.create(
-            name="Test Project",
-            description="Test description"
-        )
-
-        # Enable rich domain model
-        project.FEATURE_RICH_DOMAIN_MODEL = True
-        assert project.FEATURE_RICH_DOMAIN_MODEL is True
+        # Rich domain model is now the default and only behavior
+        # Feature flag has been removed - this test verifies the entity can be created
+        assert project is not None
+        assert project.name == "Test Project"
 
 
 class TestValidateAgentAssignment:
@@ -44,7 +36,6 @@ class TestValidateAgentAssignment:
     def test_validate_with_flag_disabled_basic_validation(self):
         """When flag is disabled, only basic validation (legacy behavior)."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = False
 
         # Register agent and create branch
         agent = Agent(id="agent-1", name="Test Agent")
@@ -67,7 +58,6 @@ class TestValidateAgentAssignment:
     def test_validate_registered_agent_and_existing_branch(self):
         """Valid assignment when agent registered and branch exists."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Setup
         agent = Agent(id="agent-1", name="Test Agent")
@@ -85,7 +75,6 @@ class TestValidateAgentAssignment:
     def test_validate_unregistered_agent_fails(self):
         """Unregistered agent cannot be assigned."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         branch = project.create_git_branch(
             git_branch_name="test-branch",
@@ -99,7 +88,6 @@ class TestValidateAgentAssignment:
     def test_validate_nonexistent_branch_fails(self):
         """Cannot assign to non-existent branch."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         agent = Agent(id="agent-1", name="Test Agent")
         project.register_agent(agent)
@@ -111,7 +99,6 @@ class TestValidateAgentAssignment:
     def test_validate_agent_workload_limit(self):
         """Agent cannot be assigned more than 3 concurrent branches."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Register agent
         agent = Agent(id="agent-1", name="Test Agent")
@@ -138,7 +125,6 @@ class TestValidateAgentAssignment:
     def test_validate_reassignment_allowed(self):
         """Reassigning same branch to different agent is allowed."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Register two agents
         agent1 = Agent(id="agent-1", name="Agent 1")
@@ -160,7 +146,6 @@ class TestValidateAgentAssignment:
     def test_validate_same_agent_reassignment_allowed(self):
         """Assigning same agent to already assigned branch is allowed."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         agent = Agent(id="agent-1", name="Test Agent")
         project.register_agent(agent)
@@ -179,10 +164,9 @@ class TestValidateAgentAssignment:
 class TestCalculateProjectHealth:
     """Test calculate_project_health() method."""
 
-    def test_health_with_flag_disabled_basic_metrics(self):
-        """When flag is disabled, returns basic metrics only (legacy)."""
+    def test_health_with_basic_project_setup(self):
+        """Health calculation with basic project setup (1 agent, 1 branch)."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = False
 
         # Add some agents and branches
         agent = Agent(id="agent-1", name="Test Agent")
@@ -196,16 +180,16 @@ class TestCalculateProjectHealth:
 
         health = project.calculate_project_health()
 
-        assert health["total_branches"] == 1
-        assert health["registered_agents"] == 1
-        assert health["active_assignments"] == 1
-        assert health["health_score"] is None
-        assert health["health_status"] == "unknown"
+        # Rich domain model always provides detailed health metrics
+        assert health["counts"]["total_branches"] == 1
+        assert "overall_health_score" in health
+        assert "health_status" in health
+        assert isinstance(health["overall_health_score"], (int, float))
+        assert health["health_status"] in ["excellent", "good", "fair", "poor", "critical"]
 
     def test_health_empty_project(self):
         """Health calculation for empty project."""
         project = Project.create(name="Empty Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         health = project.calculate_project_health()
 
@@ -219,7 +203,6 @@ class TestCalculateProjectHealth:
     def test_health_excellent_status(self):
         """Project with agents assigned (validates health calculation)."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Create project setup with high agent utilization
         for i in range(3):
@@ -243,7 +226,6 @@ class TestCalculateProjectHealth:
     def test_health_poor_status_no_agents_assigned(self):
         """Project with poor health (no agent assignments)."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Create branches but no agent assignments
         for i in range(3):
@@ -261,7 +243,6 @@ class TestCalculateProjectHealth:
     def test_health_metrics_calculation(self):
         """Verify health metrics are calculated correctly."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Register 5 agents
         for i in range(5):
@@ -286,7 +267,6 @@ class TestCalculateProjectHealth:
     def test_health_with_blocked_tasks(self):
         """Health calculation with blocked tasks."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Create branches
         branch1 = project.create_git_branch(
@@ -311,21 +291,20 @@ class TestCalculateProjectHealth:
 class TestCheckDeadlineRisk:
     """Test check_deadline_risk() method."""
 
-    def test_risk_with_flag_disabled_unknown(self):
-        """When flag is disabled, returns unknown risk (legacy)."""
+    def test_risk_empty_project_no_risk(self):
+        """Empty project (no branches) has no deadline risk."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = False
 
         risk = project.check_deadline_risk()
 
-        assert risk["risk_level"] == "unknown"
-        assert "not available" in risk["assessment"]
-        assert "FEATURE_RICH_DOMAIN_MODEL" in risk["recommendation"]
+        # Rich domain model always provides detailed risk assessment
+        # Empty project should have "no_risk" level
+        assert risk["risk_level"] == "no_risk"
+        assert "assessment" in risk
 
     def test_risk_no_branches_no_risk(self):
         """Project with no branches has no risk."""
         project = Project.create(name="Empty Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         risk = project.check_deadline_risk()
 
@@ -335,7 +314,6 @@ class TestCheckDeadlineRisk:
     def test_risk_no_tasks_no_risk(self):
         """Project with branches but no tasks has no risk."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Create branch with no tasks
         project.create_git_branch(
@@ -351,7 +329,6 @@ class TestCheckDeadlineRisk:
     def test_risk_critical_project_stalled(self):
         """Critical risk when project stalled (< 10% completion, no active work)."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Create branches (simulating stalled project)
         for i in range(3):
@@ -373,7 +350,6 @@ class TestCheckDeadlineRisk:
     def test_risk_assessment_includes_metrics(self):
         """Risk assessment includes completion and utilization metrics."""
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Register agent
         agent = Agent(id="agent-1", name="Test Agent")
@@ -399,7 +375,6 @@ class TestCheckDeadlineRisk:
         # critical_risk -> high_risk -> medium_risk -> low_risk -> no_risk
 
         project = Project.create(name="Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Empty project should have no_risk
         risk = project.check_deadline_risk()
@@ -416,7 +391,6 @@ class TestProjectRichDomainIntegration:
             name="Integration Test Project",
             description="Testing rich domain model"
         )
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Register agents
         agent1 = Agent(id="agent-1", name="Developer Agent")
@@ -454,10 +428,9 @@ class TestProjectRichDomainIntegration:
         assert "assessment" in risk
         assert "recommendation" in risk
 
-    def test_legacy_behavior_preserved_when_flag_disabled(self):
-        """Ensure legacy behavior works when feature flag is disabled."""
-        project = Project.create(name="Legacy Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = False
+    def test_rich_domain_model_always_active(self):
+        """Rich domain model is always active - provides detailed metrics."""
+        project = Project.create(name="Active Project")
 
         # Register agent and branch
         agent = Agent(id="agent-1", name="Test Agent")
@@ -468,43 +441,37 @@ class TestProjectRichDomainIntegration:
             name="Test Branch"
         )
 
-        # Validation uses legacy behavior (basic only)
+        # Validation always uses rich business logic
         assert project.validate_agent_assignment("agent-1", branch.id) is True
 
-        # Health returns basic metrics
+        # Health always returns detailed metrics
         health = project.calculate_project_health()
-        assert health["health_score"] is None
-        assert health["health_status"] == "unknown"
+        assert "overall_health_score" in health
+        assert "health_status" in health
+        assert health["health_status"] != "unknown"
 
-        # Risk returns unknown
+        # Risk always returns detailed assessment
         risk = project.check_deadline_risk()
-        assert risk["risk_level"] == "unknown"
+        assert risk["risk_level"] != "unknown"
 
-    def test_feature_flag_can_be_toggled(self):
-        """Feature flag can be toggled during runtime."""
-        project = Project.create(name="Toggle Test Project")
+    def test_health_metrics_consistency(self):
+        """Health calculation provides consistent rich metrics."""
+        project = Project.create(name="Metrics Test Project")
 
-        # Start with flag disabled
-        project.FEATURE_RICH_DOMAIN_MODEL = False
-        health_legacy = project.calculate_project_health()
-        assert health_legacy["health_score"] is None
+        # Get health for empty project
+        health = project.calculate_project_health()
 
-        # Enable flag
-        project.FEATURE_RICH_DOMAIN_MODEL = True
-        health_rich = project.calculate_project_health()
         # Rich domain uses "overall_health_score" not "health_score"
-        assert health_rich["overall_health_score"] is not None
-        assert isinstance(health_rich["overall_health_score"], (int, float))
-
-        # Disable flag again
-        project.FEATURE_RICH_DOMAIN_MODEL = False
-        health_legacy_again = project.calculate_project_health()
-        assert health_legacy_again["health_score"] is None
+        assert "overall_health_score" in health
+        assert health["overall_health_score"] is not None
+        assert isinstance(health["overall_health_score"], (int, float))
+        assert "health_status" in health
+        assert "metrics" in health
+        assert "counts" in health
 
     def test_agent_workload_prevents_overassignment(self):
         """Rich domain model prevents agent overload."""
         project = Project.create(name="Workload Test Project")
-        project.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Register one agent
         agent = Agent(id="busy-agent", name="Busy Agent")
@@ -524,9 +491,5 @@ class TestProjectRichDomainIntegration:
             assert project.validate_agent_assignment("busy-agent", branches[i].id) is True
             project.assign_agent_to_tree("busy-agent", branches[i].id)
 
-        # 4th assignment should fail (agent overloaded)
+        # 4th assignment should fail (agent overloaded) - rich domain model enforces this
         assert project.validate_agent_assignment("busy-agent", branches[3].id) is False
-
-        # But with flag disabled, validation would pass
-        project.FEATURE_RICH_DOMAIN_MODEL = False
-        assert project.validate_agent_assignment("busy-agent", branches[3].id) is True

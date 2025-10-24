@@ -51,7 +51,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
         # Arrange
         mock_time.time.side_effect = [1000.0, 1000.1]  # 100ms difference
         
-        template_id = TemplateId("test-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"name": "Test", "value": 123},
@@ -86,7 +86,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_cache_hit(self):
         """Test template rendering with cache hit"""
         # Arrange
-        template_id = TemplateId("cached-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"test": "value"},
@@ -96,7 +96,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
         # Mock cached result
         cached_data = {
             'content': 'Cached content',
-            'template_id': 'cached-template',
+            'template_id': str(template_id.value),
             'variables_used': {'test': 'value'},
             'generated_at': datetime.now(timezone.utc).isoformat(),
             'generation_time_ms': 50,
@@ -120,7 +120,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_force_regenerate(self):
         """Test template rendering with force regenerate ignores cache"""
         # Arrange
-        template_id = TemplateId("force-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"force": True},
@@ -148,7 +148,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_not_found(self):
         """Test template rendering when template not found"""
         # Arrange
-        template_id = TemplateId("missing-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={}
@@ -165,7 +165,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_compilation_error(self):
         """Test template rendering with compilation error"""
         # Arrange
-        template_id = TemplateId("invalid-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={}
@@ -186,7 +186,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_render_error(self):
         """Test template rendering with render error"""
         # Arrange
-        template_id = TemplateId("error-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"test": "value"}
@@ -380,7 +380,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_cache_result_redis_error_handling(self):
         """Test cache result handles Redis errors gracefully"""
         # Arrange
-        template_id = TemplateId("test")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={}
@@ -408,7 +408,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
         """Test check cache handles Redis errors gracefully"""
         # Arrange
         request = TemplateRenderRequest(
-            template_id=TemplateId("test"),
+            template_id=TemplateId.generate_new(),
             variables={}
         )
         

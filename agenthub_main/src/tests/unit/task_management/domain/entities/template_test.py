@@ -28,7 +28,7 @@ class TestTemplateEntity:
     @pytest.fixture
     def template_id(self):
         """Create a template ID for testing"""
-        return TemplateId.generate()
+        return TemplateId.generate_new()
     
     @pytest.fixture
     def valid_template_data(self, template_id):
@@ -463,7 +463,7 @@ class TestTemplateResultEntity:
         """Create a TemplateResult instance for testing"""
         return TemplateResult(
             content="Rendered template content",
-            template_id=TemplateId.generate(),
+            template_id=TemplateId.generate_new(),
             variables_used={"name": "test", "version": "1.0"},
             generated_at=datetime.now(timezone.utc),
             generation_time_ms=150,
@@ -485,7 +485,7 @@ class TestTemplateResultEntity:
         """Test TemplateResult creation without output path"""
         result = TemplateResult(
             content="Content",
-            template_id=TemplateId.generate(),
+            template_id=TemplateId.generate_new(),
             variables_used={},
             generated_at=datetime.now(timezone.utc),
             generation_time_ms=100,
@@ -514,7 +514,7 @@ class TestTemplateRenderRequestEntity:
     def render_request(self):
         """Create a TemplateRenderRequest instance for testing"""
         return TemplateRenderRequest(
-            template_id=TemplateId.generate(),
+            template_id=TemplateId.generate_new(),
             variables={"name": "test", "version": "1.0"},
             task_context={"task_id": "123", "project": "test_project"},
             output_path="/output/file.txt",
@@ -534,7 +534,7 @@ class TestTemplateRenderRequestEntity:
     def test_template_render_request_creation_with_defaults_success(self):
         """Test TemplateRenderRequest creation with default values"""
         request = TemplateRenderRequest(
-            template_id=TemplateId.generate(),
+            template_id=TemplateId.generate_new(),
             variables={}
         )
         
@@ -562,7 +562,7 @@ class TestTemplateUsageEntity:
     def template_usage(self):
         """Create a TemplateUsage instance for testing"""
         return TemplateUsage(
-            template_id=TemplateId.generate(),
+            template_id=TemplateId.generate_new(),
             task_id="task_123",
             project_id="project_456",
             agent_name="test_agent",
@@ -588,7 +588,7 @@ class TestTemplateUsageEntity:
     def test_template_usage_creation_with_optional_none_success(self):
         """Test TemplateUsage creation with optional fields as None"""
         usage = TemplateUsage(
-            template_id=TemplateId.generate(),
+            template_id=TemplateId.generate_new(),
             task_id=None,
             project_id=None,
             agent_name=None,
@@ -626,7 +626,7 @@ class TestTemplateBusinessRules:
     def template(self):
         """Create a Template for business rule testing"""
         return Template(
-            id=TemplateId.generate(),
+            id=TemplateId.generate_new(),
             name='Test Template',
             description='Test description',
             content='Template content',
@@ -752,7 +752,7 @@ class TestTemplateEdgeCases:
     def test_template_with_unicode_content_success(self):
         """Test template with unicode content"""
         template = Template(
-            id=TemplateId.generate(),
+            id=TemplateId.generate_new(),
             name='Template with émojis 🚀',
             description='Déscription with açcénts',
             content='Content with 中文 and émojis 🎉',
@@ -776,7 +776,7 @@ class TestTemplateEdgeCases:
     def test_template_with_empty_collections_success(self):
         """Test template with empty collections"""
         template = Template(
-            id=TemplateId.generate(),
+            id=TemplateId.generate_new(),
             name='Empty Collections Template',
             description='Template with empty collections',
             content='Simple content',
@@ -802,7 +802,7 @@ class TestTemplateEdgeCases:
         large_content = 'X' * 10000  # 10KB of content
         
         template = Template(
-            id=TemplateId.generate(),
+            id=TemplateId.generate_new(),
             name='Large Template',
             description='Template with large content',
             content=large_content,
@@ -823,7 +823,7 @@ class TestTemplateEdgeCases:
     def test_template_serialization_round_trip_with_complex_data(self):
         """Test template serialization round-trip with complex data"""
         template = Template(
-            id=TemplateId.generate(),
+            id=TemplateId.generate_new(),
             name='Complex Template',
             description='Template with complex data structures',
             content='Complex {{nested.variable}} content',
