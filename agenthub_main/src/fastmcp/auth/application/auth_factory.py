@@ -371,9 +371,11 @@ class LocalAuthAdapter(AuthServiceInterface):
             auth_service, db = self._get_auth_service()
             try:
                 # Extract user ID from token
-                user_id = self.jwt_service.decode_token(access_token).get("sub")
-                if user_id:
-                    return await auth_service.logout(user_id, revoke_all_tokens=True)
+                payload = self.jwt_service.verify_access_token(access_token)
+                if payload:
+                    user_id = payload.get("sub")
+                    if user_id:
+                        return await auth_service.logout(user_id, revoke_all_tokens=True)
                 return False
             finally:
                 db.close()
@@ -405,7 +407,7 @@ class LocalAuthAdapter(AuthServiceInterface):
     async def verify_token(self, access_token: str) -> AuthResult:
         """Verify token with local auth"""
         try:
-            payload = self.jwt_service.decode_token(access_token)
+            payload = self.jwt_service.verify_access_token(access_token)
             if payload:
                 return AuthResult(
                     success=True,

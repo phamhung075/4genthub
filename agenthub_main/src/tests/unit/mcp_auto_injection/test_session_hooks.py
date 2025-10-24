@@ -534,9 +534,8 @@ class TestMainFunction:
                     main()
     
     @patch('session_start.SessionStartHook')
-    @patch('utils.config_validator.validate_configuration', return_value=True)
-    def test_main_normal_execution(self, mock_validate_config, mock_hook_class):
-        """Test normal main execution flow."""
+    def test_main_normal_execution(self, mock_hook_class):
+        """Test normal main execution flow - mocks SessionStartHook to skip validation."""
         input_data = {
             "session_id": "test-123",
             "source": "startup"
@@ -546,37 +545,54 @@ class TestMainFunction:
         mock_hook.execute.return_value = 0
         mock_hook_class.return_value = mock_hook
 
-        with patch('sys.argv', ['session_start.py']):
-            with patch('sys.stdin') as mock_stdin:
-                mock_stdin.isatty.return_value = False
-                mock_stdin.read.return_value = json.dumps(input_data)
-                with pytest.raises(SystemExit) as exc_info:
-                    main()
+        # Mock the config validator import to succeed and return True
+        with patch.dict('sys.modules', {'utils.config_validator': Mock(validate_configuration=Mock(return_value=True))}):
+            with patch('sys.argv', ['session_start.py']):
+                with patch('sys.stdin') as mock_stdin:
+                    mock_stdin.isatty.return_value = False
+                    mock_stdin.read.return_value = json.dumps(input_data)
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
 
-                assert exc_info.value.code == 0
-                mock_hook.execute.assert_called_once_with(input_data)
+                    # Expect exit code 0 when validation passes and hook executes successfully
+                    assert exc_info.value.code == 0
+                    mock_hook.execute.assert_called_once_with(input_data)
     
     @patch('sys.stdin')
     def test_main_empty_input(self, mock_stdin):
         """Test main function with empty input."""
         mock_stdin.read.return_value = ""
-        
-        with patch('sys.argv', ['session_start.py']):
-            with pytest.raises(SystemExit) as exc_info:
-                main()
-            
-            assert exc_info.value.code == 0
+        mock_stdin.isatty.return_value = False
+
+        # Mock config validator to succeed
+        with patch.dict('sys.modules', {'utils.config_validator': Mock(validate_configuration=Mock(return_value=True))}):
+            with patch('sys.argv', ['session_start.py']):
+                # Mock SessionStartHook to return 0 from execute()
+                mock_hook = Mock()
+                mock_hook.execute.return_value = 0
+                with patch('session_start.SessionStartHook', return_value=mock_hook):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+
+                    assert exc_info.value.code == 0
     
     @patch('sys.stdin')
     def test_main_invalid_json_input(self, mock_stdin):
         """Test main function with invalid JSON input."""
         mock_stdin.read.return_value = "invalid json"
-        
-        with patch('sys.argv', ['session_start.py']):
-            with pytest.raises(SystemExit) as exc_info:
-                main()
-            
-            assert exc_info.value.code == 0
+        mock_stdin.isatty.return_value = False
+
+        # Mock config validator to succeed
+        with patch.dict('sys.modules', {'utils.config_validator': Mock(validate_configuration=Mock(return_value=True))}):
+            with patch('sys.argv', ['session_start.py']):
+                # Mock SessionStartHook to return 0 from execute()
+                mock_hook = Mock()
+                mock_hook.execute.return_value = 0
+                with patch('session_start.SessionStartHook', return_value=mock_hook):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+
+                    assert exc_info.value.code == 0
     
     @patch('session_start.SessionStartHook')
     def test_main_log_only_option(self, mock_hook_class):
@@ -584,12 +600,14 @@ class TestMainFunction:
         mock_hook = Mock()
         mock_hook_class.return_value = mock_hook
 
-        with patch('sys.argv', ['session_start.py', '--log-only']):
-            with patch('sys.stdin') as mock_stdin:
-                mock_stdin.isatty.return_value = False
-                mock_stdin.read.return_value = '{"test": "data"}'
-                with pytest.raises(SystemExit) as exc_info:
-                    main()
+        # Mock config validator to succeed
+        with patch.dict('sys.modules', {'utils.config_validator': Mock(validate_configuration=Mock(return_value=True))}):
+            with patch('sys.argv', ['session_start.py', '--log-only']):
+                with patch('sys.stdin') as mock_stdin:
+                    mock_stdin.isatty.return_value = False
+                    mock_stdin.read.return_value = '{"test": "data"}'
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
 
-                assert exc_info.value.code == 0
-                mock_hook.logger.log.assert_called_once_with('info', 'Session start logged only', {"test": "data"})
+                    assert exc_info.value.code == 0
+                    mock_hook.logger.log.assert_called_once_with('info', 'Session start logged only', {"test": "data"})

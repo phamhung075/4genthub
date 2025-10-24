@@ -134,10 +134,10 @@ class TestMCPControllersPackage:
         
         # Additional allowed attributes (submodules imported for internal use)
         allowed_submodules = {
-            'agent_mcp_controller', 'auth_helper', 'dependency_mcp_controller',
-            'git_branch_mcp_controller', 'project_mcp_controller', 'subtask_mcp_controller',
-            'task_mcp_controller', 'unified_context_controller', 'workflow_guidance',
-            'workflow_hint_enhancer'
+            'agent_mcp_controller', 'auth_helper', 'call_agent_mcp_controller',
+            'dependency_mcp_controller', 'git_branch_mcp_controller', 'project_mcp_controller',
+            'subtask_mcp_controller', 'task_mcp_controller', 'unified_context_controller',
+            'workflow_guidance', 'workflow_hint_enhancer'
         }
         
         # Remove standard attributes

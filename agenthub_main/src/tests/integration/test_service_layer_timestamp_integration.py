@@ -47,7 +47,13 @@ class TestServiceLayerTimestampIntegration:
         
         session = db_config.get_session()
         yield session
-        session.close()
+        # Try to close session gracefully, but don't fail if database already closed by global teardown
+        try:
+            session.close()
+        except Exception:
+            # Database may already be closed by pytest teardown fixtures
+            # This is expected and safe to ignore
+            pass
 
     @pytest.fixture
     def task_repository(self, db_session, user_id):

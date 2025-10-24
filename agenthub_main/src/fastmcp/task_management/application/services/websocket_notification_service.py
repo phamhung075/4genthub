@@ -267,6 +267,15 @@ class WebSocketNotificationService:
                 result = session.execute(query, params).fetchone()
 
                 if result:
+                    # Handle last_activity which may be string (SQLite) or datetime object
+                    last_activity = result[9]
+                    if last_activity:
+                        # If it's already a string (from SQLite), use it directly
+                        # If it's a datetime object (from PostgreSQL), convert to ISO format
+                        last_activity_str = last_activity if isinstance(last_activity, str) else last_activity.isoformat()
+                    else:
+                        last_activity_str = None
+
                     return {
                         "id": result[0],
                         "project_id": result[1],
@@ -277,7 +286,7 @@ class WebSocketNotificationService:
                         "completed_tasks": result[6] or 0,
                         "todo_tasks": result[7] or 0,
                         "progress_percentage": float(result[8] or 0),
-                        "last_activity": result[9].isoformat() if result[9] else None
+                        "last_activity": last_activity_str
                     }
                 else:
                     logger.warning(f"Branch {branch_id} not found for cascade data lookup")
