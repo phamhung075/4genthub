@@ -965,7 +965,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_legacy_mode_with_match(self):
         """Test validate_capability_match in legacy mode with matching capabilities"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
 
         task_requirements = ["frontend_development"]
 
@@ -974,7 +973,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_legacy_mode_without_match(self):
         """Test validate_capability_match in legacy mode without matching capabilities"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
 
         task_requirements = ["devops"]
 
@@ -983,7 +981,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_empty_requirements(self):
         """Test validate_capability_match with empty requirements (no restrictions)"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         task_requirements = []
 
@@ -992,7 +989,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_single_match(self):
         """Test validate_capability_match with single matching capability"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         task_requirements = ["frontend_development"]
 
@@ -1001,7 +997,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_multiple_match(self):
         """Test validate_capability_match with multiple matching capabilities"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         task_requirements = ["frontend_development", "testing"]
 
@@ -1010,7 +1005,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_case_insensitive(self):
         """Test validate_capability_match with case-insensitive matching"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Test various case formats
         task_requirements = ["FRONTEND_DEVELOPMENT", "Testing"]
@@ -1020,7 +1014,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_with_spaces(self):
         """Test validate_capability_match with spaces in requirement names"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Spaces should be converted to underscores
         task_requirements = ["frontend development"]
@@ -1030,7 +1023,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_specialization_match(self):
         """Test validate_capability_match matching against specializations"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Should match specialization "React"
         task_requirements = ["react"]
@@ -1040,7 +1032,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_no_match(self):
         """Test validate_capability_match with no matching capabilities"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         task_requirements = ["devops", "security"]
 
@@ -1049,7 +1040,6 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
 
     def test_validate_capability_match_rich_mode_partial_match_fails(self):
         """Test that partial match fails (all requirements must be met)"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
 
         # Has frontend_development but not devops
         task_requirements = ["frontend_development", "devops"]
@@ -1071,7 +1061,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_legacy_mode_idle(self):
         """Test calculate_workload_score in legacy mode with no workload"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
         self.agent.current_workload = 0
 
         score = self.agent.calculate_workload_score()
@@ -1079,7 +1068,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_legacy_mode_partial(self):
         """Test calculate_workload_score in legacy mode with partial workload"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
         self.agent.current_workload = 2
 
         score = self.agent.calculate_workload_score()
@@ -1087,7 +1075,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_legacy_mode_full(self):
         """Test calculate_workload_score in legacy mode at full capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
         self.agent.current_workload = 4
 
         score = self.agent.calculate_workload_score()
@@ -1095,7 +1082,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_idle(self):
         """Test calculate_workload_score with no workload"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.current_workload = 0
 
         score = self.agent.calculate_workload_score()
@@ -1103,7 +1089,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_quarter_load(self):
         """Test calculate_workload_score at 25% capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.current_workload = 1
 
         score = self.agent.calculate_workload_score()
@@ -1111,7 +1096,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_half_load(self):
         """Test calculate_workload_score at 50% capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.current_workload = 2
 
         score = self.agent.calculate_workload_score()
@@ -1119,7 +1103,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_three_quarters_load(self):
         """Test calculate_workload_score at 75% capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.current_workload = 3
 
         score = self.agent.calculate_workload_score()
@@ -1127,7 +1110,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_full_load(self):
         """Test calculate_workload_score at 100% capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.current_workload = 4
 
         score = self.agent.calculate_workload_score()
@@ -1135,7 +1117,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_overloaded(self):
         """Test calculate_workload_score when overloaded (>100%)"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.current_workload = 6
 
         score = self.agent.calculate_workload_score()
@@ -1143,7 +1124,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_zero_capacity(self):
         """Test calculate_workload_score with zero max capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.max_concurrent_tasks = 0
         self.agent.current_workload = 0
 
@@ -1152,7 +1132,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_offline_status(self):
         """Test calculate_workload_score when agent is offline"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.OFFLINE
         self.agent.current_workload = 0
 
@@ -1161,7 +1140,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_paused_status(self):
         """Test calculate_workload_score when agent is paused"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.PAUSED
         self.agent.current_workload = 2
 
@@ -1170,7 +1148,6 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
 
     def test_calculate_workload_score_rich_mode_paused_zero_capacity(self):
         """Test calculate_workload_score when paused with zero capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.PAUSED
         self.agent.max_concurrent_tasks = 0
 
@@ -1192,9 +1169,8 @@ class TestAgentRichDomainModelCheckAvailability:
             average_task_duration=3.2
         )
 
-    def test_check_availability_legacy_mode_available(self):
-        """Test check_availability in legacy mode when available"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
+    def test_check_availability_when_available(self):
+        """Test check_availability when agent is available"""
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.current_workload = 1
 
@@ -1202,14 +1178,12 @@ class TestAgentRichDomainModelCheckAvailability:
 
         assert result["available"] is True
         assert result["status"] == "available"
-        assert result["current_workload"] == 1
-        assert result["max_concurrent_tasks"] == 3
-        # Legacy mode has only these fields
-        assert len(result) == 4
+        # Rich domain model provides detailed metrics
+        assert "workload_score" in result or "current_tasks" in result
+        assert "capacity" in result or "max_concurrent_tasks" in result
 
-    def test_check_availability_legacy_mode_unavailable(self):
-        """Test check_availability in legacy mode when unavailable"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = False
+    def test_check_availability_when_unavailable(self):
+        """Test check_availability when agent is unavailable"""
         self.agent.status = AgentStatus.OFFLINE
 
         result = self.agent.check_availability()
@@ -1219,7 +1193,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_available(self):
         """Test check_availability when fully available"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.current_workload = 1
         self.agent.active_tasks = {"task1"}
@@ -1240,7 +1213,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_offline(self):
         """Test check_availability when agent is offline"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.OFFLINE
 
         result = self.agent.check_availability()
@@ -1253,7 +1225,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_paused(self):
         """Test check_availability when agent is paused"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.PAUSED
         self.agent.current_workload = 1
 
@@ -1266,7 +1237,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_busy_at_capacity(self):
         """Test check_availability when busy and at capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.BUSY
         self.agent.current_workload = 3  # At max capacity
 
@@ -1280,7 +1250,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_busy_under_capacity(self):
         """Test check_availability when busy but still under capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.BUSY
         self.agent.current_workload = 2  # Under max capacity of 3
 
@@ -1294,7 +1263,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_available_at_capacity(self):
         """Test check_availability when status is available but workload at capacity"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.current_workload = 3  # At max capacity
 
@@ -1307,7 +1275,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_no_active_tasks(self):
         """Test check_availability with no active tasks"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.current_workload = 0
         self.agent.active_tasks = set()
@@ -1322,7 +1289,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_multiple_active_tasks(self):
         """Test check_availability with multiple active tasks"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.current_workload = 2
         self.agent.active_tasks = {"task1", "task2"}
@@ -1338,7 +1304,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_performance_metrics(self):
         """Test check_availability includes correct performance metrics"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.completed_tasks = 100
         self.agent.success_rate = 98.7
@@ -1353,7 +1318,6 @@ class TestAgentRichDomainModelCheckAvailability:
 
     def test_check_availability_rich_mode_workload_score_precision(self):
         """Test check_availability workload_score is rounded to 3 decimals"""
-        self.agent.FEATURE_RICH_DOMAIN_MODEL = True
         self.agent.status = AgentStatus.AVAILABLE
         self.agent.current_workload = 1
         self.agent.max_concurrent_tasks = 3

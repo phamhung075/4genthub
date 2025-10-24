@@ -18,10 +18,10 @@ When you need to fix failing tests automatically:
    ```
 
 3. **The loop will**:
-   - Read failed tests from `.test_cache/failed_tests.txt`
+   - Read failed tests from `.pytest_cache/test-menu-cache.json`
    - Send ONLY the current failing test to you (minimal context)
    - Verify your fix automatically
-   - Move fixed tests to `.test_cache/passed_tests.txt`
+   - Update test status to "passed" in JSON cache
    - Continue with next test
 
 ### Key Improvements Over Original Script
@@ -46,10 +46,9 @@ Each iteration sends ONLY:
 
 ### File Locations
 
-- **Test Cache**: `.test_cache/`
-  - `failed_tests.txt` - Tests to fix
-  - `passed_tests.txt` - Fixed tests
-  - `test_hashes.txt` - Change detection
+- **Test Cache**: `.pytest_cache/`
+  - `test-menu-cache.json` - Consolidated cache (tests status, hashes, statistics)
+  - `test-menu-last-run.log` - Last test run output
 
 - **Worker Files**: `ai_docs/_workplace/workers/fix_tests_loop/`
   - `current_context.md` - What's sent to AI (small)
@@ -92,13 +91,17 @@ While the loop runs, you can monitor:
 # Watch progress
 tail -f ai_docs/_workplace/workers/fix_tests_loop/session.log
 
-# Check remaining failures
-wc -l .test_cache/failed_tests.txt
+# Check cache statistics
+cat .pytest_cache/test-menu-cache.json | jq '.statistics'
+# Shows: {total_tests, passed, failed, untested}
 
-# See fixed tests
-wc -l .test_cache/passed_tests.txt
+# List failed tests
+cat .pytest_cache/test-menu-cache.json | jq -r '.tests | to_entries[] | select(.value.status == "failed") | .key'
 
-# View progress stats
+# List passed tests
+cat .pytest_cache/test-menu-cache.json | jq -r '.tests | to_entries[] | select(.value.status == "passed") | .key'
+
+# View worker progress stats
 cat ai_docs/_workplace/workers/fix_tests_loop/progress.json
 ```
 
@@ -136,13 +139,75 @@ The optimized script saves tokens by:
 
 ### Integration with test-menu.sh
 
-The scripts work together:
+The scripts work together using the unified JSON cache:
 
-1. **test-menu.sh** - Identifies and caches test status
-2. **loop-worker_testfix_optimized.sh** - Fixes failures from cache
-3. **test-menu.sh** - Verifies all fixes are working
+1. **test-menu.sh** - Identifies and caches test status in `.pytest_cache/test-menu-cache.json`
+2. **loop-worker_testfix_optimized.sh** - Reads failed tests from JSON cache, fixes them
+3. **test-menu.sh** - Verifies all fixes by running tests and updating JSON cache
 
-This creates an efficient workflow:
+This creates an efficient workflow with a single source of truth:
 ```
-test-menu.sh → identify failures → loop-worker → fix tests → test-menu.sh → verify
+test-menu.sh → update JSON cache → loop-worker → fix tests → test-menu.sh → verify & update JSON
+```
+
+**Benefits of JSON cache integration:**
+- Single source of truth for test status
+- Atomic updates (no race conditions)
+- Rich metadata (hashes, timestamps, run counts)
+- Easy querying with jq
+
+### Working with the JSON Cache
+
+The new JSON cache provides structured data access:
+
+#### Query Examples
+
+```bash
+# Get overall statistics
+jq '.statistics' .pytest_cache/test-menu-cache.json
+
+# Count failed tests
+jq '[.tests[] | select(.status == "failed")] | length' .pytest_cache/test-menu-cache.json
+
+# Find tests that changed since last run
+jq -r '.tests | to_entries[] | select(.value.status == "failed") | "\(.key) (hash: \(.value.hash))"' .pytest_cache/test-menu-cache.json
+
+# Get test run history
+jq '.runs | last' .pytest_cache/test-menu-cache.json
+
+# Find tests with most failures (by run_count)
+jq -r '.tests | to_entries | sort_by(.value.run_count) | reverse | .[] | select(.value.status == "failed") | "\(.key): \(.value.run_count) runs"' .pytest_cache/test-menu-cache.json
+```
+
+#### Cache Structure
+
+```json
+{
+  "version": "2.0",
+  "last_updated": "2025-10-24T09:30:00Z",
+  "statistics": {
+    "total_tests": 150,
+    "passed": 140,
+    "failed": 10,
+    "untested": 0
+  },
+  "tests": {
+    "/full/path/test.py": {
+      "status": "failed",
+      "hash": "abc123...",
+      "last_run": "2025-10-24T09:30:00Z",
+      "run_count": 5
+    }
+  },
+  "runs": [
+    {
+      "timestamp": "2025-10-24T09:30:00Z",
+      "mode": "smart",
+      "tests_run": 10,
+      "passed": 8,
+      "failed": 2,
+      "duration": 45.2
+    }
+  ]
+}
 ```

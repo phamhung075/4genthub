@@ -325,7 +325,7 @@ class TestUserScopedRepository:
         # Create a mock repository with user_id attribute set to different user
         mock_repo = Mock(spec=['user_id', 'session'])
         mock_repo.user_id = "different_user"
-        mock_repo.session = Mock()
+        mock_repo.session = MagicMock()
 
         # Mock the type() call to return a mock class that can be instantiated
         mock_repo_class = Mock(return_value=Mock())

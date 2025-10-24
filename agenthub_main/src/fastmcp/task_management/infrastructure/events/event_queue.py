@@ -17,7 +17,7 @@ import queue
 import threading
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Any, Dict
 from enum import Enum
 
@@ -79,7 +79,7 @@ class EventQueue:
             f"EventQueue initialized with maxsize={maxsize}, timeout={timeout}s"
         )
 
-    def put(self, event: Any, block: bool = False, timeout: Optional[float] = None) -> bool:
+    def put(self, event: Any, block: bool = True, timeout: Optional[float] = None) -> bool:
         """
         Add an event to the queue.
 
@@ -117,7 +117,7 @@ class EventQueue:
             with self._metrics_lock:
                 self._metrics.total_enqueued += 1
                 self._metrics.current_size = self._queue.qsize()
-                self._metrics.last_enqueue_time = datetime.utcnow()
+                self._metrics.last_enqueue_time = datetime.now(timezone.utc)
 
                 # Track max size reached
                 if self._metrics.current_size > self._metrics.max_size_reached:
@@ -167,7 +167,7 @@ class EventQueue:
             with self._metrics_lock:
                 self._metrics.total_dequeued += 1
                 self._metrics.current_size = self._queue.qsize()
-                self._metrics.last_dequeue_time = datetime.utcnow()
+                self._metrics.last_dequeue_time = datetime.now(timezone.utc)
 
             logger.debug(
                 f"Event dequeued successfully. Queue size: {self._queue.qsize()}/{self._maxsize}"
@@ -316,8 +316,8 @@ class EventQueue:
                     if self._maxsize > 0 else 0
                 ),
                 "drop_rate_percent": (
-                    (self._metrics.total_dropped / self._metrics.total_enqueued * 100)
-                    if self._metrics.total_enqueued > 0 else 0
+                    (self._metrics.total_dropped / (self._metrics.total_enqueued + self._metrics.total_dropped) * 100)
+                    if (self._metrics.total_enqueued + self._metrics.total_dropped) > 0 else 0
                 ),
                 "last_enqueue_time": (
                     self._metrics.last_enqueue_time.isoformat()

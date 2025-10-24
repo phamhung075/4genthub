@@ -1,1 +1,0 @@
-scripts/loop-worker_testfix_optimized.sh

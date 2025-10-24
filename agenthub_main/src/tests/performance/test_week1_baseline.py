@@ -368,7 +368,7 @@ class TestWeek1BaselinePerformance:
                 title=f"List Test Task {i}",
                 description=f"Task {i} for listing performance testing",
                 git_branch_id=git_branch_id,
-                status="pending" if i % 2 == 0 else "in_progress",
+                status="todo" if i % 2 == 0 else "in_progress",
                 assignees=["@test-agent"],
                 user_id="test-user-perf"
             )
@@ -382,7 +382,7 @@ class TestWeek1BaselinePerformance:
 
             list_request = ListTasksRequest(
                 git_branch_id=git_branch_id,
-                limit=10
+                limit=20  # Increased limit to ensure we get all test tasks
             )
             result = task_facade.list_tasks(list_request, minimal=True)
 
@@ -416,7 +416,7 @@ class TestWeek1BaselinePerformance:
             title="Test Task for Updates",
             description="Task used for update performance testing",
             git_branch_id=git_branch_id,
-            status="pending",
+            status="todo",
             assignees=["@test-agent"],
             user_id="test-user-perf"
         )
@@ -473,29 +473,38 @@ class TestWeek1BaselinePerformance:
         parent_task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(parent_task_id)
 
-        # Get the parent task entity for subtask operations
-        from fastmcp.task_management.domain.value_objects.task_id import TaskId
+        # Create subtask facade for operations
+        from fastmcp.task_management.application.facades.subtask_application_facade import SubtaskApplicationFacade
         from fastmcp.task_management.infrastructure.repositories.orm.task_repository import ORMTaskRepository
+        from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import ORMSubtaskRepository
 
         task_repo = ORMTaskRepository(git_branch_id=git_branch_id, performance_mode=True)
-        parent_task_entity = task_repo.find_by_id(TaskId(parent_task_id))
-        assert parent_task_entity, "Failed to retrieve parent task entity"
+        subtask_repo = ORMSubtaskRepository()
+        subtask_facade = SubtaskApplicationFacade(
+            task_repository=task_repo,
+            subtask_repository=subtask_repo,
+            user_id="test-user-perf"
+        )
 
         # Measure subtask creation performance
         for i in range(baseline_tester.iterations):
             start_time = time.perf_counter()
 
-            # Create subtask using the entity method
-            subtask = parent_task_entity.add_subtask(
-                title=f"Subtask {i}",
-                description=f"Test subtask {i} for performance measurement"
+            # Create subtask using the facade with proper data structure
+            result = subtask_facade.handle_manage_subtask(
+                action="create",
+                task_id=parent_task_id,
+                subtask_data={
+                    "title": f"Subtask {i}",
+                    "description": f"Test subtask {i} for performance measurement"
+                }
             )
-            task_repo.save(parent_task_entity)
 
             end_time = time.perf_counter()
             execution_time_ms = (end_time - start_time) * 1000
 
             baseline_tester.metrics["subtask_operations"].measurements.append(execution_time_ms)
+            assert result.get("success"), f"Failed to create subtask: {result.get('error')}"
 
         # Cleanup
         baseline_tester.cleanup_test_data(db_session)

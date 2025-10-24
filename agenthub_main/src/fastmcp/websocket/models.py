@@ -181,10 +181,8 @@ class WSMessage(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_encoders={
-            datetime: lambda v: v.isoformat(),
-            uuid.UUID: str
-        }
+        # Pydantic v2 automatically serializes datetime to ISO format and UUID to string
+        # No need for json_encoders (deprecated in v2)
     )
 
 

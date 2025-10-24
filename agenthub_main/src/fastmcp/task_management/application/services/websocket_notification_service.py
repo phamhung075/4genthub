@@ -661,7 +661,9 @@ class WebSocketNotificationService:
         # CRITICAL FIX: Add branch cascade data for task events to trigger frontend animations
         if event_type in ["created", "deleted"] and git_branch_id:
             logger.info(f"🎯 Adding branch cascade data for task {event_type} event")
-            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(git_branch_id, user_id)
+            # Extract UUID string from GitBranchId value object if needed
+            git_branch_id_str = git_branch_id.value if hasattr(git_branch_id, 'value') else str(git_branch_id)
+            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(git_branch_id_str, user_id)
             if branch_cascade_data:
                 # Add cascade data to metadata for frontend consumption
                 metadata["cascade"] = {

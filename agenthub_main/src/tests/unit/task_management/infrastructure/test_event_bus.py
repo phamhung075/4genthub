@@ -39,7 +39,7 @@ class TestEventBus:
         """Test EventBus initialization."""
         assert event_bus._subscriptions == {}
         assert hasattr(event_bus, '_active_handlers')
-        assert hasattr(event_bus, '_event_queue')
+        assert hasattr(event_bus, '_async_event_queue')
         assert hasattr(event_bus, '_processing_task')
         assert event_bus._shutdown is False
     

@@ -4,7 +4,7 @@ Handles bulk API operations matching frontend api.types.ts
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .summaries import BranchSummaryDTO, ProjectSummaryDTO
 
@@ -15,8 +15,7 @@ class BulkSummaryRequest(BaseModel):
     userId: Optional[str] = Field(None, alias="userId")
     includeArchived: Optional[bool] = Field(False, alias="includeArchived")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class BulkSummaryMetadata(BaseModel):
@@ -25,8 +24,7 @@ class BulkSummaryMetadata(BaseModel):
     queryTimeMs: float = Field(alias="queryTimeMs")  # Changed to float to accept decimal milliseconds
     fromCache: bool = Field(alias="fromCache")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class BulkSummaryResponse(BaseModel):

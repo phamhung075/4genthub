@@ -441,14 +441,16 @@ class TestTaskFieldUpdates:
     def test_update_due_date(self):
         """Test updating due date."""
         task = Task(id=TaskId("test-1"), title="Test", description="Test")
-        
+
         task.update_due_date("2024-12-31")
-        assert task.due_date == "2024-12-31"
-        
+        # Due date is now stored in ISO 8601 format with timezone
+        assert task.due_date.startswith("2024-12-31")
+        assert "T" in task.due_date  # Has time component
+
         # Can be None
         task.update_due_date(None)
         assert task.due_date is None
-        
+
         # Invalid format
         with pytest.raises(ValueError, match="Invalid due date format"):
             task.update_due_date("31-12-2024")
@@ -1187,12 +1189,12 @@ class TestTaskEvents:
             title="Test",
             description="Test"
         )
-        
+
         task.mark_as_retrieved()
-        
+
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].__class__.__name__ == "TaskRetrieved"
+        assert events[0].__class__.__name__ == "TaskRetrievedEvent"
         assert events[0].task_id == str(task.id)
     
     def test_get_events_clears_list(self):

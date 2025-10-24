@@ -1,5 +1,19 @@
 #!/bin/bash
+# Option 1: Run the test suite anytime
+#./scripts/test-json-text-conversion.sh
+# → 16 tests, automatic cleanup, color-coded results
 
+# Option 2: Run the actual loop worker (when ready)
+#./loop-worker_testfix.sh
+# → Uses JSON cache, converts to text, sends to Claude
+
+# Option 3: Monitor the JSON cache
+#jq '.statistics' .pytest_cache/test-menu-cache.json
+# → See real-time test status
+
+# Option 4: View a test's attempt history
+#jq '.tests | to_entries[0].value.recent_attempts' .pytest_cache/test-menu-cache.json
+# → See last 3 attempts in structured format
 # Configuration
 RESULTS_FILE="ai_docs/_workplace/workers/fix_tests_loop/fix-1by1-results.md"
 CONTEXT_FILE="ai_docs/_workplace/workers/fix_tests_loop/fix-1by1-context.md"
@@ -173,6 +187,184 @@ countdown_timer() {
     echo "🚀 RUNNING - Starting analysis now!" >> "$LOG_FILE"
     echo "========================================" | tee -a "$LOG_FILE"
     echo "" | tee -a "$LOG_FILE"
+}
+
+# Convert JSON attempt to human-readable text paragraph
+format_attempt_as_text() {
+    local attempt_json="$1"
+    local attempt_num="$2"
+
+    # Parse JSON fields
+    local iteration=$(echo "$attempt_json" | jq -r '.iteration')
+    local timestamp=$(echo "$attempt_json" | jq -r '.timestamp')
+    local status=$(echo "$attempt_json" | jq -r '.status')
+    local error_type=$(echo "$attempt_json" | jq -r '.error_type // "N/A"')
+    local error_summary=$(echo "$attempt_json" | jq -r '.error_summary // "No details"')
+    local fix_applied=$(echo "$attempt_json" | jq -r '.fix_applied // "No fix recorded"')
+
+    # Build human-readable paragraph
+    cat <<EOF
+
+### Attempt #${attempt_num} - Iteration ${iteration} (${timestamp})
+
+**Result:** ${status^^}
+
+$(if [[ "$status" == "failed" ]]; then
+    echo "**Error Type:** $error_type"
+    echo "**Error Details:** $error_summary"
+    echo ""
+    echo "**What was tried:** $fix_applied"
+    echo ""
+    echo "**Outcome:** This approach did not work. The test still fails."
+else
+    echo "**Success!** The test passed after applying this fix."
+    echo ""
+    echo "**What worked:** $fix_applied"
+fi)
+
+---
+
+EOF
+}
+
+# Build smart context from JSON cache with human-readable history
+build_smart_context_from_json() {
+    local iteration=$1
+    local target_test="$2"
+    local cache_file="${3:-$CACHE_FILE}"
+
+    {
+        echo "# Current Instructions (Iteration $iteration)"
+        cat "$COMMAND_FILE"
+        echo ""
+        echo "---"
+        echo ""
+
+        # Get target test info from JSON if provided
+        if [[ -n "$target_test" ]] && [[ -f "$cache_file" ]]; then
+            echo "# 🎯 Target Test: $target_test"
+            echo ""
+
+            # Extract test metadata
+            local test_info=$(jq --arg file "$target_test" '.tests[$file]' "$cache_file" 2>/dev/null)
+            if [[ -n "$test_info" ]] && [[ "$test_info" != "null" ]]; then
+                local run_count=$(echo "$test_info" | jq -r '.run_count // 0')
+                local last_run=$(echo "$test_info" | jq -r '.last_run // "never"')
+                local current_status=$(echo "$test_info" | jq -r '.status // "unknown"')
+
+                echo "**Current Status:** $current_status"
+                echo "**Total Attempts:** $run_count"
+                echo "**Last Executed:** $last_run"
+                echo ""
+
+                # Get recent attempts from JSON
+                local attempts_json=$(jq --arg file "$target_test" '.tests[$file].recent_attempts // []' "$cache_file" 2>/dev/null)
+                local attempts_count=$(echo "$attempts_json" | jq 'length' 2>/dev/null || echo "0")
+
+                if [[ "$attempts_count" -gt 0 ]]; then
+                    echo "## 📜 History of Recent Fix Attempts"
+                    echo ""
+                    echo "Here are the last $attempts_count attempts to fix this test, showing what was tried and what happened:"
+                    echo ""
+
+                    # Convert each JSON attempt to readable text
+                    local counter=1
+                    echo "$attempts_json" | jq -c '.[]' 2>/dev/null | while read -r attempt; do
+                        format_attempt_as_text "$attempt" "$counter"
+                        counter=$((counter + 1))
+                    done
+
+                    # Pattern analysis from attempts
+                    echo ""
+                    echo "## 🔍 Error Pattern Analysis"
+                    echo ""
+
+                    local error_types=$(echo "$attempts_json" | jq -r '.[] | select(.error_type != null) | .error_type' 2>/dev/null | sort | uniq -c | sort -rn)
+
+                    if [[ -n "$error_types" ]]; then
+                        echo "**Common error patterns detected:**"
+                        echo ""
+                        echo "$error_types" | while read count error; do
+                            echo "- **$error** appeared $count time(s) - this is the main issue to focus on"
+                        done
+                        echo ""
+                    else
+                        echo "No error patterns detected in recent attempts."
+                        echo ""
+                    fi
+
+                    # Success check
+                    local has_success=$(echo "$attempts_json" | jq '[.[] | select(.status == "passed")] | length' 2>/dev/null || echo "0")
+
+                    if [[ "$has_success" -gt 0 ]]; then
+                        echo "✅ **Important Note:** This test passed in a previous attempt! Something may have changed since then."
+                        echo ""
+                    fi
+                else
+                    echo "## 📝 First Attempt"
+                    echo ""
+                    echo "This is the first time working on this test. No previous attempt history available."
+                    echo ""
+                fi
+
+                # Strategy suggestion based on attempts
+                if [[ "$run_count" -gt 5 ]]; then
+                    echo "## 💡 Recommended Strategy"
+                    echo ""
+                    echo "⚠️ **This test has failed $run_count times.** Previous approaches are not working."
+                    echo ""
+                    echo "**Suggested approach:**"
+                    echo "1. Review ALL previous attempts above to see what was already tried"
+                    echo "2. Try a COMPLETELY DIFFERENT approach - don't repeat what failed"
+                    echo "3. Consider if this is a deeper architectural issue, not just a simple fix"
+                    echo "4. Look for related code changes that might have broken this test"
+                    echo ""
+                elif [[ "$run_count" -gt 2 ]]; then
+                    echo "## 💡 Recommended Strategy"
+                    echo ""
+                    echo "This test has failed $run_count times. Review the attempts above carefully."
+                    echo ""
+                    echo "**Suggested approach:**"
+                    echo "1. Analyze why previous fixes didn't work"
+                    echo "2. The solution might be more complex than initially thought"
+                    echo "3. Check if there are related test fixtures or setup issues"
+                    echo ""
+                else
+                    echo "## 💡 Recommended Strategy"
+                    echo ""
+                    echo "Fresh test with minimal attempt history. Apply standard fix patterns:"
+                    echo ""
+                    echo "1. Read the error message carefully"
+                    echo "2. Identify the root cause"
+                    echo "3. Apply targeted fix"
+                    echo "4. Verify the fix resolves the issue"
+                    echo ""
+                fi
+            fi
+
+            # Show other similar failures for context
+            echo "## 🔗 Other Failing Tests (for context)"
+            echo ""
+            echo "Other tests currently failing in this project:"
+            echo ""
+
+            local other_failures=$(jq -r --arg current "$target_test" '
+                .tests
+                | to_entries[]
+                | select(.value.status == "failed" and .key != $current)
+                | "\(.key): \(.value.run_count) attempts"
+            ' "$cache_file" 2>/dev/null | head -5)
+
+            if [[ -n "$other_failures" ]]; then
+                echo "$other_failures" | while read line; do
+                    echo "- $line"
+                done
+            else
+                echo "No other failing tests - this is the last one!"
+            fi
+            echo ""
+        fi
+    } > "$CONTEXT_FILE"
 }
 
 # Counter for iterations
@@ -349,54 +541,74 @@ while :; do
     echo "" | tee -a "$LOG_FILE"
     echo "🔍 Verifying test results and updating cache..." | tee -a "$LOG_FILE"
 
+    # Cache file path
+    CACHE_FILE=".pytest_cache/test-menu-cache.json"
+
     # Extract test file that was worked on from Claude's output
     TEST_FILE=$(grep -oE "agenthub_main/src/tests/[^[:space:]]+\.py" "$TEMP_OUTPUT" | head -1)
 
     if [[ -n "$TEST_FILE" ]]; then
         echo "📝 Test file identified: $TEST_FILE" | tee -a "$LOG_FILE"
 
-        # Check if this file is in failed_tests.txt
-        if grep -q "^${TEST_FILE}$" .test_cache/failed_tests.txt 2>/dev/null; then
+        # Check if this file is in failed status in JSON cache
+        TEST_STATUS=$(jq -r --arg file "$TEST_FILE" '.tests[$file].status // "unknown"' "$CACHE_FILE" 2>/dev/null)
+
+        if [[ "$TEST_STATUS" == "failed" ]]; then
             echo "🧪 Re-running test to verify if fix was successful..." | tee -a "$LOG_FILE"
 
             # Re-run the specific test to verify if it passes now
             VERIFY_OUTPUT=$(mktemp)
             if timeout 30 bash -c "cd agenthub_main && python -m pytest '$TEST_FILE' -xvs" > "$VERIFY_OUTPUT" 2>&1; then
-                echo "✅ Test PASSED! Removing from failed_tests.txt" | tee -a "$LOG_FILE"
+                echo "✅ Test PASSED! Updating JSON cache..." | tee -a "$LOG_FILE"
 
-                # Remove from failed_tests.txt
-                grep -v "^${TEST_FILE}$" .test_cache/failed_tests.txt > .test_cache/failed_tests.txt.tmp 2>/dev/null || true
-                mv .test_cache/failed_tests.txt.tmp .test_cache/failed_tests.txt
-
-                # Add to passed_tests.txt if not already there
-                if ! grep -q "^${TEST_FILE}$" .test_cache/passed_tests.txt 2>/dev/null; then
-                    echo "$TEST_FILE" >> .test_cache/passed_tests.txt
-                fi
-
-                # Update test hash
+                # Calculate new hash
                 if command -v md5sum >/dev/null 2>&1; then
                     TEST_HASH=$(md5sum "$TEST_FILE" 2>/dev/null | cut -d' ' -f1 || echo "UNKNOWN")
                 else
                     TEST_HASH="UNKNOWN"
                 fi
 
-                # Update hash in test_hashes.txt
-                grep -v "^${TEST_FILE}:" .test_cache/test_hashes.txt > .test_cache/test_hashes.txt.tmp 2>/dev/null || true
-                echo "${TEST_FILE}:${TEST_HASH}" >> .test_cache/test_hashes.txt.tmp
-                mv .test_cache/test_hashes.txt.tmp .test_cache/test_hashes.txt
+                # Get current timestamp
+                TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-                # Count remaining failed tests
-                REMAINING_FAILED=$(wc -l < .test_cache/failed_tests.txt 2>/dev/null || echo "0")
-                echo "🎉 SUCCESS: Test fixed and removed from queue!" | tee -a "$LOG_FILE"
+                # Update JSON cache atomically
+                jq --arg file "$TEST_FILE" \
+                   --arg hash "$TEST_HASH" \
+                   --arg time "$TIMESTAMP" \
+                   '.tests[$file] = {
+                       status: "passed",
+                       hash: $hash,
+                       last_run: $time,
+                       run_count: ((.tests[$file].run_count // 0) + 1)
+                   } |
+                   .statistics.passed = ([.tests[] | select(.status == "passed")] | length) |
+                   .statistics.failed = ([.tests[] | select(.status == "failed")] | length) |
+                   .last_updated = $time' \
+                   "$CACHE_FILE" > "${CACHE_FILE}.tmp" && mv "${CACHE_FILE}.tmp" "$CACHE_FILE"
+
+                # Count remaining failed tests from JSON
+                REMAINING_FAILED=$(jq '[.tests[] | select(.status == "failed")] | length' "$CACHE_FILE" 2>/dev/null || echo "0")
+
+                echo "🎉 SUCCESS: Test fixed and JSON cache updated!" | tee -a "$LOG_FILE"
                 echo "📊 Remaining failed tests: $REMAINING_FAILED" | tee -a "$LOG_FILE"
             else
                 echo "⚠️  Test still FAILING - will retry in next iteration" | tee -a "$LOG_FILE"
                 echo "📄 Test output preview:" | tee -a "$LOG_FILE"
                 tail -20 "$VERIFY_OUTPUT" | sed 's/^/  | /' | tee -a "$LOG_FILE"
+
+                # Update fail count in JSON
+                TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+                jq --arg file "$TEST_FILE" \
+                   --arg time "$TIMESTAMP" \
+                   '.tests[$file].run_count = ((.tests[$file].run_count // 0) + 1) |
+                    .tests[$file].last_run = $time' \
+                   "$CACHE_FILE" > "${CACHE_FILE}.tmp" && mv "${CACHE_FILE}.tmp" "$CACHE_FILE"
             fi
             rm -f "$VERIFY_OUTPUT"
-        else
-            echo "ℹ️  Test file not in failed_tests.txt (may have been fixed already or different test)" | tee -a "$LOG_FILE"
+        elif [[ "$TEST_STATUS" == "passed" ]]; then
+            echo "✅ Test already marked as passed in cache" | tee -a "$LOG_FILE"
+        elif [[ "$TEST_STATUS" == "unknown" ]]; then
+            echo "⚠️  Test file not found in cache (may be new test)" | tee -a "$LOG_FILE"
         fi
     else
         echo "⚠️  Could not identify which test file was worked on from output" | tee -a "$LOG_FILE"

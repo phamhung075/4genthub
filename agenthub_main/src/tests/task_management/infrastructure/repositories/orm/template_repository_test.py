@@ -34,7 +34,7 @@ class TestTemplateRepositoryConversionMethods:
     def sample_orm_template(self):
         """Create sample ORM template model"""
         return ORMTemplate(
-            id="template-123",
+            id="395b13c1-2358-427c-a738-1beb72f9eba6",
             name="Test Template",
             type="task",
             content={
@@ -61,7 +61,7 @@ class TestTemplateRepositoryConversionMethods:
     def sample_entity(self):
         """Create sample Template domain entity"""
         return Template(
-            id=TemplateId("template-456"),
+            id=TemplateId("d7394682-a4ef-4d4f-a66f-bb9bc85463ab"),
             name="Entity Template",
             description="Entity description",
             content="Entity content",
@@ -84,7 +84,7 @@ class TestTemplateRepositoryConversionMethods:
         entity = repository._model_to_entity(sample_orm_template)
 
         assert isinstance(entity, Template)
-        assert str(entity.id) == "template-123"
+        assert str(entity.id) == "395b13c1-2358-427c-a738-1beb72f9eba6"
         assert entity.name == "Test Template"
         assert entity.description == "Test description"
         assert entity.content == "Template content here"
@@ -124,7 +124,7 @@ class TestTemplateRepositoryConversionMethods:
     def test_model_to_entity_empty_content(self, repository):
         """Test _model_to_entity() enforces Template validation rules"""
         orm_template = ORMTemplate(
-            id="template-empty",
+            id="a9a60521-ce09-4fe4-85aa-4fa505797b39",
             name="Empty Template",
             type="task",
             content={},  # Empty content - will fail validation
@@ -147,7 +147,7 @@ class TestTemplateRepositoryConversionMethods:
         """Test _entity_to_model_dict() converts basic fields correctly"""
         model_dict = repository._entity_to_model_dict(sample_entity)
 
-        assert model_dict["id"] == "template-456"
+        assert model_dict["id"] == "d7394682-a4ef-4d4f-a66f-bb9bc85463ab"
         assert model_dict["name"] == "Entity Template"
         assert model_dict["type"] == "task"
         assert model_dict["category"] == "development"
@@ -245,7 +245,7 @@ class TestTemplateRepositoryConversionMethods:
     def test_model_to_entity_with_created_by_attribute(self, repository):
         """Test that created_by is handled correctly in entity"""
         orm_template = ORMTemplate(
-            id="template-with-creator",
+            id="a2c05db0-d0fb-43c3-a5a5-1a6b96452bdf",
             name="Template with Creator",
             type="task",
             content={
@@ -303,7 +303,7 @@ class TestTemplateRepositorySaveWithConversionMethods:
 
         # Create a template entity
         template = Template(
-            id=TemplateId("test-save-123"),
+            id=TemplateId("2305220e-1bd5-4ad0-b064-5f720c99f948"),
             name="Save Test Template",
             description="Testing save method",
             content="Save test content",

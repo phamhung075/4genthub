@@ -138,7 +138,7 @@ class TestAgentCoordinationService:
         # Repository with user_id attribute
         repo_with_user_id = Mock()
         repo_with_user_id.user_id = "different_user"
-        repo_with_user_id.session = Mock()
+        repo_with_user_id.session = MagicMock()
         type(repo_with_user_id).__name__ = "TestRepo"
         
         with patch.object(type(repo_with_user_id), '__call__', return_value="new_repo"):
