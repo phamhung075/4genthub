@@ -233,6 +233,30 @@ class TestPasswordService:
         assert PasswordService.needs_rehash("invalid_hash") is False
         assert PasswordService.needs_rehash("") is False
         assert PasswordService.needs_rehash("$1$invalid") is False
+
+    @patch('fastmcp.auth.domain.services.password_service.logger')
+    def test_needs_rehash_handles_malformed_rounds(self, mock_logger):
+        """Test needs_rehash logs warning for malformed bcrypt rounds"""
+        # Hash with non-numeric rounds (triggers exception at line 236)
+        malformed_hash = "$2b$abc$abcdefghijklmnopqrstuabcdefghijklmnopqrstuvwxyz123456"
+
+        result = PasswordService.needs_rehash(malformed_hash)
+
+        assert result is False
+        mock_logger.warning.assert_called_once()
+        assert "Could not check if hash needs rehash" in str(mock_logger.warning.call_args)
+
+    def test_needs_rehash_handles_incomplete_hash_parts(self):
+        """Test needs_rehash handles hash with insufficient parts (covers line 232)"""
+        # Hash with only 2 parts after splitting (len(parts) < 3)
+        # "$2b$" splits into ['', '2b', ''] which has 3 parts, so use "$2b"
+        # "$2b" splits into ['', '2b'] which has 2 parts only
+        incomplete_hash = "$2b"
+
+        result = PasswordService.needs_rehash(incomplete_hash)
+
+        # Should return False when hash doesn't have enough parts
+        assert result is False
     
     @patch('fastmcp.auth.domain.services.password_service.bcrypt.gensalt')
     @patch('fastmcp.auth.domain.services.password_service.bcrypt.hashpw')

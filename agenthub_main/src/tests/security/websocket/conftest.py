@@ -20,11 +20,11 @@ from datetime import datetime, timezone
 import jwt
 import os
 
-# Set up test environment
-os.environ['AUTH_ENABLED'] = 'true'
-os.environ['JWT_SECRET_KEY'] = 'websocket-security-test-secret-key'
-os.environ['KEYCLOAK_URL'] = 'http://localhost:8080'
-os.environ['AUTH_PROVIDER'] = 'keycloak'
+# Store original environment state for restoration
+_original_auth_enabled = os.environ.get('AUTH_ENABLED')
+_original_jwt_secret = os.environ.get('JWT_SECRET_KEY')
+_original_keycloak_url = os.environ.get('KEYCLOAK_URL')
+_original_auth_provider = os.environ.get('AUTH_PROVIDER')
 
 from fastmcp.auth.domain.entities.user import User
 from fastmcp.server.routes.websocket_routes import (
@@ -34,6 +34,46 @@ from fastmcp.server.routes.websocket_routes import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_websocket_security_environment():
+    """
+    Session-scoped fixture to set up WebSocket security test environment.
+
+    This fixture:
+    1. Sets AUTH_ENABLED='true' for WebSocket security tests
+    2. Restores original environment after all tests in this session complete
+    3. Prevents environment pollution to other test modules
+    """
+    # Set up test environment for WebSocket security tests
+    os.environ['AUTH_ENABLED'] = 'true'
+    os.environ['JWT_SECRET_KEY'] = 'websocket-security-test-secret-key'
+    os.environ['KEYCLOAK_URL'] = 'http://localhost:8080'
+    os.environ['AUTH_PROVIDER'] = 'keycloak'
+
+    yield
+
+    # Restore original environment after all WebSocket security tests
+    if _original_auth_enabled is not None:
+        os.environ['AUTH_ENABLED'] = _original_auth_enabled
+    else:
+        os.environ.pop('AUTH_ENABLED', None)
+
+    if _original_jwt_secret is not None:
+        os.environ['JWT_SECRET_KEY'] = _original_jwt_secret
+    else:
+        os.environ.pop('JWT_SECRET_KEY', None)
+
+    if _original_keycloak_url is not None:
+        os.environ['KEYCLOAK_URL'] = _original_keycloak_url
+    else:
+        os.environ.pop('KEYCLOAK_URL', None)
+
+    if _original_auth_provider is not None:
+        os.environ['AUTH_PROVIDER'] = _original_auth_provider
+    else:
+        os.environ.pop('AUTH_PROVIDER', None)
 
 
 class SecurityTestConfig:

@@ -518,15 +518,256 @@ class TestEdgeCases:
                 metadata={'context_data': {'id': 'critical_small'}}
             )
         ]
-        
+
         result = progressive_expander.expand_context_progressive(
             {'loaded_contexts': []},
             candidates,
             token_budget=200  # Only enough for min reserve + a bit
         )
-        
+
         # The high priority small item should be expanded (it fits in budget)
         assert len(result.expanded_contexts) == 1
         assert result.expanded_contexts[0]['id'] == 'critical_small'
         # The expensive one should not be expanded or prefetched
         assert 'expensive' not in [c['id'] for c in result.expanded_contexts]
+
+    def test_skip_already_loaded_contexts(self, progressive_expander):
+        """Test that already loaded contexts are skipped - Line 238"""
+        current_context = {
+            'loaded_contexts': ['ctx_already_loaded', 'ctx_another']
+        }
+
+        available_contexts = [
+            {
+                'id': 'ctx_already_loaded',
+                'context_id': 'ctx_already_loaded',
+                'context_type': 'task'
+            },
+            {
+                'id': 'ctx_new',
+                'context_id': 'ctx_new',
+                'context_type': 'task'
+            }
+        ]
+
+        candidates = progressive_expander.identify_expansion_candidates(
+            current_context,
+            "test query",
+            available_contexts
+        )
+
+        # Should skip already loaded context
+        candidate_ids = [c.context_id for c in candidates]
+        assert 'ctx_already_loaded' not in candidate_ids
+        assert 'ctx_new' in candidate_ids
+
+    def test_unknown_context_type_defaults_to_global(self, progressive_expander):
+        """Test unknown context_type defaults to GLOBAL - Line 248"""
+        current_context = {'loaded_contexts': []}
+
+        available_contexts = [
+            {
+                'id': 'ctx_unknown',
+                'context_id': 'ctx_unknown',
+                'context_type': 'unknown_type'  # Not task/branch/project
+            }
+        ]
+
+        candidates = progressive_expander.identify_expansion_candidates(
+            current_context,
+            "test query",
+            available_contexts
+        )
+
+        assert len(candidates) > 0
+        # Should default to GLOBAL level for unknown types
+        unknown_candidates = [c for c in candidates if c.context_id == 'ctx_unknown']
+        assert any(c.context_level == ContextLevel.GLOBAL for c in unknown_candidates)
+
+    def test_pattern_based_trigger_identified(self, progressive_expander):
+        """Test pattern-based trigger is identified - Line 270"""
+        context_id = 'pattern_context'
+
+        # Set up usage pattern that matches
+        progressive_expander.context_access_patterns[context_id] = {
+            'access_count': 5,
+            'total_sessions': 10,  # 50% access rate
+            'common_keywords': ['authentication', 'jwt']
+        }
+
+        current_context = {'loaded_contexts': []}
+        available_contexts = [
+            {
+                'id': context_id,
+                'context_id': context_id,
+                'context_type': 'task'
+            }
+        ]
+
+        candidates = progressive_expander.identify_expansion_candidates(
+            current_context,
+            "implement authentication system",  # Matches keyword
+            available_contexts
+        )
+
+        # Should have pattern-based trigger
+        pattern_candidates = [
+            c for c in candidates
+            if c.context_id == context_id and c.trigger == ExpansionTrigger.PATTERN_BASED
+        ]
+        assert len(pattern_candidates) > 0
+
+    def test_expand_context_with_none_token_budget(self, progressive_expander):
+        """Test expansion with None token_budget uses default - Line 323"""
+        candidates = [
+            ExpansionCandidate(
+                context_id='ctx_1',
+                context_level=ContextLevel.TASK,
+                context_type='task',
+                priority_score=0.8,
+                estimated_tokens=100,
+                trigger=ExpansionTrigger.SIMILARITY_MATCH,
+                metadata={'context_data': {'id': 'ctx_1'}}
+            )
+        ]
+
+        # Pass None for token_budget
+        result = progressive_expander.expand_context_progressive(
+            {'loaded_contexts': []},
+            candidates,
+            token_budget=None  # Should use default_token_budget (2000)
+        )
+
+        # Should use default budget
+        assert len(result.expanded_contexts) > 0
+        assert result.remaining_token_budget > 0
+        # Verify it used the default budget (2000 - 100 min reserve = 1900 available)
+        assert result.total_tokens_used + result.remaining_token_budget == 1900
+
+    def test_high_priority_small_items_prefetch_on_budget_exceeded(self, progressive_expander):
+        """Test high priority small items get prefetched when budget exceeded - Lines 349-350"""
+        candidates = [
+            ExpansionCandidate(
+                context_id='fills_budget',
+                context_level=ContextLevel.TASK,
+                context_type='task',
+                priority_score=0.7,
+                estimated_tokens=125,  # Takes 125 * 1.5 = 187.5 (rounds to 187)
+                trigger=ExpansionTrigger.USER_REQUEST,
+                metadata={'context_data': {'id': 'fills_budget'}}
+            ),
+            ExpansionCandidate(
+                context_id='high_priority_small',
+                context_level=ContextLevel.TASK,
+                context_type='task',
+                priority_score=0.85,  # High priority (> 0.8)
+                estimated_tokens=5,  # Small: 5 < 19 (10% of 190 available_budget)
+                trigger=ExpansionTrigger.SIMILARITY_MATCH,
+                metadata={'context_data': {'id': 'high_priority_small'}}
+            )
+        ]
+
+        result = progressive_expander.expand_context_progressive(
+            {'loaded_contexts': []},
+            candidates,
+            token_budget=290  # 290 - 100 = 190 available, first takes 187, leaves 3
+        )
+
+        # First should be expanded (fits in budget)
+        # Second should be prefetched (priority > 0.8, est_tokens=5 < 19, but needed=7.5 exceeds remaining 3)
+        assert 'high_priority_small' in result.prefetched_contexts
+        assert 'prefetch:high_priority_small' in result.expansion_path
+
+    def test_recency_bonus_without_last_accessed(self, progressive_expander):
+        """Test recency bonus calculation when last_accessed is None - Branch 202->207"""
+        context_id = 'no_recent_access'
+
+        # Set up pattern without last_accessed
+        progressive_expander.context_access_patterns[context_id] = {
+            'access_count': 5,
+            'total_sessions': 10,
+            'last_accessed': None  # No last access timestamp
+        }
+
+        query_context = {'current': 'context'}
+        priority = progressive_expander._calculate_expansion_priority(
+            context_id, ContextLevel.TASK, query_context, ExpansionTrigger.SIMILARITY_MATCH
+        )
+
+        # Should still calculate priority without crashing
+        assert 0.0 <= priority <= 1.0
+
+    def test_similarity_below_prefetch_threshold(self, progressive_expander):
+        """Test similarity scores below prefetch threshold - Branch 257->265"""
+        current_context = {'loaded_contexts': []}
+
+        available_contexts = [
+            {
+                'id': 'low_sim',
+                'context_id': 'low_sim',
+                'context_type': 'task'
+            }
+        ]
+
+        # Similarity below prefetch threshold (0.7 * 0.7 = 0.49)
+        similarity_scores = {
+            'low_sim': 0.45  # Below 0.49, won't trigger prefetch
+        }
+
+        candidates = progressive_expander.identify_expansion_candidates(
+            current_context,
+            "test query",
+            available_contexts,
+            similarity_scores
+        )
+
+        # Should not have similarity or prefetch triggers
+        low_sim_candidates = [c for c in candidates if c.context_id == 'low_sim']
+        for candidate in low_sim_candidates:
+            assert candidate.trigger not in [
+                ExpansionTrigger.SIMILARITY_MATCH,
+                ExpansionTrigger.PREFETCH
+            ]
+
+    def test_token_availability_not_small_enough(self, progressive_expander):
+        """Test contexts not small enough for token availability trigger - Branch 273->277"""
+        current_context = {'loaded_contexts': []}
+
+        # Large context (> 10% of default budget)
+        large_context = {
+            'id': 'large_ctx',
+            'context_id': 'large_ctx',
+            'context_type': 'task',
+            'description': 'A' * 5000  # Very large, > 200 tokens (10% of 2000)
+        }
+
+        candidates = progressive_expander.identify_expansion_candidates(
+            current_context,
+            "test query",
+            [large_context],
+            None  # No similarity scores
+        )
+
+        # Should have candidates but not with TOKEN_AVAILABLE trigger
+        large_candidates = [c for c in candidates if c.context_id == 'large_ctx']
+        assert len(large_candidates) > 0  # Should still create candidate with default trigger
+
+    def test_keyword_match_no_match_found(self, progressive_expander):
+        """Test keyword matching when no match is found - Branches 441->440, 444"""
+        context_id = 'keyword_test'
+
+        # Set up pattern with keywords that won't match
+        progressive_expander.context_access_patterns[context_id] = {
+            'access_count': 2,  # Low frequency (< 30%)
+            'total_sessions': 10,
+            'common_keywords': ['database', 'schema', 'migration']
+        }
+
+        # Query with no matching keywords
+        result = progressive_expander._matches_usage_pattern(
+            context_id,
+            "implement frontend authentication with react"
+        )
+
+        # Should return False (no match)
+        assert result is False

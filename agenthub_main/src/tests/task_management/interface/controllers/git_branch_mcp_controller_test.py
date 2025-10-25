@@ -9,6 +9,7 @@ from fastmcp.task_management.interface.mcp_controllers.git_branch_mcp_controller
 from fastmcp.task_management.domain.exceptions.authentication_exceptions import (
     UserAuthenticationRequiredError
 )
+from fastmcp.task_management.interface.mcp_controllers.auth_helper import auth_helper
 
 
 class TestGitBranchMCPController:
@@ -17,6 +18,10 @@ class TestGitBranchMCPController:
     @pytest.fixture(autouse=True)
     def setup_test_environment(self):
         """Setup test environment with proper authentication mocking"""
+        # Reset singleton BEFORE setting environment variables
+        # This ensures the AuthenticationService reads the test environment
+        auth_helper._auth_service = None
+
         # Set environment variables for testing mode to bypass Keycloak authentication
         with patch.dict(os.environ, {
             'AUTH_ENABLED': 'false',
@@ -24,6 +29,9 @@ class TestGitBranchMCPController:
             'TEST_USER_ID': 'test-user-001'
         }):
             yield
+
+        # Clean up singleton after test
+        auth_helper._auth_service = None
 
     @pytest.fixture
     def mock_git_branch_facade_factory(self):

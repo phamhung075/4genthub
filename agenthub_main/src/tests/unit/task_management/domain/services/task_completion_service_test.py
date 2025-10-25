@@ -412,8 +412,206 @@ class TestEdgeCases:
         mock_subtask_repository.find_by_parent_task_id.return_value = [subtask]
 
         blockers = service.get_completion_blockers(valid_task)
-        
+
         assert len(blockers) == 1
         assert "1 of 1 subtasks are incomplete" in blockers[0]
         # Empty title should still be included
         assert "(including: )" in blockers[0]
+
+
+class TestUncoveredLines:
+    """Tests targeting specific uncovered lines identified in coverage analysis"""
+
+    def test_context_none_but_exists_in_repository_logs_info(
+        self,
+        service,
+        mock_subtask_repository,
+        mock_task_context_repository,
+        caplog
+    ):
+        """Test lines 159-165: Task with no context_id but context exists in repository logs info"""
+        import logging
+        caplog.set_level(logging.INFO)
+
+        # Create task without context_id
+        task = Mock(spec=Task)
+        task.id = TaskId("550e8400-e29b-41d4-a716-446655440001")
+        task.context_id = None  # No context_id on task
+        task.title = "Test Task"
+
+        # Mock context repository to return None (no context found)
+        mock_task_context_repository.get.return_value = None
+
+        # No subtasks
+        mock_subtask_repository.find_by_parent_task_id.return_value = []
+
+        # Execute
+        blockers = service.get_completion_blockers(task)
+
+        # Verify - Lines 163-165: Info log about auto-creation during completion
+        assert len(blockers) == 0  # No blockers
+        info_logs = [record for record in caplog.records if record.levelname == 'INFO']
+        auto_create_logs = [
+            log for log in info_logs
+            if 'has no context but will be auto-created during completion' in log.message
+        ]
+        assert len(auto_create_logs) > 0, "Should log info about context auto-creation"
+
+    def test_context_repository_get_called_when_context_id_none(
+        self,
+        service,
+        mock_subtask_repository,
+        mock_task_context_repository
+    ):
+        """Test lines 159-160: Context repository.get() is called when task.context_id is None"""
+        # Create task without context_id
+        task = Mock(spec=Task)
+        task.id = TaskId("550e8400-e29b-41d4-a716-446655440001")
+        task.context_id = None
+
+        # Mock returns
+        mock_task_context_repository.get.return_value = None
+        mock_subtask_repository.find_by_parent_task_id.return_value = []
+
+        # Execute
+        service.get_completion_blockers(task)
+
+        # Verify - Line 159: get() was called with task ID
+        mock_task_context_repository.get.assert_called_once_with(task.id.value)
+
+    def test_partial_branch_137_to_140(
+        self,
+        service,
+        mock_subtask_repository,
+        mock_task_context_repository
+    ):
+        """Test partial branch 137->140: _total_count attribute check"""
+        # Create task
+        task = Mock(spec=Task)
+        task.id = TaskId("550e8400-e29b-41d4-a716-446655440001")
+        task.context_id = "test-context"
+
+        # Create multiple subtasks to trigger validation failure
+        # This will cause _total_count to be set via can_complete_task
+        incomplete = Mock(spec=Subtask)
+        incomplete.title = "Incomplete task"
+        incomplete.is_completed = False
+
+        complete = Mock(spec=Subtask)
+        complete.title = "Complete task"
+        complete.is_completed = True
+
+        # 3 subtasks total, 1 incomplete
+        mock_subtask_repository.find_by_parent_task_id.return_value = [
+            incomplete, complete, complete
+        ]
+
+        # Execute - This should raise TaskCompletionError
+        with pytest.raises(TaskCompletionError) as exc_info:
+            service.validate_task_completion(task)
+
+        # Verify - Line 138: total_count added to exception context
+        assert hasattr(exc_info.value, 'context')
+        assert 'total_count' in exc_info.value.context
+        # _total_count is set by can_complete_task to actual subtask count
+        assert exc_info.value.context['total_count'] == 3
+
+    def test_partial_branch_176_to_198_incomplete_subtasks_path(
+        self,
+        service,
+        valid_task,
+        mock_subtask_repository
+    ):
+        """Test partial branch 176->198: Path when incomplete subtasks exist"""
+        # Create both complete and incomplete subtasks
+        complete = Mock(spec=Subtask)
+        complete.title = "Completed subtask"
+        complete.is_completed = True
+
+        incomplete1 = Mock(spec=Subtask)
+        incomplete1.title = "Incomplete 1"
+        incomplete1.is_completed = False
+
+        incomplete2 = Mock(spec=Subtask)
+        incomplete2.title = "Incomplete 2"
+        incomplete2.is_completed = False
+
+        mock_subtask_repository.find_by_parent_task_id.return_value = [
+            complete, incomplete1, incomplete2
+        ]
+
+        # Execute
+        blockers = service.get_completion_blockers(valid_task)
+
+        # Verify - Lines 176-192: Blocker message formatted correctly
+        assert len(blockers) == 1
+        blocker_msg = blockers[0]
+
+        # Line 180: Check count formatting
+        assert "2 of 3 subtasks are incomplete" in blocker_msg
+
+        # Lines 182-189: Check titles included
+        assert "(including: Incomplete 1, Incomplete 2)" in blocker_msg
+
+        # Line 191: Check completion instruction
+        assert "Complete all subtasks first" in blocker_msg
+
+    def test_partial_branch_183_to_191_many_incomplete_subtasks(
+        self,
+        service,
+        valid_task,
+        mock_subtask_repository
+    ):
+        """Test partial branch 183->191: Path when many incomplete subtasks with overflow"""
+        # Create 5 incomplete subtasks (more than the 3 shown limit)
+        subtasks = []
+        for i in range(5):
+            subtask = Mock(spec=Subtask)
+            subtask.title = f"Incomplete {i+1}"
+            subtask.is_completed = False
+            subtasks.append(subtask)
+
+        mock_subtask_repository.find_by_parent_task_id.return_value = subtasks
+
+        # Execute
+        blockers = service.get_completion_blockers(valid_task)
+
+        # Verify - Lines 185-186: Check "and X more" formatting
+        assert len(blockers) == 1
+        blocker_msg = blockers[0]
+
+        # Should show first 3 and indicate there are 2 more
+        assert "5 of 5 subtasks are incomplete" in blocker_msg
+        assert "(including: Incomplete 1, Incomplete 2, Incomplete 3, and 2 more)" in blocker_msg
+
+    def test_context_check_with_valid_context_no_logging(
+        self,
+        service,
+        mock_subtask_repository,
+        mock_task_context_repository,
+        caplog
+    ):
+        """Test that no info log occurs when task has valid context_id"""
+        import logging
+        caplog.set_level(logging.INFO)
+
+        # Create task WITH context_id
+        task = Mock(spec=Task)
+        task.id = TaskId("550e8400-e29b-41d4-a716-446655440001")
+        task.context_id = "valid-context-id"  # Has context_id
+
+        # No subtasks
+        mock_subtask_repository.find_by_parent_task_id.return_value = []
+
+        # Execute
+        blockers = service.get_completion_blockers(task)
+
+        # Verify - No auto-creation log since context_id exists
+        assert len(blockers) == 0
+        info_logs = [record for record in caplog.records if record.levelname == 'INFO']
+        auto_create_logs = [
+            log for log in info_logs
+            if 'auto-created' in log.message
+        ]
+        # Should NOT log about auto-creation when context_id already exists
+        assert len(auto_create_logs) == 0

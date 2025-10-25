@@ -297,26 +297,26 @@ class KeycloakAuthAdapter(AuthServiceInterface):
 
 class LocalAuthAdapter(AuthServiceInterface):
     """Local authentication adapter (using existing local auth service)"""
-    
+
     def __init__(self):
         # Import local auth service
         from ..application.services.auth_service import AuthService
         from ..domain.services.jwt_service import JWTService
         from ..infrastructure.repositories.user_repository import UserRepository
-        
+
         # Initialize dependencies
         JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
         self.jwt_service = JWTService(JWT_SECRET_KEY)
-        
+
         # Get database session
         from ...task_management.infrastructure.database.database_config import DatabaseConfig
         self.db_config = DatabaseConfig()
-        
+
     def _get_auth_service(self):
         """Get auth service with fresh DB session"""
         from ..infrastructure.repositories.user_repository import UserRepository
         from ..application.services.auth_service import AuthService
-        
+
         db = self.db_config.SessionLocal()
         try:
             user_repository = UserRepository(db)
@@ -324,18 +324,35 @@ class LocalAuthAdapter(AuthServiceInterface):
         except Exception:
             db.close()
             raise
+
+    def _format_user(self, user) -> Optional[Dict[str, Any]]:
+        """Format User entity for unified AuthResult response"""
+        if not user:
+            return None
+
+        return {
+            "id": user.id,
+            "email": user.email,
+            "username": user.username,
+            "full_name": user.full_name,
+            "provider": "local",
+            "email_verified": user.email_verified,
+            "status": user.status.value if hasattr(user.status, 'value') else str(user.status),
+            "roles": [role.value if hasattr(role, 'value') else str(role) for role in user.roles] if user.roles else ["user"]
+        }
     
-    async def sign_up(self, email: str, password: str, username: Optional[str] = None, 
+    async def sign_up(self, email: str, password: str, username: Optional[str] = None,
                      full_name: Optional[str] = None, **kwargs) -> AuthResult:
         """Register with local auth"""
         try:
             auth_service, db = self._get_auth_service()
             try:
                 result = await auth_service.register_user(email, username or email.split('@')[0], password, full_name)
-                
+
                 return AuthResult(
                     success=result.success,
                     error_message=result.error_message,
+                    user=self._format_user(result.user) if result.user else None,
                     requires_email_verification=True  # Local auth requires email verification
                 )
             finally:
@@ -350,10 +367,11 @@ class LocalAuthAdapter(AuthServiceInterface):
             auth_service, db = self._get_auth_service()
             try:
                 result = await auth_service.login(email, password)
-                
+
                 return AuthResult(
                     success=result.success,
                     error_message=result.error_message,
+                    user=self._format_user(result.user) if result.user else None,
                     access_token=result.access_token,
                     refresh_token=result.refresh_token,
                     requires_email_verification=result.requires_email_verification,

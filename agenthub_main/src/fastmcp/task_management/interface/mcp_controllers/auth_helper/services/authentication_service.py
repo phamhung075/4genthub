@@ -21,14 +21,23 @@ class AuthenticationService:
 
     def __init__(self):
         self.token_service = TokenExtractionService()
-        # Check for testing mode
-        self.auth_enabled = os.getenv("AUTH_ENABLED", "true").lower() in [
-            "true",
-            "1",
-            "yes",
-        ]
-        self.auth_mode = os.getenv("MCP_AUTH_MODE", "production").lower()
-        self.test_user_id = os.getenv("TEST_USER_ID", "test-user-001")
+        # Note: auth_enabled, auth_mode, and test_user_id are now properties
+        # that read from environment dynamically to support test mode changes
+
+    @property
+    def auth_enabled(self) -> bool:
+        """Check if authentication is enabled from environment variable."""
+        return os.getenv("AUTH_ENABLED", "true").lower() in ["true", "1", "yes"]
+
+    @property
+    def auth_mode(self) -> str:
+        """Get authentication mode from environment variable."""
+        return os.getenv("MCP_AUTH_MODE", "production").lower()
+
+    @property
+    def test_user_id(self) -> str:
+        """Get test user ID from environment variable."""
+        return os.getenv("TEST_USER_ID", "test-user-001")
 
     def get_authenticated_user_id(
         self, provided_user_id: str | None = None, operation_name: str = "Operation"
