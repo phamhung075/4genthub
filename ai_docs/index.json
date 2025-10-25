@@ -47,11 +47,11 @@
           "size": 13688
         },
         {
-          "hash": "9efd5cdd2f94f3ada19ed4c6a2d0a992",
-          "modified": "2025-10-24T15:16:25.202878",
+          "hash": "e30d016cdd677df3dcbdcaf2df63c492",
+          "modified": "2025-10-24T23:08:07.778097",
           "name": "fix-1by1-results.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
-          "size": 327536
+          "size": 327577
         },
         {
           "hash": "8c9fe61ff4d91eb22593f61a7213710b",
@@ -1238,7 +1238,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 11,
+      "count": 15,
       "files": [
         {
           "hash": "5863668ac26d443e940fdc5337cd69f4",
@@ -1283,6 +1283,20 @@
           "size": 14402
         },
         {
+          "hash": "b543673d95c3463ec1c1057228c95d5d",
+          "modified": "2025-10-25T16:30:37.315311",
+          "name": "coverage-improvement-plan-2025-10-25.md",
+          "path": "testing-qa/coverage-improvement-plan-2025-10-25.md",
+          "size": 14156
+        },
+        {
+          "hash": "aa7ae6388f5d21f6a0d92e516eecf8d8",
+          "modified": "2025-10-25T21:35:46.200260",
+          "name": "coverage-improvement-strategic-plan-2025-10-25.md",
+          "path": "testing-qa/coverage-improvement-strategic-plan-2025-10-25.md",
+          "size": 13041
+        },
+        {
           "hash": "4f4549725632c2ace13a1ea003ea10a6",
           "modified": "2025-10-22T10:54:49.763707",
           "name": "fix-prompts-2025-10-22.md",
@@ -1304,6 +1318,13 @@
           "size": 22729
         },
         {
+          "hash": "16e5a36e37a47bd9658570234b58e303",
+          "modified": "2025-10-25T21:37:16.168224",
+          "name": "wave1-execution-plan.md",
+          "path": "testing-qa/wave1-execution-plan.md",
+          "size": 14565
+        },
+        {
           "hash": "bd8959799e96fef53288b3ac21e801d9",
           "modified": "2025-10-24T18:52:18.117614",
           "name": "week2-mcp-test-tasks-specifications.md",
@@ -1316,6 +1337,13 @@
           "name": "test-pollution-fix-2025-10-24.md",
           "path": "testing-qa/test-pollution-fix-2025-10-24.md",
           "size": 5608
+        },
+        {
+          "hash": "4f2df87b2459ab15c010258ea5e9c79d",
+          "modified": "2025-10-25T21:40:06.028151",
+          "name": "coverage-improvement-complete-package-2025-10-25.md",
+          "path": "testing-qa/coverage-improvement-complete-package-2025-10-25.md",
+          "size": 12764
         }
       ],
       "path": "testing-qa"
@@ -1438,7 +1466,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-24T22:50:38.721355",
+  "generated_at": "2025-10-25T21:40:06.180883",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1689,6 +1717,9 @@
       },
       "files": [
         "agenthub-mcp-tools-test-report-2025-10-22.md",
+        "coverage-improvement-complete-package-2025-10-25.md",
+        "coverage-improvement-plan-2025-10-25.md",
+        "coverage-improvement-strategic-plan-2025-10-25.md",
         "fix-prompts-2025-10-22.md",
         "label-integration-test-coverage.md",
         "remaining-test-tasks-implementation-guide.md",
@@ -1697,6 +1728,7 @@
         "test-coverage-report-2025-10-24.md",
         "test-flow-issues-2025-10-22.md",
         "test-pollution-fix-2025-10-24.md",
+        "wave1-execution-plan.md",
         "week2-mcp-test-tasks-specifications.md",
         "week2-tasks-quick-reference.md"
       ]
@@ -1721,5 +1753,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 185
+  "total_files": 189
 }

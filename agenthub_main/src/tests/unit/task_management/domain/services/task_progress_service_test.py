@@ -191,6 +191,30 @@ class TestTaskProgressService:
             assert progress["overall_progress"]["percentage"] == 100.0
             assert progress["can_complete"] is True
 
+        def test_calculate_progress_task_with_dependencies(
+            self, progress_service: TaskProgressService
+        ):
+            """Test progress calculation for task with dependencies (covers line 282)."""
+            # Arrange
+            from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+
+            task_with_deps = Task(
+                id=TaskId.generate(),
+                title="Task with Dependencies",
+                description="A task with dependencies",
+                status=TaskStatus.in_progress(),
+                priority="medium"
+            )
+            # Add dependencies attribute to trigger line 282
+            task_with_deps.dependencies = [TaskId.generate(), TaskId.generate()]
+
+            # Act
+            progress = progress_service.calculate_task_progress(task_with_deps)
+
+            # Assert
+            assert len(progress["blocking_factors"]) > 0
+            assert any("Dependencies may not be satisfied" in factor for factor in progress["blocking_factors"])
+
         def test_calculate_progress_exception_handling(
             self, progress_service_with_repo: TaskProgressService, sample_task: Task, mock_subtask_repository: Mock
         ):
@@ -668,7 +692,7 @@ class TestTaskProgressService:
                 status=TaskStatus.blocked(),
                 priority="medium"
             )
-            
+
             not_blocked_task = Task(
                 id=TaskId.generate(),
                 title="Active Task",
@@ -682,6 +706,42 @@ class TestTaskProgressService:
 
             assert blocked_progress["is_blocked"] is True
             assert active_progress["is_blocked"] is False
+
+        def test_calculate_subtask_progress_without_repository(self, progress_service: TaskProgressService):
+            """Test _calculate_subtask_progress when no repository is available."""
+            # Arrange
+            task = Task(
+                id=TaskId.generate(),
+                title="Test Task",
+                description="Test",
+                status=TaskStatus.in_progress(),
+                priority="medium"
+            )
+
+            # Act - Call the private method directly to test line 229
+            result = progress_service._calculate_subtask_progress(task)
+
+            # Assert
+            assert result is None
+
+        def test_identify_blocking_factors_with_dependencies(self, progress_service: TaskProgressService, mock_subtask_repository: Mock):
+            """Test blocking factor identification when task has dependencies."""
+            # Arrange
+            task = Task(
+                id=TaskId.generate(),
+                title="Task with Dependencies",
+                description="Test",
+                status=TaskStatus.in_progress(),
+                priority="medium"
+            )
+            # Manually add dependencies attribute to trigger line 282
+            task.dependencies = ["dep1", "dep2"]
+
+            # Act
+            blocking_factors = progress_service._identify_blocking_factors(task, None)
+
+            # Assert
+            assert "Dependencies may not be satisfied" in blocking_factors
 
 
 # Integration tests for realistic scenarios

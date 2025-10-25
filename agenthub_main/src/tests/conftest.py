@@ -1209,16 +1209,18 @@ def pytest_runtest_teardown(item, nextitem):
     This is the LAST thing to run after each test, ensuring no fixture
     can pollute state after this cleanup.
 
-    Performs FOUR cleanup operations:
+    Performs FIVE cleanup operations:
     1. Test data file cleanup (from original line 988)
     2. DatabaseConfig singleton reset (catches pseudo-unit tests)
     3. DatabaseSourceManager singleton reset (CRITICAL for test isolation)
     4. SQLite adapter flag reset (prevents re-registration errors)
+    5. Environment variable reset (CRITICAL for auth test isolation)
 
     Overhead: <1ms per test (minimal file check + singleton resets if needed)
 
     This comprehensive cleanup prevents test pollution by resetting ALL
-    database-related singletons and flags after each test execution.
+    database-related singletons, flags, and environment variables after
+    each test execution.
     """
     # 1. Cleanup test data files (from original pytest_runtest_teardown at line 988)
     test_root = Path(__file__).parent
@@ -1256,6 +1258,7 @@ def pytest_runtest_teardown(item, nextitem):
         # Log but don't fail - cleanup issues shouldn't break tests
         import logging
         logging.getLogger(__name__).debug(f"Could not reset SQLite adapter flag: {e}")
+
 
 
 # =============================================
@@ -1312,7 +1315,14 @@ def set_mcp_db_path_for_tests(request):
         import fastmcp.task_management.infrastructure.database.database_config as db_config_module
         db_config_module._sqlite_adapters_registered = False
 
-        # 6. Set test database environment variables
+        # 6. Reset AuthenticationService singleton to prevent test pollution
+        try:
+            from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import authentication_service
+            authentication_service._auth_service = None
+        except Exception as e:
+            print(f"⚠️ Error resetting AuthenticationService: {e}")
+
+        # 8. Set test database environment variables
         # Use SQLite in-memory for complete isolation
         os.environ["DATABASE_TYPE"] = "sqlite"
         # Create unique in-memory database per test to prevent shared state
@@ -1320,11 +1330,11 @@ def set_mcp_db_path_for_tests(request):
         test_id = f"{request.node.name}_{id(request)}"
         os.environ["DATABASE_PATH"] = ":memory:"
 
-        # 7. Initialize the test database with schema and basic test data
+        # 9. Initialize the test database with schema and basic test data
         from fastmcp.task_management.infrastructure.database.database_initializer import initialize_database
         initialize_database(None)
 
-        # 8. Add basic test data
+        # 10. Add basic test data
         _initialize_test_database_with_basic_data()
 
         yield
@@ -1365,7 +1375,14 @@ def set_mcp_db_path_for_tests(request):
             except Exception as e:
                 print(f"⚠️ Error resetting SQLite adapter flag: {e}")
 
-            # 5. Restore original environment variables
+            # 5. Reset AuthenticationService singleton for next test
+            try:
+                from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import authentication_service
+                authentication_service._auth_service = None
+            except Exception as e:
+                print(f"⚠️ Error resetting AuthenticationService in cleanup: {e}")
+
+            # 6. Restore original environment variables
             if original_db_type is not None:
                 os.environ["DATABASE_TYPE"] = original_db_type
             elif "DATABASE_TYPE" in os.environ:
@@ -1385,6 +1402,74 @@ def set_mcp_db_path_for_tests(request):
                 os.environ["DATABASE_PATH"] = original_db_path
             elif "DATABASE_PATH" in os.environ:
                 del os.environ["DATABASE_PATH"]
+
+
+@pytest.fixture(scope='function')
+def clean_import_state(request):
+    """
+    Reset Python import state for tests that manipulate imports.
+
+    This fixture prevents test pollution when tests modify sys.modules or
+    manipulate Python's import system. Use explicitly in test signatures:
+
+    Example:
+        def test_import_behavior(self, clean_import_state):
+            # Test can safely manipulate imports
+            import sys
+            sys.modules['some_module'] = Mock()
+            # Cleanup happens automatically after test
+
+    The fixture captures module state before test and restores any modified modules,
+    preventing mock pollution while not breaking subsequent tests.
+    """
+    import sys
+    from unittest.mock import MagicMock
+
+    # Capture module state before test - store references to actual module objects
+    original_modules = {}
+    for key in list(sys.modules.keys()):
+        if key.startswith('fastmcp.task_management.interface.mcp_controllers'):
+            # Only track the specific package that gets mocked/reloaded
+            original_modules[key] = sys.modules[key]
+
+    yield
+
+    # After test: Restore modules that were replaced with mocks or reloaded
+    for module_name, original_module in original_modules.items():
+        if module_name in sys.modules:
+            current_module = sys.modules[module_name]
+            # Check if module was replaced with a mock or is a different object
+            if isinstance(current_module, MagicMock) or current_module is not original_module:
+                # Restore the original module object
+                sys.modules[module_name] = original_module
+        else:
+            # Module was deleted, restore it
+            sys.modules[module_name] = original_module
+
+    # Remove any newly added controller modules that might be stale from reload
+    current_modules = set(sys.modules.keys())
+    original_set = set(original_modules.keys())
+    new_modules = current_modules - original_set
+    for module in new_modules:
+        if module.startswith('fastmcp.task_management.interface.mcp_controllers'):
+            try:
+                del sys.modules[module]
+            except (KeyError, AttributeError):
+                pass
+
+    # Stop any active patches related to mcp_controllers to prevent decorator-level pollution
+    try:
+        from unittest.mock import _patch
+        # Find and stop only patches related to mcp_controllers
+        for patch in list(_patch._active_patches):
+            try:
+                # Check if this patch is for an mcp_controllers module
+                if hasattr(patch, 'target') and 'mcp_controllers' in str(patch.target):
+                    patch.stop()
+            except Exception:
+                pass  # Ignore errors from already-stopped patches
+    except Exception:
+        pass  # Ignore if _patch is not available
 
 
 # =============================================

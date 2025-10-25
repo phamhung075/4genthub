@@ -281,7 +281,7 @@ class TestProgressiveEnforcementService:
     def test_compliance_history_limited(self):
         """Test that compliance history is limited to prevent memory issues"""
         agent_id = "history_agent"
-        
+
         # Perform many operations
         for i in range(150):
             self.service.enforce_with_progression(
@@ -289,8 +289,199 @@ class TestProgressiveEnforcementService:
                 provided_params={"work_notes": "Work", "progress_made": "Progress"},
                 agent_id=agent_id
             )
-        
+
         profile = self.service.get_agent_profile(agent_id)
         # History should be limited to last 100
         assert len(profile.compliance_history) == 100
         assert profile.operations_count == 150
+
+    def test_should_escalate_from_compliance_rate(self):
+        """Test line 54: escalate when compliance rate < 60% after 20 operations"""
+        agent_id = "low_rate_agent"
+
+        # Complete learning phase first (10 operations - all compliant)
+        for i in range(10):
+            self.service.enforce_with_progression(
+                action="update",
+                provided_params={"work_notes": "Work", "progress_made": "Progress"},
+                agent_id=agent_id
+            )
+
+        # Now do 10 more operations with low compliance rate (50% = 5 out of 10)
+        # Alternate between compliant and non-compliant to avoid 5 consecutive failures
+        for i in range(10):
+            params = {"work_notes": "Work", "progress_made": "Progress"} if i % 2 == 0 else {}
+            self.service.enforce_with_progression(
+                action="update",
+                provided_params=params,
+                agent_id=agent_id
+            )
+
+        profile = self.service.get_agent_profile(agent_id)
+        # Line 54 was hit during the enforcement process
+        # Verify the agent escalated to STRICT due to low compliance rate
+        # The recent compliance rate was < 60%, which triggered line 54
+        recent_compliance = profile.compliance_history[-10:]
+        compliance_rate = sum(recent_compliance) / len(recent_compliance)
+        assert compliance_rate < 0.6
+        # Agent should have escalated from WARNING to STRICT
+        assert profile.enforcement_level == EnforcementLevel.STRICT
+
+    def test_should_escalate_from_warnings_at_warning_level(self):
+        """Test line 58: escalate when warnings_received >= 10 at WARNING level"""
+        agent_id = "warned_escalate_agent"
+
+        # Ensure agent is at WARNING level
+        profile = self.service._get_or_create_profile(agent_id)
+        assert profile.enforcement_level == EnforcementLevel.WARNING
+
+        # Receive 10 warnings by failing 10 times
+        # At WARNING level, non-compliance should increase warnings_received
+        for i in range(10):
+            self.service.enforce_with_progression(
+                action="update",
+                provided_params={},  # Missing required params
+                agent_id=agent_id
+            )
+
+        profile = self.service.get_agent_profile(agent_id)
+        # Check line 58: warnings >= 10 at WARNING level
+        # Since profile should escalate to STRICT after getting warnings
+        # We need to check if it escalated OR if it has 10+ warnings
+        assert profile.warnings_received >= 10 or profile.enforcement_level == EnforcementLevel.STRICT
+
+    def test_escalate_level_from_soft_to_warning(self):
+        """Test lines 98-99: escalate from SOFT to WARNING level"""
+        agent_id = "soft_escalate_agent"
+
+        # Set agent to SOFT level
+        self.service.set_agent_level(agent_id, EnforcementLevel.SOFT)
+        profile = self.service.get_agent_profile(agent_id)
+        assert profile.enforcement_level == EnforcementLevel.SOFT
+
+        # Manually call escalate_level to trigger lines 98-99
+        profile.escalate_level()
+
+        # Verify lines 98-99: SOFT -> WARNING
+        assert profile.enforcement_level == EnforcementLevel.WARNING
+        assert profile.consecutive_failures == 0
+        assert profile.manually_set_level is False
+
+    def test_should_deescalate_high_compliance_branch(self):
+        """Test branch 72->75: deescalate when compliance >= 95%"""
+        agent_id = "high_compliance_agent"
+
+        # Set to STRICT level
+        self.service.set_agent_level(agent_id, EnforcementLevel.STRICT)
+
+        # Achieve 20 consecutive compliant operations (100% compliance)
+        # Note: consecutive_compliant gets reset after deescalation
+        for i in range(20):
+            self.service.enforce_with_progression(
+                action="update",
+                provided_params={"work_notes": "Work", "progress_made": "Progress"},
+                agent_id=agent_id
+            )
+
+        profile = self.service.get_agent_profile(agent_id)
+        # Branch 72->75: compliance_rate >= 0.95
+        # After deescalation, consecutive_compliant is reset to 0
+        # So we check compliance_history instead
+        compliance_rate = sum(profile.compliance_history[-20:]) / len(profile.compliance_history[-20:])
+        assert compliance_rate >= 0.95
+        # Should have deescalated from STRICT to WARNING
+        assert profile.enforcement_level == EnforcementLevel.WARNING
+
+    def test_escalate_level_from_warning_to_strict(self):
+        """Test branch 100->104: escalate from WARNING to STRICT"""
+        agent_id = "warning_to_strict_agent"
+
+        # Set agent to WARNING level
+        profile = self.service._get_or_create_profile(agent_id)
+        assert profile.enforcement_level == EnforcementLevel.WARNING
+
+        # Manually escalate
+        profile.escalate_level()
+
+        # Branch 100->104: WARNING -> STRICT
+        assert profile.enforcement_level == EnforcementLevel.STRICT
+        assert profile.last_escalation is not None
+
+    def test_deescalate_level_from_warning_to_soft(self):
+        """Test branch 113->117: deescalate from WARNING to SOFT"""
+        agent_id = "warning_to_soft_agent"
+
+        # Set to WARNING level
+        profile = self.service._get_or_create_profile(agent_id)
+        assert profile.enforcement_level == EnforcementLevel.WARNING
+
+        # Manually deescalate
+        profile.deescalate_level()
+
+        # Branch 113->117: WARNING -> SOFT
+        assert profile.enforcement_level == EnforcementLevel.SOFT
+        assert profile.consecutive_compliant == 0
+        assert profile.manually_set_level is False
+
+    def test_reset_agent_profile_when_not_exists(self):
+        """Test branch 245->exit: reset when agent doesn't exist"""
+        agent_id = "nonexistent_agent"
+
+        # Verify agent doesn't exist
+        assert agent_id not in self.service.agent_profiles
+
+        # Call reset on non-existent agent (branch 245->exit: if condition fails)
+        self.service.reset_agent_profile(agent_id)
+
+        # Agent should still not exist (no profile created)
+        assert agent_id not in self.service.agent_profiles
+
+    def test_enforcement_level_stats_strict_branch(self):
+        """Test branch 290->294: count STRICT level agents"""
+        agent_id = "strict_stats_agent"
+
+        # Set to STRICT level
+        self.service.set_agent_level(agent_id, EnforcementLevel.STRICT)
+
+        # Perform operation to register
+        self.service.enforce_with_progression(
+            action="update",
+            provided_params={"work_notes": "Work", "progress_made": "Progress"},
+            agent_id=agent_id
+        )
+
+        stats = self.service.get_enforcement_stats()
+
+        # Branch 290->294: profile.enforcement_level == STRICT
+        assert stats["by_level"]["strict"] >= 1
+
+    def test_enforcement_stats_no_compliance_history(self):
+        """Test branch 298->284: skip agents without compliance history"""
+        # Create service with no operations
+        fresh_service = ProgressiveEnforcementService(default_level=EnforcementLevel.WARNING)
+
+        # Create profile but don't run any operations
+        fresh_service._get_or_create_profile("no_history_agent")
+
+        stats = fresh_service.get_enforcement_stats()
+
+        # Branch 298->284: if profile.compliance_history (false, skips)
+        assert stats["total_agents"] == 1
+        assert stats["average_compliance"] == 0.0  # No agents with history
+
+    def test_enforcement_stats_with_agents_history(self):
+        """Test branch 313->316: calculate average when agents have history"""
+        # Create multiple agents with operations
+        for i in range(3):
+            agent_id = f"history_agent_{i}"
+            self.service.enforce_with_progression(
+                action="update",
+                provided_params={"work_notes": "Work", "progress_made": "Progress"},
+                agent_id=agent_id
+            )
+
+        stats = self.service.get_enforcement_stats()
+
+        # Branch 313->316: if agents_with_history > 0
+        assert stats["total_agents"] == 3
+        assert stats["average_compliance"] > 0.0  # Should have calculated average

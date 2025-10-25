@@ -281,6 +281,52 @@ class TestBranchCascadeDeletion(TestCascadeDeletionService):
         assert result["branch_deleted"] is False
         assert len(result["events_dispatched"]) == 0
 
+    def test_delete_branch_with_context_id(self, service, mock_repositories):
+        """Test branch deletion with context_id attribute (line 170)."""
+        # Create branch with context_id
+        mock_branch = Mock()
+        mock_branch.id = str(uuid.uuid4())
+        mock_branch.context_id = str(uuid.uuid4())  # Ensure context_id exists
+
+        mock_repositories['branch_repository'].find_by_id.return_value = mock_branch
+        mock_repositories['task_repository'].find_by_git_branch_id.return_value = []
+        mock_repositories['branch_repository'].delete.return_value = True
+        mock_repositories['context_repository'].delete.return_value = True
+
+        with patch('fastmcp.task_management.domain.services.event_dispatcher.dispatch_domain_event'):
+            result = service.delete_branch_cascade(mock_branch.id)
+
+        assert result["branch_deleted"] is True
+        assert result["contexts_deleted"] == 1
+        mock_repositories['context_repository'].delete.assert_called_once_with(mock_branch.context_id)
+
+    def test_delete_branch_with_deleted_tasks(self, service, mock_repositories):
+        """Test branch deletion counts tasks correctly (line 164)."""
+        mock_branch = Mock()
+        mock_branch.id = str(uuid.uuid4())
+        mock_branch.context_id = None
+
+        # Create mock task that will be successfully deleted
+        mock_task = Mock()
+        mock_task.id = Mock(value=str(uuid.uuid4()))
+        mock_task.git_branch_id = mock_branch.id
+        mock_task.context_id = str(uuid.uuid4())
+
+        mock_repositories['branch_repository'].find_by_id.return_value = mock_branch
+        mock_repositories['task_repository'].find_by_git_branch_id.return_value = [mock_task]
+        mock_repositories['task_repository'].find_by_id.return_value = mock_task
+        mock_repositories['task_repository'].delete.return_value = True  # Task deletion succeeds
+        mock_repositories['subtask_repository'].count_by_parent_task_id.return_value = 0
+        mock_repositories['branch_repository'].delete.return_value = True
+        mock_repositories['context_repository'].delete.return_value = True
+
+        with patch('fastmcp.task_management.domain.services.event_dispatcher.dispatch_domain_event'):
+            result = service.delete_branch_cascade(mock_branch.id)
+
+        # Verify line 164 is covered - task was successfully deleted
+        assert result["tasks_deleted"] == 1
+        assert result["branch_deleted"] is True
+
 
 class TestProjectCascadeDeletion(TestCascadeDeletionService):
     """Test cascade deletion for projects."""
@@ -333,6 +379,52 @@ class TestProjectCascadeDeletion(TestCascadeDeletionService):
         assert result["project_deleted"] is False
         assert result["branches_deleted"] == 0
         assert len(result["events_dispatched"]) == 0
+
+    def test_delete_project_with_context_id(self, service, mock_repositories):
+        """Test project deletion with context_id attribute (line 234)."""
+        # Create project with context_id
+        mock_project = Mock()
+        mock_project.id = str(uuid.uuid4())
+        mock_project.name = "Test Project"
+        mock_project.context_id = str(uuid.uuid4())  # Ensure context_id exists
+
+        mock_repositories['project_repository'].find_by_id.return_value = mock_project
+        mock_repositories['branch_repository'].find_by_project_id.return_value = []
+        mock_repositories['project_repository'].delete.return_value = True  # Line 246
+        mock_repositories['context_repository'].delete.return_value = True
+
+        with patch('fastmcp.task_management.domain.services.event_dispatcher.dispatch_domain_event'):
+            result = service.delete_project_cascade(mock_project.id)
+
+        assert result["project_deleted"] is True  # Line 246 covered
+        assert result["contexts_deleted"] == 1  # Line 234 covered
+        mock_repositories['context_repository'].delete.assert_called_once_with(mock_project.context_id)
+
+    def test_delete_project_with_deleted_branches(self, service, mock_repositories):
+        """Test project deletion counts branches correctly (line 227)."""
+        mock_project = Mock()
+        mock_project.id = str(uuid.uuid4())
+        mock_project.name = "Test Project"
+        mock_project.context_id = None
+
+        # Create mock branch that will be successfully deleted
+        mock_branch = Mock()
+        mock_branch.id = str(uuid.uuid4())
+        mock_branch.context_id = None
+
+        mock_repositories['project_repository'].find_by_id.return_value = mock_project
+        mock_repositories['branch_repository'].find_by_project_id.return_value = [mock_branch]
+        mock_repositories['branch_repository'].find_by_id.return_value = mock_branch
+        mock_repositories['task_repository'].find_by_git_branch_id.return_value = []
+        mock_repositories['branch_repository'].delete.return_value = True  # Branch deletion succeeds
+        mock_repositories['project_repository'].delete.return_value = True
+
+        with patch('fastmcp.task_management.domain.services.event_dispatcher.dispatch_domain_event'):
+            result = service.delete_project_cascade(mock_project.id)
+
+        # Verify line 227 is covered - branch was successfully deleted
+        assert result["branches_deleted"] == 1
+        assert result["project_deleted"] is True
 
     def test_delete_project_with_full_hierarchy(self, service, mock_repositories, mock_project):
         """Test deleting project with complete hierarchy of branches, tasks, and subtasks."""

@@ -476,10 +476,22 @@ class TestAuthServiceTokenOperations:
         """Test token refresh fails with invalid token"""
         # Arrange
         mock_jwt_service.verify_refresh_token.return_value = None
-        
+
         # Act
         tokens = await auth_service.refresh_tokens("invalid_token")
-        
+
+        # Assert
+        assert tokens is None
+
+    @pytest.mark.asyncio
+    async def test_token_refresh_with_non_existent_user(self, auth_service, mock_user_repository, mock_jwt_service):
+        """Test token refresh fails when user not found"""
+        # Arrange
+        mock_user_repository.get_by_id.return_value = None
+
+        # Act
+        tokens = await auth_service.refresh_tokens("valid_refresh_token")
+
         # Assert
         assert tokens is None
     

@@ -38,19 +38,53 @@ class TestProjectApplicationFacade:
         facade = ProjectApplicationFacade(project_service=self.mock_service)
         assert facade._project_service == self.mock_service
     
-    @pytest.mark.skip(reason="Tests internal implementation details - tested indirectly by functional tests")
-    def test_initialization_with_user_id(self):
-        """Test facade initialization with user_id (SKIPPED - tests implementation details)"""
-        # This test checks internal implementation details of how the facade initializes
-        # The actual functionality is tested by all other tests that use the facade
-        pass
+    @patch('fastmcp.task_management.application.facades.project_application_facade.ProjectManagementService')
+    @patch('fastmcp.task_management.application.facades.project_application_facade.GlobalRepositoryManager.get_for_user')
+    def test_initialization_with_user_id(self, mock_get_for_user, mock_service_class):
+        """Test facade initialization with user_id creates user-scoped service"""
+        # Mock the repository manager to return a mock repository
+        mock_repository = Mock()
+        mock_get_for_user.return_value = mock_repository
 
-    @pytest.mark.skip(reason="Tests internal implementation details - tested indirectly by functional tests")
-    def test_initialization_without_parameters(self):
-        """Test facade initialization without parameters (SKIPPED - tests implementation details)"""
-        # This test checks internal implementation details of how the facade initializes
-        # The actual functionality is tested by test_initialization_with_service
-        pass
+        # Mock the service class to return a mock service
+        mock_service = Mock()
+        mock_service_class.return_value = mock_service
+
+        # Initialize facade with user_id (exercises lines 19-21)
+        facade = ProjectApplicationFacade(user_id="user-789")
+
+        # Verify repository was fetched for user
+        mock_get_for_user.assert_called_once_with("user-789")
+
+        # Verify service was created with user-scoped repository
+        mock_service_class.assert_called_once_with(mock_repository, "user-789")
+
+        assert facade._user_id == "user-789"
+        assert facade._project_service == mock_service
+
+    @patch('fastmcp.task_management.application.facades.project_application_facade.ProjectManagementService')
+    @patch('fastmcp.task_management.application.facades.project_application_facade.GlobalRepositoryManager.get_default')
+    def test_initialization_without_parameters(self, mock_get_default, mock_service_class):
+        """Test facade initialization without parameters uses default repository"""
+        # Mock the default repository
+        mock_repository = Mock()
+        mock_get_default.return_value = mock_repository
+
+        # Mock the service class to return a mock service
+        mock_service = Mock()
+        mock_service_class.return_value = mock_service
+
+        # Initialize facade without parameters (exercises lines 22-24)
+        facade = ProjectApplicationFacade()
+
+        # Verify default repository was fetched
+        mock_get_default.assert_called_once()
+
+        # Verify service was created with default repository and None user_id
+        mock_service_class.assert_called_once_with(mock_repository, None)
+
+        assert facade._user_id is None
+        assert facade._project_service == mock_service
     
     def test_with_user_method(self):
         """Test with_user method creates scoped facade"""
@@ -361,16 +395,35 @@ class TestUpdateProjectAction:
             mock_validator = Mock()
             mock_validator.validate_project_name = AsyncMock(side_effect=ValueError("Name already exists"))
             mock_validator_class.return_value = mock_validator
-            
+
             result = await self.facade.manage_project(
                 action="update",
                 project_id="proj-123",
                 name="Duplicate Name",
                 user_id="user-123"
             )
-            
+
             assert result["success"] is False
             assert result["error"] == "Name already exists"
+
+    @pytest.mark.asyncio
+    async def test_update_project_name_missing_user_id(self):
+        """Test update project with name but missing user_id (exercises line 93)"""
+        # Create facade without user_id
+        facade = ProjectApplicationFacade(project_service=self.mock_service)
+
+        # Attempt to update with name but no user_id
+        result = await facade.manage_project(
+            action="update",
+            project_id="proj-123",
+            name="New Name"
+        )
+
+        assert result["success"] is False
+        assert result["error"] == "User authentication required"
+
+        # Service should not be called without authentication
+        self.mock_service.update_project.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_update_project_direct_method(self):

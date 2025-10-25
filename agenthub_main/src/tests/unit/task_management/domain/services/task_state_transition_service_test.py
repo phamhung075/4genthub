@@ -357,11 +357,183 @@ class TestTaskStateTransitionService:
         mock_task.status = TaskStatus("todo")
         mock_task.id = "test-id"
         mock_task.update_status = Mock(side_effect=Exception("Update error"))
-        
+
         success, message = service.transition_to(
-            mock_task, 
+            mock_task,
             TaskStatus("in_progress")
         )
-        
+
         assert success is False
         assert "Transition failed" in message
+
+    def test_get_allowed_transitions_exception_handling(self, service):
+        """Test exception handling in get_allowed_transitions (lines 175-177)."""
+        # Create a task that will raise an exception
+        mock_task = Mock()
+        mock_status = Mock()
+        mock_status.__str__ = Mock(side_effect=Exception("Status error"))
+        mock_task.status = mock_status
+        mock_task.id = "test-id"
+
+        result = service.get_allowed_transitions(mock_task)
+
+        # Should return empty dict on exception
+        assert result == {}
+
+    def test_suggest_next_status_blocked_with_alternative_suggestions(self, service, mock_task):
+        """Test suggest_next_status when suggestion is blocked (lines 217-227)."""
+        # Set task to in_progress and configure to block review transition
+        mock_task.status = TaskStatus("in_progress")
+
+        # Mock can_transition_to to return False (transition is blocked)
+        original_can_transition = service.can_transition_to
+
+        def mock_can_transition(task, target_status, context=None):
+            if str(target_status).lower() == 'review':
+                return False, "Review not ready"
+            return original_can_transition(task, target_status)
+
+        service.can_transition_to = mock_can_transition
+
+        result = service.suggest_next_status(mock_task)
+
+        # Restore original method
+        service.can_transition_to = original_can_transition
+
+        assert result is not None
+        assert result["suggested_status"] == "review"
+        assert result["blocked"] is True
+        assert result["blocked_reason"] == "Review not ready"
+        assert "alternative_suggestions" in result
+        assert len(result["alternative_suggestions"]) > 0
+
+    def test_check_transition_prerequisites_review_from_non_in_progress(self, service, mock_task):
+        """Test transition to review from status other than in_progress (line 314)."""
+        # Use a status that CAN transition to review according to state machine (testing)
+        # but will fail the prerequisite check
+        mock_task.status = TaskStatus("testing")
+
+        can_transition, reason = service.can_transition_to(
+            mock_task,
+            TaskStatus("review")
+        )
+
+        # Should fail because review requires in_progress status
+        assert can_transition is False
+        assert "must be in progress before moving to review" in reason
+
+    def test_partial_branch_251_249_blocked_dependency_not_all_satisfied(self, service, mock_task, mock_task_repository):
+        """Test handle_dependency_completion partial branch 251->249 (task not blocked)."""
+        completed_task = Mock(spec=Task)
+        completed_task.id = TaskId.generate()
+        completed_task.title = "Completed Task"
+
+        # Create a dependent task that is NOT blocked
+        dependent_task = Mock(spec=Task)
+        dependent_task.id = TaskId.generate()
+        dependent_task.title = "Dependent Task"
+        dependent_task.status = TaskStatus("todo")  # Not blocked
+        dependent_task.dependencies = [str(completed_task.id)]
+
+        mock_task_repository.find_all.return_value = [completed_task, dependent_task]
+
+        updated_tasks = service.handle_dependency_completion(completed_task)
+
+        # Should return empty list because dependent task is not blocked
+        assert updated_tasks == []
+
+    def test_partial_branch_261_249_all_dependencies_not_satisfied(self, service, mock_task, mock_task_repository):
+        """Test handle_dependency_completion partial branch 261->249 (dependencies not satisfied)."""
+        completed_task = Mock(spec=Task)
+        completed_task.id = TaskId.generate()
+
+        # Create a blocked task with multiple dependencies where one is not satisfied
+        other_dep = Mock(spec=Task)
+        other_dep.id = TaskId.generate()
+        other_dep.status = TaskStatus("in_progress")  # Not done
+
+        dependent_task = Mock(spec=Task)
+        dependent_task.id = TaskId.generate()
+        dependent_task.status = TaskStatus("blocked")
+        dependent_task.dependencies = [str(completed_task.id), str(other_dep.id)]
+
+        mock_task_repository.find_all.return_value = [completed_task, other_dep, dependent_task]
+
+        updated_tasks = service.handle_dependency_completion(completed_task)
+
+        # Should return empty list because not all dependencies are satisfied
+        assert updated_tasks == []
+
+    def test_partial_branch_296_304_done_with_no_subtask_repo(self, service, mock_task):
+        """Test transition to done when _subtask_repository is None (partial branch 296->304)."""
+        # Create service without subtask repository
+        service_no_subtasks = TaskStateTransitionService(
+            subtask_repository=None,
+            task_repository=None
+        )
+
+        mock_task.status = TaskStatus("testing")
+
+        # Should allow transition to done when no subtask repository
+        can_transition, reason = service_no_subtasks.can_transition_to(
+            mock_task,
+            TaskStatus("done")
+        )
+
+        assert can_transition is True
+        assert reason is None
+
+    def test_partial_branch_330_exit_no_completion_summary(self, service, mock_task):
+        """Test _perform_pre_transition_actions for done without completion_summary (branch 330->exit)."""
+        mock_task.status = TaskStatus("testing")
+        # Don't set _completion_summary attribute
+
+        # This should log a warning but not fail the transition
+        success, message = service.transition_to(
+            mock_task,
+            TaskStatus("done"),
+            metadata={}
+        )
+
+        assert success is True
+        assert "Status changed" in message
+
+    def test_partial_branch_341_345_post_transition_with_task_repo(self, service, mock_task, mock_task_repository):
+        """Test _perform_post_transition_actions when transitioning to done with task_repository (branch 341->345)."""
+        mock_task.status = TaskStatus("testing")
+        mock_task_repository.find_all.return_value = [mock_task]
+
+        # Perform transition to done
+        success, message = service.transition_to(
+            mock_task,
+            TaskStatus("done"),
+            metadata={}
+        )
+
+        assert success is True
+        # Verify handle_dependency_completion was called by checking find_all was called
+        assert mock_task_repository.find_all.called
+
+    def test_partial_branch_372_378_all_dependencies_satisfied_status_check(self, service):
+        """Test _all_dependencies_satisfied using status.is_done() method (branch 372->378)."""
+        task = Mock(spec=Task)
+        task.dependencies = ["dep-id-1"]
+
+        dep_task = Mock(spec=Task)
+        dep_task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        dep_task_id_str = "dep-id-1"
+
+        # Test with status having is_done method
+        dep_task.status = Mock()
+        dep_task.status.is_done = Mock(return_value=True)
+
+        # Create mock id that matches
+        dep_task.id = Mock()
+        dep_task.id.__str__ = Mock(return_value="dep-id-1")
+
+        all_tasks = [dep_task]
+
+        result = service._all_dependencies_satisfied(task, all_tasks)
+
+        assert result is True
+        dep_task.status.is_done.assert_called_once()

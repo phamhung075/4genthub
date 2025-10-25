@@ -80,10 +80,49 @@ class TestAutomatedContextSyncServiceInit:
         mock_task_repo = Mock(spec=TaskRepository)
         service = AutomatedContextSyncService(mock_task_repo)  # No user_id
         mock_repo = Mock()
-        
+
         result = service._get_user_scoped_repository(mock_repo)
-        
+
         assert result == mock_repo
+
+    def test_get_user_scoped_repository_with_matching_user_id(self):
+        """Test _get_user_scoped_repository when repo user_id matches service user_id (covers line 53 false branch)."""
+        mock_task_repo = Mock(spec=TaskRepository)
+        service = AutomatedContextSyncService(mock_task_repo, user_id="test_user")
+
+        # Create a repo with user_id attribute that matches
+        mock_repo = Mock()
+        mock_repo.user_id = "test_user"
+        # Don't add with_user method so it goes to elif branch
+        del mock_repo.with_user
+
+        result = service._get_user_scoped_repository(mock_repo)
+
+        # Should return original repo since user_id matches
+        assert result == mock_repo
+
+    def test_get_user_scoped_repository_with_different_user_id_and_session(self):
+        """Test _get_user_scoped_repository creates new repo when user_id differs and session exists."""
+        mock_task_repo = Mock(spec=TaskRepository)
+        service = AutomatedContextSyncService(mock_task_repo, user_id="new_user")
+
+        # Create a mock repo class that can be instantiated
+        mock_session = Mock()
+        MockRepoClass = Mock()
+        mock_new_repo = Mock()
+        MockRepoClass.return_value = mock_new_repo
+
+        # Create a repo with different user_id and session attribute
+        mock_repo = Mock(spec=['user_id', 'session'])
+        mock_repo.user_id = "old_user"
+        mock_repo.session = mock_session
+        # Mock type() to return our mock class
+        with patch('builtins.type', return_value=MockRepoClass):
+            result = service._get_user_scoped_repository(mock_repo)
+
+            # Should create new repo instance with new user_id
+            MockRepoClass.assert_called_once_with(mock_session, user_id="new_user")
+            assert result == mock_new_repo
 
 
 class TestTaskContextSynchronization:
