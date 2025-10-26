@@ -797,6 +797,121 @@ class TestSecurityScenarios:
 
 
 # =============================================================================
+# IMPORT FALLBACK AND ERROR RECOVERY TESTS
+# =============================================================================
+
+class TestImportFallbacksAndErrorRecovery:
+    """Test import error handling, fallback mechanisms, and graceful degradation."""
+
+    @pytest.mark.asyncio
+    async def test_supabase_adapter_handles_missing_session_attributes(self, supabase_env):
+        """
+        Test SupabaseAuthAdapter handles missing session attributes gracefully.
+        Covers lines 103-108: Error recovery in sign_up when session attributes missing.
+        """
+        with patch('fastmcp.auth.infrastructure.supabase_auth.SupabaseAuthService') as mock_service:
+            mock_instance = Mock()
+            mock_result = Mock()
+            mock_result.success = True
+            mock_result.error_message = None
+            mock_result.user = Mock(
+                id='sb-user-123',
+                email='test@example.com',
+                user_metadata={},
+                confirmed_at=None,
+                created_at='2024-01-01T00:00:00Z'
+            )
+            # Session object with no attributes (simulates missing/corrupt session)
+            mock_result.session = Mock(spec=[])  # Empty spec means no attributes
+            mock_result.requires_email_verification = True
+
+            mock_instance.sign_up = AsyncMock(return_value=mock_result)
+            mock_service.return_value = mock_instance
+
+            adapter = SupabaseAuthAdapter()
+            result = await adapter.sign_up('test@example.com', 'password123')
+
+        # Should handle missing attributes gracefully
+        assert result.success is True
+        assert result.access_token is None  # Gracefully handled missing attribute
+        assert result.refresh_token is None  # Gracefully handled missing attribute
+        assert result.requires_email_verification is True
+
+    @pytest.mark.asyncio
+    async def test_supabase_adapter_refresh_handles_missing_session_attributes(self, supabase_env):
+        """
+        Test SupabaseAuthAdapter refresh_token handles missing session attributes.
+        Covers lines 140-142: Error recovery in refresh_token when session incomplete.
+        """
+        with patch('fastmcp.auth.infrastructure.supabase_auth.SupabaseAuthService') as mock_service:
+            mock_instance = Mock()
+            mock_result = Mock()
+            mock_result.success = True
+            mock_result.error_message = None
+            mock_result.user = Mock(id='sb-user-123', email='test@example.com')
+            # Session with only one attribute present
+            mock_session = Mock()
+            del mock_session.refresh_token  # Remove refresh_token attribute
+            mock_session.access_token = 'new-access-token'
+            mock_result.session = mock_session
+
+            mock_instance.refresh_session = AsyncMock(return_value=mock_result)
+            mock_service.return_value = mock_instance
+
+            adapter = SupabaseAuthAdapter()
+            result = await adapter.refresh_token('old-refresh-token')
+
+        # Should gracefully handle partial session data
+        assert result.success is True
+        assert result.access_token == 'new-access-token'
+        assert result.refresh_token is None  # Gracefully handled missing attribute
+
+    @pytest.mark.asyncio
+    async def test_local_adapter_handles_role_attribute_errors(self, local_auth_env, mock_db_config):
+        """
+        Test LocalAuthAdapter handles missing/malformed role attributes gracefully.
+        Covers lines 341-347: Error recovery when user.roles has attribute issues.
+        """
+        mock_db, mock_session = mock_db_config
+        adapter = LocalAuthAdapter()
+
+        # Create mock user with problematic roles attribute
+        mock_user = Mock()
+        mock_user.id = 'user-123'
+        mock_user.email = 'test@example.com'
+        mock_user.username = 'testuser'
+        mock_user.full_name = 'Test User'
+        mock_user.email_verified = True
+        mock_user.status = 'active'  # String without .value attribute
+        mock_user.roles = None  # Simulate missing roles
+
+        # Test _format_user handles None roles gracefully
+        result = adapter._format_user(mock_user)
+
+        assert result is not None
+        assert result['id'] == 'user-123'
+        assert result['email'] == 'test@example.com'
+        assert result['status'] == 'active'
+        assert result['roles'] == ['user']  # Default fallback when roles is None
+
+        # Now test with roles that have no .value attribute
+        mock_user.roles = ['admin', 'user']  # List of strings, no .value
+        result = adapter._format_user(mock_user)
+
+        assert result['roles'] == ['admin', 'user']  # Should handle strings correctly
+
+        # Test with roles having .value attribute
+        mock_role1 = Mock()
+        mock_role1.value = 'admin'
+        mock_role2 = Mock()
+        mock_role2.value = 'user'
+        mock_user.roles = [mock_role1, mock_role2]
+
+        result = adapter._format_user(mock_user)
+        assert result['roles'] == ['admin', 'user']  # Should extract .value correctly
+
+
+# =============================================================================
 # INTEGRATION TESTS
 # =============================================================================
 

@@ -20,7 +20,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import func
 
-# Skip all tests in this file as they need complete rewrite
+# NOTE: These tests are being migrated to integration tests
+# Keeping only unit tests for utility functions and helper methods here
 pytestmark = pytest.mark.skip(reason="Tests need complete rewrite - they mock the methods being tested")
 
 from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
