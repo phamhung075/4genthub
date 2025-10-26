@@ -77,7 +77,6 @@ class Task(BaseTimestampEntity):
     labels: list[str] = field(default_factory=list)
     dependencies: list[TaskId] = field(default_factory=list)
     subtasks: list[str] = field(default_factory=list)  # List of subtask IDs
-    subtask_count: int = 0  # Denormalized count for performance
     due_date: str | None = None
     context_id: str | None = None  # New field: tracks if context is up-to-date
     user_id: str | None = None  # User identifier for ownership
@@ -712,7 +711,6 @@ class Task(BaseTimestampEntity):
 
         if subtask_id not in self.subtasks:
             self.subtasks.append(subtask_id)
-            self.increment_subtask_count()  # Increment count via domain method
             self.touch("subtask_added")
 
             # Raise domain event
@@ -722,7 +720,7 @@ class Task(BaseTimestampEntity):
                     "subtasks": {
                         "action": "subtask_added",
                         "new_value": subtask_id,
-                        "subtask_count": self.subtask_count,
+                        "subtask_count": len(self.subtasks),  # Derive from array length
                         "updated_at": self.updated_at.isoformat() if self.updated_at else None
                     }
                 }
@@ -731,10 +729,9 @@ class Task(BaseTimestampEntity):
         return subtask_id
     
     def remove_subtask(self, subtask_id: str) -> bool:
-        """Remove a subtask by ID and decrement subtask count"""
+        """Remove a subtask by ID"""
         if subtask_id in self.subtasks:
             self.subtasks.remove(subtask_id)
-            self.decrement_subtask_count()  # Decrement count via domain method
             self.touch("subtask_removed")
 
             # Raise domain event
@@ -744,34 +741,13 @@ class Task(BaseTimestampEntity):
                     "subtasks": {
                         "action": "subtask_removed",
                         "removed_value": subtask_id,
-                        "subtask_count": self.subtask_count,
+                        "subtask_count": len(self.subtasks),  # Derive from array length
                         "updated_at": self.updated_at.isoformat() if self.updated_at else None
                     }
                 }
             ))
             return True
         return False
-    
-    def increment_subtask_count(self) -> None:
-        """Increment the subtask count by 1.
-
-        This method should be called automatically by add_subtask().
-        Following DDD principles, this keeps the count synchronized with the subtasks list.
-        """
-        self.subtask_count += 1
-        logger.debug(f"Incremented subtask_count for task {self.id} to {self.subtask_count}")
-
-    def decrement_subtask_count(self) -> None:
-        """Decrement the subtask count by 1.
-
-        This method should be called automatically by remove_subtask().
-        Following DDD principles, this keeps the count synchronized with the subtasks list.
-        """
-        if self.subtask_count > 0:
-            self.subtask_count -= 1
-            logger.debug(f"Decremented subtask_count for task {self.id} to {self.subtask_count}")
-        else:
-            logger.warning(f"Attempted to decrement subtask_count for task {self.id} but count is already 0")
 
     def update_subtask(self, subtask_id: str, updates: dict[str, Any]) -> bool:
         """Update a subtask by ID - This method should be handled by the subtask repository"""
@@ -1363,7 +1339,6 @@ class Task(BaseTimestampEntity):
             "labels": self.labels.copy() if self.labels is not None else [],
             "dependencies": [dep.value if hasattr(dep, 'value') else str(dep) for dep in self.dependencies],
             "subtasks": self.subtasks.copy(),
-            "subtask_count": self.subtask_count,
             "dueDate": self.due_date if self.due_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

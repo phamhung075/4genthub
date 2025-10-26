@@ -422,8 +422,10 @@ class TaskMCPController(ContextPropagationMixin):
             Each action has its own required parameters validated by the ValidationFactory.
             """
             # Handle boolean defaults using ParameterTransformationService
+            # OPTIMIZATION: Changed default from True to False to save 500+ tokens per response
+            # Context data only included when explicitly requested via include_context=True
             include_context = ParameterTransformationService.transform_boolean_default(
-                include_context, default=True
+                include_context, default=False
             )
             force_full_generation = ParameterTransformationService.transform_boolean_default(
                 force_full_generation, default=False

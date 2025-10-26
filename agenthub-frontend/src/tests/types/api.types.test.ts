@@ -35,8 +35,8 @@ describe('API Types', () => {
           title: 'Test Task',
           status: 'in_progress',
           priority: 'high',
-          assignees_count: 2,
-          subtask_count: 3,
+          assignees: ['user1', 'user2'],
+          subtasks: ['sub-1', 'sub-2', 'sub-3'],
           has_dependencies: true,
           has_context: true,
           git_branch_id: 'branch-123',
@@ -47,8 +47,8 @@ describe('API Types', () => {
         expect(task.title).toBe('Test Task');
         expect(task.status).toBe('in_progress');
         expect(task.priority).toBe('high');
-        expect(task.assignees_count).toBe(2);
-        expect(task.subtask_count).toBe(3);
+        expect(task.assignees).toHaveLength(2);
+        expect(task.subtasks).toHaveLength(3);
         expect(task.has_dependencies).toBe(true);
         expect(task.has_context).toBe(true);
         expect(task.git_branch_id).toBe('branch-123');
@@ -63,10 +63,8 @@ describe('API Types', () => {
           status: 'todo',
           priority: 'medium',
           assignees: ['user1', 'user2'],
-          assignees_count: 2,
-          subtask_count: 0,
+          subtasks: [],
           has_dependencies: false,
-          dependency_count: 2,
           dependencies: ['dep-1', 'dep-2'],
           has_context: true,
           context_id: 'context-123',
@@ -88,7 +86,6 @@ describe('API Types', () => {
 
         expect(task.description).toBe('Task description');
         expect(task.assignees).toEqual(['user1', 'user2']);
-        expect(task.dependency_count).toBe(2);
         expect(task.dependencies).toEqual(['dep-1', 'dep-2']);
         expect(task.context_id).toBe('context-123');
         expect(task.context_data).toEqual({ key: 'value' });
@@ -113,7 +110,7 @@ describe('API Types', () => {
             title: 'Subtask 1',
             status: 'done',
             priority: 'high',
-            assignees_count: 1
+            assignees: ['user1']
           },
           {
             id: 'sub-2',
@@ -121,7 +118,7 @@ describe('API Types', () => {
             title: 'Subtask 2',
             status: 'in_progress',
             priority: 'medium',
-            assignees_count: 2
+            assignees: ['user1', 'user2']
           }
         ];
 
@@ -130,13 +127,12 @@ describe('API Types', () => {
           title: 'Test Task',
           status: 'in_progress',
           priority: 'high',
-          assignees_count: 2,
-          subtask_count: 2,
+          assignees: ['user1', 'user2'],
+          subtasks: subtaskObjects,
           has_dependencies: false,
           has_context: false,
           git_branch_id: 'branch-123',
-          project_id: 'project-123',
-          subtasks: subtaskObjects
+          project_id: 'project-123'
         };
 
         expect(task.subtasks).toHaveLength(2);
@@ -153,7 +149,7 @@ describe('API Types', () => {
           title: 'Test Subtask',
           status: 'todo',
           priority: 'medium',
-          assignees_count: 1
+          assignees: ['user1']
         };
 
         expect(subtask.id).toBe('sub-123');
@@ -161,7 +157,7 @@ describe('API Types', () => {
         expect(subtask.title).toBe('Test Subtask');
         expect(subtask.status).toBe('todo');
         expect(subtask.priority).toBe('medium');
-        expect(subtask.assignees_count).toBe(1);
+        expect(subtask.assignees).toEqual(['user1']);
       });
 
       it('should allow optional properties', () => {
@@ -173,7 +169,6 @@ describe('API Types', () => {
           status: 'done',
           priority: 'high',
           assignees: ['user1'],
-          assignees_count: 1,
           progress_percentage: 100,
           created_at: '2025-01-01T00:00:00Z',
           updated_at: '2025-01-02T00:00:00Z',
@@ -394,8 +389,8 @@ describe('API Types', () => {
             title: 'Test Task',
             status: 'todo',
             priority: 'medium',
-            assignees_count: 0,
-            subtask_count: 0,
+            assignees: [],
+            subtasks: [],
             has_dependencies: false,
             has_context: false,
             git_branch_id: 'branch-123',
@@ -420,8 +415,8 @@ describe('API Types', () => {
               title: 'Task 1',
               status: 'todo',
               priority: 'high',
-              assignees_count: 1,
-              subtask_count: 0,
+              assignees: ['user1'],
+              subtasks: [],
               has_dependencies: false,
               has_context: false,
               git_branch_id: 'branch-123',
@@ -432,8 +427,8 @@ describe('API Types', () => {
               title: 'Task 2',
               status: 'done',
               priority: 'low',
-              assignees_count: 2,
-              subtask_count: 1,
+              assignees: ['user1', 'user2'],
+              subtasks: ['sub-1'],
               has_dependencies: true,
               has_context: true,
               git_branch_id: 'branch-123',
@@ -465,7 +460,7 @@ describe('API Types', () => {
             title: 'Subtask',
             status: 'todo',
             priority: 'medium',
-            assignees_count: 1
+            assignees: ['user1']
           }
         };
 
@@ -763,13 +758,12 @@ describe('API Types', () => {
         title: 'Task 1',
         status: 'todo',
         priority: 'high',
-        assignees_count: 1,
-        subtask_count: 2,
+        assignees: ['user1'],
+        subtasks: ['sub-1', 'sub-2'],
         has_dependencies: false,
         has_context: false,
         git_branch_id: 'branch-123',
-        project_id: 'project-123',
-        subtasks: ['sub-1', 'sub-2'] // String IDs
+        project_id: 'project-123'
       };
 
       const task2: Task = {
@@ -777,12 +771,7 @@ describe('API Types', () => {
         title: 'Task 2',
         status: 'todo',
         priority: 'high',
-        assignees_count: 1,
-        subtask_count: 1,
-        has_dependencies: false,
-        has_context: false,
-        git_branch_id: 'branch-123',
-        project_id: 'project-123',
+        assignees: ['user1'],
         subtasks: [
           {
             id: 'sub-1',
@@ -790,9 +779,13 @@ describe('API Types', () => {
             title: 'Subtask',
             status: 'todo',
             priority: 'medium',
-            assignees_count: 1
+            assignees: ['user1']
           }
-        ] // Subtask objects
+        ],
+        has_dependencies: false,
+        has_context: false,
+        git_branch_id: 'branch-123',
+        project_id: 'project-123'
       };
 
       // Type guard function

@@ -428,10 +428,15 @@ class Subtask(BaseTimestampEntity):
         self._events.clear()
         return events
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert subtask to dictionary representation"""
+    def to_dict(self, include_parent_id: bool = False) -> Dict[str, Any]:
+        """Convert subtask to dictionary representation
+
+        Args:
+            include_parent_id: If True, includes parent_task_id in output.
+                              Default False (omit when nested in parent task response)
+        """
         from fastmcp.task_management.application.use_cases.agent_mappings import resolve_agent_name
-        
+
         # Handle assignees - convert to standardized kebab-case format
         assignees_list = []
         if self.assignees is not None:
@@ -444,12 +449,11 @@ class Subtask(BaseTimestampEntity):
                     # Handle string assignees - normalize to kebab-case
                     normalized_name = resolve_agent_name(str(assignee))
                     assignees_list.append(normalized_name)
-        
-        return {
+
+        result = {
             "id": self.id.value if self.id else None,
             "title": self.title,
             "description": self.description,
-            "parent_task_id": str(self.parent_task_id),
             "status": str(self.status),
             "priority": str(self.priority),
             "assignees": assignees_list,
@@ -457,6 +461,12 @@ class Subtask(BaseTimestampEntity):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+
+        # OPTIMIZATION: Only include parent_task_id when explicitly requested (not nested)
+        if include_parent_id:
+            result["parent_task_id"] = str(self.parent_task_id)
+
+        return result
     
     @classmethod
     def create(cls, id: TaskId, title: str, description: str, parent_task_id: TaskId,

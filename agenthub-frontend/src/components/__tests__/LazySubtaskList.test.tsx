@@ -98,7 +98,7 @@ const mockSubtaskSummariesResponse = {
       title: 'Subtask 1',
       status: 'todo',
       priority: 'high',
-      assignees_count: 1,
+      assignees: ['user-1'],
       progress_percentage: 0
     },
     {
@@ -106,7 +106,7 @@ const mockSubtaskSummariesResponse = {
       title: 'Subtask 2',
       status: 'in_progress',
       priority: 'medium',
-      assignees_count: 2,
+      assignees: ['user-1', 'user-2'],
       progress_percentage: 50
     },
     {
@@ -114,7 +114,7 @@ const mockSubtaskSummariesResponse = {
       title: 'Subtask 3',
       status: 'done',
       priority: 'low',
-      assignees_count: 0,
+      assignees: [],
       progress_percentage: 100
     }
   ],

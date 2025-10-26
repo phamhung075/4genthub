@@ -104,7 +104,7 @@ describe('LazySubtaskList', () => {
           title: sub.title,
           status: sub.status,
           priority: sub.priority,
-          assignees_count: sub.assignees.length,
+          assignees: sub.assignees,
           progress_percentage: sub.progress_percentage
         })),
         parent_task_id: mockParentTaskId,
@@ -819,7 +819,7 @@ describe('LazySubtaskList', () => {
           title: 'Subtask 1',
           status: 'todo',
           priority: 'high',
-          assignees_count: 1
+          assignees: ['user-1']
         }]
       };
 

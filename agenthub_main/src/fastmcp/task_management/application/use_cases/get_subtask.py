@@ -20,8 +20,9 @@ class GetSubtaskUseCase:
             subtask = self._subtask_repository.find_by_id(id)
             if not subtask:
                 raise ValueError(f"Subtask {id} not found in task {task_id}")
-            
-            subtask_data = subtask.to_dict()
+
+            # Standalone subtask response - include parent_task_id
+            subtask_data = subtask.to_dict(include_parent_id=True)
         else:
             # Fallback to existing task entity method for backward compatibility
             subtask_data = task.get_subtask(id)

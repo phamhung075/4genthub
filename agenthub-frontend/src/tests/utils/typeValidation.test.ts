@@ -31,7 +31,6 @@ describe("typeValidation", () => {
     dependencies: [],
     blocking_tasks: [],
     subtask_ids: [],
-    subtask_count: 0,
     context_id: null,
     completion_summary: null
   };

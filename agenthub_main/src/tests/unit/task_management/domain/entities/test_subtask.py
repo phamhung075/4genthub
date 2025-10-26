@@ -600,8 +600,9 @@ class TestSubtaskSerialization:
             assignees=["coding-agent", "devops-agent"]
         )
         
-        data = subtask.to_dict()
-        
+        # Phase 2 optimization: parent_task_id is only included when include_parent_id=True
+        data = subtask.to_dict(include_parent_id=True)
+
         assert data["id"] == subtask_id.value
         assert data["title"] == "Test subtask"
         assert data["description"] == "Test description"
@@ -611,6 +612,11 @@ class TestSubtaskSerialization:
         assert data["assignees"] == ["coding-agent", "devops-agent"]
         assert data["created_at"] is not None
         assert data["updated_at"] is not None
+
+        # Test that parent_task_id is omitted when include_parent_id=False (default)
+        data_without_parent = subtask.to_dict(include_parent_id=False)
+        assert "parent_task_id" not in data_without_parent
+        assert data_without_parent["id"] == subtask_id.value
     
     def test_from_dict(self):
         """Test creating subtask from dictionary."""

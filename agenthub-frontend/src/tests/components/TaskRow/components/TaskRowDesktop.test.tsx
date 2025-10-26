@@ -68,7 +68,7 @@ describe("TaskRowDesktop", () => {
     dependencies: [],
     blocking_tasks: [],
     subtask_ids: ["sub1", "sub2"],
-    subtask_count: 2,
+    subtasks: ["sub1", "sub2"], // Array of subtask IDs
     context_id: null,
     completion_summary: null
   };
@@ -212,7 +212,7 @@ describe("TaskRowDesktop", () => {
   it("should not render subtask count when zero", () => {
     const props = {
       ...defaultProps,
-      task: { ...mockTask, subtask_count: 0 }
+      task: { ...mockTask, subtasks: [] }
     };
     render(<TaskRowDesktop {...props} />);
 

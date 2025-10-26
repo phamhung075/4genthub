@@ -243,12 +243,12 @@ class ORMTaskRepository(
             user_id=getattr(task, 'user_id', None),
             context_id=task.context_id,
             subtasks=subtask_ids,
-            subtask_count=getattr(task, 'subtask_count', 0),  # Load subtask_count from database
+            # REMOVED: subtask_count not in Task entity dataclass - count should be derived from len(subtasks)
             dependencies=dependency_ids
         )
 
-        # 🔍 DEBUG: Verify entity has the subtask_count value
-        logger.info(f"  - Entity created with subtask_count: {entity.subtask_count}")
+        # 🔍 DEBUG: Verify entity created successfully
+        logger.info(f"  - Entity created with {len(subtask_ids)} subtasks")
 
         # Map progress_percentage from database to overall_progress in entity
         if hasattr(task, 'progress_percentage'):
@@ -284,7 +284,7 @@ class ORMTaskRepository(
             "estimated_effort": _ensure_estimated_effort_default(task.estimated_effort),
             "due_date": task.due_date,
             "context_id": task.context_id,
-            "subtask_count": task.subtask_count,  # Include denormalized subtask count for DDD persistence
+            # REMOVED: subtask_count not in Task entity - count derived from len(task.subtasks)
         }
 
         # Handle optional progress percentage field

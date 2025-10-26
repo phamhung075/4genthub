@@ -273,7 +273,6 @@ class ProgressHandler:
         return {
             "progress_bar": progress_bar,
             "progress_color": color,
-            "status_emoji": status_info["emoji"],
             "status_color": status_info["color"],
             "percentage_text": f"{percentage}%",
         }

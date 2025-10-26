@@ -263,34 +263,42 @@ class ResponseOptimizer:
     def remove_nulls(self, data: Union[Dict, List, Any]) -> Union[Dict, List, Any]:
         """
         Recursively remove null, None, empty strings, and empty collections.
-        
+
+        IMPORTANT: Preserves essential empty arrays that are part of API contracts.
+        Phase 1 requirement: Frontend calculates counts from arrays, so arrays must always be present.
+
         Args:
             data: The data structure to clean
-            
+
         Returns:
-            Cleaned data structure with nulls removed
+            Cleaned data structure with nulls removed (but essential arrays preserved)
         """
         if isinstance(data, dict):
             cleaned = {}
             for key, value in data.items():
-                # Special case: preserve 'data' field even if empty (required field)
-                if key == "data":
-                    cleaned[key] = self.remove_nulls(value) if value else {}
-                    continue
-                
-                # Special case: preserve 'projects' field even if empty (required for list operations)
-                if key == "projects":
-                    cleaned[key] = self.remove_nulls(value) if value else []
+                # Essential fields that MUST be preserved even if empty (API contract)
+                # These fields are required for Phase 1 array-based count logic
+                essential_empty_fields = [
+                    "data",           # Root data field
+                    "projects",       # List operations
+                    "updated_data",   # Update operations
+                    "subtasks",       # Task relationship arrays
+                    "dependencies",   # Task relationship arrays
+                    "labels",         # Task relationship arrays
+                    "assignees"       # Task relationship arrays (note: often string, but preserve array form)
+                ]
+
+                if key in essential_empty_fields:
+                    # Preserve field with appropriate empty value
+                    if key in ["data", "updated_data"]:
+                        cleaned[key] = self.remove_nulls(value) if value else {}
+                    else:  # Arrays
+                        cleaned[key] = self.remove_nulls(value) if value else []
                     continue
 
-                # Special case: preserve 'updated_data' field even if empty (required for update operations)
-                if key == "updated_data":
-                    cleaned[key] = self.remove_nulls(value) if value else {}
-                    continue
-                    
                 # Recursively clean the value
                 cleaned_value = self.remove_nulls(value)
-                
+
                 # Only include if not null/empty
                 if cleaned_value is not None:
                     # Skip empty strings, lists, and dicts

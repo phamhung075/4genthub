@@ -21,6 +21,19 @@ class GetProjectUseCase:
                 "error": f"Project with ID '{project_id}' not found"
             }
         
+        # Calculate project-level aggregations
+        branch_count = len(project.git_branchs)
+        task_count = sum(tree.get_task_count() for tree in project.git_branchs.values())
+
+        # DEBUG LOGGING
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔍 GET_PROJECT DEBUG: project_id={project_id}")
+        logger.info(f"🔍 branch_count={branch_count}, task_count={task_count}")
+        logger.info(f"🔍 project.git_branchs keys: {list(project.git_branchs.keys())}")
+        for tree_id, tree in project.git_branchs.items():
+            logger.info(f"🔍 Branch {tree_id}: all_tasks count={len(tree.all_tasks)}, get_task_count()={tree.get_task_count()}")
+
         return {
             "success": True,
             "project": {
@@ -29,15 +42,21 @@ class GetProjectUseCase:
                 "description": project.description,
                 "created_at": project.created_at.isoformat(),
                 "updated_at": project.updated_at.isoformat(),
+                "branch_count": branch_count,  # Total branches in project
+                "task_count": task_count,      # Total tasks across all branches
                 "git_branchs": {
                     tree_id: {
                         "id": tree.id,
                         "name": tree.name,
                         "description": tree.description,
                         "created_at": tree.created_at.isoformat(),
+                        # Complete branch statistics (matching standalone branch endpoint)
                         "task_count": tree.get_task_count(),
                         "completed_tasks": tree.get_completed_task_count(),
-                        "progress": tree.get_progress_percentage()
+                        "in_progress_tasks": tree.get_active_task_count(),
+                        "blocked_tasks": tree.get_tree_status()["status_breakdown"].get("blocked", 0),
+                        "todo_tasks": tree.get_tree_status()["status_breakdown"].get("todo", 0),
+                        "progress_percentage": tree.get_progress_percentage()
                     }
                     for tree_id, tree in project.git_branchs.items()
                 },

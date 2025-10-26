@@ -424,8 +424,9 @@ class NextTaskUseCase:
                 if context_result and context_result.get("success"):
                     context = context_result.get("context")
                     # Convert context to dict if it has to_dict method
+                    # OPTIMIZATION: Pass embedded=True to remove duplicate fields
                     if hasattr(context, 'to_dict'):
-                        task_dict['context_data'] = context.to_dict()
+                        task_dict['context_data'] = context.to_dict(embedded=True)
                     else:
                         task_dict['context_data'] = context
                     task_dict['context_available'] = True
@@ -556,8 +557,9 @@ class NextTaskUseCase:
                     
                     if context:
                         # Handle both dict and object with to_dict method
+                        # OPTIMIZATION: Pass embedded=True to remove duplicate fields
                         if hasattr(context, 'to_dict'):
-                            context_data = context.to_dict()
+                            context_data = context.to_dict(embedded=True)
                         else:
                             context_data = context
                         
