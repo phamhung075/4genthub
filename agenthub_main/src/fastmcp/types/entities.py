@@ -4,7 +4,7 @@ Matches frontend types in api.types.ts
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class TaskDTO(BaseModel):
@@ -64,8 +64,7 @@ class TaskDTO(BaseModel):
     progress_count: Optional[int] = None
     subtasks: Optional[List['SubtaskDTO']] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SubtaskDTO(BaseModel):
@@ -114,8 +113,7 @@ class SubtaskDTO(BaseModel):
     progress_notes: Optional[str] = None
     completion_summary: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectDTO(BaseModel):
@@ -132,8 +130,7 @@ class ProjectDTO(BaseModel):
     git_branchs: Optional[Dict[str, 'BranchDTO']] = None  # API returns Record<string, Branch>
     branches: Optional[List['BranchDTO']] = None  # Legacy array format
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BranchDTO(BaseModel):
@@ -150,8 +147,7 @@ class BranchDTO(BaseModel):
     task_count: Optional[int] = None
     completed_tasks: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RuleDTO(BaseModel):
@@ -165,5 +161,6 @@ class RuleDTO(BaseModel):
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+

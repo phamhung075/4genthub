@@ -146,4 +146,4 @@ class TestTaskMinimumAgentRequirement:
         # Check that TaskCreated event was raised
         events = task.get_events()
         assert len(events) == 1
-        assert events[0].__class__.__name__ == "TaskCreated"
+        assert events[0].__class__.__name__ == "TaskCreatedEvent"

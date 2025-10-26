@@ -100,7 +100,6 @@ class ProjectHealthCheckUseCase:
             "issues": issues,
             "warnings": warnings,
             "checked_at": datetime.now(timezone.utc).isoformat(),
-            "git_branchs_count": len(project.git_branchs),
             "registered_agents_count": len(project.registered_agents),
             "active_assignments": len(project.agent_assignments),
             "active_sessions": len(project.active_work_sessions),

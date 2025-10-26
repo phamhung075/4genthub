@@ -60,22 +60,23 @@ class TestTaskIdValidation:
     
     def test_subtask_id_empty_string_raises_error(self):
         """Test that empty string raises ValueError."""
-        with pytest.raises(ValueError, match="Subtask ID cannot be empty"):
+        with pytest.raises(ValueError, match="TaskId cannot be empty"):
             TaskId("")
-    
+
     def test_subtask_id_whitespace_only_raises_error(self):
         """Test that whitespace-only string raises ValueError."""
-        with pytest.raises(ValueError, match="Subtask ID cannot be empty"):
+        with pytest.raises(ValueError, match="TaskId cannot be empty"):
             TaskId("   ")
-    
+
     def test_subtask_id_non_string_raises_error(self):
         """Test that non-string value raises TypeError."""
-        with pytest.raises(TypeError, match="Subtask ID value must be a string"):
+        with pytest.raises(TypeError, match="TaskId value must be a string"):
             TaskId(12345)
-        
-        with pytest.raises(TypeError, match="Subtask ID value must be a string"):
+
+        # None raises ValueError (checked first before type check)
+        with pytest.raises(ValueError, match="TaskId cannot be None"):
             TaskId(None)
-    
+
     def test_subtask_id_invalid_format_raises_error(self):
         """Test that truly invalid formats raise ValueError."""
         invalid_formats = [
@@ -87,7 +88,7 @@ class TestTaskIdValidation:
         ]
 
         for invalid in invalid_formats:
-            with pytest.raises(ValueError, match="Invalid Subtask ID format"):
+            with pytest.raises(ValueError, match="Invalid TaskId format"):
                 TaskId(invalid)
     
     def test_subtask_id_valid_uuid_formats(self):
@@ -218,7 +219,8 @@ class TestTaskIdStringRepresentation:
     def test_repr_representation(self):
         """Test __repr__ method."""
         subtask_id = TaskId("550e8400-e29b-41d4-a716-446655440001")
-        assert repr(subtask_id) == "TaskId('550e8400-e29b-41d4-a716-446655440001')"
+        # Dataclass repr includes field name
+        assert repr(subtask_id) == "TaskId(value='550e8400-e29b-41d4-a716-446655440001')"
     
     def test_repr_eval_roundtrip(self):
         """Test that repr can be used to recreate the object."""

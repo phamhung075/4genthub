@@ -114,7 +114,7 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
       <TableCell>
         <SubtaskRowAssignees
           assignees={summary.assignees}
-          assigneesCount={summary.assignees_count}
+          assigneesCount={summary.assignees?.length ?? 0}
           onAgentInfoClick={onAgentInfoClick}
         />
       </TableCell>

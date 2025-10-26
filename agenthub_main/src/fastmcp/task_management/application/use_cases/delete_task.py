@@ -88,14 +88,13 @@ class DeleteTaskUseCase:
                 from ...domain.events.task_lifecycle_events import TaskDeletedEvent
 
                 if git_branch_id:
-                    event = TaskDeletedEvent.create(
+                    event = TaskDeletedEvent(
                         task_id=task_id_str,
                         branch_id=git_branch_id,
                         status="deleted",
-                        metadata={
-                            "title": task_title,
-                            "cascade_stats": stats
-                        }
+                        title=task_title,
+                        aggregate_id=task_id_str,
+                        aggregate_type="Task"
                     )
                     dispatch_domain_event(event)
                     self._logger.info(f"Dispatched TaskDeletedEvent for task {task_id_str}")

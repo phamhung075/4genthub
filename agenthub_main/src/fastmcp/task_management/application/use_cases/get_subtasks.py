@@ -18,7 +18,8 @@ class GetSubtasksUseCase:
         # Use dedicated subtask repository if available
         if self._subtask_repository:
             subtasks = self._subtask_repository.find_by_parent_task_id(task_id_obj)
-            subtasks_data = [subtask.to_dict() for subtask in subtasks]
+            # Standalone subtask list response - include parent_task_id
+            subtasks_data = [subtask.to_dict(include_parent_id=True) for subtask in subtasks]
             
             # Calculate progress from subtask entities
             total_subtasks = len(subtasks)

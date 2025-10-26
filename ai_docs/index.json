@@ -23,36 +23,49 @@
       ],
       "path": "_absolute_docs/scripts"
     },
+    "_workplace/workers": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "bfcdfc93e61e5695d929602abb9ff12b",
+          "modified": "2025-10-24T12:03:08.022683",
+          "name": "scripts-cleanup-analysis.md",
+          "path": "_workplace/workers/scripts-cleanup-analysis.md",
+          "size": 22294
+        }
+      ],
+      "path": "_workplace/workers"
+    },
     "_workplace/workers/fix_tests_loop": {
       "count": 4,
       "files": [
         {
-          "hash": "2fc0b6e70f1a1977cbbf53c2dc094f53",
-          "modified": "2025-10-12T12:43:51.198289",
+          "hash": "e4695bfc3cb4f978c080c5941db2a03a",
+          "modified": "2025-10-24T11:36:00.167115",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 13415
+          "size": 13688
         },
         {
-          "hash": "bd9976592660c396c4a8e543e8cc3e25",
-          "modified": "2025-10-12T12:43:51.190289",
+          "hash": "e30d016cdd677df3dcbdcaf2df63c492",
+          "modified": "2025-10-24T23:08:07.778097",
+          "name": "fix-1by1-results.md",
+          "path": "_workplace/workers/fix_tests_loop/fix-1by1-results.md",
+          "size": 327577
+        },
+        {
+          "hash": "8c9fe61ff4d91eb22593f61a7213710b",
+          "modified": "2025-10-24T11:35:05.239001",
           "name": "AI_README.md",
           "path": "_workplace/workers/fix_tests_loop/AI_README.md",
-          "size": 4197
+          "size": 6209
         },
         {
-          "hash": "893dd7effd5cc0fb442f5ddefc3381d1",
-          "modified": "2025-10-12T12:43:51.190289",
+          "hash": "d8634722084aca489f75730ab72b21d8",
+          "modified": "2025-10-24T15:15:50.192142",
           "name": "fix-1by1-context.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1-context.md",
-          "size": 49640
-        },
-        {
-          "hash": "10c99f4a959a54ecda36092c042f082c",
-          "modified": "2025-10-12T12:43:51.190289",
-          "name": "current_context.md",
-          "path": "_workplace/workers/fix_tests_loop/current_context.md",
-          "size": 10793
+          "size": 62599
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -85,7 +98,7 @@
       "path": "api-behavior"
     },
     "api-integration": {
-      "count": 11,
+      "count": 16,
       "files": [
         {
           "hash": "677ae44155bbd2b3ca5ab9b6e533aa76",
@@ -93,6 +106,13 @@
           "name": "mcp-client-configuration-guide.md",
           "path": "api-integration/mcp-client-configuration-guide.md",
           "size": 17081
+        },
+        {
+          "hash": "46a2c6fb421e0d9c5bed8bb5071ab9cf",
+          "modified": "2025-10-22T21:25:12.543541",
+          "name": "label-operations.md",
+          "path": "api-integration/label-operations.md",
+          "size": 15808
         },
         {
           "hash": "8c7fe2973b3068e5cef037a2abc80a9f",
@@ -107,6 +127,13 @@
           "name": "api-endpoints-reference.md",
           "path": "api-integration/api-endpoints-reference.md",
           "size": 17356
+        },
+        {
+          "hash": "757f138d77df130221fbcb450c6fe65c",
+          "modified": "2025-10-26T18:51:40.052517",
+          "name": "phase2-response-flow-diagram-2025-10-26.md",
+          "path": "api-integration/phase2-response-flow-diagram-2025-10-26.md",
+          "size": 29875
         },
         {
           "hash": "1418838288008d5fce256cb6b5b06411",
@@ -128,6 +155,13 @@
           "name": "api-reference.md",
           "path": "api-integration/api-reference.md",
           "size": 23717
+        },
+        {
+          "hash": "7c2f9b1954385ee2dce26b107675dda8",
+          "modified": "2025-10-26T18:46:29.367190",
+          "name": "backend-service-layer-verification-2025-10-26.md",
+          "path": "api-integration/backend-service-layer-verification-2025-10-26.md",
+          "size": 11983
         },
         {
           "hash": "de6b25e0fa060df49f91bc23527bfa63",
@@ -163,6 +197,20 @@
           "name": "mcp-client-usage-examples.md",
           "path": "api-integration/mcp-client-usage-examples.md",
           "size": 32337
+        },
+        {
+          "hash": "4e62fe5ec717ff1515719193ba9ab222",
+          "modified": "2025-10-26T18:50:05.279257",
+          "name": "mcp-controller-verification-phase2-2025-10-26.md",
+          "path": "api-integration/mcp-controller-verification-phase2-2025-10-26.md",
+          "size": 18499
+        },
+        {
+          "hash": "9535eb1ad10adb6c0f6e3bc07934ab33",
+          "modified": "2025-10-26T11:01:47.658159",
+          "name": "phase-1-2-route-response-analysis-2025-10-26.md",
+          "path": "api-integration/phase-1-2-route-response-analysis-2025-10-26.md",
+          "size": 24220
         }
       ],
       "path": "api-integration"
@@ -514,7 +562,7 @@
       "path": "context-system"
     },
     "core-architecture": {
-      "count": 25,
+      "count": 28,
       "files": [
         {
           "hash": "28e09c0b0d11ef3cf07372a214b9fede",
@@ -543,6 +591,13 @@
           "name": "system-architecture-overview.md",
           "path": "core-architecture/system-architecture-overview.md",
           "size": 19028
+        },
+        {
+          "hash": "b55c471f9bb54c37d7bcd5fb771b14e9",
+          "modified": "2025-10-26T18:23:15.174654",
+          "name": "adr-phase2-breaking-changes-2025-10-26.md",
+          "path": "core-architecture/adr-phase2-breaking-changes-2025-10-26.md",
+          "size": 19099
         },
         {
           "hash": "ecfe6c884554eba0685b104218229d09",
@@ -629,6 +684,13 @@
           "size": 31916
         },
         {
+          "hash": "dc24a1c59418320fc85e498f286228d4",
+          "modified": "2025-10-26T18:34:20.909647",
+          "name": "phase2-domain-verification-2025-10-26.md",
+          "path": "core-architecture/phase2-domain-verification-2025-10-26.md",
+          "size": 23230
+        },
+        {
           "hash": "e57dfab4afd5f3c7bbab68b9a09682df",
           "modified": "2025-10-16T22:41:23.042341",
           "name": "agent-system-architecture.md",
@@ -669,6 +731,13 @@
           "name": "unified-timestamp-architecture.md",
           "path": "core-architecture/unified-timestamp-architecture.md",
           "size": 41053
+        },
+        {
+          "hash": "f11d7812cf1c2ca9b7853cfcc2090fbd",
+          "modified": "2025-10-26T18:55:19.831606",
+          "name": "phase2-orm-repository-verification-2025-10-26.md",
+          "path": "core-architecture/phase2-orm-repository-verification-2025-10-26.md",
+          "size": 10604
         },
         {
           "hash": "3e8655875e5419e4816635dccf2f33d4",
@@ -783,7 +852,7 @@
         },
         {
           "hash": "e784e58bdbbac361893b4c9b357ec219",
-          "modified": "2025-10-17T08:04:07.492878",
+          "modified": "2025-10-17T08:31:06.269725",
           "name": "mcp-response-correction-phases.md",
           "path": "development-guides/mcp-response-correction-phases.md",
           "size": 101374
@@ -797,14 +866,14 @@
         },
         {
           "hash": "9c85afc7a6f4abe14b50d607465fc860",
-          "modified": "2025-10-17T08:16:09.259606",
+          "modified": "2025-10-17T08:31:06.269725",
           "name": "MCP-RESPONSE-FIX-MASTER-PLAN.md",
           "path": "development-guides/MCP-RESPONSE-FIX-MASTER-PLAN.md",
           "size": 11400
         },
         {
           "hash": "5c4a0dfd84e9efd82568039f814964f3",
-          "modified": "2025-10-17T08:14:59.830081",
+          "modified": "2025-10-17T08:31:06.269725",
           "name": "phase-3-4-implementation-guide.md",
           "path": "development-guides/phase-3-4-implementation-guide.md",
           "size": 10780
@@ -860,7 +929,7 @@
         },
         {
           "hash": "0a5843396b3761948f3e694e28af97e2",
-          "modified": "2025-10-17T08:12:07.864902",
+          "modified": "2025-10-17T08:31:06.269725",
           "name": "phase-1-implementation-guide.md",
           "path": "development-guides/phase-1-implementation-guide.md",
           "size": 14781
@@ -874,7 +943,7 @@
         },
         {
           "hash": "743cdf33a47fa48cf4dc3322e9358663",
-          "modified": "2025-10-17T08:13:51.407825",
+          "modified": "2025-10-17T08:31:06.269725",
           "name": "phase-2-implementation-guide.md",
           "path": "development-guides/phase-2-implementation-guide.md",
           "size": 21268
@@ -923,7 +992,7 @@
       "path": "issues"
     },
     "migration-guides": {
-      "count": 3,
+      "count": 4,
       "files": [
         {
           "hash": "150a21c9839af22982d0d76b0b3022d2",
@@ -945,6 +1014,13 @@
           "name": "README.md",
           "path": "migration-guides/README.md",
           "size": 2630
+        },
+        {
+          "hash": "4cf98d267ba28e53fb457dd001b31f9e",
+          "modified": "2025-10-26T18:25:24.566243",
+          "name": "phase2-migration-guide-2025-10-26.md",
+          "path": "migration-guides/phase2-migration-guide-2025-10-26.md",
+          "size": 30082
         }
       ],
       "path": "migration-guides"
@@ -1081,14 +1157,49 @@
       "path": "product-requirements"
     },
     "reports-status": {
-      "count": 1,
+      "count": 6,
       "files": [
         {
+          "hash": "38d579f66b56a232318cd4af1ba6ecb4",
+          "modified": "2025-10-26T22:09:10.940973",
+          "name": "phase2-completion-report-2025-10-26.md",
+          "path": "reports-status/phase2-completion-report-2025-10-26.md",
+          "size": 30645
+        },
+        {
+          "hash": "836d774ab284e7069a30a8b221314da8",
+          "modified": "2025-10-26T11:02:20.274225",
+          "name": "api-mcp-response-redundancy-analysis-2025-10-26.md",
+          "path": "reports-status/api-mcp-response-redundancy-analysis-2025-10-26.md",
+          "size": 30017
+        },
+        {
+          "hash": "a4ae6b9af6257dca053aa9e53663c06b",
+          "modified": "2025-10-26T12:35:19.550027",
+          "name": "layer4-mcp-controller-verification-2025-10-26.md",
+          "path": "reports-status/layer4-mcp-controller-verification-2025-10-26.md",
+          "size": 10624
+        },
+        {
+          "hash": "2a61245ec9696bd2cdeeb5c488568a76",
+          "modified": "2025-10-24T15:03:02.042496",
+          "name": "test-fix-session-2025-10-24.md",
+          "path": "reports-status/test-fix-session-2025-10-24.md",
+          "size": 4039
+        },
+        {
           "hash": "48556ccf55bd12d65c66a8c2ba485cfc",
-          "modified": "2025-10-17T07:43:43.992735",
+          "modified": "2025-10-17T08:31:06.273725",
           "name": "mcp-tool-response-analysis.md",
           "path": "reports-status/mcp-tool-response-analysis.md",
           "size": 18214
+        },
+        {
+          "hash": "02e491379bd667fc1cdc984973b5cc02",
+          "modified": "2025-10-26T22:51:47.564240",
+          "name": "phase2-actual-implementation-status-2025-10-26.md",
+          "path": "reports-status/phase2-actual-implementation-status-2025-10-26.md",
+          "size": 12061
         }
       ],
       "path": "reports-status"
@@ -1210,6 +1321,208 @@
       ],
       "path": "setup-guides"
     },
+    "testing-qa": {
+      "count": 28,
+      "files": [
+        {
+          "hash": "5e7d64cadecb1ccf444b9e62a397d2e7",
+          "modified": "2025-10-26T17:54:20.102530",
+          "name": "phase1-e2e-test-results-2025-10-26.md",
+          "path": "testing-qa/phase1-e2e-test-results-2025-10-26.md",
+          "size": 6512
+        },
+        {
+          "hash": "a8def60ffd2ed69cc879ce7fdd288e92",
+          "modified": "2025-10-26T19:11:19.395371",
+          "name": "mock-client-phase2-update-2025-10-26.md",
+          "path": "testing-qa/mock-client-phase2-update-2025-10-26.md",
+          "size": 10507
+        },
+        {
+          "hash": "5863668ac26d443e940fdc5337cd69f4",
+          "modified": "2025-10-24T19:06:42.516133",
+          "name": "server-startup-test-implementation.md",
+          "path": "testing-qa/server-startup-test-implementation.md",
+          "size": 8507
+        },
+        {
+          "hash": "c019eb0fe43ed29ae740a5a65e57d3d8",
+          "modified": "2025-10-26T21:59:18.447540",
+          "name": "phase2-e2e-test-execution-summary-2025-10-26.md",
+          "path": "testing-qa/phase2-e2e-test-execution-summary-2025-10-26.md",
+          "size": 9058
+        },
+        {
+          "hash": "31368cbedac10ef346fe89426c64a5c1",
+          "modified": "2025-10-26T13:09:22.292865",
+          "name": "dto-serialization-test-results-2025-10-26.md",
+          "path": "testing-qa/dto-serialization-test-results-2025-10-26.md",
+          "size": 8489
+        },
+        {
+          "hash": "4b0b50b9eda47c272483bef08a9ee9b4",
+          "modified": "2025-10-26T20:15:19.939703",
+          "name": "phase2-frontend-test-execution-results-2025-10-26.md",
+          "path": "testing-qa/phase2-frontend-test-execution-results-2025-10-26.md",
+          "size": 9126
+        },
+        {
+          "hash": "420fbf7bdb81eb34ab5edf01cf7408e6",
+          "modified": "2025-10-24T18:53:27.360004",
+          "name": "week2-tasks-quick-reference.md",
+          "path": "testing-qa/week2-tasks-quick-reference.md",
+          "size": 11509
+        },
+        {
+          "hash": "a071817db866ccda9621f80fce9a3b7f",
+          "modified": "2025-10-24T15:27:46.148206",
+          "name": "test-coverage-report-2025-10-24.md",
+          "path": "testing-qa/test-coverage-report-2025-10-24.md",
+          "size": 14454
+        },
+        {
+          "hash": "89c11e2d751b921cbb5b56b1f08c7094",
+          "modified": "2025-10-26T09:33:58.995156",
+          "name": "wave1-execution-plan-revised-2025-10-26.md",
+          "path": "testing-qa/wave1-execution-plan-revised-2025-10-26.md",
+          "size": 8805
+        },
+        {
+          "hash": "d019b3a72eaeae3c820a38b2aab260b1",
+          "modified": "2025-10-22T21:22:50.104821",
+          "name": "label-integration-test-coverage.md",
+          "path": "testing-qa/label-integration-test-coverage.md",
+          "size": 21279
+        },
+        {
+          "hash": "262679023fed728bd02fcbc677e06217",
+          "modified": "2025-10-26T17:45:43.108987",
+          "name": "phase1-component-test-results-2025-10-26.md",
+          "path": "testing-qa/phase1-component-test-results-2025-10-26.md",
+          "size": 13019
+        },
+        {
+          "hash": "47ac0db31bc17e94f91538884870681f",
+          "modified": "2025-10-22T14:20:17.026215",
+          "name": "agenthub-mcp-tools-test-report-2025-10-22.md",
+          "path": "testing-qa/agenthub-mcp-tools-test-report-2025-10-22.md",
+          "size": 12620
+        },
+        {
+          "hash": "77e7c9f03a4eeea4a9960514ac4e6d1f",
+          "modified": "2025-10-22T10:53:08.096422",
+          "name": "test-flow-issues-2025-10-22.md",
+          "path": "testing-qa/test-flow-issues-2025-10-22.md",
+          "size": 14402
+        },
+        {
+          "hash": "3305b2096986eb8c34d56aa8eec81b10",
+          "modified": "2025-10-26T22:04:10.308676",
+          "name": "phase2-performance-results-2025-10-26.md",
+          "path": "testing-qa/phase2-performance-results-2025-10-26.md",
+          "size": 25137
+        },
+        {
+          "hash": "8f0436e1507954e83d5c9e5f6157dc2a",
+          "modified": "2025-10-26T17:30:54.973605",
+          "name": "phase1-integration-test-results-2025-10-26.md",
+          "path": "testing-qa/phase1-integration-test-results-2025-10-26.md",
+          "size": 7929
+        },
+        {
+          "hash": "1f372576c2d535d8eeccb84544a81866",
+          "modified": "2025-10-26T18:03:10.774185",
+          "name": "phase1-performance-results-2025-10-26.md",
+          "path": "testing-qa/phase1-performance-results-2025-10-26.md",
+          "size": 14988
+        },
+        {
+          "hash": "83efc9ba0c294117a4b082f8f6464436",
+          "modified": "2025-10-26T22:55:18.686511",
+          "name": "phase2-test-updates-verification-2025-10-26.md",
+          "path": "testing-qa/phase2-test-updates-verification-2025-10-26.md",
+          "size": 11699
+        },
+        {
+          "hash": "e073f7f7b6eeebb4f7a1dceafa6ff955",
+          "modified": "2025-10-26T21:56:55.081893",
+          "name": "phase2-e2e-test-blocker-2025-10-26.md",
+          "path": "testing-qa/phase2-e2e-test-blocker-2025-10-26.md",
+          "size": 7269
+        },
+        {
+          "hash": "b543673d95c3463ec1c1057228c95d5d",
+          "modified": "2025-10-25T16:30:37.315311",
+          "name": "coverage-improvement-plan-2025-10-25.md",
+          "path": "testing-qa/coverage-improvement-plan-2025-10-25.md",
+          "size": 14156
+        },
+        {
+          "hash": "aa7ae6388f5d21f6a0d92e516eecf8d8",
+          "modified": "2025-10-25T21:35:46.200260",
+          "name": "coverage-improvement-strategic-plan-2025-10-25.md",
+          "path": "testing-qa/coverage-improvement-strategic-plan-2025-10-25.md",
+          "size": 13041
+        },
+        {
+          "hash": "4f4549725632c2ace13a1ea003ea10a6",
+          "modified": "2025-10-22T10:54:49.763707",
+          "name": "fix-prompts-2025-10-22.md",
+          "path": "testing-qa/fix-prompts-2025-10-22.md",
+          "size": 22663
+        },
+        {
+          "hash": "7591edb1511f4eac3a3d5f7fe3c6c68e",
+          "modified": "2025-10-24T15:36:56.315516",
+          "name": "strategic-test-plan-2025-10-24.md",
+          "path": "testing-qa/strategic-test-plan-2025-10-24.md",
+          "size": 71312
+        },
+        {
+          "hash": "a1b7415035bd6590379b82897b76b4c4",
+          "modified": "2025-10-24T16:12:56.548652",
+          "name": "remaining-test-tasks-implementation-guide.md",
+          "path": "testing-qa/remaining-test-tasks-implementation-guide.md",
+          "size": 22729
+        },
+        {
+          "hash": "16e5a36e37a47bd9658570234b58e303",
+          "modified": "2025-10-25T21:37:16.168224",
+          "name": "wave1-execution-plan.md",
+          "path": "testing-qa/wave1-execution-plan.md",
+          "size": 14565
+        },
+        {
+          "hash": "bd8959799e96fef53288b3ac21e801d9",
+          "modified": "2025-10-24T18:52:18.117614",
+          "name": "week2-mcp-test-tasks-specifications.md",
+          "path": "testing-qa/week2-mcp-test-tasks-specifications.md",
+          "size": 36758
+        },
+        {
+          "hash": "62d60b7073e3e4911d75fda513fe2814",
+          "modified": "2025-10-26T09:33:08.758569",
+          "name": "wave1-coverage-audit-2025-10-26.md",
+          "path": "testing-qa/wave1-coverage-audit-2025-10-26.md",
+          "size": 6207
+        },
+        {
+          "hash": "38a0f45176295f7b9b829f01e4a12f0c",
+          "modified": "2025-10-24T22:50:38.658026",
+          "name": "test-pollution-fix-2025-10-24.md",
+          "path": "testing-qa/test-pollution-fix-2025-10-24.md",
+          "size": 5608
+        },
+        {
+          "hash": "4f2df87b2459ab15c010258ea5e9c79d",
+          "modified": "2025-10-25T21:40:06.028151",
+          "name": "coverage-improvement-complete-package-2025-10-25.md",
+          "path": "testing-qa/coverage-improvement-complete-package-2025-10-25.md",
+          "size": 12764
+        }
+      ],
+      "path": "testing-qa"
+    },
     "testing-qa/e2e": {
       "count": 1,
       "files": [
@@ -1224,7 +1537,7 @@
       "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
-      "count": 13,
+      "count": 15,
       "files": [
         {
           "hash": "3f387d62d26d34738a68e92b6fe4587a",
@@ -1246,6 +1559,13 @@
           "name": "index.md",
           "path": "troubleshooting-guides/index.md",
           "size": 2236
+        },
+        {
+          "hash": "322f5db2a4894218e019fc8b12abb713",
+          "modified": "2025-10-22T21:23:58.522116",
+          "name": "label-timestamp-errors.md",
+          "path": "troubleshooting-guides/label-timestamp-errors.md",
+          "size": 14381
         },
         {
           "hash": "a8564e3532aa64ba3ca84d6868c75461",
@@ -1274,6 +1594,13 @@
           "name": "production-deployment-issues.md",
           "path": "troubleshooting-guides/production-deployment-issues.md",
           "size": 20412
+        },
+        {
+          "hash": "17567c5adc12f0fa109d40697b2123f7",
+          "modified": "2025-10-26T23:08:25.881779",
+          "name": "project-branch-data-inconsistencies-2025-10-26.md",
+          "path": "troubleshooting-guides/project-branch-data-inconsistencies-2025-10-26.md",
+          "size": 16987
         },
         {
           "hash": "32c090f69b53bc71796c06c9b727a25d",
@@ -1321,7 +1648,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-17T08:16:09.351793",
+  "generated_at": "2025-10-26T23:08:26.030151",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1332,11 +1659,14 @@
     },
     "_workplace": {
       "workers": {
+        "files": [
+          "scripts-cleanup-analysis.md"
+        ],
         "fix_tests_loop": {
           "files": [
             "AI_README.md",
-            "current_context.md",
             "fix-1by1-context.md",
+            "fix-1by1-results.md",
             "fix-1by1.md"
           ]
         }
@@ -1369,13 +1699,18 @@
         "README.md",
         "api-endpoints-reference.md",
         "api-reference.md",
+        "backend-service-layer-verification-2025-10-26.md",
         "configuration.md",
         "dto-response-types.md",
+        "label-operations.md",
         "mcp-client-api-reference.md",
         "mcp-client-configuration-guide.md",
         "mcp-client-troubleshooting.md",
         "mcp-client-usage-examples.md",
-        "mcp-http-client-architecture.md"
+        "mcp-controller-verification-phase2-2025-10-26.md",
+        "mcp-http-client-architecture.md",
+        "phase-1-2-route-response-analysis-2025-10-26.md",
+        "phase2-response-flow-diagram-2025-10-26.md"
       ]
     },
     "architecture-design": {
@@ -1434,6 +1769,7 @@
       "files": [
         "Architecture_Technique.md",
         "README.md",
+        "adr-phase2-breaking-changes-2025-10-26.md",
         "agent-system-architecture.md",
         "architecture-thinking.md",
         "architecture.md",
@@ -1449,6 +1785,8 @@
         "implementation-methodology-pattern.md",
         "index.md",
         "mcp-injection-architecture.md",
+        "phase2-domain-verification-2025-10-26.md",
+        "phase2-orm-repository-verification-2025-10-26.md",
         "prompt-analyze.md",
         "repository-pagination-migration-guide.md",
         "session-type-detection.md",
@@ -1516,6 +1854,7 @@
       "files": [
         "HIERARCHICAL_CONTEXT_MIGRATION.md",
         "README.md",
+        "phase2-migration-guide-2025-10-26.md",
         "unified_context_migration_guide.md"
       ]
     },
@@ -1546,7 +1885,12 @@
     },
     "reports-status": {
       "files": [
-        "mcp-tool-response-analysis.md"
+        "api-mcp-response-redundancy-analysis-2025-10-26.md",
+        "layer4-mcp-controller-verification-2025-10-26.md",
+        "mcp-tool-response-analysis.md",
+        "phase2-actual-implementation-status-2025-10-26.md",
+        "phase2-completion-report-2025-10-26.md",
+        "test-fix-session-2025-10-24.md"
       ]
     },
     "setup-guides": {
@@ -1564,7 +1908,37 @@
         "files": [
           "End_to_End_Testing_Guidelines.md"
         ]
-      }
+      },
+      "files": [
+        "agenthub-mcp-tools-test-report-2025-10-22.md",
+        "coverage-improvement-complete-package-2025-10-25.md",
+        "coverage-improvement-plan-2025-10-25.md",
+        "coverage-improvement-strategic-plan-2025-10-25.md",
+        "dto-serialization-test-results-2025-10-26.md",
+        "fix-prompts-2025-10-22.md",
+        "label-integration-test-coverage.md",
+        "mock-client-phase2-update-2025-10-26.md",
+        "phase1-component-test-results-2025-10-26.md",
+        "phase1-e2e-test-results-2025-10-26.md",
+        "phase1-integration-test-results-2025-10-26.md",
+        "phase1-performance-results-2025-10-26.md",
+        "phase2-e2e-test-blocker-2025-10-26.md",
+        "phase2-e2e-test-execution-summary-2025-10-26.md",
+        "phase2-frontend-test-execution-results-2025-10-26.md",
+        "phase2-performance-results-2025-10-26.md",
+        "phase2-test-updates-verification-2025-10-26.md",
+        "remaining-test-tasks-implementation-guide.md",
+        "server-startup-test-implementation.md",
+        "strategic-test-plan-2025-10-24.md",
+        "test-coverage-report-2025-10-24.md",
+        "test-flow-issues-2025-10-22.md",
+        "test-pollution-fix-2025-10-24.md",
+        "wave1-coverage-audit-2025-10-26.md",
+        "wave1-execution-plan-revised-2025-10-26.md",
+        "wave1-execution-plan.md",
+        "week2-mcp-test-tasks-specifications.md",
+        "week2-tasks-quick-reference.md"
+      ]
     },
     "troubleshooting-guides": {
       "files": [
@@ -1575,8 +1949,10 @@
         "docker-menu-clean-volume-fix.md",
         "docker-volume-persistence-issue.md",
         "index.md",
+        "label-timestamp-errors.md",
         "mcp-connection-issues.md",
         "production-deployment-issues.md",
+        "project-branch-data-inconsistencies-2025-10-26.md",
         "subtask-component-rendering-diagnostic.md",
         "subtask-count-ddd-refactoring.md",
         "subtask-count-sync-issue.md",
@@ -1585,5 +1961,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 170
+  "total_files": 215
 }

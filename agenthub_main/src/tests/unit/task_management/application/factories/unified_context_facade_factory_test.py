@@ -58,9 +58,9 @@ class TestUnifiedContextFacadeFactory:
     def test_singleton_pattern(self):
         """Test that factory implements singleton pattern correctly"""
         # Arrange & Act
-        factory1 = UnifiedContextFacadeFactory()
-        factory2 = UnifiedContextFacadeFactory()
-        
+        factory1 = UnifiedContextFacadeFactory(None)  # Pass None to trigger mock service
+        factory2 = UnifiedContextFacadeFactory(None)
+
         # Assert
         assert factory1 is factory2
         assert UnifiedContextFacadeFactory._instance is factory1
@@ -272,9 +272,13 @@ class TestUnifiedContextFacadeFactory:
         assert hasattr(factory, 'delegation_service')
         assert hasattr(factory, 'validation_service')
 
-    def test_create_mock_service_when_database_fails(self):
+    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    def test_create_mock_service_when_database_fails(self, mock_get_db_config):
         """Test creation of mock service when database initialization fails"""
-        # Arrange & Act
+        # Arrange - Mock get_db_config to raise exception
+        mock_get_db_config.side_effect = Exception("Database not available")
+
+        # Act
         factory = UnifiedContextFacadeFactory(None)  # Force database unavailable
 
         # Assert
@@ -300,20 +304,26 @@ class TestUnifiedContextFacadeFactory:
             assert factory.unified_service is not None
             assert UnifiedContextFacadeFactory._initialized is True
 
-    def test_logging_behavior(self):
+    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    def test_logging_behavior(self, mock_get_db_config):
         """Test that appropriate logging occurs during initialization"""
         # This test validates that logging occurs during initialization
         # The actual logging behavior is verified by the successful initialization
-        # Arrange & Act
+        # Arrange - Mock get_db_config to raise exception for database fallback
+        mock_get_db_config.side_effect = Exception("Database not available")
+
+        # Act
         factory = UnifiedContextFacadeFactory(None)  # This should trigger database fallback
-        
+
         # Assert
         assert factory.unified_service is not None  # Service was created successfully
         assert UnifiedContextFacadeFactory._initialized is True  # Factory was initialized
 
-    def test_multiple_create_facade_calls_use_same_service(self):
+    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    def test_multiple_create_facade_calls_use_same_service(self, mock_get_db_config):
         """Test that multiple create_facade calls use the same unified service"""
-        # Arrange
+        # Arrange - Mock get_db_config to raise exception for mock service
+        mock_get_db_config.side_effect = Exception("Database not available")
         factory = UnifiedContextFacadeFactory(None)  # Use mock service
 
         # Act
@@ -380,9 +390,11 @@ class TestUnifiedContextFacadeFactoryIntegration:
         assert isinstance(facade, UnifiedContextFacade)
         assert facade._user_id == TEST_USER_ID
 
-    def test_facade_user_scoping_behavior(self):
+    @patch('fastmcp.task_management.application.factories.unified_context_facade_factory.get_db_config')
+    def test_facade_user_scoping_behavior(self, mock_get_db_config):
         """Test that facade correctly handles user scoping"""
-        # Arrange
+        # Arrange - Mock get_db_config to raise exception for mock service
+        mock_get_db_config.side_effect = Exception("Database not available")
         factory = UnifiedContextFacadeFactory(None)  # Use mock service
 
         # Act - when using mock service, user scoping is handled differently

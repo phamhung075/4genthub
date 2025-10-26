@@ -38,8 +38,10 @@ class SubtaskCRUDHandler:
         task_id: str,
         title: str,
         description: str | None = None,
+        status: str | None = None,
         priority: str | None = None,
         assignees: list[str] | None = None,
+        progress_percentage: int | None = None,
         progress_notes: str | None = None,
         user_id: str | None = None,
     ) -> dict[str, Any]:
@@ -91,6 +93,12 @@ class SubtaskCRUDHandler:
                 "priority": priority,
                 "assignees": assignees,
             }
+
+            # Add status and progress_percentage if provided
+            if status is not None:
+                subtask_data["status"] = status
+            if progress_percentage is not None:
+                subtask_data["progress_percentage"] = progress_percentage
 
             result = facade.handle_manage_subtask(
                 action="create",

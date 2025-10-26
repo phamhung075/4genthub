@@ -58,7 +58,8 @@ class UpdateSubtaskUseCase:
                 subtask.update_progress_percentage(request.progress_percentage)
             
             self._subtask_repository.save(subtask)
-            updated_subtask = subtask.to_dict()
+            # Standalone subtask response - include parent_task_id
+            updated_subtask = subtask.to_dict(include_parent_id=True)
             
             # Update parent task progress
             self._update_parent_task_progress(str(request.task_id))

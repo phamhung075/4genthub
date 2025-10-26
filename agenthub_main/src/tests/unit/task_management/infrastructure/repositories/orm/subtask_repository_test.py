@@ -99,8 +99,9 @@ class TestORMSubtaskRepositoryDataConversion:
             title="Test Subtask",
             description="Test Description"
         )
-        
-        with patch.object(self.repo, '_to_model_data') as mock_convert:
+
+        # FIX: Use correct method name _entity_to_model_dict instead of _to_model_data
+        with patch.object(self.repo, '_entity_to_model_dict') as mock_convert:
             expected_data = {
                 'id': 'sub-123',
                 'parent_task_id': 'task-456',
@@ -110,9 +111,9 @@ class TestORMSubtaskRepositoryDataConversion:
                 'priority': 'medium'
             }
             mock_convert.return_value = expected_data
-            
-            result = self.repo._to_model_data(subtask)
-            
+
+            result = self.repo._entity_to_model_dict(subtask)
+
             mock_convert.assert_called_once_with(subtask)
             assert result == expected_data
     
@@ -128,8 +129,9 @@ class TestORMSubtaskRepositoryDataConversion:
             assignees=["@user1", "@user2"],
             progress_percentage=75
         )
-        
-        with patch.object(self.repo, '_to_model_data') as mock_convert:
+
+        # FIX: Use correct method name _entity_to_model_dict instead of _to_model_data
+        with patch.object(self.repo, '_entity_to_model_dict') as mock_convert:
             expected_data = {
                 'id': 'sub-123',
                 'parent_task_id': 'task-456',
@@ -143,9 +145,10 @@ class TestORMSubtaskRepositoryDataConversion:
                 'testing_notes': 'Tests passed'
             }
             mock_convert.return_value = expected_data
-            
-            result = self.repo._to_model_data(subtask)
-            
+
+            result = self.repo._entity_to_model_dict(subtask)
+
+            mock_convert.assert_called_once_with(subtask)
             assert result == expected_data
     
     def test_from_model_data_to_entity(self):

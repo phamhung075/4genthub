@@ -10,6 +10,8 @@ class AddSubtaskRequest:
     description: str = ""
     assignees: List[str] = field(default_factory=list)
     priority: Optional[str] = None
+    status: Optional[str] = None
+    progress_percentage: Optional[int] = None
     
     def __post_init__(self):
         """Validate request data"""

@@ -111,6 +111,38 @@ class TestGitBranchNameValidator:
             await validator.validate_name_format("branch..name")
 
     @pytest.mark.asyncio
+    async def test_validate_unique_name_empty_after_trim(self, validator):
+        """Test line 57 - empty name after trim in validate_unique_name"""
+        # This tests a defensive check after trim - though line 47 catches it first
+        with pytest.raises(ValidationException, match="Branch name cannot be empty|must be at least 1 character"):
+            await validator.validate_unique_name("", "project123")
+
+    @pytest.mark.asyncio
+    async def test_validate_unique_name_too_long(self, validator):
+        """Test line 60 - name exceeds 100 chars in validate_unique_name"""
+        long_name = "a" * 101
+        with pytest.raises(ValidationException, match="cannot exceed 100 characters"):
+            await validator.validate_unique_name(long_name, "project123")
+
+    @pytest.mark.asyncio
+    async def test_validate_name_format_empty_after_trim(self, validator):
+        """Test line 98 - empty name after trim in validate_name_format"""
+        # Test that whitespace-only string is caught after trim
+        with pytest.raises(ValidationException, match="Branch name cannot be empty|must be at least 1 character"):
+            await validator.validate_name_format(" ")
+
+    @pytest.mark.asyncio
+    async def test_validate_name_format_slash_boundaries(self, validator):
+        """Test line 126 - name starts or ends with slash"""
+        # Test starting with slash
+        with pytest.raises(ValidationException, match="cannot start"):
+            await validator.validate_name_format("/branch")
+
+        # Test ending with slash
+        with pytest.raises(ValidationException, match="cannot end"):
+            await validator.validate_name_format("branch/")
+
+    @pytest.mark.asyncio
     async def test_validate_name_format_valid_names(self, validator):
         """Test that valid branch names are accepted"""
         valid_names = [

@@ -27,21 +27,56 @@ else
     PROJECT_ROOT="$(pwd)"
 fi
 TEST_DIR="${PROJECT_ROOT}/agenthub_main/src/tests"
-VENV_PATH="${PROJECT_ROOT}/venv"
+VENV_PATH="${PROJECT_ROOT}/agenthub_main/.venv"
 
-# Smart cache paths for test results
-CACHE_DIR="${PROJECT_ROOT}/.test_cache"
-PASSED_TESTS="${CACHE_DIR}/passed_tests.txt"
-FAILED_TESTS="${CACHE_DIR}/failed_tests.txt"
-TEST_HASHES="${CACHE_DIR}/test_hashes.txt"
-RUN_LOG="${CACHE_DIR}/last_run.log"
-STATS_FILE="${CACHE_DIR}/stats.txt"
+# Smart cache paths for test results - JSON-based cache v2.0
+# Use pytest's standard cache directory instead of custom .test_cache
+CACHE_DIR="${PROJECT_ROOT}/.pytest_cache"
+CACHE_FILE="${CACHE_DIR}/test-menu-cache.json"
+RUN_LOG="${CACHE_DIR}/test-menu-last-run.log"
 
-# Create cache directory if it doesn't exist
-mkdir -p "${CACHE_DIR}"
+# .pytest_cache already exists (created by pytest)
+# No need to create the directory
 
-# Initialize cache files if they don't exist
-touch "${PASSED_TESTS}" "${FAILED_TESTS}" "${TEST_HASHES}" "${STATS_FILE}"
+# Initialize JSON cache with proper structure
+init_json_cache() {
+    if [ ! -f "${CACHE_FILE}" ]; then
+        cat > "${CACHE_FILE}" << 'EOF'
+{
+  "version": "2.0",
+  "last_updated": "",
+  "statistics": {
+    "total_tests": 0,
+    "passed": 0,
+    "failed": 0,
+    "untested": 0
+  },
+  "tests": {},
+  "runs": []
+}
+EOF
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════
+# JSON Cache Helper Functions - v2.0
+# ═══════════════════════════════════════════════════════════════
+
+# Read entire cache (returns JSON string)
+read_cache() {
+    if [ -f "${CACHE_FILE}" ]; then
+        cat "${CACHE_FILE}"
+    else
+        echo '{}'
+    fi
+}
+
+# Write entire cache atomically
+write_cache() {
+    local data="$1"
+    echo "$data" > "${CACHE_FILE}.tmp"
+    mv "${CACHE_FILE}.tmp" "${CACHE_FILE}"
+}
 
 # Function to calculate hash of a test file
 get_file_hash() {
@@ -53,12 +88,20 @@ get_file_hash() {
     fi
 }
 
-# Function to check if test file has changed
+# Get test data from cache
+get_test_from_cache() {
+    local test_file="$1"
+    local cache=$(read_cache)
+    echo "$cache" | jq -r --arg file "$test_file" '.tests[$file] // empty'
+}
+
+# Check if test file has changed
 has_test_changed() {
     local test_file="$1"
     local current_hash=$(get_file_hash "$test_file")
-    local cached_hash=$(grep "^${test_file}:" "${TEST_HASHES}" 2>/dev/null | cut -d':' -f2)
-    
+    local cache=$(read_cache)
+    local cached_hash=$(echo "$cache" | jq -r --arg file "$test_file" '.tests[$file].hash // "NONE"')
+
     if [ "$current_hash" != "$cached_hash" ]; then
         return 0  # Changed
     else
@@ -66,61 +109,98 @@ has_test_changed() {
     fi
 }
 
-# Function to update test hash
-update_test_hash() {
+# Update test entry in cache
+update_test_in_cache() {
     local test_file="$1"
-    local new_hash=$(get_file_hash "$test_file")
-    
-    # Remove old hash if exists
-    grep -v "^${test_file}:" "${TEST_HASHES}" > "${TEST_HASHES}.tmp" 2>/dev/null || true
-    mv "${TEST_HASHES}.tmp" "${TEST_HASHES}"
-    
-    # Add new hash
-    echo "${test_file}:${new_hash}" >> "${TEST_HASHES}"
+    local status="$2"
+    local hash=$(get_file_hash "$test_file")
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    local cache=$(read_cache)
+
+    # Get existing run count or default to 0
+    local run_count=$(echo "$cache" | jq -r --arg file "$test_file" '.tests[$file].run_count // 0')
+    run_count=$((run_count + 1))
+
+    # Update test entry
+    cache=$(echo "$cache" | jq --arg file "$test_file" \
+                                --arg status "$status" \
+                                --arg hash "$hash" \
+                                --arg timestamp "$timestamp" \
+                                --argjson count "$run_count" \
+        '.tests[$file] = {
+            "status": $status,
+            "hash": $hash,
+            "last_run": $timestamp,
+            "run_count": $count
+        } | .last_updated = $timestamp')
+
+    # Update statistics
+    cache=$(echo "$cache" | jq '
+        .statistics.passed = ([.tests[] | select(.status == "passed")] | length) |
+        .statistics.failed = ([.tests[] | select(.status == "failed")] | length)
+    ')
+
+    write_cache "$cache"
 }
 
-# Function to mark test as passed
+# Mark test as passed
 mark_test_passed() {
     local test="$1"
-    # Remove from failed if exists
-    grep -v "^${test}$" "${FAILED_TESTS}" > "${FAILED_TESTS}.tmp" 2>/dev/null || true
-    mv "${FAILED_TESTS}.tmp" "${FAILED_TESTS}"
-    
-    # Add to passed if not already there
-    if ! grep -q "^${test}$" "${PASSED_TESTS}" 2>/dev/null; then
-        echo "$test" >> "${PASSED_TESTS}"
-    fi
-    
-    # Update hash
-    update_test_hash "$test"
+    update_test_in_cache "$test" "passed"
 }
 
-# Function to mark test as failed
+# Mark test as failed
 mark_test_failed() {
     local test="$1"
-    # Remove from passed if exists
-    grep -v "^${test}$" "${PASSED_TESTS}" > "${PASSED_TESTS}.tmp" 2>/dev/null || true
-    mv "${PASSED_TESTS}.tmp" "${PASSED_TESTS}"
-    
-    # Add to failed if not already there
-    if ! grep -q "^${test}$" "${FAILED_TESTS}" 2>/dev/null; then
-        echo "$test" >> "${FAILED_TESTS}"
-    fi
+    update_test_in_cache "$test" "failed"
 }
 
-# Function to get test statistics
+# Get test statistics
 get_test_stats() {
     local total_tests=$(find "${TEST_DIR}" -name "*test*.py" -type f | wc -l)
-    local passed_count=$(wc -l < "${PASSED_TESTS}" 2>/dev/null || echo 0)
-    local failed_count=$(wc -l < "${FAILED_TESTS}" 2>/dev/null || echo 0)
-    local cached_count=$((passed_count))
+    local cache=$(read_cache)
+
+    local passed_count=$(echo "$cache" | jq '[.tests[] | select(.status == "passed")] | length')
+    local failed_count=$(echo "$cache" | jq '[.tests[] | select(.status == "failed")] | length')
+    local cached_count=$passed_count
     local untested_count=$((total_tests - passed_count - failed_count))
-    
+
     echo "total:${total_tests}"
     echo "passed:${passed_count}"
     echo "failed:${failed_count}"
     echo "cached:${cached_count}"
     echo "untested:${untested_count}"
+}
+
+# Record test run in history
+record_test_run() {
+    local mode="$1"
+    local tests_run="$2"
+    local passed="$3"
+    local failed="$4"
+    local duration="${5:-0}"
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    local cache=$(read_cache)
+
+    # Add run to history (keep last 50 runs)
+    cache=$(echo "$cache" | jq --arg timestamp "$timestamp" \
+                                --arg mode "$mode" \
+                                --argjson tests_run "$tests_run" \
+                                --argjson passed "$passed" \
+                                --argjson failed "$failed" \
+                                --argjson duration "$duration" \
+        '.runs += [{
+            "timestamp": $timestamp,
+            "mode": $mode,
+            "tests_run": $tests_run,
+            "passed": $passed,
+            "failed": $failed,
+            "duration": $duration
+        }] | .runs = .runs[-50:]')
+
+    write_cache "$cache"
 }
 
 # Function to print header with stats
@@ -179,20 +259,25 @@ print_menu() {
 run_smart_tests() {
     local mode="$1"
     local specific_path="$2"
-    
+    local start_time=$(date +%s)
+
     echo -e "${CYAN}${BOLD}Starting Smart Test Run...${NC}\n"
-    
+
     # Prepare test list based on mode
     local tests_to_run=""
     local tests_to_skip=""
-    
+    local cache=$(read_cache)
+
     case "$mode" in
         "smart")
             echo -e "${YELLOW}Mode: Smart (Skip cached passed tests)${NC}"
             # Find all test files
             while IFS= read -r test_file; do
-                # Check if test is in passed cache and hasn't changed
-                if grep -q "^${test_file}$" "${PASSED_TESTS}" 2>/dev/null; then
+                # Get test status from cache
+                local test_status=$(echo "$cache" | jq -r --arg file "$test_file" '.tests[$file].status // "untested"')
+
+                # Check if test is passed and hasn't changed
+                if [ "$test_status" = "passed" ]; then
                     if ! has_test_changed "$test_file"; then
                         tests_to_skip="${tests_to_skip} ${test_file}"
                         echo -e "${GREEN}⚡ Skipping (cached):${NC} ${test_file#${PROJECT_ROOT}/}"
@@ -202,7 +287,7 @@ run_smart_tests() {
                     fi
                 else
                     tests_to_run="${tests_to_run} ${test_file}"
-                    if grep -q "^${test_file}$" "${FAILED_TESTS}" 2>/dev/null; then
+                    if [ "$test_status" = "failed" ]; then
                         echo -e "${RED}↻ Re-running (failed):${NC} ${test_file#${PROJECT_ROOT}/}"
                     else
                         echo -e "${BLUE}→ Running (new):${NC} ${test_file#${PROJECT_ROOT}/}"
@@ -210,23 +295,26 @@ run_smart_tests() {
                 fi
             done < <(find "${TEST_DIR}" -name "*test*.py" -type f)
             ;;
-            
+
         "failed")
             echo -e "${YELLOW}Mode: Failed tests only${NC}"
-            if [ -s "${FAILED_TESTS}" ]; then
-                tests_to_run=$(cat "${FAILED_TESTS}")
-                echo -e "${RED}Running ${NC}$(wc -l < "${FAILED_TESTS}")${RED} failed tests${NC}"
+            # Get failed tests from JSON cache
+            local failed_tests=$(echo "$cache" | jq -r '.tests | to_entries[] | select(.value.status == "failed") | .key')
+            if [ -n "$failed_tests" ]; then
+                tests_to_run="$failed_tests"
+                local failed_count=$(echo "$failed_tests" | wc -l)
+                echo -e "${RED}Running ${NC}${failed_count}${RED} failed tests${NC}"
             else
                 echo -e "${GREEN}No failed tests to run!${NC}"
                 return 0
             fi
             ;;
-            
+
         "all")
             echo -e "${YELLOW}Mode: All tests (ignoring cache)${NC}"
             tests_to_run=$(find "${TEST_DIR}" -name "*test*.py" -type f)
             ;;
-            
+
         "specific")
             echo -e "${YELLOW}Mode: Specific test${NC}"
             tests_to_run="$specific_path"
@@ -258,7 +346,18 @@ run_smart_tests() {
         > "$temp_raw_results"
 
         # Run pytest first and save to log
-        python -m pytest $tests_to_run -v --tb=short 2>&1 | tee "${RUN_LOG}"
+        # Use venv Python directly if it exists, otherwise use system Python
+        if [ -f "${VENV_PATH}/bin/python" ]; then
+            PYTHON_CMD="${VENV_PATH}/bin/python"
+        else
+            PYTHON_CMD="python"
+        fi
+        # Temporarily disable exit on error to capture pytest exit code
+        set +e
+        $PYTHON_CMD -m pytest $tests_to_run -v --tb=short 2>&1 | tee "${RUN_LOG}"
+        PYTEST_EXIT_CODE=$?
+        set -e
+        # Note: We don't exit on test failures - we want to process results and update cache
 
         # Parse the log file after pytest completes to avoid subshell issues
         while IFS= read -r line; do
@@ -309,10 +408,26 @@ run_smart_tests() {
         
         # Clean up
         rm -f "$temp_results"
+
+        # Calculate duration and record run
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        local test_count=$(echo "$tests_to_run" | wc -w)
+
+        # Count passed and failed from temp results
+        local passed_in_run=0
+        local failed_in_run=0
+        if [ -f "${CACHE_DIR}/temp_results.txt.bak" ]; then
+            passed_in_run=$(grep -c "^PASSED:" "${CACHE_DIR}/temp_results.txt.bak" 2>/dev/null || echo 0)
+            failed_in_run=$(grep -c "^FAILED:" "${CACHE_DIR}/temp_results.txt.bak" 2>/dev/null || echo 0)
+        fi
+
+        # Record run in history
+        record_test_run "$mode" "$test_count" "$passed_in_run" "$failed_in_run" "$duration"
     else
         echo -e "${GREEN}${BOLD}All tests are cached and passing! Nothing to run.${NC}"
     fi
-    
+
     # Show final statistics
     echo -e "\n${CYAN}${BOLD}Test Run Complete!${NC}"
     show_statistics
@@ -321,19 +436,37 @@ run_smart_tests() {
 # Function to clear cache
 clear_cache() {
     local cache_type="$1"
-    
+
     case "$cache_type" in
         "all")
             echo -e "${YELLOW}Clearing all cache...${NC}"
-            > "${PASSED_TESTS}"
-            > "${FAILED_TESTS}"
-            > "${TEST_HASHES}"
-            > "${STATS_FILE}"
+            # Reinitialize with empty structure
+            cat > "${CACHE_FILE}" << 'EOF'
+{
+  "version": "2.0",
+  "last_updated": "",
+  "statistics": {
+    "total_tests": 0,
+    "passed": 0,
+    "failed": 0,
+    "untested": 0
+  },
+  "tests": {},
+  "runs": []
+}
+EOF
             echo -e "${GREEN}✓ All cache cleared!${NC}"
             ;;
         "failed")
             echo -e "${YELLOW}Clearing failed tests cache...${NC}"
-            > "${FAILED_TESTS}"
+            local cache=$(read_cache)
+            # Remove all failed test entries
+            cache=$(echo "$cache" | jq '
+                .tests |= with_entries(select(.value.status != "failed")) |
+                .statistics.failed = 0 |
+                .last_updated = now | todate
+            ')
+            write_cache "$cache"
             echo -e "${GREEN}✓ Failed tests cache cleared!${NC}"
             ;;
     esac
@@ -370,19 +503,27 @@ show_statistics() {
 
 # Function to list cached tests
 list_cached_tests() {
+    local cache=$(read_cache)
+
     echo -e "${CYAN}${BOLD}═══ Cached Passed Tests ═══${NC}"
-    if [ -s "${PASSED_TESTS}" ]; then
-        cat "${PASSED_TESTS}" | while read test; do
-            echo -e "${GREEN}✓${NC} ${test#${PROJECT_ROOT}/}"
+    local passed_tests=$(echo "$cache" | jq -r '.tests | to_entries[] | select(.value.status == "passed") | .key')
+    if [ -n "$passed_tests" ]; then
+        echo "$passed_tests" | while read test; do
+            local run_count=$(echo "$cache" | jq -r --arg file "$test" '.tests[$file].run_count')
+            local last_run=$(echo "$cache" | jq -r --arg file "$test" '.tests[$file].last_run')
+            echo -e "${GREEN}✓${NC} ${test#${PROJECT_ROOT}/} ${CYAN}(run: ${run_count}x, last: ${last_run})${NC}"
         done
     else
         echo -e "${YELLOW}No passed tests cached yet${NC}"
     fi
-    
+
     echo -e "\n${CYAN}${BOLD}═══ Failed Tests ═══${NC}"
-    if [ -s "${FAILED_TESTS}" ]; then
-        cat "${FAILED_TESTS}" | while read test; do
-            echo -e "${RED}✗${NC} ${test#${PROJECT_ROOT}/}"
+    local failed_tests=$(echo "$cache" | jq -r '.tests | to_entries[] | select(.value.status == "failed") | .key')
+    if [ -n "$failed_tests" ]; then
+        echo "$failed_tests" | while read test; do
+            local run_count=$(echo "$cache" | jq -r --arg file "$test" '.tests[$file].run_count')
+            local last_run=$(echo "$cache" | jq -r --arg file "$test" '.tests[$file].last_run')
+            echo -e "${RED}✗${NC} ${test#${PROJECT_ROOT}/} ${CYAN}(run: ${run_count}x, last: ${last_run})${NC}"
         done
     else
         echo -e "${GREEN}No failed tests!${NC}"
@@ -392,9 +533,9 @@ list_cached_tests() {
 # Function to find obsolete tests
 find_obsolete_tests() {
     echo -e "${CYAN}${BOLD}Searching for obsolete tests...${NC}\n"
-    
+
     echo -e "${YELLOW}Tests with deprecated imports:${NC}"
-    grep -r "TaskContextRepository\|manage_hierarchical_context\|deprecated\|legacy" \
+    grep -r "TaskContextRepository\|manage_hierarchical_context\|deprecated" \
         "${TEST_DIR}" --include="*.py" 2>/dev/null | \
         cut -d: -f1 | sort -u | while read file; do
         echo -e "  ${RED}⚠${NC} ${file#${PROJECT_ROOT}/}"
@@ -416,7 +557,13 @@ run_category() {
     if [ -d "$path" ]; then
         echo -e "${CYAN}Running ${category} tests...${NC}"
         cd "${PROJECT_ROOT}"
-        python -m pytest "$path" -v --tb=short 2>&1 | tee "${RUN_LOG}"
+        # Use venv Python directly if it exists, otherwise use system Python
+        if [ -f "${VENV_PATH}/bin/python" ]; then
+            PYTHON_CMD="${VENV_PATH}/bin/python"
+        else
+            PYTHON_CMD="python"
+        fi
+        $PYTHON_CMD -m pytest "$path" -v --tb=short 2>&1 | tee "${RUN_LOG}"
     else
         echo -e "${RED}Category ${category} not found!${NC}"
     fi
@@ -472,15 +619,21 @@ main() {
             20)
                 echo -e "${CYAN}Generating coverage report...${NC}"
                 cd "${PROJECT_ROOT}"
-                # Create coverage directory in .test_cache
+                # Use venv Python directly if it exists, otherwise use system Python
+                if [ -f "${VENV_PATH}/bin/python" ]; then
+                    PYTHON_CMD="${VENV_PATH}/bin/python"
+                else
+                    PYTHON_CMD="python"
+                fi
+                # Create coverage directory in .pytest_cache
                 COVERAGE_DIR="${CACHE_DIR}/coverage"
                 mkdir -p "${COVERAGE_DIR}"
 
-                # Generate coverage report with HTML output to .test_cache
-                python -m pytest "${TEST_DIR}" --cov=agenthub_main/src --cov-report=html:${COVERAGE_DIR} --cov-report=term --cov-report=json:${COVERAGE_DIR}/coverage.json
+                # Generate coverage report with HTML output to .pytest_cache
+                $PYTHON_CMD -m pytest "${TEST_DIR}" --cov=agenthub_main/src --cov-report=html:${COVERAGE_DIR} --cov-report=term --cov-report=json:${COVERAGE_DIR}/coverage.json
 
                 # Save text report too
-                python -m pytest "${TEST_DIR}" --cov=agenthub_main/src --cov-report=term > "${COVERAGE_DIR}/coverage.txt" 2>&1
+                $PYTHON_CMD -m pytest "${TEST_DIR}" --cov=agenthub_main/src --cov-report=term > "${COVERAGE_DIR}/coverage.txt" 2>&1
 
                 echo -e "${GREEN}✓ Coverage report generated!${NC}"
                 echo -e "${CYAN}  HTML Report: ${COVERAGE_DIR}/index.html${NC}"
@@ -528,10 +681,8 @@ if [ ! -d "${TEST_DIR}" ]; then
     exit 1
 fi
 
-# Initialize stats on first run
-if [ ! -s "${STATS_FILE}" ]; then
-    get_test_stats > "${STATS_FILE}"
-fi
+# Initialize JSON cache
+init_json_cache
 
 # Start the menu
 main

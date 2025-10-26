@@ -4,7 +4,7 @@ Matches frontend types in taskTypes.ts
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class TaskSummaryDTO(BaseModel):
@@ -24,8 +24,7 @@ class TaskSummaryDTO(BaseModel):
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SubtaskSummaryDTO(BaseModel):
@@ -41,8 +40,7 @@ class SubtaskSummaryDTO(BaseModel):
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BranchSummaryDTO(BaseModel):
@@ -64,8 +62,7 @@ class BranchSummaryDTO(BaseModel):
     is_completed: Optional[bool] = None
     task_counts: Optional[Dict[str, Any]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectSummaryDTO(BaseModel):
@@ -77,6 +74,6 @@ class ProjectSummaryDTO(BaseModel):
     totalTasks: int = Field(alias="totalTasks")
     completedTasks: int = Field(alias="completedTasks")
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+

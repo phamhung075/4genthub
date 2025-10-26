@@ -270,9 +270,130 @@ class TestDependencyValidationService:
     def test_exception_handling(self, service, mock_task_repository):
         """Test exception handling in validate_dependency_chain"""
         mock_task_repository.find_by_id.side_effect = Exception("Database error")
-        
+
         task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
         result = service.validate_dependency_chain(task_id)
-        
+
         assert result["valid"] is False
         assert "Validation failed" in result["errors"][0]
+
+    def test_find_dependency_across_states_exception(self, service, mock_task_repository):
+        """Test exception handling in _find_dependency_across_states (lines 205-206)"""
+        # Make TaskId.from_string raise an exception
+        with patch('fastmcp.task_management.domain.value_objects.task_id.TaskId.from_string', side_effect=Exception("Invalid ID")):
+            result = service._find_dependency_across_states("invalid-id")
+
+        assert result is None  # Should return None on exception
+
+    def test_can_task_proceed_missing_method(self, service, mock_task_repository):
+        """Test _can_task_proceed when task doesn't have get_dependency_ids (line 286)"""
+        task = Mock(spec=Task)
+        task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        # Simulate task without get_dependency_ids by making hasattr return False
+        task.get_dependency_ids = None
+        del task.get_dependency_ids  # Remove the attribute entirely
+
+        task_map = {}
+        result = service._can_task_proceed(task, task_map)
+
+        assert result is True  # Should return True when method doesn't exist
+
+    def test_can_task_proceed_status_value_attribute(self, service, mock_task_repository):
+        """Test _can_task_proceed with dep_status using .value (lines 307-309)"""
+        task = Mock(spec=Task)
+        task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        task.get_dependency_ids = Mock(return_value=["550e8400-e29b-41d4-a716-446655440002"])
+
+        dep_task = Mock(spec=Task)
+        dep_task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440002")
+        dep_task.status = Mock()
+        # Set up status without is_done method, only has .value
+        del dep_task.status.is_done  # Remove is_done method
+        dep_task.status.value = "in_progress"  # Not done
+
+        task_map = {str(dep_task.id): dep_task}
+
+        result = service._can_task_proceed(task, task_map)
+
+        assert result is False  # Should return False when dependency not done
+
+        # Now test with done status
+        dep_task.status.value = "done"
+        result = service._can_task_proceed(task, task_map)
+
+        assert result is True  # Should return True when dependency done
+
+    def test_get_dependency_chain_status_exception(self, service, mock_task_repository):
+        """Test exception handling in get_dependency_chain_status (lines 357-359)"""
+        mock_task_repository.find_by_id.side_effect = Exception("Database connection lost")
+
+        task_id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        result = service.get_dependency_chain_status(task_id)
+
+        assert "error" in result
+        assert "Analysis failed" in result["error"]
+        assert "Database connection lost" in result["error"]
+
+    def test_validate_dependency_chain_partial_branch_60_63(self, service, mock_task_repository, sample_task):
+        """Test partial branch 60->63 (task without get_dependency_ids method)"""
+        # Create task without get_dependency_ids method
+        task_without_method = Mock(spec=Task)
+        task_without_method.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        task_without_method.title = "Task Without Deps Method"
+        task_without_method.status = Mock()
+        task_without_method.status.value = "todo"
+        # Remove get_dependency_ids attribute to simulate task without the method
+        task_without_method.get_dependency_ids = None
+        del task_without_method.get_dependency_ids
+
+        mock_task_repository.find_by_id.return_value = task_without_method
+        mock_task_repository.find_all.return_value = [task_without_method]
+
+        result = service.validate_dependency_chain(task_without_method.id)
+
+        # Should handle missing method gracefully
+        assert result["valid"] is True
+        assert result["message"] == "Task has no dependencies"
+
+    def test_find_dependency_across_states_partial_branch_197_201(self, service, mock_task_repository, dependency_task):
+        """Test partial branch 197->201 (when find_by_id_across_contexts returns task)"""
+        # Set up repository with find_by_id_across_contexts that returns a task
+        mock_task_repository.find_by_id_across_contexts = Mock(return_value=dependency_task)
+
+        result = service._find_dependency_across_states("550e8400-e29b-41d4-a716-446655440002")
+
+        assert result == dependency_task
+        assert result is not None
+        # Verify find_by_id was not called (returned early from find_by_id_across_contexts)
+        mock_task_repository.find_by_id.assert_not_called()
+
+    def test_check_orphaned_dependencies_partial_branch_265_272(self, service, mock_task_repository):
+        """Test partial branch 265->272 (task without get_dependency_ids in _check_orphaned_dependencies)"""
+        task_without_method = Mock(spec=Task)
+        task_without_method.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        # Remove get_dependency_ids to simulate task without the method
+        task_without_method.get_dependency_ids = None
+        del task_without_method.get_dependency_ids
+
+        task_map = {}
+
+        orphaned = service._check_orphaned_dependencies(task_without_method, task_map)
+
+        assert orphaned == []  # Should return empty list when method doesn't exist
+
+    def test_can_task_proceed_partial_branch_332_338(self, service, mock_task_repository):
+        """Test partial branch 332->338 (dependency with is_done method that returns True)"""
+        task = Mock(spec=Task)
+        task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440001")
+        task.get_dependency_ids = Mock(return_value=["550e8400-e29b-41d4-a716-446655440002"])
+
+        dep_task = Mock(spec=Task)
+        dep_task.id = TaskId.from_string("550e8400-e29b-41d4-a716-446655440002")
+        dep_task.status = Mock()
+        dep_task.status.is_done = Mock(return_value=True)  # Has is_done and returns True
+
+        task_map = {str(dep_task.id): dep_task}
+
+        result = service._can_task_proceed(task, task_map)
+
+        assert result is True  # Should return True when dependency has is_done() returning True

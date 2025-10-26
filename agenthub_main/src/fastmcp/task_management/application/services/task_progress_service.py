@@ -75,8 +75,8 @@ class TaskProgressService:
             logger.debug(f"Processing {total_subtasks} subtasks for task {task_id}")
             
             for subtask in subtasks:
-                # Check if subtask is completed (status == 'done')
-                if hasattr(subtask, 'status') and str(subtask.status) == 'done':
+                # Check if subtask is completed using is_completed property (handles both status=='done' and progress_percentage==100)
+                if subtask.is_completed:
                     completed_subtasks += 1
                     total_progress += 100
                 elif hasattr(subtask, 'progress_percentage'):

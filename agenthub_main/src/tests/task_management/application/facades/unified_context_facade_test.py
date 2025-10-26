@@ -1,11 +1,18 @@
 """Tests for UnifiedContextFacade"""
 
 import pytest
+import json
 from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any, Optional
+from datetime import datetime, timezone
 
 from fastmcp.task_management.application.facades.unified_context_facade import UnifiedContextFacade
-from fastmcp.task_management.domain.exceptions.base_exceptions import ValidationException
+from fastmcp.task_management.domain.exceptions.base_exceptions import (
+    ValidationException,
+    ResourceNotFoundException,
+    RepositoryError,
+    DatabaseException
+)
 
 
 class TestUnifiedContextFacade:
@@ -312,8 +319,8 @@ class TestUnifiedContextFacade:
         result = facade.get_context("task", "task-123")
 
         assert result["success"] is False
-        # Unexpected errors return generic message for security
-        assert result["error"] == "An unexpected error occurred"
+        # Unexpected errors return the actual error message
+        assert result["error"] == "Service error"
         assert result["error_type"] == "unexpected"
 
     def test_get_context_summary_with_context(self, facade, mock_unified_service):
@@ -362,7 +369,7 @@ class TestUnifiedContextFacade:
 
         assert result["success"] is False
         assert result["has_context"] is False
-        # Unexpected errors return generic message for security
+        # get_context_summary does return generic message for unexpected errors
         assert result["error"] == "An unexpected error occurred"
         assert result["error_type"] == "unexpected"
 
@@ -540,7 +547,7 @@ class TestUnifiedContextFacade:
 
         assert result["success"] is False
         assert result["bootstrap_completed"] is False
-        # Unexpected errors return generic message for security
+        # bootstrap_context_hierarchy does return generic message for unexpected errors
         assert result["error"] == "An unexpected error occurred"
         assert result["error_type"] == "unexpected"
 
@@ -582,3 +589,461 @@ class TestUnifiedContextFacade:
         
         assert result["success"] is False
         assert "Invalid creation" in result["error"]
+
+    def test_create_context_with_custom_user_id(self, facade, mock_unified_service):
+        """Test create_context with custom user_id parameter"""
+        result = facade.create_context(
+            level="global",
+            context_id="custom-user-123",
+            data={"preferences": "test"},
+            user_id="custom-user-123"
+        )
+        
+        assert result["success"] is True
+        # Verify custom user_id was used
+        call_kwargs = mock_unified_service.create_context.call_args[1]
+        assert call_kwargs["user_id"] == "custom-user-123"
+    
+    def test_create_context_resource_not_found_exception(self, facade, mock_unified_service):
+        """Test create_context handling ResourceNotFoundException"""
+        mock_unified_service.create_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="parent-123",
+            message="Parent context not found"
+        )
+        
+        result = facade.create_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Parent context not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_create_context_database_exception(self, facade, mock_unified_service):
+        """Test create_context handling DatabaseException"""
+        mock_unified_service.create_context.side_effect = DatabaseException("DB connection failed")
+        
+        result = facade.create_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "DB connection failed"
+        assert result["error_type"] == "database"
+    
+    def test_create_context_repository_error(self, facade, mock_unified_service):
+        """Test create_context handling RepositoryError"""
+        mock_unified_service.create_context.side_effect = RepositoryError("Repository operation failed")
+        
+        result = facade.create_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Repository operation failed"
+        assert result["error_type"] == "database"
+    
+    def test_get_context_with_defaults(self, facade, mock_unified_service):
+        """Test get_context with default parameters"""
+        result = facade.get_context("task", "task-123")
+        
+        assert result["success"] is True
+        # Verify default parameters were used
+        mock_unified_service.get_context.assert_called_once_with(
+            "task", "task-123", False, False, None
+        )
+    
+    def test_get_context_resource_not_found(self, facade, mock_unified_service):
+        """Test get_context handling ResourceNotFoundException"""
+        mock_unified_service.get_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.get_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_get_context_database_exception(self, facade, mock_unified_service):
+        """Test get_context handling DatabaseException"""
+        mock_unified_service.get_context.side_effect = DatabaseException("Query failed")
+        
+        result = facade.get_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Query failed"
+        assert result["error_type"] == "database"
+    
+    def test_get_context_validation_exception(self, facade, mock_unified_service):
+        """Test get_context handling ValidationException"""
+        mock_unified_service.get_context.side_effect = ValidationException("Invalid context level")
+        
+        result = facade.get_context("invalid_level", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid context level"
+        assert result["error_type"] == "validation"
+    
+    def test_get_context_summary_created_at_fallback(self, facade, mock_unified_service):
+        """Test get_context_summary using created_at when updated_at is missing"""
+        mock_unified_service.get_context.return_value = {
+            "success": True,
+            "context": {
+                "test_data": "value",
+                "created_at": "2025-01-26T10:00:00Z"
+                # No updated_at
+            }
+        }
+        
+        result = facade.get_context_summary("task-123")
+        
+        assert result["success"] is True
+        assert result["has_context"] is True
+        assert result["last_updated"] == "2025-01-26T10:00:00Z"
+    
+    def test_get_context_summary_resource_not_found(self, facade, mock_unified_service):
+        """Test get_context_summary handling ResourceNotFoundException gracefully"""
+        mock_unified_service.get_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.get_context_summary("task-123")
+        
+        # ResourceNotFoundException is expected for summary - not an error
+        assert result["success"] is True
+        assert result["has_context"] is False
+        assert result["context_size"] == 0
+        assert result["last_updated"] is None
+    
+    def test_get_context_summary_database_exception(self, facade, mock_unified_service):
+        """Test get_context_summary handling DatabaseException"""
+        mock_unified_service.get_context.side_effect = DatabaseException("DB error")
+        
+        result = facade.get_context_summary("task-123")
+        
+        assert result["success"] is False
+        assert result["has_context"] is False
+        assert result["error"] == "DB error"
+        assert result["error_type"] == "database"
+    
+    def test_get_context_summary_validation_exception(self, facade, mock_unified_service):
+        """Test get_context_summary handling ValidationException"""
+        mock_unified_service.get_context.side_effect = ValidationException("Invalid ID")
+        
+        result = facade.get_context_summary("invalid-id")
+        
+        assert result["success"] is False
+        assert result["has_context"] is False
+        assert result["error"] == "Invalid ID"
+        assert result["error_type"] == "validation"
+    
+    def test_update_context_validation_exception(self, facade, mock_unified_service):
+        """Test update_context handling ValidationException"""
+        mock_unified_service.update_context.side_effect = ValidationException("Invalid update data")
+        
+        result = facade.update_context("task", "task-123", {"invalid": "data"})
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid update data"
+        assert result["error_type"] == "validation"
+    
+    def test_update_context_resource_not_found(self, facade, mock_unified_service):
+        """Test update_context handling ResourceNotFoundException"""
+        mock_unified_service.update_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.update_context("task", "task-123", {"status": "done"})
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_update_context_database_exception(self, facade, mock_unified_service):
+        """Test update_context handling DatabaseException"""
+        mock_unified_service.update_context.side_effect = DatabaseException("Update failed")
+        
+        result = facade.update_context("task", "task-123", {"data": "test"})
+        
+        assert result["success"] is False
+        assert result["error"] == "Update failed"
+        assert result["error_type"] == "database"
+    
+    def test_delete_context_resource_not_found(self, facade, mock_unified_service):
+        """Test delete_context handling ResourceNotFoundException"""
+        mock_unified_service.delete_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.delete_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_delete_context_database_exception(self, facade, mock_unified_service):
+        """Test delete_context handling DatabaseException"""
+        mock_unified_service.delete_context.side_effect = DatabaseException("Delete failed")
+        
+        result = facade.delete_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Delete failed"
+        assert result["error_type"] == "database"
+    
+    def test_resolve_context_validation_exception(self, facade, mock_unified_service):
+        """Test resolve_context handling ValidationException"""
+        mock_unified_service.resolve_context.side_effect = ValidationException("Invalid level")
+        
+        result = facade.resolve_context("invalid", "context-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid level"
+        assert result["error_type"] == "validation"
+    
+    def test_resolve_context_resource_not_found(self, facade, mock_unified_service):
+        """Test resolve_context handling ResourceNotFoundException"""
+        mock_unified_service.resolve_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.resolve_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_resolve_context_database_exception(self, facade, mock_unified_service):
+        """Test resolve_context handling DatabaseException"""
+        mock_unified_service.resolve_context.side_effect = DatabaseException("Resolution failed")
+        
+        result = facade.resolve_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Resolution failed"
+        assert result["error_type"] == "database"
+    
+    def test_delegate_context_validation_exception(self, facade, mock_unified_service):
+        """Test delegate_context handling ValidationException"""
+        mock_unified_service.delegate_context.side_effect = ValidationException("Invalid delegation")
+        
+        result = facade.delegate_context("task", "task-123", "project", {"data": "test"})
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid delegation"
+        assert result["error_type"] == "validation"
+    
+    def test_delegate_context_resource_not_found(self, facade, mock_unified_service):
+        """Test delegate_context handling ResourceNotFoundException"""
+        mock_unified_service.delegate_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.delegate_context("task", "task-123", "project", {"data": "test"})
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_delegate_context_database_exception(self, facade, mock_unified_service):
+        """Test delegate_context handling DatabaseException"""
+        mock_unified_service.delegate_context.side_effect = DatabaseException("Delegation failed")
+        
+        result = facade.delegate_context("task", "task-123", "project", {"data": "test"})
+        
+        assert result["success"] is False
+        assert result["error"] == "Delegation failed"
+        assert result["error_type"] == "database"
+    
+    def test_add_insight_validation_exception(self, facade, mock_unified_service):
+        """Test add_insight handling ValidationException"""
+        mock_unified_service.add_insight.side_effect = ValidationException("Invalid insight")
+        
+        result = facade.add_insight("task", "task-123", "Invalid content")
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid insight"
+        assert result["error_type"] == "validation"
+    
+    def test_add_insight_resource_not_found(self, facade, mock_unified_service):
+        """Test add_insight handling ResourceNotFoundException"""
+        mock_unified_service.add_insight.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.add_insight("task", "task-123", "Good insight")
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_add_insight_database_exception(self, facade, mock_unified_service):
+        """Test add_insight handling DatabaseException"""
+        mock_unified_service.add_insight.side_effect = DatabaseException("Insert failed")
+        
+        result = facade.add_insight("task", "task-123", "Insight")
+        
+        assert result["success"] is False
+        assert result["error"] == "Insert failed"
+        assert result["error_type"] == "database"
+    
+    def test_add_progress_validation_exception(self, facade, mock_unified_service):
+        """Test add_progress handling ValidationException"""
+        mock_unified_service.add_progress.side_effect = ValidationException("Invalid progress")
+        
+        result = facade.add_progress("task", "task-123", "Invalid")
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid progress"
+        assert result["error_type"] == "validation"
+    
+    def test_add_progress_resource_not_found(self, facade, mock_unified_service):
+        """Test add_progress handling ResourceNotFoundException"""
+        mock_unified_service.add_progress.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="task-123"
+        )
+        
+        result = facade.add_progress("task", "task-123", "Progress update")
+        
+        assert result["success"] is False
+        assert result["error"] == "context with id 'task-123' not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_add_progress_database_exception(self, facade, mock_unified_service):
+        """Test add_progress handling DatabaseException"""
+        mock_unified_service.add_progress.side_effect = DatabaseException("Insert failed")
+        
+        result = facade.add_progress("task", "task-123", "Progress")
+        
+        assert result["success"] is False
+        assert result["error"] == "Insert failed"
+        assert result["error_type"] == "database"
+    
+    def test_list_contexts_validation_exception(self, facade, mock_unified_service):
+        """Test list_contexts handling ValidationException"""
+        mock_unified_service.list_contexts.side_effect = ValidationException("Invalid filters")
+        
+        result = facade.list_contexts("task", {"invalid": "filter"})
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid filters"
+        assert result["error_type"] == "validation"
+    
+    def test_list_contexts_database_exception(self, facade, mock_unified_service):
+        """Test list_contexts handling DatabaseException"""
+        mock_unified_service.list_contexts.side_effect = DatabaseException("Query failed")
+        
+        result = facade.list_contexts("task")
+        
+        assert result["success"] is False
+        assert result["error"] == "Query failed"
+        assert result["error_type"] == "database"
+    
+    def test_list_contexts_global_level(self, facade, mock_unified_service):
+        """Test list_contexts at global level with minimal filtering"""
+        result = facade.list_contexts("global")
+        
+        assert result["success"] is True
+        
+        # Verify global level only filters by user_id
+        call_args = mock_unified_service.list_contexts.call_args
+        filters_used = call_args[0][1]
+        assert filters_used["user_id"] == "test-user"
+        assert filters_used["project_id"] == "test-project"  # Still included for global
+        assert filters_used["git_branch_id"] == "test-branch"  # Still included for global
+    
+    def test_bootstrap_context_hierarchy_validation_exception(self, facade, mock_unified_service):
+        """Test bootstrap_context_hierarchy handling ValidationException"""
+        mock_unified_service.bootstrap_context_hierarchy.side_effect = ValidationException("Invalid hierarchy")
+        
+        result = facade.bootstrap_context_hierarchy()
+        
+        assert result["success"] is False
+        assert result["error"] == "Invalid hierarchy"
+        assert result["error_type"] == "validation"
+        assert result["bootstrap_completed"] is False
+    
+    def test_bootstrap_context_hierarchy_resource_not_found(self, facade, mock_unified_service):
+        """Test bootstrap_context_hierarchy handling ResourceNotFoundException"""
+        mock_unified_service.bootstrap_context_hierarchy.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="parent-id",
+            message="Parent missing"
+        )
+        
+        result = facade.bootstrap_context_hierarchy()
+        
+        assert result["success"] is False
+        assert result["error"] == "Parent missing"
+        assert result["error_type"] == "not_found"
+        assert result["bootstrap_completed"] is False
+    
+    def test_bootstrap_context_hierarchy_database_exception(self, facade, mock_unified_service):
+        """Test bootstrap_context_hierarchy handling DatabaseException"""
+        mock_unified_service.bootstrap_context_hierarchy.side_effect = DatabaseException("DB error")
+        
+        result = facade.bootstrap_context_hierarchy()
+        
+        assert result["success"] is False
+        assert result["error"] == "DB error"
+        assert result["error_type"] == "database"
+        assert result["bootstrap_completed"] is False
+    
+    def test_create_context_flexible_resource_not_found(self, facade, mock_unified_service):
+        """Test create_context_flexible handling ResourceNotFoundException"""
+        mock_unified_service.create_context.side_effect = ResourceNotFoundException(
+            resource_type="context",
+            resource_id="parent-123",
+            message="Parent not found"
+        )
+        
+        result = facade.create_context_flexible("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Parent not found"
+        assert result["error_type"] == "not_found"
+    
+    def test_create_context_flexible_database_exception(self, facade, mock_unified_service):
+        """Test create_context_flexible handling DatabaseException"""
+        mock_unified_service.create_context.side_effect = DatabaseException("DB error")
+        
+        result = facade.create_context_flexible("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "DB error"
+        assert result["error_type"] == "database"
+    
+    def test_critical_exception_logging(self, facade, mock_unified_service):
+        """Test that critical exceptions are logged properly"""
+        exception = RuntimeError("Critical failure")
+        mock_unified_service.create_context.side_effect = exception
+        
+        with patch('fastmcp.task_management.application.facades.unified_context_facade.logger') as mock_logger:
+            result = facade.create_context("task", "task-123")
+            
+            assert result["success"] is False
+            assert result["error"] == "Critical failure"  # Error message is str(e)
+            # Check critical logging was called with exc_info
+            mock_logger.critical.assert_called_once()
+            call_args = mock_logger.critical.call_args
+            assert "Unexpected error creating context" in call_args[0][0]
+            assert call_args[1]["exc_info"] is True
+    
+    def test_exception_string_conversion(self, facade, mock_unified_service):
+        """Test that exceptions are properly converted to strings in responses"""
+        # Test with exception that has special __str__ method
+        class CustomException(Exception):
+            def __str__(self):
+                return "Custom error message"
+        
+        mock_unified_service.create_context.side_effect = CustomException()
+        
+        result = facade.create_context("task", "task-123")
+        
+        assert result["success"] is False
+        assert result["error"] == "Custom error message"
+        assert result["error_type"] == "unexpected"

@@ -50,37 +50,36 @@ class TestDeleteTaskUseCase:
         return mock_service
     
     @pytest.fixture
-    def use_case(self, mock_task_repository, mock_subtask_repository, mock_db_session_factory, mock_logging_service):
+    def mock_cascade_service(self):
+        """Create a mock cascade deletion service"""
+        mock_service = Mock()
+        mock_service.delete_task_cascade.return_value = {
+            "task_deleted": True,
+            "subtasks_deleted": 0,
+            "contexts_deleted": 0,
+            "cascade_errors": []
+        }
+        return mock_service
+
+    @pytest.fixture
+    def use_case(self, mock_task_repository, mock_subtask_repository, mock_db_session_factory,
+                 mock_logging_service, mock_cascade_service):
         """Create a delete task use case instance with mocked dependencies"""
-        with patch('fastmcp.task_management.application.use_cases.delete_task.CascadeDeletionService') as mock_cascade:
-            mock_cascade_instance = Mock()
-            # Mock the delete_task_cascade method to return proper statistics
-            mock_cascade_instance.delete_task_cascade.return_value = {
-                "task_deleted": True,
-                "subtasks_deleted": 0,
-                "contexts_deleted": 0,
-                "cascade_errors": []
-            }
-            mock_cascade.return_value = mock_cascade_instance
-            
-            # Mock websocket notification to prevent database queries
-            with patch.object(DeleteTaskUseCase, '_send_websocket_notification') as mock_send_notification:
-                mock_send_notification.return_value = None
-                
-                use_case = DeleteTaskUseCase(
-                    task_repository=mock_task_repository,
-                    subtask_repository=mock_subtask_repository,
-                    branch_repository=None,
-                    project_repository=None,
-                    context_repository=None,
-                    db_session_factory=mock_db_session_factory,
-                    logging_service=mock_logging_service
-                )
-                # Attach the mocked cascade service for tests to use
-                use_case._mock_cascade_service = mock_cascade_instance
-                # Attach the mock websocket notification
-                use_case._send_websocket_notification = mock_send_notification
-                return use_case
+        with patch('fastmcp.task_management.application.use_cases.delete_task.CascadeDeletionService') as mock_cascade_class:
+            mock_cascade_class.return_value = mock_cascade_service
+
+            use_case = DeleteTaskUseCase(
+                task_repository=mock_task_repository,
+                subtask_repository=mock_subtask_repository,
+                branch_repository=None,
+                project_repository=None,
+                context_repository=None,
+                db_session_factory=mock_db_session_factory,
+                logging_service=mock_logging_service
+            )
+            # Attach the mocked cascade service for tests to use
+            use_case._mock_cascade_service = mock_cascade_service
+            return use_case
     
     @pytest.fixture
     def sample_task(self):
@@ -196,25 +195,21 @@ class TestDeleteTaskUseCase:
         
         assert result["success"] is False
         assert result["task_deleted"] is False
-        
-        # Don't expect websocket notification on failure
-        use_case._send_websocket_notification.assert_not_called()
     
-    def test_execute_with_git_branch_update(self, use_case, mock_task_repository, sample_task, mock_logger):
+    @patch('fastmcp.task_management.domain.services.event_dispatcher.dispatch_domain_event')
+    def test_execute_with_git_branch_update(self, mock_dispatch, use_case, mock_task_repository, sample_task, mock_logger):
         """Test deletion with git branch task count update"""
         task_id = "123"
-        
+
         mock_task_repository.find_by_id.return_value = sample_task
-        
+
         result = use_case.execute(task_id)
-        
+
         assert result["success"] is True
         assert result["task_deleted"] is True
-        
-        # Verify websocket notification was called with branch info
-        use_case._send_websocket_notification.assert_called_once()
-        call_args = use_case._send_websocket_notification.call_args[1]
-        assert call_args['branch_id'] == sample_task.git_branch_id
+
+        # Verify event dispatcher was called for branch update (if git_branch_id exists)
+        mock_dispatch.assert_called_once()
     
     def test_execute_without_git_branch(self, use_case, mock_task_repository, mock_logger):
         """Test deletion of task without git_branch_id"""
@@ -242,25 +237,27 @@ class TestDeleteTaskUseCase:
             for call in mock_logger.info.call_args_list
         )
     
-    def test_execute_branch_update_exception(self, use_case, mock_task_repository, sample_task,
+    @patch('fastmcp.task_management.domain.services.event_dispatcher.dispatch_domain_event')
+    def test_execute_branch_update_exception(self, mock_dispatch, use_case, mock_task_repository, sample_task,
                                            mock_db_session_factory, mock_logger):
-        """Test handling of exception during websocket notification"""
+        """Test handling of exception during event dispatching"""
         task_id = "123"
-        
+
         mock_task_repository.find_by_id.return_value = sample_task
-        
-        # In the actual implementation, _send_websocket_notification has a try-except that catches all exceptions
-        # So we don't need to mock an exception - it will be handled gracefully
-        # The test passes because the delete operation succeeds regardless of websocket failures
-        
+
+        # Mock event dispatcher to raise exception
+        mock_dispatch.side_effect = Exception("Event dispatch failed")
+
         result = use_case.execute(task_id)
-        
-        # Should succeed even if websocket notification might fail internally
+
+        # Should succeed even if event dispatch fails (error is caught and logged)
         assert result["success"] is True
         assert result["task_deleted"] is True
-        
-        # Verify websocket notification was attempted
-        use_case._send_websocket_notification.assert_called_once()
+
+        # Verify event dispatch was attempted and exception was caught
+        mock_dispatch.assert_called_once()
+        # Verify warning was logged about the failure
+        assert any("Failed to dispatch" in str(call) for call in mock_logger.warning.call_args_list)
     
     def test_execute_with_task_deleted_event(self, use_case, mock_task_repository, sample_task):
         """Test handling of TaskDeleted domain event"""
@@ -340,12 +337,7 @@ class TestDeleteTaskUseCase:
         mock_task_repository.find_by_id.return_value = task
         
         result = use_case.execute(task_id)
-        
+
         assert result["success"] is True
         assert result["task_deleted"] is True
         assert hasattr(task, 'git_branch_id') is False
-        
-        # Verify websocket notification was called with None branch_id
-        use_case._send_websocket_notification.assert_called_once()
-        call_args = use_case._send_websocket_notification.call_args[1]
-        assert call_args['branch_id'] is None

@@ -19,8 +19,8 @@ from fastmcp.task_management.domain.entities.base.base_timestamp_entity import (
 )
 
 
-class TestEntity(BaseTimestampEntity):
-    """Concrete test entity for testing BaseTimestampEntity functionality"""
+class _MockEntity(BaseTimestampEntity):
+    """Concrete mock entity for testing BaseTimestampEntity functionality (underscore prefix prevents pytest collection)"""
 
     def __init__(self, entity_id: str = None):
         self.entity_id = entity_id or str(uuid.uuid4())
@@ -40,7 +40,7 @@ class TestBaseTimestampEntity:
     def test_automatic_timestamp_initialization_new_entity(self):
         """Test that new entities get automatic timestamp initialization"""
         # Create new entity (both timestamps None initially)
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Verify timestamps were automatically set
         assert entity.created_at is not None
@@ -53,7 +53,7 @@ class TestBaseTimestampEntity:
 
     def test_automatic_timestamp_initialization_missing_created_at(self):
         """Test handling when only created_at is missing"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Simulate entity with missing created_at (clean initialization handles this)
         entity.created_at = None
@@ -70,7 +70,7 @@ class TestBaseTimestampEntity:
 
     def test_automatic_timestamp_initialization_missing_updated_at(self):
         """Test handling when only updated_at is missing"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Simulate entity with only created_at set
         original_created = entity.created_at
@@ -85,7 +85,7 @@ class TestBaseTimestampEntity:
 
     def test_touch_method_updates_timestamp(self):
         """Test that touch() method properly updates timestamp"""
-        entity = TestEntity()
+        entity = _MockEntity()
         original_created = entity.created_at
         original_updated = entity.updated_at
 
@@ -102,7 +102,7 @@ class TestBaseTimestampEntity:
 
     def test_touch_method_fires_domain_event(self):
         """Test that touch() method fires TimestampUpdatedEvent"""
-        entity = TestEntity()
+        entity = _MockEntity()
         original_updated = entity.updated_at
 
         # Clear any existing events
@@ -121,7 +121,7 @@ class TestBaseTimestampEntity:
 
     def test_creation_fires_domain_event(self):
         """Test that entity creation fires TimestampCreatedEvent"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Verify creation event was fired
         events = entity.get_domain_events()
@@ -132,7 +132,7 @@ class TestBaseTimestampEntity:
 
     def test_touch_with_custom_reason(self):
         """Test touch() method with custom reason parameter"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Clear existing events
         entity.clear_domain_events()
@@ -150,9 +150,9 @@ class TestBaseTimestampEntity:
 
     def test_is_newer_than_comparison(self):
         """Test is_newer_than() method for comparing entity ages"""
-        older_entity = TestEntity()
+        older_entity = _MockEntity()
         sleep(0.01)  # Ensure time difference
-        newer_entity = TestEntity()
+        newer_entity = _MockEntity()
 
         # Newer entity should be newer than older entity
         assert newer_entity.is_newer_than(older_entity)
@@ -163,10 +163,10 @@ class TestBaseTimestampEntity:
 
     def test_is_newer_than_with_none_timestamps(self):
         """Test is_newer_than() handles None timestamps correctly"""
-        entity_with_timestamp = TestEntity()
+        entity_with_timestamp = _MockEntity()
 
         # Create entity with None updated_at
-        entity_without_timestamp = TestEntity()
+        entity_without_timestamp = _MockEntity()
         entity_without_timestamp.updated_at = None
 
         # Entity with timestamp should be newer
@@ -175,7 +175,7 @@ class TestBaseTimestampEntity:
 
     def test_get_age_seconds(self):
         """Test get_age_seconds() method"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Age should be very small (just created)
         age = entity.get_age_seconds()
@@ -189,7 +189,7 @@ class TestBaseTimestampEntity:
 
     def test_get_staleness_seconds(self):
         """Test get_staleness_seconds() method"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Staleness should be very small (just updated)
         staleness = entity.get_staleness_seconds()
@@ -203,7 +203,7 @@ class TestBaseTimestampEntity:
 
     def test_timestamp_validation_non_utc_warning(self):
         """Test that non-UTC timestamps are handled properly"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Set non-UTC timestamp
         non_utc_time = datetime.now()  # No timezone = local time
@@ -217,7 +217,7 @@ class TestBaseTimestampEntity:
 
     def test_domain_events_management(self):
         """Test domain event collection and management"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Should start with at least creation event
         initial_events = entity.get_domain_events()
@@ -234,7 +234,7 @@ class TestBaseTimestampEntity:
 
     def test_to_timestamp_dict_export(self):
         """Test to_timestamp_dict() export functionality"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Touch to create some history
         entity.touch("export_test")
@@ -260,18 +260,18 @@ class TestBaseTimestampEntity:
 
     def test_string_representation(self):
         """Test __repr__ method"""
-        entity = TestEntity()
+        entity = _MockEntity()
         repr_str = repr(entity)
 
         # Should contain class name and timestamp info
-        assert "TestEntity" in repr_str
+        assert "_MockEntity" in repr_str
         assert str(entity._get_entity_id()) in repr_str
         assert str(entity.created_at) in repr_str
         assert str(entity.updated_at) in repr_str
 
     def test_multiple_touches_preserve_created_at(self):
         """Test that multiple touch() calls never change created_at"""
-        entity = TestEntity()
+        entity = _MockEntity()
         original_created = entity.created_at
 
         # Touch multiple times
@@ -287,8 +287,8 @@ class TestBaseTimestampEntity:
 
     def test_entity_id_requirement(self):
         """Test that entities must provide _get_entity_id implementation"""
-        # TestEntity properly implements _get_entity_id
-        entity = TestEntity("test-id-123")
+        # _MockEntity properly implements _get_entity_id
+        entity = _MockEntity("test-id-123")
         assert entity._get_entity_id() == "test-id-123"
 
         # Verify it's used in events and exports
@@ -302,7 +302,7 @@ class TestBaseTimestampEntity:
         fixed_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         mock_datetime.now.return_value = fixed_time
 
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Both timestamps should be the same fixed time
         assert entity.created_at == fixed_time
@@ -310,7 +310,7 @@ class TestBaseTimestampEntity:
 
     def test_touch_updates_only_updated_at(self):
         """Test that touch() only updates updated_at, never created_at"""
-        entity = TestEntity()
+        entity = _MockEntity()
         original_created = entity.created_at
         original_updated = entity.updated_at
 
@@ -324,7 +324,7 @@ class TestBaseTimestampEntity:
 
     def test_concurrent_touch_thread_safety_simulation(self):
         """Test simulated concurrent touch operations"""
-        entity = TestEntity()
+        entity = _MockEntity()
         original_created = entity.created_at
 
         # Simulate rapid concurrent touches
@@ -344,7 +344,7 @@ class TestBaseTimestampEntity:
 
     def test_edge_case_same_millisecond_touches(self):
         """Test behavior when touches happen in same millisecond"""
-        entity = TestEntity()
+        entity = _MockEntity()
 
         # Multiple rapid touches
         entity.touch("rapid_1")

@@ -257,3 +257,5 @@ def subtask_summary_to_dto(subtask: Any) -> SubtaskSummaryDTO:
         created_at=_format_datetime(getattr(subtask, 'created_at', None)),
         updated_at=_format_datetime(getattr(subtask, 'updated_at', None))
     )
+
+

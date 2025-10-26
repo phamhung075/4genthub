@@ -107,8 +107,9 @@ class GetTaskUseCase:
                             # Old-style response object
                             if context_response.success and context_response.context:
                                 # Convert context to dict if it has to_dict method
+                                # OPTIMIZATION: Pass embedded=True to remove duplicate fields
                                 if hasattr(context_response.context, 'to_dict'):
-                                    context_data = context_response.context.to_dict()
+                                    context_data = context_response.context.to_dict(embedded=True)
                                 else:
                                     context_data = context_response.context
                                 logger.debug(f"Context data fetched for task {task_id}")

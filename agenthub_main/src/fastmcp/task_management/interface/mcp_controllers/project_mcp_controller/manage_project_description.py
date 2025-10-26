@@ -118,8 +118,9 @@ MANAGE_PROJECT_PARAMS = {
     },
     "required": [
         "action"
-    ],  # Only action required at schema level - business logic validates per action
+    ],
     "additionalProperties": False,
+    "_validation_note": "Only action required at schema level - business logic validates per action",
 }
 
 

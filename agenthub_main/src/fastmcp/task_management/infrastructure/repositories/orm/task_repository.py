@@ -243,12 +243,12 @@ class ORMTaskRepository(
             user_id=getattr(task, 'user_id', None),
             context_id=task.context_id,
             subtasks=subtask_ids,
-            subtask_count=getattr(task, 'subtask_count', 0),  # Load subtask_count from database
+            # REMOVED: subtask_count not in Task entity dataclass - count should be derived from len(subtasks)
             dependencies=dependency_ids
         )
 
-        # 🔍 DEBUG: Verify entity has the subtask_count value
-        logger.info(f"  - Entity created with subtask_count: {entity.subtask_count}")
+        # 🔍 DEBUG: Verify entity created successfully
+        logger.info(f"  - Entity created with {len(subtask_ids)} subtasks")
 
         # Map progress_percentage from database to overall_progress in entity
         if hasattr(task, 'progress_percentage'):
@@ -284,7 +284,7 @@ class ORMTaskRepository(
             "estimated_effort": _ensure_estimated_effort_default(task.estimated_effort),
             "due_date": task.due_date,
             "context_id": task.context_id,
-            "subtask_count": task.subtask_count,  # Include denormalized subtask count for DDD persistence
+            # REMOVED: subtask_count not in Task entity - count derived from len(task.subtasks)
         }
 
         # Handle optional progress percentage field
@@ -358,6 +358,7 @@ class ORMTaskRepository(
                         try:
                             for assignee_id in assignee_ids:
                                 assignee = TaskAssignee(
+                                    id=str(uuid.uuid4()),  # Generate UUID for assignee record
                                     task_id=task.id,
                                     assignee_id=assignee_id,
                                     role=kwargs.get('assignee_role', 'contributor'),
@@ -399,7 +400,9 @@ class ORMTaskRepository(
                                         name=label_name,
                                         color="#0066cc",
                                         description="",
-                                        user_id=self.user_id  # DDD: user_id required, no fallbacks
+                                        user_id=self.user_id,  # DDD: user_id required, no fallbacks
+                                        created_at=datetime.now(timezone.utc),
+                                        updated_at=datetime.now(timezone.utc)
                                     )
                                     session.add(label)
                                     session.flush()  # Ensure label is saved before creating relationship
@@ -408,7 +411,8 @@ class ORMTaskRepository(
                                 task_label = TaskLabel(
                                     task_id=task_id,
                                     label_id=label.id,
-                                    user_id=self.user_id  # CRITICAL: Add user_id for database constraint
+                                    user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
+                                    applied_at=datetime.now(timezone.utc)
                                 )
                                 session.add(task_label)
                             session.commit()
@@ -552,6 +556,7 @@ class ORMTaskRepository(
                         # Add new assignees
                         for assignee_id in updates['assignee_ids']:
                             assignee = TaskAssignee(
+                                id=str(uuid.uuid4()),  # Generate UUID for assignee record
                                 task_id=task_id,
                                 assignee_id=assignee_id,
                                 role='contributor',
@@ -581,7 +586,10 @@ class ORMTaskRepository(
                                     id=str(uuid.uuid4()),
                                     name=label_name,
                                     color="#0066cc",
-                                    description=""
+                                    description="",
+                                    user_id=self.user_id,
+                                    created_at=datetime.now(timezone.utc),
+                                    updated_at=datetime.now(timezone.utc)
                                 )
                                 session.add(label)
                                 session.flush()  # Ensure label is saved before creating relationship
@@ -590,7 +598,8 @@ class ORMTaskRepository(
                             task_label = TaskLabel(
                                 task_id=task_id,
                                 label_id=label.id,
-                                user_id=self.user_id  # CRITICAL: Add user_id for database constraint
+                                user_id=self.user_id,  # CRITICAL: Add user_id for database constraint
+                                applied_at=datetime.now(timezone.utc)
                             )
                             session.add(task_label)
                 
@@ -1322,7 +1331,9 @@ class ORMTaskRepository(
                                 name=label_name,
                                 color="#0066cc",
                                 description="",
-                                user_id=effective_user_id
+                                user_id=effective_user_id,
+                                created_at=datetime.now(timezone.utc),
+                                updated_at=datetime.now(timezone.utc)
                             )
                             session.add(label)
                             session.flush()
@@ -1334,7 +1345,8 @@ class ORMTaskRepository(
                         task_label = TaskLabel(
                             task_id=str(task.id),
                             label_id=label.id,
-                            user_id=effective_user_id
+                            user_id=effective_user_id,
+                            applied_at=datetime.now(timezone.utc)
                         )
                         session.add(task_label)
 
@@ -1424,7 +1436,9 @@ class ORMTaskRepository(
                                 name=label_name,
                                 color="#0066cc",
                                 description="",
-                                user_id=self.user_id
+                                user_id=self.user_id,
+                                created_at=datetime.now(timezone.utc),
+                                updated_at=datetime.now(timezone.utc)
                             )
                             session.add(label)
                             session.flush()
@@ -1432,7 +1446,8 @@ class ORMTaskRepository(
                         task_label = TaskLabel(
                             task_id=str(task.id),
                             label_id=label.id,
-                            user_id=self.user_id
+                            user_id=self.user_id,
+                            applied_at=datetime.now(timezone.utc)
                         )
                         session.add(task_label)
 

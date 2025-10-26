@@ -162,7 +162,7 @@ class TestUserScopedRepository:
         # Create a mock repository instance with spec to avoid hasattr issues
         mock_repo = Mock(spec=['user_id', 'session'])
         mock_repo.user_id = "different_user"
-        mock_repo.session = Mock()
+        mock_repo.session = MagicMock()
         
         # Create a mock repository class
         MockRepoClass = Mock()

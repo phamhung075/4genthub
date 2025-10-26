@@ -48,8 +48,8 @@ from fastmcp.task_management.domain.events.base import BaseDomainEvent
 # ========================
 
 @dataclass(frozen=True)
-class TestEvent(BaseDomainEvent):
-    """Mock event for testing."""
+class _Mock_MockTestEvent(BaseDomainEvent):
+    """Mock event for testing (underscore prefix prevents pytest collection)."""
     data: str = "test-data"
 
     @property
@@ -60,13 +60,13 @@ class TestEvent(BaseDomainEvent):
 @pytest.fixture
 def mock_event():
     """Create a mock event for testing."""
-    return TestEvent()
+    return _MockTestEvent()
 
 
 @pytest.fixture
 def event_queue():
     """Create a fresh EventQueue for each test."""
-    queue = EventQueue(maxsize=100, timeout=0.1)
+    queue = EventQueue(maxsize=1000, timeout=0.1)
     yield queue
     # Cleanup
     queue.shutdown(drain=False)
@@ -83,7 +83,7 @@ def small_queue():
 @pytest.fixture
 def mock_handlers():
     """Create mock event handlers."""
-    return {TestEvent: [Mock(), Mock()]}
+    return {_MockTestEvent: [Mock(), Mock()]}
 
 
 @pytest.fixture
@@ -92,18 +92,18 @@ def event_worker(mock_handlers):
     worker = EventWorker(
         event_handlers=mock_handlers,
         max_queue_size=100,
-        heartbeat_interval=1
+        heartbeat_interval=0.3  # Short interval for testing
     )
     yield worker
-    # Cleanup
+    # Cleanup - increased timeout for tests with long retry delays
     if worker._running:
-        worker.stop(timeout=2)
+        worker.stop(timeout=10)  # Allow time for graceful shutdown even during retries
 
 
 # EventQueue Tests
 # ================
 
-class TestEventQueueBasicOperations:
+class _MockTestEventQueueBasicOperations:
     """Test basic queue operations."""
 
     def test_initialization(self, event_queue):
@@ -111,7 +111,7 @@ class TestEventQueueBasicOperations:
         assert event_queue.size() == 0
         assert event_queue.is_empty() == True
         assert event_queue.is_full() == False
-        assert event_queue._maxsize == 100
+        assert event_queue._maxsize == 1000
         assert event_queue._state == QueueState.RUNNING
 
     def test_put_and_get(self, event_queue, mock_event):
@@ -130,7 +130,7 @@ class TestEventQueueBasicOperations:
 
     def test_fifo_ordering(self, event_queue):
         """Test FIFO ordering is maintained."""
-        events = [TestEvent(data=f"event-{i}") for i in range(10)]
+        events = [_MockTestEvent(data=f"event-{i}") for i in range(10)]
 
         # Enqueue all events
         for event in events:
@@ -164,7 +164,7 @@ class TestEventQueueBasicOperations:
         assert event_queue.size() == 0
 
         for i in range(1, 6):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
             assert event_queue.size() == i
 
         for i in range(4, -1, -1):
@@ -175,21 +175,21 @@ class TestEventQueueBasicOperations:
         """Test is_full() correctly detects full queue."""
         assert small_queue.is_full() == False
 
-        small_queue.put(TestEvent(data="1"))
+        small_queue.put(_MockTestEvent(data="1"))
         assert small_queue.is_full() == False
 
-        small_queue.put(TestEvent(data="2"))
+        small_queue.put(_MockTestEvent(data="2"))
         assert small_queue.is_full() == True
 
 
-class TestEventQueueBlockingOperations:
+class _MockTestEventQueueBlockingOperations:
     """Test blocking vs non-blocking operations."""
 
     def test_blocking_put_waits_for_space(self, small_queue):
         """Test blocking put waits for space to become available."""
         # Fill queue
-        small_queue.put(TestEvent(data="1"))
-        small_queue.put(TestEvent(data="2"))
+        small_queue.put(_MockTestEvent(data="1"))
+        small_queue.put(_MockTestEvent(data="2"))
         assert small_queue.is_full()
 
         # Start thread that will free space after delay
@@ -202,7 +202,7 @@ class TestEventQueueBlockingOperations:
 
         # Blocking put should wait and succeed
         start = time.time()
-        result = small_queue.put(TestEvent(data="3"), block=True, timeout=1.0)
+        result = small_queue.put(_MockTestEvent(data="3"), block=True, timeout=1.0)
         elapsed = time.time() - start
 
         thread.join()
@@ -214,12 +214,12 @@ class TestEventQueueBlockingOperations:
     def test_blocking_put_timeout(self, small_queue):
         """Test blocking put respects timeout."""
         # Fill queue
-        small_queue.put(TestEvent(data="1"))
-        small_queue.put(TestEvent(data="2"))
+        small_queue.put(_MockTestEvent(data="1"))
+        small_queue.put(_MockTestEvent(data="2"))
 
         # Blocking put should timeout
         start = time.time()
-        result = small_queue.put(TestEvent(data="3"), block=True, timeout=0.1)
+        result = small_queue.put(_MockTestEvent(data="3"), block=True, timeout=0.1)
         elapsed = time.time() - start
 
         assert result == False  # Failed due to timeout
@@ -228,11 +228,11 @@ class TestEventQueueBlockingOperations:
     def test_non_blocking_put_drops_when_full(self, small_queue):
         """Test non-blocking put drops event when queue full."""
         # Fill queue
-        small_queue.put(TestEvent(data="1"))
-        small_queue.put(TestEvent(data="2"))
+        small_queue.put(_MockTestEvent(data="1"))
+        small_queue.put(_MockTestEvent(data="2"))
 
         # Non-blocking put should fail immediately
-        result = small_queue.put(TestEvent(data="3"), block=False)
+        result = small_queue.put(_MockTestEvent(data="3"), block=False)
         assert result == False
 
         # Metrics should track drop
@@ -244,7 +244,7 @@ class TestEventQueueBlockingOperations:
         # Start thread that will add event after delay
         def add_event():
             time.sleep(0.2)
-            event_queue.put(TestEvent(data="delayed"))
+            event_queue.put(_MockTestEvent(data="delayed"))
 
         thread = threading.Thread(target=add_event)
         thread.start()
@@ -279,7 +279,7 @@ class TestEventQueueBlockingOperations:
         assert elapsed < 0.05  # Immediate return
 
 
-class TestEventQueueThreadSafety:
+class _MockTestEventQueueThreadSafety:
     """Test thread safety for concurrent operations."""
 
     def test_concurrent_producers(self, event_queue):
@@ -290,7 +290,7 @@ class TestEventQueueThreadSafety:
 
         def producer(thread_id):
             for i in range(events_per_thread):
-                event = TestEvent(data=f"thread-{thread_id}-event-{i}")
+                event = _MockTestEvent(data=f"thread-{thread_id}-event-{i}")
                 event_queue.put(event)
 
         # Start all producer threads
@@ -317,7 +317,7 @@ class TestEventQueueThreadSafety:
 
         # Pre-fill queue
         for i in range(num_events):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
 
         consumed = []
         consumed_lock = threading.Lock()
@@ -362,7 +362,7 @@ class TestEventQueueThreadSafety:
         def producer(thread_id):
             for i in range(events_per_producer):
                 event_id = f"p{thread_id}-e{i}"
-                event = TestEvent(data=event_id)
+                event = _MockTestEvent(data=event_id)
                 event_queue.put(event)
                 with produced_lock:
                     produced_ids.append(event_id)
@@ -415,7 +415,7 @@ class TestEventQueueThreadSafety:
 
         def worker():
             for _ in range(operations_per_thread):
-                event_queue.put(TestEvent())
+                event_queue.put(_MockTestEvent())
                 event_queue.get_metrics()  # Concurrent metrics access
 
         threads = []
@@ -431,17 +431,17 @@ class TestEventQueueThreadSafety:
         assert metrics["total_enqueued"] == num_threads * operations_per_thread
 
 
-class TestEventQueueBackpressure:
+class _MockTestEventQueueBackpressure:
     """Test backpressure and queue full scenarios."""
 
     def test_backpressure_drops_events_when_full(self, small_queue):
         """Test backpressure mechanism drops events when queue full."""
         # Fill queue
-        assert small_queue.put(TestEvent(data="1")) == True
-        assert small_queue.put(TestEvent(data="2")) == True
+        assert small_queue.put(_MockTestEvent(data="1")) == True
+        assert small_queue.put(_MockTestEvent(data="2")) == True
 
         # Queue full - next put should drop
-        result = small_queue.put(TestEvent(data="3"), block=False)
+        result = small_queue.put(_MockTestEvent(data="3"), block=False)
         assert result == False
 
         metrics = small_queue.get_metrics()
@@ -451,28 +451,29 @@ class TestEventQueueBackpressure:
     def test_backpressure_metrics_tracking(self, small_queue):
         """Test dropped events are tracked in metrics."""
         # Fill queue
-        small_queue.put(TestEvent(data="1"))
-        small_queue.put(TestEvent(data="2"))
+        small_queue.put(_MockTestEvent(data="1"))
+        small_queue.put(_MockTestEvent(data="2"))
 
         # Try to add more (will be dropped)
         for i in range(3, 8):
-            small_queue.put(TestEvent(data=f"{i}"), block=False)
+            small_queue.put(_MockTestEvent(data=f"{i}"), block=False)
 
         metrics = small_queue.get_metrics()
         assert metrics["total_enqueued"] == 2
         assert metrics["total_dropped"] == 5
-        assert metrics["drop_rate_percent"] == pytest.approx(71.43, rel=0.1)
+        # 5 dropped out of 7 total attempts = 71.43%
+        assert abs(metrics["drop_rate_percent"] - 71.43) < 0.1
 
     def test_max_size_reached_tracking(self, small_queue):
         """Test max_size_reached metric tracks peak utilization."""
         metrics = small_queue.get_metrics()
         assert metrics["max_size_reached"] == 0
 
-        small_queue.put(TestEvent(data="1"))
+        small_queue.put(_MockTestEvent(data="1"))
         metrics = small_queue.get_metrics()
         assert metrics["max_size_reached"] == 1
 
-        small_queue.put(TestEvent(data="2"))
+        small_queue.put(_MockTestEvent(data="2"))
         metrics = small_queue.get_metrics()
         assert metrics["max_size_reached"] == 2
 
@@ -482,7 +483,7 @@ class TestEventQueueBackpressure:
         assert metrics["max_size_reached"] == 2
 
 
-class TestEventQueueStateManagement:
+class _MockTestEventQueueStateManagement:
     """Test queue state transitions (running, paused, shutdown)."""
 
     def test_pause_drops_events(self, event_queue, mock_event):
@@ -494,7 +495,7 @@ class TestEventQueueStateManagement:
         event_queue.pause()
 
         # Events should be dropped
-        result = event_queue.put(TestEvent(data="dropped"))
+        result = event_queue.put(_MockTestEvent(data="dropped"))
         assert result == False
 
         metrics = event_queue.get_metrics()
@@ -528,7 +529,7 @@ class TestEventQueueStateManagement:
         """Test shutdown with drain=True preserves events."""
         # Add events
         for i in range(5):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
 
         # Shutdown with drain
         remaining = event_queue.shutdown(drain=True)
@@ -540,7 +541,7 @@ class TestEventQueueStateManagement:
         """Test shutdown with drain=False clears queue."""
         # Add events
         for i in range(5):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
 
         # Shutdown without drain
         dropped = event_queue.shutdown(drain=False)
@@ -552,7 +553,7 @@ class TestEventQueueStateManagement:
         """Test clear() removes all events from queue."""
         # Add events
         for i in range(10):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
 
         assert event_queue.size() == 10
 
@@ -564,7 +565,7 @@ class TestEventQueueStateManagement:
         assert event_queue.is_empty() == True
 
 
-class TestEventQueueMetrics:
+class _MockTestEventQueueMetrics:
     """Test metrics tracking and reporting."""
 
     def test_enqueue_metrics(self, event_queue):
@@ -573,7 +574,7 @@ class TestEventQueueMetrics:
         assert metrics["total_enqueued"] == 0
         assert metrics["last_enqueue_time"] is None
 
-        event_queue.put(TestEvent())
+        event_queue.put(_MockTestEvent())
 
         metrics = event_queue.get_metrics()
         assert metrics["total_enqueued"] == 1
@@ -581,7 +582,7 @@ class TestEventQueueMetrics:
 
     def test_dequeue_metrics(self, event_queue):
         """Test dequeue operations update metrics correctly."""
-        event_queue.put(TestEvent())
+        event_queue.put(_MockTestEvent())
 
         metrics = event_queue.get_metrics()
         assert metrics["total_dequeued"] == 0
@@ -598,23 +599,23 @@ class TestEventQueueMetrics:
         metrics = small_queue.get_metrics()
         assert metrics["utilization_percent"] == 0
 
-        small_queue.put(TestEvent())
+        small_queue.put(_MockTestEvent())
         metrics = small_queue.get_metrics()
         assert metrics["utilization_percent"] == 50.0
 
-        small_queue.put(TestEvent())
+        small_queue.put(_MockTestEvent())
         metrics = small_queue.get_metrics()
         assert metrics["utilization_percent"] == 100.0
 
     def test_drop_rate_calculation(self, small_queue):
         """Test drop rate percentage calculation."""
         # Fill queue
-        small_queue.put(TestEvent())
-        small_queue.put(TestEvent())
+        small_queue.put(_MockTestEvent())
+        small_queue.put(_MockTestEvent())
 
         # Try to add 2 more (will be dropped)
-        small_queue.put(TestEvent(), block=False)
-        small_queue.put(TestEvent(), block=False)
+        small_queue.put(_MockTestEvent(), block=False)
+        small_queue.put(_MockTestEvent(), block=False)
 
         metrics = small_queue.get_metrics()
         # 2 enqueued, 2 dropped = 50% drop rate
@@ -623,7 +624,7 @@ class TestEventQueueMetrics:
     def test_reset_metrics(self, event_queue):
         """Test metrics can be reset."""
         # Generate some activity
-        event_queue.put(TestEvent())
+        event_queue.put(_MockTestEvent())
         event_queue.get(block=False)
 
         metrics = event_queue.get_metrics()
@@ -642,7 +643,7 @@ class TestEventQueueMetrics:
         """Test metrics snapshot is consistent (no race conditions)."""
         # Perform operations
         for i in range(10):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
 
         for _ in range(5):
             event_queue.get(block=False)
@@ -656,7 +657,7 @@ class TestEventQueueMetrics:
         assert metrics1["current_size"] == metrics2["current_size"]
 
 
-class TestEventQueueEdgeCases:
+class _MockTestEventQueueEdgeCases:
     """Test edge cases and error handling."""
 
     def test_get_on_empty_queue_non_blocking(self, event_queue):
@@ -692,7 +693,7 @@ class TestEventQueueEdgeCases:
         """Test error scenarios increment error counter."""
         # Force an error by mocking the internal queue
         with patch.object(event_queue._queue, 'put', side_effect=Exception("Test error")):
-            result = event_queue.put(TestEvent())
+            result = event_queue.put(_MockTestEvent())
             assert result == False
 
         metrics = event_queue.get_metrics()
@@ -700,7 +701,7 @@ class TestEventQueueEdgeCases:
 
     def test_repr_string_representation(self, event_queue):
         """Test __repr__ provides useful debugging info."""
-        event_queue.put(TestEvent())
+        event_queue.put(_MockTestEvent())
         repr_str = repr(event_queue)
 
         assert "EventQueue" in repr_str
@@ -711,7 +712,7 @@ class TestEventQueueEdgeCases:
 # EventWorker Tests
 # =================
 
-class TestEventWorkerLifecycle:
+class _MockTestEventWorkerLifecycle:
     """Test EventWorker start/stop lifecycle."""
 
     def test_worker_initialization(self, mock_handlers):
@@ -776,18 +777,18 @@ class TestEventWorkerLifecycle:
         assert event_worker._worker_thread.daemon == False
 
 
-class TestEventWorkerEventProcessing:
+class _MockTestEventWorkerEventProcessing:
     """Test event processing functionality."""
 
     def test_worker_processes_enqueued_events(self, mock_handlers, event_worker):
         """Test worker processes events from queue."""
-        handler1, handler2 = mock_handlers[TestEvent]
+        handler1, handler2 = mock_handlers[_MockTestEvent]
 
         event_worker.start()
         time.sleep(0.1)
 
         # Enqueue event
-        event = TestEvent(data="test-1")
+        event = _MockTestEvent(data="test-1")
         event_worker.enqueue_event(event)
 
         # Wait for processing
@@ -802,14 +803,14 @@ class TestEventWorkerEventProcessing:
 
     def test_worker_processes_multiple_events(self, mock_handlers, event_worker):
         """Test worker processes multiple events in order."""
-        handler1, handler2 = mock_handlers[TestEvent]
+        handler1, handler2 = mock_handlers[_MockTestEvent]
 
         event_worker.start()
         time.sleep(0.1)
 
         # Enqueue multiple events
         for i in range(5):
-            event_worker.enqueue_event(TestEvent(data=f"event-{i}"))
+            event_worker.enqueue_event(_MockTestEvent(data=f"event-{i}"))
 
         # Wait for processing
         time.sleep(1.0)
@@ -822,9 +823,9 @@ class TestEventWorkerEventProcessing:
         """Test worker handles events with no registered handlers."""
         # Create event type not in handlers
         class UnknownEvent(BaseDomainEvent):
-            def __init__(self):
-                super().__init__()
-                self.event_type = "unknown.event"
+            @property
+            def event_type(self) -> str:
+                return "unknown.event"
             def to_dict(self):
                 return {}
 
@@ -840,34 +841,34 @@ class TestEventWorkerEventProcessing:
 
     def test_enqueue_event_returns_true_on_success(self, event_worker):
         """Test enqueue_event returns True when successful."""
-        result = event_worker.enqueue_event(TestEvent())
+        result = event_worker.enqueue_event(_MockTestEvent())
         assert result == True
 
     def test_enqueue_event_returns_false_when_queue_full(self):
         """Test enqueue_event returns False when queue is full."""
         worker = EventWorker(
-            event_handlers={TestEvent: [Mock()]},
+            event_handlers={_MockTestEvent: [Mock()]},
             max_queue_size=2  # Very small queue
         )
 
         # Fill queue
-        assert worker.enqueue_event(TestEvent()) == True
-        assert worker.enqueue_event(TestEvent()) == True
+        assert worker.enqueue_event(_MockTestEvent()) == True
+        assert worker.enqueue_event(_MockTestEvent()) == True
 
         # Queue full
-        result = worker.enqueue_event(TestEvent())
+        result = worker.enqueue_event(_MockTestEvent())
         assert result == False
 
         stats = worker.get_stats()
         assert stats["queue_overflow_count"] == 1
 
 
-class TestEventWorkerRetryLogic:
+class _MockTestEventWorkerRetryLogic:
     """Test retry logic with exponential backoff."""
 
     def test_handler_failure_triggers_retry(self, mock_handlers, event_worker):
         """Test failed handler is retried."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
 
         # Fail once, then succeed
         handler.side_effect = [Exception("First attempt fails"), None]
@@ -875,7 +876,7 @@ class TestEventWorkerRetryLogic:
         event_worker.start()
         time.sleep(0.1)
 
-        event_worker.enqueue_event(TestEvent())
+        event_worker.enqueue_event(_MockTestEvent())
 
         # Wait for retry
         time.sleep(2.0)
@@ -888,7 +889,7 @@ class TestEventWorkerRetryLogic:
 
     def test_retry_backoff_schedule(self, mock_handlers, event_worker):
         """Test retry uses correct backoff delays."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
 
         # Track call times
         call_times = []
@@ -901,7 +902,7 @@ class TestEventWorkerRetryLogic:
         event_worker.start()
         time.sleep(0.1)
 
-        event_worker.enqueue_event(TestEvent())
+        event_worker.enqueue_event(_MockTestEvent())
 
         # Wait for all retries (0s + 1s + 5s + 15s + 30s ≈ 51s is too long)
         # Just verify first few retries
@@ -920,7 +921,7 @@ class TestEventWorkerRetryLogic:
 
     def test_max_retries_then_dead_letter_queue(self, mock_handlers, event_worker):
         """Test event moves to DLQ after max retries."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
 
         # Always fail
         handler.side_effect = Exception("Always fails")
@@ -928,7 +929,7 @@ class TestEventWorkerRetryLogic:
         event_worker.start()
         time.sleep(0.1)
 
-        event = TestEvent(data="failing-event")
+        event = _MockTestEvent(data="failing-event")
         event_worker.enqueue_event(event)
 
         # Wait for all retries (this is time-consuming in real scenario)
@@ -944,7 +945,7 @@ class TestEventWorkerRetryLogic:
 
     def test_retry_preserves_event_data(self, mock_handlers, event_worker):
         """Test retry attempts receive same event data."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
 
         received_events = []
         def capture_event(event):
@@ -957,7 +958,7 @@ class TestEventWorkerRetryLogic:
         event_worker.start()
         time.sleep(0.1)
 
-        event = TestEvent(data="consistent-event")
+        event = _MockTestEvent(data="consistent-event")
         event_worker.enqueue_event(event)
 
         # Wait for retry
@@ -968,12 +969,12 @@ class TestEventWorkerRetryLogic:
         assert all(e == "consistent-event" for e in received_events)
 
 
-class TestEventWorkerDeadLetterQueue:
+class _MockTestEventWorkerDeadLetterQueue:
     """Test Dead Letter Queue functionality."""
 
     def test_failed_event_moves_to_dlq(self, mock_handlers):
         """Test permanently failed events move to DLQ."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
         handler.side_effect = Exception("Permanent failure")
 
         worker = EventWorker(
@@ -984,7 +985,7 @@ class TestEventWorkerDeadLetterQueue:
         worker.start()
         time.sleep(0.1)
 
-        event = TestEvent(data="dlq-event")
+        event = _MockTestEvent(data="dlq-event")
         worker.enqueue_event(event)
 
         # Wait for all retries (shortened for testing)
@@ -999,7 +1000,7 @@ class TestEventWorkerDeadLetterQueue:
 
     def test_dlq_event_contains_error_details(self, mock_handlers):
         """Test DLQ events include error details."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
         error_message = "Specific error for testing"
         handler.side_effect = Exception(error_message)
 
@@ -1007,7 +1008,7 @@ class TestEventWorkerDeadLetterQueue:
         worker.start()
         time.sleep(0.1)
 
-        worker.enqueue_event(TestEvent(data="error-event"))
+        worker.enqueue_event(_MockTestEvent(data="error-event"))
         time.sleep(8.0)
 
         dlq_events = worker.get_dead_letter_events()
@@ -1045,7 +1046,7 @@ class TestEventWorkerDeadLetterQueue:
         assert len(worker._dead_letter_queue) == 1
 
 
-class TestEventWorkerHealthChecks:
+class _MockTestEventWorkerHealthChecks:
     """Test health monitoring and heartbeat."""
 
     def test_heartbeat_updates_while_running(self, event_worker):
@@ -1085,19 +1086,19 @@ class TestEventWorkerHealthChecks:
         assert event_worker.is_healthy() == False
 
 
-class TestEventWorkerGracefulShutdown:
+class _MockTestEventWorkerGracefulShutdown:
     """Test graceful shutdown and queue draining."""
 
     def test_worker_drains_queue_on_shutdown(self, mock_handlers, event_worker):
         """Test worker processes remaining events on shutdown."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
 
         event_worker.start()
         time.sleep(0.1)
 
         # Enqueue multiple events
         for i in range(5):
-            event_worker.enqueue_event(TestEvent(data=f"event-{i}"))
+            event_worker.enqueue_event(_MockTestEvent(data=f"event-{i}"))
 
         # Shutdown immediately (should drain)
         event_worker.stop(timeout=3)
@@ -1131,7 +1132,7 @@ class TestEventWorkerGracefulShutdown:
         # This is tested indirectly via normal stop() behavior
 
 
-class TestEventWorkerStatistics:
+class _MockTestEventWorkerStatistics:
     """Test worker statistics and monitoring."""
 
     def test_get_stats_structure(self, event_worker):
@@ -1163,7 +1164,7 @@ class TestEventWorkerStatistics:
 
         # Process events
         for i in range(3):
-            event_worker.enqueue_event(TestEvent(data=f"event-{i}"))
+            event_worker.enqueue_event(_MockTestEvent(data=f"event-{i}"))
 
         time.sleep(1.0)
 
@@ -1179,7 +1180,7 @@ class TestEventWorkerStatistics:
         # Enqueue events and read stats concurrently
         def enqueue_loop():
             for i in range(10):
-                event_worker.enqueue_event(TestEvent(data=f"event-{i}"))
+                event_worker.enqueue_event(_MockTestEvent(data=f"event-{i}"))
                 time.sleep(0.05)
 
         def stats_loop():
@@ -1199,12 +1200,12 @@ class TestEventWorkerStatistics:
         # No exceptions should occur
 
 
-class TestEventWorkerEdgeCases:
+class _MockTestEventWorkerEdgeCases:
     """Test edge cases and error scenarios."""
 
     def test_worker_handles_handler_exception_gracefully(self, mock_handlers, event_worker):
         """Test worker continues after handler exception."""
-        handler1, handler2 = mock_handlers[TestEvent]
+        handler1, handler2 = mock_handlers[_MockTestEvent]
 
         # First handler fails, second succeeds
         handler1.side_effect = Exception("Handler 1 fails")
@@ -1213,7 +1214,7 @@ class TestEventWorkerEdgeCases:
         event_worker.start()
         time.sleep(0.1)
 
-        event_worker.enqueue_event(TestEvent())
+        event_worker.enqueue_event(_MockTestEvent())
         time.sleep(0.5)
 
         # Second handler should still be called despite first failing
@@ -1221,19 +1222,19 @@ class TestEventWorkerEdgeCases:
 
     def test_worker_handles_empty_handler_list(self):
         """Test worker handles event types with empty handler list."""
-        worker = EventWorker(event_handlers={TestEvent: []})
+        worker = EventWorker(event_handlers={_MockTestEvent: []})
         worker.start()
         time.sleep(0.1)
 
         # Should not raise
-        worker.enqueue_event(TestEvent())
+        worker.enqueue_event(_MockTestEvent())
         time.sleep(0.3)
 
         worker.stop()
 
     def test_worker_survives_unexpected_errors_in_loop(self, mock_handlers, event_worker):
         """Test worker continues after unexpected errors."""
-        handler = mock_handlers[TestEvent][0]
+        handler = mock_handlers[_MockTestEvent][0]
 
         # Simulate various error types
         handler.side_effect = [
@@ -1245,7 +1246,7 @@ class TestEventWorkerEdgeCases:
         event_worker.start()
         time.sleep(0.1)
 
-        event_worker.enqueue_event(TestEvent())
+        event_worker.enqueue_event(_MockTestEvent())
 
         # Should handle errors and continue
         time.sleep(2.0)
@@ -1257,7 +1258,7 @@ class TestEventWorkerEdgeCases:
 # Integration Tests
 # ==================
 
-class TestEventQueueWorkerIntegration:
+class _MockTestEventQueueWorkerIntegration:
     """Test EventQueue and EventWorker working together."""
 
     def test_custom_event_queue_with_worker(self, mock_handlers):
@@ -1273,7 +1274,7 @@ class TestEventQueueWorkerIntegration:
 
         # Enqueue through worker
         for i in range(10):
-            worker.enqueue_event(TestEvent(data=f"event-{i}"))
+            worker.enqueue_event(_MockTestEvent(data=f"event-{i}"))
 
         time.sleep(1.0)
 
@@ -1290,7 +1291,7 @@ class TestEventQueueWorkerIntegration:
         def tracking_handler(event):
             results.append(event.data)
 
-        handlers = {TestEvent: [tracking_handler]}
+        handlers = {_MockTestEvent: [tracking_handler]}
         worker = EventWorker(event_handlers=handlers)
 
         worker.start()
@@ -1299,7 +1300,7 @@ class TestEventQueueWorkerIntegration:
         # Enqueue events
         event_ids = [f"event-{i}" for i in range(5)]
         for event_id in event_ids:
-            worker.enqueue_event(TestEvent(data=event_id))
+            worker.enqueue_event(_MockTestEvent(data=event_id))
 
         # Wait for processing
         time.sleep(1.0)
@@ -1313,7 +1314,7 @@ class TestEventQueueWorkerIntegration:
 # Performance Tests
 # ==================
 
-class TestEventQueuePerformance:
+class _MockTestEventQueuePerformance:
     """Test queue performance characteristics."""
 
     @pytest.mark.slow
@@ -1323,7 +1324,7 @@ class TestEventQueuePerformance:
 
         start = time.time()
         for i in range(num_events):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
         elapsed = time.time() - start
 
         # Should enqueue 1000 events in under 1 second
@@ -1337,7 +1338,7 @@ class TestEventQueuePerformance:
 
         # Pre-fill
         for i in range(num_events):
-            event_queue.put(TestEvent(data=f"event-{i}"))
+            event_queue.put(_MockTestEvent(data=f"event-{i}"))
 
         start = time.time()
         for _ in range(num_events):

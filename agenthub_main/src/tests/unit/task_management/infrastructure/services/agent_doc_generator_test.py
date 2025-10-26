@@ -76,8 +76,15 @@ class TestFindProjectRoot:
     
     def test_find_project_root_fallback_to_env_var(self):
         """Test fallback to environment variable"""
+        def custom_exists(path):
+            # Return True only for the custom data path, False for paths with agenthub_main
+            path_str = str(path)
+            if path_str == '/custom/data':
+                return True
+            return 'agenthub_main' not in path_str and path_str != '/custom/data'
+
         with patch.dict(os.environ, {'AGENTHUB_DATA_PATH': '/custom/data'}):
-            with patch('os.path.exists', return_value=True):
+            with patch('os.path.exists', side_effect=custom_exists):
                 with patch('pathlib.Path.cwd', return_value=Path("/no/agenthub")):
                     with patch('fastmcp.task_management.infrastructure.services.agent_doc_generator.__file__', '/random/path.py'):
                         result = _find_project_root()

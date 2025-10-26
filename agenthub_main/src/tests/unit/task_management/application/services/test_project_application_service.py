@@ -591,7 +591,7 @@ class TestAssignAgentToTree:
         result = await service.assign_agent_to_tree(
             project_id="test-project",
             agent_id="agent-1",
-            git_branch_name="feature-branch"
+            git_branch_id="feature-branch"
         )
         
         # Assert
@@ -614,7 +614,7 @@ class TestAssignAgentToTree:
         result = await service.assign_agent_to_tree(
             project_id="non-existent",
             agent_id="agent-1",
-            git_branch_name="feature"
+            git_branch_id="feature"
         )
         
         # Assert
@@ -637,7 +637,7 @@ class TestAssignAgentToTree:
         result = await service.assign_agent_to_tree(
             project_id="test-project",
             agent_id="agent-1",
-            git_branch_name="non-existent"
+            git_branch_id="non-existent"
         )
         
         # Assert

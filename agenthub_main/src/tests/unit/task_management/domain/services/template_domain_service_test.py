@@ -207,7 +207,7 @@ class TestTemplateDomainService:
     def test_validate_render_request_valid(self, service):
         """Test validation of valid render request"""
         request = Mock(spec=TemplateRenderRequest)
-        request.template_id = TemplateId.generate()
+        request.template_id = TemplateId.generate_new()
         request.variables = {"var1": "value1"}
         request.cache_strategy = "default"
         
@@ -227,7 +227,7 @@ class TestTemplateDomainService:
     def test_validate_render_request_invalid_cache_strategy(self, service):
         """Test validation fails for invalid cache strategy"""
         request = Mock(spec=TemplateRenderRequest)
-        request.template_id = TemplateId.generate()
+        request.template_id = TemplateId.generate_new()
         request.variables = {"var1": "value1"}
         request.cache_strategy = "invalid"
         
@@ -266,7 +266,7 @@ class TestTemplateDomainService:
     
     def test_create_template_usage(self, service):
         """Test creation of template usage record"""
-        template_id = TemplateId.generate()
+        template_id = TemplateId.generate_new()
         
         with patch('fastmcp.task_management.domain.services.template_domain_service.datetime') as mock_dt:
             mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)

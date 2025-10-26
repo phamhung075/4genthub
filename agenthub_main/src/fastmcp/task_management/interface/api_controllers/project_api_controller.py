@@ -174,20 +174,25 @@ class ProjectAPIController:
             facade = ProjectApplicationFacade(user_id=user_id)
 
             # Delegate to facade
-            project_data = await facade.get_project(project_id)
+            project_response = await facade.get_project(project_id)
 
-            if not project_data:
+            # Check if response is successful and contains project data
+            if not project_response or not project_response.get("success"):
+                error_msg = project_response.get("error", "Project not found") if project_response else "Project not found"
                 return ProjectResponse(
                     success=False,
                     project=None,
-                    error="Project not found",
+                    error=error_msg,
                     message="Project not found or access denied",
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 )
 
+            # Extract the actual project dict from the response
+            project_data = project_response.get("project", {})
+
             logger.info(f"Retrieved project {project_id} for user {user_id}")
 
-            # Create ProjectDTO manually
+            # Create ProjectDTO from extracted project data
             project_dto = ProjectDTO(
                 id=project_data.get("id"),
                 name=project_data.get("name"),

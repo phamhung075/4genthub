@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 import logging
 
@@ -50,12 +50,12 @@ class TokenResponse(BaseModel):
     is_active: bool = True
     token: Optional[str] = None  # Only included during creation
     metadata: Optional[Dict[str, Any]] = {}
-    
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+
+    model_config = ConfigDict(
+        from_attributes=True
+        # Pydantic v2 automatically serializes datetime to ISO format
+        # No need for json_encoders (deprecated in v2)
+    )
 
 class TokenListResponse(BaseModel):
     data: List[TokenResponse]

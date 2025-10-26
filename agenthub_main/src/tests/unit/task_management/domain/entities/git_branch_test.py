@@ -559,9 +559,11 @@ class TestSerialization:
         assert data["assigned_agent_id"] == "agent-789"
         assert data["priority"] == "high"
         assert data["status"] == "in_progress"
-        assert data["task_count"] == 1
-        assert data["completed_task_count"] == 1
-        assert data["progress_percentage"] == 100.0
+
+        # Phase 2 optimization: task counts are no longer in to_dict(), use methods instead
+        assert git_branch.get_task_count() == 1
+        assert git_branch.get_completed_task_count() == 1
+        assert git_branch.get_progress_percentage() == 100.0
     
     def test_repr(self):
         """Test string representation."""

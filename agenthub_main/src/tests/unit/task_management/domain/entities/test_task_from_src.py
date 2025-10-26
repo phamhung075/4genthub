@@ -580,11 +580,13 @@ class TestTaskEntity:
             title=self.valid_title,
             description=self.valid_description
         )
-        
+
         # Act - Valid date
         task.update_due_date("2024-12-31")
-        assert task.due_date == "2024-12-31"
-        
+        # Due date is now stored in ISO 8601 format with timezone
+        assert task.due_date.startswith("2024-12-31")
+        assert "T" in task.due_date  # Has time component
+
         # Act - Invalid date format
         with pytest.raises(ValueError, match="Invalid due date format"):
             task.update_due_date("31/12/2024")

@@ -8,7 +8,8 @@ providing CRUD operations for labels and their relationships with tasks.
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from datetime import datetime
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone
 
 from ...database.models import Label, TaskLabel, Task
 from ...database.database_adapter import DatabaseAdapter
@@ -63,7 +64,9 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                     name=name,
                     color=color,
                     description=description,
-                    user_id=effective_user_id
+                    user_id=effective_user_id,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
                 )
                 
                 session.add(label)
@@ -74,8 +77,50 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                 
         except ValidationError:
             raise
+        except IntegrityError as e:
+            error_msg = str(e)
+            # Enhanced error messages for common constraint violations
+            if "created_at" in error_msg or "updated_at" in error_msg:
+                raise RepositoryError(
+                    message=(
+                        f"Label creation failed due to timestamp constraint violation. "
+                        f"Timestamps must be timezone-aware UTC datetime objects. "
+                        f"Use datetime.now(timezone.utc) instead of datetime.now(). "
+                        f"Technical details: {error_msg}"
+                    )
+                )
+            elif "user_id" in error_msg:
+                raise RepositoryError(
+                    message=(
+                        f"Label creation failed: user_id is required and must reference a valid user. "
+                        f"Ensure authentication context is properly set. "
+                        f"Technical details: {error_msg}"
+                    )
+                )
+            elif "unique" in error_msg.lower() or "duplicate" in error_msg.lower():
+                raise ValidationError(
+                    f"Label with name '{name}' already exists. Use a different name or update the existing label."
+                )
+            else:
+                raise RepositoryError(
+                    message=(
+                        f"Label creation failed due to database constraint violation. "
+                        f"Ensure all required fields (name, created_at, updated_at, user_id) are provided correctly. "
+                        f"Technical details: {error_msg}"
+                    )
+                )
+        except ValueError as e:
+            # Let ValueError from domain validation propagate without wrapping
+            # This allows tests to catch validation errors directly
+            raise
         except Exception as e:
-            raise RepositoryError(message=f"Failed to create label: {str(e)}")
+            raise RepositoryError(
+                message=(
+                    f"Unexpected error during label creation. "
+                    f"Label name: '{name}', Color: '{color}'. "
+                    f"Error: {str(e)}"
+                )
+            )
     
     def get_label(self, label_id: int) -> Optional[LabelEntity]:
         """
@@ -278,11 +323,12 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                 effective_user_id = getattr(self, 'user_id', None)
                 if not effective_user_id:
                     raise ValueError("user_id is required for task label assignment")
-                    
+
                 task_label = TaskLabel(
                     task_id=task_id,
                     label_id=label_id,
-                    user_id=effective_user_id
+                    user_id=effective_user_id,
+                    applied_at=datetime.now(timezone.utc)
                 )
                 
                 session.add(task_label)
@@ -291,8 +337,40 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
                 
         except NotFoundError:
             raise
+        except IntegrityError as e:
+            error_msg = str(e)
+            if "user_id" in error_msg:
+                raise RepositoryError(
+                    message=(
+                        f"Failed to assign label to task: user_id is required. "
+                        f"Ensure authentication context is properly set. "
+                        f"Technical details: {error_msg}"
+                    )
+                )
+            elif "foreign key" in error_msg.lower():
+                raise RepositoryError(
+                    message=(
+                        f"Failed to assign label to task: Invalid task_id or label_id reference. "
+                        f"Ensure both task (ID: {task_id}) and label (ID: {label_id}) exist. "
+                        f"Technical details: {error_msg}"
+                    )
+                )
+            else:
+                raise RepositoryError(
+                    message=(
+                        f"Failed to assign label to task due to database constraint. "
+                        f"Task ID: {task_id}, Label ID: {label_id}. "
+                        f"Technical details: {error_msg}"
+                    )
+                )
         except Exception as e:
-            raise RepositoryError(message=f"Failed to assign label to task: {str(e)}")
+            raise RepositoryError(
+                message=(
+                    f"Unexpected error assigning label to task. "
+                    f"Task ID: {task_id}, Label ID: {label_id}. "
+                    f"Error: {str(e)}"
+                )
+            )
     
     def remove_label_from_task(self, task_id: str, label_id: int) -> bool:
         """
@@ -398,7 +476,8 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
             name=model.name,
             color=model.color,
             description=model.description,
-            created_at=model.created_at
+            created_at=model.created_at,
+            updated_at=model.updated_at
         )
 
     def _entity_to_model_dict(self, entity: LabelEntity) -> Dict[str, Any]:
@@ -431,7 +510,6 @@ class ORMLabelRepository(BaseTimestampRepository[Label]):
             git_branch_id=model.git_branch_id,
             status=model.status,
             priority=model.priority,
-            details=model.details,
             estimated_effort=model.estimated_effort,
             due_date=model.due_date,
             created_at=model.created_at,

@@ -144,9 +144,29 @@ class DatabaseAdapter:
     @contextmanager
     def get_session(self):
         """Get a database session context manager.
-        
+
         This method provides compatibility for ORM repositories that expect
         the DatabaseAdapter to provide session management.
+
+        Creates a session from the adapter's own engine, ensuring tests
+        use the correct test database instead of the global instance.
         """
-        with get_session() as session:
+        from sqlalchemy.orm import sessionmaker
+
+        # Create session from this adapter's engine, not the global one
+        SessionLocal = sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=self.engine,
+            expire_on_commit=False
+        )
+
+        session = SessionLocal()
+        try:
             yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()

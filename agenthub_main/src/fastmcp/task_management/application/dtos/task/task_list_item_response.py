@@ -12,7 +12,6 @@ class TaskListItemResponse:
     status: str
     priority: str
     progress_percentage: int = 0
-    assignees_count: int = 0
     labels: List[str] = None
     due_date: Optional[str] = None
     updated_at: Optional[datetime] = None
@@ -38,7 +37,6 @@ class TaskListItemResponse:
         self.status = status
         self.priority = priority
         self.progress_percentage = progress_percentage
-        self.assignees_count = len(assignees) if assignees else 0
         self.labels = labels[:3] if labels else []  # Show first 3 labels only
         self.due_date = due_date
         self.updated_at = updated_at
@@ -69,7 +67,6 @@ class TaskListItemResponse:
             "status": self.status,
             "priority": self.priority,
             "progress_percentage": self.progress_percentage,
-            "assignees_count": self.assignees_count,
             "labels": self.labels,
             "due_date": self.due_date,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
