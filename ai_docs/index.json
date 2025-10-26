@@ -1238,7 +1238,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 15,
+      "count": 17,
       "files": [
         {
           "hash": "5863668ac26d443e940fdc5337cd69f4",
@@ -1260,6 +1260,13 @@
           "name": "test-coverage-report-2025-10-24.md",
           "path": "testing-qa/test-coverage-report-2025-10-24.md",
           "size": 14454
+        },
+        {
+          "hash": "89c11e2d751b921cbb5b56b1f08c7094",
+          "modified": "2025-10-26T09:33:58.995156",
+          "name": "wave1-execution-plan-revised-2025-10-26.md",
+          "path": "testing-qa/wave1-execution-plan-revised-2025-10-26.md",
+          "size": 8805
         },
         {
           "hash": "d019b3a72eaeae3c820a38b2aab260b1",
@@ -1330,6 +1337,13 @@
           "name": "week2-mcp-test-tasks-specifications.md",
           "path": "testing-qa/week2-mcp-test-tasks-specifications.md",
           "size": 36758
+        },
+        {
+          "hash": "62d60b7073e3e4911d75fda513fe2814",
+          "modified": "2025-10-26T09:33:08.758569",
+          "name": "wave1-coverage-audit-2025-10-26.md",
+          "path": "testing-qa/wave1-coverage-audit-2025-10-26.md",
+          "size": 6207
         },
         {
           "hash": "38a0f45176295f7b9b829f01e4a12f0c",
@@ -1466,7 +1480,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-10-25T21:40:06.180883",
+  "generated_at": "2025-10-26T09:33:59.069275",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -1728,6 +1742,8 @@
         "test-coverage-report-2025-10-24.md",
         "test-flow-issues-2025-10-22.md",
         "test-pollution-fix-2025-10-24.md",
+        "wave1-coverage-audit-2025-10-26.md",
+        "wave1-execution-plan-revised-2025-10-26.md",
         "wave1-execution-plan.md",
         "week2-mcp-test-tasks-specifications.md",
         "week2-tasks-quick-reference.md"
@@ -1753,5 +1769,5 @@
     }
   },
   "total_directories": 26,
-  "total_files": 189
+  "total_files": 191
 }
