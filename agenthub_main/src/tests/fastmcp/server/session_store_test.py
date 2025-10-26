@@ -738,6 +738,91 @@ class TestRedisEventStore:
         assert health["using_fallback"] is True
         assert isinstance(health["session_count"], int)
 
+    @pytest.mark.asyncio
+    async def test_redis_pipeline_failure_falls_back_to_memory(self):
+        """Test that Redis pipeline execution failures trigger memory fallback (lines 314-346)"""
+        if not REDIS_AVAILABLE:
+            pytest.skip("Redis module not available")
+
+        store = RedisEventStore(fallback_to_memory=True)
+        store._redis = MagicMock()
+        store._connection_healthy = True
+
+        # Create a pipeline mock that raises an exception on execute()
+        pipeline_mock = MagicMock()
+        pipeline_mock.zadd = MagicMock(return_value=pipeline_mock)
+        pipeline_mock.zremrangebyrank = MagicMock(return_value=pipeline_mock)
+        pipeline_mock.expire = MagicMock(return_value=pipeline_mock)
+        pipeline_mock.execute = AsyncMock(side_effect=Exception("Pipeline execution failed"))
+
+        store._redis.pipeline = MagicMock(return_value=pipeline_mock)
+
+        # Create test event
+        event = SessionEvent(
+            session_id="sess_pipeline_fail",
+            stream_id="stream_pipeline_fail",
+            event_id="evt_pipeline_001",
+            event_type="test",
+            event_data={"test": "data"},
+            timestamp=time.time(),
+            ttl=3600.0
+        )
+
+        # Store event - should catch exception and fall back to memory
+        result = await store._store_event_redis(event)
+
+        # Should succeed via memory fallback
+        assert result is True
+        # Connection should be marked unhealthy
+        assert store._connection_healthy is False
+        # Event should be in memory store
+        key = store._get_session_key("sess_pipeline_fail", "stream_pipeline_fail")
+        assert key in store._memory_store
+        assert len(store._memory_store[key]) == 1
+        assert store._memory_store[key][0].event_id == "evt_pipeline_001"
+
+    @pytest.mark.asyncio
+    async def test_memory_store_cleanup_edge_cases(self):
+        """Test edge cases in MemoryEventStore cleanup operations (lines 650-692)"""
+        store = RedisEventStore()
+        store._using_fallback = True
+
+        # Test cleanup with expired and non-expired events
+        current_time = time.time()
+
+        # Create expired event
+        expired_event = SessionEvent(
+            session_id="sess_cleanup",
+            stream_id="stream_cleanup",
+            event_id="evt_expired",
+            event_type="test",
+            event_data={},
+            timestamp=current_time - 7200,  # 2 hours ago
+            ttl=3600.0  # 1 hour TTL - should be expired
+        )
+
+        # Create valid event
+        valid_event = SessionEvent(
+            session_id="sess_cleanup",
+            stream_id="stream_cleanup",
+            event_id="evt_valid",
+            event_type="test",
+            event_data={},
+            timestamp=current_time,
+            ttl=3600.0
+        )
+
+        # Store both events
+        await store._store_event_memory(expired_event)
+        await store._store_event_memory(valid_event)
+
+        # Get events - should filter expired ones
+        events = await store.get_events("sess_cleanup", "stream_cleanup")
+
+        # Should only return the valid event
+        assert len(events) == 1
+        assert events[0].event_id == "evt_valid"
+
 
 # ============================================================================
 # MemoryEventStore Tests (Lines 628-840)
