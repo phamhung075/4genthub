@@ -300,9 +300,14 @@ class DatabaseConfig:
 
             # Expand user home directory if ~ is used
             sqlite_path = os.path.expanduser(sqlite_path)
-            # Make absolute path if relative
-            if not os.path.isabs(sqlite_path):
-                sqlite_path = os.path.abspath(sqlite_path)
+
+            # CRITICAL: Preserve SQLite's special :memory: keyword
+            # :memory: creates an in-memory database (100x faster, auto-cleanup)
+            # Converting it to absolute path breaks this feature
+            if sqlite_path != ":memory:":
+                # Make absolute path if relative (but NOT for :memory:!)
+                if not os.path.isabs(sqlite_path):
+                    sqlite_path = os.path.abspath(sqlite_path)
 
             logger.info(f"📦 Using SQLite database: {sqlite_path}")
             return f"sqlite:///{sqlite_path}"
@@ -493,9 +498,9 @@ class DatabaseConfig:
             logger.error(f"  DATABASE_NAME: {os.getenv('DATABASE_NAME')}")
             logger.error("Server MUST stop - no fallback allowed!")
 
-            # Exit immediately - NO FALLBACK
-            import sys
-            sys.exit(1)
+            # Re-raise the exception - library code should NOT call sys.exit()
+            # Let the application layer decide how to handle database initialization failures
+            raise
     
     @with_connection_retry(DEFAULT_RETRY_CONFIG)
     def get_session(self) -> Session:

@@ -51,7 +51,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
         # Arrange
         mock_time.time.side_effect = [1000.0, 1000.1]  # 100ms difference
         
-        template_id = TemplateId("test-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"name": "Test", "value": 123},
@@ -86,7 +86,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_cache_hit(self):
         """Test template rendering with cache hit"""
         # Arrange
-        template_id = TemplateId("cached-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"test": "value"},
@@ -96,7 +96,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
         # Mock cached result
         cached_data = {
             'content': 'Cached content',
-            'template_id': 'cached-template',
+            'template_id': str(template_id.value),
             'variables_used': {'test': 'value'},
             'generated_at': datetime.now(timezone.utc).isoformat(),
             'generation_time_ms': 50,
@@ -120,7 +120,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_force_regenerate(self):
         """Test template rendering with force regenerate ignores cache"""
         # Arrange
-        template_id = TemplateId("force-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"force": True},
@@ -148,7 +148,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_not_found(self):
         """Test template rendering when template not found"""
         # Arrange
-        template_id = TemplateId("missing-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={}
@@ -165,7 +165,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_compilation_error(self):
         """Test template rendering with compilation error"""
         # Arrange
-        template_id = TemplateId("invalid-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={}
@@ -186,7 +186,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_render_template_render_error(self):
         """Test template rendering with render error"""
         # Arrange
-        template_id = TemplateId("error-template")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={"test": "value"}
@@ -380,7 +380,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
     async def test_cache_result_redis_error_handling(self):
         """Test cache result handles Redis errors gracefully"""
         # Arrange
-        template_id = TemplateId("test")
+        template_id = TemplateId.generate_new()
         request = TemplateRenderRequest(
             template_id=template_id,
             variables={}
@@ -408,7 +408,7 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
         """Test check cache handles Redis errors gracefully"""
         # Arrange
         request = TemplateRenderRequest(
-            template_id=TemplateId("test"),
+            template_id=TemplateId.generate_new(),
             variables={}
         )
         
@@ -441,8 +441,145 @@ class TestTemplateEngineService(unittest.IsolatedAsyncioTestCase):
             TemplateEngineService(
                 registry_service=self.mock_registry_service
             )
-        
+
         self.assertIn("pybars package required", str(context.exception))
+
+    async def test_check_cache_without_redis(self):
+        """Test branch 127->144: check cache when redis_client is None"""
+        # Create service without Redis client
+        with patch('fastmcp.task_management.infrastructure.services.template_engine_service.pybars'):
+            service_no_redis = TemplateEngineService(
+                registry_service=self.mock_registry_service,
+                redis_client=None
+            )
+
+        # Arrange
+        request = TemplateRenderRequest(
+            template_id=TemplateId.generate_new(),
+            variables={"test": "value"}
+        )
+
+        # Act - branch 127->144: if self.redis_client (False, skips)
+        result = await service_no_redis._check_cache(request)
+
+        # Assert
+        self.assertIsNone(result)  # Should return None without Redis
+
+    async def test_cache_result_without_redis(self):
+        """Test branch 151->exit: cache result when redis_client is None"""
+        # Create service without Redis client
+        with patch('fastmcp.task_management.infrastructure.services.template_engine_service.pybars'):
+            service_no_redis = TemplateEngineService(
+                registry_service=self.mock_registry_service,
+                redis_client=None
+            )
+
+        # Arrange
+        template_id = TemplateId.generate_new()
+        request = TemplateRenderRequest(
+            template_id=template_id,
+            variables={"test": "value"}
+        )
+        result = TemplateResult(
+            content="Test content",
+            template_id=template_id,
+            variables_used={"test": "value"},
+            generated_at=datetime.now(timezone.utc),
+            generation_time_ms=10,
+            cache_hit=False,
+            output_path=None
+        )
+
+        # Act - branch 151->exit: if self.redis_client (False, exits early)
+        await service_no_redis._cache_result(request, result)
+
+        # Assert - should complete without error
+
+    async def test_clear_cache_specific_template_not_in_compiled(self):
+        """Test branch 236->240: clear cache when template not in compiled cache"""
+        # Arrange
+        template_id = "non-existent-template"
+        self.service._compiled_templates = {
+            "other-template": Mock()
+        }
+
+        # Mock Redis with keys to delete
+        redis_keys = [b"template:non-existent-template:hash1", b"template:non-existent-template:hash2"]
+        self.mock_redis_client.keys.return_value = redis_keys
+
+        # Act - branch 236->240: if template_id in self._compiled_templates (False, skips to line 240)
+        await self.service.clear_cache(template_id)
+
+        # Assert
+        # Lines 245-247: Redis keys fetched and deleted
+        self.mock_redis_client.keys.assert_called_with(f"template:{template_id}:*")
+        self.mock_redis_client.delete.assert_called_once_with(*redis_keys)
+        # Other templates remain
+        self.assertIn("other-template", self.service._compiled_templates)
+
+    async def test_clear_cache_specific_template_no_redis_keys(self):
+        """Test branch 240->exit: clear cache when no Redis keys found"""
+        # Arrange
+        template_id = "template-no-keys"
+        self.service._compiled_templates = {template_id: Mock()}
+
+        # Mock Redis with no keys
+        self.mock_redis_client.keys.return_value = []  # No keys found
+
+        # Act - branch 240->exit: if keys (False, exits without delete)
+        await self.service.clear_cache(template_id)
+
+        # Assert
+        # Template removed from compiled cache
+        self.assertNotIn(template_id, self.service._compiled_templates)
+        # Redis keys checked
+        self.mock_redis_client.keys.assert_called_with(f"template:{template_id}:*")
+        # Delete not called because no keys found (line 245 condition false)
+        self.mock_redis_client.delete.assert_not_called()
+
+    async def test_clear_cache_all_without_redis(self):
+        """Test branch 252->exit: clear all cache when redis_client is None"""
+        # Create service without Redis client
+        with patch('fastmcp.task_management.infrastructure.services.template_engine_service.pybars'):
+            service_no_redis = TemplateEngineService(
+                registry_service=self.mock_registry_service,
+                redis_client=None
+            )
+
+        # Arrange
+        service_no_redis._compiled_templates = {
+            "template1": Mock(),
+            "template2": Mock()
+        }
+
+        # Act - branch 252->exit: if self.redis_client (False, exits)
+        await service_no_redis.clear_cache()  # No template_id = clear all
+
+        # Assert
+        # Compiled templates cleared (line 250)
+        self.assertEqual(len(service_no_redis._compiled_templates), 0)
+
+    async def test_clear_cache_all_no_redis_keys(self):
+        """Test line 257: clear all cache when no Redis keys found"""
+        # Arrange
+        self.service._compiled_templates = {
+            "template1": Mock(),
+            "template2": Mock()
+        }
+
+        # Mock Redis with no keys
+        self.mock_redis_client.keys.return_value = []  # No keys found
+
+        # Act
+        await self.service.clear_cache()  # No template_id = clear all
+
+        # Assert
+        # Compiled templates cleared (line 250)
+        self.assertEqual(len(self.service._compiled_templates), 0)
+        # Redis keys checked (line 255)
+        self.mock_redis_client.keys.assert_called_with("template:*")
+        # Line 257: Delete not called because no keys found (line 256 condition false)
+        self.mock_redis_client.delete.assert_not_called()
 
 
 if __name__ == "__main__":

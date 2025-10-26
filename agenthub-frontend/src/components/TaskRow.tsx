@@ -20,11 +20,10 @@ interface TaskSummary {
   title: string;
   status: string;
   priority: string;
-  subtask_count: number;
-  assignees_count: number;
   assignees: string[];
   has_dependencies: boolean;
-  dependency_count: number;
+  dependencies?: string[];
+  subtasks?: any[]; // Array of subtask objects or IDs
 }
 
 interface TaskRowProps {
@@ -78,6 +77,10 @@ const TaskRow: React.FC<TaskRowProps> = ({
   onRegisterCallbacks,
   onUnregisterCallbacks
 }) => {
+  // Calculate counts from arrays (replaces removed backend count fields)
+  const subtaskCount = fullTask?.subtasks?.length ?? summary.subtasks?.length ?? 0;
+  const dependencyCount = fullTask?.dependencies?.length ?? summary.dependencies?.length ?? 0;
+
   // 🔴 CRITICAL: Detect which mode is being used - only log when expanded or when state changes
   React.useEffect(() => {
     if (isExpanded) {
@@ -88,11 +91,11 @@ const TaskRow: React.FC<TaskRowProps> = ({
         isExpanded,
         hasFullTask: !!fullTask,
         fullTask: fullTask ? { id: fullTask.id, status: fullTask.status } : null,
-        subtask_count: summary.subtask_count,
+        subtaskCount,
         timestamp: new Date().toISOString()
       });
     }
-  }, [isExpanded, summary.id, summary.title, summary.subtask_count, isMobile, fullTask]);
+  }, [isExpanded, summary.id, summary.title, subtaskCount, isMobile, fullTask]);
 
   // Navigation hook for task detail URLs
   const navigate = useNavigate();
@@ -202,18 +205,18 @@ const TaskRow: React.FC<TaskRowProps> = ({
                     <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
                   </div>
                   <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-                    {summary.subtask_count > 0 && (
+                    {subtaskCount > 0 && (
                       <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
-                        {summary.subtask_count} subtasks
+                        {subtaskCount} subtasks
                       </Badge>
                     )}
                     {summary.has_dependencies && (
                       <Badge
                         variant="outline"
                         className="text-xs cursor-help whitespace-nowrap flex-shrink-0"
-                        title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+                        title={`This task depends on ${dependencyCount} other task${dependencyCount === 1 ? '' : 's'}.`}
                       >
-                        {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
+                        {dependencyCount} {dependencyCount === 1 ? 'dep' : 'deps'}
                       </Badge>
                     )}
                     {summary.assignees && summary.assignees.length > 0 && (
@@ -316,13 +319,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
           {/* Expanded Content - Only render LazySubtaskList if task has subtasks */}
           {(() => {
-            const shouldRenderSubtasks = isExpanded && fullTask && summary.subtask_count > 0;
+            const shouldRenderSubtasks = isExpanded && fullTask && subtaskCount > 0;
             console.log('[TaskRow] 🔍 MOBILE Subtask render decision:', {
               taskId: summary.id,
               taskTitle: summary.title,
               isExpanded,
               hasFullTask: !!fullTask,
-              subtask_count: summary.subtask_count,
+              subtaskCount,
               shouldRenderSubtasks,
               timestamp: new Date().toISOString()
             });
@@ -340,7 +343,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
           )}
 
           {/* Show message when expanded but no subtasks */}
-          {isExpanded && fullTask && summary.subtask_count === 0 && (
+          {isExpanded && fullTask && subtaskCount === 0 && (
             <div className="border-t border-surface-border dark:border-gray-700 p-4 text-center text-sm text-muted-foreground">
               No subtasks for this task - WORKING!
             </div>
@@ -389,9 +392,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span>{summary.title}</span>
-                {summary.subtask_count > 0 && (
+                {subtaskCount > 0 && (
                   <Badge variant="outline" className="text-xs">
-                    {summary.subtask_count}
+                    {subtaskCount}
                   </Badge>
                 )}
               </div>
@@ -424,9 +427,9 @@ const TaskRow: React.FC<TaskRowProps> = ({
               <Badge
                 variant="outline"
                 className="text-xs cursor-help"
-                title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+                title={`This task depends on ${dependencyCount} other task${dependencyCount === 1 ? '' : 's'}.`}
               >
-                {summary.dependency_count} {summary.dependency_count === 1 ? 'dependency' : 'dependencies'}
+                {dependencyCount} {dependencyCount === 1 ? 'dependency' : 'dependencies'}
               </Badge>
             ) : (
               <span className="text-xs text-muted-foreground">None</span>
@@ -509,13 +512,13 @@ const TaskRow: React.FC<TaskRowProps> = ({
 
         {/* Only render LazySubtaskList if task has subtasks */}
         {(() => {
-          const shouldRenderSubtasks = isExpanded && fullTask && summary.subtask_count > 0;
+          const shouldRenderSubtasks = isExpanded && fullTask && subtaskCount > 0;
           console.log('[TaskRow] 🔍 DESKTOP Subtask render decision:', {
             taskId: summary.id,
             taskTitle: summary.title,
             isExpanded,
             hasFullTask: !!fullTask,
-            subtask_count: summary.subtask_count,
+            subtaskCount,
             shouldRenderSubtasks,
             timestamp: new Date().toISOString()
           });
@@ -535,7 +538,7 @@ const TaskRow: React.FC<TaskRowProps> = ({
         )}
 
         {/* Show message when expanded but no subtasks */}
-        {isExpanded && fullTask && summary.subtask_count === 0 && (
+        {isExpanded && fullTask && subtaskCount === 0 && (
           <TableRow className="theme-context-section">
             <TableCell colSpan={7} className="p-4 text-center text-sm text-muted-foreground">
               No subtasks for this task

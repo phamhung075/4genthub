@@ -106,20 +106,28 @@ class ORMProjectRepository(EventPublishingMixin, BaseTimestampRepository[Project
                     updated_at=db_branch.updated_at
                 )
                 
-                # Query actual task count from the database instead of relying on cached task_count field
-                # This ensures accurate task counts even if the task_count field is outdated
+                # Query actual task count and status breakdown from the database
+                # This ensures accurate statistics even without loading full task entities
                 with self.get_db_session() as session:
                     from ...database.models import Task
-                    actual_count = session.query(Task).filter(
+
+                    # Get all tasks for this branch
+                    tasks = session.query(Task).filter(
                         and_(
                             Task.git_branch_id == db_branch.id,
                             Task.user_id == self.user_id
                         )
-                    ).count()
-                    
-                    # Create placeholder tasks for counting - GitBranch expects all_tasks to be populated
-                    for i in range(actual_count):
-                        git_branch.all_tasks[f"task_{i}"] = {"placeholder": True}
+                    ).all()
+
+                    # Create task objects with status information for statistics
+                    for task in tasks:
+                        # Create minimal task dict with status for statistics calculation
+                        task_dict = {
+                            "id": task.id,
+                            "status": task.status,  # Need status for get_completed_task_count, get_tree_status
+                            "priority": task.priority if hasattr(task, 'priority') else "medium"
+                        }
+                        git_branch.all_tasks[task.id] = task_dict
                 
                 entity.git_branchs[db_branch.id] = git_branch
         

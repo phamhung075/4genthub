@@ -89,26 +89,26 @@ class TestProjectEntity:
     
     def test_get_entity_id_when_empty(self):
         """Test _get_entity_id returns unknown when id is empty"""
-        # Arrange
-        project = Project()
-        
+        # Arrange - Must provide valid name due to __post_init__ validation
+        project = Project(name="Test Project")
+
         # Act
         entity_id = project._get_entity_id()
-        
+
         # Assert
         assert entity_id == "unknown"
     
     def test_create_class_method(self):
         """Test create class method generates UUID"""
         # Act
-        with patch('uuid.uuid4', return_value=uuid.UUID('12345678-1234-5678-1234-567812345678')):
+        with patch('fastmcp.task_management.domain.value_objects.base_entity_id.uuid.uuid4', return_value=uuid.UUID('12345678-1234-5678-1234-567812345678')):
             project = Project.create(
                 name="New Project",
                 description="New Description"
             )
-        
+
         # Assert
-        assert project.id == "12345678-1234-5678-1234-567812345678"
+        assert str(project.id) == "12345678-1234-5678-1234-567812345678"
         assert project.name == "New Project"
         assert project.description == "New Description"
     
@@ -122,23 +122,18 @@ class TestProjectEntity:
         assert hash(project) == hash(project.id)
     
     def test_validate_entity_empty_name_raises_error(self):
-        """Test validation fails with empty name"""
-        # Arrange
-        project = Project(id="123", name="", description="desc")
-        
-        # Act & Assert
+        """Test validation fails with empty name during construction"""
+        # Act & Assert - Validation happens in __post_init__
         with pytest.raises(ValueError, match="Project name cannot be empty"):
-            project._validate_entity()
+            project = Project(id="123", name="", description="desc")
     
     def test_validate_entity_whitespace_name_raises_error(self):
-        """Test validation fails with whitespace-only name"""
-        # Arrange
-        project = Project(id="123", name="   ", description="desc")
-        
-        # Act & Assert
+        """Test validation fails with whitespace-only name during construction"""
+        # Act & Assert - Validation happens in __post_init__
         with pytest.raises(ValueError, match="Project name cannot be empty"):
-            project._validate_entity()
+            project = Project(id="123", name="   ", description="desc")
     
+    @pytest.mark.asyncio
     async def test_create_git_branch_async_success(self, project, mock_git_branch_repository):
         """Test async git branch creation"""
         # Arrange
@@ -158,13 +153,14 @@ class TestProjectEntity:
         # Assert
         assert result == new_branch
         assert project.git_branchs["new-branch-id"] == new_branch
-        mock_git_branch_repository.find_by_name.assert_called_once_with(project.id, "feature/new")
+        mock_git_branch_repository.find_by_name.assert_called_once_with(str(project.id), "feature/new")
         mock_git_branch_repository.create_branch.assert_called_once_with(
-            project_id=project.id,
+            project_id=str(project.id),
             branch_name="feature/new",
             description="New feature branch"
         )
     
+    @pytest.mark.asyncio
     async def test_create_git_branch_async_already_exists(self, project, mock_git_branch_repository):
         """Test async git branch creation when branch already exists"""
         # Arrange
@@ -182,19 +178,19 @@ class TestProjectEntity:
     def test_create_git_branch_legacy_success(self, project):
         """Test legacy git branch creation"""
         # Act
-        with patch('uuid.uuid4', return_value=uuid.UUID('12345678-1234-5678-1234-567812345678')):
+        with patch('fastmcp.task_management.domain.value_objects.base_entity_id.uuid.uuid4', return_value=uuid.UUID('12345678-1234-5678-1234-567812345678')):
             branch = project.create_git_branch(
                 git_branch_name="feature/test",
                 name="Test Feature",
                 description="Feature description"
             )
-        
+
         # Assert
-        assert branch.id == "12345678-1234-5678-1234-567812345678"
+        assert str(branch.id) == "12345678-1234-5678-1234-567812345678"
         assert branch.name == "Test Feature"
         assert branch.git_branch_name == "feature/test"
-        assert branch.project_id == project.id
-        assert project.git_branchs[branch.id] == branch
+        assert str(branch.project_id) == str(project.id)
+        assert project.git_branchs[str(branch.id)] == branch
     
     def test_create_git_branch_legacy_duplicate_name(self, project, mock_git_branch):
         """Test legacy git branch creation with duplicate name"""

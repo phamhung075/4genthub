@@ -36,7 +36,6 @@ describe("api-lazy", () => {
         dependencies: [],
         blocking_tasks: [],
         subtask_ids: [],
-        subtask_count: 0,
         context_id: null,
         completion_summary: null
       },
@@ -113,6 +112,7 @@ describe("api-lazy", () => {
   });
 
   describe("createLazySubtaskLoader", () => {
+    // Phase 2: Standalone subtask response KEEPS parent_task_id
     const mockSubtaskResponse: SubtaskResponse = {
       subtask: {
         id: "subtask-1",
@@ -124,6 +124,7 @@ describe("api-lazy", () => {
         progress_notes: null,
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
+        parent_task_id: "task-1",  // ✅ Included when standalone
         task_id: "task-1",
         parent_title: "Parent Task"
       },

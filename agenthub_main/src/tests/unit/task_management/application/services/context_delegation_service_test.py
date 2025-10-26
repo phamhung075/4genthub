@@ -839,14 +839,785 @@ class TestUtilityMethods:
     def test_extract_ai_pattern_data(self):
         """Test extracting AI pattern data."""
         service = ContextDelegationService()
-        
+
         changes = {"component": "reusable auth utility"}
         pattern = "reusable_component"
-        
+
         result = service._extract_ai_pattern_data(changes, pattern)
-        
+
         assert result["ai_pattern"] == pattern
         assert result["detected_data"] == changes
         assert result["extraction_method"] == "ai_pattern_recognition"
         assert "extraction_timestamp" in result
         assert "confidence_factors" in result
+
+
+class TestAutoDelegationTriggers:
+    """Test automatic delegation trigger evaluation."""
+
+    @pytest.mark.asyncio
+    async def test_evaluate_auto_delegation_triggers_task_level(self):
+        """Test evaluating auto-delegation triggers at task level."""
+        service = ContextDelegationService()
+
+        context_data = {
+            "delegation_triggers": {
+                "patterns": {"security_discovery": "global"},
+                "thresholds": {"error_count": {"type": "count", "value": 3, "delegate_to": "project"}}
+            }
+        }
+        changes = {"security": "vulnerability found in authentication"}
+
+        with patch.object(service, '_evaluate_pattern_triggers') as mock_pattern:
+            with patch.object(service, '_evaluate_threshold_triggers') as mock_threshold:
+                with patch.object(service, '_evaluate_ai_triggers') as mock_ai:
+                    mock_pattern.return_value = [Mock()]
+                    mock_threshold.return_value = [Mock()]
+                    mock_ai.return_value = [Mock()]
+
+                    results = await service.evaluate_auto_delegation_triggers(
+                        "task", "task_123", context_data, changes
+                    )
+
+        assert len(results) == 3
+        mock_pattern.assert_called_once()
+        mock_threshold.assert_called_once()
+        mock_ai.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_evaluate_auto_delegation_triggers_project_level(self):
+        """Test evaluating auto-delegation triggers at project level."""
+        service = ContextDelegationService()
+
+        context_data = {"project_info": "test"}
+        changes = {"security": "security policy updated"}
+
+        with patch.object(service, '_evaluate_project_to_global_triggers') as mock_project:
+            mock_project.return_value = [Mock(), Mock()]
+
+            results = await service.evaluate_auto_delegation_triggers(
+                "project", "proj_123", context_data, changes
+            )
+
+        assert len(results) == 2
+        mock_project.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_evaluate_auto_delegation_triggers_exception(self):
+        """Test auto-delegation trigger evaluation exception handling."""
+        service = ContextDelegationService()
+
+        with patch.object(service, '_evaluate_pattern_triggers', side_effect=Exception("Evaluation error")):
+            results = await service.evaluate_auto_delegation_triggers(
+                "task", "task_123", {}, {}
+            )
+
+        assert len(results) == 0
+
+    @pytest.mark.asyncio
+    async def test_evaluate_pattern_triggers(self):
+        """Test pattern-based delegation trigger evaluation."""
+        service = ContextDelegationService()
+
+        changes = {"security": "vulnerability discovered"}
+        patterns = {"security_discovery": "global"}
+
+        with patch.object(service, '_matches_pattern', return_value=True):
+            with patch.object(service, '_resolve_target_id', return_value="global_singleton"):
+                with patch.object(service, '_extract_pattern_data', return_value={"data": "test"}):
+                    results = await service._evaluate_pattern_triggers("task_123", changes, patterns)
+
+        assert len(results) == 1
+        assert results[0].source_level == "task"
+        assert results[0].target_level == "global"
+        assert results[0].trigger_type == "auto_pattern"
+
+    @pytest.mark.asyncio
+    async def test_evaluate_threshold_triggers(self):
+        """Test threshold-based delegation trigger evaluation."""
+        service = ContextDelegationService()
+
+        context_data = {"error_count": 5}
+        changes = {"errors": "increased"}
+        thresholds = {
+            "error_threshold": {
+                "type": "count",
+                "value": 3,
+                "delegate_to": "project"
+            }
+        }
+
+        with patch.object(service, '_exceeds_threshold', return_value=True):
+            with patch.object(service, '_resolve_target_id', return_value="proj_456"):
+                with patch.object(service, '_extract_threshold_data', return_value={"threshold_data": 5}):
+                    results = await service._evaluate_threshold_triggers(
+                        "task_123", context_data, changes, thresholds
+                    )
+
+        assert len(results) == 1
+        assert results[0].trigger_type == "auto_threshold"
+        assert results[0].confidence_score == 0.9
+
+    @pytest.mark.asyncio
+    async def test_evaluate_ai_triggers(self):
+        """Test AI-initiated delegation trigger evaluation."""
+        service = ContextDelegationService()
+
+        context_data = {}
+        changes = {"component": "reusable security utility"}
+
+        with patch.object(service, '_calculate_ai_delegation_confidence', return_value=0.95):
+            with patch.object(service, '_resolve_target_id', return_value="global_singleton"):
+                with patch.object(service, '_extract_ai_pattern_data', return_value={"ai_data": "test"}):
+                    results = await service._evaluate_ai_triggers("task_123", context_data, changes)
+
+        assert len(results) >= 1
+        for result in results:
+            assert result.trigger_type == "ai_initiated"
+            assert result.confidence_score >= 0.85
+
+    @pytest.mark.asyncio
+    async def test_evaluate_project_to_global_triggers(self):
+        """Test project-to-global delegation trigger evaluation."""
+        service = ContextDelegationService()
+
+        context_data = {}
+        changes = {"security_policy": "new authentication policy", "coding_standard": "updated"}
+
+        results = await service._evaluate_project_to_global_triggers("proj_123", context_data, changes)
+
+        # Should find at least the security pattern
+        assert len(results) >= 1
+        for result in results:
+            assert result.source_level == "project"
+            assert result.target_level == "global"
+            assert result.trigger_type == "auto_pattern"
+
+    @pytest.mark.asyncio
+    async def test_evaluate_project_to_global_triggers_no_matches(self):
+        """Test project-to-global triggers with no matching patterns."""
+        service = ContextDelegationService()
+
+        # Provide changes with no matching global patterns
+        context_data = {}
+        changes = {"routine_update": "minor documentation fix"}
+
+        results = await service._evaluate_project_to_global_triggers("proj_123", context_data, changes)
+
+        # Should return empty list when no patterns match
+        assert len(results) == 0
+
+
+class TestDelegationExecution:
+    """Test delegation execution functionality."""
+
+    @pytest.mark.asyncio
+    async def test_execute_delegation_success(self):
+        """Test successful delegation execution."""
+        mock_repo = AsyncMock()
+        service = ContextDelegationService(repository=mock_repo)
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"pattern": "auth"},
+            reason="Reusable pattern",
+            trigger_type="manual"
+        )
+        impact_assessment = {"score": 85}
+
+        target_context = {"existing_data": "value"}
+
+        with patch.object(service, '_get_context', return_value=target_context):
+            with patch.object(service, '_merge_delegated_data', return_value={"merged": "data"}):
+                with patch.object(service, '_update_context', return_value=True):
+                    with patch.object(service, '_mark_delegation_implemented', return_value=True):
+                        result = await service._execute_delegation("del_123", request, impact_assessment)
+
+        assert result["success"] is True
+        assert result["delegation_id"] == "del_123"
+        assert result["implemented"] is True
+
+    @pytest.mark.asyncio
+    async def test_execute_delegation_failure(self):
+        """Test delegation execution failure."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test"
+        )
+
+        with patch.object(service, '_get_context', side_effect=Exception("Context error")):
+            with patch.object(service, '_mark_delegation_failed', return_value=True):
+                result = await service._execute_delegation("del_123", request, {})
+
+        assert result["success"] is False
+        assert "error" in result
+
+    @pytest.mark.asyncio
+    async def test_merge_delegated_data_to_global(self):
+        """Test merging delegated data into global context."""
+        service = ContextDelegationService()
+
+        target_context = {"security_policies": {"existing": "policy"}}
+        delegated_data = {"security_insights": {"new_policy": "value"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="global",
+            target_id="global_singleton",
+            delegated_data=delegated_data,
+            reason="Security best practices"
+        )
+
+        result = await service._merge_delegated_data(target_context, delegated_data, request)
+
+        assert "security_policies" in result
+        assert "delegated_insights" in result
+
+    @pytest.mark.asyncio
+    async def test_merge_delegated_data_to_project(self):
+        """Test merging delegated data into project context."""
+        service = ContextDelegationService()
+
+        target_context = {"team_preferences": {"existing": "pref"}}
+        delegated_data = {"team_insights": {"new_pref": "value"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data=delegated_data,
+            reason="Team collaboration improvement"
+        )
+
+        result = await service._merge_delegated_data(target_context, delegated_data, request)
+
+        assert "team_preferences" in result
+        assert "delegated_insights" in result
+
+    def test_merge_to_global_context_security(self):
+        """Test merging security data to global context."""
+        service = ContextDelegationService()
+
+        global_context = {}
+        delegated_data = {"security_insights": {"policy": "new_security_policy"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="global",
+            target_id="global_singleton",
+            delegated_data=delegated_data,
+            reason="Security vulnerability discovered"
+        )
+
+        result = service._merge_to_global_context(global_context, delegated_data, request)
+
+        assert "security_policies" in result
+        assert "delegated_insights" in result
+        assert len(result["delegated_insights"]) == 1
+
+    def test_merge_to_global_context_coding_standards(self):
+        """Test merging coding standards to global context."""
+        service = ContextDelegationService()
+
+        global_context = {}
+        delegated_data = {"coding_patterns": {"pattern": "factory_pattern"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="global",
+            target_id="global_singleton",
+            delegated_data=delegated_data,
+            reason="Coding standard improvement"
+        )
+
+        result = service._merge_to_global_context(global_context, delegated_data, request)
+
+        assert "coding_standards" in result
+        assert "delegated_insights" in result
+
+    def test_merge_to_global_context_workflow(self):
+        """Test merging workflow patterns to global context."""
+        service = ContextDelegationService()
+
+        global_context = {}
+        delegated_data = {"workflow_patterns": {"pattern": "approval_workflow"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="global",
+            target_id="global_singleton",
+            delegated_data=delegated_data,
+            reason="Workflow optimization"
+        )
+
+        result = service._merge_to_global_context(global_context, delegated_data, request)
+
+        assert "workflow_templates" in result
+        assert "delegated_insights" in result
+
+    def test_merge_to_project_context_team(self):
+        """Test merging team data to project context."""
+        service = ContextDelegationService()
+
+        project_context = {}
+        delegated_data = {"team_insights": {"collaboration": "improved"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data=delegated_data,
+            reason="Team efficiency improvement"
+        )
+
+        result = service._merge_to_project_context(project_context, delegated_data, request)
+
+        assert "team_preferences" in result
+        assert "delegated_insights" in result
+
+    def test_merge_to_project_context_technology(self):
+        """Test merging technology data to project context."""
+        service = ContextDelegationService()
+
+        project_context = {}
+        delegated_data = {"tech_insights": {"library": "new_framework"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data=delegated_data,
+            reason="Technology stack update"
+        )
+
+        result = service._merge_to_project_context(project_context, delegated_data, request)
+
+        assert "technology_stack" in result
+        assert "delegated_insights" in result
+
+    def test_merge_to_project_context_workflow(self):
+        """Test merging workflow data to project context."""
+        service = ContextDelegationService()
+
+        project_context = {}
+        delegated_data = {"workflow_insights": {"process": "streamlined"}}
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data=delegated_data,
+            reason="Workflow improvement"
+        )
+
+        result = service._merge_to_project_context(project_context, delegated_data, request)
+
+        assert "project_workflow" in result
+        assert "delegated_insights" in result
+
+
+class TestRepositoryInteractions:
+    """Test repository interaction methods."""
+
+    @pytest.mark.asyncio
+    async def test_get_context_global(self):
+        """Test getting global context from repository."""
+        mock_repo = AsyncMock()
+        mock_repo.get_global_context.return_value = {"global": "data"}
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._get_context("global", "global_singleton")
+
+        assert result == {"global": "data"}
+        mock_repo.get_global_context.assert_called_once_with("global_singleton")
+
+    @pytest.mark.asyncio
+    async def test_get_context_project(self):
+        """Test getting project context from repository."""
+        mock_repo = AsyncMock()
+        mock_repo.get_project_context.return_value = {"project": "data"}
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._get_context("project", "proj_123")
+
+        assert result == {"project": "data"}
+        mock_repo.get_project_context.assert_called_once_with("proj_123")
+
+    @pytest.mark.asyncio
+    async def test_get_context_task(self):
+        """Test getting task context from repository."""
+        mock_repo = AsyncMock()
+        mock_repo.get_task_context.return_value = {"task": "data"}
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._get_context("task", "task_123")
+
+        assert result == {"task": "data"}
+        mock_repo.get_task_context.assert_called_once_with("task_123")
+
+    @pytest.mark.asyncio
+    async def test_get_context_invalid_level(self):
+        """Test getting context with invalid level."""
+        service = ContextDelegationService()
+
+        result = await service._get_context("invalid", "id_123")
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_get_context_exception(self):
+        """Test get context exception handling."""
+        mock_repo = AsyncMock()
+        mock_repo.get_global_context.side_effect = Exception("Repository error")
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._get_context("global", "global_singleton")
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_update_context_global(self):
+        """Test updating global context in repository."""
+        mock_repo = AsyncMock()
+        mock_repo.update_global_context.return_value = True
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._update_context("global", "global_singleton", {"data": "updated"})
+
+        assert result is True
+        mock_repo.update_global_context.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_update_context_project(self):
+        """Test updating project context in repository."""
+        mock_repo = AsyncMock()
+        mock_repo.update_project_context.return_value = True
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._update_context("project", "proj_123", {"data": "updated"})
+
+        assert result is True
+        mock_repo.update_project_context.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_update_context_task(self):
+        """Test updating task context in repository."""
+        mock_repo = AsyncMock()
+        mock_repo.update_task_context.return_value = True
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._update_context("task", "task_123", {"data": "updated"})
+
+        assert result is True
+        mock_repo.update_task_context.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_update_context_invalid_level(self):
+        """Test updating context with invalid level."""
+        service = ContextDelegationService()
+
+        result = await service._update_context("invalid", "id_123", {})
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_update_context_exception(self):
+        """Test update context exception handling."""
+        mock_repo = AsyncMock()
+        mock_repo.update_global_context.side_effect = Exception("Update error")
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._update_context("global", "global_singleton", {})
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_store_delegation_request(self):
+        """Test storing delegation request in repository."""
+        mock_repo = AsyncMock()
+        mock_repo.store_delegation.return_value = "del_123"
+        service = ContextDelegationService(repository=mock_repo)
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test reason",
+            trigger_type="manual",
+            confidence_score=0.8
+        )
+
+        delegation_id = await service._store_delegation_request(request)
+
+        assert delegation_id == "del_123"
+        mock_repo.store_delegation.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_store_delegation_request_exception(self):
+        """Test store delegation request exception handling."""
+        mock_repo = AsyncMock()
+        mock_repo.store_delegation.side_effect = Exception("Storage error")
+        service = ContextDelegationService(repository=mock_repo)
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test"
+        )
+
+        with pytest.raises(Exception):
+            await service._store_delegation_request(request)
+
+
+class TestDelegationApproval:
+    """Test delegation approval decision logic."""
+
+    @pytest.mark.asyncio
+    async def test_assess_delegation_impact(self):
+        """Test delegation impact assessment."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="global",
+            target_id="global_singleton",
+            delegated_data={"data": "test"},
+            reason="Security improvement",
+            trigger_type="manual",
+            confidence_score=0.9
+        )
+
+        result = await service._assess_delegation_impact(request)
+
+        assert "impact_score" in result
+        assert "risk_factors" in result
+        assert "benefits" in result
+        assert "recommendation" in result
+
+    @pytest.mark.asyncio
+    async def test_assess_delegation_impact_low_score(self):
+        """Test impact assessment with low confidence and minimal benefits."""
+        service = ContextDelegationService()
+
+        # Create request with minimal attributes to get low score
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="task",  # Same level (though invalid) to test scoring
+            target_id="task_456",
+            delegated_data={"test": "data"},
+            reason="Test",
+            trigger_type="unknown",  # Non-standard trigger type
+            confidence_score=0.3  # Low confidence
+        )
+
+        result = await service._assess_delegation_impact(request)
+
+        # With low confidence and non-standard attributes, score should be lower
+        assert "impact_score" in result
+        assert "recommendation" in result
+        # Low score should result in manual review recommendation
+        assert result["impact_score"] < 70
+
+    @pytest.mark.asyncio
+    async def test_should_auto_approve_high_confidence(self):
+        """Test auto-approval with high confidence."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test",
+            confidence_score=0.9
+        )
+        impact_assessment = {"recommendation": "auto_approve"}
+
+        result = await service._should_auto_approve(request, impact_assessment)
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_should_auto_approve_low_confidence(self):
+        """Test auto-approval rejection with low confidence."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test",
+            confidence_score=0.5
+        )
+        impact_assessment = {"recommendation": "auto_approve"}
+
+        result = await service._should_auto_approve(request, impact_assessment)
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_should_auto_approve_security_pattern(self):
+        """Test auto-approval for security patterns."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="global",
+            target_id="global_singleton",
+            delegated_data={"security_discovery": "vulnerability found"},
+            reason="Security",
+            confidence_score=0.8
+        )
+        impact_assessment = {"recommendation": "manual_review"}
+
+        result = await service._should_auto_approve(request, impact_assessment)
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_should_auto_approve_exception(self):
+        """Test auto-approval exception handling."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data=None,
+            reason="Test"
+        )
+
+        with patch('fastmcp.task_management.application.services.context_delegation_service.logger'):
+            result = await service._should_auto_approve(request, {})
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_queue_for_review(self):
+        """Test queuing delegation for manual review."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test"
+        )
+        impact_assessment = {"score": 50}
+
+        result = await service._queue_for_review("del_123", request, impact_assessment)
+
+        assert result["queued"] is True
+        assert result["delegation_id"] == "del_123"
+        assert result["review_required"] is True
+
+    @pytest.mark.asyncio
+    async def test_queue_for_review_exception(self):
+        """Test queue for review exception handling."""
+        service = ContextDelegationService()
+
+        request = DelegationRequest(
+            source_level="task",
+            source_id="task_123",
+            target_level="project",
+            target_id="proj_456",
+            delegated_data={"data": "test"},
+            reason="Test"
+        )
+
+        # Cause exception by patching logger to raise
+        with patch('fastmcp.task_management.application.services.context_delegation_service.logger.error', side_effect=Exception("Log error")):
+            result = await service._queue_for_review("del_123", request, {})
+
+        # Should still return a result (exception caught internally)
+        assert "queued" in result
+
+    @pytest.mark.asyncio
+    async def test_mark_delegation_implemented(self):
+        """Test marking delegation as implemented."""
+        mock_repo = AsyncMock()
+        mock_repo.update_delegation.return_value = True
+        service = ContextDelegationService(repository=mock_repo)
+
+        implementation_data = {
+            "implemented_at": datetime.now(timezone.utc).isoformat(),
+            "implementation_details": {"merged_fields": ["field1", "field2"]}
+        }
+
+        result = await service._mark_delegation_implemented("del_123", implementation_data)
+
+        assert result is True
+        mock_repo.update_delegation.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_mark_delegation_implemented_exception(self):
+        """Test mark delegation implemented exception handling."""
+        mock_repo = AsyncMock()
+        mock_repo.update_delegation.side_effect = Exception("Update error")
+        service = ContextDelegationService(repository=mock_repo)
+
+        implementation_data = {
+            "implemented_at": datetime.now(timezone.utc).isoformat(),
+            "implementation_details": {}
+        }
+
+        result = await service._mark_delegation_implemented("del_123", implementation_data)
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_mark_delegation_failed(self):
+        """Test marking delegation as failed."""
+        mock_repo = AsyncMock()
+        mock_repo.update_delegation.return_value = True
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._mark_delegation_failed("del_123", "Execution error")
+
+        assert result is True
+        mock_repo.update_delegation.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_mark_delegation_failed_exception(self):
+        """Test mark delegation failed exception handling."""
+        mock_repo = AsyncMock()
+        mock_repo.update_delegation.side_effect = Exception("Update error")
+        service = ContextDelegationService(repository=mock_repo)
+
+        result = await service._mark_delegation_failed("del_123", "Error message")
+
+        assert result is False
+
+
+class TestDataClassCreation:
+    """Test data class model creation."""
+
+    def test_context_delegation_model_creation(self):
+        """Test ContextDelegationService model can be created."""
+        service = ContextDelegationService()
+        assert service is not None
+        assert hasattr(service, 'repository')
+        assert hasattr(service, '_user_id')

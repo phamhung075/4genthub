@@ -350,7 +350,7 @@ class TestTaskApplicationService:
         # Create repository with user_id property
         mock_repo = Mock()
         mock_repo.user_id = "old-user"
-        mock_repo.session = Mock()
+        mock_repo.session = MagicMock()
         type(mock_repo).__name__ = "MockRepository"
         
         service._task_repository = mock_repo

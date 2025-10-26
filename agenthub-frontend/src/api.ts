@@ -17,42 +17,49 @@ import type {
     ApiResponse,
     Branch,
     BranchesResponse,
+    BranchRequestOptions,
     BranchResponse,
     ContextResponse,
     DeleteResponse,
     HealthResponse,
     Project,
+    ProjectRequestOptions,
     ProjectResponse,
     ProjectsResponse,
     Rule,
     Subtask,
+    SubtaskRequestOptions,
     SubtaskResponse,
     SubtasksResponse,
     Task,
+    TaskRequestOptions,
     TaskResponse,
     TasksResponse
 } from './types/api.types';
 import logger from './utils/logger';
 
 export type {
-    AgentsResponse, ApiResponse, Branch, BranchesResponse,
+    AgentsResponse, ApiResponse, Branch, BranchRequestOptions, BranchesResponse,
     BranchResponse,
-    ContextResponse, DeleteResponse, HealthResponse, Project, ProjectResponse, ProjectsResponse, Rule, Subtask, SubtaskResponse, SubtasksResponse, Task, TaskResponse, TasksResponse
+    ContextResponse, DeleteResponse, HealthResponse, Project, ProjectRequestOptions, ProjectResponse, ProjectsResponse, Rule, Subtask, SubtaskRequestOptions, SubtaskResponse, SubtasksResponse, Task, TaskRequestOptions, TaskResponse, TasksResponse
 };
 
 // --- Task Operations ---
-export const listTasks = async (params?: { git_branch_id?: string }): Promise<Task[]> => {
+export const listTasks = async (params?: { git_branch_id?: string; includeContext?: boolean }): Promise<Task[]> => {
     const response = await taskApiV2.getTasks(params) as TasksResponse;
     return response.tasks || [];
 };
 
-export const getTasks = async (git_branch_id: string): Promise<any> => {
-    const response = await taskApiV2.getTasks({ git_branch_id }) as TasksResponse;
+export const getTasks = async (git_branch_id: string, options?: TaskRequestOptions): Promise<any> => {
+    const response = await taskApiV2.getTasks({
+        git_branch_id,
+        includeContext: options?.includeContext
+    }) as TasksResponse;
     return response || { tasks: [] };
 };
 
-export const getTask = async (task_id: string): Promise<Task> => {
-    const response = await taskApiV2.getTask(task_id) as TaskResponse;
+export const getTask = async (task_id: string, options?: TaskRequestOptions): Promise<Task> => {
+    const response = await taskApiV2.getTask(task_id, options?.includeContext) as TaskResponse;
     return response.task || response;
 };
 
@@ -137,14 +144,14 @@ export const searchTasks = async (query: string, params?: { git_branch_id?: stri
 };
 
 // --- Subtask Operations ---
-export const listSubtasks = async (task_id: string): Promise<Subtask[]> => {
-    const response = await subtaskApiV2.listSubtasksForTask(task_id) as SubtasksResponse;
+export const listSubtasks = async (task_id: string, options?: SubtaskRequestOptions): Promise<Subtask[]> => {
+    const response = await subtaskApiV2.listSubtasksForTask(task_id, options?.includeContext) as SubtasksResponse;
     return response.subtasks || [];
 };
 
-export const getSubtask = async (task_id: string, subtask_id: string): Promise<Subtask> => {
+export const getSubtask = async (task_id: string, subtask_id: string, options?: SubtaskRequestOptions): Promise<Subtask> => {
     // Use simple endpoint with authentication - task_id kept for API consistency but not used
-    const response = await subtaskApiV2.getSubtask(subtask_id) as SubtaskResponse;
+    const response = await subtaskApiV2.getSubtask(subtask_id, options?.includeContext) as SubtaskResponse;
     return response.subtask || response;
 };
 

@@ -1024,11 +1024,17 @@ class UnifiedContextService:
             )
         elif level == ContextLevel.TASK:
             # Support branch_id, parent_branch_id, and git_branch_id for backward compatibility
-            branch_id = (data.get("branch_id") or 
+            branch_id = (data.get("branch_id") or
                         data.get("parent_branch_id") or
                         data.get("git_branch_id"))
             if not branch_id:
                 raise ValueError("Task context requires branch_id, parent_branch_id, or git_branch_id")
+
+            # Extract UUID string from GitBranchId value object if needed
+            if hasattr(branch_id, 'value'):
+                branch_id = branch_id.value
+            elif isinstance(branch_id, dict) and 'value' in branch_id:
+                branch_id = branch_id['value']
             
             # Extract new fields from data (matching CONTEXT_DATA_MODELS.md)
             task_data = data.get("task_data", {})
@@ -2217,15 +2223,17 @@ class UnifiedContextService:
                     logger.debug(f"⚠️ CONTEXT_FIX: Branch context check failed (will create): {check_error}")
             
             # Get git branch info to populate branch data properly
-            git_branch_name = f"branch-{branch_id[:8]}"  # Default fallback
+            # Extract UUID string from GitBranchId value object
+            branch_id_str = branch_id.value if hasattr(branch_id, 'value') else str(branch_id)
+            git_branch_name = f"branch-{branch_id_str[:8]}"  # Default fallback
             try:
                 # Try to get actual git branch name
                 from ...infrastructure.database.database_config import get_session
                 from ...infrastructure.database.models import ProjectGitBranch
-                
+
                 with get_session() as session:
                     git_branch = session.query(ProjectGitBranch).filter(
-                        ProjectGitBranch.id == branch_id
+                        ProjectGitBranch.id == branch_id_str
                     ).first()
                     
                     if git_branch:
@@ -2255,7 +2263,7 @@ class UnifiedContextService:
                     "auto_created": True,
                     "created_by": "context_bootstrap",
                     "user_id": user_id or self._user_id,
-                    "branch_id": branch_id,
+                    "branch_id": branch_id_str,  # Use extracted UUID string
                     "project_id": project_id
                 }
             }

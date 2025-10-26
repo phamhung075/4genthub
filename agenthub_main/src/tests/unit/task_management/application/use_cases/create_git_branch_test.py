@@ -262,7 +262,9 @@ class TestCreateGitBranchUseCaseExecute:
                 )
                 
                 assert result["success"] is True
-                assert result["git_branch"]["task_count"] == 5
+                # Phase 2 optimization: use case returns only completed_tasks and progress
+                # task_count is not in response, verify the methods were called correctly
+                mock_git_branch_entity.get_completed_task_count.assert_called_once()
                 assert result["git_branch"]["completed_tasks"] == 3
                 assert result["git_branch"]["progress"] == 60.0
 
@@ -668,6 +670,6 @@ class TestCreateGitBranchUseCaseIntegration:
                 assert result["git_branch"]["id"] == "branch-456"
                 assert result["git_branch"]["name"] == "feature/integration-test"
                 assert result["git_branch"]["project_id"] == "project-123"
-                assert result["git_branch"]["task_count"] == 0
+                # Phase 2 optimization: task_count not in response
                 assert result["git_branch"]["completed_tasks"] == 0
                 assert result["git_branch"]["progress"] == 0.0

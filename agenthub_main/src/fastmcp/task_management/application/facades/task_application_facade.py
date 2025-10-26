@@ -807,6 +807,7 @@ class TaskApplicationFacade:
                 # Create repository with performance mode enabled for optimization
                 optimized_repo = ORMTaskRepository(
                     git_branch_id=request.git_branch_id if hasattr(request, 'git_branch_id') else None,
+                    user_id=self._task_repository.user_id,  # CRITICAL FIX: Required for user isolation filtering
                     performance_mode=True  # Enable performance optimizations
                 )
 
@@ -1064,28 +1065,16 @@ class TaskApplicationFacade:
             # Convert to lightweight summaries
             task_summaries = []
             for task in tasks_to_process:
-                # 🔍 DEBUG: Log task object attributes
-                logger.info(f"🔍 FACADE DEBUG - Task {task.id[:8]}...")
-                logger.info(f"  - title: {task.title}")
-                logger.info(f"  - hasattr subtask_count: {hasattr(task, 'subtask_count')}")
-                if hasattr(task, 'subtask_count'):
-                    logger.info(f"  - subtask_count value: {task.subtask_count}")
-                logger.info(f"  - task type: {type(task)}")
-                logger.info(f"  - task dir: {[attr for attr in dir(task) if 'subtask' in attr.lower()]}")
-
                 summary = {
                     "id": task.id,
                     "title": task.title,
                     "status": task.status,
                     "priority": task.priority,
-                    "subtask_count": task.subtask_count if hasattr(task, 'subtask_count') else 0,  # ✅ FIX: Include denormalized count
                     "git_branch_id": task.git_branch_id if hasattr(task, 'git_branch_id') else None,  # Required by frontend
                     "project_id": task.project_id if hasattr(task, 'project_id') else None,  # Required by frontend
                     "created_at": task.created_at.isoformat() if hasattr(task.created_at, 'isoformat') else str(task.created_at),
                     "updated_at": task.updated_at.isoformat() if hasattr(task.updated_at, 'isoformat') else str(task.updated_at)
                 }
-
-                logger.info(f"  - summary subtask_count: {summary['subtask_count']}")
 
                 if include_counts:
                     # Add counts for related data

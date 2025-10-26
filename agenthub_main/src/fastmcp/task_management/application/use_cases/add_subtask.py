@@ -36,14 +36,36 @@ class AddSubtaskUseCase:
             if request.priority:
                 priority = Priority.from_string(request.priority)
                 logging.debug(f"[AddSubtask] Creating subtask with priority: {request.priority} -> {priority}")
-            
+
+            # Convert string status to TaskStatus value object if provided
+            status = None
+            if request.status:
+                from ...domain.value_objects.task_status import TaskStatus
+                status = TaskStatus.from_string(request.status)
+                logging.debug(f"[AddSubtask] Creating subtask with status: {request.status} -> {status}")
+
+            # Get progress_percentage if provided
+            progress_percentage = request.progress_percentage if hasattr(request, 'progress_percentage') and request.progress_percentage is not None else 0
+
+            # Auto-adjust status based on progress_percentage if not explicitly set
+            if progress_percentage >= 100 and not status:
+                from ...domain.value_objects.task_status import TaskStatus
+                status = TaskStatus.done()
+                logging.debug("[AddSubtask] Auto-setting status to 'done' due to progress_percentage=100")
+            elif progress_percentage > 0 and not status:
+                from ...domain.value_objects.task_status import TaskStatus
+                status = TaskStatus.in_progress()
+                logging.debug(f"[AddSubtask] Auto-setting status to 'in_progress' due to progress_percentage={progress_percentage}")
+
             subtask = Subtask.create(
                 id=subtask_id,
                 title=request.title,
                 description=request.description,
                 parent_task_id=task_id,
                 assignees=request.assignees,
-                priority=priority
+                priority=priority,
+                status=status,
+                progress_percentage=progress_percentage
             )
             
             # Apply agent inheritance if subtask has no assignees
@@ -59,13 +81,14 @@ class AddSubtaskUseCase:
                     logging.info(f"No assignees to inherit: parent task {task.id} has no assignees")
             
             self._subtask_repository.save(subtask)
-            added_subtask = subtask.to_dict()
+            # Standalone subtask response - include parent_task_id
+            added_subtask = subtask.to_dict(include_parent_id=True)
 
             # Add subtask ID to parent task's subtasks list and increment count
             # This calls the domain method which does both operations atomically
             task.add_subtask(str(subtask_id))
             self._task_repository.save(task)
-            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {task.subtask_count}")
+            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {len(task.subtasks)}")
 
             # Update parent task progress
             self._update_parent_task_progress(str(task_id))

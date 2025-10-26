@@ -85,11 +85,11 @@ class TestDatabaseConfig:
         # Ensure DATABASE_PATH is not set
         with patch.dict(os.environ, {}, clear=True):
             os.environ["DATABASE_TYPE"] = "sqlite"
-            with pytest.raises(SystemExit) as exc_info:
+            with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
-            # SystemExit doesn't have a value message, it exits with code 1
-            assert exc_info.value.code == 1
+            # Verify error message indicates DATABASE_PATH is required
+            assert "DATABASE_PATH environment variable is NOT configured" in str(exc_info.value)
     
     @patch.dict(os.environ, {"DATABASE_TYPE": "invalid_type"})
     def test_invalid_database_type(self):
@@ -610,25 +610,26 @@ class TestErrorScenarios:
     
     @pytest.mark.unit
     @patch('sqlalchemy.event.listens_for')
-    @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite", "PYTEST_CURRENT_TEST": "test"})
+    @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite", "PYTEST_CURRENT_TEST": "test", "DATABASE_PATH": ":memory:"})
     def test_database_initialization_failure(self, mock_listens_for):
-        """Test handling of database initialization failure"""
+        """Test handling of database initialization failure - library raises exception instead of sys.exit()"""
         mock_listens_for.return_value = lambda func: func
         with patch('fastmcp.task_management.infrastructure.database.database_config.create_engine') as mock_create_engine:
                 mock_create_engine.side_effect = Exception("Engine creation failed")
 
-                with pytest.raises(SystemExit) as exc_info:
+                # Library code should raise the exception, not call sys.exit()
+                with pytest.raises(Exception) as exc_info:
                     DatabaseConfig()
 
-                # SystemExit is called with code 1 when database initialization fails
-                assert exc_info.value.code == 1
+                # Verify the original exception is raised
+                assert "Engine creation failed" in str(exc_info.value)
     
     @pytest.mark.unit
     @patch('fastmcp.task_management.infrastructure.database.ensure_ai_columns.ensure_ai_columns_exist')
     @patch('sqlalchemy.event.listens_for')
-    @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite", "PYTEST_CURRENT_TEST": "test"})
+    @patch.dict(os.environ, {"DATABASE_TYPE": "sqlite", "PYTEST_CURRENT_TEST": "test", "DATABASE_PATH": ":memory:"})
     def test_connection_test_failure(self, mock_listens_for, mock_ensure_ai):
-        """Test handling of connection test failure"""
+        """Test handling of connection test failure - library raises exception instead of sys.exit()"""
         mock_listens_for.return_value = lambda func: func
         mock_ensure_ai.return_value = True
         with patch('fastmcp.task_management.infrastructure.database.database_config.create_engine') as mock_create_engine:
@@ -637,11 +638,12 @@ class TestErrorScenarios:
                 mock_create_engine.return_value = mock_engine
 
                 with patch('fastmcp.task_management.infrastructure.database.database_config.sessionmaker'):
-                    with pytest.raises(SystemExit) as exc_info:
+                    # Library code should raise the exception, not call sys.exit()
+                    with pytest.raises(Exception) as exc_info:
                         DatabaseConfig()
 
-                    # SystemExit is called with code 1 when connection test fails
-                    assert exc_info.value.code == 1
+                    # Verify the connection failure exception is raised
+                    assert "Connection failed" in str(exc_info.value)
 
 
 class TestSecurityFeatures:

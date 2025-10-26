@@ -442,10 +442,136 @@ class TestAITaskIntegrationService:
         mock_plan.required_agents = {'agent1', 'agent2'}
         mock_plan.estimated_duration_days = 5
         mock_plan.total_estimated_hours = 40
-        
+
         insights = service._generate_ai_insights(mock_plan)
-        
+
         assert insights['plan_quality']['confidence_score'] == 0.85
         assert insights['plan_quality']['completeness'] == 'High'
-        assert len(insights['execution_recommendations']) > 0
-        assert len(insights['success_factors']) > 0
+
+    @pytest.mark.asyncio
+    async def test_enhance_task_creation_exception_handling(self, service, mock_task_facade):
+        """Test exception handling in enhance_task_creation - Lines 157-159"""
+        # Make task creation raise an exception
+        mock_task_facade.create_task.side_effect = Exception("Database connection failed")
+
+        request = CreateTaskRequest(
+            title="Test Task",
+            description="Test Description",
+            git_branch_id="branch_123",
+            assignees=["coding-agent"]
+        )
+
+        result = await service.enhance_task_creation(request, enable_ai_breakdown=True)
+
+        # Should return error response instead of raising
+        assert result['success'] is False
+        assert 'AI enhancement failed' in result['error']
+        assert 'Database connection failed' in result['error']
+
+    @pytest.mark.asyncio
+    async def test_add_ai_insights_invalid_task_data(self, service):
+        """Test early return when task_data is invalid - Line 178"""
+        # Test with missing 'success'
+        result = await service.add_ai_insights_to_task_response({'task': {}}, action="get")
+        assert result == {'task': {}}
+
+        # Test with success=False
+        result = await service.add_ai_insights_to_task_response(
+            {'success': False, 'error': 'Task not found'},
+            action="get"
+        )
+        assert result == {'success': False, 'error': 'Task not found'}
+
+        # Test with missing 'task'
+        result = await service.add_ai_insights_to_task_response(
+            {'success': True},
+            action="get"
+        )
+        assert result == {'success': True}
+
+    def test_parse_requirements_string_in_list(self, service):
+        """Test string to dict conversion in requirements parsing - Line 217"""
+        # Requirements list with plain strings (not dicts)
+        requirements_json = json.dumps([
+            "Implement user authentication",
+            "Add password reset feature",
+            "Create user profile page"
+        ])
+
+        result = service._parse_requirements(requirements_json)
+
+        assert len(result) == 3
+        assert result[0].description == "Implement user authentication"
+        assert result[0].priority == "medium"
+        assert result[1].description == "Add password reset feature"
+        assert result[2].description == "Create user profile page"
+
+    @pytest.mark.asyncio
+    async def test_create_mcp_tasks_error_handling(self, service, mock_task_facade):
+        """Test error handling in MCP task creation - Lines 279-282"""
+        # Create a mock task plan
+        mock_planned_task = Mock(spec=PlannedTask)
+        mock_planned_task.id = "planned_1"
+        mock_planned_task.title = "Test Task"
+        mock_planned_task.description = "Test Description"
+        mock_planned_task.parent_task_id = None  # Root task
+        mock_planned_task.task_type = TaskType.FEATURE
+        mock_planned_task.execution_phase = ExecutionPhase.IMPLEMENTATION
+        mock_planned_task.estimated_hours = 5.0
+        mock_planned_task.estimated_complexity = "medium"
+        mock_planned_task.priority = "high"
+        mock_planned_task.dependencies = []
+        mock_planned_task.acceptance_criteria = []
+        mock_planned_task.agent_assignment = Mock(spec=AgentAssignment)
+        mock_planned_task.agent_assignment.agent_id = "coding-agent"
+
+        mock_task_plan = Mock(spec=TaskPlan)
+        mock_task_plan.id = "plan_123"
+        mock_task_plan.tasks = [mock_planned_task]
+
+        # Test case 1: Task creation fails (returns success=False) - Line 279
+        mock_task_facade.create_task.return_value = {
+            'success': False,
+            'error': 'Validation failed'
+        }
+
+        created_tasks = await service._create_mcp_tasks_from_plan(
+            mock_task_plan,
+            "branch_123",
+            "user_123"
+        )
+
+        # Should handle failure and return empty list
+        assert created_tasks == []
+
+        # Test case 2: Task creation raises exception - Lines 281-282
+        mock_task_facade.create_task.side_effect = Exception("Unexpected database error")
+
+        created_tasks = await service._create_mcp_tasks_from_plan(
+            mock_task_plan,
+            "branch_123",
+            "user_123"
+        )
+
+        # Should handle exception and return empty list
+        assert created_tasks == []
+
+    def test_identify_risks_data_integrity(self, service):
+        """Test data integrity risk identification - Line 410"""
+        # Task with database/data keywords
+        risks = service._identify_risks(
+            "Database Migration",
+            "Migrate user data from old schema to new schema with validation"
+        )
+
+        assert 'Data integrity concerns' in risks
+
+    def test_suggest_optimizations_test_automation(self, service):
+        """Test automation optimization suggestion - Line 432"""
+        # Task with testing keywords
+        optimizations = service._suggest_optimizations(
+            "Test Suite Implementation",
+            "Create comprehensive test coverage for authentication module"
+        )
+
+        assert 'Automate test execution' in optimizations

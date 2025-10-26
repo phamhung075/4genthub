@@ -449,9 +449,10 @@ describe('API V2 Module', () => {
   describe('Subtask Operations', () => {
     describe('listSubtasks', () => {
       it('should return subtasks for task', async () => {
+        // Phase 2: Subtasks nested in parent response - parent_task_id omitted
         const mockSubtasks = [
-          { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' },
-          { id: 'sub-2', title: 'Subtask 2', parent_task_id: 'task-123' },
+          { id: 'sub-1', title: 'Subtask 1' },  // parent_task_id omitted when nested
+          { id: 'sub-2', title: 'Subtask 2' },  // parent_task_id omitted when nested
         ];
         subtaskApiV2.listSubtasksForTask.mockResolvedValue({ subtasks: mockSubtasks });
 
@@ -470,7 +471,8 @@ describe('API V2 Module', () => {
 
     describe('getSubtask', () => {
       it('should return single subtask', async () => {
-        const mockSubtask = { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' };
+        // Phase 2: Standalone subtask response KEEPS parent_task_id
+        const mockSubtask = { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' };  // ✅ Included when standalone
         subtaskApiV2.getSubtask.mockResolvedValue({ subtask: mockSubtask });
 
         const result = await getSubtask('task-123', 'sub-1');
@@ -479,7 +481,8 @@ describe('API V2 Module', () => {
       });
 
       it('should handle direct response format', async () => {
-        const mockSubtask = { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' };
+        // Phase 2: Standalone subtask response KEEPS parent_task_id
+        const mockSubtask = { id: 'sub-1', title: 'Subtask 1', parent_task_id: 'task-123' };  // ✅ Included when standalone
         subtaskApiV2.getSubtask.mockResolvedValue(mockSubtask);
 
         const result = await getSubtask('task-123', 'sub-1');
@@ -493,7 +496,8 @@ describe('API V2 Module', () => {
           title: 'New Subtask',
           description: 'Subtask description'
         };
-        const createdSubtask = { id: 'sub-123', ...newSubtask, parent_task_id: 'task-123' };
+        // Phase 2: Created subtask is standalone - KEEPS parent_task_id
+        const createdSubtask = { id: 'sub-123', ...newSubtask, parent_task_id: 'task-123' };  // ✅ Included when standalone
         subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
 
         const result = await createSubtask('task-123', newSubtask);

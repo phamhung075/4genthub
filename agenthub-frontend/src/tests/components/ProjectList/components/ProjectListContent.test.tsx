@@ -42,12 +42,12 @@ describe('ProjectListContent', () => {
       'branch-1': {
         id: 'branch-1',
         git_branch_name: 'main',
-        task_count: 3,
+        tasks: ['task-1', 'task-2', 'task-3'],
       },
       'branch-2': {
         id: 'branch-2',
         git_branch_name: 'feature/test',
-        task_count: 5,
+        tasks: ['task-1', 'task-2', 'task-3', 'task-4', 'task-5'],
       },
     },
   };
@@ -59,7 +59,7 @@ describe('ProjectListContent', () => {
       'branch-3': {
         id: 'branch-3',
         git_branch_name: 'develop',
-        task_count: 2,
+        tasks: ['task-1', 'task-2'],
       },
     },
   };
@@ -132,10 +132,10 @@ describe('ProjectListContent', () => {
       id: 'project-3',
       name: 'Single Branch Project',
       git_branchs: {
-        'branch-4': { id: 'branch-4', task_count: 1 },
+        'branch-4': { id: 'branch-4', tasks: ['task-1'] },
       },
     };
-    
+
     render(<ProjectListContent {...defaultProps} projects={[singleBranchProject]} />);
     expect(screen.getByText('1 branch')).toBeInTheDocument();
     expect(screen.getByText('1 task')).toBeInTheDocument();
@@ -265,11 +265,11 @@ describe('ProjectListContent', () => {
         'branch-4': {
           id: 'branch-4',
           git_branch_name: 'main',
-          // task_count is undefined
+          tasks: [],
         },
       },
     };
-    
+
     render(
       <ProjectListContent
         {...defaultProps}
@@ -277,8 +277,8 @@ describe('ProjectListContent', () => {
         branchSummaries={{}}
       />
     );
-    
-    // Should use taskCounts fallback or 0
+
+    // Should use tasks array length
     expect(screen.getByText('main (0)')).toBeInTheDocument();
   });
 

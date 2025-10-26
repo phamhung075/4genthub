@@ -30,6 +30,10 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
 }) => {
   const { getBaseClasses } = useTaskRowState();
 
+  // Calculate counts from arrays (replaces removed backend count fields)
+  const subtaskCount = fullTask?.subtasks?.length ?? 0;
+  const dependencyCount = fullTask?.dependencies?.length ?? 0;
+
   // Combine animation classes with loading state
   const loadingClass = isLoading ? 'loading' : '';
   const containerClasses = `rounded-lg mb-3 cursor-pointer ${getBaseClasses(isHighlighted, isHovered)} ${animationClass} ${loadingClass}`.trim();
@@ -80,18 +84,18 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
                     <HolographicPriorityBadge priority={summary.priority as any} size="xs" />
                   </div>
                   <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-                    {summary.subtask_count > 0 && (
+                    {subtaskCount > 0 && (
                       <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
-                        {summary.subtask_count} subtasks
+                        {subtaskCount} subtasks
                       </Badge>
                     )}
                     {summary.has_dependencies && (
                       <Badge
                         variant="outline"
                         className="text-xs cursor-help whitespace-nowrap flex-shrink-0"
-                        title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+                        title={`This task depends on ${dependencyCount} other task${dependencyCount === 1 ? '' : 's'}.`}
                       >
-                        {summary.dependency_count} {summary.dependency_count === 1 ? 'dep' : 'deps'}
+                        {dependencyCount} {dependencyCount === 1 ? 'dep' : 'deps'}
                       </Badge>
                     )}
                     {summary.assignees && summary.assignees.length > 0 && (

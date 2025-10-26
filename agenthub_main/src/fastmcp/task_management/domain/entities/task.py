@@ -9,6 +9,31 @@ from .base.base_timestamp_entity import BaseTimestampEntity
 
 logger = logging.getLogger(__name__)
 
+
+def normalize_datetime(dt_input: str | datetime) -> datetime:
+    """Convert naive or aware datetime to UTC-aware datetime.
+
+    Args:
+        dt_input: Either a datetime object or ISO format datetime string
+
+    Returns:
+        UTC-aware datetime object
+    """
+    if isinstance(dt_input, str):
+        dt = datetime.fromisoformat(dt_input)
+    else:
+        dt = dt_input
+
+    # If naive, assume UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    # If aware but not UTC, convert to UTC
+    elif dt.tzinfo != timezone.utc:
+        dt = dt.astimezone(timezone.utc)
+
+    return dt
+
+
 from ...domain.value_objects.task_status import TaskStatusEnum
 from ..value_objects import (
     AgentRole, resolve_legacy_role,
@@ -52,7 +77,6 @@ class Task(BaseTimestampEntity):
     labels: list[str] = field(default_factory=list)
     dependencies: list[TaskId] = field(default_factory=list)
     subtasks: list[str] = field(default_factory=list)  # List of subtask IDs
-    subtask_count: int = 0  # Denormalized count for performance
     due_date: str | None = None
     context_id: str | None = None  # New field: tracks if context is up-to-date
     user_id: str | None = None  # User identifier for ownership
@@ -544,13 +568,14 @@ class Task(BaseTimestampEntity):
         ))
     
     def update_due_date(self, due_date: str | None) -> None:
-        """Update task due date with validation"""
+        """Update task due date with validation and timezone normalization"""
         if due_date is not None:
             try:
-                # Validate date format (YYYY-MM-DD)
-                datetime.fromisoformat(due_date)
-            except ValueError:
-                raise ValueError(f"Invalid due date format: {due_date}. Expected YYYY-MM-DD.")
+                # Normalize to UTC-aware datetime and convert back to ISO string
+                normalized_dt = normalize_datetime(due_date)
+                due_date = normalized_dt.isoformat()
+            except ValueError as e:
+                raise ValueError(f"Invalid due date format: {due_date}. Expected ISO 8601 format (e.g., '2025-10-29' or '2025-10-29T23:59:59+00:00'). Error: {e}")
 
         old_due_date = self.due_date
         self.due_date = due_date
@@ -686,7 +711,6 @@ class Task(BaseTimestampEntity):
 
         if subtask_id not in self.subtasks:
             self.subtasks.append(subtask_id)
-            self.increment_subtask_count()  # Increment count via domain method
             self.touch("subtask_added")
 
             # Raise domain event
@@ -696,7 +720,7 @@ class Task(BaseTimestampEntity):
                     "subtasks": {
                         "action": "subtask_added",
                         "new_value": subtask_id,
-                        "subtask_count": self.subtask_count,
+                        "subtask_count": len(self.subtasks),  # Derive from array length
                         "updated_at": self.updated_at.isoformat() if self.updated_at else None
                     }
                 }
@@ -705,10 +729,9 @@ class Task(BaseTimestampEntity):
         return subtask_id
     
     def remove_subtask(self, subtask_id: str) -> bool:
-        """Remove a subtask by ID and decrement subtask count"""
+        """Remove a subtask by ID"""
         if subtask_id in self.subtasks:
             self.subtasks.remove(subtask_id)
-            self.decrement_subtask_count()  # Decrement count via domain method
             self.touch("subtask_removed")
 
             # Raise domain event
@@ -718,34 +741,13 @@ class Task(BaseTimestampEntity):
                     "subtasks": {
                         "action": "subtask_removed",
                         "removed_value": subtask_id,
-                        "subtask_count": self.subtask_count,
+                        "subtask_count": len(self.subtasks),  # Derive from array length
                         "updated_at": self.updated_at.isoformat() if self.updated_at else None
                     }
                 }
             ))
             return True
         return False
-    
-    def increment_subtask_count(self) -> None:
-        """Increment the subtask count by 1.
-
-        This method should be called automatically by add_subtask().
-        Following DDD principles, this keeps the count synchronized with the subtasks list.
-        """
-        self.subtask_count += 1
-        logger.debug(f"Incremented subtask_count for task {self.id} to {self.subtask_count}")
-
-    def decrement_subtask_count(self) -> None:
-        """Decrement the subtask count by 1.
-
-        This method should be called automatically by remove_subtask().
-        Following DDD principles, this keeps the count synchronized with the subtasks list.
-        """
-        if self.subtask_count > 0:
-            self.subtask_count -= 1
-            logger.debug(f"Decremented subtask_count for task {self.id} to {self.subtask_count}")
-        else:
-            logger.warning(f"Attempted to decrement subtask_count for task {self.id} but count is already 0")
 
     def update_subtask(self, subtask_id: str, updates: dict[str, Any]) -> bool:
         """Update a subtask by ID - This method should be handled by the subtask repository"""
@@ -968,16 +970,16 @@ class Task(BaseTimestampEntity):
         """Check if task is overdue"""
         if not self.due_date:
             return False
-        
+
         try:
+            # due_date is always stored as UTC-aware ISO string after normalization
             due_date = datetime.fromisoformat(self.due_date)
             now = datetime.now(timezone.utc)
-            
-            # Make both timezone-aware or both timezone-naive for comparison
+
+            # Ensure due_date is timezone-aware (defensive check)
             if due_date.tzinfo is None:
-                # Make due_date timezone-aware
                 due_date = due_date.replace(tzinfo=timezone.utc)
-            
+
             return now > due_date and not self.status.is_completed()
         except ValueError:
             return False
@@ -1337,7 +1339,6 @@ class Task(BaseTimestampEntity):
             "labels": self.labels.copy() if self.labels is not None else [],
             "dependencies": [dep.value if hasattr(dep, 'value') else str(dep) for dep in self.dependencies],
             "subtasks": self.subtasks.copy(),
-            "subtask_count": self.subtask_count,
             "dueDate": self.due_date if self.due_date else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

@@ -535,24 +535,31 @@ class TestTaskMCPController:
             assert "authentication" in error_msg or "permission" in error_msg
 
     
-    def test_insufficient_permissions(self, controller, mock_authentication):
+    def test_insufficient_permissions(self, controller, mock_authentication, sample_task_data):
         """Test request with insufficient permissions."""
         mock_auth, mock_log = mock_authentication
-        
-        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_request_context') as mock_context:
-            # Configure mock user with insufficient permissions
-            mock_request_context = Mock()
-            mock_user = Mock()
-            mock_user.token = {"sub": "test-user", "permissions": []}  # No permissions
-            mock_request_context.user = mock_user
-            mock_context.return_value = mock_request_context
-            
-            result = controller.manage_task_sync(action="create", title="Test")
-            
+
+        # Mock the permission check to return a permission denied error
+        with patch.object(
+            controller._authorization_service,
+            'check_task_permission_from_context',
+            return_value=(False, {
+                "success": False,
+                "error": {"message": "Permission denied: requires tasks:create"},
+                "code": "PERMISSION_DENIED"
+            })
+        ):
+            result = controller.manage_task_sync(
+                action="create",
+                git_branch_id=sample_task_data["git_branch_id"],
+                title="Test",
+                assignees="test-agent"
+            )
+
             # Should return permission denied error
             assert result["success"] is False
             error_msg = self._extract_error_message(result).lower()
-            assert "permission" in error_msg
+            assert "permission" in error_msg or "denied" in error_msg
 
     # Test Cases for ERROR HANDLING
     

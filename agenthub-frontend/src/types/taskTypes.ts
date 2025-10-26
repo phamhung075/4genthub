@@ -19,11 +19,8 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
  * @property title - Task title (max 200 chars)
  * @property status - Current task status ('todo' | 'in_progress' | 'done' | etc.)
  * @property priority - Task priority level ('low' | 'medium' | 'high' | 'urgent' | 'critical')
- * @property subtask_count - Denormalized count of subtasks (for performance)
- * @property assignees_count - Number of assigned agents
  * @property assignees - Optional array of assigned agent IDs
  * @property has_dependencies - Whether task has blocking dependencies
- * @property dependency_count - Optional count of dependencies
  * @property has_context - Whether task has additional context data
  * @property created_at - ISO 8601 timestamp
  * @property updated_at - ISO 8601 timestamp
@@ -34,8 +31,7 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
  *   title: 'Implement user authentication',
  *   status: 'in_progress',
  *   priority: 'high',
- *   subtask_count: 3,
- *   assignees_count: 2,
+ *   assignees: ['agent-1', 'agent-2'],
  *   has_dependencies: false,
  *   has_context: true
  * };
@@ -45,11 +41,8 @@ export interface TaskSummary {
   title: string;
   status: string;
   priority: string;
-  subtask_count: number;
-  assignees_count: number;
   assignees?: string[];
   has_dependencies: boolean;
-  dependency_count?: number;
   has_context: boolean;
   created_at?: string;
   updated_at?: string;
@@ -65,8 +58,7 @@ export interface TaskSummary {
  * @property title - Subtask title
  * @property status - Current subtask status
  * @property priority - Subtask priority level
- * @property assignees_count - Number of assigned agents (inherited from parent if not set)
- * @property assignees - Optional array of assigned agent IDs
+ * @property assignees - Optional array of assigned agent IDs (inherited from parent if not set)
  * @property progress_percentage - Completion percentage (0-100)
  * @property created_at - ISO 8601 timestamp
  * @property updated_at - ISO 8601 timestamp
@@ -78,7 +70,6 @@ export interface SubtaskSummary {
   title: string;
   status: string;
   priority: string;
-  assignees_count: number;
   assignees?: string[];
   progress_percentage?: number;
   created_at?: string;

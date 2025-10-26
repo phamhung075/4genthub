@@ -74,7 +74,9 @@ class TestLabelRepositoryDDDCompliance:
         model.name = "Bug"
         model.color = "#ff0000"
         model.description = "Bug-related tasks"
-        model.created_at = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)
+        model.created_at = now
+        model.updated_at = now  # Add updated_at field with proper datetime
         model.user_id = str(uuid.uuid4())
         return model
 

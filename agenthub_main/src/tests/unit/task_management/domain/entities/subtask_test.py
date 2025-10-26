@@ -673,12 +673,12 @@ class TestSubtaskSerialization:
     """Test cases for serialization and deserialization."""
     
     def test_to_dict(self):
-        """Test converting subtask to dictionary."""
+        """Test converting subtask to dictionary - default (nested) behavior."""
         subtask_id = TaskId("subtask-123")
         parent_task_id = TaskId("parent-456")
         created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         updated_at = datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
-        
+
         subtask = Subtask(
             id=subtask_id,
             title="Test Subtask",
@@ -691,19 +691,24 @@ class TestSubtaskSerialization:
             created_at=created_at,
             updated_at=updated_at
         )
-        
+
+        # OPTIMIZATION: Default behavior omits parent_task_id (nested context)
         data = subtask.to_dict()
-        
+
         assert data["id"] == "subtask-123"
         assert data["title"] == "Test Subtask"
         assert data["description"] == "A test subtask"
-        assert data["parent_task_id"] == "parent-456"
+        assert "parent_task_id" not in data  # OPTIMIZATION: Omitted when nested
         assert data["status"] == "in_progress"
         assert data["priority"] == "high"
         assert data["assignees"] == ["user1-agent", "coding-agent"]
         assert data["progress_percentage"] == 75
         assert data["created_at"] == created_at.isoformat()
         assert data["updated_at"] == updated_at.isoformat()
+
+        # OPTIMIZATION: Standalone response includes parent_task_id
+        data_standalone = subtask.to_dict(include_parent_id=True)
+        assert data_standalone["parent_task_id"] == "parent-456"
     
     def test_to_dict_no_id(self):
         """Test to_dict with no ID."""

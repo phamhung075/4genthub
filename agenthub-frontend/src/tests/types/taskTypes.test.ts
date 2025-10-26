@@ -109,8 +109,8 @@ describe('taskTypes', () => {
           title: 'Test Task',
           status: 'in_progress',
           priority: 'high',
-          subtask_count: 5,
-          assignees_count: 2,
+          subtasks: ['sub-1', 'sub-2', 'sub-3', 'sub-4', 'sub-5'],
+          assignees: ['user1', 'user2'],
           has_dependencies: true,
           has_context: false
         };
@@ -119,8 +119,8 @@ describe('taskTypes', () => {
         expect(taskSummary.title).toBe('Test Task');
         expect(taskSummary.status).toBe('in_progress');
         expect(taskSummary.priority).toBe('high');
-        expect(taskSummary.subtask_count).toBe(5);
-        expect(taskSummary.assignees_count).toBe(2);
+        expect(taskSummary.subtasks).toHaveLength(5);
+        expect(taskSummary.assignees).toHaveLength(2);
         expect(taskSummary.has_dependencies).toBe(true);
         expect(taskSummary.has_context).toBe(false);
       });
@@ -131,18 +131,17 @@ describe('taskTypes', () => {
           title: 'Complete Task',
           status: 'done',
           priority: 'medium',
-          subtask_count: 0,
-          assignees_count: 3,
+          subtasks: [],
           assignees: ['user1', 'user2', 'user3'],
           has_dependencies: false,
-          dependency_count: 0,
+          dependencies: [],
           has_context: true,
           created_at: '2023-01-01T00:00:00Z',
           updated_at: '2023-01-02T00:00:00Z'
         };
 
         expect(taskSummary.assignees).toEqual(['user1', 'user2', 'user3']);
-        expect(taskSummary.dependency_count).toBe(0);
+        expect(taskSummary.dependencies).toEqual([]);
         expect(taskSummary.created_at).toBe('2023-01-01T00:00:00Z');
         expect(taskSummary.updated_at).toBe('2023-01-02T00:00:00Z');
       });
@@ -164,14 +163,14 @@ describe('taskTypes', () => {
           title: 'Test Subtask',
           status: 'todo',
           priority: 'low',
-          assignees_count: 1
+          assignees: ['user1']
         };
 
         expect(subtaskSummary.id).toBe('subtask-123');
         expect(subtaskSummary.title).toBe('Test Subtask');
         expect(subtaskSummary.status).toBe('todo');
         expect(subtaskSummary.priority).toBe('low');
-        expect(subtaskSummary.assignees_count).toBe(1);
+        expect(subtaskSummary.assignees).toEqual(['user1']);
       });
 
       it('should create valid SubtaskSummary with all optional properties', () => {
@@ -180,7 +179,6 @@ describe('taskTypes', () => {
           title: 'Complete Subtask',
           status: 'done',
           priority: 'urgent',
-          assignees_count: 2,
           assignees: ['user1', 'user2'],
           progress_percentage: 75,
           created_at: '2023-01-01T10:00:00Z',
@@ -361,8 +359,8 @@ describe('taskTypes', () => {
             title: 'Test Task',
             status: 'todo',
             priority: 'medium',
-            subtask_count: 0,
-            assignees_count: 1,
+            subtasks: [],
+            assignees: ['user1'],
             has_dependencies: false,
             has_context: true
           },
@@ -410,8 +408,8 @@ describe('taskTypes', () => {
             title: 'Another Task',
             status: 'done',
             priority: 'low',
-            subtask_count: 2,
-            assignees_count: 0,
+            subtasks: ['sub-1', 'sub-2'],
+            assignees: [],
             has_dependencies: true,
             has_context: false
           },
@@ -456,8 +454,8 @@ describe('taskTypes', () => {
             title: 'Mobile Task',
             status: 'in_progress',
             priority: 'high',
-            subtask_count: 3,
-            assignees_count: 2,
+            subtasks: ['sub-1', 'sub-2', 'sub-3'],
+            assignees: ['user1', 'user2'],
             has_dependencies: false,
             has_context: true
           },
@@ -489,8 +487,8 @@ describe('taskTypes', () => {
             title: 'Animated Mobile Task',
             status: 'done',
             priority: 'critical',
-            subtask_count: 0,
-            assignees_count: 1,
+            subtasks: [],
+            assignees: ['user1'],
             has_dependencies: true,
             has_context: false
           },
@@ -522,8 +520,8 @@ describe('taskTypes', () => {
             title: 'Desktop Task',
             status: 'blocked',
             priority: 'medium',
-            subtask_count: 5,
-            assignees_count: 3,
+            subtasks: ['sub-1', 'sub-2', 'sub-3', 'sub-4', 'sub-5'],
+            assignees: ['user1', 'user2', 'user3'],
             has_dependencies: true,
             has_context: true
           },
@@ -557,8 +555,7 @@ describe('taskTypes', () => {
             title: 'Table Row Task',
             status: 'review',
             priority: 'urgent',
-            subtask_count: 1,
-            assignees_count: 1,
+            subtasks: ['sub-1'],
             assignees: ['reviewer'],
             has_dependencies: false,
             has_context: true,
@@ -648,15 +645,14 @@ describe('taskTypes', () => {
         title: 'No Assignees Task',
         status: 'todo',
         priority: 'low',
-        subtask_count: 0,
-        assignees_count: 0,
+        subtasks: [],
         assignees: [],
         has_dependencies: false,
         has_context: false
       };
 
       expect(taskSummary.assignees).toEqual([]);
-      expect(taskSummary.assignees_count).toBe(0);
+      expect(taskSummary.subtasks).toEqual([]);
     });
 
     it('should handle undefined optional properties correctly', () => {
@@ -665,7 +661,7 @@ describe('taskTypes', () => {
         title: 'Minimal Subtask',
         status: 'todo',
         priority: 'low',
-        assignees_count: 0
+        assignees: []
       };
 
       expect(subtask.assignees).toBeUndefined();
@@ -714,10 +710,10 @@ describe('taskTypes', () => {
         title: 'Zero Counts Task',
         status: 'done',
         priority: 'low',
-        subtask_count: 0,
-        assignees_count: 0,
+        subtasks: [],
+        assignees: [],
         has_dependencies: false,
-        dependency_count: 0,
+        dependencies: [],
         has_context: false
       };
 
@@ -726,17 +722,17 @@ describe('taskTypes', () => {
         title: 'Large Counts Task',
         status: 'in_progress',
         priority: 'critical',
-        subtask_count: 999999,
-        assignees_count: 100,
+        subtasks: new Array(999999).fill('sub'),
+        assignees: new Array(100).fill('user'),
         has_dependencies: true,
-        dependency_count: 50,
+        dependencies: new Array(50).fill('dep'),
         has_context: true
       };
 
-      expect(taskWithZeroCounts.subtask_count).toBe(0);
-      expect(taskWithZeroCounts.dependency_count).toBe(0);
-      expect(taskWithLargeCounts.subtask_count).toBe(999999);
-      expect(taskWithLargeCounts.assignees_count).toBe(100);
+      expect(taskWithZeroCounts.subtasks).toHaveLength(0);
+      expect(taskWithZeroCounts.dependencies).toHaveLength(0);
+      expect(taskWithLargeCounts.subtasks).toHaveLength(999999);
+      expect(taskWithLargeCounts.assignees).toHaveLength(100);
     });
 
     it('should handle progress percentage boundary values', () => {
@@ -745,7 +741,7 @@ describe('taskTypes', () => {
         title: 'Just Started',
         status: 'in_progress',
         priority: 'medium',
-        assignees_count: 1,
+        assignees: ['user1'],
         progress_percentage: 0
       };
 
@@ -754,7 +750,7 @@ describe('taskTypes', () => {
         title: 'Half Done',
         status: 'in_progress',
         priority: 'medium',
-        assignees_count: 1,
+        assignees: ['user1'],
         progress_percentage: 50
       };
 
@@ -763,7 +759,7 @@ describe('taskTypes', () => {
         title: 'Fully Complete',
         status: 'done',
         priority: 'medium',
-        assignees_count: 1,
+        assignees: ['user1'],
         progress_percentage: 100
       };
 

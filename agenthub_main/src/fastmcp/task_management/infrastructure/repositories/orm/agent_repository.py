@@ -47,7 +47,8 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
             project_id: Project ID for context
             user_id: User ID for data isolation
         """
-        # Initialize BaseTimestampRepository
+        # CRITICAL FIX: Initialize BaseTimestampRepository explicitly to provide model_class
+        # This prevents "BaseTimestampRepository.__init__() missing 1 required positional argument" error
         BaseTimestampRepository.__init__(self, Agent)
 
         # Ensure user_id is a valid UUID if provided
@@ -60,8 +61,12 @@ class ORMAgentRepository(EventPublishingMixin, BaseTimestampRepository[Agent], B
         from ...database.database_config import get_session
         actual_session = session or get_session()
         BaseUserScopedRepository.__init__(self, actual_session, user_id)
-        # Initialize EventPublishingMixin for domain events
-        EventPublishingMixin.__init__(self)
+
+        # Initialize mixin attributes manually (DON'T call mixin __init__ - causes MRO issues)
+        # EventPublishingMixin attributes
+        self._event_bus = None
+        self._event_publishing_enabled = True
+
         self.project_id = project_id
     
     def _is_valid_uuid(self, value: str) -> bool:

@@ -1,0 +1,393 @@
+[
+  {
+    "file": "src/fastmcp/task_management/domain/entities/agent.py",
+    "html_file": "z_5b05acf1d72f6d1e_test_assign_agent_py.html",
+    "category": "Domain Entity",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      32
+    ],
+    "partial_lines": [],
+    "uncovered_count": 1,
+    "partial_count": 0,
+    "total_gaps": 1,
+    "estimated_effort_minutes": 3
+  },
+  {
+    "file": "src/fastmcp/auth/middleware/jwt_auth_middleware.py",
+    "html_file": "z_0ff3d071c9e81bbd_test_jwt_auth_middleware_py.html",
+    "category": "Other",
+    "importance": "LOW",
+    "uncovered_lines": [
+      288,
+      302
+    ],
+    "partial_lines": [],
+    "uncovered_count": 2,
+    "partial_count": 0,
+    "total_gaps": 2,
+    "estimated_effort_minutes": 6
+  },
+  {
+    "file": "src/fastmcp/task_management/domain/services/dependency_validation_service.py",
+    "html_file": "z_4d9943f35defc341_test_dependency_validation_service_py.html",
+    "category": "Domain Service",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      318,
+      566
+    ],
+    "partial_lines": [],
+    "uncovered_count": 2,
+    "partial_count": 0,
+    "total_gaps": 2,
+    "estimated_effort_minutes": 9
+  },
+  {
+    "file": "src/fastmcp/task_management/application/facades/project_application_facade.py",
+    "html_file": "z_a4ad8195ea2da8a6_project_application_facade_py.html",
+    "category": "Application Facade",
+    "importance": "MEDIUM",
+    "uncovered_lines": [
+      19,
+      20,
+      21,
+      24,
+      93
+    ],
+    "partial_lines": [
+      15,
+      92
+    ],
+    "uncovered_count": 5,
+    "partial_count": 2,
+    "total_gaps": 7,
+    "estimated_effort_minutes": 19
+  },
+  {
+    "file": "src/fastmcp/task_management/application/use_cases/create_task.py",
+    "html_file": "z_64db783c5ee672ae_create_task_py.html",
+    "category": "Use Case",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      114,
+      115,
+      151,
+      152,
+      153,
+      158,
+      191
+    ],
+    "partial_lines": [
+      157,
+      187
+    ],
+    "uncovered_count": 7,
+    "partial_count": 2,
+    "total_gaps": 9,
+    "estimated_effort_minutes": 25
+  },
+  {
+    "file": "src/fastmcp/task_management/domain/services/task_completion_service.py",
+    "html_file": "z_6c5c73fa89dafa77_task_completion_service_py.html",
+    "category": "Domain Service",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      159,
+      161,
+      163,
+      164,
+      165
+    ],
+    "partial_lines": [
+      137,
+      157,
+      176,
+      183
+    ],
+    "uncovered_count": 5,
+    "partial_count": 4,
+    "total_gaps": 9,
+    "estimated_effort_minutes": 34
+  },
+  {
+    "file": "src/fastmcp/task_management/infrastructure/services/template_engine_service.py",
+    "html_file": "z_9d828c1b9256ea8f_template_engine_service_py.html",
+    "category": "Infrastructure",
+    "importance": "LOW",
+    "uncovered_lines": [
+      245,
+      246,
+      247,
+      257
+    ],
+    "partial_lines": [
+      127,
+      151,
+      236,
+      240,
+      244,
+      252,
+      256
+    ],
+    "uncovered_count": 4,
+    "partial_count": 7,
+    "total_gaps": 11,
+    "estimated_effort_minutes": 52
+  },
+  {
+    "file": "src/fastmcp/auth/keycloak_integration.py",
+    "html_file": "z_31f1ffc97db86926_keycloak_integration_py.html",
+    "category": "Other",
+    "importance": "LOW",
+    "uncovered_lines": [
+      114,
+      115,
+      117,
+      118,
+      119,
+      167,
+      168,
+      174,
+      175,
+      177,
+      178
+    ],
+    "partial_lines": [
+      166,
+      295
+    ],
+    "uncovered_count": 11,
+    "partial_count": 2,
+    "total_gaps": 13,
+    "estimated_effort_minutes": 37
+  },
+  {
+    "file": "src/fastmcp/task_management/application/services/progressive_enforcement_service.py",
+    "html_file": "z_35cac194bd77ee3b_progressive_enforcement_service_py.html",
+    "category": "Application Service",
+    "importance": "MEDIUM",
+    "uncovered_lines": [
+      54,
+      58,
+      98,
+      99,
+      100,
+      241
+    ],
+    "partial_lines": [
+      53,
+      57,
+      72,
+      97,
+      113,
+      245,
+      290,
+      298,
+      313
+    ],
+    "uncovered_count": 6,
+    "partial_count": 9,
+    "total_gaps": 15,
+    "estimated_effort_minutes": 36
+  },
+  {
+    "file": "src/fastmcp/task_management/application/services/context_template_manager.py",
+    "html_file": "z_35cac194bd77ee3b_context_template_manager_py.html",
+    "category": "Application Service",
+    "importance": "MEDIUM",
+    "uncovered_lines": [
+      74,
+      75,
+      76,
+      77,
+      85,
+      86,
+      87,
+      88,
+      89,
+      93,
+      94,
+      95,
+      96
+    ],
+    "partial_lines": [
+      382,
+      484,
+      534
+    ],
+    "uncovered_count": 13,
+    "partial_count": 3,
+    "total_gaps": 16,
+    "estimated_effort_minutes": 45
+  },
+  {
+    "file": "src/fastmcp/task_management/application/services/ai_integration_service.py",
+    "html_file": "z_35cac194bd77ee3b_ai_integration_service_py.html",
+    "category": "Application Service",
+    "importance": "MEDIUM",
+    "uncovered_lines": [
+      157,
+      158,
+      159,
+      160,
+      161,
+      162,
+      178,
+      217,
+      279,
+      281,
+      282,
+      410,
+      432
+    ],
+    "partial_lines": [
+      177,
+      216,
+      265,
+      409,
+      431
+    ],
+    "uncovered_count": 13,
+    "partial_count": 5,
+    "total_gaps": 18,
+    "estimated_effort_minutes": 49
+  },
+  {
+    "file": "src/fastmcp/task_management/domain/services/intelligence/progressive_expander.py",
+    "html_file": "z_79b0627d07fe3e66_progressive_expander_py.html",
+    "category": "Domain Service",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      238,
+      248,
+      270,
+      323,
+      349,
+      350,
+      444
+    ],
+    "partial_lines": [
+      202,
+      237,
+      245,
+      257,
+      269,
+      273,
+      322,
+      347,
+      348,
+      440,
+      441
+    ],
+    "uncovered_count": 7,
+    "partial_count": 11,
+    "total_gaps": 18,
+    "estimated_effort_minutes": 64
+  },
+  {
+    "file": "src/fastmcp/task_management/application/use_cases/batch_context_operations.py",
+    "html_file": "z_64db783c5ee672ae_batch_context_operations_py.html",
+    "category": "Use Case",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      231,
+      232,
+      234,
+      235,
+      236,
+      237,
+      238,
+      239,
+      250,
+      251
+    ],
+    "partial_lines": [
+      199,
+      246,
+      248
+    ],
+    "uncovered_count": 17,
+    "partial_count": 3,
+    "total_gaps": 20,
+    "estimated_effort_minutes": 57
+  },
+  {
+    "file": "src/fastmcp/task_management/application/services/project_application_service.py",
+    "html_file": "z_7aaa118b8b7b9077_test_project_application_service_py.html",
+    "category": "Application Service",
+    "importance": "MEDIUM",
+    "uncovered_lines": [
+      126,
+      127,
+      184,
+      185,
+      242,
+      243,
+      322,
+      323,
+      387,
+      388,
+      462,
+      463,
+      563,
+      564,
+      662,
+      663,
+      748,
+      749,
+      856,
+      857,
+      953,
+      954
+    ],
+    "partial_lines": [],
+    "uncovered_count": 22,
+    "partial_count": 0,
+    "total_gaps": 22,
+    "estimated_effort_minutes": 66
+  },
+  {
+    "file": "src/fastmcp/task_management/domain/services/task_state_transition_service.py",
+    "html_file": "z_6c5c73fa89dafa77_task_state_transition_service_py.html",
+    "category": "Domain Service",
+    "importance": "HIGH",
+    "uncovered_lines": [
+      175,
+      176,
+      177,
+      217,
+      218,
+      219,
+      220,
+      221,
+      222,
+      223,
+      225,
+      226,
+      227,
+      314
+    ],
+    "partial_lines": [
+      209,
+      251,
+      261,
+      296,
+      313,
+      330,
+      341,
+      372
+    ],
+    "uncovered_count": 14,
+    "partial_count": 8,
+    "total_gaps": 22,
+    "estimated_effort_minutes": 87
+  }
+]

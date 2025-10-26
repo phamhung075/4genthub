@@ -123,7 +123,45 @@ class UserFriendlyErrorHandler:
 
         error_str = str(exception).lower()
 
+        # Enhanced label-specific error handling
+        if "label" in error_str and ("timestamp" in error_str or "created_at" in error_str or "updated_at" in error_str):
+            return {
+                "success": False,
+                "error": "Label creation failed: Timestamp constraint violation.",
+                "error_code": ErrorCode.CONSTRAINT_VIOLATION.value,
+                "explanation": "Labels require UTC-aware timestamps. This is a system error, not a user error.",
+                "recovery_instructions": [
+                    "This error indicates a bug in the system code",
+                    "The system should automatically use UTC timestamps",
+                    "You can create the task without labels for now",
+                ],
+                "technical_details": {
+                    "issue": "Timestamps must be timezone-aware UTC datetime objects",
+                    "fix": "Use datetime.now(timezone.utc) instead of datetime.now()",
+                    "location": "Label repository or service layer",
+                },
+                "workaround": "Create task without labels parameter, add labels later after fix",
+                "examples": {
+                    "create_without_labels": "manage_task(action='create', title='Task', git_branch_id='...', assignees=['coding-agent'])",
+                },
+            }
+
         if "unique constraint failed" in error_str:
+            # Check if this is a label duplicate
+            if "label" in error_str:
+                return {
+                    "success": False,
+                    "error": "A label with this name already exists.",
+                    "error_code": ErrorCode.CONSTRAINT_VIOLATION.value,
+                    "recovery_instructions": [
+                        "Use a different label name",
+                        "The existing label will be automatically reused for the task",
+                        "Labels are shared across tasks to maintain consistency",
+                    ],
+                    "examples": {
+                        "alternative_names": "Try 'backend-api', 'api-backend', or 'backend-service'",
+                    },
+                }
             return {
                 "success": False,
                 "error": "A record with this information already exists.",
@@ -301,20 +339,68 @@ class UserFriendlyErrorHandler:
         error_message = str(exception)
 
         # Common validation patterns
-        if "labels" in error_message.lower():
+        if "labels" in error_message.lower() or "label" in error_message.lower():
+            # Check for specific label error types
+            if "timestamp" in error_message.lower() or "utc" in error_message.lower():
+                return {
+                    "success": False,
+                    "error": "Label creation failed: System timestamp error.",
+                    "error_code": ErrorCode.CONSTRAINT_VIOLATION.value,
+                    "explanation": "The system failed to create UTC-aware timestamps for labels. This is a bug in the system code.",
+                    "recovery_instructions": [
+                        "This is not your fault - it's a system bug",
+                        "You can create the task without labels as a workaround",
+                        "Report this error to the development team",
+                    ],
+                    "technical_details": {
+                        "issue": "Label timestamps must be UTC-aware",
+                        "expected": "datetime.now(timezone.utc)",
+                        "actual": "datetime.now() (naive datetime)",
+                        "fix_location": "Label repository or service layer needs to add timezone.utc",
+                    },
+                    "workaround": {
+                        "description": "Create task without labels, add labels later",
+                        "command": "manage_task(action='create', title='Task', git_branch_id='...', assignees=['coding-agent'])",
+                    },
+                }
+            if "format" in error_message.lower() or "invalid" in error_message.lower():
+                return {
+                    "success": False,
+                    "error": "Invalid labels format. Labels must be an array of strings or comma-separated string.",
+                    "error_code": ErrorCode.INVALID_PARAMETER_FORMAT.value,
+                    "recovery_instructions": [
+                        "Use array format: labels=['tag1', 'tag2', 'tag3']",
+                        "Or comma-separated string: labels='tag1,tag2,tag3'",
+                        "Each label should be a short, descriptive keyword",
+                        "Labels can contain letters, numbers, hyphens, and underscores",
+                    ],
+                    "examples": {
+                        "correct_array": "labels=['bug', 'urgent', 'frontend']",
+                        "correct_string": "labels='bug,urgent,frontend'",
+                        "with_hyphens": "labels='api-integration,backend-service,high-priority'",
+                        "incorrect_spaces": "labels='bug urgent frontend' (needs commas!)",
+                        "incorrect_special_chars": "labels=['bug!', 'urgent@'] (special chars not allowed)",
+                    },
+                    "label_naming_tips": [
+                        "Use lowercase for consistency",
+                        "Use hyphens to separate words: 'api-integration' not 'apiintegration'",
+                        "Be specific but concise: 'frontend-bug' not 'frontend'",
+                        "Common labels: bug, feature, urgent, backend, frontend, api, database, security",
+                    ],
+                }
+            # Generic label validation error
             return {
                 "success": False,
-                "error": "Invalid labels format. Labels must be an array of strings.",
-                "error_code": ErrorCode.INVALID_PARAMETER_FORMAT.value,
+                "error": f"Label validation error: {error_message}",
+                "error_code": ErrorCode.VALIDATION_ERROR.value,
                 "recovery_instructions": [
-                    "Use array format: labels=['tag1', 'tag2']",
-                    "Or comma-separated string: labels='tag1,tag2'",
-                    "Each label should be a short descriptive word",
+                    "Check your label format and names",
+                    "Labels must be alphanumeric with hyphens/underscores",
+                    "Use descriptive, concise names",
                 ],
                 "examples": {
-                    "correct_array": "labels=['bug', 'urgent', 'frontend']",
-                    "correct_string": "labels='bug,urgent,frontend'",
-                    "incorrect": "labels='bug urgent frontend' (no commas)",
+                    "good_labels": "labels=['bug', 'urgent', 'api-integration', 'backend-service']",
+                    "bad_labels": "labels=['bug!', 'urgent@work', 'fix it now'] (special chars, spaces)",
                 },
             }
 

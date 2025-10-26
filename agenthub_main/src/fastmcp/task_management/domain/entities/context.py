@@ -715,8 +715,12 @@ class TaskContext:
         
         return len(errors) == 0, errors
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert context to dictionary for JSON serialization"""
+    def to_dict(self, embedded: bool = False) -> Dict[str, Any]:
+        """Convert context to dictionary for JSON serialization
+
+        Args:
+            embedded: If True, omits fields that duplicate parent task data (optimization)
+        """
         def convert_dataclass(obj):
             if isinstance(obj, Priority) or isinstance(obj, TaskStatus):
                 return str(obj)
@@ -730,12 +734,29 @@ class TaskContext:
                 return {k: convert_dataclass(v) for k, v in obj.items()}
             else:
                 return obj
-        
+
         result = convert_dataclass(self)
-        
-        # Add task_id at root level for backward compatibility
-        result['task_id'] = self.metadata.task_id
-        
+
+        # OPTIMIZATION: When embedded in task response, remove duplicate fields
+        if embedded and 'metadata' in result and isinstance(result['metadata'], dict):
+            # Remove duplicates: task_id, status, priority (already in task root)
+            # Keep unique fields: version, assignees, labels
+            metadata_optimized = {}
+            if 'version' in result['metadata']:
+                metadata_optimized['version'] = result['metadata']['version']
+            if 'assignees' in result['metadata']:
+                metadata_optimized['assignees'] = result['metadata']['assignees']
+            if 'labels' in result['metadata']:
+                metadata_optimized['labels'] = result['metadata']['labels']
+            result['metadata'] = metadata_optimized
+
+            # Remove 'id' field when embedded (use task.context_id instead)
+            if 'id' in result:
+                del result['id']
+        else:
+            # Add task_id at root level for backward compatibility (non-embedded)
+            result['task_id'] = self.metadata.task_id
+
         # Restore custom fields from custom_sections to root level
         if 'custom_sections' in result:
             custom_sections_to_keep = []
@@ -748,7 +769,7 @@ class TaskContext:
                     # Keep other custom sections
                     custom_sections_to_keep.append(section)
             result['custom_sections'] = custom_sections_to_keep
-        
+
         return result
     
     @classmethod

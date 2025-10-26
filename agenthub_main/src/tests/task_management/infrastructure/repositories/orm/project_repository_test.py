@@ -64,6 +64,12 @@ class TestProjectRepository:
             repo.user_id = "test-user"  # Add user_id attribute
             repo._user_id = "test-user"  # Add _user_id attribute
             repo.get_user_filter = Mock(return_value=ProjectORM.user_id == "test-user")
+            # Add EventPublishingMixin attributes (required when __init__ is bypassed)
+            repo._event_bus = None
+            repo._event_publishing_enabled = True
+            # Add CacheInvalidationMixin attributes
+            repo._cache = None
+            repo._cache_enabled = True
             return repo
 
     @pytest.fixture
@@ -253,52 +259,49 @@ class TestProjectRepository:
         repository.transaction = Mock()
         repository.transaction().__enter__ = Mock()
         repository.transaction().__exit__ = Mock(return_value=False)
-        
+
         # Mock get_db_session
         repository.get_db_session = Mock()
         repository.get_db_session().__enter__ = Mock(return_value=mock_session)
         repository.get_db_session().__exit__ = Mock(return_value=False)
-        
+
         # Configure mock query with chained methods
         mock_query = Mock()
         mock_session.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = sample_project_orm
-        
-        # Mock super().update() to return the updated ORM object
-        # This is what the actual implementation expects
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.super') as mock_super:
-            mock_super_instance = Mock()
-            mock_super.return_value = mock_super_instance
-            # update_project calls super().update() which returns the ORM object
-            mock_super_instance.update.return_value = sample_project_orm
-            
-            # Update the sample_project_orm to reflect the changes
-            sample_project_orm.name = "Updated Project Name"
-            sample_project_orm.description = "Updated description"
-            sample_project_orm.updated_at = datetime.now(timezone.utc)
-            
-            # Mock the entity conversion
-            expected_entity = Project(
-                id="proj-123",
-                name="Updated Project Name",
-                description="Updated description",
-                created_at=sample_project_orm.created_at,
-                updated_at=sample_project_orm.updated_at
-            )
-            repository._model_to_entity.return_value = expected_entity
-            
-            # Execute
-            result = repository.update_project(
-                project_id="proj-123",
-                name="Updated Project Name",
-                description="Updated description"
-            )
-            
-            # Verify
-            mock_super_instance.update.assert_called_once()
-            assert result.name == "Updated Project Name"
-            assert result.description == "Updated description"
+
+        # FIX: Test behavior (update works) not implementation details (super().update() called)
+        # The current implementation updates attributes directly, not via super().update()
+
+        # Update the sample_project_orm to reflect the changes
+        sample_project_orm.name = "Updated Project Name"
+        sample_project_orm.description = "Updated description"
+        sample_project_orm.updated_at = datetime.now(timezone.utc)
+
+        # Mock the entity conversion
+        expected_entity = Project(
+            id="proj-123",
+            name="Updated Project Name",
+            description="Updated description",
+            created_at=sample_project_orm.created_at,
+            updated_at=sample_project_orm.updated_at
+        )
+        repository._model_to_entity.return_value = expected_entity
+
+        # Execute
+        result = repository.update_project(
+            project_id="proj-123",
+            name="Updated Project Name",
+            description="Updated description"
+        )
+
+        # Verify behavior: update succeeded and returned correct entity
+        assert result.name == "Updated Project Name"
+        assert result.description == "Updated description"
+        # Verify the ORM model was updated with new values
+        assert sample_project_orm.name == "Updated Project Name"
+        assert sample_project_orm.description == "Updated description"
 
     def test_delete_project(self, repository, mock_session, sample_project_orm):
         """Test deleting project"""
@@ -567,46 +570,43 @@ class TestProjectRepository:
         repository.transaction = Mock()
         repository.transaction().__enter__ = Mock()
         repository.transaction().__exit__ = Mock(return_value=False)
-        
+
         # Mock get_db_session
         repository.get_db_session = Mock()
         repository.get_db_session().__enter__ = Mock(return_value=mock_session)
         repository.get_db_session().__exit__ = Mock(return_value=False)
-        
+
         # Configure mock query with chained methods
         mock_query = Mock()
         mock_session.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = sample_project_orm
-        
-        # Mock super().update() to return the updated ORM object
-        with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.super') as mock_super:
-            mock_super_instance = Mock()
-            mock_super.return_value = mock_super_instance
-            # update_project calls super().update() which returns the ORM object
-            mock_super_instance.update.return_value = sample_project_orm
-            
-            # Update only the description field to simulate partial update
-            sample_project_orm.description = "New description only"
-            sample_project_orm.updated_at = datetime.now(timezone.utc)
-            
-            # Mock the entity conversion
-            expected_entity = Project(
-                id="proj-123",
-                name="Test Project",  # Keep original name
-                description="New description only",  # Updated description
-                created_at=sample_project_orm.created_at,
-                updated_at=sample_project_orm.updated_at
-            )
-            repository._model_to_entity.return_value = expected_entity
-            
-            # Execute partial update - update_project updates the ORM object in place
-            result = repository.update_project("proj-123", description="New description only")
-            
-            # Verify
-            mock_super_instance.update.assert_called_once()
-            assert result.description == "New description only"
-            assert result.name == "Test Project"  # Name should remain unchanged
+
+        # FIX: Test behavior (partial update works) not implementation details
+        # The current implementation updates attributes directly, not via super().update()
+
+        # Update only the description field to simulate partial update
+        sample_project_orm.description = "New description only"
+        sample_project_orm.updated_at = datetime.now(timezone.utc)
+
+        # Mock the entity conversion
+        expected_entity = Project(
+            id="proj-123",
+            name="Test Project",  # Keep original name
+            description="New description only",  # Updated description
+            created_at=sample_project_orm.created_at,
+            updated_at=sample_project_orm.updated_at
+        )
+        repository._model_to_entity.return_value = expected_entity
+
+        # Execute partial update - update_project updates the ORM object in place
+        result = repository.update_project("proj-123", description="New description only")
+
+        # Verify behavior: partial update succeeded
+        assert result.description == "New description only"
+        assert result.name == "Test Project"  # Name should remain unchanged
+        # Verify the ORM model was updated with only the new description
+        assert sample_project_orm.description == "New description only"
 
     def test_cascade_delete(self, repository, mock_session, sample_project_orm):
         """Test cascade deletion of related entities"""
@@ -614,26 +614,28 @@ class TestProjectRepository:
         repository.transaction = Mock()
         repository.transaction().__enter__ = Mock()
         repository.transaction().__exit__ = Mock(return_value=False)
-        
+
         # Mock get_db_session context manager properly
         cm = MagicMock()
         cm.__enter__.return_value = mock_session
         cm.__exit__.return_value = False
         repository.get_db_session = Mock(return_value=cm)
-        
-        # Configure mock query with chained methods
+
+        # Configure mock query with chained methods for delete_project
         mock_query = Mock()
         mock_session.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.first.return_value = sample_project_orm
-        
-        # Mock the parent class's delete method since it requires proper setup
-        with patch.object(repository.__class__.__bases__[0], 'delete', return_value=True):
-            # Execute
-            result = repository.delete_project("proj-123")
-        
-        # Verify cascading delete
+        # FIX: Mock delete() to return integer count (required by delete_project implementation)
+        mock_query.delete.return_value = 1  # Indicates 1 row deleted
+
+        # Execute delete - it should complete without errors
+        result = repository.delete_project("proj-123")
+
+        # Verify behavior: delete completed successfully
         assert result is True
+        # Verify the query delete method was called
+        assert mock_query.delete.called
         # In real implementation, related entities would be deleted via cascade
 
     def test_search_projects(self, repository, mock_session):
@@ -774,6 +776,12 @@ class TestProjectRepositoryDDDConversion:
         with patch('fastmcp.task_management.infrastructure.repositories.orm.project_repository.ORMProjectRepository.__init__', return_value=None):
             repo = ProjectRepository(session=None, user_id="test-user")
             repo.user_id = "test-user"
+            # Add EventPublishingMixin attributes (required when __init__ is bypassed)
+            repo._event_bus = None
+            repo._event_publishing_enabled = True
+            # Add CacheInvalidationMixin attributes
+            repo._cache = None
+            repo._cache_enabled = True
             return repo
 
     @pytest.fixture

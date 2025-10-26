@@ -267,6 +267,15 @@ class WebSocketNotificationService:
                 result = session.execute(query, params).fetchone()
 
                 if result:
+                    # Handle last_activity which may be string (SQLite) or datetime object
+                    last_activity = result[9]
+                    if last_activity:
+                        # If it's already a string (from SQLite), use it directly
+                        # If it's a datetime object (from PostgreSQL), convert to ISO format
+                        last_activity_str = last_activity if isinstance(last_activity, str) else last_activity.isoformat()
+                    else:
+                        last_activity_str = None
+
                     return {
                         "id": result[0],
                         "project_id": result[1],
@@ -277,7 +286,7 @@ class WebSocketNotificationService:
                         "completed_tasks": result[6] or 0,
                         "todo_tasks": result[7] or 0,
                         "progress_percentage": float(result[8] or 0),
-                        "last_activity": result[9].isoformat() if result[9] else None
+                        "last_activity": last_activity_str
                     }
                 else:
                     logger.warning(f"Branch {branch_id} not found for cascade data lookup")
@@ -661,7 +670,9 @@ class WebSocketNotificationService:
         # CRITICAL FIX: Add branch cascade data for task events to trigger frontend animations
         if event_type in ["created", "deleted"] and git_branch_id:
             logger.info(f"🎯 Adding branch cascade data for task {event_type} event")
-            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(git_branch_id, user_id)
+            # Extract UUID string from GitBranchId value object if needed
+            git_branch_id_str = git_branch_id.value if hasattr(git_branch_id, 'value') else str(git_branch_id)
+            branch_cascade_data = WebSocketNotificationService._get_branch_cascade_data(git_branch_id_str, user_id)
             if branch_cascade_data:
                 # Add cascade data to metadata for frontend consumption
                 metadata["cascade"] = {

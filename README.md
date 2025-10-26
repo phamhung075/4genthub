@@ -87,33 +87,40 @@ http://localhost:8000
 
 ```mermaid
 graph TD
-    A[👨‍💻 Human User] --> B[🌐 Web Dashboard<br/>React + TypeScript]
-    B --> C[🔗 MCP Server<br/>FastMCP + Python]
-    C --> D[🤖 Agent Orchestra<br/>60+ Specialized Agents]
-    C --> E[📊 4-Tier Context<br/>Global→Project→Branch→Task]
-    C --> F[🗄️ Database Layer<br/>PostgreSQL + Redis]
-    
-    D --> G[🎭 Task Planning Agent]
-    D --> H[💻 Coding Agent]
-    D --> I[🔍 Debugger Agent]
-    D --> J[🎨 UI Designer Agent]
-    D --> K[🛡️ Security Auditor]
-    D --> L[📚 Documentation Agent]
-    D --> M[🚀 And 54 More...]
-    
+    A[👨‍💻 Human User] --> B[🪝 Claude Hook Client<br/>Python Enforcement System]
+    B --> C[🌐 Web Dashboard<br/>React + TypeScript]
+    B --> D[📁 File System<br/>Protection & Validation]
+    B --> E[📚 Documentation<br/>ai_docs/ + index.json]
+    B --> F[⏱️ Session Tracking<br/>2-hour Work Sessions]
+
+    C --> G[🔗 MCP Server<br/>FastMCP + Python]
+    G --> H[🤖 Agent Orchestra<br/>60+ Specialized Agents]
+    G --> I[📊 4-Tier Context<br/>Global→Project→Branch→Task]
+    G --> J[🗄️ Database Layer<br/>PostgreSQL + Redis]
+
+    H --> K[🎭 Task Planning Agent]
+    H --> L[💻 Coding Agent]
+    H --> M[🔍 Debugger Agent]
+    H --> N[🎨 UI Designer Agent]
+    H --> O[🛡️ Security Auditor]
+    H --> P[📚 Documentation Agent]
+    H --> Q[🚀 And 54 More...]
+
     style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
+    style B fill:#ffe0b2
+    style C fill:#f3e5f5
+    style G fill:#e8f5e8
+    style H fill:#fff3e0
 ```
 
 </div>
 
 ### 🧩 **Core Components**
 
+- 🪝 **Claude Hook Client**: Python-based enforcement system with pre-tool file system protection, post-tool documentation indexing, and 2-hour session tracking. Located in `.claude/hooks/`, it provides selective documentation enforcement, automatic index.json generation, root directory restrictions, kebab-case folder validation, and non-disruptive workflow protection
 - 🔗 **MCP Server**: FastMCP-based server with streamable HTTP transport and RESTful APIs
 - 🎯 **Task Management**: Comprehensive DDD-compliant lifecycle management with visual tracking
-- 🤖 **Agent Orchestration**: Multi-agent coordination with intelligent role-based switching  
+- 🤖 **Agent Orchestration**: Multi-agent coordination with intelligent role-based switching
 - 📋 **Project Management**: Hierarchical organization with automatic context inheritance
 - 🌐 **Web Dashboard**: React-based interface optimized for human-AI collaboration
 - 🐳 **Docker Infrastructure**: Multi-mode containerized deployment with one-click setup
