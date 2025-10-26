@@ -1,0 +1,69 @@
+{
+  "context_id_removal": {
+    "optimization": "context_data.id removal (when embedded)",
+    "chars_saved_per_response": 44,
+    "tokens_saved_per_response": 11,
+    "applicability": "Every task response with include_context=true"
+  },
+  "metadata_flattening": {
+    "optimization": "context_data metadata flattening",
+    "fields_removed": [
+      "task_id",
+      "status",
+      "priority",
+      "title",
+      "progress_percentage",
+      "estimated_effort"
+    ],
+    "chars_saved_per_response": 183,
+    "tokens_saved_per_response": 45,
+    "applicability": "Every task response with include_context=true"
+  },
+  "parent_id_removal": {
+    "optimization": "parent_task_id removal (nested only)",
+    "chars_saved_per_subtask": 56,
+    "tokens_saved_per_subtask": 14,
+    "scenarios": {
+      "task_with_3_subtasks": 42,
+      "task_with_5_subtasks": 70,
+      "task_with_10_subtasks": 140
+    },
+    "applicability": "Subtasks embedded in task response only",
+    "note": "parent_task_id KEPT in standalone subtask GET responses"
+  },
+  "timestamp_dedup": {
+    "optimization": "timestamp deduplication",
+    "fields_removed": [
+      "created_at",
+      "updated_at",
+      "timestamp"
+    ],
+    "chars_saved_per_response": 107,
+    "tokens_saved_per_response": 26,
+    "applicability": "Every task response with include_context=true"
+  },
+  "empty_array_preservation": {
+    "optimization": "empty array removal (REJECTED)",
+    "essential_fields": [
+      "subtasks",
+      "dependencies",
+      "labels",
+      "assignees"
+    ],
+    "chars_per_empty_array": 14,
+    "tokens_not_saved": 14,
+    "reason": "Phase 1 API contract - frontend depends on arrays always present",
+    "impact": "Reduced Phase 2 target from 355 to 305 tokens"
+  },
+  "aggregate": {
+    "base_savings_chars": 334,
+    "base_savings_tokens": 83,
+    "with_5_subtasks_chars": 614,
+    "with_5_subtasks_tokens": 153,
+    "original_target": 355,
+    "revised_target": 305,
+    "base_vs_target_percentage": 27.21311475409836,
+    "with_subtasks_vs_target_percentage": 50.1639344262295,
+    "target_met": false
+  }
+}

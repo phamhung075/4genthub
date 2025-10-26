@@ -81,13 +81,14 @@ class AddSubtaskUseCase:
                     logging.info(f"No assignees to inherit: parent task {task.id} has no assignees")
             
             self._subtask_repository.save(subtask)
-            added_subtask = subtask.to_dict()
+            # Standalone subtask response - include parent_task_id
+            added_subtask = subtask.to_dict(include_parent_id=True)
 
             # Add subtask ID to parent task's subtasks list and increment count
             # This calls the domain method which does both operations atomically
             task.add_subtask(str(subtask_id))
             self._task_repository.save(task)
-            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {task.subtask_count}")
+            logging.info(f"Added subtask {subtask_id} to parent task {task_id}, subtask_count now {len(task.subtasks)}")
 
             # Update parent task progress
             self._update_parent_task_progress(str(task_id))

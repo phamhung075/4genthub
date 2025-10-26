@@ -105,7 +105,6 @@ class CreateGitBranchUseCase:
                     "description": git_branch.description,
                     "project_id": git_branch.project_id,
                     "created_at": git_branch.created_at.isoformat(),
-                    "task_count": git_branch.get_task_count(),
                     "completed_tasks": git_branch.get_completed_task_count(),
                     "progress": git_branch.get_progress_percentage()
                 },

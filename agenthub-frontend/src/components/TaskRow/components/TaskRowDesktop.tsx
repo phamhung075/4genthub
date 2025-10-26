@@ -40,6 +40,10 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
 
   const { getBaseClasses } = useTaskRowState();
 
+  // Calculate counts from arrays (replaces removed backend count fields)
+  const subtaskCount = fullTask?.subtasks?.length ?? 0;
+  const dependencyCount = fullTask?.dependencies?.length ?? 0;
+
   // Combine animation classes with loading state
   const loadingClass = isLoading ? 'loading' : '';
   const rowClasses = `cursor-pointer ${getBaseClasses(isHighlighted, isHovered)} ${animationClass} ${loadingClass}`.trim();
@@ -90,9 +94,9 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
                 size="sm"
               />
               <span>{summary.title}</span>
-              {summary.subtask_count > 0 && (
+              {subtaskCount > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  {summary.subtask_count}
+                  {subtaskCount}
                 </Badge>
               )}
             </div>
@@ -127,9 +131,9 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
             <Badge
               variant="outline"
               className="text-xs cursor-help"
-              title={`This task depends on ${summary.dependency_count} other task${summary.dependency_count === 1 ? '' : 's'}.`}
+              title={`This task depends on ${dependencyCount} other task${dependencyCount === 1 ? '' : 's'}.`}
             >
-              {summary.dependency_count} {summary.dependency_count === 1 ? 'dependency' : 'dependencies'}
+              {dependencyCount} {dependencyCount === 1 ? 'dependency' : 'dependencies'}
             </Badge>
           ) : (
             <span className="text-xs text-muted-foreground">None</span>

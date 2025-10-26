@@ -53,7 +53,6 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
               labels: ['backend'],
               dependencies: [],
               has_dependencies: false,
-              dependency_count: 0,
               has_context: true,
               created_at: '2025-09-30T10:00:00Z',
               updated_at: '2025-09-30T10:00:00Z'
@@ -86,20 +85,18 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         expect(task).toHaveProperty('has_context');
       });
 
-      it('should handle TaskSummary with subtask_count and assignees_count', async () => {
+      it('should handle TaskSummary arrays correctly', async () => {
         const mockBackendResponse = {
           tasks: [
             {
               id: 'task-2',
-              title: 'Task with counts',
+              title: 'Task with arrays',
               status: 'in_progress',
               priority: 'medium',
               subtasks: ['sub-1', 'sub-2'],
-              subtask_count: 2,
               assignees: ['agent-1', 'agent-2'],
-              assignees_count: 2,
               has_dependencies: true,
-              dependency_count: 1,
+              dependencies: ['dep-1'],
               has_context: false
             }
           ],
@@ -114,15 +111,16 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         const result = await taskApiV2.getTasks();
         const task = result.tasks[0];
 
-        // Verify count fields are present
-        expect(task.subtask_count).toBe(2);
-        expect(task.assignees_count).toBe(2);
-        expect(task.dependency_count).toBe(1);
+        // Verify arrays are present
+        expect(task.subtasks).toHaveLength(2);
+        expect(task.assignees).toHaveLength(2);
+        expect(task.dependencies).toHaveLength(1);
       });
     });
 
     describe('GET /api/v2/tasks/{id} - TaskResponse', () => {
       it('should return full Task object matching backend TaskResponse', async () => {
+        // Phase 2: Embedded context without duplicate fields
         const mockBackendResponse = {
           id: 'task-1',
           title: 'Full Task',
@@ -140,7 +138,15 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
           updated_at: '2025-09-30T10:00:00Z',
           git_branch_id: 'branch-1',
           context_id: 'context-1',
-          context_data: {},
+          // Phase 2: context_data embedded without id (id omitted when embedded)
+          context_data: {
+            // id omitted when embedded in task
+            metadata: {
+              // task_id, status, priority, timestamp omitted when embedded
+              version: '1.0',
+              source: 'mcp-ai'
+            }
+          },
           dependency_relationships: null,
           progress_percentage: 0,
           progress_history: {},
@@ -285,15 +291,16 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
   describe('Subtask API DTO Tests', () => {
     describe('GET /api/v2/subtasks/task/{id} - SubtasksResponse', () => {
       it('should return SubtaskSummary[] matching backend SubtasksResponse', async () => {
+        // Phase 2: Subtasks nested in parent response - parent_task_id omitted
         const mockBackendResponse = {
           subtasks: [
             {
               id: 'subtask-1',
+              // parent_task_id omitted when nested in parent task response
               title: 'Subtask 1',
               status: 'todo',
               priority: 'high',
               assignees: ['coding-agent'],
-              assignees_count: 1,
               progress_percentage: 0,
               created_at: '2025-09-30T10:00:00Z',
               updated_at: '2025-09-30T10:00:00Z'
@@ -304,6 +311,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
 
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          headers: new Headers(),  // Add headers to prevent logging error
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
 
@@ -319,7 +327,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         expect(subtask).toHaveProperty('title');
         expect(subtask).toHaveProperty('status');
         expect(subtask).toHaveProperty('priority');
-        expect(subtask).toHaveProperty('assignees_count');
+        expect(subtask).toHaveProperty('assignees');
         expect(subtask).toHaveProperty('progress_percentage');
       });
     });
@@ -329,10 +337,12 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
         // Use valid UUID format for subtask ID
         const validSubtaskId = '550e8400-e29b-41d4-a716-446655440000';
 
+        // Phase 2: Standalone subtask response KEEPS parent_task_id
         const mockBackendResponse = {
           task_id: 'task-1',
           subtask: {
             id: validSubtaskId,
+            parent_task_id: 'task-1',  // ✅ Included when standalone
             title: 'Full Subtask',
             description: 'Subtask description',
             status: 'in_progress',

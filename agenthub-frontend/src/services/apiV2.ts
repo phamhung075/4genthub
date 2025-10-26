@@ -238,14 +238,19 @@ const fetchWithRetry = async (url: string, init?: RequestInit) => {
 // Task API V2 - User-isolated endpoints
 export const taskApiV2 = {
   // Get all tasks for current user, optionally filtered by git_branch_id
-  getTasks: async (params?: { git_branch_id?: string }) => {
+  getTasks: async (params?: { git_branch_id?: string; includeContext?: boolean }) => {
     const url = new URL(`${API_BASE_URL}/api/v2/tasks/`);
-    
+
     // Add git_branch_id as query parameter if provided
     if (params?.git_branch_id) {
       url.searchParams.set('git_branch_id', params.git_branch_id);
     }
-    
+
+    // Add include_context as query parameter if provided
+    if (params?.includeContext !== undefined) {
+      url.searchParams.set('include_context', params.includeContext.toString());
+    }
+
     return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -254,8 +259,15 @@ export const taskApiV2 = {
   },
 
   // Get a specific task (only if owned by user)
-  getTask: async (taskId: string) => {
-    return fetchWithRetry(`${API_BASE_URL}/api/v2/tasks/${taskId}`, {
+  getTask: async (taskId: string, includeContext?: boolean) => {
+    const url = new URL(`${API_BASE_URL}/api/v2/tasks/${taskId}`);
+
+    // Add include_context as query parameter if provided
+    if (includeContext !== undefined) {
+      url.searchParams.set('include_context', includeContext.toString());
+    }
+
+    return fetchWithRetry(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
@@ -448,7 +460,7 @@ export const subtaskApiV2 = {
   },
 
   // Get a specific subtask - simple endpoint with authentication
-  getSubtask: async (subtaskId: string) => {
+  getSubtask: async (subtaskId: string, includeContext?: boolean) => {
     // Validate UUID format before making API call
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(subtaskId)) {
@@ -456,8 +468,15 @@ export const subtaskApiV2 = {
       throw new Error('Invalid subtask ID format');
     }
 
+    const url = new URL(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`);
+
+    // Add include_context as query parameter if provided
+    if (includeContext !== undefined) {
+      url.searchParams.set('include_context', includeContext.toString());
+    }
+
     // Use simple endpoint with proper authentication headers
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/${subtaskId}`, {
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(), // This includes the Bearer token
       credentials: 'include',
@@ -503,11 +522,18 @@ export const subtaskApiV2 = {
   },
 
   // List subtasks for a task
-  listSubtasksForTask: async (taskId: string) => {
-    console.log('🔍 [apiV2.listSubtasksForTask] CALLING API - taskId:', taskId);
-    console.log('🔍 [apiV2.listSubtasksForTask] URL:', `${API_BASE_URL}/api/v2/subtasks/task/${taskId}`);
+  listSubtasksForTask: async (taskId: string, includeContext?: boolean) => {
+    const url = new URL(`${API_BASE_URL}/api/v2/subtasks/task/${taskId}`);
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/subtasks/task/${taskId}`, {
+    // Add include_context as query parameter if provided
+    if (includeContext !== undefined) {
+      url.searchParams.set('include_context', includeContext.toString());
+    }
+
+    console.log('🔍 [apiV2.listSubtasksForTask] CALLING API - taskId:', taskId);
+    console.log('🔍 [apiV2.listSubtasksForTask] URL:', url.toString());
+
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',

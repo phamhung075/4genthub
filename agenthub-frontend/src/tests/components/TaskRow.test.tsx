@@ -74,11 +74,8 @@ const mockTaskSummary: TaskSummary = {
   title: 'Test Task',
   status: 'todo',
   priority: 'medium',
-  subtask_count: 0,
-  assignees_count: 1,
   assignees: ['coding-agent'],
   has_dependencies: false,
-  dependency_count: 0,
   created_at: new Date().toISOString()
 };
 

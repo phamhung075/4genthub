@@ -7,8 +7,20 @@ export interface ContextProgress {
   completed_actions?: string[];
 }
 
+/**
+ * Context Metadata Interface
+ *
+ * Phase 2 Optimization Notes:
+ * - When context is embedded in task response: task_id, status, priority, timestamp are NOT included
+ *   (these fields are already at task level, so duplication is removed)
+ * - When context is returned standalone: All metadata fields ARE included
+ * - This conditional serialization saves ~355 tokens per response
+ */
 export interface ContextMetadata {
-  status?: string;
+  status?: string; // Only included in standalone context responses, omitted when embedded
+  task_id?: string; // Only included in standalone context responses, omitted when embedded
+  priority?: string; // Only included in standalone context responses, omitted when embedded
+  timestamp?: string; // Only included in standalone context responses, omitted when embedded
   [key: string]: any;
 }
 

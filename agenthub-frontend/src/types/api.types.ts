@@ -1,10 +1,62 @@
 /**
  * API Types - Complete type definitions for API responses
+ *
+ * PHASE 2 OPTIMIZATION NOTES (2025-10-26):
+ * Backend completed Phase 2 optimizations that changed response structure at DTO serialization level.
+ * These changes implement conditional field inclusion based on response context to reduce token usage.
+ *
+ * Key Changes:
+ * 1. Context Metadata Duplicates Removed:
+ *    - context_data.metadata no longer includes: task_id, status, priority, timestamp when embedded in task response
+ *    - These fields are only at task level (task.id, task.status, task.priority, meta.timestamp)
+ *    - Saves duplication when context is part of task response
+ *
+ * 2. Subtask parent_task_id Now Conditional:
+ *    - When subtasks nested in parent task response → parent_task_id NOT included
+ *    - When subtasks returned standalone → parent_task_id IS included
+ *    - Type: parent_task_id?: string (optional)
+ *
+ * 3. Context ID Conditional:
+ *    - context_data.id removed when context embedded in task response
+ *    - Only included when context returned standalone
+ *    - Type: id?: string (optional)
+ *
+ * Token Savings: ~355 tokens per response from these optimizations
+ * Backend Evidence: context.py added `embedded` parameter, subtask.py added `include_parent_id` parameter
  */
 
 // ============================================
 // Core Entity Types
 // ============================================
+
+/**
+ * Context Interface - Represents context data attached to tasks
+ *
+ * Phase 2 Optimization Notes:
+ * - `id` is optional: Only included when context returned standalone, omitted when embedded in task response
+ * - `metadata` fields are conditionally serialized: task_id, status, priority, timestamp are omitted when embedded
+ *   (these fields are already present at task level, so duplication is removed)
+ */
+export interface Context {
+  id?: string; // Optional: Only included when context returned standalone, omitted when embedded in parent task
+  level?: string; // Context level: 'global', 'project', 'branch', 'task'
+  context_data?: {
+    metadata?: {
+      // Conditional fields - only included in standalone context responses:
+      // task_id, status, priority, timestamp are omitted when context is embedded
+      [key: string]: any;
+    };
+    progress?: {
+      current_session_summary?: string;
+      completion_percentage?: number;
+      next_steps?: string[];
+      completed_actions?: string[];
+    };
+    [key: string]: any; // Additional context-level specific fields
+  };
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface Task {
   id: string;
@@ -13,14 +65,11 @@ export interface Task {
   status: string;
   priority: string;
   assignees?: string[];
-  assignees_count: number;
-  subtask_count: number;
   has_dependencies: boolean;
-  dependency_count?: number;
   dependencies?: string[];
   has_context: boolean;
   context_id?: string;
-  context_data?: any;
+  context_data?: Context; // Phase 2: Context embedded without id and with conditional metadata serialization
   git_branch_id: string;
   project_id: string;
   created_at?: string;
@@ -30,21 +79,20 @@ export interface Task {
   labels?: string[];
   details?: string;
   progress_percentage?: number;
-  subtasks?: Subtask[] | string[]; // Can be array of subtask objects or subtask IDs
+  subtasks?: Subtask[] | string[]; // Phase 2: Can be array of subtask objects (without parent_task_id) or subtask IDs
   parent_task_id?: string; // Identifies if this task is actually a subtask
   progress_history?: Record<string, any>; // Progress history entries
-  progress_count?: number; // Total number of progress entries
 }
 
 export interface Subtask {
   id: string;
   task_id: string;
+  parent_task_id?: string; // Optional: Only included when subtask returned standalone, omitted when nested in parent task response
   title: string;
   description?: string;
   status: string;
   priority: string;
   assignees?: string[];
-  assignees_count: number;
   progress_percentage?: number;
   created_at?: string;
   updated_at?: string;
@@ -60,8 +108,6 @@ export interface Project {
   updated_at?: string;
   owner_id?: string;
   status?: string;
-  branch_count?: number;
-  task_count?: number;
   git_branchs?: Record<string, Branch>; // API returns branches as a Record with branch IDs as keys
   branches?: Branch[]; // Legacy array format for backward compatibility
 }
@@ -76,8 +122,6 @@ export interface Branch {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
-  task_count?: number;
-  completed_tasks?: number;
 }
 
 export interface Rule {
@@ -227,4 +271,24 @@ export interface LegacyBranchResponse {
   branches: BranchSummary[];
   project_summary?: ProjectSummary;
   total_branches?: number;
+}
+
+// ============================================
+// Request Options Types
+// ============================================
+
+export interface TaskRequestOptions {
+  includeContext?: boolean;
+}
+
+export interface SubtaskRequestOptions {
+  includeContext?: boolean;
+}
+
+export interface ProjectRequestOptions {
+  includeContext?: boolean;
+}
+
+export interface BranchRequestOptions {
+  includeContext?: boolean;
 }

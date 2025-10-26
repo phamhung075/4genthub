@@ -270,10 +270,7 @@ class GitBranch(BaseTimestampEntity):
             'assigned_agents': self.assigned_agents.copy(),  # Include assigned_agents list
             'priority': self.priority.value if hasattr(self.priority, 'value') else str(self.priority),
             'status': self.status.value if hasattr(self.status, 'value') else str(self.status),
-            'archived': self.archived,
-            'task_count': self.get_task_count(),
-            'completed_task_count': self.get_completed_task_count(),
-            'progress_percentage': self.get_progress_percentage()
+            'archived': self.archived
         }
     
     def __repr__(self) -> str:
