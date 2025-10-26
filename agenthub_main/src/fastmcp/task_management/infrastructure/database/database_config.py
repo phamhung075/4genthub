@@ -300,9 +300,14 @@ class DatabaseConfig:
 
             # Expand user home directory if ~ is used
             sqlite_path = os.path.expanduser(sqlite_path)
-            # Make absolute path if relative
-            if not os.path.isabs(sqlite_path):
-                sqlite_path = os.path.abspath(sqlite_path)
+
+            # CRITICAL: Preserve SQLite's special :memory: keyword
+            # :memory: creates an in-memory database (100x faster, auto-cleanup)
+            # Converting it to absolute path breaks this feature
+            if sqlite_path != ":memory:":
+                # Make absolute path if relative (but NOT for :memory:!)
+                if not os.path.isabs(sqlite_path):
+                    sqlite_path = os.path.abspath(sqlite_path)
 
             logger.info(f"📦 Using SQLite database: {sqlite_path}")
             return f"sqlite:///{sqlite_path}"
