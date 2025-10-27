@@ -107,7 +107,7 @@ export function useWebSocket(userId: string, token: string) {
     }
 
     // Create new WebSocket client
-    const client = new WebSocketClient(userId, token);
+    const client = new WebSocketClient(token);
     clientRef.current = client;
     globalWebSocketClient = client;
 
