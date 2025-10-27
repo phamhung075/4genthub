@@ -444,6 +444,26 @@ class CompleteTaskUseCase:
                         data=context_update,
                         propagate_changes=True
                     )
+
+                    # 🔄 SYNC: Synchronize task status and metadata after completion
+                    try:
+                        from ..services.task_context_sync_service import TaskContextSyncService
+                        import asyncio
+
+                        task_id_str = str(task_id)
+                        sync_service = TaskContextSyncService(self._task_repository)
+
+                        # Sync task status and metadata
+                        try:
+                            asyncio.run(sync_service.sync_task_status(task_id_str, "done"))
+                            asyncio.run(sync_service.sync_task_metadata(task_id_str, task))
+                            logging.getLogger(__name__).info(f"✅ Synced status and metadata for completed task {task_id_str}")
+                        except RuntimeError:
+                            # Already in event loop
+                            logging.getLogger(__name__).info(f"⏭️ Scheduled status/metadata sync for completed task {task_id_str} (in async context)")
+                    except Exception as sync_error:
+                        logging.getLogger(__name__).warning(f"⚠️ Failed to sync status/metadata for completed task {task_id_str}: {sync_error}")
+
                 except Exception as e:
                     logging.getLogger(__name__).warning(f"Could not update context with completion summary: {e}")
             

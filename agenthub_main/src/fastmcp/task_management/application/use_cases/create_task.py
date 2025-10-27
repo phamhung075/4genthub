@@ -227,12 +227,31 @@ class CreateTaskUseCase:
                     task.set_context_id(task_id_str)
                     # Save the updated task with context_id
                     self._task_repository.save(task)
-                    
+
+                    # 🔄 SYNC: Initial metadata synchronization after task creation
+                    try:
+                        from ..services.task_context_sync_service import TaskContextSyncService
+                        import asyncio
+
+                        sync_service = TaskContextSyncService(self._task_repository, user_id=user_id)
+
+                        # Sync task metadata (timestamps, assignees, estimated_effort, etc.)
+                        try:
+                            asyncio.run(sync_service.sync_task_metadata(task_id_str, task))
+                            self._logger.info(f"✅ Synced metadata for newly created task {task_id_str}")
+                        except RuntimeError:
+                            # Already in event loop, use asyncio.create_task
+                            loop = asyncio.get_event_loop()
+                            loop.create_task(sync_service.sync_task_metadata(task_id_str, task))
+                            self._logger.info(f"✅ Scheduled metadata sync for newly created task {task_id_str}")
+                    except Exception as sync_error:
+                        self._logger.warning(f"⚠️ Failed to sync metadata for newly created task {task_id_str}: {sync_error}")
+
             except Exception as context_error:
                 # Log context creation error but don't fail task creation
                 task_id_str = str(task.id.value) if hasattr(task.id, 'value') else str(task.id)
                 self._logger.warning(f"Error creating task context for {task_id_str}: {context_error}")
-            
+
             # Convert to response DTO
             task_response = TaskResponse.from_domain(task)
             return CreateTaskResponse.success_response(task_response)

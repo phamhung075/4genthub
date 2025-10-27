@@ -189,21 +189,31 @@ class UpdateTaskUseCase:
             if self._context_sync_service is None:
                 from ..services.task_context_sync_service import TaskContextSyncService
                 self._context_sync_service = TaskContextSyncService(self._task_repository)
-            
+
             # Use TaskContextSyncService to sync context asynchronously
             # Note: Since the context sync service has async methods, we need to handle this properly
             import asyncio
-            
+
+            # 🔄 SYNC: Granular synchronization of task status and metadata
+            try:
+                asyncio.run(self._context_sync_service.sync_task_metadata(task_id_str, task))
+                logger.info(f"✅ Synced metadata for updated task {task_id_str}")
+            except RuntimeError:
+                # Already in event loop
+                logger.info(f"⏭️ Scheduled metadata sync for updated task {task_id_str} (in async context)")
+            except Exception as sync_error:
+                logger.warning(f"⚠️ Failed to sync metadata for updated task {task_id_str}: {sync_error}")
+
             # Check if we're already in an async context
             try:
                 loop = asyncio.get_running_loop()
                 # We're in an async context, but this is a sync method
                 # We'll use run_in_executor to avoid blocking
                 logger.debug(f"[UpdateTaskUseCase] Running in async context, using task creation for context sync")
-                
+
                 # Since we can't await in a sync method, we'll just trigger context update
                 # The context will be updated on next access or through background task
-                
+
                 # For now, we'll just log that sync was triggered
                 logger.info(f"[UpdateTaskUseCase] Context sync triggered for task {task_id_str}")
                 

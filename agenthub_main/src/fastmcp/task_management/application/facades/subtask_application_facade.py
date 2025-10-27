@@ -365,6 +365,21 @@ class SubtaskApplicationFacade:
         except Exception as e:
             logger.warning(f"Failed to broadcast subtask creation: {e}")
 
+        # 🔄 SYNC: Update parent task's subtask counts in context_data
+        try:
+            from ..services.task_context_sync_service import TaskContextSyncService
+            import asyncio
+
+            sync_service = TaskContextSyncService(task_repository)
+            try:
+                asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask creation")
+            except RuntimeError:
+                # Already in event loop
+                logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+        except Exception as sync_error:
+            logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
+
         return result
     
     def _handle_update_subtask(self, task_id: str, subtask_data: Dict[str, Any], task_repository: TaskRepository, subtask_repository: SubtaskRepository, subtask_id: str = None) -> Dict[str, Any]:
@@ -413,6 +428,20 @@ class SubtaskApplicationFacade:
             )
         except Exception as e:
             logger.warning(f"Failed to broadcast subtask update: {e}")
+
+        # 🔄 SYNC: Update parent task's subtask counts in context_data
+        try:
+            from ..services.task_context_sync_service import TaskContextSyncService
+            import asyncio
+
+            sync_service = TaskContextSyncService(task_repository)
+            try:
+                asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask update")
+            except RuntimeError:
+                logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+        except Exception as sync_error:
+            logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
         return result
     
@@ -477,6 +506,20 @@ class SubtaskApplicationFacade:
 
             except Exception as e:
                 logger.warning(f"Failed to broadcast subtask deletion: {e}")
+
+            # 🔄 SYNC: Update parent task's subtask counts in context_data after deletion
+            try:
+                from ..services.task_context_sync_service import TaskContextSyncService
+                import asyncio
+
+                sync_service = TaskContextSyncService(task_repository)
+                try:
+                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask deletion")
+                except RuntimeError:
+                    logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+            except Exception as sync_error:
+                logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
         return response
     
@@ -548,6 +591,20 @@ class SubtaskApplicationFacade:
                 )
             except Exception as e:
                 logger.warning(f"Failed to broadcast subtask completion: {e}")
+
+            # 🔄 SYNC: Update parent task's subtask counts in context_data after completion
+            try:
+                from ..services.task_context_sync_service import TaskContextSyncService
+                import asyncio
+
+                sync_service = TaskContextSyncService(task_repository)
+                try:
+                    asyncio.run(sync_service.sync_subtask_counts(task_id, subtask_repository))
+                    logger.info(f"✅ Synced subtask counts for parent task {task_id} after subtask completion")
+                except RuntimeError:
+                    logger.info(f"⏭️ Scheduled subtask count sync for parent task {task_id} (in async context)")
+            except Exception as sync_error:
+                logger.warning(f"⚠️ Failed to sync subtask counts for parent task {task_id}: {sync_error}")
 
         return response
     
