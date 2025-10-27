@@ -3,7 +3,7 @@
 
 **Version**: 0.0.2
 **Status**: Production NOT Ready
-**Last Updated**: 2025-10-16
+**Last Updated**: 2025-10-27
 **Document Owner**: Engineering Team
 
 ---
@@ -20,6 +20,8 @@ agenthub implements a **Domain-Driven Design (DDD) architecture** with clear sep
 4. **Multi-Tenancy**: Per-user data isolation with Keycloak authentication
 5. **Containerized Deployment**: Docker-based with multiple configuration profiles
 6. **Microservices Ready**: Designed for future microservices migration
+7. **Dynamic Tool Enforcement v2.0**: Agent-specific tool permissions enforced at infrastructure level
+8. **Vision System Integration**: AI enrichment provides workflow guidance and intelligent insights
 
 ### 1.3 Technology Stack at a Glance
 - **Frontend**: React 19 + TypeScript 4 + Vite 7 + Tailwind CSS
@@ -606,9 +608,181 @@ Repository → Domain → Application → Controller → MCP → Client
 
 ---
 
-## 6. Authentication & Security Architecture
+## 6. Dynamic Tool Enforcement v2.0
 
-### 6.1 Keycloak Integration
+### 6.1 Architecture Overview
+
+Dynamic Tool Enforcement v2.0 represents a revolutionary shift from static configuration-based permissions to dynamic, runtime-enforced agent capabilities. The system ensures that each of the 42+ specialized agents can only access tools appropriate for their specific role.
+
+### 6.2 How It Works
+
+```
+Agent Call (call_agent)
+    ↓
+MCP Server responds with agent data
+    ↓
+{
+  "agent": {
+    "name": "master-orchestrator-agent",
+    "tools": ["Task", "Read", "mcp__*__manage_task", ...],  ← SOURCE OF TRUTH
+    "system_prompt": "...",
+    ...
+  }
+}
+    ↓
+Infrastructure Layer receives tool list
+    ↓
+Runtime Tool Enforcement Module
+    ↓
+Tool Request Validation
+    ↓
+IF tool in agent.tools:
+    Execute tool
+ELSE:
+    Block with error: "Tool 'X' not available for agent 'Y'"
+```
+
+### 6.3 Agent-Specific Tool Examples
+
+**Master Orchestrator Agent**:
+- **Allowed**: Task, TodoWrite, mcp__agenthub_http__manage_task, mcp__agenthub_http__manage_subtask
+- **Blocked**: Edit, Write, Bash (designed for coordination, not direct implementation)
+- **Rationale**: Orchestrators delegate work, they don't execute it directly
+
+**Coding Agent**:
+- **Allowed**: Read, Write, Edit, Bash, Grep, Glob
+- **Blocked**: Task (cannot delegate to other agents)
+- **Rationale**: Specialists execute work, they don't coordinate other agents
+
+**Documentation Agent**:
+- **Allowed**: Read, Write, Edit, Grep, WebFetch
+- **Blocked**: Bash, Task
+- **Rationale**: Focus on content creation without system-level access
+
+### 6.4 Security Benefits
+
+1. **Role Separation**: Each agent type has distinct, non-overlapping capabilities
+2. **Infrastructure Enforcement**: Violations blocked before execution, not after
+3. **Clear Boundaries**: Agents cannot exceed their designed responsibilities
+4. **Audit Trail**: All tool access attempts logged with agent context
+5. **Zero Configuration Drift**: Tool permissions come from agent responses, not config files
+
+### 6.5 Implementation Details
+
+**Location**: Infrastructure layer of MCP server
+**Enforcement Point**: Before tool execution
+**Source of Truth**: `call_agent` API response's `tools` array
+**Fallback**: If tool list missing, deny all tool access
+**Error Handling**: Clear error messages include available tools for agent
+
+---
+
+## 7. Vision System Architecture
+
+### 7.1 Overview
+
+The Vision System provides AI-powered enrichment for all task operations, delivering intelligent insights, workflow guidance, and progress tracking without requiring explicit user requests.
+
+### 7.2 Architecture Components
+
+```
+Task Operation (create, update, complete)
+    ↓
+Application Layer (Use Cases)
+    ↓
+Vision System Service
+    ↓ (parallel processing)
+    ├── Workflow Analyzer
+    │   - Current state assessment
+    │   - Next action suggestions
+    │   - Phase-specific guidance
+    │
+    ├── Progress Tracker
+    │   - Milestone detection
+    │   - Completion percentage mapping
+    │   - Time estimation
+    │
+    ├── Blocker Detector
+    │   - Dependency analysis
+    │   - Risk identification
+    │   - Resolution suggestions
+    │
+    └── Impact Analyzer
+        - Related task identification
+        - Cross-task dependencies
+        - Team coordination needs
+    ↓
+Context Update Service
+    ↓
+Enriched Task Response
+```
+
+### 7.3 Key Features
+
+**Automatic Enrichment**:
+- Every task operation triggers vision system processing
+- No explicit user request required
+- Enrichment data included in all task responses
+
+**Workflow Guidance**:
+- Context-aware hints based on task state
+- Next action recommendations with examples
+- Phase-specific rules and best practices
+
+**Progress Intelligence**:
+- Automatic milestone detection
+- Progress percentage to status mapping
+- Completion estimates based on subtask analysis
+
+**Blocker Management**:
+- Dependency chain analysis
+- Blocker escalation workflows
+- Resolution suggestion generation
+
+**Impact Assessment**:
+- Related task identification
+- Dependency impact analysis
+- Team coordination recommendations
+
+### 7.4 Integration Points
+
+- **Task Management**: Enriches all task CRUD operations
+- **Subtask Management**: Provides granular progress tracking
+- **Context System**: Updates context with insights and learnings
+- **Agent Orchestration**: Guides agent assignment and coordination
+
+### 7.5 Data Flow
+
+```python
+# Automatic enrichment example
+task = create_task(title="Implement auth", ...)
+    ↓
+vision_service.enrich(task)
+    ↓
+{
+  "task": {...},
+  "vision_insights": {
+    "workflow_hints": "Consider breaking into subtasks...",
+    "next_actions": ["Define database schema", "Create API endpoints"],
+    "related_tasks": ["task-uuid-1", "task-uuid-2"],
+    "blocker_analysis": "No blockers detected",
+    "impact_assessment": "Affects 3 dependent features"
+  }
+}
+```
+
+### 7.6 Performance Optimization
+
+- **Async Processing**: Vision enrichment runs asynchronously
+- **Caching**: Insights cached with task context
+- **Incremental Updates**: Only re-analyze changed aspects
+- **Timeout Protection**: Enrichment timeouts don't block core operations
+
+---
+
+## 8. Authentication & Security Architecture
+
+### 8.1 Keycloak Integration
 
 ```
 User (Web/CLI Client)
@@ -635,7 +809,7 @@ Backend
     ↓ Process request with user context
 ```
 
-### 6.2 Token Management
+### 8.2 Token Management
 
 **Access Token**:
 - Type: JWT (JSON Web Token)
@@ -657,7 +831,7 @@ if access_token.is_expired():
     retry_request_with_new_token()
 ```
 
-### 6.3 Multi-Tenancy & Data Isolation
+### 8.3 Multi-Tenancy & Data Isolation
 
 **Per-User Isolation**:
 - Every database query includes `user_id` filter
@@ -677,7 +851,7 @@ tasks = session.query(Task).join(GitBranch).join(Project).filter(
 ).all()
 ```
 
-### 6.4 Security Best Practices
+### 8.4 Security Best Practices
 
 1. **Password Handling**: Never store passwords (Keycloak manages)
 2. **Token Security**: httpOnly cookies prevent XSS attacks
@@ -690,9 +864,9 @@ tasks = session.query(Task).join(GitBranch).join(Project).filter(
 
 ---
 
-## 7. Deployment Architecture
+## 9. Deployment Architecture
 
-### 7.1 Docker Infrastructure
+### 9.1 Docker Infrastructure
 
 **docker-compose.yml configurations**:
 
@@ -742,7 +916,7 @@ services:
       - REDIS_URL=redis://redis:6379
 ```
 
-### 7.2 Container Structure
+### 9.2 Container Structure
 
 ```
 4genthub/
@@ -763,7 +937,7 @@ services:
     └── logs/                       # Application logs
 ```
 
-### 7.3 Environment Variables
+### 9.3 Environment Variables
 
 **Backend (.env)**:
 ```bash
@@ -800,7 +974,7 @@ VITE_KEYCLOAK_REALM=agenthub
 VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 ```
 
-### 7.4 Deployment Strategies
+### 9.4 Deployment Strategies
 
 **Development (Current)**:
 - Docker Compose with hot reload
@@ -824,9 +998,9 @@ VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 
 ---
 
-## 8. Performance Optimization
+## 10. Performance Optimization
 
-### 8.1 Current Performance Metrics
+### 10.1 Current Performance Metrics
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
@@ -836,7 +1010,7 @@ VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 | Frontend Load Time | <2s | ~1.8s | ✅ Met |
 | Throughput | 100 RPS | ~120 RPS | ✅ Met |
 
-### 8.2 Optimization Techniques
+### 10.2 Optimization Techniques
 
 **Frontend**:
 1. **Code Splitting**: Route-based lazy loading
@@ -859,7 +1033,7 @@ VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 4. **Vacuum**: Auto-vacuum configured for PostgreSQL
 5. **Replication**: Read replicas planned for Tier 2
 
-### 8.3 Scalability Roadmap
+### 10.3 Scalability Roadmap
 
 **MVP → Tier 1 (100 RPS → 1K RPS)**:
 - Microservices architecture (split bounded contexts)
@@ -884,9 +1058,9 @@ VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 
 ---
 
-## 9. Testing Strategy
+## 11. Testing Strategy
 
-### 9.1 Test Pyramid
+### 11.1 Test Pyramid
 
 ```
         /\
@@ -901,7 +1075,7 @@ VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 /__________________\
 ```
 
-### 9.2 Test Categories
+### 11.2 Test Categories
 
 | Type | Framework | Coverage | Examples |
 |------|-----------|----------|----------|
@@ -911,7 +1085,7 @@ VITE_KEYCLOAK_CLIENT_ID=agenthub-frontend
 | **Performance** | pytest-benchmark | N/A | Response time, throughput |
 | **Load** | Locust | N/A | Concurrent users, stress testing |
 
-### 9.3 Test Structure
+### 11.3 Test Structure
 
 **Backend Tests** (`agenthub_main/src/tests/`):
 ```
@@ -947,7 +1121,7 @@ __tests__/
     └── agent_coordination/
 ```
 
-### 9.4 CI/CD Pipeline
+### 11.4 CI/CD Pipeline
 
 ```
 Git Push
@@ -988,9 +1162,9 @@ GitHub Actions
 
 ---
 
-## 10. Monitoring & Observability
+## 12. Monitoring & Observability
 
-### 10.1 Logging Strategy
+### 12.1 Logging Strategy
 
 **Log Levels**:
 - **DEBUG**: Development only, verbose internal state
@@ -1013,7 +1187,7 @@ GitHub Actions
 }
 ```
 
-### 10.2 Metrics Collection (Planned)
+### 12.2 Metrics Collection (Planned)
 
 **Application Metrics**:
 - Request rate (requests/second)
@@ -1036,7 +1210,7 @@ GitHub Actions
 - User engagement (sessions/day)
 - Feature adoption (%)
 
-### 10.3 Health Checks
+### 12.3 Health Checks
 
 **Liveness Probe** (`/health`):
 - Service is running
@@ -1057,9 +1231,9 @@ GitHub Actions
 
 ---
 
-## 11. Future Architectural Enhancements
+## 13. Future Architectural Enhancements
 
-### 11.1 Microservices Migration (Tier 1)
+### 13.1 Microservices Migration (Tier 1)
 
 **Planned Services**:
 1. **Task Service**: Task and subtask management
@@ -1074,7 +1248,7 @@ GitHub Actions
 - Asynchronous: RabbitMQ for events
 - Service discovery: Consul or Kubernetes DNS
 
-### 11.2 Event-Driven Architecture (Tier 2)
+### 13.2 Event-Driven Architecture (Tier 2)
 
 **Domain Events**:
 ```python
@@ -1094,7 +1268,7 @@ AgentAssignedEvent(agent_id, task_id, timestamp)
 - **RabbitMQ**: Traditional message broker
 - **Redis Streams**: Lightweight event streaming
 
-### 11.3 Advanced Caching (Tier 2+)
+### 13.3 Advanced Caching (Tier 2+)
 
 **Multi-Layer Cache**:
 ```
@@ -1114,7 +1288,7 @@ Database
 - Scheduled jobs for frequently accessed data
 - User-specific cache on login
 
-### 11.4 Global Deployment (Enterprise)
+### 13.4 Global Deployment (Enterprise)
 
 **Multi-Region Architecture**:
 ```
@@ -1131,9 +1305,9 @@ User (Asia) → Edge Node (Singapore) → API Gateway (Asia) → Services
 
 ---
 
-## 12. Appendices
+## 14. Appendices
 
-### 12.1 Technology Decision Rationale
+### 14.1 Technology Decision Rationale
 
 | Technology | Why Chosen | Alternatives Considered |
 |------------|------------|-------------------------|
@@ -1145,7 +1319,7 @@ User (Asia) → Edge Node (Singapore) → API Gateway (Asia) → Services
 | **Keycloak** | Open-source SSO, enterprise features | Auth0, AWS Cognito |
 | **Docker** | Standardized containerization | Podman, LXC |
 
-### 12.2 Architecture Principles
+### 14.2 Architecture Principles
 
 1. **Domain-Driven Design**: Business logic in domain layer
 2. **SOLID Principles**: Single responsibility, dependency inversion
@@ -1155,7 +1329,7 @@ User (Asia) → Edge Node (Singapore) → API Gateway (Asia) → Services
 6. **Performance by Design**: Optimization built-in, not bolted-on
 7. **Testability**: All components designed for easy testing
 
-### 12.3 Key Architectural Constraints
+### 14.3 Key Architectural Constraints
 
 1. **MCP Protocol Compatibility**: Must adhere to MCP 2.1.0 spec
 2. **Multi-Tenancy**: Per-user data isolation mandatory
@@ -1163,7 +1337,7 @@ User (Asia) → Edge Node (Singapore) → API Gateway (Asia) → Services
 4. **Backward Compatibility**: Breaking changes require migration path
 5. **Open Source**: All core components must use permissive licenses
 
-### 12.4 Glossary
+### 14.4 Glossary
 
 - **DDD**: Domain-Driven Design - software design approach focusing on business domain
 - **MCP**: Model Context Protocol - standard for AI tool integration
@@ -1174,7 +1348,7 @@ User (Asia) → Edge Node (Singapore) → API Gateway (Asia) → Services
 - **JSONB**: JSON Binary - PostgreSQL's efficient JSON storage type
 - **GIN**: Generalized Inverted Index - PostgreSQL index type for JSONB
 
-### 12.5 References
+### 14.5 References
 
 - [FastMCP Documentation](https://github.com/anthropics/fastmcp)
 - [MCP Protocol Specification](https://modelcontextprotocol.io)
@@ -1183,11 +1357,12 @@ User (Asia) → Edge Node (Singapore) → API Gateway (Asia) → Services
 - [React Best Practices](https://react.dev/)
 - [Keycloak Documentation](https://www.keycloak.org/documentation)
 
-### 12.6 Document History
+### 14.6 Document History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-10-16 | AI Agent | Initial architecture document during sync protocol |
+| 1.1 | 2025-10-27 | documentation-agent | Added Dynamic Tool Enforcement v2.0 and Vision System Architecture sections, renumbered sections 6-14 |
 
 ---
 

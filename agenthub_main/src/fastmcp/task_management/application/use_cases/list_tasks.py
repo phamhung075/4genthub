@@ -74,6 +74,15 @@ class ListTasksUseCase:
             filters_applied['git_branch_id'] = request.git_branch_id
         if request.limit:
             filters_applied['limit'] = request.limit
-        
-        # Convert to response DTO
-        return TaskListResponse.from_domain_list(tasks, filters_applied=filters_applied) 
+
+        # Get git_branch_repository for project_id lookup
+        git_branch_repo = None
+        try:
+            from ...application.services.repository_provider_service import RepositoryProviderService
+            provider = RepositoryProviderService.get_instance()
+            git_branch_repo = provider.get_git_branch_repository()
+        except Exception as e:
+            logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
+
+        # Convert to response DTO with project_id via repository join
+        return TaskListResponse.from_domain_list(tasks, git_branch_repository=git_branch_repo, filters_applied=filters_applied) 

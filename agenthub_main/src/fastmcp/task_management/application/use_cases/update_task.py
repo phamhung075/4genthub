@@ -153,8 +153,17 @@ class UpdateTaskUseCase:
                 # Could trigger notifications, logging, etc.
                 pass
         
-        # Convert to response DTO
-        task_response = TaskResponse.from_domain(task)
+        # Convert to response DTO with project_id via repository join
+        # Get git_branch_repository for project_id lookup
+        git_branch_repo = None
+        try:
+            from ...application.services.repository_provider_service import RepositoryProviderService
+            provider = RepositoryProviderService.get_instance()
+            git_branch_repo = provider.get_git_branch_repository()
+        except Exception as e:
+            logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
+
+        task_response = TaskResponse.from_domain(task, git_branch_repository=git_branch_repo)
         return UpdateTaskResponse.success_response(task_response)
     
     def _convert_to_task_id(self, task_id: Union[str, int, TaskId]) -> TaskId:

@@ -252,8 +252,17 @@ class CreateTaskUseCase:
                 task_id_str = str(task.id.value) if hasattr(task.id, 'value') else str(task.id)
                 self._logger.warning(f"Error creating task context for {task_id_str}: {context_error}")
 
-            # Convert to response DTO
-            task_response = TaskResponse.from_domain(task)
+            # Convert to response DTO with project_id via repository join
+            # Get git_branch_repository for project_id lookup
+            git_branch_repo = None
+            try:
+                from ...application.services.repository_provider_service import RepositoryProviderService
+                provider = RepositoryProviderService.get_instance()
+                git_branch_repo = provider.get_git_branch_repository()
+            except Exception as e:
+                self._logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
+
+            task_response = TaskResponse.from_domain(task, git_branch_repository=git_branch_repo)
             return CreateTaskResponse.success_response(task_response)
             
         except ValueError as e:

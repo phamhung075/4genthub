@@ -132,9 +132,18 @@ class GetTaskUseCase:
                 task_id=str(task.id)
             )
             # Note: Event publishing would be handled by an event dispatcher in a full implementation
-            
-            # Convert domain task to response DTO with context data
-            return TaskResponse.from_domain(task, context_data=context_data)
+
+            # Get git_branch_repository for project_id lookup
+            git_branch_repo = None
+            try:
+                from ...application.services.repository_provider_service import RepositoryProviderService
+                provider = RepositoryProviderService.get_instance()
+                git_branch_repo = provider.get_git_branch_repository()
+            except Exception as e:
+                logger.warning(f"Could not get git_branch_repository for project_id lookup: {e}")
+
+            # Convert domain task to response DTO with context data and project_id
+            return TaskResponse.from_domain(task, git_branch_repository=git_branch_repo, context_data=context_data)
             
         except TaskNotFoundError:
             logger.warning(f"Task not found: {task_id}")

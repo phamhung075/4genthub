@@ -527,3 +527,497 @@ class TestTaskContextSyncServiceErrorScenarios:
                     # Test with project_id provided - should return None due to repository error
                     result = await service.sync_context_and_get_task("task-123", user_id="user-123", project_id="test-project")
                     assert result is None
+
+
+class TestTaskContextSyncServiceSyncSubtaskCounts:
+    """Test suite for sync_subtask_counts method"""
+
+    @pytest.fixture
+    def mock_task_repository(self):
+        """Create a mock task repository"""
+        repo = Mock(spec=TaskRepository)
+        return repo
+
+    @pytest.fixture
+    def mock_subtask_repository(self):
+        """Create a mock subtask repository"""
+        repo = Mock()
+        repo.find_by_parent_task_id = Mock()
+        repo.with_user = Mock(return_value=repo)
+        return repo
+
+    @pytest.fixture
+    def mock_context_service(self):
+        """Create a mock context service"""
+        service = Mock()
+        service.get_context = Mock()
+        service.update_context = Mock()
+        return service
+
+    @pytest.fixture
+    def service(self, mock_task_repository, mock_context_service):
+        """Create service instance with mocked dependencies"""
+        with patch('fastmcp.task_management.application.services.facade_service.FacadeService.get_unified_context_facade') as mock_get_facade:
+            mock_get_facade.return_value = mock_context_service
+            with patch('fastmcp.task_management.application.services.task_context_sync_service.GetTaskUseCase'):
+                service = TaskContextSyncService(mock_task_repository, mock_context_service)
+                return service
+
+    @pytest.fixture
+    def mock_subtasks(self):
+        """Create mock subtasks with different statuses"""
+        subtask1 = Mock()
+        subtask1.id = TaskId.from_string("11111111-1111-1111-1111-111111111111")
+        subtask1.title = "Subtask 1"
+        subtask1.description = "Description 1"
+        subtask1.status = "done"
+        subtask1.assignees = ["user-1"]
+        subtask1.progress_notes = "Completed"
+
+        subtask2 = Mock()
+        subtask2.id = TaskId.from_string("22222222-2222-2222-2222-222222222222")
+        subtask2.title = "Subtask 2"
+        subtask2.description = "Description 2"
+        subtask2.status = "in_progress"
+        subtask2.assignees = ["user-2"]
+        subtask2.progress_notes = "Working on it"
+
+        subtask3 = Mock()
+        subtask3.id = TaskId.from_string("33333333-3333-3333-3333-333333333333")
+        subtask3.title = "Subtask 3"
+        subtask3.description = None
+        subtask3.status = "todo"
+        subtask3.assignees = []
+        subtask3.progress_notes = ""
+
+        return [subtask1, subtask2, subtask3]
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_calculates_correctly(self, service, mock_subtask_repository, mock_context_service, mock_subtasks):
+        """Test that subtask counts are calculated correctly"""
+        # Setup
+        task_id = "12345678-1234-5678-1234-567812345678"
+        mock_subtask_repository.find_by_parent_task_id.return_value = mock_subtasks
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {"metadata": {}}
+        }
+
+        # Execute
+        await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+        # Verify counts calculation
+        mock_context_service.update_context.assert_called_once()
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        assert context_data["subtasks"]["total_count"] == 3
+        assert context_data["subtasks"]["completed_count"] == 1  # Only subtask1 is done
+        # Progress: 1/3 * 100 = 33.33...
+        assert abs(context_data["subtasks"]["progress_percentage"] - 33.33) < 0.01
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_updates_progress_percentage(self, service, mock_subtask_repository, mock_context_service):
+        """Test that progress percentage is updated correctly"""
+        # Setup - all subtasks completed
+        task_id = "12345678-1234-5678-1234-567812345678"
+        completed_subtasks = []
+        for i in range(4):
+            st = Mock()
+            st.id = TaskId.from_string(f"{i}{i}{i}{i}{i}{i}{i}{i}-1111-1111-1111-111111111111")
+            st.title = f"Subtask {i}"
+            st.description = f"Desc {i}"
+            st.status = "completed"
+            st.assignees = []
+            st.progress_notes = ""
+            completed_subtasks.append(st)
+
+        mock_subtask_repository.find_by_parent_task_id.return_value = completed_subtasks
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute
+        await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+        # Verify 100% progress
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+        assert context_data["subtasks"]["progress_percentage"] == 100.0
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_builds_items_array(self, service, mock_subtask_repository, mock_context_service, mock_subtasks):
+        """Test that subtask items array is built correctly"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        mock_subtask_repository.find_by_parent_task_id.return_value = mock_subtasks
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute
+        await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+        # Verify items array structure
+        call_args = mock_context_service.update_context.call_args
+        subtask_items = call_args[1]["data"]["subtasks"]["items"]
+
+        assert len(subtask_items) == 3
+
+        # Verify first item structure
+        assert subtask_items[0]["id"] == "11111111-1111-1111-1111-111111111111"
+        assert subtask_items[0]["title"] == "Subtask 1"
+        assert subtask_items[0]["description"] == "Description 1"
+        assert subtask_items[0]["status"] == "done"
+        assert subtask_items[0]["completed"] is True
+        assert subtask_items[0]["assignees"] == ["user-1"]
+        assert subtask_items[0]["progress_notes"] == "Completed"
+
+        # Verify third item (with None description)
+        assert subtask_items[2]["description"] == ""
+        assert subtask_items[2]["completed"] is False
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_handles_empty_subtasks(self, service, mock_subtask_repository, mock_context_service):
+        """Test handling when there are no subtasks"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        mock_subtask_repository.find_by_parent_task_id.return_value = []
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute
+        await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+        # Verify empty counts
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        assert context_data["subtasks"]["total_count"] == 0
+        assert context_data["subtasks"]["completed_count"] == 0
+        assert context_data["subtasks"]["progress_percentage"] == 0.0
+        assert context_data["subtasks"]["items"] == []
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_handles_missing_context_gracefully(self, service, mock_subtask_repository, mock_context_service, mock_subtasks):
+        """Test that sync handles missing context gracefully"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        mock_subtask_repository.find_by_parent_task_id.return_value = mock_subtasks
+        mock_context_service.get_context.return_value = None  # No context exists
+
+        # Execute - should not raise exception
+        await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+        # Verify update was not called
+        mock_context_service.update_context.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_handles_repository_error(self, service, mock_subtask_repository, mock_context_service):
+        """Test error handling when repository fails"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        mock_subtask_repository.find_by_parent_task_id.side_effect = Exception("Database error")
+
+        # Execute - should not raise exception (error is logged)
+        await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+        # Verify update was not called due to error
+        mock_context_service.update_context.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_subtask_counts_with_user_scoped_repository(self, mock_task_repository, mock_subtask_repository, mock_context_service, mock_subtasks):
+        """Test that user-scoped repository is used when user_id is set"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        # Create service with user context
+        with patch('fastmcp.task_management.application.services.facade_service.FacadeService.get_unified_context_facade') as mock_get_facade:
+            mock_get_facade.return_value = mock_context_service
+            with patch('fastmcp.task_management.application.services.task_context_sync_service.GetTaskUseCase'):
+                service = TaskContextSyncService(mock_task_repository, mock_context_service, user_id="user-123")
+
+                # Setup
+                mock_user_repo = Mock()
+                mock_user_repo.find_by_parent_task_id.return_value = mock_subtasks
+                mock_subtask_repository.with_user.return_value = mock_user_repo
+
+                mock_context_service.get_context.return_value = {
+                    "success": True,
+                    "context_data": {}
+                }
+
+                # Execute
+                await service.sync_subtask_counts(task_id, mock_subtask_repository)
+
+                # Verify user-scoped repository was used
+                mock_subtask_repository.with_user.assert_called_once_with("user-123")
+                mock_user_repo.find_by_parent_task_id.assert_called_once()
+
+
+class TestTaskContextSyncServiceSyncTaskStatus:
+    """Test suite for sync_task_status method"""
+
+    @pytest.fixture
+    def mock_task_repository(self):
+        """Create a mock task repository"""
+        return Mock(spec=TaskRepository)
+
+    @pytest.fixture
+    def mock_context_service(self):
+        """Create a mock context service"""
+        service = Mock()
+        service.get_context = Mock()
+        service.update_context = Mock()
+        return service
+
+    @pytest.fixture
+    def service(self, mock_task_repository, mock_context_service):
+        """Create service instance with mocked dependencies"""
+        with patch('fastmcp.task_management.application.services.facade_service.FacadeService.get_unified_context_facade') as mock_get_facade:
+            mock_get_facade.return_value = mock_context_service
+            with patch('fastmcp.task_management.application.services.task_context_sync_service.GetTaskUseCase'):
+                service = TaskContextSyncService(mock_task_repository, mock_context_service)
+                return service
+
+    @pytest.mark.asyncio
+    async def test_sync_task_status_updates_metadata(self, service, mock_context_service):
+        """Test that task status is synced to context metadata"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        new_status = "in_progress"
+
+        # Setup existing context
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {
+                "metadata": {"status": "todo"}
+            }
+        }
+
+        # Execute
+        await service.sync_task_status(task_id, new_status)
+
+        # Verify status was updated
+        mock_context_service.update_context.assert_called_once()
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        assert context_data["metadata"]["status"] == "in_progress"
+
+    @pytest.mark.asyncio
+    async def test_sync_task_status_creates_metadata_section(self, service, mock_context_service):
+        """Test that metadata section is created if missing"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        new_status = "done"
+
+        # Setup context without metadata
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute
+        await service.sync_task_status(task_id, new_status)
+
+        # Verify metadata was created with status
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        assert "metadata" in context_data
+        assert context_data["metadata"]["status"] == "done"
+
+    @pytest.mark.asyncio
+    async def test_sync_task_status_handles_missing_context(self, service, mock_context_service):
+        """Test that sync handles missing context gracefully"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        new_status = "blocked"
+
+        # Setup - no context exists
+        mock_context_service.get_context.return_value = None
+
+        # Execute - should not raise exception
+        await service.sync_task_status(task_id, new_status)
+
+        # Verify update was not called
+        mock_context_service.update_context.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_task_status_handles_error(self, service, mock_context_service):
+        """Test error handling during status sync"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+        new_status = "in_progress"
+
+        # Setup context service to raise exception
+        mock_context_service.get_context.side_effect = Exception("Context service error")
+
+        # Execute - should not raise exception (error is logged)
+        await service.sync_task_status(task_id, new_status)
+
+        # Verify update was not called due to error
+        mock_context_service.update_context.assert_not_called()
+
+
+class TestTaskContextSyncServiceSyncTaskMetadata:
+    """Test suite for sync_task_metadata method"""
+
+    @pytest.fixture
+    def mock_task_repository(self):
+        """Create a mock task repository"""
+        return Mock(spec=TaskRepository)
+
+    @pytest.fixture
+    def mock_context_service(self):
+        """Create a mock context service"""
+        service = Mock()
+        service.get_context = Mock()
+        service.update_context = Mock()
+        return service
+
+    @pytest.fixture
+    def service(self, mock_task_repository, mock_context_service):
+        """Create service instance with mocked dependencies"""
+        with patch('fastmcp.task_management.application.services.facade_service.FacadeService.get_unified_context_facade') as mock_get_facade:
+            mock_get_facade.return_value = mock_context_service
+            with patch('fastmcp.task_management.application.services.task_context_sync_service.GetTaskUseCase'):
+                service = TaskContextSyncService(mock_task_repository, mock_context_service)
+                return service
+
+    @pytest.fixture
+    def mock_task_entity(self):
+        """Create a comprehensive mock task entity"""
+        task = Mock(spec=Task)
+        task.status = TaskStatus.IN_PROGRESS
+        task.priority = Priority.high()
+        task.labels = ["bug", "urgent"]
+        task.assignees = ["user-1", "@user-2", "user-3"]
+        task.created_at = datetime(2025, 1, 15, 10, 30, 0)
+        task.updated_at = datetime(2025, 1, 20, 14, 45, 30)
+        task.estimated_effort = "3 days"
+        return task
+
+    @pytest.mark.asyncio
+    async def test_sync_task_metadata_copies_all_fields(self, service, mock_context_service, mock_task_entity):
+        """Test that all metadata fields are synced correctly"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        # Setup existing context
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute
+        await service.sync_task_metadata(task_id, mock_task_entity)
+
+        # Verify all fields were synced
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        # Check metadata fields
+        assert context_data["metadata"]["status"] == "in_progress"
+        assert context_data["metadata"]["priority"] == "high"
+        assert context_data["metadata"]["labels"] == ["bug", "urgent"]
+        assert context_data["metadata"]["created_at"] == "2025-01-15T10:30:00"
+        assert context_data["metadata"]["updated_at"] == "2025-01-20T14:45:30"
+
+        # Check objective fields
+        assert context_data["objective"]["estimated_effort"] == "3 days"
+
+    @pytest.mark.asyncio
+    async def test_sync_task_metadata_adds_at_prefix_to_assignees(self, service, mock_context_service, mock_task_entity):
+        """Test that assignees get @ prefix added correctly"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute
+        await service.sync_task_metadata(task_id, mock_task_entity)
+
+        # Verify @ prefix handling
+        call_args = mock_context_service.update_context.call_args
+        assignees = call_args[1]["data"]["metadata"]["assignees"]
+
+        assert assignees == ["@user-1", "@user-2", "@user-3"]
+        # Verify that "@user-2" wasn't double-prefixed
+        assert "@@user-2" not in assignees
+
+    @pytest.mark.asyncio
+    async def test_sync_task_metadata_creates_sections_if_missing(self, service, mock_context_service, mock_task_entity):
+        """Test that metadata and objective sections are created if missing"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        # Setup context without metadata or objective
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {"some_other_field": "value"}
+        }
+
+        # Execute
+        await service.sync_task_metadata(task_id, mock_task_entity)
+
+        # Verify sections were created
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        assert "metadata" in context_data
+        assert "objective" in context_data
+        assert "some_other_field" in context_data  # Existing data preserved
+
+    @pytest.mark.asyncio
+    async def test_sync_task_metadata_handles_missing_optional_fields(self, service, mock_context_service):
+        """Test handling of tasks with missing optional fields"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        # Create task without optional fields
+        minimal_task = Mock(spec=Task)
+        minimal_task.status = TaskStatus.TODO
+        minimal_task.priority = Priority.low()
+        # No labels attribute
+        # No assignees attribute
+        # No timestamps
+        # No estimated_effort
+
+        mock_context_service.get_context.return_value = {
+            "success": True,
+            "context_data": {}
+        }
+
+        # Execute - should not raise exception
+        await service.sync_task_metadata(task_id, minimal_task)
+
+        # Verify basic fields were synced
+        call_args = mock_context_service.update_context.call_args
+        context_data = call_args[1]["data"]
+
+        assert context_data["metadata"]["status"] == "todo"
+        assert context_data["metadata"]["priority"] == "low"
+
+    @pytest.mark.asyncio
+    async def test_sync_task_metadata_handles_missing_context(self, service, mock_context_service, mock_task_entity):
+        """Test that sync handles missing context gracefully"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        # Setup - no context exists
+        mock_context_service.get_context.return_value = None
+
+        # Execute - should not raise exception
+        await service.sync_task_metadata(task_id, mock_task_entity)
+
+        # Verify update was not called
+        mock_context_service.update_context.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_task_metadata_handles_error(self, service, mock_context_service, mock_task_entity):
+        """Test error handling during metadata sync"""
+        task_id = "12345678-1234-5678-1234-567812345678"
+
+        # Setup context service to raise exception
+        mock_context_service.get_context.side_effect = Exception("Sync error")
+
+        # Execute - should not raise exception (error is logged)
+        await service.sync_task_metadata(task_id, mock_task_entity)
+
+        # Verify update was not called due to error
+        mock_context_service.update_context.assert_not_called()
