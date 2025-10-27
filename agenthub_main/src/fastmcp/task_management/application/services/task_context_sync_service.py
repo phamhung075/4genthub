@@ -149,4 +149,191 @@ class TaskContextSyncService:
             raise
         except Exception as exc:
             logger.error("[TaskContextSyncService] Failed to sync context for task %s: %s", task_id, exc, exc_info=True)
-            return None 
+            return None
+
+    # ------------------------------------------------------------------
+    # New synchronization methods for data integrity
+    # ------------------------------------------------------------------
+
+    async def sync_subtask_counts(self, task_id: str, subtask_repository) -> None:
+        """Sync subtask counts and items to context_data.subtasks.
+
+        This method updates the denormalized cache in context_data to reflect
+        the actual subtask counts and data from the database.
+
+        Args:
+            task_id: The task ID (UUID as string)
+            subtask_repository: Repository to fetch subtasks
+        """
+        try:
+            from ...domain.value_objects.task_id import TaskId
+
+            task_id_obj = TaskId.from_string(task_id)
+
+            # Fetch all subtasks for this task
+            repo = self._get_user_scoped_repository(subtask_repository)
+            subtasks = repo.find_by_parent_task_id(task_id_obj)
+
+            # Calculate counts and progress
+            total_count = len(subtasks)
+            completed_count = sum(1 for st in subtasks if str(st.status) in ['done', 'completed'])
+            progress_percentage = (completed_count / total_count * 100.0) if total_count > 0 else 0.0
+
+            # Build subtask items array
+            subtask_items = []
+            for st in subtasks:
+                subtask_items.append({
+                    "id": str(st.id.value if hasattr(st.id, 'value') else st.id),
+                    "title": st.title,
+                    "description": st.description or "",
+                    "status": str(st.status),
+                    "assignees": st.assignees if hasattr(st, 'assignees') else [],
+                    "completed": str(st.status) in ['done', 'completed'],
+                    "progress_notes": getattr(st, 'progress_notes', '')
+                })
+
+            # Get current context
+            context_result = self._hierarchical_context_service.get_context(
+                level="task",
+                context_id=task_id
+            )
+
+            if context_result and context_result.get("success"):
+                # Update subtasks section in context
+                context_data = context_result.get("context_data", {})
+                context_data["subtasks"] = {
+                    "items": subtask_items,
+                    "total_count": total_count,
+                    "completed_count": completed_count,
+                    "progress_percentage": progress_percentage
+                }
+
+                # Update context
+                self._hierarchical_context_service.update_context(
+                    level="task",
+                    context_id=task_id,
+                    data=context_data
+                )
+
+                logger.info(
+                    "[TaskContextSyncService] Synced subtask counts for task %s: %d total, %d completed (%.1f%%)",
+                    task_id, total_count, completed_count, progress_percentage
+                )
+
+        except Exception as exc:
+            logger.error(
+                "[TaskContextSyncService] Failed to sync subtask counts for task %s: %s",
+                task_id, exc, exc_info=True
+            )
+
+    async def sync_task_status(self, task_id: str, new_status: str) -> None:
+        """Sync task status to context_data.metadata.status.
+
+        Args:
+            task_id: The task ID (UUID as string)
+            new_status: The new status value
+        """
+        try:
+            # Get current context
+            context_result = self._hierarchical_context_service.get_context(
+                level="task",
+                context_id=task_id
+            )
+
+            if context_result and context_result.get("success"):
+                # Update status in context metadata
+                context_data = context_result.get("context_data", {})
+                if "metadata" not in context_data:
+                    context_data["metadata"] = {}
+
+                context_data["metadata"]["status"] = new_status
+
+                # Update context
+                self._hierarchical_context_service.update_context(
+                    level="task",
+                    context_id=task_id,
+                    data=context_data
+                )
+
+                logger.info(
+                    "[TaskContextSyncService] Synced status for task %s: %s",
+                    task_id, new_status
+                )
+
+        except Exception as exc:
+            logger.error(
+                "[TaskContextSyncService] Failed to sync status for task %s: %s",
+                task_id, exc, exc_info=True
+            )
+
+    async def sync_task_metadata(self, task_id: str, task) -> None:
+        """Sync all task metadata fields to context_data.
+
+        This includes:
+        - Assignees (with @ prefix for context)
+        - Timestamps (created_at, updated_at)
+        - Estimated effort
+        - Priority, labels, etc.
+
+        Args:
+            task: The Task domain entity
+            task_id: The task ID (UUID as string)
+        """
+        try:
+            # Get current context
+            context_result = self._hierarchical_context_service.get_context(
+                level="task",
+                context_id=task_id
+            )
+
+            if context_result and context_result.get("success"):
+                context_data = context_result.get("context_data", {})
+
+                # Ensure metadata section exists
+                if "metadata" not in context_data:
+                    context_data["metadata"] = {}
+
+                # Ensure objective section exists
+                if "objective" not in context_data:
+                    context_data["objective"] = {}
+
+                # Sync metadata fields
+                context_data["metadata"]["status"] = str(task.status)
+                context_data["metadata"]["priority"] = str(task.priority)
+                context_data["metadata"]["labels"] = task.labels if hasattr(task, 'labels') else []
+
+                # Sync assignees with @ prefix
+                assignees = task.assignees if hasattr(task, 'assignees') else []
+                context_data["metadata"]["assignees"] = [
+                    f"@{a}" if not a.startswith('@') else a
+                    for a in assignees
+                ]
+
+                # Sync timestamps
+                if hasattr(task, 'created_at') and task.created_at:
+                    context_data["metadata"]["created_at"] = task.created_at.isoformat() if hasattr(task.created_at, 'isoformat') else str(task.created_at)
+
+                if hasattr(task, 'updated_at') and task.updated_at:
+                    context_data["metadata"]["updated_at"] = task.updated_at.isoformat() if hasattr(task.updated_at, 'isoformat') else str(task.updated_at)
+
+                # Sync estimated effort bidirectionally
+                if hasattr(task, 'estimated_effort') and task.estimated_effort:
+                    context_data["objective"]["estimated_effort"] = task.estimated_effort
+
+                # Update context
+                self._hierarchical_context_service.update_context(
+                    level="task",
+                    context_id=task_id,
+                    data=context_data
+                )
+
+                logger.info(
+                    "[TaskContextSyncService] Synced metadata for task %s",
+                    task_id
+                )
+
+        except Exception as exc:
+            logger.error(
+                "[TaskContextSyncService] Failed to sync metadata for task %s: %s",
+                task_id, exc, exc_info=True
+            ) 
