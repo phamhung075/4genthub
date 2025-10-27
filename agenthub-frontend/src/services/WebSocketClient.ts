@@ -24,7 +24,6 @@ export class WebSocketClient extends EventEmitter {
   private readonly MAX_PROCESSED_MESSAGES = 1000;
 
   constructor(
-    private userId: string,
     private token: string,
     wsConfig?: Partial<WebSocketConfig>
   ) {
@@ -51,7 +50,7 @@ export class WebSocketClient extends EventEmitter {
 
     this.isConnecting = true;
     // Use configuration instead of direct environment access
-    const wsBaseUrl = config.websocket.url;
+    let wsBaseUrl = config.websocket.url;
 
     // WebSocket URL configuration check (minimal logging)
 
@@ -62,6 +61,14 @@ export class WebSocketClient extends EventEmitter {
       this.emit('error', new Error('WebSocket URL not configured'));
       this.isConnecting = false;
       return;
+    }
+
+    // DEFENSIVE FIX: Remove trailing /ws/realtime from base URL to prevent duplication
+    // This handles misconfiguration where VITE_WS_URL includes the path
+    if (wsBaseUrl.endsWith('/ws/realtime') || wsBaseUrl.endsWith('/ws/realtime/')) {
+      logger.warn('[WebSocket] ⚠️ Base URL contains /ws/realtime path - this should be removed from VITE_WS_URL');
+      logger.warn('[WebSocket] 💡 Correct config: VITE_WS_URL=ws://localhost:8000 (without /ws/realtime)');
+      wsBaseUrl = wsBaseUrl.replace(/\/ws\/realtime\/?$/, '');
     }
 
     const wsUrl = `${wsBaseUrl}/ws/realtime?token=${this.token}`;
@@ -162,7 +169,9 @@ export class WebSocketClient extends EventEmitter {
     // Prevent memory leak: keep only last MAX_PROCESSED_MESSAGES
     if (this.processedMessages.size > this.MAX_PROCESSED_MESSAGES) {
       const firstMessage = this.processedMessages.values().next().value;
-      this.processedMessages.delete(firstMessage);
+      if (firstMessage !== undefined) {
+        this.processedMessages.delete(firstMessage);
+      }
     }
 
     this.emit('update', message);

@@ -63,13 +63,12 @@ import logger from '../../utils/logger';
 describe('WebSocketClient', () => {
   let client: WebSocketClient;
   let mockWs: MockWebSocket;
-  const userId = 'test-user-123';
   const token = 'test-token-abc';
 
   beforeEach(() => {
     jest.clearAllMocks();
     jest.clearAllTimers();
-    client = new WebSocketClient(userId, token);
+    client = new WebSocketClient(token);
   });
 
   afterEach(() => {
@@ -82,7 +81,7 @@ describe('WebSocketClient', () => {
   });
 
   describe('constructor', () => {
-    it('should initialize with userId and token', () => {
+    it('should initialize with token', () => {
       expect(client).toBeInstanceOf(EventEmitter);
       expect(client).toBeDefined();
     });
@@ -122,7 +121,7 @@ describe('WebSocketClient', () => {
       
       const errorSpy = jest.fn();
       const { WebSocketClient: WSClient } = require('../../services/WebSocketClient');
-      const testClient = new WSClient(userId, token);
+      const testClient = new WSClient(token);
       testClient.on('error', errorSpy);
       
       testClient.connect();
