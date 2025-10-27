@@ -1132,40 +1132,44 @@ def test_data_validator():
 # =============================================
 
 def _initialize_test_database_with_basic_data():
-    """Initialize test database with basic test data for PostgreSQL."""
+    """Initialize test database with basic test data for both SQLite and PostgreSQL."""
     from fastmcp.task_management.infrastructure.database.database_config import get_db_config
     from sqlalchemy import text
     import uuid
     from datetime import datetime, timezone
-    
+
     try:
         db_config = get_db_config()
-        
+
+        # Generate valid UUID for project (works with both SQLite and PostgreSQL)
+        default_project_id = str(uuid.uuid4())
+        main_branch_id = str(uuid.uuid4())
+        default_user_id = str(uuid.uuid4())
+
         with db_config.get_session() as session:
             # Create default test project
             try:
                 session.execute(text("""
-                    INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata) 
+                    INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata)
                     VALUES (:id, :name, :description, :user_id, :status, :created_at, :updated_at, :metadata)
-                    ON CONFLICT (id) DO UPDATE SET 
+                    ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
                         description = EXCLUDED.description,
                         updated_at = EXCLUDED.updated_at
                 """), {
-                    'id': 'default_project',
+                    'id': default_project_id,
                     'name': 'Default Test Project',
                     'description': 'Project for testing',
-                    'user_id': 'default_id',
+                    'user_id': default_user_id,
                     'status': 'active',
                     'created_at': datetime.now(timezone.utc),
                     'updated_at': datetime.now(timezone.utc),
                     'metadata': '{}'
                 })
-                
+
                 # Create main git branch for default project
-                main_branch_id = str(uuid.uuid4())
                 session.execute(text("""
-                    INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id) 
+                    INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
                     VALUES (:id, :project_id, :name, :description, :created_at, :updated_at, :priority, :status, :metadata, :task_count, :completed_task_count, :user_id)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
@@ -1173,7 +1177,7 @@ def _initialize_test_database_with_basic_data():
                         updated_at = EXCLUDED.updated_at
                 """), {
                     'id': main_branch_id,
-                    'project_id': 'default_project',
+                    'project_id': default_project_id,
                     'name': 'main',
                     'description': 'Main branch for testing',
                     'created_at': datetime.now(timezone.utc),
@@ -1183,20 +1187,123 @@ def _initialize_test_database_with_basic_data():
                     'metadata': '{}',
                     'task_count': 0,
                     'completed_task_count': 0,
-                    'user_id': 'system'
+                    'user_id': default_user_id
                 })
-                
+
                 session.commit()
-                print(f"📦 Initialized PostgreSQL test database with basic test data (branch_id: {main_branch_id})")
-                
+                print(f"📦 Initialized test database with basic test data:")
+                print(f"   - project_id: {default_project_id}")
+                print(f"   - branch_id: {main_branch_id}")
+                print(f"   - user_id: {default_user_id}")
+
             except Exception as e:
                 print(f"⚠️ Error initializing test data: {e}")
                 session.rollback()
                 # Don't fail - let individual tests handle missing data
-                
+
     except Exception as e:
         print(f"⚠️ Could not initialize test data: {e}")
         # Don't fail - let individual tests handle missing data
+
+
+@pytest.fixture(scope="function")
+def user_id():
+    """
+    Provide user ID from the test database.
+    This queries the actual database to get a user ID that was created
+    by _initialize_test_database_with_basic_data().
+    """
+    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from sqlalchemy import text
+    import uuid
+
+    try:
+        db_config = get_db_config()
+        with db_config.get_session() as session:
+            result = session.execute(
+                text("SELECT user_id FROM projects ORDER BY created_at DESC LIMIT 1")
+            ).fetchone()
+
+            if result:
+                return result[0]
+            else:
+                # Fallback: initialize if not found
+                _initialize_test_database_with_basic_data()
+                result = session.execute(
+                    text("SELECT user_id FROM projects ORDER BY created_at DESC LIMIT 1")
+                ).fetchone()
+                return result[0] if result else str(uuid.uuid4())
+    except Exception as e:
+        print(f"⚠️ Error fetching user_id: {e}")
+        import uuid
+        return str(uuid.uuid4())
+
+
+@pytest.fixture(scope="function")
+def project_id():
+    """
+    Provide project ID from the test database.
+    This queries the actual database to get the project ID that was created
+    by _initialize_test_database_with_basic_data().
+    """
+    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from sqlalchemy import text
+    import uuid
+
+    try:
+        db_config = get_db_config()
+        with db_config.get_session() as session:
+            result = session.execute(
+                text("SELECT id FROM projects ORDER BY created_at DESC LIMIT 1")
+            ).fetchone()
+
+            if result:
+                return result[0]
+            else:
+                # Fallback: initialize if not found
+                _initialize_test_database_with_basic_data()
+                result = session.execute(
+                    text("SELECT id FROM projects ORDER BY created_at DESC LIMIT 1")
+                ).fetchone()
+                return result[0] if result else str(uuid.uuid4())
+    except Exception as e:
+        print(f"⚠️ Error fetching project_id: {e}")
+        import uuid
+        return str(uuid.uuid4())
+
+
+@pytest.fixture(scope="function")
+def git_branch_id():
+    """
+    Provide git branch ID from the test database.
+    This queries the actual database to get the branch ID that was created
+    by _initialize_test_database_with_basic_data().
+    """
+    from fastmcp.task_management.infrastructure.database.database_config import get_db_config
+    from sqlalchemy import text
+    import uuid
+
+    try:
+        db_config = get_db_config()
+        with db_config.get_session() as session:
+            result = session.execute(
+                text("SELECT id FROM project_git_branchs ORDER BY created_at DESC LIMIT 1")
+            ).fetchone()
+
+            if result:
+                return result[0]
+            else:
+                # Fallback: initialize if not found
+                _initialize_test_database_with_basic_data()
+                result = session.execute(
+                    text("SELECT id FROM project_git_branchs ORDER BY created_at DESC LIMIT 1")
+                ).fetchone()
+                return result[0] if result else str(uuid.uuid4())
+    except Exception as e:
+        print(f"⚠️ Error fetching git_branch_id: {e}")
+        import uuid
+        return str(uuid.uuid4())
+
 
 # =============================================
 # LIGHTWEIGHT SAFETY NET - SINGLETON CLEANUP

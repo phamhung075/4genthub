@@ -3,7 +3,7 @@
 
 **Version**: 0.0.2
 **Status**: Production NOT Ready
-**Last Updated**: 2025-10-16
+**Last Updated**: 2025-10-27
 **Document Owner**: Product Team
 
 ---
@@ -11,7 +11,7 @@
 ## 1. Executive Summary
 
 ### 1.1 Product Vision
-agenthub is revolutionizing human-AI collaboration in software development by providing an intuitive web-based platform that orchestrates 32 specialized AI agents through a Model Context Protocol (MCP) native architecture.
+agenthub is revolutionizing human-AI collaboration in software development by providing an intuitive web-based platform that orchestrates 42+ specialized AI agents through a Model Context Protocol (MCP) native architecture.
 
 ### 1.2 Problem Statement
 Current AI development tools suffer from:
@@ -25,9 +25,11 @@ Current AI development tools suffer from:
 agenthub delivers:
 - **Persistent 4-Tier Context**: Global → Project → Branch → Task hierarchy ensures AI never forgets
 - **Web-First Experience**: Beautiful React dashboard designed for humans who prefer visual interfaces
-- **32 Specialized Agents**: Each agent masters a specific domain (coding, testing, security, etc.)
+- **42+ Specialized Agents**: Each agent masters a specific domain (coding, testing, security, etc.)
 - **MCP Protocol Native**: Built on industry-standard Model Context Protocol for seamless integration
 - **Real-Time Visualization**: Watch AI agents collaborate on your tasks through live dashboards
+- **Dynamic Tool Enforcement**: v2.0 system ensures agents use only authorized tools for their role
+- **Vision System**: AI enrichment provides workflow guidance, progress tracking, and intelligent insights
 
 ### 1.4 Success Metrics
 - **User Engagement**: 10-50 concurrent users (current MVP capacity)
@@ -47,9 +49,10 @@ agenthub delivers:
    - Maintain complete context across all interactions
 
 2. **Scale AI Agent Orchestration**
-   - Coordinate 32 specialized agents efficiently
+   - Coordinate 42+ specialized agents efficiently
    - Support parallel agent execution for complex workflows
    - Optimize resource usage for 10-50 concurrent users
+   - Dynamic tool enforcement ensures role-based agent permissions
 
 3. **Ensure Enterprise Readiness**
    - Implement robust authentication via Keycloak
@@ -142,13 +145,13 @@ agenthub delivers:
 - [x] Context sync overhead <5ms
 - [x] 100% data consistency across tiers
 
-### 4.3 Feature: 32 Specialized AI Agents
+### 4.3 Feature: 42+ Specialized AI Agents
 **Priority**: P0 (Must Have)
 **Status**: Implemented (recently optimized from 69 agents)
 
 **User Story**: As a developer, I want specialized AI agents for different tasks so I get expert-level assistance.
 
-**Agent Categories**:
+**Agent Categories** (42+ total agents across 12 categories):
 1. **Development & Coding** (4 agents)
    - coding-agent, debugger-agent, code-reviewer-agent, prototyping-agent
 
@@ -185,11 +188,19 @@ agenthub delivers:
 12. **Creative & Ideation** (1 agent)
     - creative-ideation-agent
 
+**Dynamic Tool Enforcement v2.0**:
+- Each agent has specific, dynamically enforced tool permissions
+- Master orchestrator: Task delegation tools (no direct file editing)
+- Coding agents: File operations tools (no task delegation)
+- Documentation agents: Content creation tools (limited system access)
+- Security: Infrastructure-level enforcement prevents unauthorized tool usage
+
 **Acceptance Criteria**:
 - [x] Each agent has clear, non-overlapping responsibilities
 - [x] Agent assignment based on task requirements
 - [x] Support for parallel agent execution
 - [x] Dynamic agent role switching
+- [x] Role-based tool permissions enforced at system level
 
 ### 4.4 Feature: Task Management System
 **Priority**: P0 (Must Have)
@@ -276,6 +287,51 @@ agenthub delivers:
 - [x] Automatic health checks
 - [x] Log aggregation
 - [x] Performance mode for low-resource systems
+
+### 4.8 Feature: Vision System (AI Enrichment)
+**Priority**: P0 (Must Have)
+**Status**: Implemented
+
+**User Story**: As a user, I want AI to provide intelligent insights and guidance so I can make better decisions.
+
+**Requirements**:
+- Automatic task enrichment with workflow guidance
+- Progress tracking with milestone detection
+- Blocker identification and resolution suggestions
+- Impact analysis on related tasks
+- Context-aware recommendations
+- Automatic context updates for team awareness
+- Integration with all task operations
+
+**Acceptance Criteria**:
+- [x] Vision insights generated for all tasks automatically
+- [x] Workflow hints adapt to current task state
+- [x] Progress indicators track milestone completion
+- [x] Blocker detection triggers resolution workflows
+- [x] Impact assessment identifies dependent tasks
+- [x] Context updates maintain team coordination
+
+### 4.9 Feature: Dynamic Tool Enforcement v2.0
+**Priority**: P0 (Must Have)
+**Status**: Implemented
+
+**User Story**: As a security officer, I want strict control over which tools each agent can use so that system security is maintained.
+
+**Requirements**:
+- Dynamic tool permission loading based on agent type
+- Infrastructure-level enforcement (not just configuration)
+- Tool permissions returned by call_agent API
+- Automatic blocking of unauthorized tool attempts
+- Clear error messages for permission violations
+- Support for 42+ specialized agents with unique tool sets
+
+**Acceptance Criteria**:
+- [x] Master orchestrator limited to coordination tools only
+- [x] Coding agents cannot delegate to other agents
+- [x] Documentation agents have read/write but not system access
+- [x] All tool violations blocked before execution
+- [x] Error messages include available tools for agent type
+- [x] Tool permissions sourced from agent responses, not static config
 
 ---
 
@@ -479,14 +535,15 @@ Database Layer (PostgreSQL/SQLite + Redis)
 ## 10. Success Criteria
 
 ### 10.1 MVP Success (Current)
-- [x] 32 specialized agents operational
+- [x] 42+ specialized agents operational
 - [x] 4-tier context hierarchy functional
 - [x] Web dashboard deployed
 - [x] Keycloak authentication integrated
 - [x] Docker deployment working
-- [x] Basic task management implemented
+- [x] Task management with vision system implemented
+- [x] Dynamic tool enforcement v2.0 active
+- [x] <200ms average response time achieved
 - [ ] 10+ active users
-- [ ] <200ms average response time
 - [ ] 99% uptime in production
 
 ### 10.2 Tier 1 Success (Q2 2025)
@@ -586,6 +643,7 @@ Database Layer (PostgreSQL/SQLite + Redis)
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-10-16 | AI Agent | Initial PRD creation during sync protocol |
+| 1.1 | 2025-10-27 | documentation-agent | Updated agent count to 42+, added Vision System and Dynamic Tool Enforcement v2.0 features |
 
 ---
 
